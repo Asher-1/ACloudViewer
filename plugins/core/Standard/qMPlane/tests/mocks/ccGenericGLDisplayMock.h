@@ -19,7 +19,7 @@ public:
 	MAKE_MOCK1(getGLCameraParameters, void(ccGLCameraParameters&), override);
 	MAKE_CONST_MOCK2(toCenteredGLCoordinates, QPointF(int, int), override);
 	MAKE_CONST_MOCK2(toCornerGLCoordinates, QPointF(int, int), override);
-	MAKE_CONST_MOCK0(getViewportParameters, const ccViewportParameters&(), override);
+	MAKE_CONST_MOCK0(getViewportParameters, const ecvViewportParameters&(), override);
 	MAKE_MOCK5(setupProjectiveViewport, void(const ccGLMatrixd&, float,  float, bool, bool), override);
 	MAKE_MOCK0(asWidget, QWidget*(), override);
 

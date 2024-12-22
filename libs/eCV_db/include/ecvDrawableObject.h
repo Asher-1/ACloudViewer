@@ -25,267 +25,293 @@
 // CV_CORE_LIB
 #include <CVGeom.h>
 
-
 //! Simple (clipping) plane equation
-struct ccClipPlane
-{
-	Tuple4Tpl<double> equation;
+struct ccClipPlane {
+    Tuple4Tpl<double> equation;
 };
 using ccClipPlaneSet = std::vector<ccClipPlane>;
 
 //! Generic interface for (3D) drawable entities
-class ECV_DB_LIB_API ccDrawableObject
-{
+class ECV_DB_LIB_API ccDrawableObject {
 public:
+    //! Default constructor
+    ccDrawableObject();
+    //! Copy constructor
+    ccDrawableObject(const ccDrawableObject& object);
 
-	//! Default constructor
-	ccDrawableObject();
-	//! Copy constructor
-	ccDrawableObject(const ccDrawableObject& object);
-	
-	virtual ~ccDrawableObject() = default;
+    virtual ~ccDrawableObject() = default;
 
-public:  //drawing and drawing options
+public:  // drawing and drawing options
+    //! Draws entity and its children
+    virtual void draw(CC_DRAW_CONTEXT& context) = 0;
 
-	//! Draws entity and its children
-	virtual void draw(CC_DRAW_CONTEXT& context) = 0;
+    //! Returns whether entity is visible or not
+    inline virtual bool isVisible() const { return m_visible; }
+    //! Sets entity visibility
+    inline virtual void setVisible(bool state) { m_visible = state; }
 
-	//! Returns whether entity is visible or not
-	inline virtual bool isVisible() const { return m_visible; }
-	//! Sets entity visibility
-	inline virtual void setVisible(bool state) {  m_visible = state; }
+    //! Toggles visibility
+    inline virtual void toggleVisibility() { setVisible(!isVisible()); }
 
-	//! Toggles visibility
-	inline virtual void toggleVisibility() { setVisible(!isVisible()); }
+    //! Returns whether entity is to be redraw
+    inline virtual bool isRedraw() const { return m_modelRedraw; }
+    //! Sets entity redraw mode
+    inline virtual void setRedraw(bool state) { m_modelRedraw = state; }
+    //! Sets force redraw
+    inline virtual void setForceRedraw(bool state) { m_forceRedraw = state; }
 
-	//! Returns whether entity is to be redraw
-	inline virtual bool isRedraw() const { return m_modelRedraw; }
-	//! Sets entity redraw mode
-	inline virtual void setRedraw(bool state) { m_modelRedraw = state; }
-	//! Sets force redraw
-	inline virtual void setForceRedraw(bool state) { m_forceRedraw = state; }
+    inline virtual void setFixedId(bool state) { m_fixedId = state; }
+    inline virtual bool isFixedId() { return m_fixedId; }
 
-	inline virtual void setFixedId(bool state) { m_fixedId = state; }
-	inline virtual bool isFixedId() { return m_fixedId; }
+    //! Returns whether visibility is locked or not
+    inline virtual bool isVisibilityLocked() const {
+        return m_lockedVisibility;
+    }
+    //! Locks/unlocks visibility
+    /** If visibility is locked, the user won't be able to modify it
+            (via the properties tree for instance).
+    **/
+    inline virtual void lockVisibility(bool state) {
+        m_lockedVisibility = state;
+    }
 
-	//! Returns whether visibility is locked or not
-	inline virtual bool isVisiblityLocked() const { return m_lockedVisibility; }
-	//! Locks/unlocks visibility
-	/** If visibility is locked, the user won't be able to modify it
-		(via the properties tree for instance).
-	**/
-	inline virtual void lockVisibility(bool state) { m_lockedVisibility = state; }
+    //! Returns whether entity is selected or not
+    inline virtual bool isSelected() const { return m_selected; }
+    //! Selects/Unselects entity
+    inline virtual void setSelected(bool state) { m_selected = state; }
 
-	//! Returns whether entity is selected or not
-	inline virtual bool isSelected() const { return m_selected; }
-	//! Selects/Unselects entity
-	inline virtual void setSelected(bool state) { m_selected = state; }
+    //! Returns main OpenGL parameters for this entity
+    /** These parameters are deduced from the visibility states
+            of its different features (points, normals, etc.).
+            \param params a glDrawParams structure
+    **/
+    virtual void getDrawingParameters(glDrawParams& params) const;
 
-	//! Returns main OpenGL parameters for this entity
-	/** These parameters are deduced from the visibility states
-		of its different features (points, normals, etc.).
-		\param params a glDrawParams structure
-	**/
-	virtual void getDrawingParameters(glDrawParams& params) const;
+    //! Returns whether colors are enabled or not
+    inline virtual bool hasColors() const { return false; }
+    //! Returns whether colors are shown or not
+    inline virtual bool colorsShown() const { return m_colorsDisplayed; }
+    //! Sets colors visibility
+    inline virtual void showColors(bool state) { m_colorsDisplayed = state; }
+    //! Toggles colors display state
+    inline virtual void toggleColors() { showColors(!colorsShown()); }
 
-	//! Returns whether colors are enabled or not
-	inline virtual bool hasColors() const  { return false; }
-	//! Returns whether colors are shown or not
-	inline virtual bool colorsShown() const { return m_colorsDisplayed; }
-	//! Sets colors visibility
-	inline virtual void showColors(bool state) { 
-		m_colorsDisplayed = state;
-	}
-	//! Toggles colors display state
-	inline virtual void toggleColors() { showColors(!colorsShown()); }
+    //! Returns whether normals are enabled or not
+    inline virtual bool hasNormals() const { return false; }
+    //! Returns whether normals are shown or not
+    inline virtual bool normalsShown() const { return m_normalsDisplayed; }
+    //! Sets normals visibility
+    inline virtual void showNormals(bool state) { m_normalsDisplayed = state; }
+    //! Toggles normals display state
+    inline virtual void toggleNormals() { showNormals(!normalsShown()); }
 
-	//! Returns whether normals are enabled or not
-	inline virtual bool hasNormals() const  { return false; }
-	//! Returns whether normals are shown or not
-	inline virtual bool normalsShown() const { return m_normalsDisplayed; }
-	//! Sets normals visibility
-	inline virtual void showNormals(bool state) { m_normalsDisplayed = state; }
-	//! Toggles normals display state
-	inline virtual void toggleNormals() { showNormals(!normalsShown()); }
+public:  // scalar fields
+    //! Returns whether an active scalar field is available or not
+    inline virtual bool hasDisplayedScalarField() const { return false; }
 
-public: //scalar fields
+    //! Returns whether one or more scalar fields are instantiated
+    /** WARNING: doesn't mean a scalar field is currently displayed
+            (see ccDrawableObject::hasDisplayedScalarField).
+    **/
+    inline virtual bool hasScalarFields() const { return false; }
 
-	//! Returns whether an active scalar field is available or not
-	inline virtual bool hasDisplayedScalarField() const { return false; }
+    //! Sets active scalarfield visibility
+    inline virtual void showSF(bool state) {
+        m_sfDisplayed = state;
+        setRedraw(state);
+    }
 
-	//! Returns whether one or more scalar fields are instantiated
-	/** WARNING: doesn't mean a scalar field is currently displayed
-		(see ccDrawableObject::hasDisplayedScalarField).
-	**/
-	inline virtual bool hasScalarFields() const  { return false; }
+    //! Toggles SF display state
+    inline virtual void toggleSF() { showSF(!sfShown()); }
 
-	//! Sets active scalarfield visibility
-	inline virtual void showSF(bool state) { 
-		m_sfDisplayed = state; 
-		setRedraw(state);
-	}
+    //! Returns whether active scalar field is visible
+    inline virtual bool sfShown() const { return m_sfDisplayed; }
 
-	//! Toggles SF display state
-	inline virtual void toggleSF() { showSF(!sfShown()); }
+public:  //(Mesh) materials
+    //! Toggles material display state
+    virtual void toggleMaterials() {}  // does nothing by default!
 
-	//! Returns whether active scalar field is visible
-	inline virtual bool sfShown() const { return m_sfDisplayed; }
+public:  // Name display in 3D
+    //! Sets whether name should be displayed in 3D
+    inline virtual void showNameIn3D(bool state) { m_showNameIn3D = state; }
 
-public: //(Mesh) materials
+    //! Returns whether name is displayed in 3D or not
+    inline virtual bool nameShownIn3D() const { return m_showNameIn3D; }
 
-	//! Toggles material display state
-	virtual void toggleMaterials() {} //does nothing by default!
+    //! Toggles name in 3D display state
+    inline virtual void toggleShowName() { showNameIn3D(!nameShownIn3D()); }
 
-public: //Name display in 3D
+public:  // Temporary color
+    //! Returns whether colors are currently overridden by a temporary (unique)
+    //! color
+    /** See ccDrawableObject::setTempColor.
+     **/
+    inline virtual bool isColorOverridden() const {
+        return m_colorIsOverridden;
+    }
 
-	//! Sets whether name should be displayed in 3D
-	inline virtual void showNameIn3D(bool state) {
-		m_showNameIn3D = state; 
-	}
+    //! Returns current temporary (unique) color
+    inline virtual const ecvColor::Rgb& getTempColor() const {
+        return m_tempColor;
+    }
 
-	//! Returns whether name is displayed in 3D or not
-	inline virtual bool nameShownIn3D() const { return m_showNameIn3D; }
+    //! Sets current temporary (unique)
+    /** \param col rgb color
+            \param autoActivate auto activates temporary color
+    **/
+    virtual void setTempColor(const ecvColor::Rgb& col,
+                              bool autoActivate = true);
 
-	//! Toggles name in 3D display state
-	inline virtual void toggleShowName() { showNameIn3D(!nameShownIn3D()); }
+    //! Set temporary color activation state
+    inline virtual void enableTempColor(bool state) {
+        m_colorIsOverridden = state;
+    }
 
-public: //Temporary color
+    // Get opacity
+    inline virtual float getOpacity() const { return m_opacity; }
 
-	//! Returns whether colors are currently overridden by a temporary (unique) color
-	/** See ccDrawableObject::setTempColor.
-	**/
-	inline virtual bool isColorOverriden() const { return m_colorIsOverriden; }
+    //! Set opacity activation state
+    inline virtual void setOpacity(float opacity) {
+        m_opacity = opacity;
+        setRedraw(false);
+    }
 
-	//! Returns current temporary (unique) color
-	inline virtual const ecvColor::Rgb& getTempColor() const { return m_tempColor; }
+public:  // Transformation matrix management (for display only)
+    //! Associates entity with a GL transformation (rotation + translation)
+    /** \warning FOR DISPLAY PURPOSE ONLY (i.e. should only be temporary)
+            If the associated GL transformation is enabled (see
+            ccDrawableObject::enableGLTransformation), it will
+            be applied before displaying this entity.
+            However it will not be taken into account by any cloudViewer
+    algorithm (distance computation, etc.) for instance. Note: GL transformation
+    is automatically enabled.
+    **/
+    virtual void setGLTransformation(const ccGLMatrix& trans);
 
-	//! Sets current temporary (unique)
-	/** \param col rgb color
-		\param autoActivate auto activates temporary color
-	**/
-	virtual void setTempColor(const ecvColor::Rgb& col, bool autoActivate = true);
+    //! Enables/disables associated GL transformation
+    /** See ccDrawableObject::setGLTransformation.
+     **/
+    virtual void enableGLTransformation(bool state);
 
-	//! Set temporary color activation state
-	inline virtual void enableTempColor(bool state) {
-		m_colorIsOverriden = state;  
-	}
+    //! Returns whether a GL transformation is enabled or not
+    inline virtual bool isGLTransEnabled() const { return m_glTransEnabled; }
 
-	// Get opacity
-	inline virtual float getOpacity() const { return m_opacity; }
+    //! Returns associated GL transformation
+    /** See ccDrawableObject::setGLTransformation.
+     **/
+    inline virtual const ccGLMatrix& getGLTransformation() const {
+        return m_glTrans;
+    }
 
-	//! Set opacity activation state
-	inline virtual void setOpacity(float opacity) {
-		m_opacity = opacity;
-		setRedraw(false);
-	}
+    //! Resets associated GL transformation
+    /** GL transformation is reset to identity.
+            Note: GL transformation is automatically disabled.
+            See ccDrawableObject::setGLTransformation.
+    **/
+    virtual void resetGLTransformation();
 
-public: //Transformation matrix management (for display only)
+    //! Multiplies (left) current GL transformation by a rotation matrix
+    /** 'GLtrans = M * GLtrans'
+            Note: GL transformation is automatically enabled.
+            See ccDrawableObject::setGLTransformation.
+    **/
+    virtual void rotateGL(const ccGLMatrix& rotMat);
 
-	//! Associates entity with a GL transformation (rotation + translation)
-	/** \warning FOR DISPLAY PURPOSE ONLY (i.e. should only be temporary)
-		If the associated GL transformation is enabled (see
-		ccDrawableObject::enableGLTransformation), it will
-		be applied before displaying this entity.
-		However it will not be taken into account by any cloudViewer algorithm
-		(distance computation, etc.) for instance.
-		Note: GL transformation is automatically enabled.
-	**/
-	virtual void setGLTransformation(const ccGLMatrix& trans);
+    //! Translates current GL transformation by a rotation matrix
+    /** 'GLtrans = GLtrans + T'
+            Note: GL transformation is automatically enabled.
+            See ccDrawableObject::setGLTransformation.
+    **/
+    virtual void translateGL(const CCVector3& trans);
 
-	//! Enables/disables associated GL transformation
-	/** See ccDrawableObject::setGLTransformation.
-	**/
-	virtual void enableGLTransformation(bool state);
+public:  // clipping planes
+    //! Removes all clipping planes (if any)
+    virtual void removeAllClipPlanes() { m_clipPlanes.resize(0); }
 
-	//! Returns whether a GL transformation is enabled or not
-	inline virtual bool isGLTransEnabled() const { return m_glTransEnabled; }
+    //! Registers a new clipping plane
+    /** \return false if the planes couldn't be added (not enough memory)
+     **/
+    virtual bool addClipPlanes(const ccClipPlane& plane);
 
-	//! Returns associated GL transformation
-	/** See ccDrawableObject::setGLTransformation.
-	**/
-	inline virtual const ccGLMatrix& getGLTransformation() const { return m_glTrans; }
+    //! Enables or disables clipping planes (OpenGL)
+    /** \warning If enabling the clipping planes, be sure to call this method
+     *AFTER the model view matrix has been set.
+     **/
+    virtual void toggleClipPlanes(CC_DRAW_CONTEXT& context, bool enable);
 
-	//! Resets associated GL transformation
-	/** GL transformation is reset to identity.
-		Note: GL transformation is automatically disabled.
-		See ccDrawableObject::setGLTransformation.
-	**/
-	virtual void resetGLTransformation();
+public:  // push and pop display state
+    //! Display state
+    struct DisplayState {
+        DisplayState() {}
+        DisplayState(const ccDrawableObject& dobj);
 
-	//! Multiplies (left) current GL transformation by a rotation matrix
-	/** 'GLtrans = M * GLtrans'
-		Note: GL transformation is automatically enabled.
-		See ccDrawableObject::setGLTransformation.
-	**/
-	virtual void rotateGL(const ccGLMatrix& rotMat);
+        using Shared = QSharedPointer<DisplayState>;
 
-	//! Translates current GL transformation by a rotation matrix
-	/** 'GLtrans = GLtrans + T'
-		Note: GL transformation is automatically enabled.
-		See ccDrawableObject::setGLTransformation.
-	**/
-	virtual void translateGL(const CCVector3& trans);
+        bool visible = false;
+        bool colorsDisplayed = false;
+        bool normalsDisplayed = false;
+        bool sfDisplayed = false;
+        bool colorIsOverridden = false;
+        bool showNameIn3D = false;
+    };
 
-public: //clipping planes
+    //! Pushes the current display state
+    virtual bool pushDisplayState();
 
-	//! Removes all clipping planes (if any)
-	virtual void removeAllClipPlanes() { m_clipPlanes.resize(0); }
+    //! Pops the last pushed display state
+    virtual void popDisplayState(bool apply = true);
 
-	//! Registers a new clipping plane
-	/** \return false if the planes couldn't be added (not enough memory)
-	**/
-	virtual bool addClipPlanes(const ccClipPlane& plane);
+    //! Applies a display state
+    virtual void applyDisplayState(const DisplayState& state);
 
-	//! Enables or disables clipping planes (OpenGL)
-	/** \warning If enabling the clipping planes, be sure to call this method AFTER the model view matrix has been set.
-	**/
-	virtual void toggleClipPlanes(CC_DRAW_CONTEXT& context, bool enable);
+protected:  // members
+    bool m_fixedId;
+    bool m_modelRedraw;
+    bool m_forceRedraw;
+    float m_opacity;
 
-protected: //members
-	bool m_fixedId;
-	bool m_modelRedraw;
-	bool m_forceRedraw;
-	float m_opacity;
+    //! Specifies whether the object is visible or not
+    /** Note: this does not influence the children visibility
+     **/
+    bool m_visible;
 
-	//! Specifies whether the object is visible or not
-	/** Note: this does not influence the children visibility
-	**/
-	bool m_visible;
+    //! Specifies whether the object is selected or not
+    bool m_selected;
 
-	//! Specifies whether the object is selected or not
-	bool m_selected;
+    //! Specifies whether the visibility can be changed by user or not
+    bool m_lockedVisibility;
 
-	//! Specifies whether the visibility can be changed by user or not
-	bool m_lockedVisibility;
+    //! Specifies whether colors should be displayed
+    bool m_colorsDisplayed;
+    //! Specifies whether normals should be displayed
+    bool m_normalsDisplayed;
+    //! Specifies whether scalar field should be displayed
+    bool m_sfDisplayed;
 
-	//! Specifies whether colors should be displayed
-	bool m_colorsDisplayed;
-	//! Specifies whether normals should be displayed
-	bool m_normalsDisplayed;
-	//! Specifies whether scalar field should be displayed
-	bool m_sfDisplayed;
+    //! Temporary (unique) color
+    ecvColor::Rgb m_tempColor;
+    //! Temporary (unique) color activation state
+    bool m_colorIsOverridden;
 
-	//! Temporary (unique) color
-	ecvColor::Rgb m_tempColor;
-	//! Temporary (unique) color activation state
-	bool m_colorIsOverriden;
+    //! Current GL transformation
+    /** See ccDrawableObject::setGLTransformation.
+     **/
+    ccGLMatrix m_glTrans;
+    //! Current GL transformation activation state
+    /** See ccDrawableObject::setGLTransformation.
+     **/
+    bool m_glTransEnabled;
 
-	//! Current GL transformation
-	/** See ccDrawableObject::setGLTransformation.
-	**/
-	ccGLMatrix m_glTrans;
-	//! Current GL transformation activation state
-	/** See ccDrawableObject::setGLTransformation.
-	**/
-	bool m_glTransEnabled;
+    //! Whether name is displayed in 3D or not
+    bool m_showNameIn3D;
+    //! Last 2D position of the '3D' name
+    CCVector3d m_nameIn3DPos;
 
-	//! Whether name is displayed in 3D or not
-	bool m_showNameIn3D;
-	//! Last 2D position of the '3D' name
-	CCVector3d m_nameIn3DPos;
+    //! Active clipping planes (used for display only)
+    ccClipPlaneSet m_clipPlanes;
 
-	//! Active clipping planes (used for display only)
-	ccClipPlaneSet m_clipPlanes;
+    //! The stack of pushed display states
+    std::vector<DisplayState::Shared> m_displayStateStack;
 };
 
-#endif // ECV_DRAWABLE_OBJECT_HEADER
+#endif  // ECV_DRAWABLE_OBJECT_HEADER

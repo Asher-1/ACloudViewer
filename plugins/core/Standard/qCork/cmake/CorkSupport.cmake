@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Quick & dirty Cork+MPIR+CMake support for CloudCompare
+# Quick & dirty Cork+MPIR+CMake support for ACloudViewer
 # ------------------------------------------------------------------------------
 
 	# Cork library (CC fork) https://github.com/cloudcompare/cork

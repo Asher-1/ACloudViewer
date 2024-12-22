@@ -137,6 +137,11 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPOISSON_RECON_WITH_OPEN_MP=ON \
         -DPLUGIN_STANDARD_QRANSAC_SD=ON \
         -DPLUGIN_STANDARD_QSRA=ON \
+        -DPLUGIN_STANDARD_3DMASC=ON \
+        -DPLUGIN_STANDARD_QTREEISO=ON \
+        -DPLUGIN_STANDARD_QVOXFALL=ON \
+        -DPLUGIN_PYTHON=ON \
+        -DBUILD_PYTHON_MODULE=ON \
         -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
         -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
         ..

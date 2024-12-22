@@ -413,7 +413,8 @@ cloudViewer::SquareMatrixd ccGenericPointCloud::computeCovariance() const {
 
 cloudViewer::ReferenceCloud* ccGenericPointCloud::getTheVisiblePoints(
         const VisibilityTableType* visTable /*=nullptr*/,
-        bool silent /*=false*/) const {
+        bool silent /*=false*/,
+        cloudViewer::ReferenceCloud* selection /*=nullptr*/) const {
     if (!visTable) {
         visTable = &m_pointsVisibility;
     }
@@ -422,8 +423,8 @@ cloudViewer::ReferenceCloud* ccGenericPointCloud::getTheVisiblePoints(
     if (!visTable || visTable->size() != count) {
         assert(false);
         CVLog::Warning(
-                "[ccGenericPointCloud::getTheVisiblePoints] No visibility "
-                "table instantiated!");
+                "[ccGenericPointCloud::getTheVisiblePoints] Invalid visibility "
+                "table!");
         return nullptr;
     }
 
@@ -438,8 +439,16 @@ cloudViewer::ReferenceCloud* ccGenericPointCloud::getTheVisiblePoints(
     }
 
     // we create an entity with the 'visible' vertices only
-    cloudViewer::ReferenceCloud* rc = new cloudViewer::ReferenceCloud(
-            const_cast<ccGenericPointCloud*>(this));
+    cloudViewer::ReferenceCloud* rc = nullptr;
+    if (selection) {
+        assert(selection->getAssociatedCloud() == this &&
+               selection->size() == 0);
+        rc = selection;
+        rc->clear();
+    } else {
+        rc = new cloudViewer::ReferenceCloud(
+                const_cast<ccGenericPointCloud*>(this));
+    }
 
     if (pointCount) {
         if (rc->reserve(pointCount)) {

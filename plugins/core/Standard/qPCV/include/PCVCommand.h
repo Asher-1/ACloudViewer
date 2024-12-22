@@ -14,7 +14,7 @@
 //#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
 //#  GNU General Public License for more details.                          #
 //#                                                                        #
-//#          COPYRIGHT: CloudCompare project                               #
+//#          COPYRIGHT: ACloudViewer project                               #
 //#                                                                        #
 //##########################################################################
 
@@ -24,7 +24,7 @@ class ecvProgressDialog;
 class ecvMainAppInterface;
 
 //qCC_db
-#include <ccHObject.h>
+#include <ecvHObject.h>
 
 class PCVCommand : public ccCommandLineInterface::Command
 {

@@ -72,6 +72,7 @@ ExternalProject_Add(
         -DBUILD_opencv_imgproc=ON
         -DBUILD_opencv_features2d=OFF
         -DBUILD_opencv_flann=OFF
+        # -DBUILD_opencv_hdf=OFF
         -DBUILD_opencv_xfeatures2d=OFF
         -DBUILD_opencv_photo=OFF
         -DBUILD_opencv_calib3d=OFF
@@ -87,7 +88,7 @@ ExternalProject_Add(
         -DBUILD_opencv_face=OFF
         -DBUILD_opencv_js=OFF
         -DBUILD_opencv_dnn=OFF
-        -DBUILD_opencv_ml=OFF
+        -DBUILD_opencv_ml=${PLUGIN_STANDARD_3DMASC}
         -DBUILD_opencv_objdetect=OFF
         -DBUILD_opencv_xobjdetect=OFF
         -DBUILD_opencv_dnn_objdetect=OFF

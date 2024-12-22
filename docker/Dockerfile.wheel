@@ -164,8 +164,6 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
  && rm Miniconda3-latest-Linux-x86_64.sh \
  && conda --version
 
-# Checkout CloudViewer-ML main branch
-# TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
 ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install

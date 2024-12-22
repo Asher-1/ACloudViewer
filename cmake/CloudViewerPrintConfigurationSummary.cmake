@@ -12,7 +12,7 @@ endfunction()
 # Prints a summary of the current configuration.
 function(cloudViewer_print_configuration_summary)
     message(STATUS "========================================================================")
-    message(STATUS "ACloudViewer ${PROJECT_VERSION} ${CMAKE_BUILD_TYPE} Configuration Summary")
+    message(STATUS "ACloudViewer ${CLOUDVIEWER_VERSION_FULL} ${CMAKE_BUILD_TYPE} Configuration Summary")
     message(STATUS "========================================================================")
     message(STATUS "Enabled Features:")
     cloudViewer_aligned_print("SIMD" "${USE_SIMD}")
@@ -50,6 +50,7 @@ function(cloudViewer_print_configuration_summary)
     message(STATUS "========================================================================")
     message(STATUS "Third-Party Dependencies:")
     set(3RDPARTY_DEPENDENCIES
+            Assimp
             Opencv
             Eigen3
             BLAS
@@ -62,6 +63,8 @@ function(cloudViewer_print_configuration_summary)
             JPEG
             jsoncpp
             liblzf
+            msgpack
+            nanoflann
             OpenGL
             PNG
             qhullcpp
@@ -70,7 +73,10 @@ function(cloudViewer_print_configuration_summary)
             tinyfiledialogs
             TinyGLTF
             tinyobjloader
+            VTK
+            PCL
             WebRTC
+            ZeroMQ
             )
 
     foreach (dep IN LISTS 3RDPARTY_DEPENDENCIES)

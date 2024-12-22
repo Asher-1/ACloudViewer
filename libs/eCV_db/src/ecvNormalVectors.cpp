@@ -174,7 +174,8 @@ bool ccNormalVectors::UpdateNormalOrientations(
             }
         } break;
 
-        case SENSOR_ORIGIN: {
+        case MINUS_SENSOR_ORIGIN:
+        case PLUS_SENSOR_ORIGIN: {
             // look for the first sensor (child) with a valid origin
             bool sensorFound = false;
             for (unsigned i = 0; i < theCloud->getChildrenNumber(); ++i) {
@@ -183,14 +184,16 @@ bool ccNormalVectors::UpdateNormalOrientations(
                     ccSensor* sensor = ccHObjectCaster::ToSensor(child);
                     if (sensor->getActiveAbsoluteCenter(originPoint)) {
                         useOriginPoint = true;
-                        fromOriginPoint = true;
+                        fromOriginPoint =
+                                (preferredOrientation == PLUS_SENSOR_ORIGIN);
+                        sensorFound = true;
                         break;
                     }
                 }
             }
             if (!sensorFound) {
                 CVLog::Warning(
-                        "[UpdateNormalOrientations] Could not found a valid "
+                        "[UpdateNormalOrientations] Could not find a valid "
                         "sensor child");
                 return false;
             }
@@ -595,7 +598,10 @@ bool ccNormalVectors::ComputeNormalWithTri(
     cloudViewer::Neighbourhood Z(pointAndNeighbors);
 
     // we mesh the neighbour points (2D1/2)
-    cloudViewer::GenericIndexedMesh* theMesh = Z.triangulateOnPlane();
+    std::string errorStr;
+    cloudViewer::GenericIndexedMesh* theMesh = Z.triangulateOnPlane(
+            cloudViewer::Neighbourhood::DO_NOT_DUPLICATE_VERTICES,
+            cloudViewer::Neighbourhood::IGNORE_MAX_EDGE_LENGTH, errorStr);
     if (!theMesh) {
         return false;
     }

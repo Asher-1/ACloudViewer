@@ -7,8 +7,8 @@
 #include "FileIOFilter.h"
 #include "cctype"
 #include "ShpFilter.h"
-#include "ccHObject.h"
-#include "ccPointCloud.h"
+#include "ecvHObject.h"
+#include <ecvPointCloud.h>
 
 
 void TestShpFilter::readPolylineFile(const QString &filePath) const

@@ -139,6 +139,7 @@
 #include "ecvSensorComputeDistancesDlg.h"
 #include "ecvSensorComputeScatteringAnglesDlg.h"
 #include "ecvShiftAndScaleCloudDlg.h"
+#include "ecvSmoothPolylineDlg.h"
 #include "ecvSubsamplingDlg.h"
 #include "ecvUnrollDlg.h"
 #include "ecvUpdateDlg.h"
@@ -217,6 +218,7 @@ static ccHObject* s_levelEntity = nullptr;
 static QFileDialog::Options ECVFileDialogOptions() {
     // dialog options
     QFileDialog::Options dialogOptions = QFileDialog::Options();
+    dialogOptions |= QFileDialog::DontResolveSymlinks;
     if (!ecvOptions::Instance().useNativeDialogs) {
         dialogOptions |= QFileDialog::DontUseNativeDialog;
     }
@@ -384,14 +386,15 @@ doActionToggleOrientationMarker(true);
 #endif
 
 #ifdef USE_PYTHON_MODULE
-QString applicationPath = QCoreApplication::applicationDirPath();
-QString pyHome = applicationPath + "/python38";
-if (!PythonInterface::SetPythonHome(CVTools::FromQString(pyHome).c_str())) {
-    CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].")
-                           .arg(pyHome));
-} else {
-    CVLog::Print(QString("Setting python home [%1] successfully!").arg(pyHome));
-}
+// QString applicationPath = QCoreApplication::applicationDirPath();
+// QString pyHome = applicationPath + "/python38";
+// if (!PythonInterface::SetPythonHome(CVTools::FromQString(pyHome).c_str())) {
+//     CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].")
+//                            .arg(pyHome));
+// } else {
+//     CVLog::Print(QString("Setting python home [%1]
+//     successfully!").arg(pyHome));
+// }
 #else
 m_ui->actionSemanticSegmentation->setEnabled(false);
 #endif
@@ -548,6 +551,8 @@ void MainWindow::connectActions() {
             &MainWindow::doActionOpenFile);
     connect(m_ui->actionSave, &QAction::triggered, this,
             &MainWindow::doActionSaveFile);
+    connect(m_ui->actionSaveProject, &QAction::triggered, this,
+            &MainWindow::doActionSaveProject);
     connect(m_ui->actionPrimitiveFactory, &QAction::triggered, this,
             &MainWindow::doShowPrimitiveFactory);
     connect(m_ui->actionClearAll, &QAction::triggered, this,
@@ -678,6 +683,8 @@ void MainWindow::connectActions() {
     // "Edit > Polyline" menu
     connect(m_ui->actionSamplePointsOnPolyline, &QAction::triggered, this,
             &MainWindow::doActionSamplePointsOnPolyline);
+    connect(m_ui->actionSmoothPolyline, &QAction::triggered, this,
+            &MainWindow::doActionSmoohPolyline);
     connect(m_ui->actionConvertPolylinesToMesh, &QAction::triggered, this,
             &MainWindow::doConvertPolylinesToMesh);
     connect(m_ui->actionBSplineFittingOnCloud, &QAction::triggered, this,
@@ -855,6 +862,8 @@ void MainWindow::connectActions() {
             &MainWindow::doActionFitPlane);
     connect(m_ui->actionFitSphere, &QAction::triggered, this,
             &MainWindow::doActionFitSphere);
+    connect(m_ui->actionFitCircle, &QAction::triggered, this,
+            &MainWindow::doActionFitCircle);
     connect(m_ui->actionFitFacet, &QAction::triggered, this,
             &MainWindow::doActionFitFacet);
     connect(m_ui->actionFitQuadric, &QAction::triggered, this,
@@ -1647,9 +1656,9 @@ void MainWindow::addToDB(const QStringList& filenames,
 }
 
 void MainWindow::addToDB(ccHObject* obj,
-                         bool updateZoom /*=true*/,
+                         bool updateZoom /*=false*/,
                          bool autoExpandDBTree /*=true*/,
-                         bool checkDimensions /*=true*/,
+                         bool checkDimensions /*=false*/,
                          bool autoRedraw /*=true*/) {
     // let's check that the new entity is not too big nor too far from scene
     // center!
@@ -2159,6 +2168,88 @@ void MainWindow::doActionSaveFile() {
                                 currentPath);
 }
 
+void MainWindow::doActionSaveProject() {
+    if (!m_ccRoot || !m_ccRoot->getRootEntity()) {
+        assert(false);
+        return;
+    }
+
+    ccHObject* rootEntity = m_ccRoot->getRootEntity();
+    if (rootEntity->getChildrenNumber() == 0) {
+        return;
+    }
+
+    // default output path (+ filename)
+    QSettings settings;
+    settings.beginGroup(ecvPS::SaveFile());
+    QString currentPath =
+            settings.value(ecvPS::CurrentPath(), ecvFileUtils::defaultDocPath())
+                    .toString();
+    CVLog::PrintDebug(currentPath);
+    QString fullPathName = currentPath;
+
+    static QString s_previousProjectName{"project"};
+    QString defaultFileName = s_previousProjectName;
+    if (rootEntity->getChildrenNumber() == 1) {
+        // If there's only on top entity, we can try to use its name as the
+        // project name.
+        ccHObject* topEntity = rootEntity->getChild(0);
+        defaultFileName = topEntity->getName();
+        if (topEntity->isA(CV_TYPES::HIERARCHY_OBJECT)) {
+            // Hierarchy objects have generally as name: 'filename.ext
+            // (fullpath)' so we must only take the first part! (otherwise this
+            // type of name with a path inside disturbs the QFileDialog a lot
+            // ;))
+            QStringList parts =
+                    defaultFileName.split(' ', QString::SkipEmptyParts);
+            if (!parts.empty()) {
+                defaultFileName = parts[0];
+            }
+        }
+
+        // we remove the extension
+        defaultFileName = QFileInfo(defaultFileName).completeBaseName();
+
+        if (!IsValidFileName(defaultFileName)) {
+            CVLog::Warning(
+                    tr("[I/O] Top entity's name would make an invalid "
+                       "filename! Can't use it..."));
+            defaultFileName = "project";
+        }
+    }
+    fullPathName += QString("/") + defaultFileName;
+
+    QString binFilter = BinFilter::GetFileFilter();
+
+    // ask the user for the output filename
+    QString selectedFilename = QFileDialog::getSaveFileName(
+            this, tr("Save file"), fullPathName, binFilter, &binFilter,
+            ECVFileDialogOptions());
+
+    if (selectedFilename.isEmpty()) {
+        // process cancelled by the user
+        return;
+    }
+
+    FileIOFilter::SaveParameters parameters;
+    {
+        parameters.alwaysDisplaySaveDialog = true;
+        parameters.parentWidget = this;
+    }
+
+    CC_FILE_ERROR result = FileIOFilter::SaveToFile(
+            rootEntity->getChildrenNumber() == 1 ? rootEntity->getChild(0)
+                                                 : rootEntity,
+            selectedFilename, parameters, binFilter);
+
+    // we update the current 'save' path
+    QFileInfo fi(selectedFilename);
+    s_previousProjectName = fi.fileName();
+    currentPath = fi.absolutePath();
+    settings.setValue(ecvPS::CurrentPath(), currentPath);
+    settings.endGroup();
+}
+
 void MainWindow::doActionApplyTransformation() {
     ccApplyTransformationDlg dlg(this);
     if (!dlg.exec()) return;
@@ -2621,6 +2712,18 @@ void MainWindow::clearAll() {
     m_ccRoot->unloadAll();
 }
 
+void MainWindow::enableAll() {
+    for (QMdiSubWindow* window : m_mdiArea->subWindowList()) {
+        window->setEnabled(true);
+    }
+}
+
+void MainWindow::disableAll() {
+    for (QMdiSubWindow* window : m_mdiArea->subWindowList()) {
+        window->setEnabled(false);
+    }
+}
+
 void MainWindow::updateUIWithSelection() {
     dbTreeSelectionInfo selInfo;
 
@@ -2659,6 +2762,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionTracePolyline->setEnabled(!dbIsEmpty);
     m_ui->actionZoomAndCenter->setEnabled(atLeastOneEntity);
     m_ui->actionSave->setEnabled(atLeastOneEntity);
+    m_ui->actionSaveProject->setEnabled(!dbIsEmpty);
     m_ui->actionClone->setEnabled(atLeastOneEntity);
     m_ui->actionDelete->setEnabled(atLeastOneEntity);
     m_ui->actionImportSFFromFile->setEnabled(atLeastOneEntity);
@@ -2709,6 +2813,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionFitPlane->setEnabled(atLeastOneEntity);
     m_ui->actionFitPlaneProxy->setEnabled(atLeastOneEntity);
     m_ui->actionFitSphere->setEnabled(atLeastOneCloud);
+    m_ui->actionFitCircle->setEnabled(atLeastOneCloud);
     //    m_ui->actionLevel->setEnabled(atLeastOneEntity);
     m_ui->actionFitFacet->setEnabled(atLeastOneEntity);
     m_ui->actionFitQuadric->setEnabled(atLeastOneCloud);
@@ -2781,6 +2886,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionConvertPolylinesToMesh->setEnabled(atLeastOnePolyline ||
                                                    exactlyOneGroup);
     m_ui->actionSamplePointsOnPolyline->setEnabled(atLeastOnePolyline);
+    m_ui->actionSmoothPolyline->setEnabled(atLeastOnePolyline);
     m_ui->actionMeshTwoPolylines->setEnabled(selInfo.selCount == 2 &&
                                              selInfo.polylineCount == 2);
     m_ui->actionModifySensor->setEnabled(exactlyOneSensor);
@@ -2971,11 +3077,6 @@ void MainWindow::updateMenus() {
     m_ui->menuEdit->setEnabled(true /*hasSelectedEntities*/);
     m_ui->menuTools->setEnabled(true /*hasSelectedEntities*/);
 
-    ////Shaders & Filters display Menu
-    // bool shadersEnabled = (active3DView ? active3DView->areShadersEnabled() :
-    // false); m_ui->actionLoadShader->setEnabled(shadersEnabled);
-    // m_ui->actionDeleteShader->setEnabled(shadersEnabled);
-
     ////View Menu
     m_ui->ViewToolBar->setEnabled(hasMdiChild);
 
@@ -2987,8 +3088,6 @@ void MainWindow::updateMenus() {
     m_ui->actionPointListPicking->setEnabled(hasLoadedEntities);
     // m_ui->actionTestFrameRate->setEnabled(hasMdiChild);
     // m_ui->actionRenderToFile->setEnabled(hasMdiChild);
-    // m_ui->actionToggleSunLight->setEnabled(hasMdiChild);
-    // m_ui->actionToggleCustomLight->setEnabled(hasMdiChild);
     // m_ui->actionToggleCenteredPerspective->setEnabled(hasMdiChild);
     // m_ui->actionToggleViewerBasedPerspective->setEnabled(hasMdiChild);
 
@@ -3645,7 +3744,6 @@ void MainWindow::toggleActiveWindowCenteredPerspective() {
         doActionPerspectiveProjection();
         refreshAll(true, false);
         updateViewModePopUpMenu();
-        // updatePivotVisibilityPopUpMenu(win);
     }
 }
 
@@ -4419,11 +4517,11 @@ void MainWindow::doActionResampleWithOctree() {
 }
 
 void MainWindow::doActionComputeMeshAA() {
-    doActionComputeMesh(DELAUNAY_2D_AXIS_ALIGNED);
+    doActionComputeMesh(cloudViewer::DELAUNAY_2D_AXIS_ALIGNED);
 }
 
 void MainWindow::doActionComputeMeshLS() {
-    doActionComputeMesh(DELAUNAY_2D_BEST_LS_PLANE);
+    doActionComputeMesh(cloudViewer::DELAUNAY_2D_BEST_LS_PLANE);
 }
 
 void MainWindow::doActionConvexHull() {
@@ -4479,7 +4577,7 @@ void MainWindow::doActionPoissonReconstruction() {
     updateUI();
 }
 
-void MainWindow::doActionComputeMesh(CC_TRIANGULATION_TYPES type) {
+void MainWindow::doActionComputeMesh(cloudViewer::TRIANGULATION_TYPES type) {
     // ask the user for the max edge length
     static double s_meshMaxEdgeLength = 0.0;
     {
@@ -5529,6 +5627,54 @@ void MainWindow::doActionSamplePointsOnPolyline() {
     }
 }
 
+void MainWindow::doActionSmoohPolyline() {
+    static int s_iterationCount = 5;
+    static double s_ratio = 0.25;
+
+    ccSmoothPolylineDialog dlg(this);
+    // restore last parameters
+    dlg.setIerationCount(s_iterationCount);
+    dlg.setRatio(s_ratio);
+    if (!dlg.exec()) return;
+
+    s_iterationCount = dlg.getIerationCount();
+    s_ratio = dlg.getRatio();
+
+    bool errors = false;
+
+    ccHObject::Container selectedEntities = getSelectedEntities();
+    m_ccRoot->unselectAllEntities();
+
+    for (ccHObject* entity : selectedEntities) {
+        if (!entity->isKindOf(CV_TYPES::POLY_LINE)) continue;
+
+        ccPolyline* poly = ccHObjectCaster::ToPolyline(entity);
+        assert(poly);
+
+        ccPolyline* smoothPoly = poly->smoothChaikin(
+                s_ratio, static_cast<unsigned>(s_iterationCount));
+        if (smoothPoly) {
+            if (poly->getParent()) {
+                poly->getParent()->addChild(smoothPoly);
+            }
+            poly->setEnabled(false);
+            addToDB(smoothPoly);
+
+            m_ccRoot->selectEntity(smoothPoly, true);
+        } else {
+            errors = true;
+        }
+    }
+
+    if (errors) {
+        CVLog::Error(
+                tr("[DoActionSmoohPolyline] Errors occurred during the "
+                   "process! Result may be incomplete!"));
+    }
+
+    refreshAll();
+}
+
 void MainWindow::doConvertPolylinesToMesh() {
     if (!haveSelection()) return;
 
@@ -5635,9 +5781,10 @@ void MainWindow::doConvertPolylinesToMesh() {
     }
 
     cloudViewer::Delaunay2dMesh* delaunayMesh = new cloudViewer::Delaunay2dMesh;
-    char errorStr[1024];
+    std::string errorStr;
     if (!delaunayMesh->buildMesh(points2D, segments2D, errorStr)) {
-        CVLog::Error(tr("Third party library error: %1").arg(errorStr));
+        CVLog::Error(tr("Third party library error: %1")
+                             .arg(QString::fromStdString(errorStr)));
         delete delaunayMesh;
         return;
     }
@@ -7892,9 +8039,11 @@ void MainWindow::doActionComputeBestICPRmsMatrix() {
                 double phi_deg = i * angularStep_deg;
                 ccGLMatrix trans;
                 trans.initFromParameters(
-                        static_cast<float>(cloudViewer::DegreesToRadians(phi_deg)),
-                        static_cast<float>(cloudViewer::DegreesToRadians(theta_deg)), 0,
-                        CCVector3(0, 0, 0));
+                        static_cast<float>(
+                                cloudViewer::DegreesToRadians(phi_deg)),
+                        static_cast<float>(
+                                cloudViewer::DegreesToRadians(theta_deg)),
+                        0, CCVector3(0, 0, 0));
                 matrices.push_back(trans);
                 matrixAngles.push_back(
                         std::pair<double, double>(phi_deg, theta_deg));
@@ -9732,7 +9881,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                 QString(),
                 ecvDisplayTools::UPPER_CENTER_MESSAGE);  // clear the area
         ecvDisplayTools::SetRedrawRecursive(false);
-        m_gsTool->removeAllEntities(!deleteHiddenParts);
+        m_gsTool->removeAllEntities();
         if (ecvDisplayTools::GetCurrentScreen()) {
             refreshAll();
         }
@@ -10693,6 +10842,64 @@ void MainWindow::doActionFitSphere() {
     }
 }
 
+void MainWindow::doActionFitCircle() {
+    ecvProgressDialog pDlg(true, this);
+    pDlg.setAutoClose(false);
+
+    ecvDisplayTools::SetRedrawRecursive(false);
+    for (ccHObject* entity : getSelectedEntities()) {
+        ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(entity);
+        if (!cloud) continue;
+
+        CCVector3 center;
+        CCVector3 normal;
+        PointCoordinateType radius = 0;
+        double rms = std::numeric_limits<double>::quiet_NaN();
+        if (cloudViewer::GeometricalAnalysisTools::DetectCircle(
+                    cloud, center, normal, radius, rms, &pDlg) !=
+            cloudViewer::GeometricalAnalysisTools::NoError) {
+            CVLog::Warning(
+                    tr("[Fit circle] Failed to fit a circle on cloud '%1'")
+                            .arg(cloud->getName()));
+            continue;
+        }
+
+        CVLog::Print(tr("[Fit circle] Cloud '%1': center (%2,%3,%4) - radius = "
+                        "%5 [RMS = %6]")
+                             .arg(cloud->getName())
+                             .arg(center.x)
+                             .arg(center.y)
+                             .arg(center.z)
+                             .arg(radius)
+                             .arg(rms));
+
+        CVLog::Print(tr("[Fit circle] Normal (%1,%2,%3)")
+                             .arg(normal.x)
+                             .arg(normal.y)
+                             .arg(normal.z));
+
+        // create the circle representation as a polyline
+        ccPolyline* circle =
+                ccPolyline::Circle(CCVector3(0, 0, 0), radius, 128);
+        if (circle) {
+            circle->setName(QObject::tr("Circle r=%1").arg(radius));
+            cloud->addChild(circle);
+            circle->copyGlobalShiftAndScale(*cloud);
+            circle->setMetaData("RMS", rms);
+
+            ccGLMatrix trans =
+                    ccGLMatrix::FromToRotation(CCVector3(0, 0, 1), normal);
+            trans.setTranslation(center);
+            circle->applyGLTransformation_recursive(&trans);
+            circle->setRedrawFlagRecursive(true);
+
+            addToDB(circle, false, false, false);
+        }
+    }
+
+    refreshAll();
+}
+
 void MainWindow::doActionFitPlane() { doComputePlaneOrientation(false); }
 
 void MainWindow::doComputePlaneOrientation(bool fitFacet) {
@@ -11016,12 +11223,19 @@ void MainWindow::doActionUnroll() {
 
 void MainWindow::doComputeGeometricFeature() {
     static ccLibAlgorithms::GeomCharacteristicSet s_selectedCharacteristics;
+    static CCVector3 s_upDir(0, 0, 1);
+    static bool s_upDirDefined = false;
 
     ccGeomFeaturesDlg gfDlg(this);
     double radius =
             ccLibAlgorithms::GetDefaultCloudKernelSize(m_selectedEntities);
     gfDlg.setRadius(radius);
+
+    // restore semi-persistent parameters
     gfDlg.setSelectedFeatures(s_selectedCharacteristics);
+    if (s_upDirDefined) {
+        gfDlg.setUpDirection(s_upDir);
+    }
 
     if (!gfDlg.exec()) return;
 
@@ -11031,9 +11245,17 @@ void MainWindow::doComputeGeometricFeature() {
         return;
     }
 
+    CCVector3* upDir = gfDlg.getUpDirection();
+
+    // remember semi-persistent parameters
+    s_upDirDefined = (upDir != nullptr);
+    if (s_upDirDefined) {
+        s_upDir = *upDir;
+    }
+
     ccLibAlgorithms::ComputeGeomCharacteristics(
             s_selectedCharacteristics, static_cast<PointCoordinateType>(radius),
-            m_selectedEntities, this);
+            m_selectedEntities, upDir, this);
 
     refreshSelected();
     updateUI();

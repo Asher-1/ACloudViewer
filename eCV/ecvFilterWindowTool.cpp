@@ -290,7 +290,7 @@ ccHObject* ecvFilterWindowTool::getSlice(ccHObject* obj, bool silent) {
 
         ccGenericPointCloud* sliceCloud =
                 inputCloud->createNewCloudFromVisibilitySelection(
-                        false, &selectionTable, true);
+                        false, &selectionTable, nullptr, true);
         if (!sliceCloud) {
             if (!silent) CVLog::Error("Not enough memory!");
         } else if (sliceCloud->size() == 0) {

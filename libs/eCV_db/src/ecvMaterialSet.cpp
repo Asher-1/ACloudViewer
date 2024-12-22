@@ -27,12 +27,10 @@
 // System
 #include <set>
 
-ccMaterialSet::ccMaterialSet(QString name /*=QString()*/)
+ccMaterialSet::ccMaterialSet(const QString& name /*=QString()*/)
     : std::vector<ccMaterial::CShared>(), CCShareable(), ccHObject(name) {
     setFlagState(CC_LOCKED, true);
 }
-
-ccMaterialSet::~ccMaterialSet() {}
 
 int ccMaterialSet::findMaterialByName(QString mtlName) const {
     CVLog::PrintDebug(QString("[ccMaterialSet::findMaterialByName] Query: ") +
@@ -198,8 +196,8 @@ bool ccMaterialSet::ParseMTL(QString path,
             else if (tokens.front() == "Ke") {
                 if (tokens.size() > 3) {
                     ecvColor::Rgbaf emission(tokens[1].toFloat(),
-                                            tokens[2].toFloat(),
-                                            tokens[3].toFloat(), 1.0f);
+                                             tokens[2].toFloat(),
+                                             tokens[3].toFloat(), 1.0f);
                     currentMaterial->setEmission(emission);
                 }
             }

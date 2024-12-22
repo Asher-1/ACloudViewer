@@ -89,6 +89,15 @@ if (UNIX AND NOT APPLE)
         DESTINATION "${MAIN_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS
     )
+    
+    if (${PLUGIN_PYTHON} STREQUAL "ON") 
+        file(COPY 
+            "${CMAKE_INSTALL_PREFIX}/plugins-python"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS
+        )
+    endif()
+
     # deploy c++ library dependency
     execute_process(COMMAND bash ${PACK_SCRIPTS}
                     "${BUILD_LIB_PATH}" ${DEPLOY_LIB_PATH}
@@ -96,9 +105,23 @@ if (UNIX AND NOT APPLE)
     execute_process(COMMAND bash ${PACK_SCRIPTS}
                     "${BUILD_LIB_PATH}/plugins" ${DEPLOY_LIB_PATH}
                     WORKING_DIRECTORY ${BUILD_LIB_PATH})
-    execute_process(COMMAND bash ${PACK_SCRIPTS}
-                    ${MAIN_DEPLOY_PATH}/platforms/libqxcb.so ${DEPLOY_LIB_PATH}
-                    WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
+    
+    set(QXCB_LIB_PATH "${MAIN_DEPLOY_PATH}/platforms/libqxcb.so")
+    if(EXISTS ${QXCB_LIB_PATH})
+        execute_process(COMMAND bash ${PACK_SCRIPTS}
+                        ${QXCB_LIB_PATH} ${DEPLOY_LIB_PATH}
+                        WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
+    else()
+        message(WARNING "File ${QXCB_LIB_PATH} does not exist.")
+    endif()
+    set(SVGICON_LIB_PATH "${MAIN_DEPLOY_PATH}/iconengines/libqsvgicon.so")
+    if(EXISTS "${SVGICON_LIB_PATH}")
+        execute_process(COMMAND bash ${PACK_SCRIPTS}
+                        ${SVGICON_LIB_PATH} ${DEPLOY_LIB_PATH}
+                        WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
+    else()
+        message(WARNING "File ${SVGICON_LIB_PATH} does not exist.")
+    endif()
 
 elseif (WIN32)
     # deploy plugins and translations for ACloudViewer
@@ -108,6 +131,14 @@ elseif (WIN32)
         DESTINATION "${MAIN_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS
         )
+
+    if (${PLUGIN_PYTHON} STREQUAL "ON")
+        file(COPY 
+            "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/plugins-python"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS
+        )
+    endif()
 
     # prepare search path for powershell
     set(EXTERNAL_DLL_DIR ${EXTERNAL_INSTALL_DIRS} ${CONDA_PREFIX}/Library/bin)

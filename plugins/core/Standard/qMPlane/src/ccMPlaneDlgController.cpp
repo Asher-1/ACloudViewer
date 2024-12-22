@@ -172,7 +172,6 @@ void ccMPlaneDlgController::registerDialog()
 	m_app->registerOverlayDialog(m_dialog, Qt::Corner::TopLeftCorner);
 	m_dialog->start();
 	m_app->updateOverlayDialogsPlacement();
-	//m_app->getActiveGLWindow()->redraw(true, false);
 	m_app->refreshSelected(true);
 }
 

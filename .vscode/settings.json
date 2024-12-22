@@ -127,7 +127,24 @@
 		"xutility": "cpp",
 		"resumable": "cpp",
 		"geometry": "cpp",
-		"tensor": "cpp"
+		"tensor": "cpp",
+		"specialfunctions": "cpp",
+		"*.tc": "cpp",
+		"dense": "cpp",
+		"bvh": "cpp",
+		"eulerangles": "cpp",
+		"*.expression": "cpp",
+		"fft": "cpp",
+		"__bit_reference": "cpp",
+		"__locale": "cpp",
+		"__node_handle": "cpp",
+		"__verbose_abort": "cpp",
+		"print": "cpp",
+		"kroneckerproduct": "cpp",
+		"mprealsupport": "cpp",
+		"numericaldiff": "cpp",
+		"openglsupport": "cpp",
+		"splines": "cpp"
 	},
 	"python.languageServer": "Default"
 }

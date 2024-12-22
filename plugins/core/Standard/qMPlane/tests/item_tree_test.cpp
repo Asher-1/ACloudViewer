@@ -24,8 +24,8 @@
 #include "mocks\ccGenericGLDisplayMock.h"
 
 // ACloudViewer
-#include "ccPointCloud.h"
-#include "ccHObject.h"
+#include <ecvPointCloud.h>
+#include "ecvHObject.h"
 
 // Qt
 #include "qmainwindow.h"
@@ -156,8 +156,5 @@ TEST_CASE("Test createPointLabel2D() ", "[item-tree]")
 
 	// ToDo: call setDisplay() and afterwards createPointLabel2D()
 	SECTION("TEST createPointLabel2D returns Label2D when Display is set") {
-		//REQUIRE_CALL(display, invalidateViewport());
-		//REQUIRE_CALL(display, deprecate3DLayer()).TIMES(1);
-		//cloud.setDisplay(&display);
 	}
 }

@@ -42,6 +42,7 @@ if(NOT Pytorch_FOUND)
         "print(torch.__version__, end=';')"
         "print(os.path.dirname(torch.__file__), end=';')"
         "print(torch._C._GLIBCXX_USE_CXX11_ABI, end=';')"
+        "print(torch.version.cuda, end=';')"
     )
     execute_process(
         COMMAND ${Python3_EXECUTABLE} "-c" "${PyTorch_FETCH_PROPERTIES}"
@@ -51,6 +52,7 @@ if(NOT Pytorch_FOUND)
     list(GET PyTorch_PROPERTIES 0 Pytorch_VERSION)
     list(GET PyTorch_PROPERTIES 1 Pytorch_ROOT)
     list(GET PyTorch_PROPERTIES 2 Pytorch_CXX11_ABI)
+    list(GET PyTorch_PROPERTIES 3 Pytorch_CUDA_VERSION)
 
     unset(PyTorch_FETCH_PROPERTIES)
     unset(PyTorch_PROPERTIES)
@@ -64,11 +66,30 @@ if(NOT Pytorch_FOUND)
             list(APPEND TORCH_CUDA_ARCH_LIST "${ptarch}")
         endforeach()
         message(STATUS "Using top level CMAKE_CUDA_ARCHITECTURES for TORCH_CUDA_ARCH_LIST: ${TORCH_CUDA_ARCH_LIST}")
+
+        # fix the issues of Failed to find nvToolsExt
+        message(STATUS "Pytorch_CUDA_VERSION: ${Pytorch_CUDA_VERSION}")
+        if(WIN32 AND PYTORCH_VERSION VERSION_GREATER_EQUAL 2.5.0 AND
+           Pytorch_CUDA_VERSION VERSION_GREATER_EQUAL 12)
+            message(STATUS "PyTorch NVTX headers workaround: Yes")
+            # only do this if nvToolsExt is not defined and CUDA::nvtx3 exists
+            if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
+                message(STATUS "CUDA::nvToolsExt is not defined and use CUDA::nvtx3 instead!")
+                add_library(CUDA::nvToolsExt INTERFACE IMPORTED)
+                # ensure that PyTorch is told to use NVTX3 headers
+                target_compile_definitions(
+                    CUDA::nvToolsExt INTERFACE
+                    TORCH_CUDA_USE_NVTX3
+                )
+                target_link_libraries(CUDA::nvToolsExt INTERFACE CUDA::nvtx3)
+            endif()
+        else()
+            message(STATUS "PyTorch NVTX headers workaround: No")
+        endif()
     endif()
 
     # Use the cmake config provided by torch
-    find_package(Torch REQUIRED PATHS "${Pytorch_ROOT}"
-                 NO_DEFAULT_PATH)
+    find_package(Torch REQUIRED PATHS "${Pytorch_ROOT}" NO_DEFAULT_PATH)
 
     if(BUILD_CUDA_MODULE)
         # Note: older versions of PyTorch have hard-coded cuda library paths, see:

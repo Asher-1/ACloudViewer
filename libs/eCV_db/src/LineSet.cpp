@@ -55,7 +55,7 @@ void LineSet::drawMeOnly(CC_DRAW_CONTEXT &context)
 
     if (MACRO_Draw3D(context) && ecvDisplayTools::GetMainScreen())
     {
-        if (isColorOverriden())
+        if (isColorOverridden())
         {
             context.defaultPolylineColor = getTempColor();
         }/*

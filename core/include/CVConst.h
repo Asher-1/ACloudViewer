@@ -60,6 +60,10 @@ constexpr float ZERO_TOLERANCE_F = std::numeric_limits<float>::epsilon();
 //! for our purposes.
 constexpr double ZERO_TOLERANCE_D = static_cast<double>(ZERO_TOLERANCE_F);
 
+//! ZERO_SQUARED_TOLERANCE_D is used to set or compare a (square) value to
+//! "close to zero".
+constexpr double ZERO_SQUARED_TOLERANCE_D = ZERO_TOLERANCE_D * ZERO_TOLERANCE_D;
+
 //! ZERO_TOLERANCE_SCALAR is used to set or compare a ScalarType variable to
 //! "close to zero".
 constexpr ScalarType ZERO_TOLERANCE_SCALAR =

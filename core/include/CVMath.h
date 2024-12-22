@@ -39,6 +39,26 @@ inline bool GreaterThanEpsilon(float x) { return x > ZERO_TOLERANCE_F; }
 */
 inline bool GreaterThanEpsilon(double x) { return x > ZERO_TOLERANCE_D; }
 
+//! Test a (squared) floating point number against our epsilon (a very small
+//! number).
+/*!
+  \param x The number to test
+  \return True if the number is greater than epsilon.
+*/
+inline bool GreaterThanSquareEpsilon(double x) {
+    return x > ZERO_SQUARED_TOLERANCE_D;
+}
+
+//! Test a (squared) floating point number against our epsilon (a very small
+//! number).
+/*!
+  \param x The (squared) number to test
+  \return True if the number is less than epsilon.
+*/
+inline bool LessThanSquareEpsilon(double x) {
+    return x < ZERO_SQUARED_TOLERANCE_D;
+}
+
 //! Convert radians to degrees.
 /*!
   \param radians Radians to convert

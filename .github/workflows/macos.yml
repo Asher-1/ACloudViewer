@@ -39,6 +39,7 @@ jobs:
         # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
         os: [macos-13, macos-14]
+        python_version: ['3.11']
     env:
       BUILD_SHARED_LIBS: OFF
       BUILD_CUDA_MODULE: OFF
@@ -62,6 +63,10 @@ jobs:
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-ccache
+
+      - name: Set up Python version
+        run: |
+          sed -i "" "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python version
@@ -148,7 +153,8 @@ jobs:
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
           name: ACloudViewer-app-macosx-${{ runner.arch}}
-          path: ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
+          path: |
+            ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
         
       - name: Update devel release
@@ -416,7 +422,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: false
-          generate_release_notes: true
+          generate_release_notes: false
           prerelease: false
           files: |
             universal_wheels/${{ env.PIP_PKG_NAME }}

@@ -821,7 +821,6 @@ namespace ccCompassExport {
 			if (params.perspective)
 			{
 				ecvDisplayTools::SetPerspectiveState(false, true);
-				//m_app->getActiveGLWindow()->redraw(false, false); //not sure if this is needed or not?
 				ecvDisplayTools::GetGLCameraParameters(params); //get updated params
 			}
 			

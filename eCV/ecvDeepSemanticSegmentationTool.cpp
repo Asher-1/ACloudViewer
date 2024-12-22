@@ -107,7 +107,7 @@ bool ecvDeepSemanticSegmentationTool::start() {
     }
 
     if (m_selectedEntity.getChildrenNumber() != 0) {
-        m_selectedEntity.detatchAllChildren();
+        m_selectedEntity.detachAllChildren();
     }
 
     unsigned childNum = getNumberOfValidEntities();
@@ -163,14 +163,14 @@ void ecvDeepSemanticSegmentationTool::stop(bool state) {
 }
 
 void ecvDeepSemanticSegmentationTool::clear() {
-    m_entity.detatchAllChildren();
+    m_entity.detachAllChildren();
     for (int i = 0; i < selectedTreeWiget->topLevelItemCount(); ++i) {
         delete selectedTreeWiget->takeTopLevelItem(i);
     }
 
     m_clusters_map.clear();
     m_clusters.clear();
-    m_selectedEntity.detatchAllChildren();
+    m_selectedEntity.detachAllChildren();
 }
 
 void ecvDeepSemanticSegmentationTool::getSegmentations(
@@ -183,7 +183,7 @@ void ecvDeepSemanticSegmentationTool::getSegmentations(
 }
 
 void ecvDeepSemanticSegmentationTool::updateSelectedEntity() {
-    m_selectedEntity.detatchAllChildren();
+    m_selectedEntity.detachAllChildren();
     for (int i = 0; i < selectedTreeWiget->topLevelItemCount(); ++i) {
         QTreeWidgetItem* item = selectedTreeWiget->topLevelItem(i);
         if (item->checkState(0) == Qt::Checked) {

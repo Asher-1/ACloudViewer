@@ -24,8 +24,7 @@
 //PCL
 #include <pcl/register_point_struct.h>
 #include <pcl/point_types.h>
-#include <boost/cstdint.hpp>
-#include <pcl/io/boost.h> // for boost::uint8_t
+#include <stdint.h>
 
 //! PCL custom point type used for reading RGB data
 struct OnlyRGB
@@ -36,14 +35,14 @@ struct OnlyRGB
         {
             struct
             {
-                boost::uint8_t b;
-                boost::uint8_t g;
-                boost::uint8_t r;
-                boost::uint8_t a;
+                std::uint8_t b;
+                std::uint8_t g;
+                std::uint8_t r;
+                std::uint8_t a;
             };
             float rgb;
         };
-        boost::uint32_t rgba;
+        std::uint32_t rgba;
     };
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -99,6 +98,20 @@ struct UShortScalar
 
 };
 
+struct Int8Scalar
+{
+	std::int8_t S5c4laR;
+	CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
+};
+
+struct UInt8Scalar
+{
+	std::uint8_t S5c4laR;
+	CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
+};
+
 //! PCL custom point type used for reading intensity data
 struct OnlyNormals
 {
@@ -141,14 +154,14 @@ struct PointXYZScalarRGB
         {
             struct
             {
-                boost::uint8_t b;
-                boost::uint8_t g;
-                boost::uint8_t r;
-                boost::uint8_t _unused;
+                std::uint8_t b;
+                std::uint8_t g;
+                std::uint8_t r;
+                std::uint8_t _unused;
             };
             float rgb;
         };
-        boost::uint32_t rgba;
+        std::uint32_t rgba;
     };
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -164,10 +177,10 @@ struct PointXYZScalarRGBNormals
         {
             struct
             {
-                boost::uint8_t b;
-                boost::uint8_t g;
-                boost::uint8_t r;
-                boost::uint8_t a;
+                std::uint8_t b;
+                std::uint8_t g;
+                std::uint8_t r;
+                std::uint8_t a;
             };
             float rgb;
         };
@@ -212,6 +225,14 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (ShortScalar,
 POINT_CLOUD_REGISTER_POINT_STRUCT (UShortScalar,
     (unsigned short, S5c4laR, S5c4laR)
     )
+
+POINT_CLOUD_REGISTER_POINT_STRUCT (Int8Scalar,
+	(std::int8_t, S5c4laR, S5c4laR)
+	)
+
+POINT_CLOUD_REGISTER_POINT_STRUCT (UInt8Scalar,
+	(std::uint8_t, S5c4laR, S5c4laR)
+	)
 
 POINT_CLOUD_REGISTER_POINT_STRUCT (OnlyNormals,
     (float, normal_x, normal_x)

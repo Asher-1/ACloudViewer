@@ -411,7 +411,7 @@ void pybind_cloudbase(py::module& m) {
                         return std::shared_ptr<ccGenericPointCloud>(
                                 cloud.createNewCloudFromVisibilitySelection(
                                         remove_selected_points, visTable,
-                                        silent));
+                                        nullptr, silent));
                     },
                     "Creates a new point cloud with only the 'visible' points "
                     "(as defined by the visibility array).",

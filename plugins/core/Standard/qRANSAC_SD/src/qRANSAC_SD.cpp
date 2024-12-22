@@ -751,7 +751,7 @@ ccHObject* qRansacSD::executeRANSAC(ccPointCloud* ccPC, const RansacParams& para
 				const TorusPrimitiveShape* torus = static_cast<const TorusPrimitiveShape*>(shape);
 				if (torus->Internal().IsAppleShaped())
 				{
-					CVLog::Warning("[qRansacSD] Apple-shaped torus are not handled by CloudCompare!");
+					CVLog::Warning("[qRansacSD] Apple-shaped torus are not handled by ACloudViewer!");
 				}
 				else
 				{

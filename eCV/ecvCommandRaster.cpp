@@ -69,7 +69,7 @@ static ccRasterGrid::EmptyCellFillOption GetEmptyCellFillingStrategy(
     } else if (option == COMMAND_RASTER_FILL_CUSTOM_HEIGHT) {
         return ccRasterGrid::FILL_CUSTOM_HEIGHT;
     } else if (option == COMMAND_RASTER_FILL_INTERPOLATE) {
-        return ccRasterGrid::INTERPOLATE;
+        return ccRasterGrid::INTERPOLATE_DELAUNAY;
     } else {
         assert(false);
         cmd.warning(QString("Unknwon empty cell filling strategy: %1 "
@@ -288,7 +288,7 @@ bool CommandRasterize::process(ccCommandLineInterface& cmd) {
 
             if (grid.fillWith(
                         cloudDesc.pc, vertDir, projectionType,
-                        emptyCellFillStrategy == ccRasterGrid::INTERPOLATE,
+                        emptyCellFillStrategy == ccRasterGrid::INTERPOLATE_DELAUNAY,
                         sfProjectionType, pDlg.data())) {
                 grid.fillEmptyCells(emptyCellFillStrategy, customHeight);
                 cmd.print(QString("[Rasterize] Raster grid: size: %1 x %2 / "
@@ -307,7 +307,7 @@ bool CommandRasterize::process(ccCommandLineInterface& cmd) {
             std::vector<ccRasterGrid::ExportableFields> exportedFields;
             try {
                 // we always compute the default 'height' layer
-                exportedFields.push_back(ccRasterGrid::PER_CELL_HEIGHT);
+                exportedFields.push_back(ccRasterGrid::PER_CELL_VALUE);
             } catch (const std::bad_alloc&) {
                 return cmd.error("Not enough memory");
             }
@@ -347,10 +347,13 @@ bool CommandRasterize::process(ccCommandLineInterface& cmd) {
                     }
                 }
             } else if (outputMesh) {
-                char errorStr[1024];
+                std::string errorStr;
                 cloudViewer::GenericIndexedMesh* baseMesh =
                         cloudViewer::PointProjectionTools::computeTriangulation(
-                                rasterCloud, DELAUNAY_2D_AXIS_ALIGNED, 0,
+                                rasterCloud,
+                                cloudViewer::DELAUNAY_2D_AXIS_ALIGNED,
+                                cloudViewer::PointProjectionTools::
+                                        IGNORE_MAX_EDGE_LENGTH,
                                 vertDir, errorStr);
 
                 if (baseMesh) {
@@ -390,7 +393,7 @@ bool CommandRasterize::process(ccCommandLineInterface& cmd) {
                 } else {
                     cmd.warning(QString("[Rasterize] Failed to create output "
                                         "mesh ('%1')")
-                                        .arg(errorStr));
+                                        .arg(QString::fromStdString(errorStr)));
                 }
             }
 
@@ -626,10 +629,13 @@ bool CommandVolume25D::process(ccCommandLineInterface& cmd) {
 
             ccMesh* rasterMesh = nullptr;
             if (outputMesh) {
-                char errorStr[1024];
+                std::string errorStr;
                 cloudViewer::GenericIndexedMesh* baseMesh =
                         cloudViewer::PointProjectionTools::computeTriangulation(
-                                rasterCloud, DELAUNAY_2D_AXIS_ALIGNED, 0,
+                                rasterCloud,
+                                cloudViewer::DELAUNAY_2D_AXIS_ALIGNED,
+                                cloudViewer::PointProjectionTools::
+                                        IGNORE_MAX_EDGE_LENGTH,
                                 vertDir, errorStr);
 
                 if (baseMesh) {
@@ -652,9 +658,10 @@ bool CommandVolume25D::process(ccCommandLineInterface& cmd) {
                                     .arg(rasterMesh->getName()));
                 } else {
                     delete rasterCloud;
-                    return cmd.error(QString("[Voume] Failed to create output "
-                                             "mesh ('%1')")
-                                             .arg(errorStr));
+                    return cmd.error(
+                            QString("[Voume] Failed to create output "
+                                    "mesh ('%1')")
+                                    .arg(QString::fromStdString(errorStr)));
                 }
             }
 
