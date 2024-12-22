@@ -529,11 +529,13 @@ test_wheel() {
     else
         if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
             python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
+            # fix issues of invalid pixel size; error code 0x17
             if [[ "$OSTYPE" == "darwin"* ]]; then
-                PROCESSOR_ARCH=$(uname -m)
-                if [ "$PROCESSOR_ARCH" == "arm64" ]; then
-                    # fix macos issues of Could not set the fontsize (invalid pixel size; error code 0x17)
-                    pip install matplotlib==3.9.4
+                MATPLOT_LIB_TARGET_VERSION="3.9.4"
+                if pip install "matplotlib==$MATPLOT_LIB_TARGET_VERSION" &>/dev/null; then
+                    echo "Successfully installed matplotlib version $MATPLOT_LIB_TARGET_VERSION"
+                else
+                    echo "Ignore matplotlib re-installation: $MATPLOT_LIB_TARGET_VERSION"
                 fi
             fi
             python  -W default -c \
