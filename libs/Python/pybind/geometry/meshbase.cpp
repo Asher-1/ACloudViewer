@@ -41,12 +41,12 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_meshbase(py::module& m) {
-    py::enum_<CC_TRIANGULATION_TYPES>(m, "TriangulationType")
+    py::enum_<cloudViewer::TRIANGULATION_TYPES>(m, "TriangulationType")
             .value("DELAUNAY_2D_AXIS_ALIGNED",
-                   CC_TRIANGULATION_TYPES::DELAUNAY_2D_AXIS_ALIGNED,
+                   cloudViewer::TRIANGULATION_TYPES::DELAUNAY_2D_AXIS_ALIGNED,
                    "Triangulation types.")
             .value("DELAUNAY_2D_BEST_LS_PLANE",
-                   CC_TRIANGULATION_TYPES::DELAUNAY_2D_BEST_LS_PLANE,
+                   cloudViewer::TRIANGULATION_TYPES::DELAUNAY_2D_BEST_LS_PLANE,
                    "Triangulation types.")
             .export_values();
     py::class_<GenericMesh, PyGenericMesh<GenericMesh>,

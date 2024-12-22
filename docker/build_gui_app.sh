@@ -19,6 +19,8 @@ export NPROC=$(nproc)
 export ENV_NAME="cloudViewer"
 echo "ENV_NAME: " ${ENV_NAME}
 
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
 set +u
 if [ -n "$CONDA_EXE" ]; then
     CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
@@ -46,19 +48,34 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && which python \
  && python --version
 
-# fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-echo -e "\ny" | conda install libffi==3.3
+# for python plugin
+python -m pip install -r ${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt
+
+eval $(
+    source /etc/lsb-release;
+    echo DISTRIB_ID="$DISTRIB_ID";
+    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+)
+
+# if [ "$DISTRIB_ID" == "Ubuntu" ] && [ "$DISTRIB_RELEASE" != "18.04" ]; then
+#     # fix the library conflicts between ubuntu and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
+#     if [ "${PYTHON_VERSION}" = "3.8" ]; then
+#         echo -e "\ny" | conda install libffi==3.3
+#     else
+#         echo -e "\ny" | conda install libffi==3.4.2
+#     fi
+# fi
 
 set -x # Echo commands on
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
-source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
 echo "Start to build GUI package with only CPU..."
 echo
 export BUILD_CUDA_MODULE=OFF
-build_gui_app with_pcl_nurbs with_gdal package_installer
+build_gui_app with_pcl_nurbs package_installer plugin_treeiso
 echo
 
 # Building with cuda if cuda available
@@ -66,7 +83,7 @@ if [ "${BUILD_CUDA_MODULE_FLAG}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
-    build_gui_app with_pcl_nurbs with_gdal package_installer
+    build_gui_app with_pcl_nurbs package_installer plugin_treeiso
     echo
 fi
 

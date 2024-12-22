@@ -101,7 +101,7 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        CUDA_VER=$(nvcc --version | grep "release " | cut -c33-37 | sed 's|[^0-9]||g')    # e.g.: 117, 118, 121, ...
+        CUDA_VER=$(nvcc --version | grep "release " | cut -c33-37 | sed 's|[^0-9]||g') # e.g.: 117, 118, 121, ...
         TORCH_GLNX="torch==${TORCH_VER}+cu${CUDA_VER}"
     else
         # tensorflow-cpu wheels for macOS arm64 are not available
@@ -261,6 +261,13 @@ build_gui_app() {
         WITH_PCL_NURBS=OFF
         echo "WITH_PCL_NURBS is off"
     fi
+    if [[ "plugin_treeiso" =~ ^($options)$ ]]; then
+        PLUGIN_STANDARD_QTREEISO=ON
+        echo "PLUGIN_STANDARD_QTREEISO is on"
+    else
+        PLUGIN_STANDARD_QTREEISO=OFF
+        echo "PLUGIN_STANDARD_QTREEISO is off"
+    fi
 
     if [[ "with_conda" =~ ^($options)$ ]]; then
         BUILD_WITH_CONDA=ON
@@ -336,8 +343,10 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QRANSAC_SD=ON"
                 "-DPLUGIN_STANDARD_QSRA=ON"
                 "-DPLUGIN_STANDARD_3DMASC=ON"
-                "-DPLUGIN_STANDARD_QTREEISO=ON"
+                "-DPLUGIN_STANDARD_QTREEISO=$PLUGIN_STANDARD_QTREEISO"
                 "-DPLUGIN_STANDARD_QVOXFALL=ON"
+                "-DPLUGIN_PYTHON=ON"
+                "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"
                 "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
                 "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"

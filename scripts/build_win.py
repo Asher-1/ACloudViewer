@@ -216,7 +216,7 @@ def build():
             exit(1)
 
     logging.info("\nStart to build ACloudViewer GUI On Windows...\n")
-    success = build_gui_app("3.8")
+    success = build_gui_app("3.11")
     if success:
         logging.info(f"Building package installed to {ACLOUDVIEWER_INSTALL}")
     else:
@@ -260,6 +260,8 @@ if __name__ == "__main__":
     CLOUDVIEWER_BUILD_DIR = os.path.join(CLOUDVIEWER_SOURCE_ROOT, "build")
     logging.info(f"CLOUDVIEWER_BUILD_DIR: {CLOUDVIEWER_BUILD_DIR}")
     ACLOUDVIEWER_INSTALL = os.path.join("C:/dev", "cloudViewer_install")
+    if not os.path.exists(ACLOUDVIEWER_INSTALL):
+        os.makedirs(ACLOUDVIEWER_INSTALL)
     logging.info(f"ACloudViewer_INSTALL PATH: {ACLOUDVIEWER_INSTALL}")
     CloudViewerMLRoot = "C:/Users/asher/develop/code/CloudViewer/CloudViewer-ML"
     logging.info(f"CloudViewerMLRoot PATH: {CloudViewerMLRoot}")

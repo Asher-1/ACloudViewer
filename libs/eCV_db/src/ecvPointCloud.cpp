@@ -35,6 +35,7 @@
 #include "ecvFrustum.h"
 #include "ecvGBLSensor.h"
 #include "ecvGenericMesh.h"
+#include "ecvHObjectCaster.h"
 #include "ecvImage.h"
 #include "ecvKdTree.h"
 #include "ecvMaterial.h"
@@ -297,7 +298,8 @@ void UpdateGridIndexes(const std::vector<int>& newIndexMap,
 
 ccPointCloud* ccPointCloud::partialClone(
         const cloudViewer::ReferenceCloud* selection,
-        int* warnings /*=0*/) const {
+        int* warnings /*=nullptr*/,
+        bool withChildEntities /*=true*/) const {
     if (warnings) {
         *warnings = 0;
     }
@@ -308,20 +310,27 @@ ccPointCloud* ccPointCloud::partialClone(
         return nullptr;
     }
 
-    ccPointCloud* result = new ccPointCloud(getName() + QString(".extract"));
+    static constexpr const char* DefaultSuffix = ".extract";
+    QString cloneName = getName();
+    if (!cloneName.endsWith(
+                DefaultSuffix))  // avoid adding a multitude of suffixes
+    {
+        cloneName += DefaultSuffix;
+    }
+
+    ccPointCloud* result = new ccPointCloud(cloneName);
 
     // visibility
     result->setVisible(isVisible());
-    // result->setDisplay(getDisplay());
     result->setEnabled(isEnabled());
 
     // other parameters
     result->importParametersFrom(this);
 
     // from now on we will need some points to proceed ;)
-    unsigned n = selection->size();
-    if (n) {
-        if (!result->reserveThePointsTable(n)) {
+    unsigned selectionSize = selection->size();
+    if (selectionSize != 0) {
+        if (!result->reserveThePointsTable(selectionSize)) {
             CVLog::Error(
                     "[ccPointCloud::partialClone] Not enough memory to "
                     "duplicate cloud!");
@@ -331,7 +340,7 @@ ccPointCloud* ccPointCloud::partialClone(
 
         // import points
         {
-            for (unsigned i = 0; i < n; i++) {
+            for (unsigned i = 0; i < selectionSize; i++) {
                 result->addPoint(*getPointPersistentPtr(
                         selection->getPointGlobalIndex(i)));
             }
@@ -340,7 +349,7 @@ ccPointCloud* ccPointCloud::partialClone(
         // RGB colors
         if (hasColors()) {
             if (result->reserveTheRGBTable()) {
-                for (unsigned i = 0; i < n; i++) {
+                for (unsigned i = 0; i < selectionSize; i++) {
                     result->addRGBColor(
                             getPointColor(selection->getPointGlobalIndex(i)));
                 }
@@ -356,7 +365,7 @@ ccPointCloud* ccPointCloud::partialClone(
         // normals
         if (hasNormals()) {
             if (result->reserveTheNormsTable()) {
-                for (unsigned i = 0; i < n; i++) {
+                for (unsigned i = 0; i < selectionSize; i++) {
                     result->addNormIndex(getPointNormalIndex(
                             selection->getPointGlobalIndex(i)));
                 }
@@ -373,7 +382,7 @@ ccPointCloud* ccPointCloud::partialClone(
         if (hasFWF()) {
             if (result->reserveTheFWFTable()) {
                 try {
-                    for (unsigned i = 0; i < n; i++) {
+                    for (unsigned i = 0; i < selectionSize; i++) {
                         const ccWaveform& w =
                                 m_fwfWaveforms[selection->getPointGlobalIndex(
                                         i)];
@@ -419,12 +428,12 @@ ccPointCloud* ccPointCloud::partialClone(
                                 static_cast<ccScalarField*>(
                                         result->getScalarField(sfIdx));
                         assert(currentScalarField);
-                        if (currentScalarField->resizeSafe(n)) {
+                        if (currentScalarField->resizeSafe(selectionSize)) {
                             currentScalarField->setGlobalShift(
                                     sf->getGlobalShift());
 
                             // we copy data to new SF
-                            for (unsigned i = 0; i < n; i++)
+                            for (unsigned i = 0; i < selectionSize; i++)
                                 currentScalarField->setValue(
                                         i,
                                         sf->getValue(
@@ -467,17 +476,23 @@ ccPointCloud* ccPointCloud::partialClone(
             }
         }
 
+        std::vector<int> newIndexMap;
+        if (gridCount() != 0 || withChildEntities) {
+            // we need a map between old and new indexes
+            try {
+                newIndexMap.resize(size(), -1);
+                for (unsigned i = 0; i < selectionSize; i++) {
+                    newIndexMap[selection->getPointGlobalIndex(i)] = i;
+                }
+            } catch (const std::bad_alloc&) {
+                CVLog::Warning("Not enough memory");
+            }
+        }
+
         // scan grids
         if (gridCount() != 0) {
+            assert(newIndexMap.size() == size());
             try {
-                // we need a map between old and new indexes
-                std::vector<int> newIndexMap(size(), -1);
-                {
-                    for (unsigned i = 0; i < n; i++) {
-                        newIndexMap[selection->getPointGlobalIndex(i)] = i;
-                    }
-                }
-
                 // duplicate the grid structure(s)
                 std::vector<Grid::Shared> newGrids;
                 {
@@ -509,7 +524,13 @@ ccPointCloud* ccPointCloud::partialClone(
                                 "memory to copy the grid structure(s)"));
             }
         }
+
+        if (withChildEntities) {
+            assert(newIndexMap.size() == size());
+            ccHObjectCaster::CloneChildren(this, result, &newIndexMap);
+        }
     }
+
     return result;
 }
 
@@ -2400,7 +2421,7 @@ void ccPointCloud::removePoints(size_t index) {
 
 void ccPointCloud::getDrawingParameters(glDrawParams& params) const {
     // color override
-    if (isColorOverriden()) {
+    if (isColorOverridden()) {
         params.showColors = true;
         params.showNorms = false;
         params.showSF = false;
@@ -2516,7 +2537,7 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
         bool colorMaterialEnabled = false;
 
-        if (glParams.showColors && isColorOverriden()) {
+        if (glParams.showColors && isColorOverridden()) {
             // ccGL::Color3v(glFunc, m_tempColor.rgb);
             context.pointsCurrentCol = m_tempColor;
             glParams.showColors = false;
@@ -2648,7 +2669,9 @@ void ccPointCloud::hidePointsByScalarValue(std::vector<ScalarType> values) {
 ccGenericPointCloud* ccPointCloud::createNewCloudFromVisibilitySelection(
         bool removeSelectedPoints /*=false*/,
         VisibilityTableType* visTable /*=nullptr*/,
-        bool silent /*=false*/) {
+        std::vector<int>* newIndexesOfRemainingPoints /*=nullptr*/,
+        bool silent /*=false*/,
+        cloudViewer::ReferenceCloud* selection /*=nullptr*/) {
     if (!visTable) {
         if (!isVisibilityTableInstantiated()) {
             CVLog::Error(
@@ -2665,11 +2688,26 @@ ccGenericPointCloud* ccPointCloud::createNewCloudFromVisibilitySelection(
         }
     }
 
+    // count the number of visible points
+    {
+        unsigned visiblePoints = 0;
+        for (size_t i = 0; i < visTable->size(); ++i) {
+            if (visTable->at(i) == POINT_VISIBLE) {
+                ++visiblePoints;
+            }
+        }
+        if (visiblePoints == size()) {
+            // all points are visible: nothing to do
+            return this;
+        }
+    }
+
     // we create a new cloud with the "visible" points
     ccPointCloud* result = nullptr;
     {
         // we create a temporary entity with the visible points only
-        cloudViewer::ReferenceCloud* rc = getTheVisiblePoints(visTable, silent);
+        cloudViewer::ReferenceCloud* rc =
+                getTheVisiblePoints(visTable, silent, selection);
         if (!rc) {
             // a warning message has already been issued by getTheVisiblePoints!
             // CVLog::Warning("[ccPointCloud] An error occurred during points
@@ -2681,71 +2719,126 @@ ccGenericPointCloud* ccPointCloud::createNewCloudFromVisibilitySelection(
         result = partialClone(rc);
 
         // don't need this one anymore
-        delete rc;
-        rc = nullptr;
+        if (rc != selection) {
+            delete rc;
+            rc = nullptr;
+        }
     }
 
     if (!result) {
-        CVLog::Warning("[ccPointCloud] Failed to generate a subset cloud");
+        CVLog::Warning(
+                "[ccPointCloud::createNewCloudFromVisibilitySelection] Failed "
+                "to generate a subset cloud");
         return nullptr;
     }
 
-    result->setName(getName() + QString(".segmented"));
+    static constexpr const char* DefaultSuffix = ".segmented";
+    QString newName = getName();
+    if (!newName.endsWith(
+                DefaultSuffix))  // avoid adding a multitude of suffixes
+        newName += DefaultSuffix;
+
+    result->setName(newName);
 
     // shall the visible points be erased from this cloud?
-    if (removeSelectedPoints && !isLocked()) {
-        // we drop the octree before modifying this cloud's contents
-        deleteOctree();
-        // clearLOD();
-
-        unsigned count = size();
-
-        // we have to take care of scan grids first
-        {
-            // we need a map between old and new indexes
-            std::vector<int> newIndexMap(size(), -1);
-            {
-                unsigned newIndex = 0;
-                for (unsigned i = 0; i < count; ++i) {
-                    if (m_pointsVisibility[i] != POINT_VISIBLE) {
-                        newIndexMap[i] = newIndex++;
-                    }
-                }
+    if (removeSelectedPoints) {
+        if (isLocked()) {
+            CVLog::Warning(
+                    "[ccPointCloud::createNewCloudFromVisibilitySelection] "
+                    "Can't remove selected points as cloud is locked");
+            if (newIndexesOfRemainingPoints) {
+                newIndexesOfRemainingPoints->clear();
             }
-
-            // then update the indexes
-            UpdateGridIndexes(newIndexMap, m_grids);
-
-            // and reset the invalid (empty) ones
-            //(DGM: we don't erase them as they may still be useful?)
-            for (Grid::Shared& grid : m_grids) {
-                if (grid->validCount == 0) {
-                    grid->indexes.resize(0);
-                }
-            }
+        } else {
+            removeVisiblePoints(visTable, newIndexesOfRemainingPoints);
         }
-
-        // we remove all visible points
-        unsigned lastPoint = 0;
-        for (unsigned i = 0; i < count; ++i) {
-            if (m_pointsVisibility[i] != POINT_VISIBLE) {
-                if (i != lastPoint) {
-                    swapPoints(lastPoint, i);
-                }
-                ++lastPoint;
-            }
-        }
-
-        unallocateVisibilityArray();
-
-        // TODO: handle associated meshes
-
-        resize(lastPoint);
-
-        refreshBB();  // calls notifyGeometryUpdate + releaseVBOs
     }
 
     return result;
+}
+
+bool ccPointCloud::removeVisiblePoints(
+        VisibilityTableType* visTable /*=nullptr*/,
+        std::vector<int>* newIndexes /*=nullptr*/) {
+    if (!visTable) {
+        if (!isVisibilityTableInstantiated()) {
+            CVLog::Error(
+                    "[removeVisiblePoints] Visibility table not instantiated!");
+            return false;
+        }
+        visTable = &m_pointsVisibility;
+    } else {
+        if (visTable->size() != size()) {
+            CVLog::Error(
+                    "[removeVisiblePoints] Invalid input visibility table");
+            return false;
+        }
+    }
+
+    std::vector<int> localNewIndexes;
+    std::vector<int>* _newIndexes = nullptr;
+    try {
+        if (newIndexes) {
+            if (newIndexes->empty()) {
+                newIndexes->resize(size());
+            } else if (newIndexes->size() != size()) {
+                CVLog::Error(
+                        "[removeVisiblePoints] Input 'new indexes' has a wrong "
+                        "size");
+                return false;
+            }
+            _newIndexes = newIndexes;
+        } else if (!m_grids.empty()) {
+            // we still need the mapping between old and new indexes
+            localNewIndexes.resize(size());
+            _newIndexes = &localNewIndexes;
+        }
+    } catch (const std::bad_alloc&) {
+        CVLog::Error("[removeVisiblePoints] Not enough memory");
+        return false;
+    }
+
+    // we drop the octree before modifying this cloud's contents
+    deleteOctree();
+    clearLOD();
+
+    // we remove all visible points
+    unsigned lastPointIndex = 0;
+    unsigned previousCount = size();
+    for (unsigned i = 0; i < previousCount; ++i) {
+        if (visTable->at(i) != POINT_VISIBLE) {
+            if (_newIndexes) {
+                _newIndexes->at(i) = lastPointIndex;
+            }
+            if (i != lastPointIndex) {
+                swapPoints(lastPointIndex, i);
+            }
+            ++lastPointIndex;
+        } else if (_newIndexes) {
+            _newIndexes->at(i) = -1;
+        }
+    }
+
+    // we have to take care of scan grids
+    if (!m_grids.empty()) {
+        assert(_newIndexes);
+        // then update the indexes
+        UpdateGridIndexes(*_newIndexes, m_grids);
+
+        // and reset the invalid (empty) ones
+        //(DGM: we don't erase them as they may still be useful?)
+        for (Grid::Shared& grid : m_grids) {
+            if (grid->validCount == 0) {
+                grid->indexes.resize(0);
+            }
+        }
+    }
+
+    resize(lastPointIndex);
+
+    refreshBB();  // calls notifyGeometryUpdate + releaseVBOs
+
+    return true;
 }
 
 ccScalarField* ccPointCloud::getCurrentDisplayedScalarField() const {
@@ -5276,6 +5369,37 @@ bool ccPointCloud::exportCoordToSF(bool exportDims[3]) {
         setCurrentDisplayedScalarField(sfIndex);
         showSF(true);
     }
+
+    return true;
+}
+
+bool ccPointCloud::setCoordFromSF(bool importDims[3],
+                                  cloudViewer::ScalarField* sf,
+                                  PointCoordinateType defaultValueForNaN) {
+    unsigned pointCount = size();
+
+    if (!sf || sf->size() < pointCount) {
+        CVLog::Error("Invalid scalar field");
+        return false;
+    }
+
+    for (unsigned i = 0; i < pointCount; ++i) {
+        CCVector3& P = m_points[i];
+        ScalarType s = sf->getValue(i);
+
+        // handle NaN values
+        PointCoordinateType coord =
+                cloudViewer::ScalarField::ValidValue(s)
+                        ? static_cast<PointCoordinateType>(s)
+                        : defaultValueForNaN;
+
+        // test each dimension
+        if (importDims[0]) P.x = coord;
+        if (importDims[1]) P.y = coord;
+        if (importDims[2]) P.z = coord;
+    }
+
+    invalidateBoundingBox();
 
     return true;
 }

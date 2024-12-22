@@ -19,7 +19,8 @@ CommandCrossSection::CommandCrossSection()
 bool CommandCrossSection::process(ccCommandLineInterface &cmd) {
     cmd.print("[CROSS SECTION]");
 
-    static QString s_xmlCloudCompare = "ACloudViewer";
+    static QString s_xmlACloudViewer = "ACloudViewer";
+    static QString s_xmlCloudCompare = "CloudCompare";
     static QString s_xmlBoxThickness = "BoxThickness";
     static QString s_xmlBoxCenter = "BoxCenter";
     static QString s_xmlRepeatDim = "RepeatDim";
@@ -53,12 +54,13 @@ bool CommandCrossSection::process(ccCommandLineInterface &cmd) {
         // read file content
         QXmlStreamReader stream(&file);
 
-        // expected: ACloudViewer
+        // expected: ACloudViewer or CloudCompare
         if (!stream.readNextStartElement() ||
-            stream.name() != s_xmlCloudCompare) {
+            (stream.name() != s_xmlACloudViewer &&
+             stream.name() != s_xmlCloudCompare)) {
             return cmd.error(
-                    QString("Invalid XML file (should start by '<%1>')")
-                            .arg(s_xmlCloudCompare));
+                    QString("Invalid XML file (should start by '<%1 or %2>')")
+                            .arg(s_xmlACloudViewer, s_xmlCloudCompare));
         }
 
         unsigned mandatoryCount = 0;

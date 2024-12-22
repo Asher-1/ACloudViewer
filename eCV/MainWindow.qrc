@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>Resources/images/open.png</file>
         <file>Resources/images/save.png</file>
+        <file>Resources/images/saveBinary.png</file>
         <file>Resources/images/cube.png</file>
         <file>Resources/images/about.png</file>
         <file>Resources/images/help.png</file>

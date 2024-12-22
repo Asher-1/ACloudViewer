@@ -8,7 +8,6 @@ class MainAppInterfaceMock : public ecvMainAppInterface {
 public:
 
 	MAKE_MOCK0(getMainWindow, QMainWindow*(), override);
-	MAKE_MOCK0(getActiveGLWindow, ccGLWindow*(), override);
 	MAKE_CONST_MOCK2(createGLWindow, void(ccGLWindow*&, QWidget*&), override);
 	MAKE_CONST_MOCK1(destroyGLWindow, void(ccGLWindow*), override);
 	MAKE_MOCK2(registerOverlayDialog, void(ccOverlayDialog*, Qt::Corner), override);

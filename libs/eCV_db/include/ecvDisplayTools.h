@@ -37,6 +37,12 @@
 #include <unordered_set>
 #include <vector>
 
+namespace cloudViewer {
+namespace geometry {
+class LineSet;
+}
+}  // namespace cloudViewer
+
 class ccPolyline;
 class ccInteractor;
 class ccGenericMesh;
@@ -85,6 +91,7 @@ public:
         POINT_PICKING,
         TRIANGLE_PICKING,
         POINT_OR_TRIANGLE_PICKING,
+        POINT_OR_TRIANGLE_OR_LABEL_PICKING,
         LABEL_PICKING,
         DEFAULT_PICKING,
     };
@@ -112,9 +119,11 @@ public:
         INTERACT_SIG_MOUSE_MOVED =
                 512,  // mouse moved (only if a button is clicked)
         INTERACT_SIG_BUTTON_RELEASED = 1024,  // mouse button released
+        INTERACT_SIG_MB_CLICKED = 2048,       // middle button clicked
         INTERACT_SEND_ALL_SIGNALS =
                 INTERACT_SIG_RB_CLICKED | INTERACT_SIG_LB_CLICKED |
-                INTERACT_SIG_MOUSE_MOVED | INTERACT_SIG_BUTTON_RELEASED,
+                INTERACT_SIG_MB_CLICKED | INTERACT_SIG_MOUSE_MOVED |
+                INTERACT_SIG_BUTTON_RELEASED,
 
         // default modes
         MODE_PAN_ONLY = INTERACT_PAN | INTERACT_ZOOM_CAMERA |
@@ -318,17 +327,6 @@ public:
         }
     };
 
-    //! Text alignment
-    enum TextAlign {
-        ALIGN_HLEFT = 1,
-        ALIGN_HMIDDLE = 2,
-        ALIGN_HRIGHT = 4,
-        ALIGN_VTOP = 8,
-        ALIGN_VMIDDLE = 16,
-        ALIGN_VBOTTOM = 32,
-        ALIGN_DEFAULT = 1 | 8
-    };
-
     //! Displays a string at a given 2D position
     /** This method should be called solely during 2D pass rendering.
             The coordinates are expressed relatively to the current viewport (y
@@ -338,14 +336,14 @@ public:
     rgbColor text color (optional) \param font optional font (otherwise default
     one will be used)
     **/
-    static void DisplayText(QString text,
+    static void DisplayText(const QString& text,
                             int x,
                             int y,
                             unsigned char align = ALIGN_DEFAULT,
                             float bkgAlpha = 0.0f,
                             const unsigned char* rgbColor = nullptr,
                             const QFont* font = nullptr,
-                            QString id = "");
+                            const QString& id = "");
 
     static void DisplayText(const CC_DRAW_CONTEXT& CONTEXT) {
         TheInstance()->displayText(CONTEXT);
@@ -362,7 +360,7 @@ public:
     **/
     static void Display3DLabel(const QString& str,
                                const CCVector3& pos3D,
-                               const unsigned char* rgbColor = nullptr,
+                               const ecvColor::Rgbub* color = nullptr,
                                const QFont& font = QFont());
 
 public:  //! Draws the main 3D layer
@@ -419,6 +417,8 @@ public:  //! Draws the main 3D layer
     }
     static void RemoveWidgets(const WIDGETS_PARAMETER& param,
                               bool update = false);
+    static void RemoveAllWidgets(bool update = true);
+    static void Remove3DLabel(const QString& view_id);
 
     inline static void DrawCoordinates(double scale = 1.0,
                                        const std::string& id = "reference",
@@ -575,6 +575,10 @@ public:  // main interface
     }
     inline static void SetScreenSize(int xw, int yw) {
         GetCurrentScreen()->resize(QSize(xw, yw));
+    }
+    inline static void DoResize(int xw, int yw) { SetScreenSize(xw, yw); }
+    inline static void DoResize(const QSize& size) {
+        SetScreenSize(size.width(), size.height());
     }
     inline static QSize GetScreenSize() { return GetCurrentScreen()->size(); }
 
@@ -1106,16 +1110,16 @@ public:  // visualization matrix transformation
             int y,
             const QString& str,
             const QFont& font = QFont(),
-            ecvColor::Rgbub color = ecvColor::defaultLabelBkgColor,
-            QString id = "");
+            const ecvColor::Rgbub& color = ecvColor::defaultLabelBkgColor,
+            const QString& id = "");
     static void RenderText(
             double x,
             double y,
             double z,
             const QString& str,
             const QFont& font = QFont(),
-            ecvColor::Rgbub color = ecvColor::defaultLabelBkgColor,
-            QString id = "");
+            const ecvColor::Rgbub& color = ecvColor::defaultLabelBkgColor,
+            const QString& id = "");
 
     //! Toggles (exclusive) full-screen mode
     inline static void ToggleExclusiveFullScreen(bool state) {
@@ -1152,6 +1156,8 @@ public:  // visualization matrix transformation
     static void GetGLCameraParameters(ccGLCameraParameters& params);
 
     static void SetInteractionMode(INTERACTION_FLAGS flags);
+    //! Returns the current interaction flags
+    static INTERACTION_FLAGS GetInteractionMode();
 
     static void SetView(CC_VIEW_ORIENTATION orientation, ccBBox* bbox);
     static void SetView(CC_VIEW_ORIENTATION orientation,
@@ -1176,12 +1182,17 @@ public:  // visualization matrix transformation
     **/
     static void SetPerspectiveState(bool state, bool objectCenteredView);
 
-    inline static bool GetPerspectiveState(int viewport = 0) {
+    static bool GetPerspectiveState(int viewport = 0) {
         return TheInstance()->getPerspectiveState(viewport);
     }
     inline virtual bool getPerspectiveState(int viewport = 0) const override {
         return TheInstance()->m_viewportParams.perspectiveView;
     }
+
+    //! Shortcut: returns whether object-based perspective mode is enabled
+    static bool ObjectPerspectiveEnabled();
+    //! Shortcut: returns whether viewer-based perspective mode is enabled
+    static bool ViewerPerspectiveEnabled();
 
     //! Returns the zoom value equivalent to the current camera position
     //! (perspective only)
@@ -1221,8 +1232,28 @@ public:  // visualization matrix transformation
             * Z: depth axis (pointing out of the screen)
     **/
     static void MoveCamera(float dx, float dy, float dz);
+    //! Displaces camera
+    /** Values are given in objects world along the current camera
+            viewing directions (we use the right hand rule):
+            * X: horizontal axis (right)
+            * Y: vertical axis (up)
+            * Z: depth axis (pointing out of the screen)
+            \param v displacement vector
+    **/
+    inline static void MoveCamera(const CCVector3d& v) {
+        MoveCamera(v.x, v.y, v.z);
+    }
 
     static void SetPickingMode(PICKING_MODE mode = DEFAULT_PICKING);
+    static PICKING_MODE GetPickingMode();
+
+    //! Locks picking mode
+    /** \warning Bes sure to unlock it at some point ;)
+     **/
+    static void LockPickingMode(bool state);
+
+    //! Returns whether picking mode is locked or not
+    static bool IsPickingModeLocked();
 
     //! Sets current zoom
     /** Warning: has no effect in viewer-centered perspective mode
@@ -1313,6 +1344,12 @@ public:  // visualization matrix transformation
     /** In perspective mode, this value is approximate.
      **/
     static double ComputeActualPixelSize();
+
+    //! Returns whether rectangular picking is allowed or not
+    static bool IsRectangularPickingAllowed();
+
+    //! Sets whether rectangular picking is allowed or not
+    static void SetRectangularPickingAllowed(bool state);
 
     //! Sets bubble-view mode state
     /** Bubble-view is a kind of viewer-based perspective mode where
@@ -1611,6 +1648,8 @@ public:
 
     //! Rectangular picking polyline
     ccPolyline* m_rectPickingPoly;
+
+    cloudViewer::geometry::LineSet* m_scale_lineset;
 
     //! Window own DB
     ccHObject* m_winDBRoot;

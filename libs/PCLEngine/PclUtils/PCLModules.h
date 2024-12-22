@@ -47,9 +47,10 @@
 // PCL KEYPOINTS
 #include <pcl/keypoints/harris_3d.h>
 #include <pcl/keypoints/sift_keypoint.h>
-#include <pcl/keypoints/uniform_sampling.h>
+// #include <pcl/keypoints/uniform_sampling.h>
 
 // PCL FILTERS
+#include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/conditional_removal.h>
 #include <pcl/filters/crop_hull.h>
 #include <pcl/filters/extract_indices.h>
@@ -59,7 +60,6 @@
 #include <pcl/filters/voxel_grid.h>
 
 // PCL RECOGNITION
-// #include <pcl/recognition/hv/hv_go.h>
 #include <pcl/recognition/cg/geometric_consistency.h>
 #include <pcl/recognition/cg/hough_3d.h>
 

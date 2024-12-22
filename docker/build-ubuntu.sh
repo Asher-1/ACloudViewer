@@ -38,8 +38,8 @@ if [ "$BUILD_WITH_CONDA" != "ON" ]; then
 	DOCKER_FILE_POSFIX=""
 	BUILD_IMAGE_NAME="cloudviewer"
 	DEPENDENCY_IMAGE_NAME="cloudviewer-deps"
-	test -f docker_files/qt-opensource-linux-x64-5.14.2.run || \
-		wget https://download.qt.io/archive/qt/5.14/5.14.2/qt-opensource-linux-x64-5.14.2.run -O "docker_files/qt-opensource-linux-x64-5.14.2.run"
+	# test -f docker_files/qt-opensource-linux-x64-5.14.2.run || \
+	# 	wget https://download.qt.io/archive/qt/5.14/5.14.2/qt-opensource-linux-x64-5.14.2.run -O "docker_files/qt-opensource-linux-x64-5.14.2.run"
 
 	test -f docker_files/laszip-src-3.4.3.tar.gz || \
 		wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "docker_files/laszip-src-3.4.3.tar.gz"
@@ -72,6 +72,13 @@ export DEPENDENCY_IMAGE_TAG=${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubun
 
 if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]]; 
 	then
+
+		if [ "${UBUNTU_VERSION}" = "22.04" ]; then
+        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
+    else 
+        QT_BASE_DIR="/opt/qt515"
+    fi
+
 		docker build \
 			--network host \
 			--build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
@@ -81,6 +88,7 @@ if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]];
 			--build-arg UBUNTU_VERSION="${UBUNTU_VERSION}" \
 			--build-arg VTK_VERSION="${VTK_VERSION}" \
 			--build-arg PCL_VERSION="${PCL_VERSION}" \
+			--build-arg QT_BASE_DIR="${QT_BASE_DIR}" \
 			--tag "$DEPENDENCY_IMAGE_TAG" \
 			-f docker/Dockerfile_deps${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-${DEPENDENCY_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 fi
@@ -103,7 +111,7 @@ wheel_release_export_env() {
 
 release_build() {
     options="$(echo "$@" | tr ' ' '|')"
-    echo "[release_build()] options: ${options}"
+    echo "[release_build()] options: ${options} on ${UBUNTU_VERSION}"
     if [[ "py38" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.8
     elif [[ "py39" =~ ^($options)$ ]]; then
@@ -184,49 +192,26 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 	# Start building...
 	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "ACloudViewer-*${UBUNTU_VERSION}*.run" | grep -q .; then
     gui_release_export_env
-		release_build py38 gui
+		release_build py311 gui
 	else
 		echo "Ignore ACloudViewer GUI app building due to have builded before..."
 	fi
 
-	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp38-*.whl" | grep -q .; then
-    wheel_release_export_env
-		release_build py38 wheel
-	else
-		echo "Ignore cloudViewer wheel building based on python3.8 due to have builded before..."
-	fi
+	PYTHON_VERSIONS=("38" "39" "310" "311" "312")
 
-	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp39-*.whl" | grep -q .; then
-    wheel_release_export_env
-		release_build py39 wheel
-	else
-		echo "Ignore cloudViewer wheel building based on python3.9 due to have builded before..."
-	fi
-
-	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp310-*.whl" | grep -q .; then
-    wheel_release_export_env
-		release_build py310 wheel
-	else
-		echo "Ignore cloudViewer wheel building based on python3.10 due to have builded before..."
-	fi
-
-	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp311-*.whl" | grep -q .; then
-    wheel_release_export_env
-		release_build py311 wheel
-	else
-		echo "Ignore cloudViewer wheel building based on python3.11 due to have builded before..."
-	fi
-
-	if [ "$UBUNTU_VERSION" != "18.04" ]; then
-		if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp312-*.whl" | grep -q .; then
-			wheel_release_export_env
-			release_build py312 wheel
-		else
-			echo "Ignore cloudViewer wheel building based on python3.12 due to have builded before..."
-		fi
-	else
-		echo "Ubuntu18.04 do not support python3.12 as default!"
-	fi
+	for version in "${PYTHON_VERSIONS[@]}"; do
+    if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp${version}-*.whl" | grep -q .; then
+		    if [ "$version" == "312" ] && [ "$UBUNTU_VERSION" == "18.04" ]; then
+					echo "Ubuntu18.04 does not support python3.12 as default!"
+					continue
+    		fi
+				echo "Start building cloudViewer wheel with python${version}..."
+        wheel_release_export_env
+        release_build "py${version}" wheel
+    else
+        echo "Ignore cloudViewer wheel building based on python${version} due to have built before..."
+    fi
+	done
 else
 	echo "Please run docker rmi $CLOUDVIEWER_IMAGE_TAG first!"
 fi

@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>:/CC/plugin/qRANSAC_SD/qRANSAC_SD.png</normaloff>:/CC/plugin/qRANSAC_SD/qRANSAC_SD.png</iconset>
+    <normaloff>:/CC/plugin/qRANSAC_SD/images/qRANSAC_SD.png</normaloff>:/CC/plugin/images/qRANSAC_SD/qRANSAC_SD.png</iconset>
   </property>
   <layout class="QFormLayout" name="formLayout">
    <item row="0" column="0" colspan="2">

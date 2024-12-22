@@ -50,6 +50,8 @@ jobs:
       - name: Install dependencies
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
           source 3rdparty/webrtc/webrtc_build.sh
           install_dependencies_ubuntu
 
@@ -102,6 +104,9 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      
+      - name: Install CMake and Ninja
+        uses: lukka/get-cmake@latest
 
       - name: Download WebRTC sources
         shell: pwsh
@@ -136,6 +141,7 @@ jobs:
           cp "$env:ACLOUDVIEWER_DIR/3rdparty/webrtc/webrtc_common.cmake" webrtc/
 
       - name: Build WebRTC (Release)
+        shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -143,6 +149,7 @@ jobs:
           mkdir webrtc/build
           cd webrtc/build
           cmake -G Ninja -D CMAKE_BUILD_TYPE=Release `
+                -DCMAKE_MAKE_PROGRAM=ninja `
                 -D CMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release/Release `
                 ..
           ninja install
@@ -151,6 +158,7 @@ jobs:
           rm -r build
 
       - name: Build WebRTC (Debug)
+        shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -163,6 +171,7 @@ jobs:
           ninja install
 
       - name: Package WebRTC
+        shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'

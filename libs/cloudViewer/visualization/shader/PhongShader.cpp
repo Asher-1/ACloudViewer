@@ -245,7 +245,7 @@ bool PhongShaderForPointCloud::PrepareBinding(
             case RenderOption::PointColorOption::Color:
             case RenderOption::PointColorOption::Default:
             default:
-                if (pointcloud.isColorOverriden()) {
+                if (pointcloud.isColorOverridden()) {
                     color = ecvColor::Rgb::ToEigen(pointcloud.getTempColor());
                 } else if (pointcloud.hasColors()) {
                     color = pointcloud.getEigenColor(i);
@@ -346,7 +346,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
                                         vertex(2)));
                         break;
                     case RenderOption::MeshColorOption::Color:
-                        if (mesh.isColorOverriden()) {
+                        if (mesh.isColorOverridden()) {
                             color = ecvColor::Rgb::ToEigen(mesh.getTempColor());
                         } else if (mesh.hasColors()) {
                             color = mesh.getVertexColor(vi);

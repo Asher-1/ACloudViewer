@@ -923,7 +923,7 @@ void ModelViewerWidget::UploadMovieGrabberData() {
 void ModelViewerWidget::update() { ecvDisplayTools::UpdateScreen(); }
 
 void ModelViewerWidget::drawPointCloud(ccPointCloud* cloud) {
-    if (!cloud || cloud->isEmpty()) {
+    if (cloud->isEmpty()) {
         cloud->setVisible(false);
         cloud->setEnabled(false);
         cloud->setRedrawFlagRecursive(false);
@@ -958,7 +958,7 @@ void ModelViewerWidget::resetPointCloud(ccPointCloud* cloud) {
 void ModelViewerWidget::drawLines(geometry::LineSet& lineset) {
     if (!lineset.isEmpty()) {
         CC_DRAW_CONTEXT context;
-        if (lineset.isColorOverriden()) {
+        if (lineset.isColorOverridden()) {
             context.defaultPolylineColor = lineset.getTempColor();
         } else if (lineset.colorsShown() && lineset.hasColors()) {
             context.defaultPolylineColor =

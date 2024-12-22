@@ -208,7 +208,7 @@ void ccGraphicalTransformationTool::pause(bool state) {
 }
 
 void ccGraphicalTransformationTool::clear() {
-    m_toTransform.detatchAllChildren();
+    m_toTransform.detachAllChildren();
 
     if (m_tool) {
         m_tool->clear();

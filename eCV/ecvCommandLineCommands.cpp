@@ -64,6 +64,7 @@ constexpr char COMMAND_DENSITY_TYPE[] = "TYPE";  //+ density type
 constexpr char COMMAND_APPROX_DENSITY[] = "APPROX_DENSITY";
 constexpr char COMMAND_SF_GRADIENT[] = "SF_GRAD";
 constexpr char COMMAND_ROUGHNESS[] = "ROUGH";
+constexpr char COMMAND_ROUGHNESS_UP_DIR[] = "UP_DIR";
 constexpr char COMMAND_APPLY_TRANSFORMATION[] = "APPLY_TRANS";
 constexpr char COMMAND_DROP_GLOBAL_SHIFT[] = "DROP_GLOBAL_SHIFT";
 constexpr char COMMAND_SF_COLOR_SCALE[] = "SF_COLOR_SCALE";
@@ -138,16 +139,132 @@ constexpr char COMMAND_POP_MESHES[] = "POP_MESHES";
 constexpr char COMMAND_NO_TIMESTAMP[] = "NO_TIMESTAMP";
 constexpr char COMMAND_MOMENT[] = "MOMENT";
 constexpr char COMMAND_FEATURE[] = "FEATURE";
+constexpr char COMMAND_RGB_CONVERT_TO_SF[] = "RGB_CONVERT_TO_SF";
+constexpr char COMMAND_FLIP_TRIANGLES[] = "FLIP_TRI";
+constexpr char COMMAND_DEBUG[] = "DEBUG";
+constexpr char COMMAND_VERBOSITY[] = "VERBOSITY";
+constexpr char COMMAND_FILTER[] = "FILTER";
 
 // options / modifiers
 constexpr char COMMAND_MAX_THREAD_COUNT[] = "MAX_TCOUNT";
 constexpr char OPTION_ALL_AT_ONCE[] = "ALL_AT_ONCE";
 constexpr char OPTION_ON[] = "ON";
 constexpr char OPTION_OFF[] = "OFF";
-constexpr char OPTION_LAST[] = "LAST";
 constexpr char OPTION_FILE_NAMES[] = "FILE";
 constexpr char OPTION_ORIENT[] = "ORIENT";
 constexpr char OPTION_MODEL[] = "MODEL";
+constexpr char OPTION_FIRST[] = "FIRST";
+constexpr char OPTION_LAST[] = "LAST";
+constexpr char OPTION_ALL[] = "ALL";
+constexpr char OPTION_REGEX[] = "REGEX";
+constexpr char OPTION_NOT[] = "NOT";
+constexpr char OPTION_CLOUD[] = "CLOUD";
+constexpr char OPTION_MESH[] = "MESH";
+constexpr char OPTION_PERCENT[] = "PERCENT";
+constexpr char OPTION_NUMBER_OF_POINTS[] = "NUMBER_OF_POINTS";
+constexpr char OPTION_FORCE[] = "FORCE";
+constexpr char OPTION_USE_ACTIVE_SF[] = "USE_ACTIVE_SF";
+constexpr char OPTION_SF[] = "SF";
+constexpr char OPTION_RGB[] = "RGB";
+constexpr char OPTION_GAUSSIAN[] = "GAUSSIAN";
+constexpr char OPTION_BILATERAL[] = "BILATERAL";
+constexpr char OPTION_MEAN[] = "MEAN";
+constexpr char OPTION_MEDIAN[] = "MEDIAN";
+constexpr char OPTION_SIGMA[] = "SIGMA";
+constexpr char OPTION_SIGMA_SF[] = "SIGMA_SF";
+constexpr char OPTION_BURNT_COLOR_THRESHOLD[] = "BURNT_COLOR_THRESHOLD";
+constexpr char OPTION_BLEND_GRAYSCALE[] = "BLEND_GRAYSCALE";
+
+static bool GetSFIndexOrName(ccCommandLineInterface& cmd,
+                             int& sfIndex,
+                             QString& sfName,
+                             bool allowMinusOne = false) {
+    sfName = cmd.arguments().takeFirst();
+    if (sfName.toUpper() == OPTION_LAST) {
+        sfIndex = -2;
+        cmd.print(QObject::tr("SF index: LAST"));
+    } else {
+        bool validInt = false;
+        sfIndex = sfName.toInt(&validInt);
+        if (validInt) {
+            sfName.clear();  // user has provided an index, not a name
+
+            if (sfIndex < 0) {
+                if (allowMinusOne && sfIndex == -1) {
+                    // -1 means 'no active SF'
+                    cmd.print(QObject::tr("SF index: none"));
+                } else {
+                    // invalid index
+                    cmd.warning(
+                            QObject::tr("Invalid SF index: %1").arg(sfIndex));
+                    return false;
+                }
+            } else {
+                cmd.print(QObject::tr("SF index: %1").arg(sfIndex));
+            }
+        } else {
+            cmd.print(QObject::tr("SF name: '%1'").arg(sfName));
+            sfIndex = -1;
+        }
+    }
+
+    return true;
+}
+
+int GetScalarFieldIndex(ccPointCloud* cloud,
+                        int sfIndex,
+                        const QString& sfName,
+                        bool minusOneMeansCurrent = false) {
+    if (!cloud) {
+        assert(false);
+        return -1;
+    } else if (!cloud->hasScalarFields()) {
+        return -1;
+    } else if (sfIndex == -2) {
+        return static_cast<int>(cloud->getNumberOfScalarFields()) - 1;
+    } else if (sfIndex == -1) {
+        if (!sfName.isEmpty())  // the user has provided a SF name instead of an
+                                // index
+        {
+            // check if this cloud has a scalar field with the input name
+            sfIndex = cloud->getScalarFieldIndexByName(sfName.toStdString().c_str());
+            if (sfIndex < 0) {
+                CVLog::Warning(QObject::tr("Cloud %1 has no SF named '%2'")
+                                       .arg(cloud->getName())
+                                       .arg(sfName));
+                return -1;
+            }
+        } else if (minusOneMeansCurrent) {
+            return cloud->getCurrentInScalarFieldIndex();
+        } else {
+            CVLog::Warning(
+                    QObject::tr("Input scalar field index is invalid: %1")
+                            .arg(sfIndex));
+            return -1;
+        }
+    } else if (sfIndex >= static_cast<int>(cloud->getNumberOfScalarFields())) {
+        CVLog::Warning(QObject::tr("Cloud %1 has less scalar fields than the "
+                                   "SF index (%2/%3)")
+                               .arg(cloud->getName())
+                               .arg(sfIndex)
+                               .arg(cloud->getNumberOfScalarFields()));
+        return -1;
+    }
+
+    return sfIndex;
+}
+
+cloudViewer::ScalarField* GetScalarField(ccPointCloud* cloud,
+                                         int sfIndex,
+                                         const QString& sfName,
+                                         bool minusOneMeansCurrent = false) {
+    sfIndex = GetScalarFieldIndex(cloud, sfIndex, sfName, minusOneMeansCurrent);
+    if (sfIndex < 0) {
+        return nullptr;
+    } else {
+        return cloud->getScalarField(sfIndex);
+    }
+}
 
 CommandChangeOutputFormat::CommandChangeOutputFormat(const QString& name,
                                                      const QString& keyword)
@@ -655,8 +772,12 @@ bool CommandOctreeNormal::process(ccCommandLineInterface& cmd) {
                     orientation = ccNormalVectors::Orientation::MINUS_Z;
                 } else if (orient_argument == "PREVIOUS") {
                     orientation = ccNormalVectors::Orientation::PREVIOUS;
-                } else if (orient_argument == "SENSOR_ORIGIN") {
-                    orientation = ccNormalVectors::Orientation::SENSOR_ORIGIN;
+                } else if (orient_argument == "PLUS_SENSOR_ORIGIN") {
+                    orientation =
+                            ccNormalVectors::Orientation::PLUS_SENSOR_ORIGIN;
+                } else if (orient_argument == "MINUS_SENSOR_ORIGIN") {
+                    orientation =
+                            ccNormalVectors::Orientation::MINUS_SENSOR_ORIGIN;
                 } else {
                     return cmd.error(QObject::tr("Invalid parameter: unknown "
                                                  "orientation '%1'")
@@ -930,19 +1051,127 @@ bool CommandSubsample::process(ccCommandLineInterface& cmd) {
         }
         cmd.print(QObject::tr("\tSpatial step: %1").arg(step));
 
-        for (size_t i = 0; i < cmd.clouds().size(); ++i) {
-            ccPointCloud* cloud = cmd.clouds()[i].pc;
-            cmd.print(QObject::tr("\tProcessing cloud #%1 (%2)")
-                              .arg(i + 1)
-                              .arg(!cloud->getName().isEmpty()
-                                           ? cloud->getName()
+        double sfMinSpacing = 0;
+        double sfMaxSpacing = 0;
+        bool useActiveSF = false;
+        if (!cmd.arguments().empty()) {
+            if (cmd.arguments().front().toUpper() == OPTION_USE_ACTIVE_SF) {
+                // enable USE_ACTIVE_SF
+                useActiveSF = true;
+                cmd.arguments().pop_front();
+                if (cmd.arguments().size() >= 2) {
+                    bool validMin = false;
+                    sfMinSpacing =
+                            cmd.arguments().takeFirst().toDouble(&validMin);
+                    bool validMax = false;
+                    sfMaxSpacing =
+                            cmd.arguments().takeFirst().toDouble(&validMax);
+                    if (!validMin || !validMax || sfMinSpacing < 0 ||
+                        sfMaxSpacing < 0) {
+                        return cmd.error(
+                                QObject::tr(
+                                        "Invalid parameters: Two positive "
+                                        "decimal number required after '%1'")
+                                        .arg(OPTION_USE_ACTIVE_SF));
+                    }
+                } else {
+                    return cmd.error(
+                            QObject::tr("Missing parameters: Two positive "
+                                        "decimal number required after '%1'")
+                                    .arg(OPTION_USE_ACTIVE_SF));
+                }
+            }
+        }
+
+        for (CLCloudDesc& desc : cmd.clouds()) {
+            cmd.print(QObject::tr("\tProcessing cloud %1")
+                              .arg(!desc.pc->getName().isEmpty()
+                                           ? desc.pc->getName()
                                            : "no name"));
 
             cloudViewer::CloudSamplingTools::SFModulationParams modParams(
                     false);
+
+            // handle Use Active SF on each cloud
+            if (useActiveSF) {
+                // look for the min and max sf values
+                ccScalarField* sf = desc.pc->getCurrentDisplayedScalarField();
+                if (!sf) {
+                    // warn the user, not use active SF and keep going
+                    cmd.warning(
+                            QObject::tr(
+                                    "\tCan't use 'Use active SF': no active "
+                                    "scalar field. Set one with '-%1'")
+                                    .arg(COMMAND_SET_ACTIVE_SF));
+                } else {
+                    // found active scalar field
+                    ScalarType sfMin = NAN_VALUE;
+                    ScalarType sfMax = NAN_VALUE;
+                    if (sf->countValidValues() > 0) {
+                        if (!ccScalarField::ValidValue(sfMin) ||
+                            sfMin > sf->getMin())
+                            sfMin = sf->getMin();
+                        if (!ccScalarField::ValidValue(sfMax) ||
+                            sfMax < sf->getMax())
+                            sfMax = sf->getMax();
+                        if (!ccScalarField::ValidValue(sfMin) ||
+                            !ccScalarField::ValidValue(sfMax)) {
+                            // warn the user, don't use 'Use Active SF' and keep
+                            // going
+                            cmd.warning(
+                                    QObject::tr("\tCan't use 'Use active SF': "
+                                                "scalar field '%1' has invalid "
+                                                "min/max values.")
+                                            .arg(QString::fromStdString(
+                                                    sf->getName())));
+                        } else {
+                            // everything validated use acitve SF for modulation
+                            // implementation of modParams.a/b values come from
+                            // MainWindow::doActionSubsample()
+                            modParams.enabled = true;
+
+                            double deltaSF = static_cast<double>(sfMax) -
+                                             static_cast<double>(sfMin);
+
+                            if (cloudViewer::GreaterThanEpsilon(deltaSF)) {
+                                modParams.a =
+                                        (sfMaxSpacing - sfMinSpacing) / deltaSF;
+                                modParams.b =
+                                        sfMinSpacing - modParams.a * sfMin;
+                            } else {
+                                modParams.a = 0.0;
+                                modParams.b = sfMin;
+                            }
+                            cmd.print(QObject::tr("\tUse active SF: "
+                                                  "enabled\n\t\tSpacing at SF "
+                                                  "min (%1): %2\n\t\tSpacing "
+                                                  "at SF max (%3): %4")
+                                              .arg(sfMin)
+                                              .arg(sfMinSpacing)
+                                              .arg(sfMax)
+                                              .arg(sfMaxSpacing));
+                        }
+                    } else {
+                        // warn the user, not use Use Active SF and keep going
+                        cmd.warning(QObject::tr("\tCan't use 'Use active SF': "
+                                                "scalar field '%2' does not "
+                                                "have any valid value.")
+                                            .arg(COMMAND_SET_ACTIVE_SF)
+                                            .arg(QString::fromStdString(
+                                                    sf->getName())));
+                    }
+                }
+            }
+
+            if (useActiveSF && !modParams.enabled) {
+                cmd.print(
+                        QObject::tr("\t'Use active SF' disabled. Falling back "
+                                    "to constant spacing."));
+            }
+
             cloudViewer::ReferenceCloud* refCloud =
                     cloudViewer::CloudSamplingTools::resampleCloudSpatially(
-                            cloud, static_cast<PointCoordinateType>(step),
+                            desc.pc, static_cast<PointCoordinateType>(step),
                             modParams, nullptr, cmd.progressDialog());
             if (!refCloud) {
                 return cmd.error("Subsampling process failed!");
@@ -950,30 +1179,27 @@ bool CommandSubsample::process(ccCommandLineInterface& cmd) {
             cmd.print(QObject::tr("\tResult: %1 points").arg(refCloud->size()));
 
             // save output
-            ccPointCloud* result = cloud->partialClone(refCloud);
+            ccPointCloud* result = desc.pc->partialClone(refCloud);
             delete refCloud;
             refCloud = nullptr;
 
             if (result) {
-                result->setName(cmd.clouds()[i].pc->getName() +
+                result->setName(desc.pc->getName() +
                                 QObject::tr(".subsampled"));
                 if (cmd.autoSaveMode()) {
-                    CLCloudDesc cloudDesc(result, cmd.clouds()[i].basename,
-                                          cmd.clouds()[i].path,
-                                          cmd.clouds()[i].indexInFile);
+                    CLCloudDesc newDesc(result, desc.basename, desc.path,
+                                        desc.indexInFile);
                     QString errorStr =
-                            cmd.exportEntity(cloudDesc, "SPATIAL_SUBSAMPLED");
+                            cmd.exportEntity(newDesc, "SPATIAL_SUBSAMPLED");
                     if (!errorStr.isEmpty()) {
                         delete result;
                         return cmd.error(errorStr);
                     }
                 }
                 // replace current cloud by this one
-                delete cmd.clouds()[i].pc;
-                cmd.clouds()[i].pc = result;
-                cmd.clouds()[i].basename += QObject::tr("_SUBSAMPLED");
-                // delete result;
-                // result = 0;
+                delete desc.pc;
+                desc.pc = result;
+                desc.basename += "_SPATIAL_SUBSAMPLED";
             } else {
                 return cmd.error(QObject::tr("Not enough memory!"));
             }
@@ -1288,7 +1514,7 @@ bool CommandCurvature::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::Curvature, curvType,
-                kernelSize, entities, cmd.widgetParent())) {
+                kernelSize, entities, nullptr, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() &&
             !cmd.saveClouds(QObject::tr("%1_CURVATURE_KERNEL_%2")
@@ -1371,7 +1597,7 @@ bool CommandApproxDensity::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::ApproxLocalDensity,
-                densityType, 0, entities, cmd.widgetParent())) {
+                densityType, 0, entities, nullptr, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() && !cmd.saveClouds("APPROX_DENSITY")) {
             return false;
@@ -1443,7 +1669,8 @@ bool CommandDensity::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::LocalDensity,
-                densityType, kernelSize, entities, cmd.widgetParent())) {
+                densityType, kernelSize, entities, nullptr,
+                cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() && !cmd.saveClouds("DENSITY")) {
             return false;
@@ -1533,8 +1760,6 @@ CommandRoughness::CommandRoughness()
                                       COMMAND_ROUGHNESS) {}
 
 bool CommandRoughness::process(ccCommandLineInterface& cmd) {
-    cmd.print(QObject::tr("[ROUGHNESS]"));
-
     if (cmd.arguments().empty()) {
         return cmd.error(
                 QObject::tr("Missing parameter: kernel size after \"-%1\"")
@@ -1553,6 +1778,35 @@ bool CommandRoughness::process(ccCommandLineInterface& cmd) {
     }
     cmd.print(QObject::tr("\tKernel size: %1").arg(kernelSize));
 
+    // optional argument
+    CCVector3 roughnessUpDir;
+    CCVector3* _roughnessUpDir = nullptr;
+    if (cmd.arguments().size() >= 4) {
+        QString nextArg = cmd.arguments().first();
+        if (nextArg.startsWith('-') &&
+            nextArg.mid(1).toUpper() == COMMAND_ROUGHNESS_UP_DIR) {
+            // option confirmed
+            cmd.arguments().takeFirst();
+            QString xStr = cmd.arguments().takeFirst();
+            QString yStr = cmd.arguments().takeFirst();
+            QString zStr = cmd.arguments().takeFirst();
+            bool okX = false, okY = false, okZ = false;
+            roughnessUpDir.x =
+                    static_cast<PointCoordinateType>(xStr.toDouble(&okX));
+            roughnessUpDir.y =
+                    static_cast<PointCoordinateType>(yStr.toDouble(&okY));
+            roughnessUpDir.z =
+                    static_cast<PointCoordinateType>(zStr.toDouble(&okZ));
+            if (!okX || !okY || !okZ) {
+                return cmd.error(
+                        QObject::tr("Invalid 'up direction' vector after "
+                                    "option -%1 (3 coordinates expected)")
+                                .arg(COMMAND_ROUGHNESS_UP_DIR));
+            }
+            _roughnessUpDir = &roughnessUpDir;
+        }
+    }
+
     if (cmd.clouds().empty()) {
         return cmd.error(QObject::tr("No point cloud on which to compute "
                                      "roughness! (be sure to open one with "
@@ -1569,7 +1823,7 @@ bool CommandRoughness::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::Roughness, 0, kernelSize,
-                entities, cmd.widgetParent())) {
+                entities, _roughnessUpDir, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() &&
             !cmd.saveClouds(
@@ -3573,7 +3827,7 @@ bool CommandDist::process(ccCommandLineInterface& cmd) {
             // DGM: not true anymore
             // if (maxDist > 0)
             //	cmd.warning("'Split XYZ' option is ignored if max distance is
-            //defined!");
+            // defined!");
             compDlg.split3DCheckBox->setChecked(true);
         }
         if (modelIndex != 0) {
@@ -3959,8 +4213,8 @@ bool CommandDelaunayTri::process(ccCommandLineInterface& cmd) {
 
         ccMesh* mesh = ccMesh::Triangulate(
                 cloud,
-                axisAligned ? DELAUNAY_2D_AXIS_ALIGNED
-                            : DELAUNAY_2D_BEST_LS_PLANE,
+                axisAligned ? cloudViewer::DELAUNAY_2D_AXIS_ALIGNED
+                            : cloudViewer::DELAUNAY_2D_BEST_LS_PLANE,
                 false, static_cast<PointCoordinateType>(maxEdgeLength),
                 2  // XY plane by default
         );
@@ -3992,7 +4246,7 @@ bool CommandDelaunayTri::process(ccCommandLineInterface& cmd) {
             // the mesh takes ownership of the cloud.
             // Therefore we have to remove all clouds from the 'cloud set'! (see
             // below) (otherwise bad things will happen when we'll clear it
-            //later ;)
+            // later ;)
             cloud->setEnabled(false);
             mesh->addChild(cloud);
         }
@@ -4686,7 +4940,7 @@ bool CommandChangePLYExportFormat::process(ccCommandLineInterface& cmd) {
 
     // if (fileFilter != PlyFilter::GetFileFilter())
     //	cmd.warning(QObject::tr("Argument '%1' is only applicable to PLY
-    //format!").arg(argument));
+    // format!").arg(argument));
 
     QString plyFormat = cmd.arguments().takeFirst().toUpper();
     // printf("%s\n",qPrintable(plyFormat));
@@ -5027,7 +5281,7 @@ bool CommandMoment::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::MomentOrder1, 0,
-                kernelSize, entities, cmd.widgetParent())) {
+                kernelSize, entities, nullptr, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() &&
             !cmd.saveClouds(QObject::tr("MOMENT_KERNEL_%2").arg(kernelSize))) {
@@ -5134,7 +5388,7 @@ bool CommandFeature::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::Feature, featureType,
-                kernelSize, entities, cmd.widgetParent())) {
+                kernelSize, entities, nullptr, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() &&
             !cmd.saveClouds(QObject::tr("%1_FEATURE_KERNEL_%2")

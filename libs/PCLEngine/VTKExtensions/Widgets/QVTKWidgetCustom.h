@@ -22,7 +22,8 @@
 /* The below is MANDATORY for Windows builds or you will take an exception in
  * vtkRenderer::SetRenderWindow(vtkRenderWindow *renwin) */
 #include <vtkAutoInit.h>
-VTK_MODULE_INIT(vtkRenderingOpenGL2); /* VTK was built with vtkRenderingOpenGL2 */
+/* VTK was built with vtkRenderingOpenGL2 */
+VTK_MODULE_INIT(vtkRenderingOpenGL2);
 VTK_MODULE_INIT(vtkInteractionStyle);
 
 #endif
@@ -101,10 +102,12 @@ public:
     void transformCameraView(const double* viewMat);
     void transformCameraProjection(const double* projMat);
 
-    inline void updateScene() { this->GetRenderWindow()->Render(); }
-    vtkRenderWindow* GetRenderWindow() {return this->renderWindow(); }
-    void SetRenderWindow(vtkRenderWindow* win) {return this->setRenderWindow(win); }
-    QVTKInteractor* GetInteractor() {return this->interactor(); }
+    void updateScene();
+    vtkRenderWindow* GetRenderWindow() { return this->renderWindow(); }
+    void SetRenderWindow(vtkRenderWindow* win) {
+        return this->setRenderWindow(win);
+    }
+    QVTKInteractor* GetInteractor() { return this->interactor(); }
 
 protected:
     void setBounds(double* bounds);

@@ -33,6 +33,7 @@
 class ccPolyline;
 class ccPointCloud;
 class ccGLWindow;
+class ecvMainAppInterface;
 
 //! Graphical segmentation mechanism (with polyline)
 class ccGraphicalSegmentationTool : public ccOverlayDialog,
@@ -50,7 +51,7 @@ public:
             locked, or can't be segmented this way.
             \return whether entity has been added to the pool or not
     **/
-    bool addEntity(ccHObject* anObject);
+    bool addEntity(ccHObject* anObject, bool silent = false);
 
     //! Returns the number of entites currently in the the 'to be segmented'
     //! pool
@@ -76,7 +77,11 @@ public:
     /** \warning 'unallocateVisibilityArray' will be called on all point clouds
             prior to be removed from the pool.
     **/
-    void removeAllEntities(bool unallocateVisibilityArrays);
+    void removeAllEntities();
+
+    //! Apply segmentation and update the database (helper)
+    bool applySegmentation(ecvMainAppInterface* app,
+                           ccHObject::Container& newEntities);
 
 protected slots:
 
@@ -105,10 +110,14 @@ protected slots:
     //! To capture overridden shortcuts (pause button, etc.)
     void onShortcutTriggered(int);
 
-protected:
+    //! Prepare entity before removal
+    void prepareEntityForRemoval(ccHObject* entity,
+                                 bool unallocateVisibilityArrays);
+
     //! Whether to allow or not to exort the current segmentation polyline
     void allowPolylineExport(bool state);
 
+protected:
     void setDrawFlag(bool state = true);
 
     //! Set of entities to be segmented

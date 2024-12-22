@@ -1043,7 +1043,7 @@ void ccHObject::drawBB(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) {
     }
 }
 
-void ccHObject::detatchAllChildren() {
+void ccHObject::detachAllChildren() {
     for (auto child : m_children) {
         // remove any dependency (bilateral)
         removeDependencyWith(child);
@@ -1307,10 +1307,10 @@ bool ccHObject::toFile_MeOnly(QFile& out) const {
         0)
         return WriteError();
     //'colorIsOverriden' state (dataVersion>=20)
-    if (out.write(reinterpret_cast<const char*>(&m_colorIsOverriden),
+    if (out.write(reinterpret_cast<const char*>(&m_colorIsOverridden),
                   sizeof(bool)) < 0)
         return WriteError();
-    if (m_colorIsOverriden) {
+    if (m_colorIsOverridden) {
         //'tempColor' (dataVersion>=20)
         if (out.write(reinterpret_cast<const char*>(m_tempColor.rgb),
                       sizeof(ColorCompType) * 3) < 0) {
@@ -1360,9 +1360,10 @@ bool ccHObject::fromFile_MeOnly(QFile& in,
     if (in.read(reinterpret_cast<char*>(&m_sfDisplayed), sizeof(bool)) < 0)
         return ReadError();
     //'colorIsOverriden' state (dataVersion>=20)
-    if (in.read(reinterpret_cast<char*>(&m_colorIsOverriden), sizeof(bool)) < 0)
+    if (in.read(reinterpret_cast<char*>(&m_colorIsOverridden), sizeof(bool)) <
+        0)
         return ReadError();
-    if (m_colorIsOverriden) {
+    if (m_colorIsOverridden) {
         //'tempColor' (dataVersion>=20)
         if (in.read(reinterpret_cast<char*>(m_tempColor.rgb),
                     sizeof(ColorCompType) * 3) < 0)
@@ -1669,4 +1670,39 @@ void ccHObject::hideObject_recursive(bool recursive) {
 void ccHObject::redrawDisplay(bool forceRedraw /* = true*/,
                               bool only2D /* = false*/) {
     ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
+}
+
+struct HObjectDisplayState : ccDrawableObject::DisplayState {
+    HObjectDisplayState() {}
+
+    HObjectDisplayState(const ccHObject& obj)
+        : ccDrawableObject::DisplayState(obj), isEnabled(obj.isEnabled()) {}
+
+    bool isEnabled = false;
+};
+
+bool ccHObject::pushDisplayState() {
+    try {
+        m_displayStateStack.emplace_back(new HObjectDisplayState(*this));
+    } catch (const std::bad_alloc&) {
+        CVLog::Warning("Not enough memory to push the current display state");
+        return false;
+    }
+
+    return true;
+}
+
+void ccHObject::popDisplayState(bool apply /*=true*/) {
+    if (!m_displayStateStack.empty()) {
+        const DisplayState::Shared state = m_displayStateStack.back();
+        if (state && apply) {
+            HObjectDisplayState* hState =
+                    static_cast<HObjectDisplayState*>(state.data());
+            if (hState->isEnabled != isEnabled()) {
+                setEnabled(hState->isEnabled);
+            }
+            applyDisplayState(*state);
+        }
+        m_displayStateStack.pop_back();
+    }
 }

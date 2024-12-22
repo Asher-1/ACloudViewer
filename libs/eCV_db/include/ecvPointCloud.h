@@ -220,14 +220,18 @@ public:  // clone, copy, etc.
 
     //! Creates a new point cloud object from a ReferenceCloud (selection)
     /** "Reference clouds" are a set of indexes referring to a real point cloud.
-            See cloudViewer documentation for more information about
-    ReferenceClouds. Warning: the ReferenceCloud structure must refer to this
-    cloud. \param selection a ReferenceCloud structure (pointing to source)
-            \param[out] warnings [optional] to determine if warnings
-    (CTOR_ERRORS) occurred during the duplication process
+            See CClib documentation for more information about ReferenceClouds.
+            Warning: the ReferenceCloud structure must refer to this cloud.
+            \param[in]  selection			a ReferenceCloud
+    structure
+    (pointing to source) \param[out] warnings			[optional] to
+    determine if warnings (CTOR_ERRORS) occurred during the duplication process
+            \param[in]  withChildEntities	whether child entities should be
+    transferred as well (see ccHObjectCaster::CloneChildren)
     **/
     ccPointCloud* partialClone(const cloudViewer::ReferenceCloud* selection,
-                               int* warnings = nullptr) const;
+                               int* warnings = nullptr,
+                               bool withChildEntities = true) const;
 
     //! Clones this entity
     /** All the main features of the entity are cloned, except from the octree
@@ -562,16 +566,14 @@ public:  // other methods
     bool hasNormals() const override;
     bool hasScalarFields() const override;
     bool hasDisplayedScalarField() const override;
-    // void removeFromDisplay(const ccGenericGLDisplay* win) override; //for
-    // proper VBO release void setDisplay(ccGenericGLDisplay* win) override;
 
     // inherited from cloudViewer::GenericCloud
     unsigned char testVisibility(const CCVector3& P) const override;
 
     // inherited from cloudViewer::GenericIndexedCloud
     bool normalsAvailable() const override { return hasNormals(); }
-    const CCVector3* getNormal(unsigned pointIndex)
-            const override;  // equivalent to getPointNormal, but for cloudViewer
+    const CCVector3* getNormal(unsigned pointIndex) const
+            override;  // equivalent to getPointNormal, but for cloudViewer
 
     // inherited from ccGenericPointCloud
     const ecvColor::Rgb* getScalarValueColor(ScalarType d) const override;
@@ -608,12 +610,15 @@ public:  // other methods
                        CCVector3 center = CCVector3(0, 0, 0)) override;
     inline void refreshBB() override { invalidateBoundingBox(); }
     /** \warning if removeSelectedPoints is true, any attached octree will be
-     * deleted. **/
+     * deleted, as well as the visibility table. **/
     ccGenericPointCloud* createNewCloudFromVisibilitySelection(
             bool removeSelectedPoints = false,
             VisibilityTableType* visTable = nullptr,
-            bool silent = false) override;
-
+            std::vector<int>* newIndexesOfRemainingPoints = nullptr,
+            bool silent = false,
+            cloudViewer::ReferenceCloud* selection = nullptr) override;
+    bool removeVisiblePoints(VisibilityTableType* visTable = nullptr,
+                             std::vector<int>* newIndexes = nullptr) override;
     //! Sets whether visibility check is enabled or not (e.g. during distances
     //! computation)
     /** See ccPointCloud::testVisibility.
@@ -911,6 +916,11 @@ public:  // other methods
 
     //! Exports the specified coordinate dimension(s) to scalar field(s)
     bool exportCoordToSF(bool exportDims[3]);
+
+    //! Sets coordinate(s) from a scalar field
+    bool setCoordFromSF(bool importDims[3],
+                        cloudViewer::ScalarField* sf,
+                        PointCoordinateType defaultValueForNaN);
 
     //! Exports the specified normal dimension(s) to scalar field(s)
     bool exportNormalToSF(bool exportDims[3]);

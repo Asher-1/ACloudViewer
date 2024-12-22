@@ -188,17 +188,17 @@ CV_CLASS_ENUM ccObject::ReadClassIDFromFile(QFile& in, short dataVersion)
 	return classID;
 }
 
-QVariant ccObject::getMetaData(QString key) const
+QVariant ccObject::getMetaData(const QString& key) const
 {
 	return m_metaData.value(key,QVariant());
 }
 
-bool ccObject::removeMetaData(QString key)
+bool ccObject::removeMetaData(const QString& key)
 {
 	return m_metaData.remove(key) != 0;
 }
 
-void ccObject::setMetaData(QString key, QVariant data)
+void ccObject::setMetaData(const QString& key, const QVariant& data)
 {
 	m_metaData.insert(key,data);
 }
@@ -214,7 +214,7 @@ void ccObject::setMetaData(const QVariantMap& dataset, bool overwrite/*=false*/)
 	}
 }
 
-bool ccObject::hasMetaData(QString key) const
+bool ccObject::hasMetaData(const QString& key) const
 {
 	return m_metaData.contains(key);
 }

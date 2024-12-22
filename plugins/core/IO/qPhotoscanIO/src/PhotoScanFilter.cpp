@@ -897,7 +897,7 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
 					{
 						container.addChild(tempContainer.getChild(i));
 					}
-					tempContainer.detatchAllChildren();
+					tempContainer.detachAllChildren();
 				}
 
 				if (!tempTextureFilename.isNull())
@@ -917,7 +917,7 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
 					{
 						container.addChild(newGroup->getChild(i));
 					}
-					newGroup->detatchAllChildren();
+					newGroup->detachAllChildren();
 					delete newGroup;
 					newGroup = nullptr;
 				}

@@ -9,4 +9,6 @@ if [ "${dirname%$tmp}" != "/" ]; then
 fi
 LD_LIBRARY_PATH=$dirname
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$dirname/lib
+export PYTHONPATH=$dirname/plugins/Python
+
 $dirname/$appname "$@"

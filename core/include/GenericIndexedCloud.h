@@ -54,14 +54,19 @@ public:
     minus 1) \param P output point
     **/
     virtual void getPoint(unsigned index, CCVector3& P) const = 0;
-    virtual void getPoint(unsigned index, double P[3]) const = 0;
+    virtual void getPoint(unsigned index, double P[3]) const {
+        const CCVector3* pt = getPoint(index);
+        P[0] = pt->x;
+        P[1] = pt->y;
+        P[2] = pt->z;
+    };
 
     //! Returns whether normals are available
     virtual bool normalsAvailable() const { return false; }
 
     //! If per-point normals are available, returns the one at a specific index
     /** \warning If overriden, this method should return a valid normal for all
-      *points
+     *points
      **/
     virtual const CCVector3* getNormal(unsigned index) const {
         (void)index;
