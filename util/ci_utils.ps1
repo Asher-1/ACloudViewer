@@ -440,6 +440,7 @@ function Build-PipPackage {
     cmake --build . --target pip-package --config Release --parallel $env:NPROC
     Write-Host "Finish make pip-package for cpu"
 
+    Write-Host "Backup lib/python_package/pip_package/cloudViewer*.whl to build path"
     Move-Item lib/python_package/pip_package/cloudViewer*.whl . -Force
 
     if ($BUILD_CUDA_MODULE -eq "ON") {
@@ -461,15 +462,16 @@ function Build-PipPackage {
         }
 
         Write-Host "Executing cmake command with CUDA..."
-        cmake -DBUILD_CUDA_MODULE=ON `
-              -DBUILD_COMMON_CUDA_ARCHS=ON `
-              $cmakeOptions ..
+        cmake   -DBUILD_CUDA_MODULE=ON `
+                -DBUILD_COMMON_CUDA_ARCHS=ON `
+                $cmakeOptions ..
+
+        Write-Host "`ncmake --build with cuda..."
+        cmake --build . --target pip-package --config Release --parallel $env:NPROC
+        Write-Host "Finish cmake --build with cuda"
     }
 
-    Write-Host "`nPackaging CloudViewer full pip package..."
-    cmake --build . --target pip-package --config Release --parallel $env:NPROC
-    Write-Host "Finish make CloudViewer full pip package"
-
+    Write-Host "Restore cloudViewer*.whl from build path"
     Move-Item cloudViewer*.whl lib/python_package/pip_package/ -Force
 
     Pop-Location
@@ -503,13 +505,6 @@ function Test-Wheel {
 
     $CLOUDVIEWER_ML_ROOT = [System.IO.Path]::GetFullPath("$env:CLOUDVIEWER_ML_ROOT")
     if ($options -contains "with_torch") {
-        # if ($options -contains "with_cuda") {
-        #     $CUDA_VER = (nvcc --version | Select-String "release ").ToString() -replace '.*release (\d+)\.(\d+).*','$1$2'
-        #     $TORCH_GLNX = "torch==${TORCH_VER}+cu${CUDA_VER}"
-        #     python -m pip install -U $TORCH_GLNX -f $TORCH_REPO_URL tensorboard
-        # } else {
-        #     $Requirements_Path = Join-Path $CLOUDVIEWER_ML_ROOT "requirements-torch.txt"
-        # }
         $Requirements_Path = Join-Path $CLOUDVIEWER_ML_ROOT "requirements-torch.txt"
         Install-Requirements $Requirements_Path
         python -W default -c "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
