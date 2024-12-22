@@ -47,6 +47,7 @@ if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) {
         $env:BUILD_CUDA_MODULE = "OFF"
     }
 }
+$env:IGNORE_TEST = if (-not [string]::IsNullOrEmpty($env:IGNORE_TEST)) { $env:IGNORE_TEST } else { "OFF" }
 $env:BUILD_PYTORCH_OPS = if (-not [string]::IsNullOrEmpty($env:BUILD_PYTORCH_OPS)) { $env:BUILD_PYTORCH_OPS } else { "ON" }
 $env:BUILD_TENSORFLOW_OPS = if (-not [string]::IsNullOrEmpty($env:BUILD_TENSORFLOW_OPS)) { $env:BUILD_TENSORFLOW_OPS } else { "OFF" }
 $env:BUILD_JUPYTER_EXTENSION = if (-not [string]::IsNullOrEmpty($env:BUILD_JUPYTER_EXTENSION)) { $env:BUILD_JUPYTER_EXTENSION } else { "ON" }
@@ -151,29 +152,31 @@ if ($env:BUILD_LIBREALSENSE -eq "ON") {
 Write-Host "Build options: $build_options"
 Build-PipPackage -options $build_options
 
-Push-Location build  # PWD=ACloudViewer/build
-Write-Host "Try importing cloudViewer Python package"
-if ($env:BUILD_CUDA_MODULE -eq "ON") {
-    $wheel_file = (Get-Item "lib/python_package/pip_package/cloudViewer-*.whl").FullName
-    Write-Host "Test with cuda version: $wheel_file"
-} else {
-    $wheel_file = (Get-Item "lib/python_package/pip_package/cloudViewer_cpu*.whl").FullName
-    Write-Host "Test with cpu version: $wheel_file"
+if ($env:IGNORE_TEST -ne "ON") {
+    Push-Location build  # PWD=ACloudViewer/build
+    Write-Host "Try importing cloudViewer Python package"
+    if ($env:BUILD_CUDA_MODULE -eq "ON") {
+        $wheel_file = (Get-Item "lib/python_package/pip_package/cloudViewer-*.whl").FullName
+        Write-Host "Test with cuda version: $wheel_file"
+    } else {
+        $wheel_file = (Get-Item "lib/python_package/pip_package/cloudViewer_cpu*.whl").FullName
+        Write-Host "Test with cpu version: $wheel_file"
+    }
+    $test_options = @()
+    if ($env:BUILD_CUDA_MODULE -eq "ON") {
+        $test_options += "with_cuda"
+    }
+    if ($env:BUILD_PYTORCH_OPS -eq "ON") {
+        $test_options += "with_torch"
+    }
+    if ($env:BUILD_TENSORFLOW_OPS -eq "ON") {
+        $test_options += "with_tensorflow"
+    }
+    Write-Host "Wheel_file path: $wheel_file"
+    Write-Host "Test options: $test_options"
+    Test-Wheel -wheel_path $wheel_file -options $test_options
+    Pop-Location  # PWD=ACloudViewer
 }
-$test_options = @()
-if ($env:BUILD_CUDA_MODULE -eq "ON") {
-    $test_options += "with_cuda"
-}
-if ($env:BUILD_PYTORCH_OPS -eq "ON") {
-    $test_options += "with_torch"
-}
-if ($env:BUILD_TENSORFLOW_OPS -eq "ON") {
-    $test_options += "with_tensorflow"
-}
-Write-Host "Wheel_file path: $wheel_file"
-Write-Host "Test options: $test_options"
-Test-Wheel -wheel_path $wheel_file -options $test_options
-Pop-Location  # PWD=ACloudViewer
 
 Write-Host "Move to install path: $env:CLOUDVIEWER_INSTALL_DIR"
 New-Item -ItemType Directory -Force -Path "$env:CLOUDVIEWER_INSTALL_DIR"

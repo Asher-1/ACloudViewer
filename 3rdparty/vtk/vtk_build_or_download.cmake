@@ -9,6 +9,33 @@ endif()
 set(VTK_VERSION 9.3)
 
 set(VTK_LIBRARIES
+    vtkRenderingUI-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkRenderingSceneGraph-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkfreetype-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkFiltersHyperTree-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkdoubleconversion-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkImagingColor-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtklz4-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtklzma-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkverdict-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkParallelDIY-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtktiff-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkpng-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkjpeg-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkzlib-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkmetaio-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkexpat-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkglew-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkjsoncpp-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkInfovisCore-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkInfovisLayout-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkFiltersImaging-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkFiltersTexture-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkFiltersStatistics-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkDomainsChemistry-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkImagingGeneral-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkImagingHybrid-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkDICOMParser-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkfmt-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkloguru-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkkissfft-${VTK_VERSION}${VTK_LIB_SUFFIX}
@@ -174,10 +201,18 @@ else() #### download prebuilt vtk
     set(VTK_DIR ${SOURCE_DIR}/lib/cmake/vtk-${VTK_MAJOR_VERSION})
     set(VTK_CMAKE_FLAGS -DVTK_DIR=${SOURCE_DIR}/lib/cmake/vtk-${VTK_VERSION})
     set(VTK_BINARY_DIR "${SOURCE_DIR}/bin")
-    if (WIN32)
-        copy_shared_library(ext_vtk
-                            LIB_DIR   ${VTK_BINARY_DIR}
-                            LIBRARIES ${VTK_LIBRARIES})
-    endif()
+    # if (WIN32)
+    #     copy_shared_library(ext_vtk
+    #                         LIB_DIR   ${VTK_BINARY_DIR}
+    #                         LIBRARIES ${VTK_LIBRARIES})
+    # endif()
+    add_custom_command(TARGET ext_vtk
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} 
+        "-DCONFIG=$<CONFIG>"
+        -DVTK_BINARY_DIR=${VTK_BINARY_DIR}
+        -DDESTINATION_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        -P "${CloudViewer_3RDPARTY_DIR}/vtk/copy_vtk_files.cmake"
+    )
 
 endif() # BUILD_VTK_FROM_SOURCE

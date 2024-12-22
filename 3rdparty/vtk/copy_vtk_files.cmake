@@ -1,0 +1,10 @@
+file(GLOB VTK_FILES "${VTK_BINARY_DIR}/vtk*")
+
+set(CONFIG_NAME "${CONFIG}")
+foreach(FILE IN LISTS VTK_FILES)
+		if (WIN32)
+			execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FILE}" "${DESTINATION_DIR}/${CONFIG_NAME}/")
+		else ()
+			execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FILE}" "${DESTINATION_DIR}/")
+		endif ()
+endforeach()
