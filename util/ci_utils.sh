@@ -530,8 +530,11 @@ test_wheel() {
         if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
             python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
             if [[ "$OSTYPE" == "darwin"* ]]; then
-                # fix macos issues of Could not set the fontsize (invalid pixel size; error code 0x17)
-                pip install matplotlib==3.9.4
+                PROCESSOR_ARCH=$(uname -m)
+                if [ "$PROCESSOR_ARCH" == "arm64" ]; then
+                    # fix macos issues of Could not set the fontsize (invalid pixel size; error code 0x17)
+                    pip install matplotlib==3.9.4
+                fi
             fi
             python  -W default -c \
                 "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
