@@ -48,6 +48,13 @@ jobs:
       LOW_MEM_USAGE: ON
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_macos_cloudViewer.yml"
     steps:
+      - name: Setup DEVELOPER_BUILD
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
+          else
+            echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
+          fi
       - name: Checkout source code
         uses: actions/checkout@v4
       - name: Setup cache
@@ -142,6 +149,8 @@ jobs:
           export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
           echo "PATH=$PATH" >> $GITHUB_ENV
 
+          echo "DEVELOPER_BUILD is $DEVELOPER_BUILD"
+
           ccache -s
           ./util/run_ci.sh
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
@@ -170,7 +179,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: false
-          generate_release_notes: true
+          generate_release_notes: false
           prerelease: false
           body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
@@ -211,6 +220,14 @@ jobs:
       BUILD_TENSORFLOW_OPS: OFF
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
+      - name: Setup DEVELOPER_BUILD
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
+          else
+            echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
+          fi
+
       - name: Checkout source code
         uses: actions/checkout@v4
 
@@ -313,6 +330,8 @@ jobs:
           export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
           echo "PATH=$PATH" >> $GITHUB_ENV
 
+          echo "DEVELOPER_BUILD is $DEVELOPER_BUILD"
+
           ccache -s
           source util/ci_utils.sh
           build_mac_wheel with_conda build_realsense
@@ -340,7 +359,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: false
-          generate_release_notes: true
+          generate_release_notes: false
           prerelease: false
           body_path: ${{github.workspace}}/CHANGELOG.md
           files: |

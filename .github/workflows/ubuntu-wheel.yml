@@ -54,6 +54,13 @@ jobs:
       CCACHE_TAR_NAME: cloudViewer-ubuntu-2004-cuda-ci-ccache
       CLOUDVIEWER_CPU_RENDERING: true
     steps:
+      - name: Setup DEVELOPER_BUILD
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
+          else
+            echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
+          fi
       - name: Checkout source code
         uses: actions/checkout@v4
       - name: Maximize build space
@@ -64,6 +71,7 @@ jobs:
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
+          echo "DEVELOPER_BUILD is $DEVELOPER_BUILD"
           if [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py38_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then

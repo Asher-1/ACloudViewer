@@ -59,6 +59,13 @@ jobs:
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
 
     steps:
+      - name: Setup DEVELOPER_BUILD
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
+          else
+            echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
+          fi
       - name: Disk space used
         run: Get-PSDrive
 
@@ -139,6 +146,7 @@ jobs:
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
+          echo "DEVELOPER_BUILD is ${env:DEVELOPER_BUILD}"
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
@@ -237,7 +245,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: false
-          generate_release_notes: true
+          generate_release_notes: false
           prerelease: false
           body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
@@ -282,6 +290,13 @@ jobs:
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
 
     steps:
+      - name: Setup DEVELOPER_BUILD
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
+          else
+            echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
+          fi
       - name: Setup Windows SDK
         uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
         with:
@@ -344,6 +359,7 @@ jobs:
           # no need to test due to to next step is test-wheel
           $env:IGNORE_TEST = "ON"
           echo "IGNORE_TEST=$env:IGNORE_TEST"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DEVELOPER_BUILD is $env:DEVELOPER_BUILD"
           scripts/build_win_wheel.ps1 "${{ matrix.python_version }}" "${{ env.INSTALL_DIR }}" "${{ env.CLOUDVIEWER_ML_ROOT }}"
 
           $PIP_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudViewer-*.whl")).Name

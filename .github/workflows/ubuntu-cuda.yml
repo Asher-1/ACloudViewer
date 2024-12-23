@@ -64,6 +64,13 @@ jobs:
       DOCKER_TAG         : cloudviewer-ci:${{ matrix.CI_CONFIG }}
       CCACHE_TAR_NAME    : cloudviewer-ci-${{ matrix.CI_CONFIG }}
     steps:
+      - name: Setup DEVELOPER_BUILD
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
+          else
+            echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
+          fi
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -75,6 +82,7 @@ jobs:
       - name: Docker build
         run: |
           # GITHUB_WORKSPACE: /home/runner/work/ACloudViewer/ACloudViewer
+          echo "DEVELOPER_BUILD is $DEVELOPER_BUILD"
           if [ "${BUILD_PACKAGE}" == "true" ] && [ "$DEVELOPER_BUILD" == "OFF" ]; then
             export RELEASE_TAG="-release"
           fi
