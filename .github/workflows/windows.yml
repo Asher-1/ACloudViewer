@@ -249,7 +249,7 @@ jobs:
           fail_on_unmatched_files: false
           generate_release_notes: false
           prerelease: false
-          body_path: ${{github.workspace}}/CHANGELOG.md
+          # body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
             ${{ env.INSTALL_DIR }}\${{ env.PACKAGE_INSTALLER_NAME }}
 

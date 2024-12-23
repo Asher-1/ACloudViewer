@@ -181,7 +181,7 @@ jobs:
           fail_on_unmatched_files: false
           generate_release_notes: false
           prerelease: false
-          body_path: ${{github.workspace}}/CHANGELOG.md
+          # body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
             ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
 
@@ -361,7 +361,7 @@ jobs:
           fail_on_unmatched_files: false
           generate_release_notes: false
           prerelease: false
-          body_path: ${{github.workspace}}/CHANGELOG.md
+          # body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
             build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 
