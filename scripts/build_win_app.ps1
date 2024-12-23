@@ -17,6 +17,9 @@ Write-Host "ENV_NAME: $env:ENV_NAME"
 Write-Host "nproc = $env:NPROC"
 
 # setting env
+$env:STATIC_RUNTIME = if (-not [string]::IsNullOrEmpty($env:STATIC_RUNTIME)) { $env:STATIC_RUNTIME } else { "OFF" }
+$env:DEVELOPER_BUILD = if (-not [string]::IsNullOrEmpty($env:DEVELOPER_BUILD)) { $env:DEVELOPER_BUILD } else { "OFF" }
+$env:BUILD_SHARED_LIBS = if (-not [string]::IsNullOrEmpty($env:BUILD_SHARED_LIBS)) { $env:BUILD_SHARED_LIBS } else { "OFF" }
 if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) {
     $env:BUILD_CUDA_MODULE = $env:BUILD_CUDA_MODULE
 } else {
