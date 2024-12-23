@@ -48,6 +48,9 @@ if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) {
     }
 }
 $env:IGNORE_TEST = if (-not [string]::IsNullOrEmpty($env:IGNORE_TEST)) { $env:IGNORE_TEST } else { "OFF" }
+$env:STATIC_RUNTIME = if (-not [string]::IsNullOrEmpty($env:STATIC_RUNTIME)) { $env:STATIC_RUNTIME } else { "OFF" }
+$env:DEVELOPER_BUILD = if (-not [string]::IsNullOrEmpty($env:DEVELOPER_BUILD)) { $env:DEVELOPER_BUILD } else { "OFF" }
+$env:BUILD_SHARED_LIBS = if (-not [string]::IsNullOrEmpty($env:BUILD_SHARED_LIBS)) { $env:BUILD_SHARED_LIBS } else { "OFF" }
 $env:BUILD_PYTORCH_OPS = if (-not [string]::IsNullOrEmpty($env:BUILD_PYTORCH_OPS)) { $env:BUILD_PYTORCH_OPS } else { "ON" }
 $env:BUILD_TENSORFLOW_OPS = if (-not [string]::IsNullOrEmpty($env:BUILD_TENSORFLOW_OPS)) { $env:BUILD_TENSORFLOW_OPS } else { "OFF" }
 $env:BUILD_JUPYTER_EXTENSION = if (-not [string]::IsNullOrEmpty($env:BUILD_JUPYTER_EXTENSION)) { $env:BUILD_JUPYTER_EXTENSION } else { "ON" }
