@@ -6,9 +6,9 @@
 
 $env:GENERATOR = "Visual Studio 16 2019"
 $env:ARCHITECTURE = "x64"
-$env:STATIC_RUNTIME = "OFF"
-$env:DEVELOPER_BUILD = "OFF"
-$env:BUILD_SHARED_LIBS = "OFF"
+$env:STATIC_RUNTIME = if (-not [string]::IsNullOrEmpty($env:STATIC_RUNTIME)) { $env:STATIC_RUNTIME } else { "OFF" }
+$env:DEVELOPER_BUILD = if (-not [string]::IsNullOrEmpty($env:DEVELOPER_BUILD)) { $env:DEVELOPER_BUILD } else { "OFF" }
+$env:BUILD_SHARED_LIBS = if (-not [string]::IsNullOrEmpty($env:BUILD_SHARED_LIBS)) { $env:BUILD_SHARED_LIBS } else { "OFF" }
 $env:PIP_DISABLE_PIP_VERSION_CHECK = "1"
 $env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalProcessors
 
