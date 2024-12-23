@@ -61,11 +61,11 @@ jobs:
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
-            echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
-          else
-            echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
-          fi
+          if ($env:GITHUB_EVENT_NAME -eq "push" -and $env:GITHUB_REF -like "refs/tags/v*") {
+            echo "DEVELOPER_BUILD=OFF" >> $env:GITHUB_ENV
+          } else {
+            echo "DEVELOPER_BUILD=$env:DEVELOPER_BUILD" >> $env:GITHUB_ENV
+          }
       - name: Disk space used
         run: Get-PSDrive
 
@@ -292,11 +292,11 @@ jobs:
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
-            echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
-          else
-            echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
-          fi
+          if ($env:GITHUB_EVENT_NAME -eq "push" -and $env:GITHUB_REF -like "refs/tags/v*") {
+            echo "DEVELOPER_BUILD=OFF" >> $env:GITHUB_ENV
+          } else {
+            echo "DEVELOPER_BUILD=$env:DEVELOPER_BUILD" >> $env:GITHUB_ENV
+          }
       - name: Setup Windows SDK
         uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
         with:
