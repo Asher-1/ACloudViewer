@@ -86,7 +86,7 @@ jobs:
           # installation significantly. And we need the space for ccache.
           use-github-cache: 'false'
   
-      - name: Setup CUDA ENV
+      - name: Setup ENV
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
           $CUDA_VER_FULL = "${{ env.CUDA_VERSION }}"
@@ -99,6 +99,8 @@ jobs:
           echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          echo "DEVELOPER_BUILD is $env:DEVELOPER_BUILD"
 
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -268,7 +270,7 @@ jobs:
         BUILD_CUDA_MODULE: [ON, OFF]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
-          - ${{ github.ref == 'refs/heads/main' }}
+          - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
         exclude:
           - BUILD_CUDA_MODULE: OFF
           - is_main: false
@@ -314,7 +316,7 @@ jobs:
           # installation significantly. And we need the space for ccache.
           use-github-cache: 'false'
 
-      - name: Setup CUDA ENV
+      - name: Setup ENV
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
           $CUDA_VER_FULL = "${{ env.CUDA_VERSION }}"
@@ -327,6 +329,8 @@ jobs:
           echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          echo "DEVELOPER_BUILD is $env:DEVELOPER_BUILD"
 
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -359,7 +363,6 @@ jobs:
           # no need to test due to to next step is test-wheel
           $env:IGNORE_TEST = "ON"
           echo "IGNORE_TEST=$env:IGNORE_TEST"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DEVELOPER_BUILD is $env:DEVELOPER_BUILD"
           scripts/build_win_wheel.ps1 "${{ matrix.python_version }}" "${{ env.INSTALL_DIR }}" "${{ env.CLOUDVIEWER_ML_ROOT }}"
 
           $PIP_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudViewer-*.whl")).Name
@@ -406,7 +409,7 @@ jobs:
       matrix:
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
-          - ${{ github.ref == 'refs/heads/main' }}
+          - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
         exclude:
           - is_main: false
             python_version: '3.8'
