@@ -322,7 +322,7 @@ function main() {
     cuda_wheel_py312_dev)
         cuda_wheel_build py312 dev
         ;;
-    cuda_wheel_py38)shared
+    cuda_wheel_py38)
         cuda_wheel_build py38
         ;;
     cuda_wheel_py39)
