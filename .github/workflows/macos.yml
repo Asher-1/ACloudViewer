@@ -56,9 +56,8 @@ jobs:
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
           fi
       - name: Set up Install path environment
-        env:
-          INSTALL_DIR: "${HOME}/cloudViewer_install"
         run: |
+          echo "INSTALL_DIR=${HOME}/cloudViewer_install" >> $GITHUB_ENV
           echo "Install directory is ${{ env.INSTALL_DIR }}"
       - name: Checkout source code
         uses: actions/checkout@v4
