@@ -58,7 +58,6 @@ jobs:
       - name: Set up Install path environment
         run: |
           echo "INSTALL_DIR=${HOME}/cloudViewer_install" >> $GITHUB_ENV
-          echo "Install directory is ${{ env.INSTALL_DIR }}"
       - name: Checkout source code
         uses: actions/checkout@v4
       - name: Setup cache
