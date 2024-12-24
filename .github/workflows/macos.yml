@@ -47,7 +47,7 @@ jobs:
       BUILD_PYTORCH_OPS: OFF
       LOW_MEM_USAGE: ON
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_macos_cloudViewer.yml"
-      INSTALL_DIR: "${HOME}/cloudViewer_install"
+      INSTALL_DIR: "${{ env.HOME }}/cloudViewer_install"
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |
