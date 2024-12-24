@@ -47,7 +47,7 @@ jobs:
       BUILD_PYTORCH_OPS: OFF
       LOW_MEM_USAGE: ON
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_macos_cloudViewer.yml"
-      INSTALL_DIR: "$HOME/cloudViewer_install"
+      INSTALL_DIR: "${HOME}/cloudViewer_install"
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |
@@ -144,13 +144,14 @@ jobs:
             echo "OpenMP_ROOT=/usr/local/opt/libomp" >> $GITHUB_ENV
           fi
 
-          export PATH=$HOME/QtIFW-4.6.1-darwin/bin:$PATH
+          export PATH=${HOME}/QtIFW-4.6.1-darwin/bin:$PATH
           export PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
           export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
           echo "PATH=$PATH" >> $GITHUB_ENV
 
-          echo "DEVELOPER_BUILD is $DEVELOPER_BUILD"
+          echo "DEVELOPER_BUILD is ${{ env.DEVELOPER_BUILD }}"
+          echo "INSTALL_DIR is ${{ env.INSTALL_DIR }}"
 
           ccache -s
           ./util/run_ci.sh
@@ -331,7 +332,7 @@ jobs:
           export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
           echo "PATH=$PATH" >> $GITHUB_ENV
 
-          echo "DEVELOPER_BUILD is $DEVELOPER_BUILD"
+          echo "DEVELOPER_BUILD is ${{ env.DEVELOPER_BUILD }}"
 
           ccache -s
           source util/ci_utils.sh
