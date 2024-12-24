@@ -55,6 +55,11 @@ jobs:
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
           fi
+      - name: Set up Install path environment
+        env:
+          INSTALL_DIR: "${HOME}/cloudViewer_install"
+        run: |
+          echo "Install directory is ${{ env.INSTALL_DIR }}"
       - name: Checkout source code
         uses: actions/checkout@v4
       - name: Setup cache
@@ -150,12 +155,12 @@ jobs:
           echo "PATH=$PATH" >> $GITHUB_ENV
 
           echo "DEVELOPER_BUILD is ${{ env.DEVELOPER_BUILD }}"
-          echo "INSTALL_DIR is ${{ env.HOME }}/cloudViewer_install"
+          echo "INSTALL_DIR is ${{ env.INSTALL_DIR }}"
 
           ccache -s
           ./util/run_ci.sh
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
-          DEVEL_PKG_NAME="$(basename ${{ env.HOME }}/cloudViewer_install/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
+          DEVEL_PKG_NAME="$(basename ${{ env.INSTALL_DIR }}/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload ACloudViewer app to GitHub artifacts
@@ -164,7 +169,7 @@ jobs:
         with:
           name: ACloudViewer-app-macosx-${{ runner.arch}}
           path: |
-            ${{ env.HOME }}/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
+            ${{ env.INSTALL_DIR }}/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
         
       - name: Update devel release
@@ -172,7 +177,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload main-devel ${{ env.HOME }}/cloudViewer_install/${{ env.DEVEL_PKG_NAME }} --clobber
+          gh release upload main-devel ${{ env.INSTALL_DIR }}/${{ env.DEVEL_PKG_NAME }} --clobber
           gh release view main-devel
 
       - name: Public App Release
@@ -184,7 +189,7 @@ jobs:
           prerelease: false
           # body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
-            ${{ env.HOME }}/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
+            ${{ env.INSTALL_DIR }}/${{ env.DEVEL_PKG_NAME }}
 
   build-wheel:
     name: Build wheel
