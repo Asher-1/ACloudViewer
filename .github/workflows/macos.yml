@@ -47,6 +47,7 @@ jobs:
       BUILD_PYTORCH_OPS: OFF
       LOW_MEM_USAGE: ON
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_macos_cloudViewer.yml"
+      INSTALL_DIR: "$HOME/cloudViewer_install"
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |
@@ -154,7 +155,7 @@ jobs:
           ccache -s
           ./util/run_ci.sh
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
-          DEVEL_PKG_NAME="$(basename ~/cloudViewer_install/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
+          DEVEL_PKG_NAME="$(basename ${{ env.INSTALL_DIR }}/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload ACloudViewer app to GitHub artifacts
@@ -163,7 +164,7 @@ jobs:
         with:
           name: ACloudViewer-app-macosx-${{ runner.arch}}
           path: |
-            ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
+            ${{ env.INSTALL_DIR }}/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
         
       - name: Update devel release
@@ -171,7 +172,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload main-devel ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }} --clobber
+          gh release upload main-devel ${{ env.INSTALL_DIR }}/${{ env.DEVEL_PKG_NAME }} --clobber
           gh release view main-devel
 
       - name: Public App Release
@@ -183,7 +184,7 @@ jobs:
           prerelease: false
           # body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
-            ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
+            ${{ env.INSTALL_DIR }}/${{ env.DEVEL_PKG_NAME }}
 
   build-wheel:
     name: Build wheel
