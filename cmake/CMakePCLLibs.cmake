@@ -15,12 +15,12 @@ set(CMAKE_AUTOMOC ON) # for meta object compiler
 # set(CMAKE_AUTOUIC ON) # UI files
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
+     message(STATUS "VTK_DIR: ${VTK_DIR}")
+     message(STATUS "PCL_DIR: ${PCL_DIR}")
+endif()
 
 if (USE_SYSTEM_VTK AND USE_SYSTEM_PCL)
-     if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
-          message(STATUS "VTK_DIR: ${VTK_DIR}")
-          message(STATUS "PCL_DIR: ${PCL_DIR}")
-     endif()
      set(VTK_USE_PTHREADS 1)
      find_package (PCL REQUIRED) # must before find_package (VTK REQUIRED), otherwise link errors.
      if (NOT PCL_FOUND)
@@ -48,6 +48,10 @@ else ()
      set(VTK_VERSION ${VTK_VERSION} PARENT_SCOPE)
 endif()
 
+message(STATUS "PCL_INCLUDE_DIRS: ${PCL_INCLUDE_DIRS}")
+message(STATUS "PCL_LIBRARY_DIRS: ${PCL_LIBRARY_DIRS}")
+message(STATUS "VTK_INCLUDE_DIRS: ${VTK_INCLUDE_DIRS}")
+message(STATUS "VTK_LIBRARIES_DIRS: ${VTK_LIBRARIES_DIRS}")
 include_directories( ${PCL_INCLUDE_DIRS} )
 include_directories( ${VTK_INCLUDE_DIRS} )
 message(STATUS "PCL_DEFINITIONS: ${PCL_DEFINITIONS}")
