@@ -1,4 +1,4 @@
-numpy
+numpy==1.26.4
 pybind11>=2.6.0
 sphinx==5.0.2
 sphinx-rtd-theme
