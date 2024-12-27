@@ -345,7 +345,7 @@ jobs:
       - name: Set up Python environment
         uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: ${{ matrix.python_version }}
+          python-version: "3.11"
           auto-activate-base: true
 
       - name: Install 3rdparty_downloads
