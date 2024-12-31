@@ -351,10 +351,6 @@ jobs:
       - name: Install 3rdparty_downloads
         working-directory: ${{ env.SRC_DIR }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          python -m pip install -r python/requirements.txt
-          python -m pip install -r python/requirements_jupyter_build.txt
-          
           Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.4/3rdparty_downloads.zip" -OutFile "3rdparty_downloads.zip"
           Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
 
