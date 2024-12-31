@@ -120,7 +120,7 @@ Write-Host "echo Start to build GUI package on Windows..."
 . (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
 
 Write-Host "Start to install python dependencies package On Windows..."
-$install_options = @("with-unit-test","purge-cache")
+$install_options = @("with-unit-test")
 if ($env:BUILD_PYTORCH_OPS -eq "ON") {
     $install_options += "with-torch"
 }
