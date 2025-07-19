@@ -1,6 +1,6 @@
 project(glew C)
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.10)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
 if (ENABLE_HEADLESS_RENDERING)

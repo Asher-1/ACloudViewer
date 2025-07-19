@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+
 project(${MAIN_APP_NAME} VERSION ${PROJECT_VERSION})
 
 OPTION(UPDATE_TRANSLATION_FILES "Generate or update ts files" OFF)

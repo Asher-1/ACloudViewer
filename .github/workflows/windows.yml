@@ -1,3 +1,8 @@
+# - librealsense upgrade needed to build with MSVC 17
+# - MSVC 17 and CUDA 12.4+ error while building CreateCUDAHashBackend.cu (Debug only)
+# - PyTorch Ops in debug mode - DLL initialization error while loading cloudViewer_torch_ops.dll
+# - CUDA - Draw.exe does not run due to CUDA DLL path issues
+
 name: Windows
 permissions: {}
 
@@ -27,7 +32,7 @@ env:
   STOOLS_VER: "67.3.2"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
-  CUDA_VERSION: "11.8.0" # CUDA_VERSION: "12.1.0"
+  CUDA_VERSION: "12.4.0" # CUDA_VERSION: "11.8.0"
   SRC_DIR: "D:\\a\\ACloudViewer\\ACloudViewer"
   BUILD_DIR: "C:\\ACloudViewer\\build"
   INSTALL_DIR: "C:\\dev\\cloudViewer_install"
@@ -39,7 +44,7 @@ jobs:
     permissions:
       contents: write  # upload
       actions: write   # release
-    runs-on: windows-2019
+    runs-on: windows-2022
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
       fail-fast: false
@@ -149,7 +154,7 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           echo "DEVELOPER_BUILD is ${env:DEVELOPER_BUILD}"
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
@@ -261,7 +266,7 @@ jobs:
     permissions:
       contents: write  # upload
       actions: write   # release
-    runs-on: windows-2019
+    runs-on: windows-2022
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
       fail-fast: false
@@ -398,7 +403,7 @@ jobs:
     name: Test wheel(CPU)
     permissions:
       contents: read
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: [build-wheel]
     strategy:
       fail-fast: false

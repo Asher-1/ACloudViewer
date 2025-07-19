@@ -4,7 +4,7 @@
 
 # $ErrorActionPreference = "Stop"
 
-$env:GENERATOR = "Visual Studio 16 2019"
+$env:GENERATOR = "Visual Studio 17 2022"
 $env:ARCHITECTURE = "x64"
 $env:STATIC_RUNTIME = if (-not [string]::IsNullOrEmpty($env:STATIC_RUNTIME)) { $env:STATIC_RUNTIME } else { "OFF" }
 $env:DEVELOPER_BUILD = if (-not [string]::IsNullOrEmpty($env:DEVELOPER_BUILD)) { $env:DEVELOPER_BUILD } else { "OFF" }

@@ -13,6 +13,7 @@ ExternalProject_Add(
     COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
         ${CMAKE_CURRENT_LIST_DIR}/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=OFF
         -DBUILD_STATIC_LIBS=ON

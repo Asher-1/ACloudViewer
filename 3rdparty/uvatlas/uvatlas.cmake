@@ -46,6 +46,7 @@ ExternalProject_Add(
         ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/uvatlas/sal.h <INSTALL_DIR>/include/DirectXMath/
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_TOOLS=OFF
         -Ddirectx-headers_DIR=<INSTALL_DIR>

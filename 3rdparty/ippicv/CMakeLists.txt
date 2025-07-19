@@ -1,5 +1,5 @@
 # Adapted from https://github.com/opencv/opencv/blob/master/3rdparty/ippicv/CMakeLists.txt
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 project(ippiw)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)

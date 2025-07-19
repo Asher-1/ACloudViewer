@@ -156,6 +156,7 @@ ExternalProject_Add(
     INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DBUILD_SHARED_LIBS=ON
         -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
         # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly

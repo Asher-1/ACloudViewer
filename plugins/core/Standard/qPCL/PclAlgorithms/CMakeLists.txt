@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
 
 if (NOT MSVC AND NOT APPLE)
