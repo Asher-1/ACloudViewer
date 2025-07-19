@@ -13,6 +13,7 @@ ExternalProject_Add(
 	   # fix compiling bugs on windows
 	   PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CloudViewer_3RDPARTY_DIR}/suitesparse/CMakeLists.txt <SOURCE_DIR>
        CMAKE_ARGS
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DOPENMP=${WITH_OPENMP}
             -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>

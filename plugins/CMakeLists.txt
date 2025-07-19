@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+
 project( ACloudViewerPlugins )
 
 # Add our cmake module path so we don't need relative paths for these

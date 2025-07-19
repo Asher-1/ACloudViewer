@@ -69,7 +69,7 @@ Windows
 	    
 	    :: Specify the generator based on your Visual Studio version
 	    :: If CMAKE_INSTALL_PREFIX is a system folder, admin access is needed for installation
-	    cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="<cloudViewer_install_directory>" ..
+	    cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_INSTALL_PREFIX="<cloudViewer_install_directory>" ..
 
 3. Build
 

@@ -422,6 +422,10 @@ public:
                                  bool silent = false,
                                  int viewport = 0) override;
 
+    void setScaleBarVisible(bool visible) {
+        if (getQVtkWidget()) getQVtkWidget()->setScaleBarVisible(visible);
+    }
+
 private:
     void drawPointCloud(const CC_DRAW_CONTEXT& context, ccPointCloud* ecvCloud);
     void drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh);

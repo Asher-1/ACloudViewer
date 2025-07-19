@@ -65,6 +65,7 @@ ExternalProject_Add(
             ${VTK_CMAKE_FLAGS}
             ${EIGEN_CMAKE_FLAGS}
             -DBUILD_SHARED_LIBS=ON
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
             # checking CXX_COMPILER_ID is not supported.

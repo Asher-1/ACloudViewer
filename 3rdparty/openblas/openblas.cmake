@@ -15,6 +15,7 @@ ExternalProject_Add(
         CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}
         -DTARGET=${OPENBLAS_TARGET}
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
         BUILD_BYPRODUCTS

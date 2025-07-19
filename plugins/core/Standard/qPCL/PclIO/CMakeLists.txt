@@ -1,4 +1,6 @@
 #CLOUDVIEWER  PCL I/O plugin (for PCD files)
+cmake_minimum_required(VERSION 3.10)
+
 project( QPCL_IO_PLUGIN )
 AddPlugin( NAME ${PROJECT_NAME} TYPE io )
 

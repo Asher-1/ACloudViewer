@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+
 # cloudViewer_set_cloudViewer_lib_properties() sets properties for the CloudViewer lib itself.
 # This should be used for all object libraries that make up the CloudViewer lib.
 #

@@ -37,6 +37,7 @@ ExternalProject_Add(
     # Patch for macOS ARM64 support for versions < 2.50.0
     COMMAND ${PATCH_MACOS_ARM64_COMMAND}
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=OFF
         -DBUILD_EXAMPLES=OFF

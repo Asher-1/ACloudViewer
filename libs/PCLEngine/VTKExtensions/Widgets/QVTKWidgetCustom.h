@@ -48,6 +48,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 
 // QPCL_ENGINE_LIB
 #include "PclUtils/PCLCloud.h"
+#include "ScaleBar.h"
 
 // SYSTEM
 #include <assert.h>
@@ -136,6 +137,8 @@ public:
 
     QMainWindow* getWin() { return m_win; }
 
+    void setScaleBarVisible(bool visible);
+
 protected:
     // events handling
     virtual bool event(QEvent* evt) override;
@@ -181,6 +184,8 @@ protected:
 
     /** \brief Internal pointer to widget which contains a set of axes */
     vtkSmartPointer<vtkOrientationMarkerWidget> m_axesWidget;
+
+    ScaleBar* m_scaleBar = nullptr;
 
     VtkWidgetPrivate* d_ptr;
 };

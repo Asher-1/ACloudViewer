@@ -276,7 +276,7 @@ all headers to ``${CMAKE_INSTALL_PREFIX}/include/colmap``, all libraries to
 For example, compiling your own source code against COLMAP is as simple as
 using the following ``CMakeLists.txt``::
 
-    cmake_minimum_required(VERSION 2.8.11)
+    cmake_minimum_required(VERSION 3.10)
 
     project(TestProject)
 

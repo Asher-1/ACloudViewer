@@ -1,5 +1,7 @@
 # Create a new CMake file for ACloudViewer since the included ones are old-style
 
+cmake_minimum_required(VERSION 3.10)
+
 project( quazip )
 
 find_package( ZLIB REQUIRED )

@@ -1,6 +1,8 @@
 # CC custom CMake script for QCustomPlot
 # https://www.qcustomplot.com/
 
+cmake_minimum_required(VERSION 3.10)
+
 project( QCustomPlot )
 
 add_library( ${PROJECT_NAME} STATIC )
