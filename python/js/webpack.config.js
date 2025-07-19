@@ -1,5 +1,6 @@
 var path = require("path");
 var version = require("./package.json").version;
+var TerserPlugin = require('terser-webpack-plugin');
 
 // Custom webpack rules are generally the same for all webpack bundles, hence
 // stored in a separate local variable.
@@ -7,6 +8,45 @@ var rules = [{test: /\.css$/, use: ["style-loader", "css-loader"]}];
 
 module.exports = (env, argv) => {
     var devtool = argv.mode === "development" ? "source-map" : false;
+    var isProduction = argv.mode === "production";
+    
+    // Common optimization settings
+    var optimization = {
+        minimize: isProduction,
+        minimizer: isProduction ? [
+            new TerserPlugin({
+                terserOptions: {
+                    compress: {
+                        drop_console: true,
+                        drop_debugger: true,
+                        pure_funcs: ['console.log'],
+                    },
+                    mangle: true,
+                    output: {
+                        comments: false,
+                    },
+                },
+                extractComments: false,
+            })
+        ] : [],
+        sideEffects: false,
+        usedExports: true,
+        splitChunks: {
+            chunks: 'all',
+            minSize: 20000,
+            maxSize: 250000,
+            cacheGroups: {
+                vendor: {
+                    test: /[\\/]node_modules[\\/]/,
+                    name: 'vendors',
+                    chunks: 'all',
+                    priority: 10,
+                    enforce: true,
+                },
+            },
+        },
+    };
+    
     return [
         {
             // Notebook extension
@@ -41,6 +81,7 @@ module.exports = (env, argv) => {
                 publicPath: "",
             },
             devtool,
+            optimization,
             module: {
                 rules: rules,
             },
@@ -69,6 +110,7 @@ module.exports = (env, argv) => {
                 publicPath: "https://unpkg.com/cloudViewer@" + version + "/dist/",
             },
             devtool,
+            optimization,
             module: {
                 rules: rules,
             },

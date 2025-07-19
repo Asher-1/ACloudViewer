@@ -45,6 +45,14 @@
 #endif
 #endif
 
+// Enable OpenMP for additional parallelization when Qt Concurrent is not available
+#ifdef _OPENMP
+#include <omp.h>
+#ifndef ENABLE_MT_OCTREE
+#define ENABLE_MT_OCTREE_OMP
+#endif
+#endif
+
 using namespace cloudViewer;
 
 /**********************************/

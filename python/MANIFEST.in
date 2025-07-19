@@ -47,3 +47,30 @@ global-exclude *.pyo
 global-exclude .git
 global-exclude .ipynb_checkpoints
 global-exclude *.map
+
+# Performance optimization - exclude development and debug files
+global-exclude *.orig
+global-exclude *.bak
+global-exclude .gitignore
+global-exclude .DS_Store
+global-exclude Thumbs.db
+global-exclude *.log
+global-exclude *.tmp
+global-exclude *.swp
+global-exclude .coverage
+global-exclude *.profile
+
+# Exclude test files and directories to reduce bundle size
+prune **/tests
+prune **/test
+prune **/docs
+prune **/examples
+global-exclude *test*.py
+global-exclude *_test.py
+global-exclude test_*.py
+global-exclude conftest.py
+
+# Exclude debug symbols and unstripped binaries
+global-exclude *.debug
+global-exclude *.pdb
+global-exclude *.dSYM

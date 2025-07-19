@@ -72,14 +72,16 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
 else:
     cmdclass = dict()
 
-# Force platform specific wheel.
-# https://stackoverflow.com/a/45150383/1255535
-try:
-    class bdist_wheel(_bdist_wheel):
+    # Force platform specific wheel.
+    # https://stackoverflow.com/a/45150383/1255535
+    try:
+        class bdist_wheel(_bdist_wheel):
 
-        def finalize_options(self):
-            _bdist_wheel.finalize_options(self)
-            self.root_is_pure = False
+            def finalize_options(self):
+                _bdist_wheel.finalize_options(self)
+                self.root_is_pure = False
+                # Enable wheel compression for smaller size
+                self.compression = 6  # Higher compression level
 
         # https://github.com/Yelp/dumb-init/blob/57f7eebef694d780c1013acd410f2f0d3c79f6c6/setup.py#L25
         def get_tag(self):

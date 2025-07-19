@@ -108,8 +108,13 @@ else()
 endif ()
 option(BUILD_JUPYTER_EXTENSION "Build Jupyter, requires BUILD_WEBRTC=ON" OFF)
 
+# Performance optimization options
+option(ENABLE_PERFORMANCE_OPTIMIZATION "Enable aggressive performance optimizations" ON)
+option(ENABLE_LTO "Enable Link Time Optimization" ON)
+option(ENABLE_NATIVE_ARCH "Enable -march=native optimization" ON)
+
 # 3rd-party build options
-option(USE_SIMD "Use Single Instruction Multiple Data speed optimization" OFF)
+option(USE_SIMD "Use Single Instruction Multiple Data speed optimization" ON)
 option(USE_SYSTEM_OPENCV "Use system pre-installed opencv" OFF)
 option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" OFF)
 option(USE_SYSTEM_EMBREE "Use system pre-installed Embree"          OFF)
@@ -413,6 +418,7 @@ set(PROJECT_ISSUES "https://github.com/Asher-1/ACloudViewer/issues")
 
 include(CMakePolicies)
 include(CMakeSetCompilerOptions)
+include(cmake/CMakeOptimization.cmake)
 include(DeployQt)
 # Load advanced scripts
 include(CMakeInclude)
