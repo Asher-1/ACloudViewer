@@ -26,13 +26,13 @@ if((MSVC OR APPLE OR LINUX_AARCH64) AND NOT BUILD_CURL_FROM_SOURCE)
 endif()
 
 if(BUILD_CURL_FROM_SOURCE)
-    ExternalProject_Add(
-        ext_curl
+    ExternalProject_Add(ext_curl
         PREFIX curl
         URL https://github.com/curl/curl/releases/download/curl-7_88_0/curl-7.88.0.tar.xz
         URL_HASH SHA256=fd17432cf28714a4cf39d89e26b8ace0d8901199fe5d01d75eb0ae3bbfcc731f
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/curl"
         CMAKE_ARGS
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DBUILD_SHARED_LIBS=OFF
             -DBUILD_CURL_EXE=OFF
@@ -51,8 +51,7 @@ if(BUILD_CURL_FROM_SOURCE)
             ${ExternalProject_CMAKE_ARGS_hidden}
         BUILD_BYPRODUCTS
             <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
-            <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}-d${CMAKE_STATIC_LIBRARY_SUFFIX}
-    )
+            <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}-d${CMAKE_STATIC_LIBRARY_SUFFIX})
 
     ExternalProject_Get_Property(ext_curl INSTALL_DIR)
     set(CURL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
@@ -70,8 +69,7 @@ else()
     # 2. -DBUILD_CURL_FROM_SOURCE=ON, build CloudViewer: make ext_curl
     # 3. cd build/curl
     # 4. tar -czvf curl_7.88.0_linux_x86_64.tar.gz include lib
-    ExternalProject_Add(
-        ext_curl
+    ExternalProject_Add(ext_curl
         PREFIX curl
         URL https://github.com/isl-org/open3d_downloads/releases/download/boringssl-bin/curl_7.88.0_linux_x86_64.tar.bz2
         URL_HASH SHA256=745f33ad65c550e1885a5341945a8a952123565cfb83b477433f3784857ec0ea

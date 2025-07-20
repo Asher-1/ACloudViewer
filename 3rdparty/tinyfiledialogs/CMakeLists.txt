@@ -1,6 +1,7 @@
+cmake_minimum_required(VERSION 3.10)
+
 project(tinyfiledialogs C)
 
-cmake_minimum_required(VERSION 3.10)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
 # SET LIBNAME

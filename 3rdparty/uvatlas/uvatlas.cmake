@@ -1,8 +1,7 @@
 include(ExternalProject)
 
 # uvatlas needs some headers from directx 
-ExternalProject_Add(
-    ext_directxheaders
+ExternalProject_Add(ext_directxheaders
     PREFIX uvatlas
     GIT_REPOSITORY https://github.com/microsoft/DirectX-Headers.git
     GIT_TAG v1.606.3
@@ -10,17 +9,16 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/uvatlas"
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         ${ExternalProject_CMAKE_ARGS_hidden}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_GMOCK=OFF
         -DDXHEADERS_BUILD_GOOGLE_TEST=OFF
         -DDXHEADERS_BUILD_TEST=OFF
-        -DINSTALL_GTEST=OFF
-)
+        -DINSTALL_GTEST=OFF)
 
 # uvatlas needs DirectXMath
-ExternalProject_Add(
-    ext_directxmath
+ExternalProject_Add(ext_directxmath
     PREFIX uvatlas
     GIT_REPOSITORY https://github.com/microsoft/DirectXMath.git
     GIT_TAG may2022
@@ -28,13 +26,12 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/uvatlas"
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         ${ExternalProject_CMAKE_ARGS_hidden}
-        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-)
+        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>)
 
 # uvatlas
-ExternalProject_Add(
-    ext_uvatlas
+ExternalProject_Add(ext_uvatlas
     PREFIX uvatlas
     URL https://github.com/microsoft/UVAtlas/archive/refs/tags/may2022.tar.gz
     URL_HASH SHA256=591516913a0f3c381f1fd01647cb1b8d1eeade575d1c726ae8f5dd9f83b81754

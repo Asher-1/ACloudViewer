@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+
 # -----------------------------------------------------------------
 # CMake build system for SuiteSparse
 #  http://code.google.com/p/suitesparse-metis-for-windows/
@@ -6,8 +8,6 @@
 # -----------------------------------------------------------------
 
 PROJECT(SuiteSparseProject)
-
-cmake_minimum_required(VERSION 3.10)
 
 include(checkGetSuiteSparse.cmake)
 
@@ -86,7 +86,6 @@ if(BUILD_METIS)
 	endif()
 	add_subdirectory(metis) ## important part for building metis from its src files
 endif(BUILD_METIS)
-
 
 ## For EXPORT only :
 ## Previous version of cmake (>2.8.12) doesn't auto take into account external lib (here I mean blas and lapack) we need to link to for our current target we want to export.

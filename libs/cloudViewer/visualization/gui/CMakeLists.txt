@@ -71,7 +71,6 @@ file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
 file(COPY ${GUI_RESOURCE_SOURCE_FILES}
         DESTINATION ${GUI_RESOURCE_DIR})
 
-
 include(CloudViewerAddCompiledMaterials)
 
 cloudViewer_add_compiled_materials(materials

@@ -2,8 +2,7 @@ include(ExternalProject)
 
 find_package(Git QUIET REQUIRED)
 
-ExternalProject_Add(
-    ext_jsoncpp
+ExternalProject_Add(ext_jsoncpp
     PREFIX jsoncpp
     URL https://github.com/open-source-parsers/jsoncpp/archive/refs/tags/1.9.4.tar.gz
     URL_HASH SHA256=e34a628a8142643b976c7233ef381457efad79468c67cb1ae0b83a33d7493999
@@ -23,8 +22,7 @@ ExternalProject_Add(
         -DJSONCPP_STATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}jsoncpp${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
+        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}jsoncpp${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 ExternalProject_Get_Property(ext_jsoncpp INSTALL_DIR)
 set(JSONCPP_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

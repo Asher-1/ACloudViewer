@@ -1,6 +1,6 @@
-# Create a new CMake file for ACloudViewer since the included ones are old-style
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
-cmake_minimum_required(VERSION 3.10)
+# Create a new CMake file for ACloudViewer since the included ones are old-style
 
 project( quazip )
 

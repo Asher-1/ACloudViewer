@@ -8,8 +8,7 @@
 # # set(FMT_SHA256
 # #     "1250e4cc58bf06ee631567523f48848dc4596133e163f02615c97f78bab6c811")
 
-# ExternalProject_Add(
-#     ext_fmt
+# ExternalProject_Add(#     ext_fmt
 #     PREFIX fmt
 #     URL https://github.com/fmtlib/fmt/archive/refs/tags/${FMT_VER}.tar.gz
 #     URL_HASH SHA256=${FMT_SHA256}
@@ -18,7 +17,7 @@
 #     CONFIGURE_COMMAND ""
 #     BUILD_COMMAND ""
 #     INSTALL_COMMAND ""
-# )
+#
 
 # ExternalProject_Get_Property(ext_fmt SOURCE_DIR)
 # set(FMT_INCLUDE_DIRS ${SOURCE_DIR}/include/) # "/" is critical.
@@ -43,24 +42,21 @@ else()
         "1250e4cc58bf06ee631567523f48848dc4596133e163f02615c97f78bab6c811")
 endif()
 
-ExternalProject_Add(
-    ext_fmt
+ExternalProject_Add(ext_fmt
     PREFIX fmt
     URL https://github.com/fmtlib/fmt/archive/refs/tags/${FMT_VER}.tar.gz
     URL_HASH SHA256=${FMT_SHA256}
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/fmt"
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         ${ExternalProject_CMAKE_ARGS_hidden}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DFMT_DOC=OFF
         -DFMT_TEST=OFF
-        -DFMT_FUZZ=OFF
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-    BUILD_BYPRODUCTS
+        -DFMT_FUZZ=OFFBUILD_BYPRODUCTS
         <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${FMT_LIB_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}
-        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${FMT_LIB_NAME}d${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
+        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${FMT_LIB_NAME}d${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 ExternalProject_Get_Property(ext_fmt INSTALL_DIR)
 set(FMT_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

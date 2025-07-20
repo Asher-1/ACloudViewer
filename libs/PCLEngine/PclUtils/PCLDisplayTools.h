@@ -422,7 +422,7 @@ public:
                                  bool silent = false,
                                  int viewport = 0) override;
 
-    void setScaleBarVisible(bool visible) {
+    virtual void setScaleBarVisible(bool visible) override {
         if (getQVtkWidget()) getQVtkWidget()->setScaleBarVisible(visible);
     }
 

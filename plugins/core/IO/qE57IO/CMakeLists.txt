@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
 option(PLUGIN_IO_QE57 "Install qE57_IO plugin to read & write E57 files using libE57Format" OFF)
 

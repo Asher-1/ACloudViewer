@@ -1,7 +1,6 @@
 include(ExternalProject)
 
-ExternalProject_Add(
-    ext_parallelstl
+ExternalProject_Add(ext_parallelstl
     PREFIX parallelstl
     URL https://github.com/oneapi-src/oneDPL/archive/refs/tags/20190522.tar.gz
     URL_HASH SHA256=40d78c3405a42f781348b5bc9038cb0ce1147591e07fca7329538c9842d36a7b

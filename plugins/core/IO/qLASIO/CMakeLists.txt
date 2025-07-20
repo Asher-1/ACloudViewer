@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option(PLUGIN_IO_QLAS "LAS IO plugin using laszip" OFF)
 
 if (PLUGIN_IO_QLAS)
@@ -24,7 +26,7 @@ if (PLUGIN_IO_QLAS)
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DQT_FORCE_ASSERTS)
     if (WIN32)
-        # fix error C2872: “byte”: undeinfinde sysmbols on windows
+        # fix error C2872: "byte": undeinfinde sysmbols on windows
         target_compile_definitions(${PROJECT_NAME} PRIVATE _HAS_STD_BYTE=0)
     endif()
 

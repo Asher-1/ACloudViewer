@@ -1,7 +1,9 @@
+cmake_minimum_required(VERSION 3.19.2)
+
 # This file is used for creating the precompiled VTK archives that will be
 # downloaded when building ACloudViewer. This will make use of vtk_build.cmake.
 # See .github/workflows/vtk_packages.yml for more information.
-cmake_minimum_required(VERSION 3.19.2)
+
 project(VTKArchiveBuild)
 
 option(BUILD_WITH_CONDA "Build with conda env" OFF)

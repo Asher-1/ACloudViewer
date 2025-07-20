@@ -20,6 +20,7 @@
 // LOCAL
 #include "ecvBasicTypes.h"
 #include "ecvSingleton.h"
+#include "ecvDisplayTools.h"
 
 //Qt
 #include <QSettings>
@@ -39,6 +40,12 @@ const ecvGui::ParamStruct& ecvGui::Parameters()
 	}
 
 	return s_gui.instance->params;
+}
+
+void ecvGui::UpdateParameters() {
+	if (s_gui.instance) {
+		s_gui.instance->params.initFontSizesIfNeeded();
+	}
 }
 
 void ecvGui::ReleaseInstance()
@@ -96,10 +103,10 @@ void ecvGui::ParamStruct::reset()
 
 #ifdef Q_OS_MAC
 	defaultFontSize				= 12;
-	labelFontSize				= 10;
+	labelFontSize					= 10;
 #else
 	defaultFontSize				= 10;
-	labelFontSize				= 8;
+	labelFontSize					= 8;
 #endif
 	
 	displayedNumPrecision		        = 6;
@@ -108,6 +115,13 @@ void ecvGui::ParamStruct::reset()
 	zoomSpeed				= 1.0;
 
 	autoComputeOctree			= ASK_USER;
+}
+
+void ecvGui::ParamStruct::initFontSizesIfNeeded()
+{
+	// 只有在QApplication已初始化后才调用
+	defaultFontSize = ecvDisplayTools::GetOptimizedFontSize(12);
+	labelFontSize = ecvDisplayTools::GetOptimizedFontSize(10);
 }
 
 static int c_fColorArraySize  = sizeof(float) * 4;

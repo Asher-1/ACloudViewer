@@ -15,8 +15,7 @@ else()
 endif()
 set(OPENCV_VERSION_FILE "${OPENCV_MAJOR_VERSION}.${OPENCV_MINOR_VERSION}.${OPENCV_PATCH_VERSION}.zip")
 file(GLOB PATCH_FILES "${CloudViewer_3RDPARTY_DIR}/opencv/boostdesc_bgm/*.i")
-ExternalProject_Add(
-        ext_opencv_contrib
+ExternalProject_Add(ext_opencv_contrib
         PREFIX opencv_contrib
         URL https://github.com/opencv/opencv_contrib/archive/${OPENCV_VERSION_FILE}
         URL_MD5 ${CONTRIB_MD5}
@@ -34,8 +33,7 @@ set(OPENCV_CONTRIB_SOURCE_DIR "${SOURCE_DIR}/modules")
 
 set(SHARED_BUILD_OPENCV ON)
 
-ExternalProject_Add(
-        ext_opencv
+ExternalProject_Add(ext_opencv
         PREFIX opencv
         URL https://github.com/opencv/opencv/archive/${OPENCV_VERSION_FILE}
         URL_MD5 ${OPENCV_MD5}
@@ -45,81 +43,80 @@ ExternalProject_Add(
         BUILD_ALWAYS 0
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         CMAKE_ARGS
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-        ${ExternalProject_CMAKE_ARGS_hidden}
-        # -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
-        -DBUILD_SHARED_LIBS=${SHARED_BUILD_OPENCV}
-        -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
-        -DOPENCV_EXTRA_MODULES_PATH=${OPENCV_CONTRIB_SOURCE_DIR}
-        -DBUILD_opencv_contrib=OFF
-        -DOPENCV_ENABLE_NONFREE=OFF
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        -DOPENCV_FORCE_3RDPARTY_BUILD=ON
-        -DWITH_TBB=OFF
-        -DWITH_FFMPEG=OFF
-        -DBUILD_JASPER=ON
-        -DBUILD_JPEG=ON            #编译opencv 3rdparty自带的libjpeg
-        -DBUILD_PNG=ON             #编译opencv 3rdparty自带的libpng
-        -DBUILD_TIFF=ON            #编译opencv 3rdparty自带的libtiff
-        -DBUILD_ZLIB=ON            #编译opencv 3rdparty自带的libzlib
-        -DBUILD_WEBP=ON            #编译opencv 3rdparty自带的libwebp
-        -DBUILD_OPENEXR=ON         #编译opencv 3rdparty自带的openexr
-        # -DBUILD_PROTOBUF=OFF      #编译opencv 3rdparty自带的libprotobuf
-        # -DWITH_OPENEXR=ON  # Build error on IlmBase includes without "OpenEXR/" prefix
-        -DBUILD_opencv_world=ON
-        -DBUILD_opencv_core=ON
-        -DBUILD_opencv_highgui=ON
-        -DBUILD_opencv_imgcodecs=ON
-        -DBUILD_opencv_imgproc=ON
-        -DBUILD_opencv_features2d=OFF
-        -DBUILD_opencv_flann=OFF
-        # -DBUILD_opencv_hdf=OFF
-        -DBUILD_opencv_xfeatures2d=OFF
-        -DBUILD_opencv_photo=OFF
-        -DBUILD_opencv_calib3d=OFF
-        -DBUILD_JAVA=OFF
-        -DBUILD_opencv_sfm=OFF # disabled ceres dependence compiling issues [only support 1.x.x for ceres]
-        -DBUILD_opencv_apps=OFF
-        -DBUILD_opencv_python2=OFF
-        -DBUILD_opencv_python3=OFF
-        -DBUILD_opencv_python_bindings_generator=OFF
-        -DBUILD_PERF_TESTS=OFF
-        -DBUILD_opencv_gapi=OFF
-        -DBUILD_opencv_java_bindings_generator=OFF
-        -DBUILD_opencv_face=OFF
-        -DBUILD_opencv_js=OFF
-        -DBUILD_opencv_dnn=OFF
-        -DBUILD_opencv_ml=${PLUGIN_STANDARD_3DMASC}
-        -DBUILD_opencv_objdetect=OFF
-        -DBUILD_opencv_xobjdetect=OFF
-        -DBUILD_opencv_dnn_objdetect=OFF
-        -DBUILD_opencv_optflow=OFF
-        -DBUILD_opencv_stitching=OFF
-        -DBUILD_opencv_ts=OFF
-        -DBUILD_opencv_video=OFF
-        -DBUILD_opencv_videoio=OFF
-        -DBUILD_opencv_legacy=OFF
-        -DWITH_GSTREAMER=OFF
-        -DWITH_GTK=OFF
-        -DWITH_GTK_2_X=OFF
-        -DWITH_V4L=OFF
-        -DWITH_CAROTENE=OFF
-        -DWITH_OPENGL=OFF
-        -DWITH_OPENCL=OFF
-        -DWITH_LAPACK=OFF
-        -DENABLE_PRECOMPILED_HEADERS=OFF
-        -DINSTALL_C_EXAMPLES=OFF
-        -DINSTALL_PYTHON_EXAMPLES=OFF
-        -DBUILD_EXAMPLES=OFF
-        -DWITH_QT=OFF
-        -DWITH_IPP=OFF # disabled ippicv acceleration on intel chips
-        -DWITH_VTK=OFF
-        -DWITH_CUDA=OFF
-        -DBUILD_TESTS=OFF
-        # -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,version
-        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        DEPENDS ext_opencv_contrib 3rdparty_eigen3
-)
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            ${ExternalProject_CMAKE_ARGS_hidden}
+            # -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
+            -DBUILD_SHARED_LIBS=${SHARED_BUILD_OPENCV}
+            -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
+            -DOPENCV_EXTRA_MODULES_PATH=${OPENCV_CONTRIB_SOURCE_DIR}
+            -DBUILD_opencv_contrib=OFF
+            -DOPENCV_ENABLE_NONFREE=OFF
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            -DOPENCV_FORCE_3RDPARTY_BUILD=ON
+            -DWITH_TBB=OFF
+            -DWITH_FFMPEG=OFF
+            -DBUILD_JASPER=ON
+            -DBUILD_JPEG=ON            #编译opencv 3rdparty自带的libjpeg
+            -DBUILD_PNG=ON             #编译opencv 3rdparty自带的libpng
+            -DBUILD_TIFF=ON            #编译opencv 3rdparty自带的libtiff
+            -DBUILD_ZLIB=ON            #编译opencv 3rdparty自带的libzlib
+            -DBUILD_WEBP=ON            #编译opencv 3rdparty自带的libwebp
+            -DBUILD_OPENEXR=ON         #编译opencv 3rdparty自带的openexr
+            # -DBUILD_PROTOBUF=OFF      #编译opencv 3rdparty自带的libprotobuf
+            # -DWITH_OPENEXR=ON  # Build error on IlmBase includes without "OpenEXR/" prefix
+            -DBUILD_opencv_world=ON
+            -DBUILD_opencv_core=ON
+            -DBUILD_opencv_highgui=ON
+            -DBUILD_opencv_imgcodecs=ON
+            -DBUILD_opencv_imgproc=ON
+            -DBUILD_opencv_features2d=OFF
+            -DBUILD_opencv_flann=OFF
+            # -DBUILD_opencv_hdf=OFF
+            -DBUILD_opencv_xfeatures2d=OFF
+            -DBUILD_opencv_photo=OFF
+            -DBUILD_opencv_calib3d=OFF
+            -DBUILD_JAVA=OFF
+            -DBUILD_opencv_sfm=OFF # disabled ceres dependence compiling issues [only support 1.x.x for ceres]
+            -DBUILD_opencv_apps=OFF
+            -DBUILD_opencv_python2=OFF
+            -DBUILD_opencv_python3=OFF
+            -DBUILD_opencv_python_bindings_generator=OFF
+            -DBUILD_PERF_TESTS=OFF
+            -DBUILD_opencv_gapi=OFF
+            -DBUILD_opencv_java_bindings_generator=OFF
+            -DBUILD_opencv_face=OFF
+            -DBUILD_opencv_js=OFF
+            -DBUILD_opencv_dnn=OFF
+            -DBUILD_opencv_ml=${PLUGIN_STANDARD_3DMASC}
+            -DBUILD_opencv_objdetect=OFF
+            -DBUILD_opencv_xobjdetect=OFF
+            -DBUILD_opencv_dnn_objdetect=OFF
+            -DBUILD_opencv_optflow=OFF
+            -DBUILD_opencv_stitching=OFF
+            -DBUILD_opencv_ts=OFF
+            -DBUILD_opencv_video=OFF
+            -DBUILD_opencv_videoio=OFF
+            -DBUILD_opencv_legacy=OFF
+            -DWITH_GSTREAMER=OFF
+            -DWITH_GTK=OFF
+            -DWITH_GTK_2_X=OFF
+            -DWITH_V4L=OFF
+            -DWITH_CAROTENE=OFF
+            -DWITH_OPENGL=OFF
+            -DWITH_OPENCL=OFF
+            -DWITH_LAPACK=OFF
+            -DENABLE_PRECOMPILED_HEADERS=OFF
+            -DINSTALL_C_EXAMPLES=OFF
+            -DINSTALL_PYTHON_EXAMPLES=OFF
+            -DBUILD_EXAMPLES=OFF
+            -DWITH_QT=OFF
+            -DWITH_IPP=OFF # disabled ippicv acceleration on intel chips
+            -DWITH_VTK=OFF
+            -DWITH_CUDA=OFF
+            -DBUILD_TESTS=OFF
+            # -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,version
+            -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        DEPENDS ext_opencv_contrib 3rdparty_eigen3)
 ExternalProject_Get_Property(ext_opencv INSTALL_DIR)
 
 if(WIN32)

@@ -1,7 +1,6 @@
 include(ExternalProject)
 
-ExternalProject_Add(
-    ext_poisson
+ExternalProject_Add(ext_poisson
     PREFIX poisson
     URL https://github.com/isl-org/Open3D-PoissonRecon/archive/fd273ea8c77a36973d6565a495c9969ccfb12d3b.tar.gz
     URL_HASH SHA256=917d98e037982d57a159fa166b259ff3dc90ffffe09c6a562a71b400f6869ddf

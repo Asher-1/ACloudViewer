@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_IO_QADDITIONAL "Install qAdditionalIO plugin" OFF )
 
 if( PLUGIN_IO_QADDITIONAL )

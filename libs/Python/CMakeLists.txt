@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION ${CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION})
 
 if (BUILD_PYTHON_MODULE)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -82,4 +82,3 @@ if (BUILD_PYTHON_MODULE)
     export_python_dlls(${ACloudViewer_DEST_FOLDER})
 
 endif ()
-

@@ -37,8 +37,7 @@ else()  # Linux
     endif()
 endif()
 
-ExternalProject_Add(
-    ext_webrtc
+ExternalProject_Add(ext_webrtc
     PREFIX webrtc
     URL ${WEBRTC_URL}
     URL_HASH SHA256=${WEBRTC_SHA256}

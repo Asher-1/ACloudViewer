@@ -38,8 +38,7 @@ set(STATIC_MKL_INCLUDE_DIR "${MKL_INSTALL_PREFIX}/include/")
 set(STATIC_MKL_LIB_DIR "${MKL_INSTALL_PREFIX}/${CloudViewer_INSTALL_LIB_DIR}")
 
 if(WIN32)
-    ExternalProject_Add(
-        ext_mkl
+    ExternalProject_Add(ext_mkl
         PREFIX mkl
         URL ${MKL_URL}
         URL_HASH SHA256=${MKL_SHA256}
@@ -53,8 +52,7 @@ if(WIN32)
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_intel_ilp64${CMAKE_STATIC_LIBRARY_SUFFIX}
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX}
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_sequential${CMAKE_STATIC_LIBRARY_SUFFIX}
-            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX}
-    )
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX})
     # Generator expression can result in an empty string "", causing CMake to try to
     # locate ".lib". The workaround to first list all libs, and remove unneeded items
     # using generator expressions.
@@ -67,8 +65,7 @@ if(WIN32)
     list(REMOVE_ITEM STATIC_MKL_LIBRARIES "$<$<CONFIG:Debug>:mkl_tbb_thread>")
     list(REMOVE_ITEM STATIC_MKL_LIBRARIES "$<$<CONFIG:Release>:mkl_sequential>")
 else()
-    ExternalProject_Add(
-        ext_mkl
+    ExternalProject_Add(ext_mkl
         PREFIX mkl
         URL ${MKL_URL}
         URL_HASH SHA256=${MKL_SHA256}
@@ -81,7 +78,6 @@ else()
         BUILD_BYPRODUCTS
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_intel_ilp64${CMAKE_STATIC_LIBRARY_SUFFIX}
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX}
-            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX}
-    )
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX})
     set(STATIC_MKL_LIBRARIES mkl_intel_ilp64 mkl_tbb_thread mkl_core)
 endif()

@@ -1,7 +1,6 @@
 include(ExternalProject)
 
-ExternalProject_Add(
-    ext_nanoflann
+ExternalProject_Add(ext_nanoflann
     PREFIX nanoflann
     URL https://github.com/jlblancoc/nanoflann/archive/refs/tags/v1.3.2.tar.gz
     URL_HASH SHA256=e100b5fc8d72e9426a80312d852a62c05ddefd23f17cbb22ccd8b458b11d0bea

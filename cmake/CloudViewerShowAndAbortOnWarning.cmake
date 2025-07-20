@@ -41,10 +41,9 @@ function(cloudViewer_show_and_abort_on_warning target)
         string(REPLACE ";" "," DISABLE_NVCC_WARNINGS "${DISABLE_NVCC_WARNINGS}")
 
         set(CUDA_FLAGS "--Werror cross-execution-space-call")
+        string(APPEND CUDA_FLAGS " --expt-relaxed-constexpr")
+        string(APPEND CUDA_FLAGS " --diag-suppress ${DISABLE_NVCC_WARNINGS}")
 
-        if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "10.2")
-            # string(APPEND CUDA_FLAGS " --Werror all-warnings")
-        endif ()
         if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
             string(APPEND CUDA_FLAGS " --Werror ext-lambda-captures-this")
         endif ()

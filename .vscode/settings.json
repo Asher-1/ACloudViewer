@@ -146,5 +146,5 @@
 		"openglsupport": "cpp",
 		"splines": "cpp"
 	},
-	"python.languageServer": "Default"
+	"python.languageServer": "None"
 }

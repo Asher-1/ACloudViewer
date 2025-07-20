@@ -8,8 +8,7 @@ else ()
     message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for lapack")
 endif ()
 
-ExternalProject_Add(
-        ext_lapack
+ExternalProject_Add(ext_lapack
         PREFIX lapack
         #   http://www.netlib.org/lapack/lapack-3.9.0.tar.gz
         URL https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz
@@ -19,19 +18,20 @@ ExternalProject_Add(
         BUILD_ALWAYS 0
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         UPDATE_COMMAND ""
+        PATCH_COMMAND ${CMAKE_COMMAND} -DINPUT_DIR=<SOURCE_DIR> -P ${CloudViewer_3RDPARTY_DIR}/CMake/fix_all_cmake_minimum.cmake
         CMAKE_ARGS
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-        -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
-        -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
-        # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
-        # checking CXX_COMPILER_ID is not supported.
-        $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
-        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
+            -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
+            # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
+            # checking CXX_COMPILER_ID is not supported.
+            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
+            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
         DEPENDS ${GLOG_TARGET}
 )
 
