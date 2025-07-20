@@ -31,6 +31,8 @@
 #include <QObject>
 #include <QRect>
 #include <QTimer>
+#include <QApplication> // Added for QApplication::primaryScreen()
+#include <QScreen> // Added for QScreen
 
 // System
 #include <list>
@@ -267,10 +269,12 @@ public:
 
             if (win) {
                 font = win->font();
-                int retinaScale = win->devicePixelRatio();
-                font.setPointSize(12 * retinaScale);
-                margin *= retinaScale;
-                iconSize *= retinaScale;
+                double dpiScale = GetPlatformAwareDPIScale();
+                // 使用跨平台优化的字体大小
+                int fontSize = GetOptimizedFontSize(12);
+                font.setPointSize(fontSize);
+                margin *= dpiScale;
+                iconSize *= dpiScale;
                 font.setBold(true);
             }
 
@@ -564,6 +568,130 @@ public:  // main interface
     static inline int GetDevicePixelRatio() {
         // return TheInstance()->getDevicePixelRatio();
         return GetMainWindow()->devicePixelRatio();
+    }
+
+    // 新增：跨平台字体大小优化函数
+    static inline int GetOptimizedFontSize(int baseFontSize = 12) {
+        QWidget* win = GetMainWindow();
+        if (!win) {
+            return baseFontSize;
+        }
+        
+        int dpiScale = win->devicePixelRatio();
+        QScreen* screen = QApplication::primaryScreen();
+        if (!screen) {
+            return baseFontSize;
+        }
+        
+        // 获取屏幕分辨率信息
+        QSize screenSize = screen->size();
+        int screenWidth = screenSize.width();
+        int screenHeight = screenSize.height();
+        int screenDPI = screen->physicalDotsPerInch();
+        
+        // 平台特定的基础字体大小调整
+        int platformBaseSize = baseFontSize;
+        #ifdef Q_OS_MAC
+            // macOS: 默认字体稍大，但需要考虑Retina显示器的过度放大
+            platformBaseSize = baseFontSize;
+            if (dpiScale > 1) {
+                // Retina显示器：使用较小的字体避免过度放大
+                platformBaseSize = std::max(8, baseFontSize - (dpiScale - 1) * 2);
+            }
+        #elif defined(Q_OS_WIN)
+            // Windows: 根据DPI调整字体大小
+            if (screenDPI > 120) {
+                // 高DPI显示器
+                platformBaseSize = std::max(8, baseFontSize - 1);
+            } else if (screenDPI < 96) {
+                // 低DPI显示器
+                platformBaseSize = baseFontSize + 1;
+            }
+        #elif defined(Q_OS_LINUX)
+            // Linux: 根据屏幕分辨率调整
+            if (screenWidth >= 1920 && screenHeight >= 1080) {
+                // 高分辨率显示器
+                platformBaseSize = std::max(8, baseFontSize - 1);
+            } else if (screenWidth < 1366) {
+                // 低分辨率显示器
+                platformBaseSize = baseFontSize + 1;
+            }
+        #endif
+        
+        // 分辨率特定的调整
+        int resolutionFactor = 1;
+        if (screenWidth >= 2560 && screenHeight >= 1440) {
+            // 2K及以上分辨率
+            resolutionFactor = 0;
+        } else if (screenWidth >= 1920 && screenHeight >= 1080) {
+            // 1080p分辨率
+            resolutionFactor = 0;
+        } else if (screenWidth < 1366) {
+            // 低分辨率
+            resolutionFactor = 1;
+        }
+        
+        // 最终字体大小计算
+        int finalSize = platformBaseSize + resolutionFactor;
+        
+        // 确保字体大小在合理范围内
+        finalSize = std::max(6, std::min(24, finalSize));
+        
+        return finalSize;
+    }
+
+    // 新增：跨平台DPI缩放处理函数
+    static inline double GetPlatformAwareDPIScale() {
+        QWidget* win = GetMainWindow();
+        if (!win) {
+            return 1.0;
+        }
+        
+        int dpiScale = win->devicePixelRatio();
+        QScreen* screen = QApplication::primaryScreen();
+        if (!screen) {
+            return static_cast<double>(dpiScale);
+        }
+        
+        // 获取屏幕信息
+        QSize screenSize = screen->size();
+        int screenWidth = screenSize.width();
+        int screenHeight = screenSize.height();
+        int screenDPI = screen->physicalDotsPerInch();
+        
+        // 平台特定的DPI缩放调整
+        double adjustedScale = static_cast<double>(dpiScale);
+        
+        #ifdef Q_OS_MAC
+            // macOS: Retina显示器需要特殊处理
+            if (dpiScale > 1) {
+                // 对于UI元素，使用较小的缩放以避免过度放大
+                adjustedScale = 1.0 + (dpiScale - 1.0) * 0.5;
+            }
+        #elif defined(Q_OS_WIN)
+            // Windows: 根据DPI设置调整
+            if (screenDPI > 120) {
+                // 高DPI显示器，适当减小缩放
+                adjustedScale = std::min(adjustedScale, 1.5);
+            } else if (screenDPI < 96) {
+                // 低DPI显示器，适当增加缩放
+                adjustedScale = std::max(adjustedScale, 1.0);
+            }
+        #elif defined(Q_OS_LINUX)
+            // Linux: 根据分辨率调整
+            if (screenWidth >= 2560 && screenHeight >= 1440) {
+                // 超高分辨率，减小缩放
+                adjustedScale = std::min(adjustedScale, 1.3);
+            } else if (screenWidth < 1366) {
+                // 低分辨率，增加缩放
+                adjustedScale = std::max(adjustedScale, 1.0);
+            }
+        #endif
+        
+        // 确保缩放在合理范围内
+        adjustedScale = std::max(0.5, std::min(2.0, adjustedScale));
+        
+        return adjustedScale;
     }
 
     inline static QRect GetScreenRect() {
@@ -1093,7 +1221,12 @@ public:  // visualization matrix transformation
         return QImage(); /* do nothing */
     }
 
-    static void DrawScale(const ecvColor::Rgbub& color);
+    inline static void SetScaleBarVisible(bool visible) {
+        return TheInstance()->setScaleBarVisible(visible);
+    }
+    inline virtual void setScaleBarVisible(bool visible) {
+        /* do nothing */
+    }
 
     static void DisplayTexture2DPosition(QImage image,
                                          const QString& id,

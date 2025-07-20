@@ -67,8 +67,7 @@ else()
     endif()
 
     # ExternalProject_Add happens at build time.
-    ExternalProject_Add(
-        ext_filament
+    ExternalProject_Add(ext_filament
         PREFIX filament
         URL ${FILAMENT_URL}
         URL_HASH SHA256=${FILAMENT_SHA256}
@@ -79,7 +78,9 @@ else()
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS ${lib_byproducts}
-    )
+CMAKE_ARGS
+    
+-DCMAKE_POLICY_VERSION_MINIMUM=3.5)
     ExternalProject_Get_Property(ext_filament SOURCE_DIR)
     set(FILAMENT_ROOT ${SOURCE_DIR})
 endif()

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
 project(QMPLANE_PLUGIN_TESTS)
 
@@ -36,6 +36,5 @@ endif()
 target_link_libraries( QMPLANE_PLUGIN_TESTS CVCoreLib )
 target_link_libraries( QMPLANE_PLUGIN_TESTS ECV_DB_LIB )
 target_link_libraries( QMPLANE_PLUGIN_TESTS ECV_IO_LIB )
-
 
 install( TARGETS QMPLANE_PLUGIN_TESTS DESTINATION ${ACloudViewer_DEST_FOLDER})

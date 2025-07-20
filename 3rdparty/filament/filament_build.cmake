@@ -50,8 +50,7 @@ if(NOT WIN32)
     set(filament_cxx_flags "${filament_cxx_flags} -fno-builtin")
 endif()
 
-ExternalProject_Add(
-    ext_filament
+ExternalProject_Add(ext_filament
     PREFIX filament
     URL https://github.com/isl-org/filament/archive/d1d873d27f43ba0cee1674a555cc0f18daac3008.tar.gz
     URL_HASH SHA256=00c3f41af0fcfb2df904e1f77934f2678d943ddac5eb889788a5e22590e497bd
@@ -61,6 +60,7 @@ ExternalProject_Add(
     # Patch for filament/libs/image/src/ImageSampler.cpp:41:17: error: expected unqualified-id replace M_PIf with M_PI_f
     COMMAND sed -i $<$<PLATFORM_ID:Darwin>:""> "s/M_PIf/M_PI_f/g" <SOURCE_DIR>/libs/image/src/ImageSampler.cpp
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         # ${ExternalProject_CMAKE_ARGS}
         -DCMAKE_BUILD_TYPE=${FILAMENT_BUILD_TYPE}
         -DCCACHE_PROGRAM=OFF  # Enables ccache, "launch-cxx" is not working.
@@ -78,5 +78,4 @@ ExternalProject_Add(
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
         -DSPIRV_WERROR=OFF
-    BUILD_BYPRODUCTS ${lib_byproducts}
-)
+    BUILD_BYPRODUCTS ${lib_byproducts})

@@ -111,8 +111,7 @@ if(BUILD_VTK_FROM_SOURCE)
         endif()
     endif()
 
-    ExternalProject_Add(
-        ext_vtk
+    ExternalProject_Add(ext_vtk
         PREFIX vtk
         URL https://www.vtk.org/files/release/${VTK_VERSION}/VTK-${VTK_VERSION}.1.tar.gz
         URL_HASH SHA256=8354ec084ea0d2dc3d23dbe4243823c4bfc270382d0ce8d658939fd50061cab8
@@ -139,8 +138,7 @@ if(BUILD_VTK_FROM_SOURCE)
             -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=NO
             -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=NO
         BUILD_BYPRODUCTS
-            ${VTK_BUILD_BYPRODUCTS}
-    )
+            ${VTK_BUILD_BYPRODUCTS})
 
     ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
     set(VTK_LIBRARIES_DIRS ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
@@ -182,8 +180,7 @@ else() #### download prebuilt vtk
         message(FATAL "Unsupported platform")
     endif()
 
-    ExternalProject_Add(
-        ext_vtk
+    ExternalProject_Add(ext_vtk
         PREFIX vtk
         URL ${VTK_URL}
         URL_HASH SHA256=${VTK_SHA256}

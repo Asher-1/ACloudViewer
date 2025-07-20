@@ -1,7 +1,6 @@
 include(ExternalProject)
 
-ExternalProject_Add(
-    ext_tinygltf
+ExternalProject_Add(ext_tinygltf
     PREFIX tinygltf
     URL https://github.com/syoyo/tinygltf/archive/72f4a55edd54742bca1a71ade8ac70afca1d3f07.tar.gz
     URL_HASH SHA256=9e848dcf0ec7dcb352ced782aea32064a63a51b3c68ed14c68531e08632a2d90

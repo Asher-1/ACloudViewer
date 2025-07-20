@@ -143,8 +143,7 @@ if (BUILD_WITH_CONDA)
     endif()
 endif()
 
-ExternalProject_Add(
-    ext_vtk
+ExternalProject_Add(ext_vtk
     PREFIX vtk
     URL https://www.vtk.org/files/release/${INTERNAL_VTK_VERSION}/VTK-${VTK_VERSION}.tar.gz
     URL_HASH SHA256=8354ec084ea0d2dc3d23dbe4243823c4bfc270382d0ce8d658939fd50061cab8
@@ -184,8 +183,7 @@ ExternalProject_Add(
         -DCMAKE_PREFIX_PATH=${CONDA_LIB_DIR}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     BUILD_BYPRODUCTS
-        ${VTK_BUILD_BYPRODUCTS}
-)
+        ${VTK_BUILD_BYPRODUCTS})
 
 ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
 set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-${INTERNAL_VTK_VERSION}/")

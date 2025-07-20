@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_STANDARD_QCORK "Install qCORK plugin" OFF )
 
 # ACloudViewer Mesh CSG operations plugin (based on the Cork library)

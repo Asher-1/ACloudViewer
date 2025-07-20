@@ -154,7 +154,6 @@ void ecvDisplayTools::Init(ecvDisplayTools* displayTools,
     s_tools.instance->m_pivotVisibility = PIVOT_SHOW_ON_MOVE;
     s_tools.instance->m_pivotSymbolShown = false;
     s_tools.instance->m_allowRectangularEntityPicking = false;
-    s_tools.instance->m_scale_lineset = nullptr;
     s_tools.instance->m_rectPickingPoly = nullptr;
     s_tools.instance->m_overridenDisplayParametersEnabled = false;
     s_tools.instance->m_displayOverlayEntities = true;
@@ -261,10 +260,6 @@ ecvDisplayTools::~ecvDisplayTools() {
     if (m_winDBRoot) {
         delete m_winDBRoot;
         m_winDBRoot = nullptr;
-    }
-    if (m_scale_lineset) {
-        delete m_scale_lineset;
-        m_scale_lineset = nullptr;
     }
     if (m_rectPickingPoly) {
         delete m_rectPickingPoly;
@@ -2422,9 +2417,14 @@ void ecvDisplayTools::SetCameraPos(const CCVector3d& P) {
 }
 
 const ecvGui::ParamStruct& ecvDisplayTools::GetDisplayParameters() {
-    return s_tools.instance->m_overridenDisplayParametersEnabled
-                   ? s_tools.instance->m_overridenDisplayParameters
-                   : ecvGui::Parameters();
+    if (s_tools.instance->m_overridenDisplayParametersEnabled) {
+        s_tools.instance->m_overridenDisplayParameters.initFontSizesIfNeeded();
+        return s_tools.instance->m_overridenDisplayParameters;
+    } else {
+        const ecvGui::ParamStruct& params = ecvGui::Parameters();
+        ecvGui::UpdateParameters();
+        return params;
+    }
 }
 
 void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters& params) {
@@ -2464,6 +2464,7 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters& params) {
 void ecvDisplayTools::SetDisplayParameters(const ecvGui::ParamStruct& params) {
     s_tools.instance->m_overridenDisplayParametersEnabled = true;
     s_tools.instance->m_overridenDisplayParameters = params;
+    s_tools.instance->m_overridenDisplayParameters.initFontSizesIfNeeded();
     ecvGui::Set(params);
 }
 
@@ -3138,22 +3139,16 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
 
     /*** overlay entities ***/
     if (s_tools.instance->m_displayOverlayEntities) {
-        // default overlay color
-        const ecvColor::Rgbub& textCol = GetDisplayParameters().textDefaultCol;
+        // const ecvColor::Rgbub& textCol = GetDisplayParameters().textDefaultCol;
 
         if (!s_tools.instance->m_captureMode.enabled ||
             s_tools.instance->m_captureMode.renderOverlayItems) {
             // scale: only in ortho mode
-            /*
             if (!s_tools.instance->m_viewportParams.perspectiveView) {
-                DrawScale(textCol);
-            } else if (s_tools.instance->m_scale_lineset) {
-                CC_DRAW_CONTEXT context;
-                context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
-                context.removeViewID = QString::number(
-                        s_tools.instance->m_scale_lineset->getUniqueID(), 10);
-                RemoveEntities(context);
-            }*/
+                SetScaleBarVisible(true);
+            } else {
+                SetScaleBarVisible(false);
+            }
         }
 
         if (!s_tools.instance->m_captureMode.enabled) {
@@ -3161,53 +3156,34 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
 
             // current messages (if valid)
             if (!s_tools.instance->m_messagesToDisplay.empty()) {
-                int ll_currentHeight = s_tools.instance->m_glViewport.height() -
-                                       10;  // lower left
-                int uc_currentHeight = 10;  // upper center
+                QFont font = s_tools.instance->m_font;
+                QFontMetrics fm(font);
+                int margin = fm.height() / 4;
+                int ll_currentHeight = s_tools.instance->m_glViewport.height() - 10;
+                int uc_currentHeight = 10;
 
-                for (const auto& message :
-                     s_tools.instance->m_messagesToDisplay) {
+                for (const auto& message : s_tools.instance->m_messagesToDisplay) {
                     switch (message.position) {
                         case LOWER_LEFT_MESSAGE: {
-                            RenderText(10, ll_currentHeight, message.message,
-                                       s_tools.instance->m_font);
-                            int messageHeight =
-                                    QFontMetrics(s_tools.instance->m_font)
-                                            .height();
-                            ll_currentHeight -= (messageHeight * 5) /
-                                                4;  // add a 25% margin
+                            RenderText(10, ll_currentHeight, message.message, font);
+                            int messageHeight = fm.height();
+                            ll_currentHeight -= (messageHeight + margin);
                         } break;
                         case UPPER_CENTER_MESSAGE: {
-                            QRect rect = QFontMetrics(s_tools.instance->m_font)
-                                                 .boundingRect(message.message);
-                            int x = (s_tools.instance->m_glViewport.width() -
-                                     rect.width()) /
-                                    2;
+                            QRect rect = fm.boundingRect(message.message);
+                            int x = (s_tools.instance->m_glViewport.width() - rect.width()) / 2;
                             int y = uc_currentHeight + rect.height();
-
-                            RenderText(x, y, message.message,
-                                       s_tools.instance->m_font);
-                            uc_currentHeight += (rect.height() * 5) /
-                                                4;  // add a 25% margin
+                            RenderText(x, y, message.message, font);
+                            uc_currentHeight += (rect.height() + margin);
                         } break;
                         case SCREEN_CENTER_MESSAGE: {
-                            QFont newFont(
-                                    s_tools.instance
-                                            ->m_font);  // no need to take zoom
-                                                        // into account!
-                            newFont.setPointSize(12 * GetDevicePixelRatio());
-                            QRect rect = QFontMetrics(newFont).boundingRect(
-                                    message.message);
-                            // only one message supported in the screen center
-                            // (for the moment ;)
-                            RenderText(
-                                    (s_tools.instance->m_glViewport.width() -
-                                     rect.width()) /
-                                            2,
-                                    (s_tools.instance->m_glViewport.height() -
-                                     rect.height()) /
-                                            2,
-                                    message.message, newFont);
+                            QFont newFont(font);
+                            int fontSize = GetOptimizedFontSize(12);
+                            newFont.setPointSize(fontSize);
+                            QRect rect = QFontMetrics(newFont).boundingRect(message.message);
+                            RenderText((s_tools.instance->m_glViewport.width() - rect.width()) / 2,
+                                       (s_tools.instance->m_glViewport.height() - rect.height()) / 2,
+                                       message.message, newFont);
                         } break;
                     }
                 }
@@ -3495,6 +3471,11 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
     // QImage(":/Resources/images/ecvExit.png").mirrored();
     int fullW = s_tools.instance->m_glViewport.width();
     int fullH = s_tools.instance->m_glViewport.height();
+    QFont font = s_tools.instance->m_hotZone->font;
+    QFontMetrics fm(font);
+    int textHeight = fm.height();
+    int margin = textHeight / 4;
+    int iconSize = s_tools.instance->m_hotZone->iconSize;
 
     // clear history
     RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS));
@@ -3517,7 +3498,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
     }
 
     yStart = s_tools.instance->m_hotZone->topCorner.y();
-    int iconSize = s_tools.instance->m_hotZone->iconSize;
 
     if (fullScreenEnabled) {
         int xStart = s_tools.instance->m_hotZone->topCorner.x();
@@ -3600,192 +3580,70 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
         // default point size
         {
             int xStart = s_tools.instance->m_hotZone->topCorner.x();
-
-            RenderText(
-                    xStart,
-                    yStart + s_tools.instance->m_hotZone->yTextBottomLineShift,
-                    s_tools.instance->m_hotZone->psi_label,
-                    s_tools.instance->m_hotZone->font, textColor,
-                    CLICKED_ITEMS);
-
-            // icons
-            xStart += s_tools.instance->m_hotZone->psi_labelRect.width() +
-                      s_tools.instance->m_hotZone->margin;
+            RenderText(xStart, yStart + textHeight, s_tools.instance->m_hotZone->psi_label, font, textColor, CLICKED_ITEMS);
+            xStart += s_tools.instance->m_hotZone->psi_labelRect.width() + s_tools.instance->m_hotZone->margin;
             xStart -= iconSize;
             //"minus" icon
-            {
-                int x0 = xStart;
-                int y0 = fullH - (yStart + iconSize / 2);
-                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
-                DrawWidgets(widgetParam, false);
-                s_tools.instance->m_clickableItems.emplace_back(
-                        ClickableItem::DECREASE_POINT_SIZE,
-                        QRect(xStart, yStart, iconSize, iconSize));
-                xStart += iconSize;
-            }
-
+            int x0 = xStart;
+            int y0 = fullH - (yStart + textHeight / 2);
+            widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+            DrawWidgets(widgetParam, false);
+            s_tools.instance->m_clickableItems.emplace_back(ClickableItem::DECREASE_POINT_SIZE, QRect(xStart, yStart, iconSize, iconSize));
+            xStart += iconSize;
             // separator
-            {
-                sepParam.radius =
-                        s_tools.instance->m_viewportParams.defaultPointSize / 2;
-                int x0 = xStart +
-                         s_tools.instance->m_hotZone
-                                 ->margin /*s_tools.instance->m_hotZone->margin
-                                             / 2*/
-                        ;
-                int y0 = fullH - (yStart + iconSize / 2);
-                sepParam.rect = QRect(x0, y0, iconSize, iconSize);
-                DrawWidgets(sepParam, false);
-                xStart += s_tools.instance->m_hotZone->margin * 2;
-            }
-
+            sepParam.radius = s_tools.instance->m_viewportParams.defaultPointSize / 2;
+            x0 = xStart + s_tools.instance->m_hotZone->margin * 2;
+            y0 = fullH - (yStart + textHeight / 2);
+            sepParam.rect = QRect(x0, y0, iconSize, iconSize);
+            DrawWidgets(sepParam, false);
+            xStart += s_tools.instance->m_hotZone->margin * 2;
             //"plus" icon
-            {
-                int x0 = xStart;
-                int y0 = fullH - (yStart + iconSize / 2);
-                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
-                DrawWidgets(widgetParam, false);
-                x0 = xStart + 3 * iconSize / 8;
-                y0 = fullH - (yStart + 7 * iconSize / 8);
-                widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
-                DrawWidgets(widgetParam, false);
-
-                s_tools.instance->m_clickableItems.emplace_back(
-                        ClickableItem::INCREASE_POINT_SIZE,
-                        QRect(xStart, yStart, iconSize, iconSize));
-                xStart += iconSize;
-            }
-
-            yStart += iconSize;
-            yStart += s_tools.instance->m_hotZone->margin;
+            x0 = xStart;
+            y0 = fullH - (yStart + textHeight / 2);
+            widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+            DrawWidgets(widgetParam, false);
+            x0 = xStart + 3 * iconSize / 8;
+            y0 = fullH - (yStart + 7 * iconSize / 8);
+            widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
+            DrawWidgets(widgetParam, false);
+            s_tools.instance->m_clickableItems.emplace_back(ClickableItem::INCREASE_POINT_SIZE, QRect(xStart, yStart, iconSize, iconSize));
+            xStart += iconSize;
+            yStart += textHeight + margin;
         }
-
         // default line size
         {
             int xStart = s_tools.instance->m_hotZone->topCorner.x();
-
-            RenderText(
-                    xStart,
-                    yStart + s_tools.instance->m_hotZone->yTextBottomLineShift,
-                    s_tools.instance->m_hotZone->lsi_label,
-                    s_tools.instance->m_hotZone->font, textColor,
-                    CLICKED_ITEMS);
-
-            // icons
-            xStart += s_tools.instance->m_hotZone->lsi_labelRect.width() +
-                      s_tools.instance->m_hotZone->margin;
+            RenderText(xStart, yStart + textHeight, s_tools.instance->m_hotZone->lsi_label, font, textColor, CLICKED_ITEMS);
+            xStart += s_tools.instance->m_hotZone->lsi_labelRect.width() + s_tools.instance->m_hotZone->margin;
             xStart -= iconSize;
-
             //"minus" icon
-            {
-                int x0 = xStart;
-                int y0 = fullH - (yStart + iconSize / 2);
-                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
-                DrawWidgets(widgetParam, false);
-
-                s_tools.instance->m_clickableItems.emplace_back(
-                        ClickableItem::DECREASE_LINE_WIDTH,
-                        QRect(xStart, yStart, iconSize, iconSize));
-                xStart += iconSize;
-            }
-
+            int x0 = xStart;
+            int y0 = fullH - (yStart + textHeight / 2);
+            widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+            DrawWidgets(widgetParam, false);
+            s_tools.instance->m_clickableItems.emplace_back(ClickableItem::DECREASE_LINE_WIDTH, QRect(xStart, yStart, iconSize, iconSize));
+            xStart += iconSize;
             // separator
-            {
-                sepParam.radius =
-                        s_tools.instance->m_viewportParams.defaultLineWidth / 2;
-                int x0 = xStart +
-                         s_tools.instance->m_hotZone
-                                 ->margin /*s_tools.instance->m_hotZone->margin
-                                             / 2*/
-                        ;
-                int y0 = fullH - (yStart + iconSize / 2);
-                sepParam.rect = QRect(x0, y0, iconSize, iconSize);
-                DrawWidgets(sepParam, false);
-                xStart += s_tools.instance->m_hotZone->margin * 2;
-            }
-
+            sepParam.radius = s_tools.instance->m_viewportParams.defaultLineWidth / 2;
+            x0 = xStart + s_tools.instance->m_hotZone->margin * 2;
+            y0 = fullH - (yStart + textHeight / 2);
+            sepParam.rect = QRect(x0, y0, iconSize, iconSize);
+            DrawWidgets(sepParam, false);
+            xStart += s_tools.instance->m_hotZone->margin * 2;
             //"plus" icon
-            {
-                int x0 = xStart;
-                int y0 = fullH - (yStart + iconSize / 2);
-                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
-                DrawWidgets(widgetParam, false);
-                x0 = xStart + 3 * iconSize / 8;
-                y0 = fullH - (yStart + 7 * iconSize / 8);
-                widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
-                DrawWidgets(widgetParam, false);
-
-                s_tools.instance->m_clickableItems.emplace_back(
-                        ClickableItem::INCREASE_LINE_WIDTH,
-                        QRect(xStart, yStart, iconSize, iconSize));
-                xStart += iconSize;
-            }
-
-            yStart += iconSize;
-            yStart += s_tools.instance->m_hotZone->margin;
+            x0 = xStart;
+            y0 = fullH - (yStart + textHeight / 2);
+            widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+            DrawWidgets(widgetParam, false);
+            x0 = xStart + 3 * iconSize / 8;
+            y0 = fullH - (yStart + 7 * iconSize / 8);
+            widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
+            DrawWidgets(widgetParam, false);
+            s_tools.instance->m_clickableItems.emplace_back(ClickableItem::INCREASE_LINE_WIDTH, QRect(xStart, yStart, iconSize, iconSize));
+            xStart += iconSize;
+            yStart += textHeight + margin;
         }
     }
-}
-
-void ecvDisplayTools::DrawScale(const ecvColor::Rgbub& color) {
-    assert(!s_tools.instance->m_viewportParams
-                    .perspectiveView);  // a scale is only valid in ortho. mode!
-
-    // 25% of screen width
-    float scaleMaxW = s_tools.instance->m_glViewport.width() / 4.0f;
-    if (s_tools.instance->m_captureMode.enabled) {
-        // DGM: we have to fall back to the case 'render zoom = 1' (otherwise we
-        // might not get the exact same aspect)
-        scaleMaxW /= s_tools.instance->m_captureMode.zoomFactor;
-    }
-
-    float screen_width = s_tools.instance->m_glViewport.width();
-    float screen_height = s_tools.instance->m_glViewport.height();
-
-    // we first compute the width equivalent to 25% of horizontal screen width
-    // (this is why it's only valid in orthographic mode !)
-    double pixelSize = GetDevicePixelRatio();
-    float equivalentWidth = RoundScale(scaleMaxW * pixelSize);
-
-    QFont font = GetTextDisplayFont();  // we take rendering zoom into account!
-    QFontMetrics fm(font);
-
-    // we deduce the scale drawing width
-    float scaleW_pix = equivalentWidth / pixelSize;
-    if (s_tools.instance->m_captureMode.enabled) {
-        // we can now safely apply the rendering zoom
-        scaleW_pix *= s_tools.instance->m_captureMode.zoomFactor;
-    }
-    float trihedronLength =
-            (CC_DISPLAYED_TRIHEDRON_AXES_LENGTH + CC_TRIHEDRON_TEXT_MARGIN +
-             QFontMetrics(font).width('X')) *
-            s_tools.instance->m_captureMode.zoomFactor;
-    float dW = 2.0f * trihedronLength +
-               20.0f * s_tools.instance->m_captureMode.zoomFactor;
-    float dH =
-            std::max(fm.height() * 1.25f,
-                     trihedronLength +
-                             5.0f * s_tools.instance->m_captureMode.zoomFactor);
-    float w = screen_width - dW;
-    float h = dH;
-    float tick = 3.0f * s_tools.instance->m_captureMode.zoomFactor;
-
-    WIDGETS_PARAMETER scaleLineParam(WIDGETS_TYPE::WIDGET_LINE_2D, "ScaleLine");
-    scaleLineParam.color = ecvColor::FromRgbub(color);
-    scaleLineParam.p1 = QPoint(w - scaleW_pix, h);
-    scaleLineParam.p2 = QPoint(w, h);
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_LINE_2D, "ScaleLine"));
-    DrawWidgets(scaleLineParam, true);
-
-    // display label
-    double textEquivalentWidth = equivalentWidth;
-    QString text = QString::number(textEquivalentWidth);
-    int text_x = screen_width - static_cast<int>(scaleW_pix / 2 + dW) -
-                 fm.width(text) / 2;
-    int text_y = screen_height - static_cast<int>(dH / 2) + fm.height() / 3;
-    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "ScaleLineText"));
-    CVLog::Print(QString("ScaleLineText is %1").arg(text));
-    RenderText(text_x, text_y, text, font, color, "ScaleLineText");
 }
 
 void ecvDisplayTools::CheckIfRemove() {

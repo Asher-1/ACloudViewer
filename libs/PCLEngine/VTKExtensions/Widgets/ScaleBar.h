@@ -32,6 +32,12 @@ private:
     // 兼容不同Qt版本的DPI获取方法
     double getDPIScale();
     
+    // 跨平台字体大小优化函数
+    int getOptimizedFontSize(int baseFontSize = 18);
+    
+    // 跨平台DPI缩放处理函数
+    double getPlatformAwareDPIScale();
+    
     // 创建刻度线
     vtkSmartPointer<vtkActor2D> createTickActor(double x, double y, double length);
 }; 

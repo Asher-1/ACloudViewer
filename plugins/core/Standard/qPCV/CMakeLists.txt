@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_STANDARD_QPCV "Install qPCV plugin" OFF )
 
 if( PLUGIN_STANDARD_QPCV )

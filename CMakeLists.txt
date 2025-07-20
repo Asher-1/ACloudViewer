@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.19)
 # If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
-# official repository https://apt.kitware.com/.  CMake 3.18+ is required to
+# official repository https://apt.kitware.com/.  CMake 3.19+ is required to
 # allow linking with OBJECT libraries, to prevent erroneous -gencode option
 # deduplication with CUDA, and to simplify generator expressions for selecting
 # compile flags and setting global hardened link flags.
+
+include(cmake/CMakeVersionConfig.cmake)
 
 # One shouldn't generate the BUILD project directly in the SOURCES folder!
 if (${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})

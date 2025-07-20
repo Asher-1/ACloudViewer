@@ -18,10 +18,15 @@
 #include <cstring>
 #include <QString>
 #include <QProcessEnvironment>
+#include <QScreen>
+#include <algorithm>
+#include <QCoreApplication>
+#include <QApplication>
+#include <QDesktopWidget>
 
 ScaleBar::ScaleBar(vtkRenderer* renderer) {
-    // 获取DPI缩放
-    dpiScale = getDPIScale();
+    // 获取跨平台优化的DPI缩放
+    dpiScale = getPlatformAwareDPIScale();
     
     // 创建线段
     auto lineSource = vtkSmartPointer<vtkLineSource>::New();
@@ -36,14 +41,16 @@ ScaleBar::ScaleBar(vtkRenderer* renderer) {
     lineActor->GetProperty()->SetColor(1.0, 1.0, 1.0);
     lineActor->GetProperty()->SetLineWidth(3.0 * dpiScale);
 
-    // 创建文本
+    // 创建文本 - 使用跨平台优化的字体大小
     textActor = vtkSmartPointer<vtkTextActor>::New();
     textActor->SetInput("1 m");
-    textActor->GetTextProperty()->SetFontSize(static_cast<int>(18.0 * dpiScale));
+    int optimizedFontSize = getOptimizedFontSize(18);
+    textActor->GetTextProperty()->SetFontSize(optimizedFontSize);
     textActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
     textActor->GetTextProperty()->SetJustificationToCentered();
     textActor->GetTextProperty()->SetVerticalJustificationToTop();
-    textActor->SetPosition(50.0 * dpiScale, 25.0 * dpiScale); // 初始位置，会在update中调整
+    // 初始位置设置为居中，会在update中调整到正确位置
+    textActor->SetPosition(100.0 * dpiScale, 25.0 * dpiScale);
 
     // 创建刻度线
     leftTickActor = createTickActor(0.0, 0.0, 10.0 * dpiScale);
@@ -83,7 +90,11 @@ double ScaleBar::getDPIScale() {
     
     // 方法2: Qt 5.0+ 使用 QApplication::devicePixelRatio()
     #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-    return QApplication::devicePixelRatio();
+    QCoreApplication* coreApp = QCoreApplication::instance();
+    QApplication* app = qobject_cast<QApplication*>(coreApp);
+    if (app) {
+        return app->devicePixelRatio();
+    }
     #endif
     
     // 方法3: Qt 4.x 使用 QDesktopWidget 计算
@@ -112,6 +123,116 @@ double ScaleBar::getDPIScale() {
     return 1.0; // 默认缩放
 }
 
+int ScaleBar::getOptimizedFontSize(int baseFontSize) {
+    // 获取屏幕信息
+    QScreen* screen = QApplication::primaryScreen();
+    if (!screen) {
+        return baseFontSize;
+    }
+    
+    // 获取屏幕分辨率信息
+    QSize screenSize = screen->size();
+    int screenWidth = screenSize.width();
+    int screenHeight = screenSize.height();
+    int screenDPI = screen->physicalDotsPerInch();
+    int dpiScale = static_cast<int>(getDPIScale());
+    
+    // 平台特定的基础字体大小调整
+    int platformBaseSize = baseFontSize;
+    #ifdef Q_OS_MAC
+        // macOS: 默认字体稍大，但需要考虑Retina显示器的过度放大
+        platformBaseSize = baseFontSize;
+        if (dpiScale > 1) {
+            // Retina显示器：使用较小的字体避免过度放大
+            platformBaseSize = std::max(12, baseFontSize - (dpiScale - 1) * 3);
+        }
+    #elif defined(Q_OS_WIN)
+        // Windows: 根据DPI调整字体大小
+        if (screenDPI > 120) {
+            // 高DPI显示器
+            platformBaseSize = std::max(12, baseFontSize - 2);
+        } else if (screenDPI < 96) {
+            // 低DPI显示器
+            platformBaseSize = baseFontSize + 2;
+        }
+    #elif defined(Q_OS_LINUX)
+        // Linux: 根据屏幕分辨率调整
+        if (screenWidth >= 1920 && screenHeight >= 1080) {
+            // 高分辨率显示器
+            platformBaseSize = std::max(12, baseFontSize - 2);
+        } else if (screenWidth < 1366) {
+            // 低分辨率显示器
+            platformBaseSize = baseFontSize + 2;
+        }
+    #endif
+    
+    // 分辨率特定的调整
+    int resolutionFactor = 0;
+    if (screenWidth >= 2560 && screenHeight >= 1440) {
+        // 2K及以上分辨率
+        resolutionFactor = -1;
+    } else if (screenWidth < 1366) {
+        // 低分辨率
+        resolutionFactor = 1;
+    }
+    
+    // 最终字体大小计算
+    int finalSize = platformBaseSize + resolutionFactor;
+    
+    // 确保字体大小在合理范围内
+    finalSize = std::max(10, std::min(32, finalSize));
+    
+    return finalSize;
+}
+
+double ScaleBar::getPlatformAwareDPIScale() {
+    double dpiScale = getDPIScale();
+    QScreen* screen = QApplication::primaryScreen();
+    if (!screen) {
+        return dpiScale;
+    }
+    
+    // 获取屏幕信息
+    QSize screenSize = screen->size();
+    int screenWidth = screenSize.width();
+    int screenHeight = screenSize.height();
+    int screenDPI = screen->physicalDotsPerInch();
+    
+    // 平台特定的DPI缩放调整
+    double adjustedScale = dpiScale;
+    
+    #ifdef Q_OS_MAC
+        // macOS: Retina显示器需要特殊处理
+        if (dpiScale > 1) {
+            // 对于UI元素，使用较小的缩放以避免过度放大
+            adjustedScale = 1.0 + (dpiScale - 1.0) * 0.6;
+        }
+    #elif defined(Q_OS_WIN)
+        // Windows: 根据DPI设置调整
+        if (screenDPI > 120) {
+            // 高DPI显示器，适当减小缩放
+            adjustedScale = std::min(adjustedScale, 1.4);
+        } else if (screenDPI < 96) {
+            // 低DPI显示器，适当增加缩放
+            adjustedScale = std::max(adjustedScale, 1.0);
+        }
+    #elif defined(Q_OS_LINUX)
+        // Linux: 根据分辨率调整
+        if (screenWidth >= 2560 && screenHeight >= 1440) {
+            // 超高分辨率，减小缩放
+            adjustedScale = std::min(adjustedScale, 1.2);
+        } else if (screenWidth < 1366) {
+            // 低分辨率，增加缩放
+            adjustedScale = std::max(adjustedScale, 1.0);
+        }
+    #endif
+    
+    // 确保缩放在合理范围内
+    adjustedScale = std::max(0.8, std::min(1.8, adjustedScale));
+    
+    return adjustedScale;
+}
+
 vtkSmartPointer<vtkActor2D> ScaleBar::createTickActor(double x, double y, double length) {
     auto lineSource = vtkSmartPointer<vtkLineSource>::New();
     lineSource->SetPoint1(x, y, 0.0);
@@ -132,12 +253,13 @@ void ScaleBar::update(vtkRenderer* renderer, vtkRenderWindowInteractor* interact
     if (!visible || !renderer || !renderer->GetRenderWindow()) return;
     
     // 动态更新DPI缩放（以防窗口移动到不同DPI的显示器）
-    double currentDPIScale = getDPIScale();
+    double currentDPIScale = getPlatformAwareDPIScale();
     if (std::abs(currentDPIScale - dpiScale) > 0.1) {
         dpiScale = currentDPIScale;
-        // 更新字体大小和线宽
+        // 更新字体大小和线宽 - 使用跨平台优化的字体大小
         if (textActor) {
-            textActor->GetTextProperty()->SetFontSize(static_cast<int>(18.0 * dpiScale));
+            int optimizedFontSize = getOptimizedFontSize(18);
+            textActor->GetTextProperty()->SetFontSize(optimizedFontSize);
             textActor->GetTextProperty()->SetJustificationToCentered();
             textActor->GetTextProperty()->SetVerticalJustificationToTop();
         }
@@ -158,10 +280,15 @@ void ScaleBar::update(vtkRenderer* renderer, vtkRenderWindowInteractor* interact
     int winH = size[1];
     // 比例尺长度（像素），考虑DPI缩放
     int barPixelLen = static_cast<int>((winW / 6.0) * dpiScale); // 约为窗口宽度的1/6
-    // 获取相机
-    vtkCamera* cam = renderer->GetActiveCamera();
-    double p1[3] = {50.0 * dpiScale, 50.0 * dpiScale, 0.0}; // 屏幕左下角偏移
-    double p2[3] = {50.0 * dpiScale + static_cast<double>(barPixelLen), 50.0 * dpiScale, 0.0};
+    
+    // 计算ScaleBar在窗口底部居中的位置
+    double bottomMargin = 25.0 * dpiScale; // 底部边距
+    double centerX = static_cast<double>(winW) / 2.0; // 窗口中心X坐标
+    double bottomY = bottomMargin; // 底部Y坐标
+    
+    // 计算ScaleBar的起始和结束位置（居中）
+    double p1[3] = {centerX - static_cast<double>(barPixelLen) / 2.0, bottomY, 0.0}; // 线条左端点
+    double p2[3] = {centerX + static_cast<double>(barPixelLen) / 2.0, bottomY, 0.0}; // 线条右端点
     // 屏幕坐标转世界坐标
     double world1[4], world2[4];
     renderer->SetDisplayPoint(static_cast<int>(p1[0]), static_cast<int>(p1[1]), 0);
@@ -198,8 +325,8 @@ void ScaleBar::update(vtkRenderer* renderer, vtkRenderWindowInteractor* interact
     if (mapper) {
         auto lineSource = dynamic_cast<vtkLineSource*>(mapper->GetInputConnection(0,0)->GetProducer());
         if (lineSource) {
-                    lineSource->SetPoint1(p1[0], p1[1], 0.0);
-        lineSource->SetPoint2(p1[0] + static_cast<double>(barPixelLen), p1[1], 0.0);
+            lineSource->SetPoint1(p1[0], p1[1], 0.0);
+            lineSource->SetPoint2(p2[0], p2[1], 0.0);
             lineSource->Update();
         }
     }
@@ -218,8 +345,8 @@ void ScaleBar::update(vtkRenderer* renderer, vtkRenderWindowInteractor* interact
                 leftSource->SetPoint2(p1[0], p1[1] + tickLength, 0.0);
                 leftSource->Update();
                 
-                rightSource->SetPoint1(p1[0] + static_cast<double>(barPixelLen), p1[1], 0.0);
-                rightSource->SetPoint2(p1[0] + static_cast<double>(barPixelLen), p1[1] + tickLength, 0.0);
+                rightSource->SetPoint1(p2[0], p2[1], 0.0);
+                rightSource->SetPoint2(p2[0], p2[1] + tickLength, 0.0);
                 rightSource->Update();
             }
         }
@@ -236,7 +363,7 @@ void ScaleBar::update(vtkRenderer* renderer, vtkRenderWindowInteractor* interact
     textActor->GetTextProperty()->SetVerticalJustificationToTop();
     
     // 计算文本位置：在线条下方居中
-    double textX = p1[0] + static_cast<double>(barPixelLen) / 2.0; // 线条中心X坐标
-    double textY = p1[1] - 20.0 * dpiScale; // 线条下方
+    double textX = centerX; // 使用窗口中心X坐标，确保文本居中
+    double textY = bottomY - 10.0 * dpiScale; // 线条下方
     textActor->SetPosition(textX, textY);
 } 

@@ -10,8 +10,7 @@ else ()
     set(lib_name assimp)
 endif ()
 
-ExternalProject_Add(
-        ext_assimp
+ExternalProject_Add(ext_assimp
         PREFIX assimp
         URL https://github.com/assimp/assimp/archive/refs/tags/v5.0.1.tar.gz # Jan 2020
         URL_HASH SHA256=11310ec1f2ad2cd46b95ba88faca8f7aaa1efe9aa12605c55e3de2b977b3dbfc
@@ -32,8 +31,7 @@ ExternalProject_Add(
         ${ExternalProject_CMAKE_ARGS_hidden}
         BUILD_BYPRODUCTS
         <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
-        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}IrrXML${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
+        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}IrrXML${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
 set(ASSIMP_INCLUDE_DIR ${INSTALL_DIR}/include/)

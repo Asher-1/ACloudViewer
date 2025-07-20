@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.15..3.27)
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 project(pycvcorelib LANGUAGES CXX)
 
 include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/Helpers.cmake")

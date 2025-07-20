@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION ${CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION})
 
 project(${MAIN_APP_NAME} VERSION ${PROJECT_VERSION})
 
@@ -222,7 +222,6 @@ else ()
             VERBATIM
     )
 endif ()
-
 
 if (WIN32 OR APPLE)
     DeployQt(

@@ -26,8 +26,7 @@ else()
 endif()
 
 
-ExternalProject_Add(
-    ext_zeromq
+ExternalProject_Add(ext_zeromq
     PREFIX zeromq
     URL https://github.com/zeromq/libzmq/releases/download/v4.3.5/zeromq-4.3.5.tar.gz
     URL_HASH SHA256=6653ef5910f17954861fe72332e68b03ca6e4d9c7160eb3a8de5a5a913bfab43
@@ -35,11 +34,10 @@ ExternalProject_Add(
     # do not update
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         # Does not seem to work. We have to directly set the flags on Windows.
         #-DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
-        #-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-        -DBUILD_STATIC=ON
+        #-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}-DBUILD_STATIC=ON
         -DBUILD_SHARED=OFF
         -DBUILD_TESTS=OFF
         -DENABLE_CPACK=OFF
@@ -52,12 +50,10 @@ ExternalProject_Add(
         ${WIN_CMAKE_ARGS}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${lib_suffix}${CMAKE_STATIC_LIBRARY_SUFFIX}
-        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}gd${lib_suffix}${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
+        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}gd${lib_suffix}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 # cppzmq is header only. we just need to download
-ExternalProject_Add(
-    ext_cppzmq
+ExternalProject_Add(ext_cppzmq
     PREFIX zeromq
     URL https://github.com/zeromq/cppzmq/archive/refs/tags/v4.10.0.tar.gz
     URL_HASH SHA256=c81c81bba8a7644c84932225f018b5088743a22999c6d82a2b5f5cd1e6942b74

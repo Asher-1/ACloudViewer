@@ -1,7 +1,7 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION})
+
 # CC custom CMake script for QCustomPlot
 # https://www.qcustomplot.com/
-
-cmake_minimum_required(VERSION 3.10)
 
 project( QCustomPlot )
 

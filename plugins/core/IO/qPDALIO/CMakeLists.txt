@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_IO_QPDAL "Install qPDALIO plugin to read & write LAS files (deprecated, prefer using qLAS I/O now)" OFF )
 
 if( PLUGIN_IO_QPDAL )

@@ -1,7 +1,7 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION})
+
 # CC custom CMake script for shapelib
 # https://github.com/OSGeo/shapelib
-
-cmake_minimum_required(VERSION 3.10)
 
 project( shapelib )
 

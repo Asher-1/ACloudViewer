@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
 option( PLUGIN_STANDARD_QVOXFALL "Install qVoxFall plugin" OFF )
 

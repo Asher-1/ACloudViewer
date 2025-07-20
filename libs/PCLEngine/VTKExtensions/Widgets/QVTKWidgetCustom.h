@@ -137,7 +137,9 @@ public:
 
     QMainWindow* getWin() { return m_win; }
 
-    void setScaleBarVisible(bool visible);
+    void setScaleBarVisible(bool visible) {
+        if (m_scaleBar) m_scaleBar->setVisible(visible);
+    }
 
 protected:
     // events handling

@@ -6,8 +6,7 @@ else()
     set(lib_name z)
 endif()
 
-ExternalProject_Add(
-    ext_zlib
+ExternalProject_Add(ext_zlib
     PREFIX zlib
     URL https://github.com/madler/zlib/archive/refs/tags/v1.2.13.tar.gz
     URL_HASH SHA256=1525952a0a567581792613a9723333d7f8cc20b87a81f920fb8bc7e3f2251428
@@ -24,8 +23,7 @@ ExternalProject_Add(
         ${ExternalProject_CMAKE_ARGS}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
-        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}d${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
+        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}d${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
 set(ZLIB_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

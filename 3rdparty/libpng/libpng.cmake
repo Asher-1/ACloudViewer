@@ -6,8 +6,7 @@ else()
     set(lib_name png16)
 endif()
 
-ExternalProject_Add(
-    ext_libpng
+ExternalProject_Add(ext_libpng
     PREFIX libpng
     URL https://github.com/glennrp/libpng/archive/refs/tags/v1.6.37.tar.gz
     URL_HASH SHA256=ca74a0dace179a8422187671aee97dd3892b53e168627145271cad5b5ac81307

@@ -72,8 +72,7 @@ if(NOT EXISTS ${CMAKE_BINARY_DIR}/args.gn)
     message(STATUS "Configs written to ${CMAKE_BINARY_DIR}/args.gn")
 endif()
 
-ExternalProject_Add(
-    ext_webrtc
+ExternalProject_Add(ext_webrtc
     PREFIX webrtc
     DOWNLOAD_COMMAND ${CMAKE_COMMAND} -E rm -rf ext_webrtc
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/../webrtc ext_webrtc

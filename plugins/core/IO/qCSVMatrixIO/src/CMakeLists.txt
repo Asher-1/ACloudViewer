@@ -4,4 +4,3 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/CSVMatrixOpenDialog.cpp
         ${CMAKE_CURRENT_LIST_DIR}/qCSVMatrixIO.cpp
 )
-

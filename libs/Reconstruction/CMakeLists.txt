@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION})
+
 # Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 # All rights reserved.
 #
@@ -29,8 +31,6 @@
 #
 # Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-cmake_minimum_required(VERSION 3.18)
-
 project(COLMAP)
 
 set(COLMAP_VERSION "${CLOUDVIEWER_VERSION}")
@@ -47,7 +47,6 @@ include(CheckCXXCompilerFlag)
 # Include helper macros and commands, and allow the included file to override
 # the CMake policies in this file
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeHelper.cmake NO_POLICY_SCOPE)
-
 
 ################################################################################
 # Options
@@ -165,7 +164,6 @@ if (CGAL_FOUND)
     message(STATUS "  Includes : ${CGAL_INCLUDE_DIRS}")
     message(STATUS "  Libraries : ${CGAL_LIBRARY}")
 endif ()
-
 
 ################################################################################
 # Compiler specific configuration

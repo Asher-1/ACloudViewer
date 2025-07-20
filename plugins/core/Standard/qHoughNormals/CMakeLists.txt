@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_STANDARD_QHOUGH_NORMALS "Install qHoughNormals plugin" OFF )
 
 # ACloudViewer 'Hough Normals' plugin (see https://github.com/aboulch/normals_Hough)

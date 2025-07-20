@@ -37,4 +37,3 @@ target_sources(pybind PRIVATE
 target_sources(pybind PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/vocab_tree/vocab_tree.cpp
         )
-

@@ -1,5 +1,4 @@
 
-cmake_minimum_required(VERSION 3.10)
 # Overide policy for hidden symbol visibility
 if(POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)
@@ -48,4 +47,3 @@ if (BUILD_CUDA_MODULE)
     target_link_libraries(tests PRIVATE ${CUDA_LIBRARIES})
     target_include_directories(tests SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
-
