@@ -245,6 +245,7 @@ public:
         int margin;
         int iconSize;
         QPoint topCorner;
+        qreal  pixelDeviceRatio;
 
         explicit HotZone(QWidget* win)
             : textHeight(0),
@@ -253,28 +254,36 @@ public:
               fs_label("fullscreen mode"),
               psi_label("default point size"),
               lsi_label("default line width"),
-              margin(10)  // 16|10
+              margin(16)  // 16|10
               ,
-              iconSize(12)  // 16
+              iconSize(16)  // 16
               ,
-              topCorner(0, 0) {
-            // default color ("greenish")
-            // color[0] = 133;
-            // color[1] = 193;
-            // color[2] = 39;
+              topCorner(0, 0)
+              , 
+              pixelDeviceRatio(1.0) {
 
             color[0] = ecvColor::defaultLabelBkgColor.r;
             color[1] = ecvColor::defaultLabelBkgColor.g;
             color[2] = ecvColor::defaultLabelBkgColor.b;
 
+            updateInternalVariables(win);
+
+        }
+
+        void updateInternalVariables(QWidget* win) {
             if (win) {
                 font = win->font();
-                double dpiScale = GetPlatformAwareDPIScale();
-                // 使用跨平台优化的字体大小
+                pixelDeviceRatio = GetPlatformAwareDPIScale();
                 int fontSize = GetOptimizedFontSize(12);
-                font.setPointSize(fontSize);
-                margin *= dpiScale;
-                iconSize *= dpiScale;
+                if (fontSize != pixelDeviceRatio) {
+                    font.setPointSize(fontSize);
+                } else {
+                    font.setPointSize(12 * pixelDeviceRatio);
+                }
+                CVLog::Print(QString("pixelDeviceRatio: %1 and fontSize %2")
+                         .arg(pixelDeviceRatio).arg(fontSize));
+                margin *= pixelDeviceRatio;
+                iconSize *= pixelDeviceRatio;
                 font.setBold(true);
             }
 
@@ -297,8 +306,7 @@ public:
                     std::max(psi_labelRect.height(), bbv_labelRect.height());
             textHeight = std::max(lsi_labelRect.height(), textHeight);
             textHeight = std::max(fs_labelRect.height(), textHeight);
-            textHeight = (3 * textHeight) /
-                         4;  // --> factor: to recenter the baseline a little
+            textHeight = (3 * textHeight) / 4;  // --> factor: to recenter the baseline a little
             yTextBottomLineShift = (iconSize / 2) + (textHeight / 2);
         }
 
@@ -314,6 +322,10 @@ public:
             if (fullScreenEnabled)
                 totalWidth = std::max(totalWidth, fs_totalWidth);
 
+#ifdef Q_OS_MAC
+                // fix the hot zone width on mac
+                totalWidth = totalWidth + 3 * (margin + iconSize);
+#endif
             QPoint minAreaCorner(
                     0, std::min(0, yTextBottomLineShift - textHeight));
             QPoint maxAreaCorner(totalWidth,
@@ -420,10 +432,10 @@ public:  //! Draws the main 3D layer
             const WIDGETS_PARAMETER& param) { /* do nothing */
     }
     static void RemoveWidgets(const WIDGETS_PARAMETER& param,
-                              bool update = false);
+        bool update = false);
     static void RemoveAllWidgets(bool update = true);
     static void Remove3DLabel(const QString& view_id);
-
+    
     inline static void DrawCoordinates(double scale = 1.0,
                                        const std::string& id = "reference",
                                        int viewport = 0) {

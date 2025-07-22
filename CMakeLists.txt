@@ -161,7 +161,7 @@ else()
     option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
 endif()
 
-if(LINUX_AARCH64 OR APPLE_AARCH64)
+if(LINUX_AARCH64)
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
 else()
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           OFF)
