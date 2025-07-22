@@ -3350,6 +3350,7 @@ void ecvDisplayTools::DisplayText(
         else if (align & ALIGN_VBOTTOM)
             y2 += rect.height();
 
+    
         // background is not totally transparent
         if (bkgAlpha != 0.0f) {
             // inverted color with a bit of transparency
@@ -3381,7 +3382,11 @@ void ecvDisplayTools::DisplayText(
                           static_cast<int>(rect.height() + 1.5 * margin));
 
 #ifdef Q_OS_MAC
+            // fix name3d background issues on mac
             param.rect.setWidth(param.rect.width() * 2);
+            // Note: should be moved to the top of the screen (equal to move bottom) in GL coordinates.
+            param.rect.moveTop(std::min(s_tools.instance->m_glViewport.height(),
+                                param.rect.y() + 2 * margin));
 #endif
 
             DrawWidgets(param, true);
@@ -3469,7 +3474,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
         WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
                                 CLICKED_ITEMS);
         param.color = ecvColor::FromRgba(ecvColor::odarkGrey);
-        param.color.a = 0.2f /*210/255.0f*/;
+        param.color.a = 210 / 255.0f;
         int x0 = areaRect.x();
         int y0 = fullH - areaRect.y() - areaRect.height();
         param.rect = QRect(x0, y0, areaRect.width(), areaRect.height());
