@@ -110,6 +110,7 @@ public:
     }
     QVTKInteractor* GetInteractor() { return this->interactor(); }
 
+
 protected:
     void setBounds(double* bounds);
 

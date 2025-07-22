@@ -277,6 +277,7 @@ bool IsCalledFromMainThread() {
 }
 
 void QVTKWidgetCustom::updateScene() {
+    if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
     if (IsCalledFromMainThread() && this->GetRenderWindow()) {
         this->GetRenderWindow()->Render();
     } else { // only core threading enabled rendering
@@ -284,7 +285,6 @@ void QVTKWidgetCustom::updateScene() {
                 this, [=]() { this->GetRenderWindow()->Render(); },
                 Qt::QueuedConnection);
     }
-    if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
 }
 
 void QVTKWidgetCustom::toWorldPoint(const CCVector3d& input2D,

@@ -1632,35 +1632,6 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(
         // DGM: we now take 'frustumAsymmetry' into account (for stereo
         // rendering)
         double frustumAsymmetry = 0.0;
-        //            if (eyeOffset)
-        //            {
-        //                //see 'NVIDIA 3D VISION PRO AND STEREOSCOPIC 3D' White
-        //                paper (Oct 2010, p. 12) double convergence =
-        //                std::abs(s_tools.instance->m_viewportParams.getFocalDistance());
-
-        //                //we assume zNear = screen distance
-        //                //double scale = zNear * m_stereoParams.stereoStrength
-        //                / m_stereoParams.screenDistance_mm;	//DGM: we don't
-        //                want to depend on the cloud size anymore
-        //                                                                                                            //as it can produce very strange visual effects on very large clouds
-        //                                                                                                            //we now keep something related to the focal distance (multiplied by
-        //                                                                                                            //the 'zNearCoef' that can be tweaked by the user if necessary)
-        //                double scale = convergence *
-        //                s_tools.instance->m_viewportParams.zNearCoef *
-        //                        s_tools.instance->m_stereoParams.stereoStrength
-        //                        /
-        //                        s_tools.instance->m_stereoParams.screenDistance_mm;
-        //                double eyeSeperation =
-        //                s_tools.instance->m_stereoParams.eyeSeparation_mm *
-        //                scale;
-
-        //                //on input 'eyeOffset' should be -1 (left) or +1
-        //                (right) *eyeOffset *= eyeSeperation;
-
-        //                frustumAsymmetry = (*eyeOffset) * zNear / convergence;
-
-        //            }
-
         projMatrix = ecvGenericDisplayTools::Frustum(-xMax - frustumAsymmetry,
                                                      xMax - frustumAsymmetry,
                                                      -yMax, yMax, zNear, zFar);
@@ -2729,21 +2700,19 @@ void ecvDisplayTools::ShowPivotSymbol(bool state) {
 }
 
 int ecvDisplayTools::GetFontPointSize() {
-    return (s_tools.instance->m_captureMode.enabled
+    return GetOptimizedFontSize(s_tools.instance->m_captureMode.enabled
                     ? FontSizeModifier(
                               GetDisplayParameters().defaultFontSize,
                               s_tools.instance->m_captureMode.zoomFactor)
-                    : GetDisplayParameters().defaultFontSize) *
-           GetDevicePixelRatio();
+                    : GetDisplayParameters().defaultFontSize);
 }
 
 int ecvDisplayTools::GetLabelFontPointSize() {
-    return (s_tools.instance->m_captureMode.enabled
+    return GetOptimizedFontSize(s_tools.instance->m_captureMode.enabled
                     ? FontSizeModifier(
                               GetDisplayParameters().labelFontSize,
                               s_tools.instance->m_captureMode.zoomFactor)
-                    : GetDisplayParameters().labelFontSize) *
-           GetDevicePixelRatio();
+                    : GetDisplayParameters().labelFontSize);
 }
 
 QFont ecvDisplayTools::GetLabelDisplayFont() {
@@ -2916,12 +2885,18 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
     // display traces
     if (s_tools.instance->m_showDebugTraces) {
         if (!s_tools.instance->m_diagStrings.isEmpty()) {
+            QFont font = GetTextDisplayFont();
+            int font_size = font.pointSize();
+            QFontMetrics fm(font);
+
             int x = s_tools.instance->m_glViewport.width() / 2 - 100;
-            int y = 0;
+            int margin = font_size / 2;
+            int y = margin;
+            
 
             // draw black background
             {
-                int height = (s_tools.instance->m_diagStrings.size() + 1) * 10;
+                int height = (s_tools.instance->m_diagStrings.size() + 1) * (fm.height() + margin);
                 WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
                                         DEBUG_LAYER_ID);
                 param.color = ecvColor::dark;
@@ -2931,11 +2906,11 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
                         200, height);
                 DrawWidgets(param, true);
             }
-
+            y += margin;
             for (const QString& str : s_tools.instance->m_diagStrings) {
-                RenderText(x + 10, y + 10, str, QFont(), ecvColor::yellow,
+                RenderText(x + font_size, y + font_size, str, font, ecvColor::yellow,
                            DEBUG_LAYER_ID);
-                y += 10;
+                y += fm.height() + margin;
             }
         }
     }
@@ -3149,6 +3124,7 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
             } else {
                 SetScaleBarVisible(false);
             }
+            UpdateScreen();
         }
 
         if (!s_tools.instance->m_captureMode.enabled) {
@@ -3294,7 +3270,7 @@ void ecvDisplayTools::RenderText(
 
     context.textDefaultCol = color;
     if (context.textParam.display3D) {
-        context.textParam.textScale = 2.0;
+        context.textParam.textScale = GetPlatformAwareDPIScale();
         CCVector3d input3D(x, s_tools.instance->m_glViewport.height() - y, 0);
         CCVector3d output2D;
         ToWorldPoint(input3D, output2D);
@@ -3404,6 +3380,10 @@ void ecvDisplayTools::DisplayText(
                     QRect(xB - margin, yB - margin, rect.width() + 2 * margin,
                           static_cast<int>(rect.height() + 1.5 * margin));
 
+#ifdef Q_OS_MAC
+            param.rect.setWidth(param.rect.width() * 2);
+#endif
+
             DrawWidgets(param, true);
         }
     }
@@ -3450,7 +3430,11 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
     if (!s_tools.instance->m_hotZone) {
         s_tools.instance->m_hotZone =
                 new HotZone(ecvDisplayTools::GetCurrentScreen());
-    }
+    } else if (GetPlatformAwareDPIScale() != s_tools.instance->m_hotZone->pixelDeviceRatio) // the device pixel ratio has changed (happens when changing screen for instance)
+	{
+		s_tools.instance->m_hotZone->updateInternalVariables(ecvDisplayTools::GetCurrentScreen());
+	}
+
     // remember the last position of the 'top corner'
     s_tools.instance->m_hotZone->topCorner =
             QPoint(xStart0, yStart) +
@@ -3466,16 +3450,11 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
         return;
     }
 
-    //"exit" icon
+     //"exit" icon
     // static const QImage c_exitIcon =
     // QImage(":/Resources/images/ecvExit.png").mirrored();
     int fullW = s_tools.instance->m_glViewport.width();
     int fullH = s_tools.instance->m_glViewport.height();
-    QFont font = s_tools.instance->m_hotZone->font;
-    QFontMetrics fm(font);
-    int textHeight = fm.height();
-    int margin = textHeight / 4;
-    int iconSize = s_tools.instance->m_hotZone->iconSize;
 
     // clear history
     RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS));
@@ -3498,6 +3477,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
     }
 
     yStart = s_tools.instance->m_hotZone->topCorner.y();
+    int iconSize = s_tools.instance->m_hotZone->iconSize;
 
     if (fullScreenEnabled) {
         int xStart = s_tools.instance->m_hotZone->topCorner.x();
@@ -3513,6 +3493,10 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
         xStart += s_tools.instance->m_hotZone->fs_labelRect.width() +
                   s_tools.instance->m_hotZone->margin;
 
+#ifdef Q_OS_MAC
+        // fix the start of icon on mac
+        xStart += s_tools.instance->m_hotZone->margin * 4;
+#endif
         //"full-screen" icon
         {
             int x0 = xStart;
@@ -3552,6 +3536,10 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
         // icon
         xStart += s_tools.instance->m_hotZone->bbv_labelRect.width() +
                   s_tools.instance->m_hotZone->margin;
+#ifdef Q_OS_MAC
+        // fix the start of icon on mac
+        xStart += s_tools.instance->m_hotZone->margin * 4;
+#endif
 
         //"exit" icon
         {
@@ -3580,68 +3568,140 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
         // default point size
         {
             int xStart = s_tools.instance->m_hotZone->topCorner.x();
-            RenderText(xStart, yStart + textHeight, s_tools.instance->m_hotZone->psi_label, font, textColor, CLICKED_ITEMS);
-            xStart += s_tools.instance->m_hotZone->psi_labelRect.width() + s_tools.instance->m_hotZone->margin;
+
+            RenderText(
+                    xStart,
+                    yStart + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                    s_tools.instance->m_hotZone->psi_label,
+                    s_tools.instance->m_hotZone->font, textColor,
+                    CLICKED_ITEMS);
+
+            // icons
+            xStart += s_tools.instance->m_hotZone->psi_labelRect.width() +
+                      s_tools.instance->m_hotZone->margin;
+#ifdef Q_OS_MAC
+            // fix the start of icon on mac
+            xStart += s_tools.instance->m_hotZone->margin * 4;
+#else
+            // fix the start of icon on linux or windows
             xStart -= iconSize;
+#endif
             //"minus" icon
-            int x0 = xStart;
-            int y0 = fullH - (yStart + textHeight / 2);
-            widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
-            DrawWidgets(widgetParam, false);
-            s_tools.instance->m_clickableItems.emplace_back(ClickableItem::DECREASE_POINT_SIZE, QRect(xStart, yStart, iconSize, iconSize));
-            xStart += iconSize;
+            {
+                int x0 = xStart;
+                int y0 = fullH - (yStart + iconSize / 2);
+                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+                DrawWidgets(widgetParam, false);
+                s_tools.instance->m_clickableItems.emplace_back(
+                        ClickableItem::DECREASE_POINT_SIZE,
+                        QRect(xStart, yStart, iconSize, iconSize));
+                xStart += iconSize;
+            }
+
             // separator
-            sepParam.radius = s_tools.instance->m_viewportParams.defaultPointSize / 2;
-            x0 = xStart + s_tools.instance->m_hotZone->margin * 2;
-            y0 = fullH - (yStart + textHeight / 2);
-            sepParam.rect = QRect(x0, y0, iconSize, iconSize);
-            DrawWidgets(sepParam, false);
-            xStart += s_tools.instance->m_hotZone->margin * 2;
+            {
+                sepParam.radius =
+                        s_tools.instance->m_viewportParams.defaultPointSize / 2;
+                int x0 = xStart +
+                         s_tools.instance->m_hotZone
+                                 ->margin /*s_tools.instance->m_hotZone->margin
+                                             / 2*/
+                        ;
+                int y0 = fullH - (yStart + iconSize / 2);
+                sepParam.rect = QRect(x0, y0, iconSize, iconSize);
+                DrawWidgets(sepParam, false);
+                xStart += s_tools.instance->m_hotZone->margin * 2;
+            }
+
             //"plus" icon
-            x0 = xStart;
-            y0 = fullH - (yStart + textHeight / 2);
-            widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
-            DrawWidgets(widgetParam, false);
-            x0 = xStart + 3 * iconSize / 8;
-            y0 = fullH - (yStart + 7 * iconSize / 8);
-            widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
-            DrawWidgets(widgetParam, false);
-            s_tools.instance->m_clickableItems.emplace_back(ClickableItem::INCREASE_POINT_SIZE, QRect(xStart, yStart, iconSize, iconSize));
-            xStart += iconSize;
-            yStart += textHeight + margin;
+            {
+                int x0 = xStart;
+                int y0 = fullH - (yStart + iconSize / 2);
+                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+                DrawWidgets(widgetParam, false);
+                x0 = xStart + 3 * iconSize / 8;
+                y0 = fullH - (yStart + 7 * iconSize / 8);
+                widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
+                DrawWidgets(widgetParam, false);
+
+                s_tools.instance->m_clickableItems.emplace_back(
+                        ClickableItem::INCREASE_POINT_SIZE,
+                        QRect(xStart, yStart, iconSize, iconSize));
+                xStart += iconSize;
+            }
+
+            yStart += iconSize;
+            yStart += s_tools.instance->m_hotZone->margin;
         }
+
         // default line size
         {
             int xStart = s_tools.instance->m_hotZone->topCorner.x();
-            RenderText(xStart, yStart + textHeight, s_tools.instance->m_hotZone->lsi_label, font, textColor, CLICKED_ITEMS);
-            xStart += s_tools.instance->m_hotZone->lsi_labelRect.width() + s_tools.instance->m_hotZone->margin;
+
+            RenderText(
+                    xStart,
+                    yStart + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                    s_tools.instance->m_hotZone->lsi_label,
+                    s_tools.instance->m_hotZone->font, textColor,
+                    CLICKED_ITEMS);
+
+            // icons
+            xStart += s_tools.instance->m_hotZone->lsi_labelRect.width() +
+                      s_tools.instance->m_hotZone->margin;
+#ifdef Q_OS_MAC
+            // fix the start of icon on mac
+            xStart += s_tools.instance->m_hotZone->margin * 4;
+#else
+            // fix the start of icon on linux or windows
             xStart -= iconSize;
+#endif
             //"minus" icon
-            int x0 = xStart;
-            int y0 = fullH - (yStart + textHeight / 2);
-            widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
-            DrawWidgets(widgetParam, false);
-            s_tools.instance->m_clickableItems.emplace_back(ClickableItem::DECREASE_LINE_WIDTH, QRect(xStart, yStart, iconSize, iconSize));
-            xStart += iconSize;
+            {
+                int x0 = xStart;
+                int y0 = fullH - (yStart + iconSize / 2);
+                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+                DrawWidgets(widgetParam, false);
+
+                s_tools.instance->m_clickableItems.emplace_back(
+                        ClickableItem::DECREASE_LINE_WIDTH,
+                        QRect(xStart, yStart, iconSize, iconSize));
+                xStart += iconSize;
+            }
+
             // separator
-            sepParam.radius = s_tools.instance->m_viewportParams.defaultLineWidth / 2;
-            x0 = xStart + s_tools.instance->m_hotZone->margin * 2;
-            y0 = fullH - (yStart + textHeight / 2);
-            sepParam.rect = QRect(x0, y0, iconSize, iconSize);
-            DrawWidgets(sepParam, false);
-            xStart += s_tools.instance->m_hotZone->margin * 2;
+            {
+                sepParam.radius =
+                        s_tools.instance->m_viewportParams.defaultLineWidth / 2;
+                int x0 = xStart +
+                         s_tools.instance->m_hotZone
+                                 ->margin /*s_tools.instance->m_hotZone->margin
+                                             / 2*/
+                        ;
+                int y0 = fullH - (yStart + iconSize / 2);
+                sepParam.rect = QRect(x0, y0, iconSize, iconSize);
+                DrawWidgets(sepParam, false);
+                xStart += s_tools.instance->m_hotZone->margin * 2;
+            }
+
             //"plus" icon
-            x0 = xStart;
-            y0 = fullH - (yStart + textHeight / 2);
-            widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
-            DrawWidgets(widgetParam, false);
-            x0 = xStart + 3 * iconSize / 8;
-            y0 = fullH - (yStart + 7 * iconSize / 8);
-            widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
-            DrawWidgets(widgetParam, false);
-            s_tools.instance->m_clickableItems.emplace_back(ClickableItem::INCREASE_LINE_WIDTH, QRect(xStart, yStart, iconSize, iconSize));
-            xStart += iconSize;
-            yStart += textHeight + margin;
+            {
+                int x0 = xStart;
+                int y0 = fullH - (yStart + iconSize / 2);
+                widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
+                DrawWidgets(widgetParam, false);
+                x0 = xStart + 3 * iconSize / 8;
+                y0 = fullH - (yStart + 7 * iconSize / 8);
+                widgetParam.rect = QRect(x0, y0, iconSize / 4, iconSize);
+                DrawWidgets(widgetParam, false);
+
+                s_tools.instance->m_clickableItems.emplace_back(
+                        ClickableItem::INCREASE_LINE_WIDTH,
+                        QRect(xStart, yStart, iconSize, iconSize));
+                xStart += iconSize;
+            }
+
+            yStart += iconSize;
+            yStart += s_tools.instance->m_hotZone->margin;
         }
     }
 }
@@ -3714,14 +3774,6 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param,
 
         case WIDGETS_TYPE::WIDGET_T2D: {
             QFont textFont = s_tools.instance->m_font;
-            // QRect screen = QGuiApplication::primaryScreen()->geometry();
-
-            // if (screen.width() > 1920 && GetDevicePixelRatio() == 1)  // for
-            // high DPI
-            //{
-            //	textFont.setPointSize(textFont.pointSize() * 3);
-            // }
-
             const_cast<WIDGETS_PARAMETER*>(&param)->fontSize =
                     textFont.pointSize();
 

@@ -308,9 +308,15 @@ endfunction()
 #    LIBRARIES
 #        the expected library variable names to be found in <pkg>.
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
+#    PATHS
+#        Paths with hardcoded guesses. Same as in find_package.
+#    DEPENDS
+#        Adds targets that should be build before "name" as dependency.
 #
 function(find_package_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET"
+        "PACKAGE;VERSION;PACKAGE_VERSION_VAR"
+        "TARGETS;INCLUDE_DIRS;LIBRARIES;PATHS;DEPENDS" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: find_package_3rdparty_library(${name} ${ARGN})")
@@ -322,11 +328,17 @@ function(find_package_3rdparty_library name)
         set(arg_PACKAGE_VERSION_VAR "${arg_PACKAGE}_VERSION")
     endif()
     set(find_package_args "")
+    if(arg_VERSION)
+        list(APPEND find_package_args "${arg_VERSION}")
+    endif()
     if(arg_REQUIRED)
         list(APPEND find_package_args "REQUIRED")
     endif()
     if(arg_QUIET)
         list(APPEND find_package_args "QUIET")
+    endif()
+    if (arg_PATHS)
+        list(APPEND find_package_args PATHS ${arg_PATHS} NO_DEFAULT_PATH)
     endif()
     find_package(${arg_PACKAGE} ${find_package_args})
     if(${arg_PACKAGE}_FOUND)
@@ -353,6 +365,14 @@ function(find_package_3rdparty_library name)
         endif()
         if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
             install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
+            # Ensure that imported targets will be found again.
+            if(arg_TARGETS)
+                list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES ${arg_PACKAGE})
+                set(CloudViewer_3RDPARTY_EXTERNAL_MODULES ${CloudViewer_3RDPARTY_EXTERNAL_MODULES} PARENT_SCOPE)
+            endif()
+        endif()
+        if(arg_DEPENDS)
+            add_dependencies(${name} ${arg_DEPENDS})
         endif()
         set(${name}_FOUND TRUE PARENT_SCOPE)
         set(${name}_VERSION ${${arg_PACKAGE_VERSION_VAR}} PARENT_SCOPE)
@@ -660,6 +680,7 @@ if(USE_SYSTEM_ASSIMP)
     find_package_3rdparty_library(3rdparty_assimp
         PACKAGE assimp
         TARGETS assimp::assimp
+        DEPENDS ext_zlib
     )
     if(NOT 3rdparty_assimp_FOUND)
         set(USE_SYSTEM_ASSIMP OFF)
@@ -1036,7 +1057,8 @@ if (NOT USE_SYSTEM_PNG)
             LIBRARIES     ${ZLIB_LIBRARIES}
             DEPENDS       ext_zlib
             )
-
+    add_dependencies(ext_assimp ext_zlib)
+    
     include(${CloudViewer_3RDPARTY_DIR}/libpng/libpng.cmake)
     import_3rdparty_library(3rdparty_png
             INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}

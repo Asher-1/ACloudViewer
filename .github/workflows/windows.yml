@@ -74,22 +74,16 @@ jobs:
       - name: Disk space used
         run: Get-PSDrive
 
-      - name: Setup Windows SDK
-        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
-        with:
-          sdk-version: 19041
-
       - name: Install CUDA
-        uses: Jimver/cuda-toolkit@v0.2.26
+        uses: Jimver/cuda-toolkit@v0.2.23
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         id: cuda-toolkit
         with:
           cuda: "${{ env.CUDA_VERSION }}"
-          sub-packages: '["nvcc", "visual_studio_integration", "cublas", "cublas_dev", "nvtx", "cudart", "cusolver", "cusolver_dev", "npp", "npp_dev", "thrust", "curand", "curand_dev", "nvrtc_dev"]'
+          sub-packages: '["nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "thrust", "nvtx", "curand", "curand_dev", "nvrtc_dev"]'
           method: 'network'
-          # Do not cache the installer (~3 GiB). It doesn't speed up the
-          # installation significantly. And we need the space for ccache.
           use-github-cache: 'false'
+          use-local-cache: 'false'
   
       - name: Setup ENV
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
@@ -310,7 +304,7 @@ jobs:
           sdk-version: 19041
 
       - name: Install CUDA
-        uses: Jimver/cuda-toolkit@v0.2.26
+        uses: Jimver/cuda-toolkit@v0.2.23
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         id: cuda-toolkit
         with:
