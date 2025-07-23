@@ -150,7 +150,6 @@ jobs:
           echo "DEVELOPER_BUILD is ${env:DEVELOPER_BUILD}"
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
-            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="${{ env.INSTALL_DIR }}" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
