@@ -3482,6 +3482,11 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
     }
 
     yStart = s_tools.instance->m_hotZone->topCorner.y();
+    int offset = 0;
+#ifdef Q_OS_MAC
+    // fix the start of text vertically on macos
+    offset = s_tools.instance->m_hotZone->margin / 3;
+#endif
     int iconSize = s_tools.instance->m_hotZone->iconSize;
 
     if (fullScreenEnabled) {
@@ -3489,7 +3494,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
 
         // label
         RenderText(xStart,
-                   yStart + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                   yStart + offset + s_tools.instance->m_hotZone->yTextBottomLineShift,
                    s_tools.instance->m_hotZone->fs_label,
                    s_tools.instance->m_hotZone->font,
                    ecvColor::defaultLabelBkgColor, CLICKED_ITEMS);
@@ -3509,13 +3514,13 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
             WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
                                     CLICKED_ITEMS);
             param.color = ecvColor::FromRgba(ecvColor::ored);
-            param.rect = QRect(x0, y0, iconSize, iconSize);
+            param.rect = QRect(x0, y0, iconSize + offset, iconSize);
             DrawWidgets(param, false);
 
             WIDGETS_PARAMETER texParam(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
             texParam.color = ecvColor::bright;
             texParam.text = "Exit";
-            texParam.rect = QRect(x0, fullH - (yStart + 3 * iconSize / 4),
+            texParam.rect = QRect(x0, fullH - (yStart + offset / 2 + 3 * iconSize / 4),
                                   iconSize, iconSize);
             texParam.fontSize = s_tools.instance->m_hotZone->font.pointSize();
             DrawWidgets(texParam, false);
@@ -3534,7 +3539,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
 
         // label
         RenderText(xStart,
-                   yStart + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                   yStart + offset + s_tools.instance->m_hotZone->yTextBottomLineShift,
                    s_tools.instance->m_hotZone->bbv_label,
                    s_tools.instance->m_hotZone->font);
 
@@ -3576,7 +3581,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
 
             RenderText(
                     xStart,
-                    yStart + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                    yStart + offset + s_tools.instance->m_hotZone->yTextBottomLineShift,
                     s_tools.instance->m_hotZone->psi_label,
                     s_tools.instance->m_hotZone->font, textColor,
                     CLICKED_ITEMS);
@@ -3645,7 +3650,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
 
             RenderText(
                     xStart,
-                    yStart + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                    yStart + offset + s_tools.instance->m_hotZone->yTextBottomLineShift,
                     s_tools.instance->m_hotZone->lsi_label,
                     s_tools.instance->m_hotZone->font, textColor,
                     CLICKED_ITEMS);
