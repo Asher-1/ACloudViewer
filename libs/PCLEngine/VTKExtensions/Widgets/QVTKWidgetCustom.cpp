@@ -1348,10 +1348,6 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                     break;
                 }
             }
-            //            CVLog::PrintDebug(QString("Touch update (%1 points)")
-            //                                      .arg(static_cast<QTouchEvent*>(evt)
-            //                                                   ->touchPoints()
-            //                                                   .size()));
         } break;
 
         case QEvent::Resize: {
