@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: write
     # TODO: Convert to docker
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -68,7 +68,7 @@ jobs:
   Windows:
     permissions:
       contents: write
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
       SRC_DIR: "D:\\a\\ACloudViewer\\ACloudViewer"
       BUILD_DIR: "C:\\ACloudViewer\\build"

@@ -6,6 +6,8 @@ set(PATCH_CUDACRT_COMMAND "")
 if(WIN32)
   set(PATCH_CUDACRT_COMMAND 
     ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch
+    # Patch to include the <chrono> header for the system_clock type
+    ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch
   )
 endif()
 

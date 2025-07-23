@@ -1,6 +1,17 @@
 ACloudViewer Version History
 ============================
 
+
+## v3.9.3
+- New features:
+    -   Add ScaleBar support!
+
+- Bug fixes:
+    -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
+    -   Fix windows ci issues with migrate VS 16 2019 to VS 17 2022 and replace windows-2019 with windows-2022
+    -   Fix ubuntu ci issues that replacing runs on: ubuntu-20.04 with runs-on: ubuntu-22.04 
+    -   Fix the display issues with text on macos
+
 v3.9.2 (Asher) - 12/22/2024
 ----------------------
 
