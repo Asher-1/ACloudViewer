@@ -1739,7 +1739,7 @@ if (BUILD_CUDA_MODULE)
         # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
         # cudatoolkit conda package), or have a mechanism to locate the CUDA
         # toolkit from the system.
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM CUDA::cusolver CUDA::cublas)
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else ()
         # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
         # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
@@ -1748,15 +1748,43 @@ if (BUILD_CUDA_MODULE)
         # find_package_3rdparty_library, but we have to insert
         # liblapack_static.a in the middle of the targets.
         add_library(3rdparty_cublas INTERFACE)
-        target_link_libraries(3rdparty_cublas INTERFACE
-                CUDA::cusolver_static
-                ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
-                CUDA::cusparse_static
-                CUDA::cublas_static
-                CUDA::cudart_static  # must link this to avoid hidden symbol `cudaMemcpy' in libcudart_static.a is referenced by DSO
-                CUDA::cublasLt_static
-                CUDA::culibos
+        if(CUDAToolkit_VERSION VERSION_LESS "12.0")
+            target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver_static
+                    ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
+                    CUDA::cusparse_static
+                    CUDA::cublas_static
+                    CUDA::cudart_static  # must link this to avoid hidden symbol `cudaMemcpy' in libcudart_static.a is referenced by DSO
+                    CUDA::cublasLt_static
+                    CUDA::culibos
+                    )
+        else()
+            # In CUDA 12.0 the liblapack_static.a is deprecated and removed.
+            # Use the libcusolver_lapack_static.a instead.
+            # Use of static libraries is preferred.
+            if(BUILD_WITH_CUDA_STATIC)
+                # Use static CUDA libraries.
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver_static
+                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
+                    CUDA::cusparse_static
+                    CUDA::cublas_static
+                    CUDA::cublasLt_static
+                    CUDA::culibos
+                    CUDA::cudart_static
                 )
+            else()
+                # Use shared CUDA libraries.
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver
+                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver.so
+                    CUDA::cusparse
+                    CUDA::cublas
+                    CUDA::cublasLt
+                    CUDA::culibos
+                )
+            endif()
+        endif()
         if (NOT BUILD_SHARED_LIBS)
             # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/CloudViewer/${PROJECT_NAME}Targets.cmake.
             install(TARGETS 3rdparty_cublas EXPORT ${PROJECT_NAME}Targets)
@@ -1775,24 +1803,43 @@ if (BUILD_CUDA_MODULE)
                 REQUIRED
                 PACKAGE CUDAToolkit
                 TARGETS CUDA::nppc
-                CUDA::nppicc
-                CUDA::nppif
-                CUDA::nppig
-                CUDA::nppim
-                CUDA::nppial
-                )
+                        CUDA::nppicc
+                        CUDA::nppif
+                        CUDA::nppig
+                        CUDA::nppim
+                        CUDA::nppial
+        )
     else ()
-        find_package_3rdparty_library(3rdparty_cuda_npp
+        if(BUILD_WITH_CUDA_STATIC)
+            # Use static CUDA libraries.
+            find_package_3rdparty_library(3rdparty_cuda_npp
                 REQUIRED
                 PACKAGE CUDAToolkit
                 TARGETS CUDA::nppc_static
-                CUDA::nppicc_static
-                CUDA::nppif_static
-                CUDA::nppig_static
-                CUDA::nppim_static
-                CUDA::nppial_static
-                )
+                        CUDA::nppicc_static
+                        CUDA::nppif_static
+                        CUDA::nppig_static
+                        CUDA::nppim_static
+                        CUDA::nppial_static
+            )
+        else()
+            # Use shared CUDA libraries.
+            find_package_3rdparty_library(3rdparty_cuda_npp
+                REQUIRED
+                PACKAGE CUDAToolkit
+                TARGETS CUDA::nppc
+                        CUDA::nppicc
+                        CUDA::nppif
+                        CUDA::nppig
+                        CUDA::nppim
+                        CUDA::nppial
+            )
+        endif()
     endif ()
+
+    if(NOT 3rdparty_cuda_npp_FOUND)
+        message(FATAL_ERROR "CUDA NPP libraries not found.")
+    endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_cuda_npp)
 endif ()
 
