@@ -136,18 +136,23 @@ if(WIN32)
     endif()
     set(CV_LIB_SUFFIX ${OPENCV_MAJOR_VERSION}${OPENCV_MINOR_VERSION}${OPENCV_PATCH_VERSION}$<$<CONFIG:Debug>:d>)
     set(OpenCV_INCLUDE_DIRS ${INSTALL_DIR}/include/ ${INSTALL_DIR}/include/opencv4/)
-    # set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${INSTALL_DIR}/lib -DOPENCV_DIR=${INSTALL_DIR}/lib)  # vs2022
-    # set(OpenCV_LIB_DIR ${INSTALL_DIR}/bin) # vs2022
-    set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${INSTALL_DIR}/x64/${MSVC_VC_VERSION}/lib -DOPENCV_DIR=${INSTALL_DIR}/x64/${MSVC_VC_VERSION}/lib)
-    set(OpenCV_LIB_DIR ${INSTALL_DIR}/x64/${MSVC_VC_VERSION}/lib) # vs2019
+
+    if(MSVC_VC_VERSION STREQUAL "vc17")
+        set(OPENCV_INTALL_PREFIX ${INSTALL_DIR})
+    else()
+        set(OPENCV_INTALL_PREFIX ${INSTALL_DIR}/x64/${MSVC_VC_VERSION})
+    endif()
+        
+    set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${OPENCV_INTALL_PREFIX}/lib -DOPENCV_DIR=${OPENCV_INTALL_PREFIX}/lib)
+    set(OpenCV_LIB_DIR ${OPENCV_INTALL_PREFIX}/lib)
 
     # for debugging
     copy_shared_library(ext_opencv
-                        LIB_DIR      ${INSTALL_DIR}/x64/${MSVC_VC_VERSION}/bin
+                        LIB_DIR      ${OPENCV_INTALL_PREFIX}/bin
                         LIBRARIES    opencv_world${CV_LIB_SUFFIX})
 
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}opencv_world${CV_LIB_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    cloudViewer_install_ext( FILES ${INSTALL_DIR}/x64/${MSVC_VC_VERSION}/bin/${library_filename} ${INSTALL_DESTINATIONS} "")
+    cloudViewer_install_ext( FILES ${OPENCV_INTALL_PREFIX}/bin/${library_filename} ${INSTALL_DESTINATIONS} "")
 else()
     set(CV_LIB_SUFFIX "")
     set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${INSTALL_DIR}/lib/cmake/opencv4 -DOPENCV_DIR=${INSTALL_DIR}/lib/cmake/opencv4)
