@@ -5,6 +5,7 @@ ACloudViewer Version History
 ## v3.9.3
 - New features:
     -   Add ScaleBar support!
+		-   [add some cmake tools](./scripts/cmake/README.md)
 
 - Bug fixes:
     -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)

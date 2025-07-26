@@ -38,7 +38,14 @@ endif()
 add_subdirectory(FLANN)
 add_subdirectory(Graclus)
 add_subdirectory(LSD)
-add_subdirectory(PBA)
+
+# Include PBA conditionally based on PBA_ENABLED flag from parent CMakeLists.txt
+if(PBA_ENABLED)
+    add_subdirectory(PBA)
+else()
+    message(STATUS "Skipping PBA - disabled by parent CMakeLists.txt")
+endif()
+
 add_subdirectory(PoissonRecon)
 add_subdirectory(SiftGPU)
 add_subdirectory(SQLite)

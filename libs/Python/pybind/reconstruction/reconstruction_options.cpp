@@ -673,6 +673,7 @@ void pybind_incremental_triangulator_options(py::module& m) {
                     "ignored in triangulation.");
 }
 
+#ifdef PBA_ENABLED
 void pybind_parallel_bundle_adjustment_options(py::module& m) {
     // cloudViewer.reconstruction.options.ParallelBundleAdjustmentOptions
     py::class_<colmap::ParallelBundleAdjuster::Options>
@@ -710,6 +711,7 @@ void pybind_parallel_bundle_adjustment_options(py::module& m) {
                            "small bundle adjustment problems due to the "
                            "overhead of threading.");
 }
+#endif
 
 void pybind_incremental_mapper_options(py::module& m) {
     // cloudViewer.reconstruction.options.IncrementalMapperSubOptions
@@ -867,10 +869,12 @@ void pybind_incremental_mapper_options(py::module& m) {
             .def("get_global_ba_options",
                  &colmap::IncrementalMapperOptions::GlobalBundleAdjustment,
                  "Get global BundleAdjustment options.")
+#ifdef PBA_ENABLED
             .def("get_parallel_global_ba_options",
                  &colmap::IncrementalMapperOptions::
                          ParallelGlobalBundleAdjustment,
                  "Get parallel global BundleAdjustment options.")
+#endif
             .def_readwrite("min_num_matches",
                            &colmap::IncrementalMapperOptions::min_num_matches,
                            "int: (Default ``15``) The minimum number of "
@@ -975,6 +979,7 @@ void pybind_incremental_mapper_options(py::module& m) {
                                    ba_local_max_num_iterations,
                            "int: (Default ``25``) The maximum number of local "
                            "bundle adjustment iterations.")
+#ifdef PBA_ENABLED
             .def_readwrite("ba_global_use_pba",
                            &colmap::IncrementalMapperOptions::ba_global_use_pba,
                            "bool: (Default ``False``) Whether to use PBA in "
@@ -984,6 +989,7 @@ void pybind_incremental_mapper_options(py::module& m) {
                     &colmap::IncrementalMapperOptions::ba_global_pba_gpu_index,
                     "int: (Default ``-1``) The GPU index for PBA bundle "
                     "adjustment.")
+#endif
             .def_readwrite(
                     "ba_global_images_ratio",
                     &colmap::IncrementalMapperOptions::ba_global_images_ratio,
@@ -1270,7 +1276,9 @@ void pybind_reconstruction_options(py::module& m) {
     pybind_featurepairs_matching_options(m_submodule);
     pybind_bundle_adjustment_options(m_submodule);
     pybind_incremental_triangulator_options(m_submodule);
+#ifdef PBA_ENABLED
     pybind_parallel_bundle_adjustment_options(m_submodule);
+#endif
     pybind_incremental_mapper_options(m_submodule);
     pybind_patch_match_options(m_submodule);
     pybind_stereo_fusion_options(m_submodule);

@@ -63,6 +63,7 @@ void AdjustGlobalBundle(const IncrementalMapperOptions& options,
   }
 
   PrintHeading1("Global bundle adjustment");
+#ifdef PBA_ENABLED
   if (options.ba_global_use_pba && !options.fix_existing_images &&
       num_reg_images >= kMinNumRegImagesForFastBA &&
       ParallelBundleAdjuster::IsSupported(custom_ba_options,
@@ -72,6 +73,9 @@ void AdjustGlobalBundle(const IncrementalMapperOptions& options,
   } else {
     mapper->AdjustGlobalBundle(options.Mapper(), custom_ba_options);
   }
+#else
+  mapper->AdjustGlobalBundle(options.Mapper(), custom_ba_options);
+#endif
 }
 
 void IterativeLocalRefinement(const IncrementalMapperOptions& options,
@@ -258,6 +262,7 @@ BundleAdjustmentOptions IncrementalMapperOptions::GlobalBundleAdjustment()
   return options;
 }
 
+#ifdef PBA_ENABLED
 ParallelBundleAdjuster::Options
 IncrementalMapperOptions::ParallelGlobalBundleAdjustment() const {
   ParallelBundleAdjuster::Options options;
@@ -269,6 +274,7 @@ IncrementalMapperOptions::ParallelGlobalBundleAdjustment() const {
       ba_min_num_residuals_for_multi_threading;
   return options;
 }
+#endif
 
 bool IncrementalMapperOptions::Check() const {
   CHECK_OPTION_GT(min_num_matches, 0);

@@ -39,7 +39,9 @@
 
 #include <ceres/ceres.h>
 
+#ifdef PBA_ENABLED
 #include "PBA/pba.h"
+#endif
 #include "base/camera_rig.h"
 #include "base/reconstruction.h"
 #include "util/alignment.h"
@@ -203,6 +205,7 @@ class BundleAdjuster {
   std::unordered_map<point3D_t, size_t> point3D_num_observations_;
 };
 
+#ifdef PBA_ENABLED
 // Bundle adjustment using PBA (GPU or CPU). Less flexible and accurate than
 // Ceres-Solver bundle adjustment but much faster. Only supports SimpleRadial
 // camera model.
@@ -267,6 +270,7 @@ class ParallelBundleAdjuster {
   std::vector<point3D_t> ordered_point3D_ids_;
   std::unordered_map<image_t, int> image_id_to_camera_idx_;
 };
+#endif
 
 class RigBundleAdjuster : public BundleAdjuster {
  public:
