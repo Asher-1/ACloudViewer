@@ -65,7 +65,7 @@ endif()
 
 # turn on QStringBuilder for more efficient string construction
 #	see https://doc.qt.io/qt-5/qstring.html#more-efficient-string-construction
-add_definitions( -DQT_USE_QSTRINGBUILDER )
+add_compile_definitions(QT_USE_QSTRINGBUILDER)
 				
 # ------------------------------------------------------------------------------
 # OpenGL

@@ -24,11 +24,11 @@ endif()
 set( CMAKE_POSITION_INDEPENDENT_CODE ON )
 
 if (APPLE)
-    add_definitions("-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION")
+    add_compile_definitions(_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
 endif ()
 
 if( MSVC )
-    add_definitions(-DNOMINMAX -D_CRT_SECURE_NO_WARNINGS -D__STDC_LIMIT_MACROS)
+    add_compile_definitions(NOMINMAX _CRT_SECURE_NO_WARNINGS __STDC_LIMIT_MACROS)
     option( OPTION_MP_BUILD "Check to activate multithreaded compilation with MSVC" OFF )
     if( ${OPTION_MP_BUILD} )
        set( CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}\ /MP)

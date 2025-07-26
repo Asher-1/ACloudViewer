@@ -646,9 +646,9 @@ add_subdirectory(core)
 
 # Propagate the choice to use doubles for ScalarType
 if (${CV_CORE_LIB_USES_DOUBLE})
-    add_definitions(-DSCALAR_TYPE_DOUBLE)
+    add_compile_definitions(SCALAR_TYPE_DOUBLE)
 else ()
-    add_definitions(-DSCALAR_TYPE_FLOAT)
+    add_compile_definitions(SCALAR_TYPE_FLOAT)
 endif ()
 
 # Internal libs used by both ACloudViewer and cloudViewer python package

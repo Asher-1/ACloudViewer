@@ -526,6 +526,11 @@ void pybind_bundle_adjustment_options(py::module& m) {
     bundle_adjustment_options.def(py::init<>())
             .def("check", &colmap::BundleAdjustmentOptions::Check,
                  "Check parameters validation.")
+            //     .def("create_loss_function",
+            //     &colmap::BundleAdjustmentOptions::CreateLossFunction)
+            //     .def("create_solver_options",
+            //     &colmap::BundleAdjustmentOptions::CreateSolverOptions,
+            //          "config"_a, "problem"_a)
             .def_readwrite(
                     "loss_function_type",
                     &colmap::BundleAdjustmentOptions::loss_function_type,
@@ -560,14 +565,44 @@ void pybind_bundle_adjustment_options(py::module& m) {
                            &colmap::BundleAdjustmentOptions::print_summary,
                            "bool: (Default ``True``) Whether to print a final "
                            "summary.")
+            .def_readwrite("use_gpu", &colmap::BundleAdjustmentOptions::use_gpu,
+                           "Whether to use Ceres' CUDA linear algebra library, "
+                           "if available.")
+            .def_readwrite("gpu_index",
+                           &colmap::BundleAdjustmentOptions::gpu_index,
+                           "Which GPU to use for solving the problem.")
             .def_readwrite(
-                    "min_num_residuals_for_multi_threading",
+                    "min_num_residuals_for_cpu_multi_threading",
                     &colmap::BundleAdjustmentOptions::
-                            min_num_residuals_for_multi_threading,
+                            min_num_residuals_for_cpu_multi_threading,
                     "int: (Default ``50000``) Minimum number of residuals to "
                     "enable multi-threading. Note that single-threaded is "
                     "typically better for small bundle adjustment problems due "
-                    "to the overhead of threading.");
+                    "to the overhead of threading.")
+            .def_readwrite(
+                    "min_num_images_gpu_solver",
+                    &colmap::BundleAdjustmentOptions::min_num_images_gpu_solver,
+                    "Minimum number of images to use the GPU solver.")
+            .def_readwrite("max_num_images_direct_dense_cpu_solver",
+                           &colmap::BundleAdjustmentOptions::
+                                   max_num_images_direct_dense_cpu_solver,
+                           "Threshold to switch between direct, sparse, and "
+                           "iterative solvers.")
+            .def_readwrite("max_num_images_direct_sparse_cpu_solver",
+                           &colmap::BundleAdjustmentOptions::
+                                   max_num_images_direct_sparse_cpu_solver,
+                           "Threshold to switch between direct, sparse, and "
+                           "iterative solvers.")
+            .def_readwrite("max_num_images_direct_dense_gpu_solver",
+                           &colmap::BundleAdjustmentOptions::
+                                   max_num_images_direct_dense_gpu_solver,
+                           "Threshold to switch between direct, sparse, and "
+                           "iterative solvers.")
+            .def_readwrite("max_num_images_direct_sparse_gpu_solver",
+                           &colmap::BundleAdjustmentOptions::
+                                   max_num_images_direct_sparse_gpu_solver,
+                           "Threshold to switch between direct, sparse, and "
+                           "iterative solvers.");
 
     // cloudViewer.reconstruction.options.LossFunctionType
     py::enum_<colmap::BundleAdjustmentOptions::LossFunctionType>
@@ -702,9 +737,9 @@ void pybind_parallel_bundle_adjustment_options(py::module& m) {
                     &colmap::ParallelBundleAdjuster::Options::num_threads,
                     "int: (Default ``-1``) Number of threads for CPU based "
                     "bundle adjustment.")
-            .def_readwrite("min_num_residuals_for_multi_threading",
+            .def_readwrite("min_num_residuals_for_cpu_multi_threading",
                            &colmap::ParallelBundleAdjuster::Options::
-                                   min_num_residuals_for_multi_threading,
+                                   min_num_residuals_for_cpu_multi_threading,
                            "int: (Default ``50000``) Minimum number of "
                            "residuals to enable multi-threading."
                            " Note that single-threaded is typically better for "
@@ -958,9 +993,9 @@ void pybind_incremental_mapper_options(py::module& m) {
                     &colmap::IncrementalMapperOptions::ba_refine_extra_params,
                     "bool: (Default ``True``) Which intrinsic parameters to "
                     "optimize during the reconstruction.")
-            .def_readwrite("ba_min_num_residuals_for_multi_threading",
+            .def_readwrite("ba_min_num_residuals_for_cpu_multi_threading",
                            &colmap::IncrementalMapperOptions::
-                                   ba_min_num_residuals_for_multi_threading,
+                                   ba_min_num_residuals_for_cpu_multi_threading,
                            "int: (Default ``50000``) The minimum number of "
                            "residuals per bundle adjustment problem to enable "
                            "multi-threading solving of the problems.")
@@ -1040,6 +1075,13 @@ void pybind_incremental_mapper_options(py::module& m) {
                                    ba_global_max_refinement_change,
                            "float: (Default ``0.0005``) The thresholds for "
                            "iterative bundle adjustment refinements.")
+            .def_readwrite("ba_use_gpu",
+                           &colmap::IncrementalMapperOptions::ba_use_gpu,
+                           "Whether to use Ceres' CUDA sparse linear algebra "
+                           "library, if available.")
+            .def_readwrite("ba_gpu_index",
+                           &colmap::IncrementalMapperOptions::ba_gpu_index,
+                           "Index of CUDA GPU to use for BA, if available.")
             .def_readwrite("snapshot_path",
                            &colmap::IncrementalMapperOptions::snapshot_path,
                            "str: (Default ``''``) Path to a folder with "
