@@ -234,10 +234,20 @@ if (CUDA_ENABLED)
     # Do not show warnings if the architectures are deprecated.
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
 
+    # Check CUDA version for PBA compatibility
+    if(CUDA_VERSION_MAJOR GREATER_EQUAL 12)
+        set(PBA_ENABLED ON)
+        message(STATUS "PBA enabled - CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} supports modern texture API")
+    else()
+        set(PBA_ENABLED OFF)
+        message(STATUS "PBA disabled - requires CUDA 12.0 or above (found CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR})")
+    endif()
+
     message(STATUS "Enabling CUDA support (version: ${CUDAToolkit_VERSION},"
             " archs: ${CMAKE_CUDA_ARCHITECTURES})")
 else ()
     set(CUDA_FOUND OFF)
+    set(PBA_ENABLED OFF)
     message(STATUS "Disabling CUDA support")
 endif ()
 
@@ -347,7 +357,17 @@ set(COLMAP_INTERNAL_LIBRARIES
         flann
         graclus
         lsd
-        pba
+        )
+
+# Add PBA conditionally based on CUDA version
+if(PBA_ENABLED)
+    list(APPEND COLMAP_INTERNAL_LIBRARIES pba)
+    add_definitions("-DPBA_ENABLED")
+else()
+    message(STATUS "PBA library excluded from build")
+endif()
+
+list(APPEND COLMAP_INTERNAL_LIBRARIES
         poisson_recon
         sqlite3
         sift_gpu
@@ -372,7 +392,14 @@ add_subdirectory(src)
 COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
-COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
+
+# Add PBA sources conditionally
+if(PBA_ENABLED)
+    COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
+else()
+    set(LIB_PBA_SRCS "")
+endif()
+
 COLMAP_ADD_SOURCE_DIR(lib/PoissonRecon LIB_POISSON_RECON_SRCS *.h *.cpp *.inl)
 COLMAP_ADD_SOURCE_DIR(lib/SiftGPU LIB_SIFT_GPU_SRCS *.h *.cpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/SQLite LIB_SQLITE_SRCS *.h *.c)

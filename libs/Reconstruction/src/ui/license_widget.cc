@@ -49,8 +49,10 @@ LicenseWidget::LicenseWidget(QWidget* parent) : QTextEdit(parent) {
   licenses += GetGraclusLicense();
   licenses += "<h3>LSD</h3>";
   licenses += GetLSDLicense();
+#ifdef PBA_ENABLED
   licenses += "<h3>PBA</h3>";
   licenses += GetPBALicense();
+#endif
   licenses += "<h3>PoissonRecon</h3>";
   licenses += GetPoissonReconLicense();
   licenses += "<h3>SiftGPU</h3>";
@@ -196,6 +198,7 @@ QString LicenseWidget::GetLSDLicense() const {
   return license;
 }
 
+#ifdef PBA_ENABLED
 QString LicenseWidget::GetPBALicense() const {
   const QString license =
       "Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)<br>"
@@ -212,6 +215,7 @@ QString LicenseWidget::GetPBALicense() const {
       "General Public License for more details.";
   return license;
 }
+#endif
 
 QString LicenseWidget::GetPoissonReconLicense() const {
   const QString license =

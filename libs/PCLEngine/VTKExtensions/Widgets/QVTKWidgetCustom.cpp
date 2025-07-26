@@ -1371,7 +1371,7 @@ void QVTKWidgetCustom::keyPressEvent(QKeyEvent* event) {
             emit m_tools->exclusiveFullScreenToggled(false);
             break;
         }
-
+        // Translation on macos: shift + three finger tap move
         default:
             QVTKOpenGLNativeWidget::keyPressEvent(event);
     }

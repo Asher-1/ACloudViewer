@@ -45,7 +45,9 @@ class LicenseWidget : public QTextEdit {
   QString GetFLANNLicense() const;
   QString GetGraclusLicense() const;
   QString GetLSDLicense() const;
+#ifdef PBA_ENABLED
   QString GetPBALicense() const;
+#endif
   QString GetPoissonReconLicense() const;
   QString GetSiftGPULicense() const;
   QString GetSQLiteLicense() const;

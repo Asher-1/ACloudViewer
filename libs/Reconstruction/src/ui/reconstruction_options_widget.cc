@@ -130,15 +130,17 @@ MapperBundleAdjustmentOptionsWidget::MapperBundleAdjustmentOptionsWidget(
   AddSpacer();
 
   AddSection("Global Bundle Adjustment");
+#ifdef PBA_ENABLED
   AddOptionBool(&options->mapper->ba_global_use_pba,
                 "use_pba\n(requires SIMPLE_RADIAL)");
+  AddOptionInt(&options->mapper->ba_global_pba_gpu_index, "pba_gpu_index", -1);
+#endif
   AddOptionDouble(&options->mapper->ba_global_images_ratio, "images_ratio");
   AddOptionInt(&options->mapper->ba_global_images_freq, "images_freq");
   AddOptionDouble(&options->mapper->ba_global_points_ratio, "points_ratio");
   AddOptionInt(&options->mapper->ba_global_points_freq, "points_freq");
   AddOptionInt(&options->mapper->ba_global_max_num_iterations,
                "max_num_iterations");
-  AddOptionInt(&options->mapper->ba_global_pba_gpu_index, "pba_gpu_index", -1);
   AddOptionInt(&options->mapper->ba_global_max_refinements, "max_refinements",
                1);
   AddOptionDouble(&options->mapper->ba_global_max_refinement_change,

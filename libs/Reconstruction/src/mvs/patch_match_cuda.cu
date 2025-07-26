@@ -56,20 +56,13 @@
 namespace colmap {
 namespace mvs {
 
-texture<uint8_t, cudaTextureType2D, cudaReadModeNormalizedFloat>
-    ref_image_texture;
-texture<uint8_t, cudaTextureType2DLayered, cudaReadModeNormalizedFloat>
-    src_images_texture;
-texture<float, cudaTextureType2DLayered, cudaReadModeElementType>
-    src_depth_maps_texture;
-texture<float, cudaTextureType2D, cudaReadModeElementType> poses_texture;
-
 // Calibration of reference image as {fx, cx, fy, cy}.
 __constant__ float ref_K[4];
 // Calibration of reference image as {1/fx, -cx/fx, 1/fy, -cy/fy}.
 __constant__ float ref_inv_K[4];
 
-__device__ inline void Mat33DotVec3(const float mat[9], const float vec[3],
+__device__ inline void Mat33DotVec3(const float mat[9],
+                                    const float vec[3],
                                     float result[3]) {
   result[0] = mat[0] * vec[0] + mat[1] * vec[1] + mat[2] * vec[2];
   result[1] = mat[3] * vec[0] + mat[4] * vec[1] + mat[5] * vec[2];
@@ -94,7 +87,8 @@ __device__ inline float GenerateRandomDepth(const float depth_min,
   return curand_uniform(rand_state) * (depth_max - depth_min) + depth_min;
 }
 
-__device__ inline void GenerateRandomNormal(const int row, const int col,
+__device__ inline void GenerateRandomNormal(const int row,
+                                            const int col,
                                             curandState* rand_state,
                                             float normal[3]) {
   // Unbiased sampling of normal, according to George Marsaglia, "Choosing a
@@ -115,7 +109,8 @@ __device__ inline void GenerateRandomNormal(const int row, const int col,
 
   // Make sure normal is looking away from camera.
   const float view_ray[3] = {ref_inv_K[0] * col + ref_inv_K[1],
-                             ref_inv_K[2] * row + ref_inv_K[3], 1.0f};
+                             ref_inv_K[2] * row + ref_inv_K[3],
+                             1.0f};
   if (DotProduct3(normal, view_ray) > 0) {
     normal[0] = -normal[0];
     normal[1] = -normal[1];
@@ -131,7 +126,8 @@ __device__ inline float PerturbDepth(const float perturbation,
   return GenerateRandomDepth(depth_min, depth_max, rand_state);
 }
 
-__device__ inline void PerturbNormal(const int row, const int col,
+__device__ inline void PerturbNormal(const int row,
+                                     const int col,
                                      const float perturbation,
                                      const float normal[3],
                                      curandState* rand_state,
@@ -167,12 +163,18 @@ __device__ inline void PerturbNormal(const int row, const int col,
   // Make sure the perturbed normal is still looking in the same direction as
   // the viewing direction, otherwise try again but with smaller perturbation.
   const float view_ray[3] = {ref_inv_K[0] * col + ref_inv_K[1],
-                             ref_inv_K[2] * row + ref_inv_K[3], 1.0f};
+                             ref_inv_K[2] * row + ref_inv_K[3],
+                             1.0f};
   if (DotProduct3(perturbed_normal, view_ray) >= 0.0f) {
     const int kMaxNumTrials = 3;
     if (num_trials < kMaxNumTrials) {
-      PerturbNormal(row, col, 0.5f * perturbation, normal, rand_state,
-                    perturbed_normal, num_trials + 1);
+      PerturbNormal(row,
+                    col,
+                    0.5f * perturbation,
+                    normal,
+                    rand_state,
+                    perturbed_normal,
+                    num_trials + 1);
       return;
     } else {
       perturbed_normal[0] = normal[0];
@@ -189,8 +191,10 @@ __device__ inline void PerturbNormal(const int row, const int col,
   perturbed_normal[2] *= inv_norm;
 }
 
-__device__ inline void ComputePointAtDepth(const float row, const float col,
-                                           const float depth, float point[3]) {
+__device__ inline void ComputePointAtDepth(const float row,
+                                           const float col,
+                                           const float depth,
+                                           float point[3]) {
   point[0] = depth * (ref_inv_K[0] * col + ref_inv_K[1]);
   point[1] = depth * (ref_inv_K[2] * row + ref_inv_K[3]);
   point[2] = depth;
@@ -200,7 +204,8 @@ __device__ inline void ComputePointAtDepth(const float row, const float col,
 // depth is the intersection of the viewing ray through row2 with the plane
 // at row1 defined by the given depth and normal.
 __device__ inline float PropagateDepth(const float depth1,
-                                       const float normal1[3], const float row1,
+                                       const float normal1[3],
+                                       const float row1,
                                        const float row2) {
   // Point along first viewing ray.
   const float x1 = depth1 * (ref_inv_K[2] * row1 + ref_inv_K[3]);
@@ -229,18 +234,20 @@ __device__ inline float PropagateDepth(const float depth1,
 // First, compute triangulation angle between reference and source image for 3D
 // point. Second, compute incident angle between viewing direction of source
 // image and normal direction of 3D point. Both angles are cosine distances.
-__device__ inline void ComputeViewingAngles(const float point[3],
-                                            const float normal[3],
-                                            const int image_idx,
-                                            float* cos_triangulation_angle,
-                                            float* cos_incident_angle) {
+__device__ inline void ComputeViewingAngles(
+    const cudaTextureObject_t poses_texture,
+    const float point[3],
+    const float normal[3],
+    const int image_idx,
+    float* cos_triangulation_angle,
+    float* cos_incident_angle) {
   *cos_triangulation_angle = 0.0f;
   *cos_incident_angle = 0.0f;
 
   // Projection center of source image.
   float C[3];
   for (int i = 0; i < 3; ++i) {
-    C[i] = tex2D(poses_texture, i + 16, image_idx);
+    C[i] = tex2D<float>(poses_texture, i + 16, image_idx);
   }
 
   // Ray from point to camera.
@@ -256,25 +263,30 @@ __device__ inline void ComputeViewingAngles(const float point[3],
   *cos_triangulation_angle = DotProduct3(SX, point) * RX_inv_norm * SX_inv_norm;
 }
 
-__device__ inline void ComposeHomography(const int image_idx, const int row,
-                                         const int col, const float depth,
-                                         const float normal[3], float H[9]) {
+__device__ inline void ComposeHomography(
+    const cudaTextureObject_t poses_texture,
+    const int image_idx,
+    const int row,
+    const int col,
+    const float depth,
+    const float normal[3],
+    float H[9]) {
   // Calibration of source image.
   float K[4];
   for (int i = 0; i < 4; ++i) {
-    K[i] = tex2D(poses_texture, i, image_idx);
+    K[i] = tex2D<float>(poses_texture, i, image_idx);
   }
 
   // Relative rotation between reference and source image.
   float R[9];
   for (int i = 0; i < 9; ++i) {
-    R[i] = tex2D(poses_texture, i + 4, image_idx);
+    R[i] = tex2D<float>(poses_texture, i + 4, image_idx);
   }
 
   // Relative translation between reference and source image.
   float T[3];
   for (int i = 0; i < 3; ++i) {
-    T[i] = tex2D(poses_texture, i + 13, image_idx);
+    T[i] = tex2D<float>(poses_texture, i + 13, image_idx);
   }
 
   // Distance to the plane.
@@ -332,6 +344,9 @@ struct LocalRefImage {
   const static int kNumColumns = kThreadBlockSize * THREADS_PER_BLOCK;
   const static int kDataSize = kNumRows * kNumColumns;
 
+  __device__ explicit LocalRefImage(const cudaTextureObject_t ref_image_texture)
+      : ref_image_texture_(ref_image_texture) {}
+
   float* data = nullptr;
 
   __device__ inline void Read(const int row) {
@@ -357,7 +372,7 @@ struct LocalRefImage {
 #pragma unroll
         for (int block = 0; block < kThreadBlockSize; ++block) {
           data[local_row * kNumColumns + local_col] =
-              tex2D(ref_image_texture, global_col, global_row);
+              tex2D<float>(ref_image_texture_, global_col, global_row);
           local_col += THREADS_PER_BLOCK;
           global_col += THREADS_PER_BLOCK;
         }
@@ -382,12 +397,15 @@ struct LocalRefImage {
 #pragma unroll
       for (int block = 0; block < kThreadBlockSize; ++block) {
         data[local_row * kNumColumns + local_col] =
-            tex2D(ref_image_texture, global_col, global_row);
+            tex2D<float>(ref_image_texture_, global_col, global_row);
         local_col += THREADS_PER_BLOCK;
         global_col += THREADS_PER_BLOCK;
       }
     }
   }
+
+ private:
+  const cudaTextureObject_t ref_image_texture_;
 };
 
 // The return values is 1 - NCC, so the range is [0, 2], the smaller the
@@ -396,9 +414,16 @@ template <int kWindowSize, int kWindowStep>
 struct PhotoConsistencyCostComputer {
   const static int kWindowRadius = kWindowSize / 2;
 
-  __device__ PhotoConsistencyCostComputer(const float sigma_spatial,
-                                          const float sigma_color)
-      : bilateral_weight_computer_(sigma_spatial, sigma_color) {}
+  __device__ PhotoConsistencyCostComputer(
+      const cudaTextureObject_t ref_image_texture,
+      const cudaTextureObject_t src_images_texture,
+      const cudaTextureObject_t poses_texture,
+      const float sigma_spatial,
+      const float sigma_color)
+      : local_ref_image(ref_image_texture),
+        src_images_texture_(src_images_texture),
+        poses_texture_(poses_texture),
+        bilateral_weight_computer_(sigma_spatial, sigma_color) {}
 
   // Maximum photo consistency cost as 1 - min(NCC).
   const float kMaxCost = 2.0f;
@@ -429,7 +454,8 @@ struct PhotoConsistencyCostComputer {
 
   __device__ inline float Compute() const {
     float tform[9];
-    ComposeHomography(src_image_idx, row, col, depth, normal, tform);
+    ComposeHomography(
+        poses_texture_, src_image_idx, row, col, depth, normal, tform);
 
     float tform_step[8];
     for (int i = 0; i < 8; ++i) {
@@ -467,8 +493,8 @@ struct PhotoConsistencyCostComputer {
         const float norm_col_src = inv_z * col_src + 0.5f;
         const float norm_row_src = inv_z * row_src + 0.5f;
         const float ref_color = local_ref_image.data[ref_image_idx];
-        const float src_color = tex2DLayered(src_images_texture, norm_col_src,
-                                             norm_row_src, src_image_idx);
+        const float src_color = tex2DLayered<float>(
+            src_images_texture_, norm_col_src, norm_row_src, src_image_idx);
 
         const float bilateral_weight = bilateral_weight_computer_.Compute(
             row, col, ref_center_color, ref_color);
@@ -528,22 +554,27 @@ struct PhotoConsistencyCostComputer {
   }
 
  private:
+  const cudaTextureObject_t src_images_texture_;
+  const cudaTextureObject_t poses_texture_;
   const BilateralWeightComputer bilateral_weight_computer_;
 };
 
-__device__ inline float ComputeGeomConsistencyCost(const float row,
-                                                   const float col,
-                                                   const float depth,
-                                                   const int image_idx,
-                                                   const float max_cost) {
+__device__ inline float ComputeGeomConsistencyCost(
+    const cudaTextureObject_t poses_texture,
+    const cudaTextureObject_t src_depth_maps_texture,
+    const float row,
+    const float col,
+    const float depth,
+    const int image_idx,
+    const float max_cost) {
   // Extract projection matrices for source image.
   float P[12];
   for (int i = 0; i < 12; ++i) {
-    P[i] = tex2D(poses_texture, i + 19, image_idx);
+    P[i] = tex2D<float>(poses_texture, i + 19, image_idx);
   }
   float inv_P[12];
   for (int i = 0; i < 12; ++i) {
-    inv_P[i] = tex2D(poses_texture, i + 31, image_idx);
+    inv_P[i] = tex2D<float>(poses_texture, i + 31, image_idx);
   }
 
   // Project point in reference image to world.
@@ -562,8 +593,8 @@ __device__ inline float ComputeGeomConsistencyCost(const float row,
                        P[6] * forward_point[2] + P[7]);
 
   // Extract depth in source image.
-  const float src_depth = tex2DLayered(src_depth_maps_texture, src_col + 0.5f,
-                                       src_row + 0.5f, image_idx);
+  const float src_depth = tex2DLayered<float>(
+      src_depth_maps_texture, src_col + 0.5f, src_row + 0.5f, image_idx);
 
   // Projection outside of source image.
   if (src_depth == 0.0f) {
@@ -651,7 +682,8 @@ class LikelihoodComputer {
   }
 
   // Compute the selection probability from the forward and backward message.
-  __device__ inline float ComputeSelProb(const float alpha, const float beta,
+  __device__ inline float ComputeSelProb(const float alpha,
+                                         const float beta,
                                          const float prev,
                                          const float prev_weight) const {
     const float zn0 = (1.0f - alpha) * (1.0f - beta);
@@ -755,10 +787,10 @@ class LikelihoodComputer {
     return zn1 / (zn0 + zn1);
   }
 
-  float cos_min_triangulation_angle_;
-  float inv_incident_angle_sigma_square_;
-  float inv_ncc_sigma_square_;
-  float ncc_norm_factor_;
+  const float cos_min_triangulation_angle_;
+  const float inv_incident_angle_sigma_square_;
+  const float inv_ncc_sigma_square_;
+  const float ncc_norm_factor_;
 };
 
 // Rotate normals by 90deg around z-axis in counter-clockwise direction.
@@ -794,15 +826,22 @@ template <int kWindowSize, int kWindowStep>
 __global__ void ComputeInitialCost(GpuMat<float> cost_map,
                                    const GpuMat<float> depth_map,
                                    const GpuMat<float> normal_map,
+                                   const cudaTextureObject_t ref_image_texture,
                                    const GpuMat<float> ref_sum_image,
                                    const GpuMat<float> ref_squared_sum_image,
+                                   const cudaTextureObject_t src_images_texture,
+                                   const cudaTextureObject_t poses_texture,
                                    const float sigma_spatial,
                                    const float sigma_color) {
   const int col = blockDim.x * blockIdx.x + threadIdx.x;
 
   typedef PhotoConsistencyCostComputer<kWindowSize, kWindowStep>
       PhotoConsistencyCostComputerType;
-  PhotoConsistencyCostComputerType pcc_computer(sigma_spatial, sigma_color);
+  PhotoConsistencyCostComputerType pcc_computer(ref_image_texture,
+                                                src_images_texture,
+                                                poses_texture,
+                                                sigma_spatial,
+                                                sigma_color);
   pcc_computer.col = col;
 
   __shared__ float local_ref_image_data
@@ -852,15 +891,27 @@ struct SweepOptions {
   float filter_geom_consistency_max_cost = 1.0f;
 };
 
-template <int kWindowSize, int kWindowStep, bool kGeomConsistencyTerm = false,
+template <int kWindowSize,
+          int kWindowStep,
+          bool kGeomConsistencyTerm = false,
           bool kFilterPhotoConsistency = false,
           bool kFilterGeomConsistency = false>
 __global__ void SweepFromTopToBottom(
-    GpuMat<float> global_workspace, GpuMat<curandState> rand_state_map,
-    GpuMat<float> cost_map, GpuMat<float> depth_map, GpuMat<float> normal_map,
-    GpuMat<uint8_t> consistency_mask, GpuMat<float> sel_prob_map,
-    const GpuMat<float> prev_sel_prob_map, const GpuMat<float> ref_sum_image,
-    const GpuMat<float> ref_squared_sum_image, const SweepOptions options) {
+    GpuMat<float> global_workspace,
+    GpuMat<curandState> rand_state_map,
+    GpuMat<float> cost_map,
+    GpuMat<float> depth_map,
+    GpuMat<float> normal_map,
+    GpuMat<uint8_t> consistency_mask,
+    GpuMat<float> sel_prob_map,
+    const GpuMat<float> prev_sel_prob_map,
+    const cudaTextureObject_t ref_image_texture,
+    const GpuMat<float> ref_sum_image,
+    const GpuMat<float> ref_squared_sum_image,
+    const cudaTextureObject_t src_images_texture,
+    const cudaTextureObject_t src_depth_maps_texture,
+    const cudaTextureObject_t poses_texture,
+    const SweepOptions options) {
   const int col = blockDim.x * blockIdx.x + threadIdx.x;
 
   // Probability for boundary pixels.
@@ -904,7 +955,10 @@ __global__ void SweepFromTopToBottom(
 
   typedef PhotoConsistencyCostComputer<kWindowSize, kWindowStep>
       PhotoConsistencyCostComputerType;
-  PhotoConsistencyCostComputerType pcc_computer(options.sigma_spatial,
+  PhotoConsistencyCostComputerType pcc_computer(ref_image_texture,
+                                                src_images_texture,
+                                                poses_texture,
+                                                options.sigma_spatial,
                                                 options.sigma_color);
   pcc_computer.col = col;
 
@@ -961,8 +1015,11 @@ __global__ void SweepFromTopToBottom(
     // Generate random parameters.
     rand_param_state.depth =
         PerturbDepth(options.perturbation, curr_param_state.depth, &rand_state);
-    PerturbNormal(row, col, options.perturbation * M_PI,
-                  curr_param_state.normal, &rand_state,
+    PerturbNormal(row,
+                  col,
+                  options.perturbation * M_PI,
+                  curr_param_state.normal,
+                  &rand_state,
                   rand_param_state.normal);
 
     // Read in the backward message, compute selection probabilities and
@@ -982,16 +1039,25 @@ __global__ void SweepFromTopToBottom(
 
       float cos_triangulation_angle;
       float cos_incident_angle;
-      ComputeViewingAngles(point, curr_param_state.normal, image_idx,
-                           &cos_triangulation_angle, &cos_incident_angle);
+      ComputeViewingAngles(poses_texture,
+                           point,
+                           curr_param_state.normal,
+                           image_idx,
+                           &cos_triangulation_angle,
+                           &cos_incident_angle);
       const float tri_prob =
           likelihood_computer.ComputeTriProb(cos_triangulation_angle);
       const float inc_prob =
           likelihood_computer.ComputeIncProb(cos_incident_angle);
 
       float H[9];
-      ComposeHomography(image_idx, row, col, curr_param_state.depth,
-                        curr_param_state.normal, H);
+      ComposeHomography(poses_texture,
+                        image_idx,
+                        row,
+                        col,
+                        curr_param_state.depth,
+                        curr_param_state.normal,
+                        H);
       const float res_prob =
           likelihood_computer.ComputeResolutionProb<kWindowSize>(H, row, col);
 
@@ -1009,13 +1075,16 @@ __global__ void SweepFromTopToBottom(
 
     constexpr int kNumCosts = 5;
     float costs[kNumCosts] = {0};
-    const float depths[kNumCosts] = {
-        curr_param_state.depth, prev_param_state.depth, rand_param_state.depth,
-        curr_param_state.depth, rand_param_state.depth};
-    const float* normals[kNumCosts] = {
-        curr_param_state.normal, prev_param_state.normal,
-        rand_param_state.normal, rand_param_state.normal,
-        curr_param_state.normal};
+    const float depths[kNumCosts] = {curr_param_state.depth,
+                                     prev_param_state.depth,
+                                     rand_param_state.depth,
+                                     curr_param_state.depth,
+                                     rand_param_state.depth};
+    const float* normals[kNumCosts] = {curr_param_state.normal,
+                                       prev_param_state.normal,
+                                       rand_param_state.normal,
+                                       rand_param_state.normal,
+                                       curr_param_state.normal};
 
     for (int sample = 0; sample < options.num_samples; ++sample) {
       const float rand_prob = curand_uniform(&rand_state) - FLT_EPSILON;
@@ -1035,10 +1104,15 @@ __global__ void SweepFromTopToBottom(
 
       costs[0] += cost_map.Get(row, col, pcc_computer.src_image_idx);
       if (kGeomConsistencyTerm) {
-        costs[0] += options.geom_consistency_regularizer *
-                    ComputeGeomConsistencyCost(
-                        row, col, depths[0], pcc_computer.src_image_idx,
-                        options.geom_consistency_max_cost);
+        costs[0] +=
+            options.geom_consistency_regularizer *
+            ComputeGeomConsistencyCost(poses_texture,
+                                       src_depth_maps_texture,
+                                       row,
+                                       col,
+                                       depths[0],
+                                       pcc_computer.src_image_idx,
+                                       options.geom_consistency_max_cost);
       }
 
       for (int i = 1; i < kNumCosts; ++i) {
@@ -1046,10 +1120,15 @@ __global__ void SweepFromTopToBottom(
         pcc_computer.normal = normals[i];
         costs[i] += pcc_computer.Compute();
         if (kGeomConsistencyTerm) {
-          costs[i] += options.geom_consistency_regularizer *
-                      ComputeGeomConsistencyCost(
-                          row, col, depths[i], pcc_computer.src_image_idx,
-                          options.geom_consistency_max_cost);
+          costs[i] +=
+              options.geom_consistency_regularizer *
+              ComputeGeomConsistencyCost(poses_texture,
+                                         src_depth_maps_texture,
+                                         row,
+                                         col,
+                                         depths[i],
+                                         pcc_computer.src_image_idx,
+                                         options.geom_consistency_max_cost);
         }
       }
     }
@@ -1102,8 +1181,12 @@ __global__ void SweepFromTopToBottom(
       for (int image_idx = 0; image_idx < cost_map.GetDepth(); ++image_idx) {
         float cos_triangulation_angle;
         float cos_incident_angle;
-        ComputeViewingAngles(best_point, best_normal, image_idx,
-                             &cos_triangulation_angle, &cos_incident_angle);
+        ComputeViewingAngles(poses_texture,
+                             best_point,
+                             best_normal,
+                             image_idx,
+                             &cos_triangulation_angle,
+                             &cos_incident_angle);
         if (cos_triangulation_angle > cos_min_triangulation_angle ||
             cos_incident_angle <= 0.0f) {
           continue;
@@ -1115,7 +1198,12 @@ __global__ void SweepFromTopToBottom(
             num_consistent += 1;
           }
         } else if (!kFilterPhotoConsistency) {
-          if (ComputeGeomConsistencyCost(row, col, best_depth, image_idx,
+          if (ComputeGeomConsistencyCost(poses_texture,
+                                         src_depth_maps_texture,
+                                         row,
+                                         col,
+                                         best_depth,
+                                         image_idx,
                                          options.geom_consistency_max_cost) <=
               options.filter_geom_consistency_max_cost) {
             consistency_mask.Set(row, col, image_idx, 1);
@@ -1123,7 +1211,12 @@ __global__ void SweepFromTopToBottom(
           }
         } else {
           if (sel_prob_map.Get(row, col, image_idx) >= min_ncc_prob &&
-              ComputeGeomConsistencyCost(row, col, best_depth, image_idx,
+              ComputeGeomConsistencyCost(poses_texture,
+                                         src_depth_maps_texture,
+                                         row,
+                                         col,
+                                         best_depth,
+                                         image_idx,
                                          options.geom_consistency_max_cost) <=
                   options.filter_geom_consistency_max_cost) {
             consistency_mask.Set(row, col, image_idx, 1);
@@ -1169,53 +1262,48 @@ PatchMatchCuda::PatchMatchCuda(const PatchMatchOptions& options,
   InitWorkspaceMemory();
 }
 
-PatchMatchCuda::~PatchMatchCuda() {
-  for (size_t i = 0; i < 4; ++i) {
-    poses_device_[i].reset();
-  }
-}
-
 void PatchMatchCuda::Run() {
 #define CASE_WINDOW_RADIUS(window_radius, window_step)              \
   case window_radius:                                               \
     RunWithWindowSizeAndStep<2 * window_radius + 1, window_step>(); \
     break;
 
-#define CASE_WINDOW_STEP(window_step)                                 \
-  case window_step:                                                   \
-    switch (options_.window_radius) {                                 \
-      CASE_WINDOW_RADIUS(1, window_step)                              \
-      CASE_WINDOW_RADIUS(2, window_step)                              \
-      CASE_WINDOW_RADIUS(3, window_step)                              \
-      CASE_WINDOW_RADIUS(4, window_step)                              \
-      CASE_WINDOW_RADIUS(5, window_step)                              \
-      CASE_WINDOW_RADIUS(6, window_step)                              \
-      CASE_WINDOW_RADIUS(7, window_step)                              \
-      CASE_WINDOW_RADIUS(8, window_step)                              \
-      CASE_WINDOW_RADIUS(9, window_step)                              \
-      CASE_WINDOW_RADIUS(10, window_step)                             \
-      CASE_WINDOW_RADIUS(11, window_step)                             \
-      CASE_WINDOW_RADIUS(12, window_step)                             \
-      CASE_WINDOW_RADIUS(13, window_step)                             \
-      CASE_WINDOW_RADIUS(14, window_step)                             \
-      CASE_WINDOW_RADIUS(15, window_step)                             \
-      CASE_WINDOW_RADIUS(16, window_step)                             \
-      CASE_WINDOW_RADIUS(17, window_step)                             \
-      CASE_WINDOW_RADIUS(18, window_step)                             \
-      CASE_WINDOW_RADIUS(19, window_step)                             \
-      CASE_WINDOW_RADIUS(20, window_step)                             \
-      default: {                                                      \
-        std::cerr << "Error: Window size not supported" << std::endl; \
-        break;                                                        \
-      }                                                               \
-    }                                                                 \
+#define CASE_WINDOW_STEP(window_step)                          \
+  case window_step:                                            \
+    switch (options_.window_radius) {                          \
+      CASE_WINDOW_RADIUS(1, window_step)                       \
+      CASE_WINDOW_RADIUS(2, window_step)                       \
+      CASE_WINDOW_RADIUS(3, window_step)                       \
+      CASE_WINDOW_RADIUS(4, window_step)                       \
+      CASE_WINDOW_RADIUS(5, window_step)                       \
+      CASE_WINDOW_RADIUS(6, window_step)                       \
+      CASE_WINDOW_RADIUS(7, window_step)                       \
+      CASE_WINDOW_RADIUS(8, window_step)                       \
+      CASE_WINDOW_RADIUS(9, window_step)                       \
+      CASE_WINDOW_RADIUS(10, window_step)                      \
+      CASE_WINDOW_RADIUS(11, window_step)                      \
+      CASE_WINDOW_RADIUS(12, window_step)                      \
+      CASE_WINDOW_RADIUS(13, window_step)                      \
+      CASE_WINDOW_RADIUS(14, window_step)                      \
+      CASE_WINDOW_RADIUS(15, window_step)                      \
+      CASE_WINDOW_RADIUS(16, window_step)                      \
+      CASE_WINDOW_RADIUS(17, window_step)                      \
+      CASE_WINDOW_RADIUS(18, window_step)                      \
+      CASE_WINDOW_RADIUS(19, window_step)                      \
+      CASE_WINDOW_RADIUS(20, window_step)                      \
+      default: {                                               \
+        LOG(ERROR) << "Window size " << options_.window_radius \
+                   << " not supported";                        \
+        break;                                                 \
+      }                                                        \
+    }                                                          \
     break;
 
   switch (options_.window_step) {
     CASE_WINDOW_STEP(1)
     CASE_WINDOW_STEP(2)
     default: {
-      std::cerr << "Error: Window step not supported" << std::endl;
+      LOG(ERROR) << "Window step " << options_.window_step << " not supported";
       break;
     }
   }
@@ -1225,8 +1313,8 @@ void PatchMatchCuda::Run() {
 }
 
 DepthMap PatchMatchCuda::GetDepthMap() const {
-  return DepthMap(depth_map_->CopyToMat(), options_.depth_min,
-                  options_.depth_max);
+  return DepthMap(
+      depth_map_->CopyToMat(), options_.depth_min, options_.depth_max);
 }
 
 NormalMap PatchMatchCuda::GetNormalMap() const {
@@ -1273,10 +1361,16 @@ void PatchMatchCuda::RunWithWindowSizeAndStep() {
 
   ComputeCudaConfig();
   ComputeInitialCost<kWindowSize, kWindowStep>
-      <<<sweep_grid_size_, sweep_block_size_>>>(
-          *cost_map_, *depth_map_, *normal_map_, *ref_image_->sum_image,
-          *ref_image_->squared_sum_image, options_.sigma_spatial,
-          options_.sigma_color);
+      <<<sweep_grid_size_, sweep_block_size_>>>(*cost_map_,
+                                                *depth_map_,
+                                                *normal_map_,
+                                                ref_image_texture_->GetObj(),
+                                                *ref_image_->sum_image,
+                                                *ref_image_->squared_sum_image,
+                                                src_images_texture_->GetObj(),
+                                                poses_texture_[0]->GetObj(),
+                                                options_.sigma_spatial,
+                                                options_.sigma_color);
   CUDA_SYNC_AND_CHECK();
 
   init_timer.Print("Initialization");
@@ -1318,14 +1412,30 @@ void PatchMatchCuda::RunWithWindowSizeAndStep() {
 
       const bool last_sweep = iter == options_.num_iterations - 1 && sweep == 3;
 
-#define CALL_SWEEP_FUNC                                                  \
-  SweepFromTopToBottom<kWindowSize, kWindowStep, kGeomConsistencyTerm,   \
-                       kFilterPhotoConsistency, kFilterGeomConsistency>  \
-      <<<sweep_grid_size_, sweep_block_size_>>>(                         \
-          *global_workspace_, *rand_state_map_, *cost_map_, *depth_map_, \
-          *normal_map_, *consistency_mask_, *sel_prob_map_,              \
-          *prev_sel_prob_map_, *ref_image_->sum_image,                   \
-          *ref_image_->squared_sum_image, sweep_options);
+#define CALL_SWEEP_FUNC                                   \
+  SweepFromTopToBottom<kWindowSize,                       \
+                       kWindowStep,                       \
+                       kGeomConsistencyTerm,              \
+                       kFilterPhotoConsistency,           \
+                       kFilterGeomConsistency>            \
+      <<<sweep_grid_size_, sweep_block_size_>>>(          \
+          *global_workspace_,                             \
+          *rand_state_map_,                               \
+          *cost_map_,                                     \
+          *depth_map_,                                    \
+          *normal_map_,                                   \
+          *consistency_mask_,                             \
+          *sel_prob_map_,                                 \
+          *prev_sel_prob_map_,                            \
+          ref_image_texture_->GetObj(),                   \
+          *ref_image_->sum_image,                         \
+          *ref_image_->squared_sum_image,                 \
+          src_images_texture_->GetObj(),                  \
+          src_depth_maps_texture_ == nullptr              \
+              ? 0                                         \
+              : src_depth_maps_texture_->GetObj(),        \
+          poses_texture_[rotation_in_half_pi_]->GetObj(), \
+          sweep_options);
 
       if (last_sweep) {
         if (options_.filter) {
@@ -1378,7 +1488,8 @@ void PatchMatchCuda::RunWithWindowSizeAndStep() {
       // Rotate selected image map.
       if (last_sweep && options_.filter) {
         std::unique_ptr<GpuMat<uint8_t>> rot_consistency_mask_(
-            new GpuMat<uint8_t>(cost_map_->GetWidth(), cost_map_->GetHeight(),
+            new GpuMat<uint8_t>(cost_map_->GetWidth(),
+                                cost_map_->GetHeight(),
                                 cost_map_->GetDepth()));
         consistency_mask_->Rotate(rot_consistency_mask_.get());
         consistency_mask_.swap(rot_consistency_mask_);
@@ -1410,32 +1521,36 @@ void PatchMatchCuda::ComputeCudaConfig() {
   elem_wise_grid_size_.z = 1;
 }
 
+void PatchMatchCuda::BindRefImageTexture() {
+  cudaTextureDesc texture_desc;
+  memset(&texture_desc, 0, sizeof(texture_desc));
+  texture_desc.addressMode[0] = cudaAddressModeBorder;
+  texture_desc.addressMode[1] = cudaAddressModeBorder;
+  texture_desc.addressMode[2] = cudaAddressModeBorder;
+  texture_desc.filterMode = cudaFilterModePoint;
+  texture_desc.readMode = cudaReadModeNormalizedFloat;
+  texture_desc.normalizedCoords = false;
+  ref_image_texture_ = CudaArrayLayeredTexture<uint8_t>::FromGpuMat(
+      texture_desc, *ref_image_->image);
+}
+
 void PatchMatchCuda::InitRefImage() {
   const Image& ref_image = problem_.images->at(problem_.ref_image_idx);
 
   ref_width_ = ref_image.GetWidth();
   ref_height_ = ref_image.GetHeight();
 
-  // Upload to device.
+  // Upload to device and filter.
   ref_image_.reset(new GpuMatRefImage(ref_width_, ref_height_));
   const std::vector<uint8_t> ref_image_array =
       ref_image.GetBitmap().ConvertToRowMajorArray();
-  ref_image_->Filter(ref_image_array.data(), options_.window_radius,
-                     options_.window_step, options_.sigma_spatial,
+  ref_image_->Filter(ref_image_array.data(),
+                     options_.window_radius,
+                     options_.window_step,
+                     options_.sigma_spatial,
                      options_.sigma_color);
 
-  ref_image_device_.reset(
-      new CudaArrayWrapper<uint8_t>(ref_width_, ref_height_, 1));
-  ref_image_device_->CopyFromGpuMat(*ref_image_->image);
-
-  // Create texture.
-  ref_image_texture.addressMode[0] = cudaAddressModeBorder;
-  ref_image_texture.addressMode[1] = cudaAddressModeBorder;
-  ref_image_texture.addressMode[2] = cudaAddressModeBorder;
-  ref_image_texture.filterMode = cudaFilterModePoint;
-  ref_image_texture.normalized = false;
-  CUDA_SAFE_CALL(
-      cudaBindTextureToArray(ref_image_texture, ref_image_device_->GetPtr()));
+  BindRefImageTexture();
 }
 
 void PatchMatchCuda::InitSourceImages() {
@@ -1470,19 +1585,21 @@ void PatchMatchCuda::InitSourceImages() {
       }
     }
 
-    // Upload to device.
-    src_images_device_.reset(new CudaArrayWrapper<uint8_t>(
-        max_width, max_height, problem_.src_image_idxs.size()));
-    src_images_device_->CopyToDevice(src_images_host_data.data());
-
     // Create source images texture.
-    src_images_texture.addressMode[0] = cudaAddressModeBorder;
-    src_images_texture.addressMode[1] = cudaAddressModeBorder;
-    src_images_texture.addressMode[2] = cudaAddressModeBorder;
-    src_images_texture.filterMode = cudaFilterModeLinear;
-    src_images_texture.normalized = false;
-    CUDA_SAFE_CALL(cudaBindTextureToArray(src_images_texture,
-                                          src_images_device_->GetPtr()));
+    cudaTextureDesc texture_desc;
+    memset(&texture_desc, 0, sizeof(texture_desc));
+    texture_desc.addressMode[0] = cudaAddressModeBorder;
+    texture_desc.addressMode[1] = cudaAddressModeBorder;
+    texture_desc.addressMode[2] = cudaAddressModeBorder;
+    texture_desc.filterMode = cudaFilterModeLinear;
+    texture_desc.readMode = cudaReadModeNormalizedFloat;
+    texture_desc.normalizedCoords = false;
+    src_images_texture_ = CudaArrayLayeredTexture<uint8_t>::FromHostArray(
+        texture_desc,
+        max_width,
+        max_height,
+        problem_.src_image_idxs.size(),
+        src_images_host_data.data());
   }
 
   // Upload source depth maps to device.
@@ -1498,25 +1615,28 @@ void PatchMatchCuda::InitSourceImages() {
       float* dest =
           src_depth_maps_host_data.data() + max_width * max_height * i;
       for (size_t r = 0; r < depth_map.GetHeight(); ++r) {
-        memcpy(dest, depth_map.GetPtr() + r * depth_map.GetWidth(),
+        memcpy(dest,
+               depth_map.GetPtr() + r * depth_map.GetWidth(),
                depth_map.GetWidth() * sizeof(float));
         dest += max_width;
       }
     }
 
-    src_depth_maps_device_.reset(new CudaArrayWrapper<float>(
-        max_width, max_height, problem_.src_image_idxs.size()));
-    src_depth_maps_device_->CopyToDevice(src_depth_maps_host_data.data());
-
     // Create source depth maps texture.
-    src_depth_maps_texture.addressMode[0] = cudaAddressModeBorder;
-    src_depth_maps_texture.addressMode[1] = cudaAddressModeBorder;
-    src_depth_maps_texture.addressMode[2] = cudaAddressModeBorder;
-    // TODO: Check if linear interpolation improves results or not.
-    src_depth_maps_texture.filterMode = cudaFilterModePoint;
-    src_depth_maps_texture.normalized = false;
-    CUDA_SAFE_CALL(cudaBindTextureToArray(src_depth_maps_texture,
-                                          src_depth_maps_device_->GetPtr()));
+    cudaTextureDesc texture_desc;
+    memset(&texture_desc, 0, sizeof(texture_desc));
+    texture_desc.addressMode[0] = cudaAddressModeBorder;
+    texture_desc.addressMode[1] = cudaAddressModeBorder;
+    texture_desc.addressMode[2] = cudaAddressModeBorder;
+    texture_desc.filterMode = cudaFilterModePoint;
+    texture_desc.readMode = cudaReadModeElementType;
+    texture_desc.normalizedCoords = false;
+    src_depth_maps_texture_ = CudaArrayLayeredTexture<float>::FromHostArray(
+        texture_desc,
+        max_width,
+        max_height,
+        problem_.src_image_idxs.size(),
+        src_depth_maps_host_data.data());
   }
 }
 
@@ -1557,10 +1677,12 @@ void PatchMatchCuda::InitTransforms() {
   }
 
   // Bind 0 degrees version to constant global memory.
-  CUDA_SAFE_CALL(cudaMemcpyToSymbol(ref_K, ref_K_host_[0], sizeof(float) * 4, 0,
-                                    cudaMemcpyHostToDevice));
-  CUDA_SAFE_CALL(cudaMemcpyToSymbol(ref_inv_K, ref_inv_K_host_[0],
-                                    sizeof(float) * 4, 0,
+  CUDA_SAFE_CALL(cudaMemcpyToSymbol(
+      ref_K, ref_K_host_[0], sizeof(float) * 4, 0, cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpyToSymbol(ref_inv_K,
+                                    ref_inv_K_host_[0],
+                                    sizeof(float) * 4,
+                                    0,
                                     cudaMemcpyHostToDevice));
 
   //////////////////////////////////////////////////////////////////////////////
@@ -1576,6 +1698,15 @@ void PatchMatchCuda::InitTransforms() {
   // Matrix for 90deg rotation around Z-axis in counter-clockwise direction.
   const float R_z90[9] = {0, 1, 0, -1, 0, 0, 0, 0, 1};
 
+  cudaTextureDesc texture_desc;
+  memset(&texture_desc, 0, sizeof(texture_desc));
+  texture_desc.addressMode[0] = cudaAddressModeBorder;
+  texture_desc.addressMode[1] = cudaAddressModeBorder;
+  texture_desc.addressMode[2] = cudaAddressModeBorder;
+  texture_desc.filterMode = cudaFilterModePoint;
+  texture_desc.readMode = cudaReadModeElementType;
+  texture_desc.normalizedCoords = false;
+
   for (size_t i = 0; i < 4; ++i) {
     const size_t kNumTformParams = 4 + 9 + 3 + 3 + 12 + 12;
     std::vector<float> poses_host_data(kNumTformParams *
@@ -1584,15 +1715,15 @@ void PatchMatchCuda::InitTransforms() {
     for (const auto image_idx : problem_.src_image_idxs) {
       const Image& image = problem_.images->at(image_idx);
 
-      const float K[4] = {image.GetK()[0], image.GetK()[2], image.GetK()[4],
-                          image.GetK()[5]};
+      const float K[4] = {
+          image.GetK()[0], image.GetK()[2], image.GetK()[4], image.GetK()[5]};
       memcpy(poses_host_data.data() + offset, K, 4 * sizeof(float));
       offset += 4;
 
       float rel_R[9];
       float rel_T[3];
-      ComputeRelativePose(rotated_R, rotated_T, image.GetR(), image.GetT(),
-                          rel_R, rel_T);
+      ComputeRelativePose(
+          rotated_R, rotated_T, image.GetR(), image.GetT(), rel_R, rel_T);
       memcpy(poses_host_data.data() + offset, rel_R, 9 * sizeof(float));
       offset += 9;
       memcpy(poses_host_data.data() + offset, rel_T, 3 * sizeof(float));
@@ -1614,20 +1745,15 @@ void PatchMatchCuda::InitTransforms() {
       offset += 12;
     }
 
-    poses_device_[i].reset(new CudaArrayWrapper<float>(
-        kNumTformParams, problem_.src_image_idxs.size(), 1));
-    poses_device_[i]->CopyToDevice(poses_host_data.data());
+    poses_texture_[i] = CudaArrayLayeredTexture<float>::FromHostArray(
+        texture_desc,
+        kNumTformParams,
+        problem_.src_image_idxs.size(),
+        1,
+        poses_host_data.data());
 
     RotatePose(R_z90, rotated_R, rotated_T);
   }
-
-  poses_texture.addressMode[0] = cudaAddressModeBorder;
-  poses_texture.addressMode[1] = cudaAddressModeBorder;
-  poses_texture.addressMode[2] = cudaAddressModeBorder;
-  poses_texture.filterMode = cudaFilterModePoint;
-  poses_texture.normalized = false;
-  CUDA_SAFE_CALL(
-      cudaBindTextureToArray(poses_texture, poses_device_[0]->GetPtr()));
 }
 
 void PatchMatchCuda::InitWorkspaceMemory() {
@@ -1640,8 +1766,8 @@ void PatchMatchCuda::InitWorkspaceMemory() {
     depth_map_->CopyToDevice(init_depth_map.GetPtr(),
                              init_depth_map.GetWidth() * sizeof(float));
   } else {
-    depth_map_->FillWithRandomNumbers(options_.depth_min, options_.depth_max,
-                                      *rand_state_map_);
+    depth_map_->FillWithRandomNumbers(
+        options_.depth_min, options_.depth_max, *rand_state_map_);
   }
 
   normal_map_.reset(new GpuMat<float>(ref_width_, ref_height_, 3));
@@ -1651,14 +1777,14 @@ void PatchMatchCuda::InitWorkspaceMemory() {
   // the temporary selection probabilities in the global_workspace_.
   // However, it is useful to keep the probabilities for the entire image
   // in memory, so that it can be exported.
-  sel_prob_map_.reset(new GpuMat<float>(ref_width_, ref_height_,
-                                        problem_.src_image_idxs.size()));
-  prev_sel_prob_map_.reset(new GpuMat<float>(ref_width_, ref_height_,
-                                             problem_.src_image_idxs.size()));
+  sel_prob_map_.reset(new GpuMat<float>(
+      ref_width_, ref_height_, problem_.src_image_idxs.size()));
+  prev_sel_prob_map_.reset(new GpuMat<float>(
+      ref_width_, ref_height_, problem_.src_image_idxs.size()));
   prev_sel_prob_map_->FillWithScalar(0.5f);
 
-  cost_map_.reset(new GpuMat<float>(ref_width_, ref_height_,
-                                    problem_.src_image_idxs.size()));
+  cost_map_.reset(new GpuMat<float>(
+      ref_width_, ref_height_, problem_.src_image_idxs.size()));
 
   const int ref_max_dim = std::max(ref_width_, ref_height_);
   global_workspace_.reset(
@@ -1727,14 +1853,8 @@ void PatchMatchCuda::Rotate() {
     ref_image_->squared_sum_image->Rotate(
         rotated_ref_image->squared_sum_image.get());
     ref_image_.swap(rotated_ref_image);
+    BindRefImageTexture();
   }
-
-  // Bind rotated reference image to texture.
-  ref_image_device_.reset(new CudaArrayWrapper<uint8_t>(width, height, 1));
-  ref_image_device_->CopyFromGpuMat(*ref_image_->image);
-  CUDA_SAFE_CALL(cudaUnbindTexture(ref_image_texture));
-  CUDA_SAFE_CALL(
-      cudaBindTextureToArray(ref_image_texture, ref_image_device_->GetPtr()));
 
   // Rotate selection probability map.
   prev_sel_prob_map_.reset(
@@ -1751,18 +1871,17 @@ void PatchMatchCuda::Rotate() {
     cost_map_.swap(rotated_cost_map);
   }
 
-  // Rotate transformations.
-  CUDA_SAFE_CALL(cudaUnbindTexture(poses_texture));
-  CUDA_SAFE_CALL(cudaBindTextureToArray(
-      poses_texture, poses_device_[rotation_in_half_pi_]->GetPtr()));
-
   // Rotate calibration.
-  CUDA_SAFE_CALL(cudaMemcpyToSymbol(ref_K, ref_K_host_[rotation_in_half_pi_],
-                                    sizeof(float) * 4, 0,
+  CUDA_SAFE_CALL(cudaMemcpyToSymbol(ref_K,
+                                    ref_K_host_[rotation_in_half_pi_],
+                                    sizeof(float) * 4,
+                                    0,
                                     cudaMemcpyHostToDevice));
-  CUDA_SAFE_CALL(
-      cudaMemcpyToSymbol(ref_inv_K, ref_inv_K_host_[rotation_in_half_pi_],
-                         sizeof(float) * 4, 0, cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpyToSymbol(ref_inv_K,
+                                    ref_inv_K_host_[rotation_in_half_pi_],
+                                    sizeof(float) * 4,
+                                    0,
+                                    cudaMemcpyHostToDevice));
 
   // Recompute Cuda configuration for rotated reference image.
   ComputeCudaConfig();

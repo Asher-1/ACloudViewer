@@ -45,7 +45,7 @@ using namespace std;
 #include "PyramidGL.h"
 
 //CUDA works only with vc8 or higher
-#if defined(CUDA_SIFTGPU_ENABLED)
+#if defined(SIFTGPU_CUDA_ENABLED)
 #include "PyramidCU.h"
 #endif
 
@@ -105,16 +105,6 @@ SiftGPUEX::SiftGPUEX()
 	RandomizeColor();
 }
 
-void* SiftGPU::operator new (size_t  size){
-  void * p = malloc(size);
-  if (p == 0)
-  {
-	  const std::bad_alloc ba;
-	  throw ba;
-  }
-  return p;
-}
-
 
 void SiftGPUEX::RandomizeColor()
 {
@@ -143,7 +133,7 @@ inline void SiftGPU::InitSiftGPU()
 	//Parse sift parameters
 	ParseSiftParam();
 
-#if !defined(CUDA_SIFTGPU_ENABLED)
+#if !defined(SIFTGPU_CUDA_ENABLED)
 	if(GlobalUtil::_UseCUDA)
 	{
 		GlobalUtil::_UseCUDA = 0;
@@ -174,7 +164,7 @@ inline void SiftGPU::InitSiftGPU()
                                             << (GlobalUtil::_UseCUDA? "CUDA" :
                                             (GlobalUtil::_UseOpenCL? "OpenCL" : "GLSL")) <<"\n";
 
-#if defined(CUDA_SIFTGPU_ENABLED)
+#if defined(SIFTGPU_CUDA_ENABLED)
 	if(GlobalUtil::_UseCUDA)
 		_pyramid = new PyramidCU(*this);
 	else
@@ -779,7 +769,7 @@ void SiftGPU::ParseParam(const int argc, const char **argv)
 			PrintUsage();
             break;
         case MAKEINT4(c, u, d, a):
-#if defined(CUDA_SIFTGPU_ENABLED)
+#if defined(SIFTGPU_CUDA_ENABLED)
 
             if(!_initialized)
             {
@@ -803,7 +793,7 @@ void SiftGPU::ParseParam(const int argc, const char **argv)
             if(!_initialized) GlobalUtil::_UseOpenCL = 1;
 #else
 		    std::cerr	<< "---------------------------------------------------------------------------\n"
-					    << "OpenCL not supported in this binary! Define CL_CUDA_SIFTGPU_ENABLED to..\n"
+					    << "OpenCL not supported in this binary! Define CL_SIFTGPU_CUDA_ENABLED to..\n"
 					    << "----------------------------------------------------------------------------\n";
 #endif
             break;
@@ -1293,7 +1283,7 @@ int SiftGPU::CreateContextGL()
     }
     else if(!GlobalUtil::CreateWindowEZ())
     {
-#if CUDA_SIFTGPU_ENABLED
+#if SIFTGPU_CUDA_ENABLED
 		GlobalUtil::_UseCUDA = 1;
 #else
         return 0;
@@ -1439,15 +1429,6 @@ SiftGPU* CreateNewSiftGPU(int np)
 }
 
 /////////////////////////////////////////////////////
-void* ComboSiftGPU::operator new (size_t  size){
-  void * p = malloc(size);
-  if (p == 0)
-  {
-	  const std::bad_alloc ba;
-	  throw ba;
-  }
-  return p;
-}
 
 ComboSiftGPU* CreateComboSiftGPU()
 {
