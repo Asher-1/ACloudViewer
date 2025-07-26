@@ -102,10 +102,10 @@ if (BUILD_RECONSTRUCTION)
 
     if (MSVC)
         # Some fixes for the Glog library.
-        add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
-        add_definitions("-DGOOGLE_GLOG_DLL_DECL=")
+        add_compile_definitions(GLOG_NO_ABBREVIATED_SEVERITIES)
+        add_compile_definitions(GOOGLE_GLOG_DLL_DECL=)
         # fix gflags library bugs on windows
-        add_definitions(-DGFLAGS_DLL_DECLARE_FLAG= -DGFLAGS_DLL_DEFINE_FLAG= -DGFLAGS_IS_A_DLL=0)
+        add_compile_definitions(GFLAGS_DLL_DECLARE_FLAG= GFLAGS_DLL_DEFINE_FLAG= GFLAGS_IS_A_DLL=0)
         target_link_libraries(${PROJECT_NAME} shlwapi.lib)
     endif ()
 

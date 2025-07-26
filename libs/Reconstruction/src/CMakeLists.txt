@@ -66,10 +66,10 @@ if (CUDA_ENABLED)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas=-suppress-stack-size-warning")
 
     # Fix for Ubuntu 16.04.
-    add_definitions("-D_MWAITXINTRIN_H_INCLUDED")
+    add_compile_definitions(_MWAITXINTRIN_H_INCLUDED)
     if (MSVC)
         # Avoid pulling in too many header files through <windows.h>
-        add_definitions("-DWIN32_LEAN_AND_MEAN")
+        add_compile_definitions(WIN32_LEAN_AND_MEAN)
     endif ()
 
     COLMAP_ADD_STATIC_CUDA_LIBRARY(colmap_cuda ${COLMAP_CUDA_SOURCES})
