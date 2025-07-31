@@ -129,6 +129,16 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.4/3rdparty_downloads.zip" -OutFile "3rdparty_downloads.zip"
           Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
 
+      - name: Fix Windows 11 appverifUI issues
+        run: |
+          echo "Running Windows 11 appverifUI fix script..."
+          $ErrorActionPreference = 'Continue'
+          & "${{ env.SRC_DIR }}\scripts\platforms\windows\fix_win11_appverifUI.bat"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "appverifUI fix script returned exit code: $LASTEXITCODE"
+          }
+          $ErrorActionPreference = 'Stop'
+
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
@@ -351,6 +361,16 @@ jobs:
         run: |
           Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.4/3rdparty_downloads.zip" -OutFile "3rdparty_downloads.zip"
           Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
+
+      - name: Fix Windows 11 appverifUI issues (Wheel Build)
+        run: |
+          echo "Running Windows 11 appverifUI fix script for wheel build..."
+          $ErrorActionPreference = 'Continue'
+          & "${{ env.SRC_DIR }}\scripts\platforms\windows\fix_win11_appverifUI.bat"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "appverifUI fix script returned exit code: $LASTEXITCODE"
+          }
+          $ErrorActionPreference = 'Stop'
 
       - name: Config and Building
         run: |
