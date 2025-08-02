@@ -276,15 +276,11 @@ jobs:
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         BUILD_CUDA_MODULE: [ON, OFF]
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
         exclude:
           - BUILD_CUDA_MODULE: OFF
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
           - is_main: false
@@ -416,14 +412,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
         exclude:
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
           - is_main: false

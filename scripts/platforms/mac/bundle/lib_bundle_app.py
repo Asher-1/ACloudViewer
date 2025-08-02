@@ -355,7 +355,7 @@ class CCBundler:
                     self.config.frameworks_path,
                 )  # copy libs that are not in framework yet
                 added_to_framework_count = added_to_framework_count + 1
-        logger.info("libs added to Frameworks: %i", {added_to_framework_count})
+        logger.info("libs added to Frameworks: %i", added_to_framework_count)
 
         logger.info(" --- Python libs: set rpath to Frameworks, nb libs: %i", len(python_libs))
 
