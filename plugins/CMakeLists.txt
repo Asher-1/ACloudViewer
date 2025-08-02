@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 project( ACloudViewerPlugins )
 
 # Add our cmake module path so we don't need relative paths for these

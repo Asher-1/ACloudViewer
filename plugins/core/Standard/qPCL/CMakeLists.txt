@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.18 )
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
 # https://cmake.org/cmake/help/git-stage/policy/CMP0074.html
 #cmake_policy(SET CMP0074 OLD)

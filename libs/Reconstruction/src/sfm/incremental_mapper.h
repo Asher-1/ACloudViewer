@@ -209,10 +209,11 @@ class IncrementalMapper {
   // Global bundle adjustment using Ceres Solver or PBA.
   bool AdjustGlobalBundle(const Options& options,
                           const BundleAdjustmentOptions& ba_options);
+#ifdef PBA_ENABLED
   bool AdjustParallelGlobalBundle(
       const BundleAdjustmentOptions& ba_options,
       const ParallelBundleAdjuster::Options& parallel_ba_options);
-
+#endif
   // Filter images and point observations.
   size_t FilterImages(const Options& options);
   size_t FilterPoints(const Options& options);

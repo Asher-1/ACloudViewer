@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_EXAMPLE_GL "Install example GL plugin" OFF )
 
 if( PLUGIN_EXAMPLE_GL )

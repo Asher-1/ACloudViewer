@@ -63,14 +63,14 @@ else()
 endif()
 
 
-ExternalProject_Add(
-    ext_embree
+ExternalProject_Add(ext_embree
     PREFIX embree
     URL https://github.com/embree/embree/archive/refs/tags/v4.3.3.tar.gz
     URL_HASH SHA256=8a3bc3c3e21aa209d9861a28f8ba93b2f82ed0dc93341dddac09f1f03c36ef2d
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/embree"
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         ${ExternalProject_CMAKE_ARGS_hidden}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         ${ISA_ARGS}
@@ -92,8 +92,7 @@ ExternalProject_Add(
         <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}math${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}tasking${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ze_wrapper${CMAKE_STATIC_LIBRARY_SUFFIX}
-        ${ISA_BUILD_BYPRODUCTS}
-)
+        ${ISA_BUILD_BYPRODUCTS})
 
 ExternalProject_Get_Property(ext_embree INSTALL_DIR)
 set(EMBREE_INCLUDE_DIRS ${INSTALL_DIR}/include/ ${INSTALL_DIR}/src/ext_embree/) # "/" is critical.

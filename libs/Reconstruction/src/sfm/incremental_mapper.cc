@@ -716,6 +716,7 @@ bool IncrementalMapper::AdjustGlobalBundle(
   return true;
 }
 
+#ifdef PBA_ENABLED
 bool IncrementalMapper::AdjustParallelGlobalBundle(
     const BundleAdjustmentOptions& ba_options,
     const ParallelBundleAdjuster::Options& parallel_ba_options) {
@@ -748,6 +749,7 @@ bool IncrementalMapper::AdjustParallelGlobalBundle(
 
   return true;
 }
+#endif
 
 size_t IncrementalMapper::FilterImages(const Options& options) {
   CHECK_NOTNULL(reconstruction_);

@@ -297,12 +297,14 @@ void OptionsParser::addMapperOptions(
     registerOption("Mapper.ba_refine_focal_length", &incremental_mapper_options.ba_refine_focal_length);
     registerOption("Mapper.ba_refine_principal_point", &incremental_mapper_options.ba_refine_principal_point);
     registerOption("Mapper.ba_refine_extra_params", &incremental_mapper_options.ba_refine_extra_params);
-    registerOption("Mapper.ba_min_num_residuals_for_multi_threading", &incremental_mapper_options.ba_min_num_residuals_for_multi_threading);
+    registerOption("Mapper.ba_min_num_residuals_for_cpu_multi_threading", &incremental_mapper_options.ba_min_num_residuals_for_cpu_multi_threading);
     registerOption("Mapper.ba_local_num_images", &incremental_mapper_options.ba_local_num_images);
     registerOption("Mapper.ba_local_function_tolerance", &incremental_mapper_options.ba_local_function_tolerance);
     registerOption("Mapper.ba_local_max_num_iterations", &incremental_mapper_options.ba_local_max_num_iterations);
+#ifdef PBA_ENABLED
     registerOption("Mapper.ba_global_use_pba", &incremental_mapper_options.ba_global_use_pba);
     registerOption("Mapper.ba_global_pba_gpu_index", &incremental_mapper_options.ba_global_pba_gpu_index);
+#endif
     registerOption("Mapper.ba_global_images_ratio", &incremental_mapper_options.ba_global_images_ratio);
     registerOption("Mapper.ba_global_points_ratio", &incremental_mapper_options.ba_global_points_ratio);
     registerOption("Mapper.ba_global_images_freq", &incremental_mapper_options.ba_global_images_freq);

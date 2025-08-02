@@ -2,7 +2,14 @@ if(NOT IS_MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
-add_definitions("-DSIFTGPU_NO_DEVIL")
+add_compile_definitions(SIFTGPU_NO_DEVIL)
+
+if(SIMD_ENABLED AND IS_X86)
+    add_compile_definitions(SIFTGPU_USE_SSE_FOR)
+    if(MSVC)
+        add_compile_definitions(__SSE__)
+    endif()
+endif()
 
 set(SIFT_GPU_SOURCE_FILES
     FrameBufferObject.cpp
@@ -27,7 +34,7 @@ set(SIFT_GPU_SOURCE_FILES
 )
 
 if(CUDA_ENABLED)
-    add_definitions("-DCUDA_SIFTGPU_ENABLED")
+    add_compile_definitions(SIFTGPU_CUDA_ENABLED)
 
     set(SIFT_GPU_SOURCE_FILES
         ${SIFT_GPU_SOURCE_FILES}

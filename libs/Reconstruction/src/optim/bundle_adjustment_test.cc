@@ -644,6 +644,7 @@ BOOST_AUTO_TEST_CASE(TestConstantExtraParam) {
   }
 }
 
+#ifdef PBA_ENABLED
 BOOST_AUTO_TEST_CASE(TestParallelReconstructionSupported) {
   BundleAdjustmentOptions options;
   options.refine_focal_length = true;
@@ -751,6 +752,7 @@ BOOST_AUTO_TEST_CASE(TestParallelTwoViewConstantIntrinsics) {
                        orig_reconstruction.Point3D(point3D.first));
   }
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(TestRigTwoView) {
   Reconstruction reconstruction;

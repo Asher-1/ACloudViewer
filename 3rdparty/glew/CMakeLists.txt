@@ -1,6 +1,7 @@
+cmake_minimum_required(VERSION 3.10)
+
 project(glew C)
 
-cmake_minimum_required(VERSION 3.0.0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
 if (ENABLE_HEADLESS_RENDERING)
@@ -17,7 +18,7 @@ if (GLEW_OSMESA)
 	else ()
 		set (OSMESA_LIB_NAME OSMesa)
 	endif ()
-	add_definitions (-DGLEW_OSMESA)
+	add_compile_definitions(GLEW_OSMESA)
 	set (GLEW_LIBRARIES ${OSMESA_LIB_NAME} ${OPENGL_LIBRARIES})
 	set (X11_LIBRARIES)
 endif ()

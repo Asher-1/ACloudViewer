@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_STANDARD_QCSF "Install qCSF plugin" OFF )
 
 if( PLUGIN_STANDARD_QCSF )
@@ -9,4 +11,3 @@ if( PLUGIN_STANDARD_QCSF )
 	add_subdirectory( src )
 	add_subdirectory( ui )
 endif()
-

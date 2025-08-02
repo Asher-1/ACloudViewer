@@ -308,9 +308,15 @@ endfunction()
 #    LIBRARIES
 #        the expected library variable names to be found in <pkg>.
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
+#    PATHS
+#        Paths with hardcoded guesses. Same as in find_package.
+#    DEPENDS
+#        Adds targets that should be build before "name" as dependency.
 #
 function(find_package_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET"
+        "PACKAGE;VERSION;PACKAGE_VERSION_VAR"
+        "TARGETS;INCLUDE_DIRS;LIBRARIES;PATHS;DEPENDS" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: find_package_3rdparty_library(${name} ${ARGN})")
@@ -322,11 +328,17 @@ function(find_package_3rdparty_library name)
         set(arg_PACKAGE_VERSION_VAR "${arg_PACKAGE}_VERSION")
     endif()
     set(find_package_args "")
+    if(arg_VERSION)
+        list(APPEND find_package_args "${arg_VERSION}")
+    endif()
     if(arg_REQUIRED)
         list(APPEND find_package_args "REQUIRED")
     endif()
     if(arg_QUIET)
         list(APPEND find_package_args "QUIET")
+    endif()
+    if (arg_PATHS)
+        list(APPEND find_package_args PATHS ${arg_PATHS} NO_DEFAULT_PATH)
     endif()
     find_package(${arg_PACKAGE} ${find_package_args})
     if(${arg_PACKAGE}_FOUND)
@@ -353,6 +365,14 @@ function(find_package_3rdparty_library name)
         endif()
         if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
             install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
+            # Ensure that imported targets will be found again.
+            if(arg_TARGETS)
+                list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES ${arg_PACKAGE})
+                set(CloudViewer_3RDPARTY_EXTERNAL_MODULES ${CloudViewer_3RDPARTY_EXTERNAL_MODULES} PARENT_SCOPE)
+            endif()
+        endif()
+        if(arg_DEPENDS)
+            add_dependencies(${name} ${arg_DEPENDS})
         endif()
         set(${name}_FOUND TRUE PARENT_SCOPE)
         set(${name}_VERSION ${${arg_PACKAGE_VERSION_VAR}} PARENT_SCOPE)
@@ -660,6 +680,7 @@ if(USE_SYSTEM_ASSIMP)
     find_package_3rdparty_library(3rdparty_assimp
         PACKAGE assimp
         TARGETS assimp::assimp
+        DEPENDS ext_zlib
     )
     if(NOT 3rdparty_assimp_FOUND)
         set(USE_SYSTEM_ASSIMP OFF)
@@ -1036,7 +1057,8 @@ if (NOT USE_SYSTEM_PNG)
             LIBRARIES     ${ZLIB_LIBRARIES}
             DEPENDS       ext_zlib
             )
-
+    add_dependencies(ext_assimp ext_zlib)
+    
     include(${CloudViewer_3RDPARTY_DIR}/libpng/libpng.cmake)
     import_3rdparty_library(3rdparty_png
             INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
@@ -1717,7 +1739,7 @@ if (BUILD_CUDA_MODULE)
         # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
         # cudatoolkit conda package), or have a mechanism to locate the CUDA
         # toolkit from the system.
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM CUDA::cusolver CUDA::cublas)
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else ()
         # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
         # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
@@ -1726,15 +1748,43 @@ if (BUILD_CUDA_MODULE)
         # find_package_3rdparty_library, but we have to insert
         # liblapack_static.a in the middle of the targets.
         add_library(3rdparty_cublas INTERFACE)
-        target_link_libraries(3rdparty_cublas INTERFACE
-                CUDA::cusolver_static
-                ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
-                CUDA::cusparse_static
-                CUDA::cublas_static
-                CUDA::cudart_static  # must link this to avoid hidden symbol `cudaMemcpy' in libcudart_static.a is referenced by DSO
-                CUDA::cublasLt_static
-                CUDA::culibos
+        if(CUDAToolkit_VERSION VERSION_LESS "12.0")
+            target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver_static
+                    ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
+                    CUDA::cusparse_static
+                    CUDA::cublas_static
+                    CUDA::cudart_static  # must link this to avoid hidden symbol `cudaMemcpy' in libcudart_static.a is referenced by DSO
+                    CUDA::cublasLt_static
+                    CUDA::culibos
+                    )
+        else()
+            # In CUDA 12.0 the liblapack_static.a is deprecated and removed.
+            # Use the libcusolver_lapack_static.a instead.
+            # Use of static libraries is preferred.
+            if(BUILD_WITH_CUDA_STATIC)
+                # Use static CUDA libraries.
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver_static
+                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
+                    CUDA::cusparse_static
+                    CUDA::cublas_static
+                    CUDA::cublasLt_static
+                    CUDA::culibos
+                    CUDA::cudart_static
                 )
+            else()
+                # Use shared CUDA libraries.
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver
+                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver.so
+                    CUDA::cusparse
+                    CUDA::cublas
+                    CUDA::cublasLt
+                    CUDA::culibos
+                )
+            endif()
+        endif()
         if (NOT BUILD_SHARED_LIBS)
             # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/CloudViewer/${PROJECT_NAME}Targets.cmake.
             install(TARGETS 3rdparty_cublas EXPORT ${PROJECT_NAME}Targets)
@@ -1753,24 +1803,43 @@ if (BUILD_CUDA_MODULE)
                 REQUIRED
                 PACKAGE CUDAToolkit
                 TARGETS CUDA::nppc
-                CUDA::nppicc
-                CUDA::nppif
-                CUDA::nppig
-                CUDA::nppim
-                CUDA::nppial
-                )
+                        CUDA::nppicc
+                        CUDA::nppif
+                        CUDA::nppig
+                        CUDA::nppim
+                        CUDA::nppial
+        )
     else ()
-        find_package_3rdparty_library(3rdparty_cuda_npp
+        if(BUILD_WITH_CUDA_STATIC)
+            # Use static CUDA libraries.
+            find_package_3rdparty_library(3rdparty_cuda_npp
                 REQUIRED
                 PACKAGE CUDAToolkit
                 TARGETS CUDA::nppc_static
-                CUDA::nppicc_static
-                CUDA::nppif_static
-                CUDA::nppig_static
-                CUDA::nppim_static
-                CUDA::nppial_static
-                )
+                        CUDA::nppicc_static
+                        CUDA::nppif_static
+                        CUDA::nppig_static
+                        CUDA::nppim_static
+                        CUDA::nppial_static
+            )
+        else()
+            # Use shared CUDA libraries.
+            find_package_3rdparty_library(3rdparty_cuda_npp
+                REQUIRED
+                PACKAGE CUDAToolkit
+                TARGETS CUDA::nppc
+                        CUDA::nppicc
+                        CUDA::nppif
+                        CUDA::nppig
+                        CUDA::nppim
+                        CUDA::nppial
+            )
+        endif()
     endif ()
+
+    if(NOT 3rdparty_cuda_npp_FOUND)
+        message(FATAL_ERROR "CUDA NPP libraries not found.")
+    endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_cuda_npp)
 endif ()
 
@@ -2092,7 +2161,7 @@ if (USE_SYSTEM_OPENCV)
         message(STATUS "Using system Opencv")
         message(STATUS "OpenCV version: ${3rdparty_opencv_VERSION}")
         if (NOT 3rdparty_opencv_VERSION VERSION_LESS "3.4.0")
-            add_definitions(-DHAVE_OPENCV3)
+            add_compile_definitions(HAVE_OPENCV3)
             message(STATUS "defined HAVE_OPENCV3")
 
             set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${3rdparty_opencv_INCLUDE_DIRS})
@@ -2100,7 +2169,7 @@ if (USE_SYSTEM_OPENCV)
 
             check_include_file_cxx(opencv2/ccalib/omnidir.hpp HAVE_OPENCV_CONTRIB)
             if (HAVE_OPENCV_CONTRIB)
-                add_definitions(-DHAVE_OPENCV_CONTRIB)
+                add_compile_definitions(HAVE_OPENCV_CONTRIB)
                 set(WITH_OPENCV_CONTRIB ON)
             else ()
                 message(STATUS "OPENCV_CONTRIB NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
@@ -2108,26 +2177,26 @@ if (USE_SYSTEM_OPENCV)
 
             check_include_file_cxx(opencv2/xfeatures2d/nonfree.hpp HAVE_OPENCV_XFEATURES2D_NONFREE)
             if (HAVE_OPENCV_XFEATURES2D_NONFREE)
-                add_definitions(-DHAVE_OPENCV_XFEATURES2D_NONFREE)
+                add_compile_definitions(HAVE_OPENCV_XFEATURES2D_NONFREE)
             else ()
                 message(STATUS "OPENCV_XFEATURES2D_NONFREE NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
             endif ()
 
             check_include_file_cxx(opencv2/cudafeatures2d.hpp HAVE_OPENCV_CUDAFEATURES2D)
             if (HAVE_OPENCV_CUDAFEATURES2D)
-                add_definitions(-DHAVE_OPENCV_CUDAFEATURES2D)
+                add_compile_definitions(HAVE_OPENCV_CUDAFEATURES2D)
             else ()
                 message(STATUS "OPENCV_CUDAFEATURES2D NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY")
             endif ()
 
         else ()
-            add_definitions(-DHAVE_OPENCV2)
+            add_compile_definitions(HAVE_OPENCV2)
         endif ()
 
         # enable GPU enhanced SURF features
         # if BOTH CUDA and the OPENCV contrib cuda features are available
         if (CUDA_FOUND AND HAVE_OPENCV_CUDAFEATURES2D)
-            add_definitions(-DHAVE_CUDA)
+            add_compile_definitions(HAVE_CUDA)
             message(STATUS "defined HAVE_CUDA")
             set(CUDA_CUDART_LIBRARY_OPTIONAL ${CUDA_CUDART_LIBRARY})
         endif ()

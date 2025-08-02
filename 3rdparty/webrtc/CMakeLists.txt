@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.18)
+
 # This CMake file is intended to be used inside Dockerfile.webrtc.
 #
 # 1) We assume the following directory structure:
@@ -20,7 +22,6 @@
 #    - build/lib
 #    - build/include
 
-cmake_minimum_required(VERSION 3.18)
 project(webrtc CXX)
 
 include(CMakeDependentOption)

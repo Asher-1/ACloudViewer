@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
 option( PLUGIN_STANDARD_3DMASC "Check to install q3DMASC plugin" OFF )
 

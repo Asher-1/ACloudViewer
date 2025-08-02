@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_EXAMPLE_IO "Install example I/O plugin" OFF )
 
 if( PLUGIN_EXAMPLE_IO )

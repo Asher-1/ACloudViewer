@@ -23,6 +23,3 @@ if ( OPTION_USE_SHAPE_LIB )
 
     add_test( NAME TestShpFilter COMMAND TestShpFilter )
 endif()
-
-
-

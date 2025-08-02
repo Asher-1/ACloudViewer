@@ -13,8 +13,7 @@ set(GFLAGS_MINOR_VERSION "2.2")
 set(GFLAGS_FULL_VERSION ${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
 
 # Add gflags
-ExternalProject_Add(
-        ext_gflags
+ExternalProject_Add(ext_gflags
         PREFIX gflags
         URL https://github.com/gflags/gflags/archive/v${GFLAGS_FULL_VERSION}.zip
         URL_HASH MD5=ff856ff64757f1381f7da260f79ba79b
@@ -24,6 +23,7 @@ ExternalProject_Add(
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         UPDATE_COMMAND ""
         CMAKE_ARGS
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
             # checking CXX_COMPILER_ID is not supported.
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
@@ -34,8 +34,7 @@ ExternalProject_Add(
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-)
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>)
 
 ExternalProject_Get_Property(ext_gflags INSTALL_DIR)
 set(GFLAGS_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

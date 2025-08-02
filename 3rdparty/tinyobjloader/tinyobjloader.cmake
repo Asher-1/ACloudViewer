@@ -1,7 +1,6 @@
 include(ExternalProject)
 
-ExternalProject_Add(
-    ext_tinyobjloader
+ExternalProject_Add(ext_tinyobjloader
     PREFIX tinyobjloader
     URL https://github.com/tinyobjloader/tinyobjloader/archive/refs/tags/v2.0.0rc8.tar.gz
     URL_HASH SHA256=b8c972dfbbcef33d55554e7c9031abe7040795b67778ad3660a50afa7df6ec56

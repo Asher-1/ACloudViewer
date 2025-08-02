@@ -27,6 +27,7 @@
 #pragma once
 
 #include <stdgpu/memory.h>
+#include <stdgpu/utility.h>
 #include <thrust/transform.h>
 
 #include <stdgpu/unordered_map.cuh>
@@ -118,7 +119,7 @@ private:
 // accessible in raw CUDA kernels.
 template <typename Key>
 using InternalStdGPUHashmapAllocator =
-        StdGPUAllocator<thrust::pair<const Key, addr_t>>;
+        StdGPUAllocator<stdgpu::pair<const Key, addr_t>>;
 
 template <typename Key, typename Hash>
 using InternalStdGPUHashmap =
@@ -311,7 +312,7 @@ void StdGPUHashmap<Key, Hash>::Erase(const void* input_keys,
 template <typename Key>
 struct ValueExtractor {
     CLOUDVIEWER_HOST_DEVICE addr_t
-    operator()(const thrust::pair<Key, addr_t>& x) const {
+    operator()(const stdgpu::pair<Key, addr_t>& x) const {
         return x.second;
     }
 };

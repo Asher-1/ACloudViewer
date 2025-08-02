@@ -1,7 +1,6 @@
 include(ExternalProject)
 
-ExternalProject_Add(
-       ext_suitesparse
+ExternalProject_Add(ext_suitesparse
        PREFIX suitesparse
        URL https://codeload.github.com/jlblancoc/suitesparse-metis-for-windows/zip/7bc503bfa2c4f1be9176147d36daf9e18340780a
        URL_HASH MD5=e7c27075e8e0afc9d2cf188630090946
@@ -13,6 +12,7 @@ ExternalProject_Add(
 	   # fix compiling bugs on windows
 	   PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CloudViewer_3RDPARTY_DIR}/suitesparse/CMakeLists.txt <SOURCE_DIR>
        CMAKE_ARGS
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DOPENMP=${WITH_OPENMP}
             -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
@@ -25,8 +25,7 @@ ExternalProject_Add(
             # -DCUDA_INCLUDE_DIRS=${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
             # -DWITH_CUDA=${BUILD_CUDA_MODULE}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-           DEPENDS ${LAPACK_TARGET}
-       )
+           DEPENDS ${LAPACK_TARGET})
 ExternalProject_Get_Property(ext_suitesparse INSTALL_DIR)
 set(SUITESPARSE_INCLUDE_DIRS ${INSTALL_DIR}/include/suitesparse/)
 set(SUITESPARSE_LIB_DIR ${INSTALL_DIR}/lib)
@@ -79,6 +78,6 @@ endif()
 set(CXSPARSE_CMAKE_FLAGS -DCXSPARSE=ON -DCXSPARSE_INCLUDE_DIR_HINTS=${SUITESPARSE_INCLUDE_DIRS} -DCXSPARSE_LIBRARY_DIR_HINTS=${SUITESPARSE_LIB_DIR})
 
 # for compiling ceres-solver
-set(SUITESPARSE_CMAKE_FLAGS ${LAPACK_CMAKE_FLAGS} ${CXSPARSE_CMAKE_FLAGS} -DSuiteSparse_DIR=${SUITESPARSE_LIB_DIR}/cmake/suitesparse-5.4.0 -DSUITESPARSE_INCLUDE_DIR_HINTS=${SUITESPARSE_INCLUDE_DIRS} -DSUITESPARSE_LIBRARY_DIR_HINTS=${SUITESPARSE_LIB_DIR})
+set(SUITESPARSE_CMAKE_FLAGS ${LAPACK_CMAKE_FLAGS} ${CXSPARSE_CMAKE_FLAGS} -DSuiteSparse_DIR=${SUITESPARSE_LIB_DIR}/cmake/suitesparse-4.5.0 -DSUITESPARSE_INCLUDE_DIR_HINTS=${SUITESPARSE_INCLUDE_DIRS} -DSUITESPARSE_LIBRARY_DIR_HINTS=${SUITESPARSE_LIB_DIR})
 
 

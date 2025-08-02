@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 # Windows only
 if (WIN32)
 	option( PLUGIN_IO_QLAS_FWF "Check to install qLAS FWF I/O plugin (deprecated, prefer using qLAS I/O now)" OFF )

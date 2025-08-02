@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: write
     # TODO: Convert to docker
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -68,7 +68,7 @@ jobs:
   Windows:
     permissions:
       contents: write
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
       SRC_DIR: "D:\\a\\ACloudViewer\\ACloudViewer"
       BUILD_DIR: "C:\\ACloudViewer\\build"
@@ -113,7 +113,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\ACloudViewer" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `

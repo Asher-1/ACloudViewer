@@ -1,7 +1,6 @@
 include(ExternalProject)
 
-ExternalProject_Add(
-    ext_lasLibzip
+ExternalProject_Add(ext_lasLibzip
     PREFIX lasLibzip
     URL https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.8.0/LasZipLib.7z
     URL_HASH MD5=38B48A3C413BBF34DF6F3BFF1E869CCB

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
 # ACloudViewer Masonry Manual Segmentation plugin
 option(PLUGIN_STANDARD_MASONRY_QAUTO_SEG "Check to install QAutoSeg plugin" OFF)
@@ -32,7 +32,6 @@ if (PLUGIN_STANDARD_MASONRY_QAUTO_SEG)
                 ${PCL_INCLUDE_DIRS}
                 )
         # For Use Not PreCompiled Features
-        #add_definitions( -DPCL_NO_PRECOMPILE )
         if (CMAKE_VERSION VERSION_LESS 3.13)
             link_directories(${PCL_LIBRARY_DIRS})
         else ()

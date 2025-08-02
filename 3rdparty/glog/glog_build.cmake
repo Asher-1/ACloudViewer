@@ -8,8 +8,7 @@ else ()
     message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for glog")
 endif ()
 
-ExternalProject_Add(
-        ext_glog
+ExternalProject_Add(ext_glog
         PREFIX glog
         URL https://github.com/google/glog/archive/v0.3.5.zip
         URL_HASH MD5=454766d0124951091c95bad33dafeacd
@@ -21,6 +20,7 @@ ExternalProject_Add(
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         UPDATE_COMMAND ""
         CMAKE_ARGS
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             ${GFLAGS_CMAKE_FLAGS}
             -DBUILD_TESTING=OFF
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
@@ -34,8 +34,7 @@ ExternalProject_Add(
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-            DEPENDS ext_gflags
-)
+            DEPENDS ext_gflags)
 
 ExternalProject_Get_Property(ext_glog INSTALL_DIR)
 set(GLOG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

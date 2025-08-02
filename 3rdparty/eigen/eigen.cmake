@@ -11,8 +11,7 @@ else ()
     endif ()
 endif ()
 
-ExternalProject_Add(
-        ext_eigen
+ExternalProject_Add(ext_eigen
         PREFIX eigen
         URL https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2
         URL_HASH SHA256=92641cb17a92bcf311c7fc095a555ca0e32990503573dda80eb1764dc37dcac9
@@ -22,6 +21,7 @@ ExternalProject_Add(
         BUILD_ALWAYS 0
         UPDATE_COMMAND ""
         CMAKE_ARGS
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             ${EIGEN_ALIGN_FLAGS}
             # -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
@@ -30,8 +30,7 @@ ExternalProject_Add(
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-)
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>)
 
 ExternalProject_Get_Property(ext_eigen INSTALL_DIR)
 set(EIGEN_INCLUDE_DIRS ${INSTALL_DIR}/include/eigen3/) # "/" is critical.

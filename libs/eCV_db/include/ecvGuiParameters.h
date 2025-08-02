@@ -122,6 +122,7 @@ public:
 
 		//! Resets parameters to default values
 		void reset();
+		void initFontSizesIfNeeded();
 
 		//! Loads from persistent DB
 		void fromPersistentSettings();
@@ -140,6 +141,8 @@ public:
 
 	//! Sets GUI parameters
 	static void Set(const ParamStruct& params);
+
+	static void UpdateParameters();
 
 	//! Release unique instance (if any)
 	static void ReleaseInstance();

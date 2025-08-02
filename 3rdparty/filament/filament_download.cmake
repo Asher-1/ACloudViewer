@@ -27,7 +27,7 @@ else()
         endif()
     elseif(APPLE)
         if (APPLE_AARCH64)
-            set(FILAMENT_URL https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-macos_arm64.tgz)
+            set(FILAMENT_URL https://github.com/Asher-1/cloudViewer_downloads/releases/download/v1.9.9/filament-v1.9.19-macos_arm64.tgz)
             set(FILAMENT_SHA256 3422bdff451d90144fbb69e625d8dcaeaf3222dc2c28879536067937955bc362)
             string(APPEND lib_dir /arm64)
             # Our arm64 builds use FILAMENT_SUPPORTS_VULKAN=OFF
@@ -42,13 +42,13 @@ else()
         string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
         if(${glibc_version} VERSION_LESS "2.31")
             set(FILAMENT_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux.tgz)
+                https://github.com/Asher-1/cloudViewer_downloads/releases/download/v1.9.9/filament-v1.9.19-linux.tgz)
             set(FILAMENT_SHA256 f0c0b05a543dd0c82b1cd571957a90f28e72cfeee36d19a527c17ac9de4733d5)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
                 "Google Filament binary.")
         else()
             set(FILAMENT_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux-20.04.tgz)
+                https://github.com/Asher-1/cloudViewer_downloads/releases/download/v1.9.9/filament-v1.9.19-linux-20.04.tgz)
             set(FILAMENT_SHA256 c756fd76f5c6a40ca554f8c3cca424354a2a22ea6fce3c8ea893d4c4aa39514c)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
                 "CloudViewer Filament binary.")
@@ -67,8 +67,7 @@ else()
     endif()
 
     # ExternalProject_Add happens at build time.
-    ExternalProject_Add(
-        ext_filament
+    ExternalProject_Add(ext_filament
         PREFIX filament
         URL ${FILAMENT_URL}
         URL_HASH SHA256=${FILAMENT_SHA256}
@@ -79,7 +78,9 @@ else()
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS ${lib_byproducts}
-    )
+CMAKE_ARGS
+    
+-DCMAKE_POLICY_VERSION_MINIMUM=3.5)
     ExternalProject_Get_Property(ext_filament SOURCE_DIR)
     set(FILAMENT_ROOT ${SOURCE_DIR})
 endif()

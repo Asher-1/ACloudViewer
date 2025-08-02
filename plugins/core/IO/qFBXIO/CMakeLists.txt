@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_IO_QFBX "Install qFBXIO plugin to read & write AutoDesk FBX files" OFF )
 
 if ( PLUGIN_IO_QFBX )
@@ -35,7 +37,7 @@ if ( PLUGIN_IO_QFBX )
 	else()
 		include_directories( ${FBX_SDK_INCLUDE_DIR} )
 		if ( FBX_SDK_SHARED_MODE )
-			add_definitions( -DFBXSDK_SHARED  )
+			add_compile_definitions(FBXSDK_SHARED)
 		endif()
 	endif()
 	
