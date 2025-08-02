@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION})
+
 # CC custom CMake script for Ribbonsoft's DXF Lib
 # https://www.qcad.org/en/dxflib-downloads
 

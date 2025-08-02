@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION})
+
 project(CVAppCommon)
 
 add_library(${PROJECT_NAME} SHARED)

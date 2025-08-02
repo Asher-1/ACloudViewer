@@ -78,6 +78,8 @@
 #include <vld.h>
 #endif
 
+#include "ScaleBar.h"
+
 // macroes
 #ifndef VTK_CREATE
 #define VTK_CREATE(TYPE, NAME) \
@@ -193,7 +195,9 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
       m_interactor(nullptr),
       m_logoWidget(nullptr),
       m_scalarbarWidget(nullptr),
-      m_axesWidget(nullptr) {
+      m_axesWidget(nullptr),
+      m_scaleBar(nullptr)
+{
     this->setWindowTitle("3D View");
 
     QSurfaceFormat fmt = QVTKOpenGLNativeWidget::defaultFormat();
@@ -217,6 +221,7 @@ QVTKWidgetCustom::~QVTKWidgetCustom() {
         delete d_ptr;
         d_ptr = nullptr;
     }
+    if (m_scaleBar) { delete m_scaleBar; m_scaleBar = nullptr; }
 }
 
 vtkSmartPointer<vtkLookupTable> QVTKWidgetCustom::createLookupTable(
@@ -245,6 +250,9 @@ void QVTKWidgetCustom::initVtk(
             this->GetRenderWindow()->GetRenderers()->GetFirstRenderer();
     this->m_camera = m_render->GetActiveCamera();
     this->m_renders = this->GetRenderWindow()->GetRenderers();
+    if (!m_scaleBar) {
+        m_scaleBar = new ScaleBar(m_render);
+    }
 }
 
 void QVTKWidgetCustom::transformCameraView(const double* viewMat) {
@@ -269,6 +277,7 @@ bool IsCalledFromMainThread() {
 }
 
 void QVTKWidgetCustom::updateScene() {
+    if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
     if (IsCalledFromMainThread() && this->GetRenderWindow()) {
         this->GetRenderWindow()->Render();
     } else { // only core threading enabled rendering
@@ -1121,6 +1130,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     m_tools->m_mouseMoved = true;
     m_tools->m_lastMousePos = event->pos();
     emit m_tools->cameraParamChanged();
+    if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
     event->accept();
 }
 
@@ -1338,15 +1348,12 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                     break;
                 }
             }
-            //            CVLog::PrintDebug(QString("Touch update (%1 points)")
-            //                                      .arg(static_cast<QTouchEvent*>(evt)
-            //                                                   ->touchPoints()
-            //                                                   .size()));
         } break;
 
         case QEvent::Resize: {
             QSize newSize = static_cast<QResizeEvent*>(evt)->size();
             ecvDisplayTools::ResizeGL(newSize.width(), newSize.height());
+            if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
             evt->accept();
         } break;
 
@@ -1364,7 +1371,7 @@ void QVTKWidgetCustom::keyPressEvent(QKeyEvent* event) {
             emit m_tools->exclusiveFullScreenToggled(false);
             break;
         }
-
+        // Translation on macos: shift + three finger tap move
         default:
             QVTKOpenGLNativeWidget::keyPressEvent(event);
     }

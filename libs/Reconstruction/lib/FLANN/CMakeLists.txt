@@ -1,6 +1,6 @@
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
-    add_definitions(-DLZ4_DLL_EXPORT)
+    add_compile_definitions(LZ4_DLL_EXPORT)
 endif()
 
 if (UNIX AND NOT APPLE)

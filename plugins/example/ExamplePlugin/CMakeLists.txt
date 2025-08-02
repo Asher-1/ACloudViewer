@@ -1,4 +1,5 @@
-cmake_minimum_required( VERSION 3.10 )
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 # ACloudViewer example for standard plugins
 
 # REPLACE ALL 'ExamplePlugin' OCCURENCES BY YOUR PLUGIN NAME

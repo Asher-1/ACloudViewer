@@ -69,8 +69,7 @@ if(NOT Pytorch_FOUND)
 
         # fix the issues of Failed to find nvToolsExt
         message(STATUS "Pytorch_CUDA_VERSION: ${Pytorch_CUDA_VERSION}")
-        if(WIN32 AND PYTORCH_VERSION VERSION_GREATER_EQUAL 2.5.0 AND
-           Pytorch_CUDA_VERSION VERSION_GREATER_EQUAL 12)
+        if(WIN32 AND Pytorch_CUDA_VERSION VERSION_GREATER_EQUAL "12.0")
             message(STATUS "PyTorch NVTX headers workaround: Yes")
             # only do this if nvToolsExt is not defined and CUDA::nvtx3 exists
             if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
@@ -82,6 +81,15 @@ if(NOT Pytorch_FOUND)
                     TORCH_CUDA_USE_NVTX3
                 )
                 target_link_libraries(CUDA::nvToolsExt INTERFACE CUDA::nvtx3)
+            else()
+                set(NVTX3_INCLUDE_DIR "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${Pytorch_CUDA_VERSION}/include/nvtx3")
+                include_directories(${NVTX3_INCLUDE_DIR})
+                message(STATUS "CUDA::nvtx3 not found, creating CUDA::nvToolsExt interface manually")
+                if(NOT TARGET CUDA::nvToolsExt)
+                    add_library(nvtx3_dummy INTERFACE)
+                    target_include_directories(nvtx3_dummy INTERFACE "${NVTX3_INCLUDE_DIR}")
+                    add_library(CUDA::nvToolsExt ALIAS nvtx3_dummy)
+                endif()
             endif()
         else()
             message(STATUS "PyTorch NVTX headers workaround: No")

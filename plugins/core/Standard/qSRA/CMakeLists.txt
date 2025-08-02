@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_STANDARD_QSRA "Install qSRA (Surface of Revolution Analysis) plugin" OFF )
 
 # ACloudViewer 'Surface of Revolution Analysis' plugin

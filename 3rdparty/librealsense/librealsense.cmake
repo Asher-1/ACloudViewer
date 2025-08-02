@@ -6,6 +6,8 @@ set(PATCH_CUDACRT_COMMAND "")
 if(WIN32)
   set(PATCH_CUDACRT_COMMAND 
     ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch
+    # Patch to include the <chrono> header for the system_clock type
+    ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch
   )
 endif()
 
@@ -37,6 +39,7 @@ ExternalProject_Add(
     # Patch for macOS ARM64 support for versions < 2.50.0
     COMMAND ${PATCH_MACOS_ARM64_COMMAND}
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=OFF
         -DBUILD_EXAMPLES=OFF

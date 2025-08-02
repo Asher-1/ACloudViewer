@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 # Add an option to CMake to control whether we build this plugin or not
 option( PLUGIN_STANDARD_QMPLANE "Check to install QMPlane_PLUGIN plugin" OFF )
 

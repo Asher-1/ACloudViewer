@@ -49,14 +49,14 @@ else()
     set(lib_name "turbojpeg")
 endif()
 
-ExternalProject_Add(
-    ext_turbojpeg
+ExternalProject_Add(ext_turbojpeg
     PREFIX turbojpeg
     URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/2.0.6.tar.gz
     URL_HASH SHA256=005aee2fcdca252cee42271f7f90574dda64ca6505d9f8b86ae61abc2b426371
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/libjpeg-turbo"
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DWITH_CRT_DLL=${WITH_CRT_DLL}
         -DENABLE_STATIC=ON
@@ -70,8 +70,7 @@ ExternalProject_Add(
         -UCMAKE_INSTALL_LIBDIR
         -DCMAKE_INSTALL_DEFAULT_LIBDIR=${CloudViewer_INSTALL_LIB_DIR}
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
+        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 ExternalProject_Get_Property(ext_turbojpeg INSTALL_DIR)
 set(JPEG_TURBO_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

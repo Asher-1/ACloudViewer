@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION})
+
 # Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 # All rights reserved.
 #
@@ -29,8 +31,6 @@
 #
 # Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-cmake_minimum_required(VERSION 3.18)
-
 project(COLMAP)
 
 set(COLMAP_VERSION "${CLOUDVIEWER_VERSION}")
@@ -47,7 +47,6 @@ include(CheckCXXCompilerFlag)
 # Include helper macros and commands, and allow the included file to override
 # the CMake policies in this file
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeHelper.cmake NO_POLICY_SCOPE)
-
 
 ################################################################################
 # Options
@@ -83,8 +82,8 @@ if (BOOST_STATIC)
 else ()
     # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
     # https://lists.boost.org/boost-users/2009/11/54015.php
-    add_definitions("-DBOOST_ALL_DYN_LINK")
-    add_definitions("-DBOOST_TEST_DYN_LINK")
+    add_compile_definitions(BOOST_ALL_DYN_LINK)
+    add_compile_definitions(BOOST_TEST_DYN_LINK)
     set(Boost_USE_STATIC_LIBS OFF)
     set(Boost_USE_STATIC OFF)
 endif ()
@@ -120,8 +119,8 @@ if (NOT APPLE)
         if (NOT BOOST_ROOT)
             message(STATUS "No Boost library root specified (BOOST_ROOT)")
         else ()
-            add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
-            add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
+            add_compile_definitions(BOOST_ROOT=${BOOST_ROOT})
+            add_compile_definitions(BOOST_LIBRARYDIR=${BOOST_ROOT})
         endif ()
     else ()
         if (NOT ${GLIBCXX_USE_CXX11_ABI})
@@ -133,14 +132,14 @@ if (NOT APPLE)
 
     # Disable BOOST autolink
     if (MSVC)
-        add_definitions(-DBOOST_ALL_NO_LIB)
+        add_compile_definitions(BOOST_ALL_NO_LIB)
     endif ()
 
     if (BOOST_NO_CXX11)
         # Avoid link errors on boost filesystem copy_file function
         # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
-        add_definitions("-DBOOST_NO_CXX11_SCOPED_ENUMS")
-        add_definitions("-DBOOST_NO_CXX11_OVERRIDE")
+        add_compile_definitions(BOOST_NO_CXX11_SCOPED_ENUMS)
+        add_compile_definitions(BOOST_NO_CXX11_OVERRIDE)
         message("disable boost cxx11 on ${COLMAP_APP_NAME}!")
     endif ()
 endif ()
@@ -166,7 +165,6 @@ if (CGAL_FOUND)
     message(STATUS "  Libraries : ${CGAL_LIBRARY}")
 endif ()
 
-
 ################################################################################
 # Compiler specific configuration
 ################################################################################
@@ -180,12 +178,12 @@ endif ()
 
 if (IS_MSVC)
     # Some fixes for the Glog library.
-    add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
-    add_definitions("-DGOOGLE_GLOG_DLL_DECL=")
+    add_compile_definitions(GLOG_NO_ABBREVIATED_SEVERITIES)
+    add_compile_definitions(GOOGLE_GLOG_DLL_DECL=)
     # fix gflags library bugs
-    add_definitions(-DGFLAGS_DLL_DECLARE_FLAG= -DGFLAGS_DLL_DEFINE_FLAG= -DGFLAGS_IS_A_DLL=0)
+    add_compile_definitions(GFLAGS_DLL_DECLARE_FLAG= GFLAGS_DLL_DEFINE_FLAG= GFLAGS_IS_A_DLL=0)
     # opengl
-    add_definitions("-DGL_GLEXT_PROTOTYPES")
+    add_compile_definitions(GL_GLEXT_PROTOTYPES)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
     # Enable object level parallel builds in Visual Studio.
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
@@ -203,12 +201,12 @@ if (IS_GNU)
 endif ()
 
 if (IS_DEBUG)
-    add_definitions("-DEIGEN_INITIALIZE_MATRICES_BY_NAN")
+    add_compile_definitions(EIGEN_INITIALIZE_MATRICES_BY_NAN)
 endif ()
 
 if (OPENMP_ENABLED AND OPENMP_FOUND)
     message(STATUS "Enabling OpenMP support")
-    add_definitions("-DOPENMP_ENABLED")
+    add_compile_definitions(OPENMP_ENABLED)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 else ()
@@ -228,7 +226,7 @@ if (CUDA_ENABLED)
         set(CMAKE_CUDA_ARCHITECTURES "native")
     endif()
 
-    add_definitions("-DCUDA_ENABLED")
+    add_compile_definitions(CUDA_ENABLED)
 
     # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_FORCE_INLINES")
@@ -236,22 +234,32 @@ if (CUDA_ENABLED)
     # Do not show warnings if the architectures are deprecated.
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
 
+    # Check CUDA version for PBA compatibility
+    if(CUDAToolkit_VERSION VERSION_LESS "12.0")
+        set(PBA_ENABLED ON)
+        message(STATUS "PBA enabled - CUDA ${CUDAToolkit_VERSION} supports modern texture API")
+    else()
+        set(PBA_ENABLED OFF)
+        message(STATUS "PBA disabled - requires CUDA 11.x or below (but found CUDA ${CUDAToolkit_VERSION})")
+    endif()
+
     message(STATUS "Enabling CUDA support (version: ${CUDAToolkit_VERSION},"
             " archs: ${CMAKE_CUDA_ARCHITECTURES})")
 else ()
     set(CUDA_FOUND OFF)
+    set(PBA_ENABLED OFF)
     message(STATUS "Disabling CUDA support")
 endif ()
 
 if (GUI_ENABLED AND Qt5_FOUND)
-    add_definitions("-DGUI_ENABLED")
+    add_compile_definitions(GUI_ENABLED)
     message(STATUS "Enabling GUI support")
 else ()
     message(STATUS "Disabling GUI support")
 endif ()
 
 if (OPENGL_ENABLED)
-    add_definitions("-DOPENGL_ENABLED")
+    add_compile_definitions(OPENGL_ENABLED)
     message(STATUS "Enabling OpenGL support")
 else ()
     message(STATUS "Disabling OpenGL support")
@@ -267,7 +275,7 @@ endif ()
 
 if (CGAL_FOUND AND CGAL_ENABLED)
     message(STATUS "Enabling CGAL support")
-    add_definitions("-DCGAL_ENABLED")
+    add_compile_definitions(CGAL_ENABLED)
 else ()
     message(STATUS "Disabling CGAL support")
     set(CGAL_ENABLED OFF)
@@ -349,7 +357,17 @@ set(COLMAP_INTERNAL_LIBRARIES
         flann
         graclus
         lsd
-        pba
+        )
+
+# Add PBA conditionally based on CUDA version
+if(PBA_ENABLED)
+    list(APPEND COLMAP_INTERNAL_LIBRARIES pba)
+    add_compile_definitions(PBA_ENABLED)
+else()
+    message(STATUS "PBA library excluded from build")
+endif()
+
+list(APPEND COLMAP_INTERNAL_LIBRARIES
         poisson_recon
         sqlite3
         sift_gpu
@@ -374,7 +392,14 @@ add_subdirectory(src)
 COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
-COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
+
+# Add PBA sources conditionally
+if(PBA_ENABLED)
+    COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
+else()
+    set(LIB_PBA_SRCS "")
+endif()
+
 COLMAP_ADD_SOURCE_DIR(lib/PoissonRecon LIB_POISSON_RECON_SRCS *.h *.cpp *.inl)
 COLMAP_ADD_SOURCE_DIR(lib/SiftGPU LIB_SIFT_GPU_SRCS *.h *.cpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/SQLite LIB_SQLITE_SRCS *.h *.c)

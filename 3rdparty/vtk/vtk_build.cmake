@@ -33,8 +33,7 @@ if(BUILD_VTK_FROM_SOURCE)
         list(APPEND VTK_BUILD_BYPRODUCTS <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${item}${CMAKE_STATIC_LIBRARY_SUFFIX})
     endforeach()
 
-    ExternalProject_Add(
-        ext_vtk
+    ExternalProject_Add(ext_vtk
         PREFIX vtk
         URL https://www.vtk.org/files/release/${VTK_VERSION}/VTK-${VTK_VERSION}.0.tar.gz
         URL_HASH SHA256=8fed42f4f8f1eb8083107b68eaa9ad71da07110161a3116ad807f43e5ca5ce96
@@ -43,6 +42,7 @@ if(BUILD_VTK_FROM_SOURCE)
         UPDATE_COMMAND ""
         CMAKE_ARGS
             ${ExternalProject_CMAKE_ARGS_hidden}
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DVTK_GROUP_ENABLE_Imaging=NO
@@ -285,8 +285,7 @@ if(BUILD_VTK_FROM_SOURCE)
             -DVTK_MODULE_ENABLE_VTK_zfp=DONT_WANT
             -DVTK_MODULE_ENABLE_VTK_zlib=DONT_WANT
         BUILD_BYPRODUCTS
-            ${VTK_BUILD_BYPRODUCTS}
-    )
+            ${VTK_BUILD_BYPRODUCTS})
 
     ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
     set(VTK_LIBRARIES_DIRS ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
@@ -328,8 +327,7 @@ else() #### download prebuilt vtk
         message(FATAL "Unsupported platform")
     endif()
 
-    ExternalProject_Add(
-        ext_vtk
+    ExternalProject_Add(ext_vtk
         PREFIX vtk
         URL ${VTK_URL}
         URL_HASH SHA256=${VTK_SHA256}
@@ -340,7 +338,7 @@ else() #### download prebuilt vtk
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS
             ${VTK_BUILD_BYPRODUCTS}
-    )
+)
 
     ExternalProject_Get_Property(ext_vtk SOURCE_DIR)
     set(VTK_LIBRARIES_DIRS "${SOURCE_DIR}/lib")

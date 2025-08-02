@@ -1,7 +1,6 @@
 include(ExternalProject)
 
-ExternalProject_Add(
-    ext_cork
+ExternalProject_Add(ext_cork
     PREFIX cork
     URL https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.0/cork.7z
     URL_HASH MD5=8014B0317BE35DE273A78780A688F49A

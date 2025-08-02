@@ -26,4 +26,3 @@ target_include_directories( ${PROJECT_NAME}
 		$<INSTALL_INTERFACE:include/E57Format>
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
-

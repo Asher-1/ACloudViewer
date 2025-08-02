@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_IO_QDRACO "Install qDracoIO plugin to read & write DRC files" OFF )
 
 if( PLUGIN_IO_QDRACO )

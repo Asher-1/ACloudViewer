@@ -69,6 +69,11 @@ elseif(APPLE)
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/freeimage"
         BUILD_IN_SOURCE ON
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
+        PATCH_COMMAND
+            # fix fopen issues on macos
+            sed -i.bak -e "s/#        define fdopen(fd,mode) NULL/#if !defined(__APPLE__)\\n#        define fdopen(fd,mode) NULL\\n#endif/" Source/ZLib/zutil.h &&
+            # # fix missing fp.h in pngpriv.h issues on macos
+            sed -i.bak -e "s/#      include <fp.h>/#if !defined(__APPLE__)\\n#include <fp.h>\\n#endif/" Source/LibPNG/pngpriv.h
         CONFIGURE_COMMAND cp ${CloudViewer_3RDPARTY_DIR}/freeimage/Makefile.osx <SOURCE_DIR>
         BUILD_COMMAND make -f Makefile.osx
         UPDATE_COMMAND ""

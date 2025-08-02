@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 # ACloudViewer Json RPC plugin based on example for standard plugins
 
 # Add an option to CMake to control whether we build this plugin or not

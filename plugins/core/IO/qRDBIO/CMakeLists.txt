@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option(PLUGIN_IO_QRDB "Install RDB 2 I/O plugin" OFF)
 if (PLUGIN_IO_QRDB)
     option(PLUGIN_IO_QRDB_FETCH_DEPENDENCY "Fetch RDB SDK from public server" ON)

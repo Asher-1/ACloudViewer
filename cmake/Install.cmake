@@ -265,37 +265,52 @@ function( _InstallFiles )
 	set( files "${INSTALL_FILES_FILES}" )
 	set( full_path "${INSTALL_FILES_DEST_PATH}/${INSTALL_FILES_DEST_FOLDER}" )
 	
-	if( WIN32 )
-		if( NOT CMAKE_CONFIGURATION_TYPES )
-			install(
-				FILES ${files}
-				DESTINATION "${full_path}"
-			)
+	# Filter out non-existent files
+	set( existing_files "" )
+	foreach( file ${files} )
+		if( EXISTS "${file}" )
+			list( APPEND existing_files "${file}" )
+		else()
+			message( STATUS "Skipping non-existent file: ${file}" )
+		endif()
+	endforeach()
+	
+	# Only proceed if we have existing files to install
+	if( existing_files )
+		if( WIN32 )
+			if( NOT CMAKE_CONFIGURATION_TYPES )
+				install(
+					FILES ${existing_files}
+					DESTINATION "${full_path}"
+				)
+			else()
+				install(
+					FILES ${existing_files}
+					CONFIGURATIONS Debug
+					DESTINATION "${INSTALL_FILES_DEST_PATH}_debug/${INSTALL_FILES_DEST_FOLDER}"
+				)
+			
+				install(
+					FILES ${existing_files}
+					CONFIGURATIONS Release
+					RUNTIME DESTINATION ${full_path}
+				)
+			
+				install(
+					FILES ${existing_files}
+					CONFIGURATIONS RelWithDebInfo
+					RUNTIME DESTINATION "${INSTALL_FILES_DEST_PATH}_withDebInfo/${INSTALL_FILES_DEST_FOLDER}"
+				)
+			endif()			
 		else()
 			install(
-				FILES ${files}
-				CONFIGURATIONS Debug
-				DESTINATION "${INSTALL_FILES_DEST_PATH}_debug/${INSTALL_FILES_DEST_FOLDER}"
+				FILES ${existing_files}
+				DESTINATION "${full_path}"
+				PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+				GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 			)
-		
-			install(
-				FILES ${files}
-				CONFIGURATIONS Release
-				RUNTIME DESTINATION ${full_path}
-			)
-		
-			install(
-				FILES ${files}
-				CONFIGURATIONS RelWithDebInfo
-				RUNTIME DESTINATION "${INSTALL_FILES_DEST_PATH}_withDebInfo/${INSTALL_FILES_DEST_FOLDER}"
-			)
-		endif()			
+		endif()
 	else()
-		install(
-			FILES ${files}
-			DESTINATION "${full_path}"
-			PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-      GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-		)
+		message( STATUS "No existing files to install" )
 	endif()
 endfunction()

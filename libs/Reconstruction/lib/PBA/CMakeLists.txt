@@ -3,9 +3,9 @@ if(NOT IS_MSVC)
 endif()
 
 if(NOT SIMD_ENABLED)
-    add_definitions("-DDISABLE_CPU_NEON")
-    add_definitions("-DDISABLE_CPU_AVX")
-    add_definitions("-DDISABLE_CPU_SSE")
+    add_compile_definitions(DISABLE_CPU_NEON)
+    add_compile_definitions(DISABLE_CPU_AVX)
+    add_compile_definitions(DISABLE_CPU_SSE)
 endif()
 
 if(CUDA_ENABLED)
@@ -26,7 +26,7 @@ if(CUDA_ENABLED)
         util.h
     )
 else()
-    add_definitions("-DPBA_NO_GPU")
+    add_compile_definitions(PBA_NO_GPU)
 
     COLMAP_ADD_STATIC_LIBRARY(pba
         ConfigBA.cpp

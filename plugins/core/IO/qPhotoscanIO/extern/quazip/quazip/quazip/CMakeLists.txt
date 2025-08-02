@@ -9,7 +9,7 @@ file(GLOB SRCS "*.c" "*.cpp")
 file(GLOB PUBLIC_HEADERS "*.h")
 
 # Must be added to enable export macro
-ADD_DEFINITIONS(-DQUAZIP_BUILD)
+add_compile_definitions(QUAZIP_BUILD)
 
 qt_wrap_cpp(MOC_SRCS ${PUBLIC_HEADERS})
 set(SRCS ${SRCS} ${MOC_SRCS})

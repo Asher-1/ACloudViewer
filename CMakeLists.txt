@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.19)
 # If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
-# official repository https://apt.kitware.com/.  CMake 3.18+ is required to
+# official repository https://apt.kitware.com/.  CMake 3.19+ is required to
 # allow linking with OBJECT libraries, to prevent erroneous -gencode option
 # deduplication with CUDA, and to simplify generator expressions for selecting
 # compile flags and setting global hardened link flags.
+
+include(cmake/CMakeVersionConfig.cmake)
 
 # One shouldn't generate the BUILD project directly in the SOURCES folder!
 if (${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
@@ -93,6 +95,7 @@ option(BUILD_BENCHMARKS "Build the micro benchmarks" OFF)
 option(BUILD_OPENCV "Build the opencv" OFF)
 option(BUILD_PYTHON_MODULE "Build the python module" ON)
 option(BUILD_CUDA_MODULE "Build the CUDA module" OFF)
+option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"         ON )
 option(BUILD_COMMON_CUDA_ARCHS "Build for common CUDA GPUs (for release)" OFF)
 option(BUILD_CACHED_CUDA_MANAGER "Build the cached CUDA memory manager" ON)
 option(BUILD_GUI "Builds CloudViewerApp GUI" ON)
@@ -159,7 +162,7 @@ else()
     option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
 endif()
 
-if(LINUX_AARCH64 OR APPLE_AARCH64)
+if(LINUX_AARCH64)
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
 else()
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           OFF)
@@ -527,8 +530,8 @@ if (BUILD_CUDA_MODULE)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
-        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.5")
+        message(FATAL_ERROR "CUDA 11.4 and older are not supported. Please upgrade to CUDA 11.5 or newer.")
     endif ()
 endif ()
 
@@ -643,9 +646,9 @@ add_subdirectory(core)
 
 # Propagate the choice to use doubles for ScalarType
 if (${CV_CORE_LIB_USES_DOUBLE})
-    add_definitions(-DSCALAR_TYPE_DOUBLE)
+    add_compile_definitions(SCALAR_TYPE_DOUBLE)
 else ()
-    add_definitions(-DSCALAR_TYPE_FLOAT)
+    add_compile_definitions(SCALAR_TYPE_FLOAT)
 endif ()
 
 # Internal libs used by both ACloudViewer and cloudViewer python package
@@ -839,6 +842,7 @@ if (BUILD_RECONSTRUCTION)
     endforeach()
 endif()
 
+message(STATUS "CMAKE_INSTALL_PATH: " ${CMAKE_INSTALL_PREFIX})
 message(STATUS "ACLOUDVIEWER_PACKAGE_NAME: " ${ACLOUDVIEWER_PACKAGE_NAME})
 # for linux
 install(CODE "set(BUILD_LIB_PATH \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")")

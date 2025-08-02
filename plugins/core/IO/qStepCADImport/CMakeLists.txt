@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.10 )
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
 option( PLUGIN_IO_QSTEP "Check to install the STEP reading file plugin" OFF )
 
@@ -50,6 +50,4 @@ if ( PLUGIN_IO_QSTEP )
 		unset( OC_DLLS )
 	endif()
 
-
 endif()
-

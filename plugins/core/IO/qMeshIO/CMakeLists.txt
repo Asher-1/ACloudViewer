@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 # MeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -46,6 +48,8 @@ if ( PLUGIN_IO_QMESH )
 		message( WARNING "The AMD64 option may cause link errors. If you run into link errors regarding 'inflate_fast', try turning this off." )
 	endif()
 
-	target_link_libraries( ${PROJECT_NAME} ${ZLIB_LIBRARIES} )
+	if (NOT USE_SYSTEM_PNG)
+		target_link_libraries( ${PROJECT_NAME} 3rdparty_zlib )
+	endif()
 	target_link_libraries( ${PROJECT_NAME} ${ASSIMP_LIBRARIES} )
 endif()

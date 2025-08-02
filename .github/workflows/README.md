@@ -2,7 +2,7 @@
 
 ## OS versions
 
-Use the oldest available OS version (e.g. ubuntu-18.04, macos-11, windows-2019)
+Use the oldest available OS version (e.g. ubuntu-18.04, macos-11, windows-2022)
 for each workflow to ensure created binary artifacts are as widely compatible as
 possible. For jobs that use docker, or auxiliary jobs (e.g. uploading artifacts
 to google cloud), use ubuntu-latest to avoid changing the version on GitHub

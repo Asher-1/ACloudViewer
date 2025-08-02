@@ -58,7 +58,6 @@ target_sources(cloudViewer_torch_ops PRIVATE
 target_sources(cloudViewer_torch_ops PRIVATE
         ragged_tensor/RaggedTensor.cpp)
 
-
 target_sources(cloudViewer_torch_ops PRIVATE
         pointnet/BallQueryOps.cpp
         pointnet/InterpolateOps.cpp

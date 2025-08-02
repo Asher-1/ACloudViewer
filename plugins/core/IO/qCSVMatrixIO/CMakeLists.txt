@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
+
 option( PLUGIN_IO_QCSV_MATRIX "Install qCSVMatrix I/O plugin" OFF )
 
 if( PLUGIN_IO_QCSV_MATRIX )

@@ -50,8 +50,7 @@ if (BUILD_WITH_CONDA)
     endif()
 endif()
 
-ExternalProject_Add(
-        ext_pcl
+ExternalProject_Add(ext_pcl
         PREFIX pcl
         URL https://github.com/PointCloudLibrary/pcl/releases/download/pcl-${PCL_VERSION}/source.zip
         URL_HASH MD5=91cb583c1d5ecf221ee16a736c0ae39d
@@ -61,11 +60,11 @@ ExternalProject_Add(
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         UPDATE_COMMAND ""
         CMAKE_ARGS
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             ${ExternalProject_CMAKE_ARGS_hidden}
             ${VTK_CMAKE_FLAGS}
             ${EIGEN_CMAKE_FLAGS}
-            -DBUILD_SHARED_LIBS=ON
-            -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
+            -DBUILD_SHARED_LIBS=ON-DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
             # checking CXX_COMPILER_ID is not supported.
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
@@ -94,8 +93,7 @@ ExternalProject_Add(
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
         DEPENDS 3rdparty_eigen3 3rdparty_vtk
         BUILD_BYPRODUCTS
-            ${PCL_BUILD_BYPRODUCTS}
-)
+            ${PCL_BUILD_BYPRODUCTS})
 
 ExternalProject_Get_Property(ext_pcl INSTALL_DIR)
 set(PCL_INCLUDE_DIRS "${INSTALL_DIR}/include/pcl-${PCL_MAJOR_VERSION}/")
