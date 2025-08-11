@@ -26,7 +26,7 @@
 using namespace std;
 
 #include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <cuda_runtime.h>
 #include "CuTexImage.h"
 
 #if CUDA_VERSION <= 2010
@@ -124,8 +124,10 @@ void CuTexImage::CopyToHost(void* buf) {
   size_t sz = _imgWidth * _imgHeight * _numChannel * sizeof(float);
   // cudaThreadSynchronize();
   cudaMemcpy(buf, _cuData, sz, cudaMemcpyDeviceToHost);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
 }
+
+// Texture object creation now handled in ProgramCU with a cache; noop here.
 
 void CuTexImage::SaveToFile(const char* name) {
   ofstream out(name);
