@@ -33,6 +33,7 @@ int CheckErrorCUDA(const char* location);
 void FinishWorkCUDA();
 void ClearPreviousError();
 void ResetCurrentDevice();
+void ClearTextureObjectCache();
 void GetBlockConfiguration(unsigned int nblock, unsigned int& bw,
                            unsigned int& bh);
 
