@@ -233,18 +233,18 @@ public:
     ~SlabNodeManager() { MemoryManager::Free(impl_.super_blocks_, device_); }
 
     void Reset() {
-        OPEN3D_CUDA_CHECK(cudaMemset(
+        CLOUDVIEWER_CUDA_CHECK(cudaMemset(
                 impl_.super_blocks_, 0xFF,
                 kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t)));
 
         for (uint32_t i = 0; i < kSuperBlocks; i++) {
             // setting bitmaps into zeros:
-            OPEN3D_CUDA_CHECK(cudaMemset(
+            CLOUDVIEWER_CUDA_CHECK(cudaMemset(
                     impl_.super_blocks_ + i * kUIntsPerSuperBlock, 0x00,
                     kBlocksPerSuperBlock * kSlabsPerBlock * sizeof(uint32_t)));
         }
         cuda::Synchronize();
-        OPEN3D_CUDA_CHECK(cudaGetLastError());
+        CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
     }
 
     std::vector<int> CountSlabsPerSuperblock() {
@@ -262,7 +262,7 @@ public:
                                         core::cuda::GetStream()>>>(
                 impl_, thrust::raw_pointer_cast(slabs_per_superblock.data()));
         cuda::Synchronize();
-        OPEN3D_CUDA_CHECK(cudaGetLastError());
+        CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
 
         std::vector<int> result(num_super_blocks);
         thrust::copy(slabs_per_superblock.begin(), slabs_per_superblock.end(),

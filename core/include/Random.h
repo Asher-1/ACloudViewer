@@ -16,100 +16,208 @@ namespace cloudViewer {
 namespace utility {
 namespace random {
 
-inline std::mt19937* GetEngine() {
-    thread_local static std::mt19937 engine{std::random_device{}()};
-    return &engine;
-}
+/// Set CloudViewer global random seed.
+void Seed(const int seed);
 
-inline std::mutex* GetMutex() {
-    static std::mutex mtx;
-    return &mtx;
-}
+/// Get global singleton random engine.
+/// You must also lock the global mutex before calling the engine.
+///
+/// Example:
+/// ```cpp
+/// #include <Random.h>
+///
+/// {
+///     // Put the lock and the call to the engine in the same scope.
+///     std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
+///     std::shuffle(vals.begin(), vals.end(), *utility::random::GetEngine());
+/// }
+/// ```
+std::mt19937* GetEngine();
 
+/// Get global singleton mutex to protect the engine call. Also see
+/// random::GetEngine().
+std::mutex* GetMutex();
+
+/// Generate a random uint32.
+/// This function is globally seeded by utility::random::Seed().
+/// This function is automatically protected by the global random mutex.
+uint32_t RandUint32();
+
+/// Generate uniformly distributed random integers in [low, high].
+/// This class is globally seeded by utility::random::Seed().
+/// This class is a wrapper around std::uniform_int_distribution.
+///
+/// Example:
+/// ```cpp
+/// #include <Random.h>
+///
+/// // Globally seed cloudViewer. This will affect all random functions.
+/// utility::random::Seed(0);
+///
+/// // Generate a random int in [0, 100].
+/// utility::random::UniformIntGenerator<int> gen(0, 100);
+/// for (size_t i = 0; i < 10; i++) {
+///     std::cout << gen() << std::endl;
+/// }
+/// ```
+template <typename T>
+class UniformIntGenerator {
+public:
+    /// Generate uniformly distributed random integer from
+    /// [low, low + 1, ... high].
+    ///
+    /// \param low The lower bound (inclusive).
+    /// \param high The upper bound (inclusive). \p high must be >= \p low.
+    UniformIntGenerator(const T low, const T high) : distribution_(low, high) {
+        if (low < 0) {
+            utility::LogError("low must be > 0, but got {}.", low);
+        }
+        if (low > high) {
+            utility::LogError(
+                    "low must be <= high, but got low={} and high={}.", low,
+                    high);
+        }
+    }
+
+    /// Call this to generate a uniformly distributed integer.
+    T operator()() {
+        std::lock_guard<std::mutex> lock(*GetMutex());
+        return distribution_(*GetEngine());
+    }
+
+protected:
+    std::uniform_int_distribution<T> distribution_;
+};
+
+/// Generate uniformly distributed floating point values in [low, high).
+/// This class is globally seeded by utility::random::Seed().
+/// This class is a wrapper around std::uniform_real_distribution.
+///
+/// Example:
+/// ```cpp
+/// #include <Random.h>
+///
+/// // Globally seed cloudViewer. This will affect all random functions.
+/// utility::random::Seed(0);
+///
+/// // Generate a random double in [0, 1).
+/// utility::random::UniformRealGenerator<double> gen(0, 1);
+/// for (size_t i = 0; i < 10; i++) {
+///    std::cout << gen() << std::endl;
+/// }
+/// ```
 template <typename T>
 class UniformRealGenerator {
 public:
-    UniformRealGenerator(T a, T b) : distribution_(a, b) {}
+    /// Generate uniformly distributed floating point values in [low, high).
+    ///
+    /// \param low The lower bound (inclusive).
+    /// \param high The upper bound (exclusive).
+    UniformRealGenerator(const T low = 0.0, const T high = 1.0)
+        : distribution_(low, high) {
+        if (low >= high) {
+            utility::LogError("low must be < high, but got low={} and high={}.",
+                              low, high);
+        }
+    }
 
+    /// Call this to generate a uniformly distributed floating point value.
     T operator()() {
         std::lock_guard<std::mutex> lock(*GetMutex());
         return distribution_(*GetEngine());
     }
 
-private:
+protected:
     std::uniform_real_distribution<T> distribution_;
 };
 
-template <typename IndexType = size_t>
-class DiscreteGenerator {
-public:
-    template <typename WeightType>
-    DiscreteGenerator(const WeightType* weights, size_t count) {
-        cumulative_weights_.resize(count);
-        double running_sum = 0.0;
-        for (size_t i = 0; i < count; ++i) {
-            running_sum += static_cast<double>(weights[i]);
-            cumulative_weights_[i] = running_sum;
-        }
-        total_weight_ = running_sum > 0.0 ? running_sum : 1.0;
-    }
-
-    template <typename WeightType>
-    DiscreteGenerator(const WeightType* begin, const WeightType* end) {
-        const size_t count = static_cast<size_t>(end - begin);
-        cumulative_weights_.resize(count);
-        double running_sum = 0.0;
-        for (size_t i = 0; i < count; ++i) {
-            running_sum += static_cast<double>(begin[i]);
-            cumulative_weights_[i] = running_sum;
-        }
-        total_weight_ = running_sum > 0.0 ? running_sum : 1.0;
-    }
-
-    IndexType operator()() {
-        std::lock_guard<std::mutex> lock(*GetMutex());
-        std::uniform_real_distribution<double> dist(0.0, total_weight_);
-        const double r = dist(*GetEngine());
-        auto it = std::lower_bound(cumulative_weights_.begin(),
-                                   cumulative_weights_.end(), r);
-        if (it == cumulative_weights_.end()) {
-            return static_cast<IndexType>(cumulative_weights_.empty()
-                                                  ? 0
-                                                  : cumulative_weights_.size() -
-                                                            1);
-        }
-        return static_cast<IndexType>(it - cumulative_weights_.begin());
-    }
-
-private:
-    std::vector<double> cumulative_weights_;
-    double total_weight_ = 1.0;
-};
-
-}  // namespace random
-}  // namespace utility
-}  // namespace cloudViewer
-
-namespace cloudViewer {
-namespace utility {
-namespace random {
-
+/// Generate normally distributed floating point values with mean and std.
+/// This class is globally seeded by utility::random::Seed().
+/// This class is a wrapper around std::normal_distribution.
+///
+/// Example:
+/// ```cpp
+/// #include <Random.h>
+///
+/// // Globally seed cloudViewer. This will affect all random functions.
+/// utility::random::Seed(0);
+///
+/// // Generate a random double with mean 0 and std 1.
+/// utility::random::NormalGenerator<double> gen(0, 1);
+/// for (size_t i = 0; i < 10; i++) {
+///     std::cout << gen() << std::endl;
+/// }
+/// ```
 template <typename T>
 class NormalGenerator {
 public:
-    NormalGenerator(T mean, T stddev) : distribution_(mean, stddev) {}
+    /// Generate normally distributed floating point value with mean and std.
+    ///
+    /// \param mean The mean of the distribution.
+    /// \param stddev The standard deviation of the distribution.
+    NormalGenerator(const T mean = 0.0, const T stddev = 1.0)
+        : distribution_(mean, stddev) {
+        if (stddev <= 0) {
+            utility::LogError("stddev must be > 0, but got {}.", stddev);
+        }
+    }
 
+    /// Call this to generate a normally distributed floating point value.
     T operator()() {
         std::lock_guard<std::mutex> lock(*GetMutex());
         return distribution_(*GetEngine());
     }
 
-private:
+protected:
     std::normal_distribution<T> distribution_;
+};
+
+/// Generate discretely distributed integer values according to a range of
+/// weight values.
+/// This class is globally seeded by utility::random::Seed().
+/// This class is a wrapper around std::discrete_distribution.
+///
+/// Example:
+/// ```cpp
+/// #include <Random.h>
+///
+/// // Globally seed cloudViewer. This will affect all random functions.
+/// utility::random::Seed(0);
+///
+/// // Weighted random choice of size_t
+/// std::vector<double> weights{1, 2, 3, 4, 5};
+/// utility::random::DiscreteGenerator<size_t> gen(weights.cbegin(),
+/// weights.cend()); for (size_t i = 0; i < 10; i++) {
+///     std::cout << gen() << std::endl;
+/// }
+/// ```
+template <typename T>
+class DiscreteGenerator {
+public:
+    /// Generate discretely distributed integer values according to a range of
+    /// weight values.
+    /// \param first The iterator or pointer pointing to the first element in
+    /// the range of weights.
+    /// \param last The iterator or pointer pointing to one past the last
+    /// element in the range of weights.
+    template <typename InputIt>
+    DiscreteGenerator(InputIt first, InputIt last)
+        : distribution_(first, last) {
+        if (first > last) {
+            utility::LogError("first must be <= last.");
+        }
+    }
+
+    /// Call this to generate a discretely distributed integer value.
+    T operator()() {
+        std::lock_guard<std::mutex> lock(*GetMutex());
+        return distribution_(*GetEngine());
+    }
+
+protected:
+    std::discrete_distribution<T> distribution_;
 };
 
 }  // namespace random
 }  // namespace utility
 }  // namespace cloudViewer
-
-

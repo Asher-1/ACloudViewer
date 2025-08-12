@@ -220,7 +220,7 @@ template void IntegrateCPU<float, float, float, float, float>(FN_ARGUMENTS);
 #undef FN_ARGUMENTS
 
 #define FN_ARGUMENTS                                                           \
-    const std::shared_ptr<core::DeviceHashBackend> &hashmap, const TensorMap &block_value_map, \
+    const std::shared_ptr<core::HashMap> &hashmap, const TensorMap &block_value_map, \
             const core::Tensor &range_map, TensorMap &renderings_map,          \
             const core::Tensor &intrinsic, const core::Tensor &extrinsic,      \
             index_t h, index_t w, index_t block_resolution, float voxel_size,  \

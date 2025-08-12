@@ -67,7 +67,7 @@ public:
 
         heap_top_ = hashmap_buffer.GetHeapTop().cuda.GetDataPtr<int>();
         cuda::Synchronize();
-        OPEN3D_CUDA_CHECK(cudaGetLastError());
+        CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
     }
 
     __host__ void Shutdown(const Device &device) {

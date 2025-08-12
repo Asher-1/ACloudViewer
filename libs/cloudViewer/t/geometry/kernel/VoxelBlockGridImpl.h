@@ -538,7 +538,7 @@ void RayCastCUDA
 #else
 void RayCastCPU
 #endif
-        (const std::shared_ptr<core::DeviceHashBackend>& hashmap,
+        (const std::shared_ptr<core::HashMap>& hashmap,
          const TensorMap& block_value_map,
          const core::Tensor& range,
          TensorMap& renderings_map,

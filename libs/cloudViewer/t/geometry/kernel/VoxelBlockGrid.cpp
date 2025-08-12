@@ -223,7 +223,7 @@ void EstimateRange(const core::Tensor& block_keys,
     }
 }
 
-void RayCast(const std::shared_ptr<core::DeviceHashBackend>& hashmap,
+void RayCast(const std::shared_ptr<core::HashMap>& hashmap,
              const TensorMap& block_value_map,
              const core::Tensor& range_map,
              TensorMap& renderings_map,
