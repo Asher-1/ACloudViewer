@@ -234,14 +234,16 @@ if (CUDA_ENABLED)
     # Do not show warnings if the architectures are deprecated.
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
 
+    set(PBA_ENABLED ON)
+    message(STATUS "PBA enabled - CUDA ${CUDAToolkit_VERSION} supports modern texture API")
     # Check CUDA version for PBA compatibility
-    if(CUDAToolkit_VERSION VERSION_LESS "12.0")
-        set(PBA_ENABLED ON)
-        message(STATUS "PBA enabled - CUDA ${CUDAToolkit_VERSION} supports modern texture API")
-    else()
-        set(PBA_ENABLED OFF)
-        message(STATUS "PBA disabled - requires CUDA 11.x or below (but found CUDA ${CUDAToolkit_VERSION})")
-    endif()
+    # if(CUDAToolkit_VERSION VERSION_LESS "12.0")
+    #     set(PBA_ENABLED ON)
+    #     message(STATUS "PBA enabled - CUDA ${CUDAToolkit_VERSION} supports modern texture API")
+    # else()
+    #     set(PBA_ENABLED OFF)
+    #     message(STATUS "PBA disabled - requires CUDA 11.x or below (but found CUDA ${CUDAToolkit_VERSION})")
+    # endif()
 
     message(STATUS "Enabling CUDA support (version: ${CUDAToolkit_VERSION},"
             " archs: ${CMAKE_CUDA_ARCHITECTURES})")

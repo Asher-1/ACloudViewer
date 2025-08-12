@@ -22,7 +22,7 @@
 #ifndef CU_TEX_IMAGE_H
 #define CU_TEX_IMAGE_H
 
-struct textureReference;
+#include <cuda_runtime.h>
 
 namespace pba {
 
@@ -39,14 +39,7 @@ class CuTexImage {
   bool InitTexture(unsigned int width, unsigned int height,
                    unsigned int nchannel = 1);
   void SetTexture(void* data, unsigned int width, unsigned int nchannel = 1);
-  void BindTexture(textureReference& texRef);
-  void BindTexture(textureReference& texRef, int offset, size_t size);
-  void BindTexture2(textureReference& texRef1, textureReference& texRef2);
-  void BindTexture4(textureReference& texRef1, textureReference& texRef2,
-                    textureReference& texRef3, textureReference& texRef4);
-  int BindTextureX(textureReference& texRef1, textureReference& texRef2,
-                   textureReference& texRef3, textureReference& texRef4,
-                   bool force4);
+
   void SwapData(CuTexImage& src);
   void CopyToHost(void* buf);
   void CopyFromDevice(const void* buf);
