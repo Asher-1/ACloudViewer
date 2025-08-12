@@ -16,63 +16,14 @@
 #include <string>
 #include <unordered_set>
 
-#ifdef CLOUDVIEWER_WITH_VTK
 #include <vtkImageData.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
-#endif
 
 namespace cloudViewer {
 namespace t {
 namespace geometry {
 namespace vtkutils {
-#ifndef CLOUDVIEWER_WITH_VTK
-// ---- Minimal fallbacks to allow building without VTK ----
-inline int DtypeToVtkType(const core::Dtype&) { return 0; }
-inline void* CreateVtkImageDataFromTensor(core::Tensor&, bool = false) {
-    utility::LogError("VTK is not enabled in this build");
-    return nullptr;
-}
-inline void* CreateVtkPolyDataFromGeometry(
-        const Geometry&, const std::unordered_set<std::string>&,
-        const std::unordered_set<std::string>&,
-        const std::unordered_set<std::string>& = {},
-        const std::unordered_set<std::string>& = {}, bool = false) {
-    utility::LogError("VTK is not enabled in this build");
-    return nullptr;
-}
-inline TriangleMesh CreateTriangleMeshFromVtkPolyData(void*, bool = false) {
-    utility::LogError("VTK is not enabled in this build");
-    return TriangleMesh(core::Device("CPU:0"));
-}
-inline LineSet CreateLineSetFromVtkPolyData(void*, bool = false) {
-    utility::LogError("VTK is not enabled in this build");
-    return LineSet(core::Device("CPU:0"));
-}
-inline TriangleMesh ExtrudeRotationTriangleMesh(const Geometry&, double,
-                                                const core::Tensor&, int, double,
-                                                bool) {
-    utility::LogError("VTK is not enabled in this build");
-    return TriangleMesh(core::Device("CPU:0"));
-}
-inline LineSet ExtrudeRotationLineSet(const PointCloud&, double,
-                                      const core::Tensor&, int, double, bool) {
-    utility::LogError("VTK is not enabled in this build");
-    return LineSet(core::Device("CPU:0"));
-}
-inline TriangleMesh ExtrudeLinearTriangleMesh(const Geometry&,
-                                              const core::Tensor&, double, bool) {
-    utility::LogError("VTK is not enabled in this build");
-    return TriangleMesh(core::Device("CPU:0"));
-}
-inline LineSet ExtrudeLinearLineSet(const PointCloud&, const core::Tensor&,
-                                    double, bool) {
-    utility::LogError("VTK is not enabled in this build");
-    return LineSet(core::Device("CPU:0"));
-}
-#else
-// ---- VTK declarations ----
-
 /// Returns the corresponding vtk data type for core::Dtype
 /// Logs an error if no conversion exists.
 int DtypeToVtkType(const core::Dtype& dtype);
@@ -209,8 +160,6 @@ TriangleMesh ComputeNormals(const TriangleMesh& mesh,
                             bool auto_orient_normals,
                             bool splitting,
                             double feature_angle_deg = 30);
-#endif  // CLOUDVIEWER_WITH_VTK
-
 }  // namespace vtkutils
 }  // namespace geometry
 }  // namespace t

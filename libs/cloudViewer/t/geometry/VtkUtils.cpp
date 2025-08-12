@@ -7,7 +7,6 @@
 
 #include "cloudViewer/t/geometry/VtkUtils.h"
 
-#ifdef CLOUDVIEWER_WITH_VTK
 #include <vtkArrayDispatch.h>
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
@@ -27,9 +26,7 @@ namespace cloudViewer {
 namespace t {
 namespace geometry {
 namespace vtkutils {
-#endif  // CLOUDVIEWER_WITH_VTK
 
-#ifdef CLOUDVIEWER_WITH_VTK
 int DtypeToVtkType(const core::Dtype& dtype) {
     if (dtype == core::Float32) {
         return VTK_FLOAT;
@@ -622,4 +619,3 @@ CLOUDVIEWER_LOCAL TriangleMesh ComputeNormals(const TriangleMesh& mesh,
 }  // namespace geometry
 }  // namespace t
 }  // namespace cloudViewer
-#endif  // CLOUDVIEWER_WITH_VTK

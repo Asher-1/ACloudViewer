@@ -1855,28 +1855,28 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # IPP
-if (WITH_IPPICV)
+if (WITH_IPP)
     # Ref: https://stackoverflow.com/a/45125525
-    set(IPPICV_SUPPORTED_HW AMD64 x86_64 x64 x86 X86 i386 i686)
+    set(IPP_SUPPORTED_HW AMD64 x86_64 x64)  # 32 bit deprecated: x86 X86 i386 i686
     # Unsupported: ARM64 aarch64 armv7l armv8b armv8l ...
-    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPPICV_SUPPORTED_HW)
-        set(WITH_IPPICV OFF)
-        message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPP_SUPPORTED_HW)
+        set(WITH_IPP OFF)
+        message(WARNING "Intel IPP disabled: Unsupported Platform.")
     else ()
-        include(${CloudViewer_3RDPARTY_DIR}/ippicv/ippicv.cmake)
-        if (WITH_IPPICV)
-            message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
-            import_3rdparty_library(3rdparty_ippicv
-                    HIDDEN
-                    INCLUDE_DIRS ${IPPICV_INCLUDE_DIR}
-                    LIBRARIES ${IPPICV_LIBRARIES}
-                    LIB_DIR ${IPPICV_LIB_DIR}
-                    DEPENDS ext_ippicv
-                    )
-            target_compile_definitions(3rdparty_ippicv INTERFACE ${IPPICV_DEFINITIONS})
-            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_ippicv)
-        endif ()
-    endif ()
+        include(${CloudViewer_3RDPARTY_DIR}/ipp/ipp.cmake)
+        if (WITH_IPP)
+            message(STATUS "Using Intel IPP ${IPP_VERSION_STRING}.")
+            import_3rdparty_library(3rdparty_ipp
+                HIDDEN
+                INCLUDE_DIRS ${IPP_INCLUDE_DIR}
+                LIBRARIES    ${IPP_LIBRARIES}
+                LIB_DIR      ${IPP_LIB_DIR}
+                DEPENDS      ext_ipp
+            )
+            target_compile_definitions(3rdparty_ipp INTERFACE IPP_VERSION_INT=${IPP_VERSION_INT})
+            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_ipp)
+        endif()
+    endif()
 endif ()
 
 # Stdgpu
@@ -2291,7 +2291,204 @@ if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
     # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
     # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
 else()
-    set(3rdparty_vtk "")
+    find_package(Boost REQUIRED COMPONENTS
+                 filesystem
+                 iostreams)
+    find_package_3rdparty_library(3rdparty_vtk
+        PACKAGE VTK
+        TARGETS
+            VTK::FiltersGeneral
+            VTK::FiltersSources
+            VTK::FiltersModeling
+            VTK::FiltersCore
+            VTK::CommonExecutionModel
+            VTK::CommonDataModel
+            VTK::CommonTransforms
+            VTK::CommonMath
+            VTK::CommonMisc
+            VTK::CommonSystem
+            VTK::CommonCore
+            VTK::kissfft
+            VTK::pugixml
+            VTK::vtksys
+    )
+
+    # find_package_3rdparty_library(3rdparty_vtk
+    #     PACKAGE VTK
+    #     TARGETS
+    #         VTK::WrappingTools
+    #         VTK::WebPython
+    #         VTK::WebCore
+    #         VTK::Python
+    #         VTK::vtksys
+    #         VTK::WebGLExporter
+    #         VTK::ViewsInfovis
+    #         VTK::CommonColor
+    #         VTK::ViewsContext2D
+    #         VTK::loguru
+    #         VTK::TestingRendering
+    #         VTK::TestingCore
+    #         VTK::RenderingQt
+    #         VTK::PythonContext2D
+    #         VTK::RenderingVolumeOpenGL2
+    #         VTK::glew
+    #         VTK::opengl
+    #         VTK::RenderingMatplotlib
+    #         VTK::PythonInterpreter
+    #         VTK::RenderingLabel
+    #         VTK::octree
+    #         VTK::RenderingLOD
+    #         VTK::RenderingLICOpenGL2
+    #         VTK::RenderingImage
+    #         VTK::RenderingContextOpenGL2
+    #         VTK::IOXdmf2
+    #         VTK::libxml2
+    #         VTK::xdmf2
+    #         VTK::hdf5
+    #         VTK::IOVeraOut
+    #         VTK::IOTecplotTable
+    #         VTK::utf8
+    #         VTK::IOSegY
+    #         VTK::IOXdmf3
+    #         VTK::xdmf3
+    #         VTK::IOParallelXML
+    #         VTK::IOPLY
+    #         VTK::IOOggTheora
+    #         VTK::theora
+    #         VTK::ogg
+    #         VTK::IONetCDF
+    #         VTK::netcdf
+    #         VTK::libproj
+    #         VTK::IOMotionFX
+    #         VTK::pegtl
+    #         VTK::IOParallel
+    #         VTK::jsoncpp
+    #         VTK::IOMINC
+    #         VTK::IOLSDyna
+    #         VTK::IOInfovis
+    #         VTK::zlib
+    #         VTK::IOImport
+    #         VTK::IOIOSS
+    #         VTK::fmt
+    #         VTK::ioss
+    #         VTK::cgns
+    #         VTK::exodusII
+    #         VTK::IOFFMPEG
+    #         VTK::IOVideo
+    #         VTK::IOMovie
+    #         VTK::IOExportPDF
+    #         VTK::libharu
+    #         VTK::IOExportGL2PS
+    #         VTK::RenderingGL2PSOpenGL2
+    #         VTK::gl2ps
+    #         VTK::png
+    #         VTK::IOExport
+    #         VTK::RenderingVtkJS
+    #         VTK::nlohmannjson
+    #         VTK::RenderingSceneGraph
+    #         VTK::IOExodus
+    #         VTK::IOEnSight
+    #         VTK::IOCityGML
+    #         VTK::pugixml
+    #         VTK::IOChemistry
+    #         VTK::IOCesium3DTiles
+    #         VTK::IOGeometry
+    #         VTK::IOCONVERGECFD
+    #         VTK::IOHDF
+    #         VTK::IOCGNSReader
+    #         VTK::IOAsynchronous
+    #         VTK::IOAMR
+    #         VTK::InteractionImage
+    #         VTK::ImagingStencil
+    #         VTK::ImagingStatistics
+    #         VTK::ImagingMorphological
+    #         VTK::ImagingMath
+    #         VTK::ImagingFourier
+    #         VTK::IOSQL
+    #         VTK::sqlite
+    #         VTK::GUISupportQt
+    #         VTK::GeovisCore
+    #         VTK::InfovisLayout
+    #         VTK::ViewsCore
+    #         VTK::InteractionWidgets
+    #         VTK::RenderingVolume
+    #         VTK::RenderingAnnotation
+    #         VTK::ImagingHybrid
+    #         VTK::ImagingColor
+    #         VTK::InteractionStyle
+    #         VTK::FiltersTopology
+    #         VTK::FiltersSelection
+    #         VTK::FiltersSMP
+    #         VTK::FiltersPython
+    #         VTK::FiltersProgrammable
+    #         VTK::FiltersPoints
+    #         VTK::FiltersVerdict
+    #         VTK::verdict
+    #         VTK::FiltersParallelImaging
+    #         VTK::FiltersParallelDIY2
+    #         VTK::FiltersImaging
+    #         VTK::ImagingGeneral
+    #         VTK::FiltersGeneric
+    #         VTK::FiltersFlowPaths
+    #         VTK::eigen
+    #         VTK::FiltersAMR
+    #         VTK::FiltersParallel
+    #         VTK::FiltersTexture
+    #         VTK::FiltersModeling
+    #         VTK::DomainsChemistryOpenGL2
+    #         VTK::RenderingOpenGL2
+    #         VTK::RenderingHyperTreeGrid
+    #         VTK::RenderingUI
+    #         VTK::FiltersHyperTree
+    #         VTK::FiltersHybrid
+    #         VTK::DomainsChemistry
+    #         VTK::CommonPython
+    #         VTK::WrappingPythonCore
+    #         VTK::ChartsCore
+    #         VTK::InfovisCore
+    #         VTK::FiltersExtraction
+    #         VTK::ParallelDIY
+    #         VTK::diy2
+    #         VTK::IOXML
+    #         VTK::IOXMLParser
+    #         VTK::expat
+    #         VTK::ParallelCore
+    #         VTK::IOLegacy
+    #         VTK::IOCore
+    #         VTK::doubleconversion
+    #         VTK::lz4
+    #         VTK::lzma
+    #         VTK::FiltersStatistics
+    #         VTK::ImagingSources
+    #         VTK::IOImage
+    #         VTK::DICOMParser
+    #         VTK::jpeg
+    #         VTK::metaio
+    #         VTK::tiff
+    #         VTK::RenderingContext2D
+    #         VTK::RenderingFreeType
+    #         VTK::freetype
+    #         VTK::kwiml
+    #         VTK::RenderingCore
+    #         VTK::FiltersSources
+    #         VTK::ImagingCore
+    #         VTK::FiltersGeometry
+    #         VTK::FiltersGeneral
+    #         VTK::CommonComputationalGeometry
+    #         VTK::FiltersCore
+    #         VTK::CommonExecutionModel
+    #         VTK::CommonDataModel
+    #         VTK::CommonSystem
+    #         VTK::CommonMisc
+    #         VTK::exprtk
+    #         VTK::CommonTransforms
+    #         VTK::CommonMath
+    #         VTK::kissfft
+    #         VTK::CommonCore
+    # )
+    if(NOT 3rdparty_vtk_FOUND)
+        set(USE_SYSTEM_VTK OFF)
+    endif()
     set(3rdparty_pcl "")
 endif()
 

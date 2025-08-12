@@ -27,7 +27,7 @@ static NppStreamContext MakeNPPContext() {
     context.nCudaDeviceId = core::cuda::GetDevice();
 
     cudaDeviceProp device_prop;
-    OPEN3D_CUDA_CHECK(
+    CLOUDVIEWER_CUDA_CHECK(
             cudaGetDeviceProperties(&device_prop, core::cuda::GetDevice()));
 
     context.nMultiProcessorCount = device_prop.multiProcessorCount;
@@ -36,13 +36,13 @@ static NppStreamContext MakeNPPContext() {
     context.nSharedMemPerBlock = device_prop.sharedMemPerBlock;
 
     int cc_major;
-    OPEN3D_CUDA_CHECK(cudaDeviceGetAttribute(&cc_major,
+    CLOUDVIEWER_CUDA_CHECK(cudaDeviceGetAttribute(&cc_major,
                                              cudaDevAttrComputeCapabilityMajor,
                                              core::cuda::GetDevice()));
     context.nCudaDevAttrComputeCapabilityMajor = cc_major;
 
     int cc_minor;
-    OPEN3D_CUDA_CHECK(cudaDeviceGetAttribute(&cc_minor,
+    CLOUDVIEWER_CUDA_CHECK(cudaDeviceGetAttribute(&cc_minor,
                                              cudaDevAttrComputeCapabilityMinor,
                                              core::cuda::GetDevice()));
     context.nCudaDevAttrComputeCapabilityMinor = cc_minor;
@@ -52,7 +52,7 @@ static NppStreamContext MakeNPPContext() {
 // to expose this member variable.
 #if NPP_VERSION >= 11100
     unsigned int stream_flags;
-    OPEN3D_CUDA_CHECK(
+    CLOUDVIEWER_CUDA_CHECK(
             cudaStreamGetFlags(core::cuda::GetStream(), &stream_flags));
     context.nStreamFlags = stream_flags;
 #endif
@@ -475,7 +475,7 @@ void FilterSobel(const core::Tensor &src_im,
     // We need to negate it in-place for lower versions.
     // TODO: this part is subject to changes given tests on more versions.
     int cuda_version;
-    OPEN3D_CUDA_CHECK(cudaRuntimeGetVersion(&cuda_version));
+    CLOUDVIEWER_CUDA_CHECK(cudaRuntimeGetVersion(&cuda_version));
     if (cuda_version < 10020) {
         dst_im_dx.Neg_();
     }

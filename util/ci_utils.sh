@@ -197,7 +197,7 @@ build_mac_wheel() {
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE" # some issues with network locally
         "-DWITH_OPENMP=ON"
-        "-DWITH_IPPICV=ON"
+        "-DWITH_IPP=ON"
         "-DWITH_SIMD=ON"
         "-DUSE_SIMD=ON"
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
@@ -294,7 +294,7 @@ build_gui_app() {
                 "-DBUILD_BENCHMARKS=OFF"
                 "-DBUILD_WEBRTC=OFF"
                 "-DWITH_OPENMP=ON"
-                "-DWITH_IPPICV=ON"
+                "-DWITH_IPP=ON"
                 "-DWITH_SIMD=ON"
                 "-DWITH_PCL_NURBS=$WITH_PCL_NURBS"
                 "-DUSE_SIMD=ON"
@@ -443,7 +443,7 @@ build_pip_package() {
         "-DUSE_SIMD=ON"
         "-DWITH_SIMD=ON"
         "-DWITH_OPENMP=ON"
-        "-DWITH_IPPICV=ON"
+        "-DWITH_IPP=ON"
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
