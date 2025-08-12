@@ -667,6 +667,7 @@ void SparseBundleCU::ReleaseAllocatedData() {
   _cuCameraQMap.ReleaseData();
   _cuCameraQMapW.ReleaseData();
   _cuCameraQListW.ReleaseData();
+  ProgramCU::ClearTextureObjectCache();
   ProgramCU::ResetCurrentDevice();
 }
 
