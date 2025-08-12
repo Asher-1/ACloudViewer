@@ -28,6 +28,7 @@
 
 #include <Logging.h>
 #include "pybind/core/tensor_converter.h"
+#include "cloudViewer/core/TensorCheck.h"
 #include "pybind/docstring.h"
 #include "pybind/ml/contrib/contrib.h"
 #include "pybind/cloudViewer_pybind.h"
@@ -40,14 +41,14 @@ namespace contrib {
 py::array IouBevCPU(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous();
-    boxes_a_tensor.AssertDtype(core::Float32);
-    boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 5});
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 5});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous();
-    boxes_b_tensor.AssertDtype(core::Float32);
-    boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 5});
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 5});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -64,14 +65,14 @@ py::array IouBevCPU(py::array boxes_a, py::array boxes_b) {
 py::array Iou3dCPU(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous();
-    boxes_a_tensor.AssertDtype(core::Float32);
-    boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 7});
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 7});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous();
-    boxes_b_tensor.AssertDtype(core::Float32);
-    boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 7});
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 7});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -90,14 +91,14 @@ py::array IouBevCUDA(py::array boxes_a, py::array boxes_b) {
     core::Device cuda_device("CUDA:0");
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous().To(cuda_device);
-    boxes_a_tensor.AssertDtype(core::Float32);
-    boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 5});
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 5});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous().To(cuda_device);
-    boxes_b_tensor.AssertDtype(core::Float32);
-    boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 5});
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 5});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -114,14 +115,14 @@ py::array Iou3dCUDA(py::array boxes_a, py::array boxes_b) {
     core::Device cuda_device("CUDA:0");
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous().To(cuda_device);
-    boxes_a_tensor.AssertDtype(core::Float32);
-    boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 7});
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 7});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous().To(cuda_device);
-    boxes_b_tensor.AssertDtype(core::Float32);
-    boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 7});
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 7});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(

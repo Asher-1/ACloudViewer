@@ -1,44 +1,25 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/nns/NanoFlannIndex.h"
+#include "cloudViewer/core/nns/NanoFlannIndex.h"
 
-#include "core/Dispatch.h"
-#include "core/TensorCheck.h"
-#include "core/nns/NanoFlannImpl.h"
-#include "core/nns/NeighborSearchAllocator.h"
-#include "core/nns/NeighborSearchCommon.h"
-// #include <nanoflann.hpp>
+#include "cloudViewer/core/Dispatch.h"
+#include "cloudViewer/core/TensorCheck.h"
+#include "cloudViewer/core/nns/NanoFlannImpl.h"
+#include "cloudViewer/core/nns/NeighborSearchAllocator.h"
+#include "cloudViewer/core/nns/NeighborSearchCommon.h"
 #include <Logging.h>
-#include "utility/ParallelScan.h"
+#include "cloudViewer/utility/ParallelScan.h"
 
 namespace cloudViewer {
 namespace core {
 namespace nns {
-NanoFlannIndex::NanoFlannIndex(){};
+
+NanoFlannIndex::NanoFlannIndex() {};
 
 NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
     SetTensorData(dataset_points);
@@ -49,7 +30,7 @@ NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points,
     SetTensorData(dataset_points, index_dtype);
 };
 
-NanoFlannIndex::~NanoFlannIndex(){};
+NanoFlannIndex::~NanoFlannIndex() {};
 
 bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points,
                                    const Dtype &index_dtype) {

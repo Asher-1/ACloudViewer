@@ -1,36 +1,19 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                                                 -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EposePRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "t/pipelines/kernel/TransformationConverter.h"
+#include "cloudViewer/t/pipelines/kernel/TransformationConverter.h"
 
 #include <cmath>
 
-#include "core/Dispatch.h"
-#include "core/Tensor.h"
-#include "t/pipelines/kernel/TransformationConverterImpl.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/Dispatch.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/TensorCheck.h"
+#include "cloudViewer/t/pipelines/kernel/TransformationConverterImpl.h"
 #include <Logging.h>
 
 namespace cloudViewer {
@@ -39,22 +22,17 @@ namespace pipelines {
 namespace kernel {
 
 core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
-    core::Device device = R.GetDevice();
-    core::Dtype dtype = R.GetDtype();
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(t, {3});
+    core::AssertTensorDtypes(R, {core::Float32, core::Float64});
 
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                " [RtToTransformation]: Only Float32 abd Float64 supported, "
-                "but got {} ",
-                dtype.ToString());
-    }
+    const core::Device device = R.GetDevice();
+    const core::Dtype dtype = R.GetDtype();
+
+    core::AssertTensorDtype(t, dtype);
+    core::AssertTensorDevice(t, device);
 
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
-    R.AssertShape({3, 3});
-    R.AssertDtype(dtype);
-    t.AssertShape({3});
-    t.AssertDevice(device);
-    t.AssertDtype(dtype);
 
     // Rotation.
     transformation.SetItem(
@@ -81,6 +59,7 @@ static void PoseToTransformationDevice(
         PoseToTransformationImpl<scalar_t>(transformation_ptr, pose_ptr);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
+        core::CUDAScopedDevice scoped_device(transformation.GetDevice());
         PoseToTransformationCUDA<scalar_t>(transformation_ptr, pose_ptr);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
@@ -91,17 +70,11 @@ static void PoseToTransformationDevice(
 }
 
 core::Tensor PoseToTransformation(const core::Tensor &pose) {
-    core::Device device = pose.GetDevice();
-    core::Dtype dtype = pose.GetDtype();
+    core::AssertTensorShape(pose, {6});
+    core::AssertTensorDtypes(pose, {core::Float32, core::Float64});
 
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                " [PoseToTransformation]: Only Float32 abd Float64 supported, "
-                "but got {} ",
-                dtype.ToString());
-    }
-
-    pose.AssertShape({6});
+    const core::Device device = pose.GetDevice();
+    const core::Dtype dtype = pose.GetDtype();
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     transformation = transformation.Contiguous();
     core::Tensor pose_ = pose.Contiguous();
@@ -121,12 +94,61 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     return transformation;
 }
 
+template <typename scalar_t>
+static void TransformationToPoseDevice(
+        core::Tensor &pose,
+        const core::Tensor &transformation,
+        const core::Device::DeviceType &device_type) {
+    scalar_t *pose_ptr = pose.GetDataPtr<scalar_t>();
+    const scalar_t *transformation_ptr = transformation.GetDataPtr<scalar_t>();
+
+    if (device_type == core::Device::DeviceType::CPU) {
+        TransformationToPoseImpl<scalar_t>(pose_ptr, transformation_ptr);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        TransformationToPoseCUDA<scalar_t>(pose_ptr, transformation_ptr);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+}
+
+core::Tensor TransformationToPose(const core::Tensor &transformation) {
+    core::AssertTensorShape(transformation, {4, 4});
+    core::AssertTensorDtypes(transformation, {core::Float32, core::Float64});
+
+    const core::Device device = transformation.GetDevice();
+    const core::Dtype dtype = transformation.GetDtype();
+    core::Tensor pose = core::Tensor::Zeros({6}, dtype, device);
+    pose = pose.Contiguous();
+    core::Tensor transformation_ = transformation.Contiguous();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        core::Device::DeviceType device_type = device.GetType();
+        TransformationToPoseDevice<scalar_t>(pose, transformation_,
+                                             device_type);
+    });
+
+    // Set translation parameters in pose vector.
+    pose.SetItem(core::TensorKey::Slice(3, 6, 1),
+                 transformation_
+                         .GetItem({core::TensorKey::Slice(0, 3, 1),
+                                   core::TensorKey::Slice(3, 4, 1)})
+                         .Flatten());
+
+    return pose;
+}
+
 void DecodeAndSolve6x6(const core::Tensor &A_reduction,
                        core::Tensor &delta,
                        float &inlier_residual,
                        int &inlier_count) {
     const core::Device host(core::Device("CPU:0"));
     core::Tensor A_1x29_host = A_reduction.To(host, core::Float64);
+    core::AssertTensorShape(A_reduction, {29});
+
     double *A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
 
     core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Float64, host);

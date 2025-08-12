@@ -1,36 +1,17 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: Asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <cmath>
 
-#include "core/CUDAUtils.h"
-#include "t/geometry/kernel/GeometryMacros.h"
-#include "t/pipelines/registration/RobustKernel.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
+#include "cloudViewer/t/pipelines/registration/RobustKernel.h"
 
 #ifndef __CUDACC__
 using std::abs;
@@ -93,7 +74,7 @@ using cloudViewer::t::pipelines::registration::RobustKernelMethod;
             };                                                               \
             return __VA_ARGS__();                                            \
         } else if (METHOD == RobustKernelMethod::GeneralizedLoss) {          \
-            if (cloudViewer::IsClose(shape_parameter, 2.0, 1e-3)) {          \
+            if (cloudViewer::IsClose(shape_parameter, 2.0, 1e-3)) {               \
                 auto const_val = 1.0 / Square(scale);                        \
                 auto GetWeightFromRobustKernel =                             \
                         [=] CLOUDVIEWER_HOST_DEVICE(                              \
@@ -101,7 +82,7 @@ using cloudViewer::t::pipelines::registration::RobustKernelMethod;
                     return const_val;                                        \
                 };                                                           \
                 return __VA_ARGS__();                                        \
-            } else if (cloudViewer::IsClose(shape_parameter, 0.0, 1e-3)) {   \
+            } else if (cloudViewer::IsClose(shape_parameter, 0.0, 1e-3)) {        \
                 auto GetWeightFromRobustKernel =                             \
                         [=] CLOUDVIEWER_HOST_DEVICE(                              \
                                 scalar_t residual) -> scalar_t {             \
@@ -131,4 +112,68 @@ using cloudViewer::t::pipelines::registration::RobustKernelMethod;
         } else {                                                             \
             utility::LogError("Unsupported method.");                        \
         }                                                                    \
+    }()
+
+/// \param scalar_t type: float / double.
+/// \param METHOD_1 registration::RobustKernelMethod Loss type.
+/// \param scaling_parameter_1 Scaling parameter for loss fine-tuning.
+/// \param METHOD_2 registration::RobustKernelMethod Loss type.
+/// \param scaling_parameter_2 Scaling parameter for loss fine-tuning.
+#define DISPATCH_DUAL_ROBUST_KERNEL_FUNCTION(scalar_t, METHOD_1,            \
+                                             scaling_parameter_1, METHOD_2, \
+                                             scaling_parameter_2, ...)      \
+    [&] {                                                                   \
+        scalar_t scale_1 = static_cast<scalar_t>(scaling_parameter_1);      \
+        scalar_t scale_2 = static_cast<scalar_t>(scaling_parameter_2);      \
+        if (METHOD_1 == RobustKernelMethod::L2Loss &&                       \
+            METHOD_2 == RobustKernelMethod::L2Loss) {                       \
+            auto GetWeightFromRobustKernelFirst =                           \
+                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return 1.0;                                                 \
+            };                                                              \
+            auto GetWeightFromRobustKernelSecond =                          \
+                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return 1.0;                                                 \
+            };                                                              \
+            return __VA_ARGS__();                                           \
+        } else if (METHOD_1 == RobustKernelMethod::L2Loss &&                \
+                   METHOD_2 == RobustKernelMethod::TukeyLoss) {             \
+            auto GetWeightFromRobustKernelFirst =                           \
+                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return 1.0;                                                 \
+            };                                                              \
+            auto GetWeightFromRobustKernelSecond =                          \
+                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return Square(1.0 - Square(min((scalar_t)1.0,               \
+                                               abs(residual) / scale_2)));  \
+            };                                                              \
+            return __VA_ARGS__();                                           \
+        } else if (METHOD_1 == RobustKernelMethod::TukeyLoss &&             \
+                   METHOD_2 == RobustKernelMethod::L2Loss) {                \
+            auto GetWeightFromRobustKernelFirst =                           \
+                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return Square(1.0 - Square(min((scalar_t)1.0,               \
+                                               abs(residual) / scale_1)));  \
+            };                                                              \
+            auto GetWeightFromRobustKernelSecond =                          \
+                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return 1.0;                                                 \
+            };                                                              \
+            return __VA_ARGS__();                                           \
+        } else if (METHOD_1 == RobustKernelMethod::TukeyLoss &&             \
+                   METHOD_2 == RobustKernelMethod::TukeyLoss) {             \
+            auto GetWeightFromRobustKernelFirst =                           \
+                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return Square(1.0 - Square(min((scalar_t)1.0,               \
+                                               abs(residual) / scale_1)));  \
+            };                                                              \
+            auto GetWeightFromRobustKernelSecond =                          \
+                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return Square(1.0 - Square(min((scalar_t)1.0,               \
+                                               abs(residual) / scale_2)));  \
+            };                                                              \
+            return __VA_ARGS__();                                           \
+        } else {                                                            \
+            utility::LogError("Unsupported method.");                       \
+        }                                                                   \
     }()

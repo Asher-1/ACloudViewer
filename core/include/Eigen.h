@@ -287,6 +287,45 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> CV_CORE_LIB_API
 ComputeMeanAndCovariance(const std::vector<Eigen::Vector3d>& points,
                          const std::vector<IdxType>& indices);
 
+// Overload: compute mean and covariance from raw pointer to a contiguous
+// array of (N, 3) points. Points are accessed via indices.
+template <typename Scalar, typename IdxType>
+inline std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const Scalar* points, const std::vector<IdxType>& indices) {
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d covariance;
+    Eigen::Matrix<double, 9, 1> cumulants;
+    cumulants.setZero();
+    for (const auto& idx : indices) {
+        const double x = static_cast<double>(points[3 * static_cast<size_t>(idx) + 0]);
+        const double y = static_cast<double>(points[3 * static_cast<size_t>(idx) + 1]);
+        const double z = static_cast<double>(points[3 * static_cast<size_t>(idx) + 2]);
+        cumulants(0) += x;
+        cumulants(1) += y;
+        cumulants(2) += z;
+        cumulants(3) += x * x;
+        cumulants(4) += x * y;
+        cumulants(5) += x * z;
+        cumulants(6) += y * y;
+        cumulants(7) += y * z;
+        cumulants(8) += z * z;
+    }
+    cumulants /= static_cast<double>(indices.size());
+    mean(0) = cumulants(0);
+    mean(1) = cumulants(1);
+    mean(2) = cumulants(2);
+    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
+    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
+    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
+    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
+    covariance(1, 0) = covariance(0, 1);
+    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
+    covariance(2, 0) = covariance(0, 2);
+    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
+    covariance(2, 1) = covariance(1, 2);
+    return std::make_tuple(mean, covariance);
+}
+
 }  // namespace utility
 }  // namespace cloudViewer
 

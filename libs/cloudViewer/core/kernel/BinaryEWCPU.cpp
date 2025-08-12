@@ -1,43 +1,27 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/Dispatch.h"
-#include "core/Dtype.h"
-#include "core/Indexer.h"
-#include "core/MemoryManager.h"
-#include "core/ParallelFor.h"
-#include "core/SizeVector.h"
-#include "core/Tensor.h"
-#include "core/kernel/BinaryEW.h"
+#include "cloudViewer/core/Dispatch.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/Indexer.h"
+#include "cloudViewer/core/MemoryManager.h"
+#include "cloudViewer/core/ParallelFor.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/kernel/BinaryEW.h"
 #include <Logging.h>
+
+#ifdef BUILD_ISPC_MODULE
+#include "BinaryEWCPU_ispc.h"
+#endif
 
 namespace cloudViewer {
 namespace core {
 namespace kernel {
-
 
 template <typename src_t, typename dst_t, typename element_func_t>
 static void LaunchBinaryEWKernel(const Indexer& indexer,
@@ -189,7 +173,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
                                 indexer,
                                 CPULogicalAndElementKernel<scalar_t, scalar_t>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalAndElementKernel,
                                         &ispc_indexer));
                         break;
@@ -197,7 +181,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
                                 indexer,
                                 CPULogicalOrElementKernel<scalar_t, scalar_t>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalOrElementKernel,
                                         &ispc_indexer));
                         break;
@@ -205,21 +189,21 @@ void BinaryEWCPU(const Tensor& lhs,
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
                                 indexer,
                                 CPULogicalXorElementKernel<scalar_t, scalar_t>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalXorElementKernel,
                                         &ispc_indexer));
                         break;
                     case BinaryEWOpCode::Gt:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
                                 indexer, CPUGtElementKernel<scalar_t, scalar_t>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalGtElementKernel,
                                         &ispc_indexer));
                         break;
                     case BinaryEWOpCode::Lt:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
                                 indexer, CPULtElementKernel<scalar_t, scalar_t>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalLtElementKernel,
                                         &ispc_indexer));
                         break;
@@ -227,7 +211,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
                                 indexer,
                                 CPUGeqElementKernel<scalar_t, scalar_t>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalGeqElementKernel,
                                         &ispc_indexer));
                         break;
@@ -235,14 +219,14 @@ void BinaryEWCPU(const Tensor& lhs,
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
                                 indexer,
                                 CPULeqElementKernel<scalar_t, scalar_t>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalLeqElementKernel,
                                         &ispc_indexer));
                         break;
                     case BinaryEWOpCode::Eq:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
                                 indexer, CPUEqElementKernel<scalar_t, scalar_t>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalEqElementKernel,
                                         &ispc_indexer));
                         break;
@@ -250,7 +234,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
                                 indexer,
                                 CPUNeqElementKernel<scalar_t, scalar_t>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalNeqElementKernel,
                                         &ispc_indexer));
                         break;
@@ -271,7 +255,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer,
                                 CPULogicalAndElementKernel<scalar_t, bool>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalAndElementKernel_bool,
                                         &ispc_indexer));
@@ -280,7 +264,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer,
                                 CPULogicalOrElementKernel<scalar_t, bool>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalOrElementKernel_bool,
                                         &ispc_indexer));
@@ -289,7 +273,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer,
                                 CPULogicalXorElementKernel<scalar_t, bool>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalXorElementKernel_bool,
                                         &ispc_indexer));
@@ -297,7 +281,7 @@ void BinaryEWCPU(const Tensor& lhs,
                     case BinaryEWOpCode::Gt:
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer, CPUGtElementKernel<scalar_t, bool>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalGtElementKernel_bool,
                                         &ispc_indexer));
@@ -305,7 +289,7 @@ void BinaryEWCPU(const Tensor& lhs,
                     case BinaryEWOpCode::Lt:
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer, CPULtElementKernel<scalar_t, bool>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalLtElementKernel_bool,
                                         &ispc_indexer));
@@ -313,7 +297,7 @@ void BinaryEWCPU(const Tensor& lhs,
                     case BinaryEWOpCode::Ge:
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer, CPUGeqElementKernel<scalar_t, bool>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalGeqElementKernel_bool,
                                         &ispc_indexer));
@@ -321,7 +305,7 @@ void BinaryEWCPU(const Tensor& lhs,
                     case BinaryEWOpCode::Le:
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer, CPULeqElementKernel<scalar_t, bool>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalLeqElementKernel_bool,
                                         &ispc_indexer));
@@ -329,7 +313,7 @@ void BinaryEWCPU(const Tensor& lhs,
                     case BinaryEWOpCode::Eq:
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer, CPUEqElementKernel<scalar_t, bool>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalEqElementKernel_bool,
                                         &ispc_indexer));
@@ -337,7 +321,7 @@ void BinaryEWCPU(const Tensor& lhs,
                     case BinaryEWOpCode::Ne:
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer, CPUNeqElementKernel<scalar_t, bool>,
-                                CLOUDVIEWER_TEMPLATE_VECTORIZED(
+                                OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalNeqElementKernel_bool,
                                         &ispc_indexer));
@@ -378,21 +362,21 @@ void BinaryEWCPU(const Tensor& lhs,
                 case BinaryEWOpCode::Add:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUAddElementKernel<scalar_t>,
-                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUAddElementKernel,
                                                        &ispc_indexer));
                     break;
                 case BinaryEWOpCode::Sub:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUSubElementKernel<scalar_t>,
-                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUSubElementKernel,
                                                        &ispc_indexer));
                     break;
                 case BinaryEWOpCode::Mul:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUMulElementKernel<scalar_t>,
-                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUMulElementKernel,
                                                        &ispc_indexer));
                     break;

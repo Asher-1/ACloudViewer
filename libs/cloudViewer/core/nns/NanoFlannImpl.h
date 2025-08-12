@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                  -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 #pragma once
@@ -12,11 +12,10 @@
 #include <mutex>
 #include <nanoflann.hpp>
 
-#include "core/Atomic.h"
-#include "core/nns/NeighborSearchCommon.h"
-#include "utility/ParallelScan.h"
+#include "cloudViewer/core/Atomic.h"
+#include "cloudViewer/core/nns/NeighborSearchCommon.h"
 #include <Helper.h>
-#include <Logging.h>
+#include "cloudViewer/utility/ParallelScan.h"
 
 namespace cloudViewer {
 namespace core {
@@ -25,7 +24,7 @@ namespace nns {
 /// NanoFlann Index Holder.
 template <int METRIC, class TReal, class TIndex>
 struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
-    /// This class is the Adaptor for connecting cloudViewer Tensor and NanoFlann.
+    /// This class is the Adaptor for connecting Open3D Tensor and NanoFlann.
     struct DataAdaptor {
         DataAdaptor(size_t dataset_size,
                     int dimension,
@@ -119,13 +118,6 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
         return;
     }
 
-    auto points_equal = [](const T *const p1, const T *const p2,
-                           size_t dimension) {
-        std::vector<T> p1_vec(p1, p1 + dimension);
-        std::vector<T> p2_vec(p2, p2 + dimension);
-        return p1_vec == p2_vec;
-    };
-
     std::vector<std::vector<TIndex>> neighbors_indices(num_queries);
     std::vector<std::vector<T>> neighbors_distances(num_queries);
     std::vector<uint32_t> neighbors_count(num_queries, 0);
@@ -148,8 +140,9 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                     for (size_t valid_i = 0; valid_i < num_valid; ++valid_i) {
                         TIndex idx = result_indices[valid_i];
                         if (ignore_query_point &&
-                            points_equal(&queries[i * dimension],
-                                         &points[idx * dimension], dimension)) {
+                            std::equal(&queries[i * dimension],
+                                       &queries[i * dimension] + dimension,
+                                       &points[idx * dimension])) {
                             continue;
                         }
                         neighbors_indices[i].push_back(idx);
@@ -223,13 +216,6 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
         return;
     }
 
-    auto points_equal = [](const T *const p1, const T *const p2,
-                           size_t dimension) {
-        std::vector<T> p1_vec(p1, p1 + dimension);
-        std::vector<T> p2_vec(p2, p2 + dimension);
-        return p1_vec == p2_vec;
-    };
-
     std::vector<std::vector<TIndex>> neighbors_indices(num_queries);
     std::vector<std::vector<T>> neighbors_distances(num_queries);
     std::vector<uint32_t> neighbors_count(num_queries, 0);
@@ -242,7 +228,7 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
             [&](const tbb::blocked_range<size_t> &r) {
-								std::vector<std::pair<TIndex, T>> search_result;
+                std::vector<std::pair<TIndex, T>> search_result;
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     T radius = radii[i];
                     if (METRIC == L2) {
@@ -250,18 +236,20 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                     }
 
                     holder_->index_->radiusSearch(&queries[i * dimension],
-                                                  radius, search_result,
+                                                   radius, search_result,
                                                   params);
 
                     int num_neighbors = 0;
                     for (const auto &idx_dist : search_result) {
                         if (ignore_query_point &&
-                            points_equal(&queries[i * dimension],
-                                         &points[idx_dist.first * dimension],
-                                         dimension)) {
+                            std::equal(&queries[i * dimension],
+                                       &queries[i * dimension] + dimension,
+                                        &points[static_cast<TIndex>(idx_dist.first) *
+                                                dimension])) {
                             continue;
                         }
-                        neighbors_indices[i].push_back(idx_dist.first);
+                        neighbors_indices[i].push_back(
+                                static_cast<TIndex>(idx_dist.first));
                         if (return_distances) {
                             neighbors_distances[i].push_back(idx_dist.second);
                         }
@@ -355,7 +343,7 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
             [&](const tbb::blocked_range<size_t> &r) {
-								std::vector<std::pair<TIndex, T>> ret_matches;
+                std::vector<std::pair<TIndex, T>> ret_matches;
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     size_t num_results = holder_->index_->radiusSearch(
                             &queries[i * dimension], radius_squared,
@@ -370,7 +358,8 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                     for (auto it = ret_matches.begin();
                          it < ret_matches.end() && neighbor_idx < max_knn;
                          it++, neighbor_idx++) {
-                        indices_ptr[i * max_knn + neighbor_idx] = it->first;
+                        indices_ptr[i * max_knn + neighbor_idx] =
+                                static_cast<TIndex>(it->first);
                         distances_ptr[i * max_knn + neighbor_idx] = it->second;
                     }
 

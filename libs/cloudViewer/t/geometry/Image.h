@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -31,16 +12,13 @@
 #include <string>
 #include <vector>
 
-#include "core/Dtype.h"
-#include "core/Tensor.h"
-#include "core/kernel/UnaryEW.h"
-#include "t/geometry/Geometry.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/kernel/UnaryEW.h"
+#include "cloudViewer/geometry/Image.h"
+#include "cloudViewer/t/geometry/Geometry.h"
 
 namespace cloudViewer {
-namespace geometry {
-class Image;
-}
-
 namespace t {
 namespace geometry {
 
@@ -115,7 +93,7 @@ public:
     core::Dtype GetDtype() const { return data_.GetDtype(); }
 
     /// \brief Get device of the image.
-    core::Device GetDevice() const { return data_.GetDevice(); }
+    core::Device GetDevice() const override { return data_.GetDevice(); }
 
     /// \brief Get pixel(s) in the image.
     ///
@@ -142,7 +120,7 @@ public:
     /// \brief Get raw buffer of the Image data.
     const void *GetDataPtr() const { return data_.GetDataPtr(); }
 
-    /// \brief Retuns the underlying Tensor of the Image.
+    /// \brief Returns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
     /// \brief Transfer the image to a specified device.
@@ -155,21 +133,14 @@ public:
         return Image(data_.To(device, copy));
     }
 
+    // ---------------------------------------------------------------------
+    // Backward-compatibility helper for pre-v0.19 API
+    // ---------------------------------------------------------------------
+    /// Backward-compatible convenience method to obtain a CPU-resident copy.
+    Image CPU() const { return To(core::Device("CPU:0"), false); }
+
     /// \brief Returns copy of the image on the same device.
     Image Clone() const { return To(GetDevice(), /*copy=*/true); }
-
-    /// \brief Transfer the image to CPU.
-    ///
-    /// If the image is already on CPU, no copy will be performed.
-    Image CPU() const { return To(core::Device("CPU:0")); }
-
-    /// \brief Transfer the image to a CUDA device.
-    ///
-    /// If the image is already on the specified CUDA device, no copy will
-    /// be performed.
-    Image CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    }
 
     /// \brief Returns an Image with the specified \p dtype.
     ///
@@ -211,12 +182,14 @@ public:
         Lanczos = 3,  ///< Lanczos filter interpolation.
         Super = 4     ///< Super sampling interpolation (only downsample).
     };
+
     /// \brief Return a new image after resizing with specified interpolation
     /// type.
     ///
     /// Downsample if sampling rate is < 1. Upsample if sampling rate > 1.
     /// Aspect ratio is always preserved.
     Image Resize(float sampling_rate = 0.5f,
+
                  InterpType interp_type = InterpType::Nearest) const;
 
     /// \brief Return a new image after performing morphological dilation.
@@ -349,10 +322,9 @@ public:
                             core::Int64);
     }
 
-    /// \brief Create from a legacy CloudViewer Image.
-    static Image FromLegacy(
-            const cloudViewer::geometry::Image &image_legacy,
-            const core::Device &Device = core::Device("CPU:0"));
+    /// \brief Create from a legacy Open3D Image.
+    static Image FromLegacy(const cloudViewer::geometry::Image &image_legacy,
+                            const core::Device &Device = core::Device("CPU:0"));
 
     /// \brief Convert to legacy Image type.
     cloudViewer::geometry::Image ToLegacy() const;
@@ -360,11 +332,11 @@ public:
     /// \brief Text description.
     std::string ToString() const;
 
-    /// Do we use IPP ICV for accelerating image processing operations?
-#ifdef WITH_IPPICV
-    static constexpr bool HAVE_IPPICV = true;
+    /// Do we use IPP for accelerating image processing operations?
+#ifdef WITH_IPP
+    static constexpr bool HAVE_IPP = true;
 #else
-    static constexpr bool HAVE_IPPICV = false;
+    static constexpr bool HAVE_IPP = false;
 #endif
 
 protected:

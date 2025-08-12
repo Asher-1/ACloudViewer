@@ -1,40 +1,30 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <sstream>
 
-#include "core/CUDAUtils.h"
-#include "core/Dtype.h"
-#include "core/ShapeUtil.h"
-#include "core/SizeVector.h"
-#include "core/Tensor.h"
-#include "utility/MiniVec.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/ShapeUtil.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "cloudViewer/core/Tensor.h"
 #include <Logging.h>
+#include "cloudViewer/utility/MiniVec.h"
+
+// The generated "Indexer_ispc.h" header will not be available outside the
+// library. Therefore, forward declare all exported ISPC classes.
+#ifdef BUILD_ISPC_MODULE
+namespace ispc {
+struct TensorRef;
+struct Indexer;
+}  // namespace ispc
+#endif
 
 namespace cloudViewer {
 namespace core {
@@ -44,11 +34,11 @@ class Indexer;
 class IndexerIterator;
 
 // Maximum number of dimensions of TensorRef.
-static constexpr int64_t MAX_DIMS = 10;
+static constexpr int64_t MAX_DIMS = 5;
 
 // Maximum number of inputs of an op.
 // MAX_INPUTS shall be >= MAX_DIMS to support advanced indexing.
-static constexpr int64_t MAX_INPUTS = 10;
+static constexpr int64_t MAX_INPUTS = 5;
 
 // Maximum number of outputs of an op. This number can be increased when
 // necessary.
@@ -120,7 +110,7 @@ struct TensorRef {
 
     TensorRef(const Tensor& t) {
         if (t.NumDims() > MAX_DIMS) {
-            utility::LogError("Tenor has too many dimensions {} > {}.",
+            utility::LogError("Tensor has too many dimensions {} > {}.",
                               t.NumDims(), MAX_DIMS);
         }
         data_ptr_ = const_cast<void*>(t.GetDataPtr());
@@ -648,7 +638,7 @@ protected:
 class IndexerIterator {
 public:
     struct Iterator {
-        Iterator(){};
+        Iterator() {};
         Iterator(const Indexer& indexer);
         Iterator(Iterator&& other) = default;
 

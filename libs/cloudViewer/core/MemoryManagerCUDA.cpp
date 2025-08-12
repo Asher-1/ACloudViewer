@@ -1,96 +1,84 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "core/CUDAUtils.h"
-#include "core/MemoryManager.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/MemoryManager.h"
 
 namespace cloudViewer {
 namespace core {
 
-void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
+void* MemoryManagerCUDA::Malloc(size_t byte_size, const Device& device) {
     CUDAScopedDevice scoped_device(device);
 
     void* ptr;
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #if CUDART_VERSION >= 11020
-        CLOUDVIEWER_CUDA_CHECK(cudaMallocAsync(static_cast<void**>(&ptr), byte_size,
-                                          cuda::GetStream()));
+        if (cuda::SupportsMemoryPools(device)) {
+            OPEN3D_CUDA_CHECK(cudaMallocAsync(static_cast<void**>(&ptr),
+                                              byte_size, cuda::GetStream()));
+        } else {
+            OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+        }
 #else
-        CLOUDVIEWER_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+        OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
 #endif
     } else {
-        utility::LogError("CUDAMemoryManager::Malloc: Unimplemented device.");
+        utility::LogError("Internal error: Unimplemented device {}.",
+                          device.ToString());
     }
     return ptr;
 }
 
-void CUDAMemoryManager::Free(void* ptr, const Device& device) {
+void MemoryManagerCUDA::Free(void* ptr, const Device& device) {
     CUDAScopedDevice scoped_device(device);
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         if (ptr && IsCUDAPointer(ptr, device)) {
 #if CUDART_VERSION >= 11020
-            CLOUDVIEWER_CUDA_CHECK(cudaFreeAsync(ptr, cuda::GetStream()));
+            if (cuda::SupportsMemoryPools(device)) {
+                OPEN3D_CUDA_CHECK(cudaFreeAsync(ptr, cuda::GetStream()));
+            } else {
+                OPEN3D_CUDA_CHECK(cudaFree(ptr));
+            }
 #else
-            CLOUDVIEWER_CUDA_CHECK(cudaFree(ptr));
+            OPEN3D_CUDA_CHECK(cudaFree(ptr));
 #endif
         }
     } else {
-        utility::LogError("CUDAMemoryManager::Free: Unimplemented device.");
+        utility::LogError("Internal error: Unimplemented device {}.",
+                          device.ToString());
     }
 }
 
-void CUDAMemoryManager::Memcpy(void* dst_ptr,
+void MemoryManagerCUDA::Memcpy(void* dst_ptr,
                                const Device& dst_device,
                                const void* src_ptr,
                                const Device& src_device,
                                size_t num_bytes) {
-    if (dst_device.GetType() == Device::DeviceType::CUDA &&
-        src_device.GetType() == Device::DeviceType::CPU) {
+    if (dst_device.IsCUDA() && src_device.IsCPU()) {
         if (!IsCUDAPointer(dst_ptr, dst_device)) {
             utility::LogError("dst_ptr is not a CUDA pointer.");
         }
         CUDAScopedDevice scoped_device(dst_device);
-        CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
+        OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
                                           cudaMemcpyHostToDevice,
                                           cuda::GetStream()));
-    } else if (dst_device.GetType() == Device::DeviceType::CPU &&
-               src_device.GetType() == Device::DeviceType::CUDA) {
+    } else if (dst_device.IsCPU() && src_device.IsCUDA()) {
         if (!IsCUDAPointer(src_ptr, src_device)) {
             utility::LogError("src_ptr is not a CUDA pointer.");
         }
         CUDAScopedDevice scoped_device(src_device);
-        CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
+        OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
                                           cudaMemcpyDeviceToHost,
                                           cuda::GetStream()));
-    } else if (dst_device.GetType() == Device::DeviceType::CUDA &&
-               src_device.GetType() == Device::DeviceType::CUDA) {
+    } else if (dst_device.IsCUDA() && src_device.IsCUDA()) {
         if (!IsCUDAPointer(dst_ptr, dst_device)) {
             utility::LogError("dst_ptr is not a CUDA pointer.");
         }
@@ -100,25 +88,25 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
 
         if (dst_device == src_device) {
             CUDAScopedDevice scoped_device(src_device);
-            CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
+            OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
                                               cudaMemcpyDeviceToDevice,
                                               cuda::GetStream()));
         } else if (CUDAState::GetInstance().IsP2PEnabled(src_device.GetID(),
-                                                          dst_device.GetID())) {
-            CLOUDVIEWER_CUDA_CHECK(cudaMemcpyPeerAsync(
+                                                         dst_device.GetID())) {
+            OPEN3D_CUDA_CHECK(cudaMemcpyPeerAsync(
                     dst_ptr, dst_device.GetID(), src_ptr, src_device.GetID(),
                     num_bytes, cuda::GetStream()));
         } else {
             void* cpu_buf = MemoryManager::Malloc(num_bytes, Device("CPU:0"));
             {
                 CUDAScopedDevice scoped_device(src_device);
-                CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(cpu_buf, src_ptr, num_bytes,
+                OPEN3D_CUDA_CHECK(cudaMemcpyAsync(cpu_buf, src_ptr, num_bytes,
                                                   cudaMemcpyDeviceToHost,
                                                   cuda::GetStream()));
             }
             {
                 CUDAScopedDevice scoped_device(dst_device);
-                CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, cpu_buf, num_bytes,
+                OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, cpu_buf, num_bytes,
                                                   cudaMemcpyHostToDevice,
                                                   cuda::GetStream()));
             }
@@ -129,7 +117,7 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
     }
 }
 
-bool CUDAMemoryManager::IsCUDAPointer(const void* ptr, const Device& device) {
+bool MemoryManagerCUDA::IsCUDAPointer(const void* ptr, const Device& device) {
     CUDAScopedDevice scoped_device(device);
 
     cudaPointerAttributes attributes;

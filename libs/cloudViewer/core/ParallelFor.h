@@ -1,45 +1,27 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <cstdint>
-#include <vector>
+#include <type_traits>
 
-#include "core/Device.h"
-#include "utility/Overload.h"
-#include "utility/Preprocessor.h"
+#include "cloudViewer/core/Device.h"
 #include <Logging.h>
+#include "cloudViewer/utility/Overload.h"
 #include <Parallel.h>
+#include "cloudViewer/utility/Preprocessor.h"
+#include "cloudViewer/Macro.h"
 
 #ifdef __CUDACC__
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #endif
 
 namespace cloudViewer {
@@ -118,6 +100,11 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
 /// \note If you use a lambda function, capture only the required variables
 /// instead of all to prevent accidental race conditions. If you want the
 /// kernel to be used on both CPU and CUDA, capture the variables by value.
+/// \note This does not dispatch to SYCL, since SYCL has extra constraints:
+///      - Lambdas may capture by value only.
+///      - No function pointers / virtual functions.
+/// Auto dispatch to SYCL will enforce these conditions even on CPU devices. Use
+/// ParallelForSYCL instead.
 template <typename func_t>
 void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 #ifdef __CUDACC__
@@ -134,8 +121,8 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 /// \param func The function to be executed in parallel. The function should
 /// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
 /// \param vec_func The vectorized function to be executed in parallel. The
-/// function should be provided using the CLOUDVIEWER_VECTORIZED macro, e.g.,
-/// `CLOUDVIEWER_VECTORIZED(MyISPCKernel, some_used_variable)`.
+/// function should be provided using the OPEN3D_VECTORIZED macro, e.g.,
+/// `OPEN3D_VECTORIZED(MyISPCKernel, some_used_variable)`.
 ///
 /// \note This is optimized for uniform work items, i.e. where each call to \p
 /// func takes the same time.
@@ -147,6 +134,9 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 ///
 /// \code
 /// /* MyFile.cpp */
+/// #ifdef BUILD_ISPC_MODULE
+/// #include "MyFile_ispc.h"
+/// #endif
 ///
 /// std::vector<float> v(1000);
 /// float fill_value = 42.0f;
@@ -154,7 +144,10 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 ///         core::Device("CPU:0"),
 ///         v.size(),
 ///         [&](int64_t idx) { v[idx] = fill_value; },
-///         CLOUDVIEWER_VECTORIZED(MyFillKernel, v.data(), fill_value));
+///         OPEN3D_VECTORIZED(MyFillKernel, v.data(), fill_value));
+///
+/// /* MyFile.ispc */
+/// #include "cloudViewer/core/ParallelFor.isph"
 ///
 /// static inline void MyFillFunction(int64_t idx,
 ///                                   float* uniform v,
@@ -162,7 +155,7 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 ///     v[idx] = fill_value;
 /// }
 ///
-/// CLOUDVIEWER_EXPORT_VECTORIZED(MyFillKernel,
+/// OPEN3D_EXPORT_VECTORIZED(MyFillKernel,
 ///                          MyFillFunction,
 ///                          float* uniform,
 ///                          uniform float)
@@ -172,24 +165,41 @@ void ParallelFor(const Device& device,
                  int64_t n,
                  const func_t& func,
                  const vec_func_t& vec_func) {
+#ifdef BUILD_ISPC_MODULE
+
+#ifdef __CUDACC__
+    ParallelForCUDA_(device, n, func);
+#else
+    int num_threads = utility::EstimateMaxThreads();
+    ParallelForCPU_(device, num_threads, [&](int64_t i) {
+        int64_t start = n * i / num_threads;
+        int64_t end = std::min<int64_t>(n * (i + 1) / num_threads, n);
+        vec_func(start, end);
+    });
+#endif
+
+#else
+
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
 #else
     ParallelForCPU_(device, n, func);
+#endif
+
 #endif
 }
 
 #ifdef BUILD_ISPC_MODULE
 
 // Internal helper macro.
-#define CLOUDVIEWER_CALL_ISPC_KERNEL_(ISPCKernel, start, end, ...)  \
-    using namespace ispc;                                           \
+#define CLOUDVIEWER_CALL_ISPC_KERNEL_(ISPCKernel, start, end, ...) \
+    using namespace ispc;                                     \
     ISPCKernel(start, end, __VA_ARGS__);
 
 #else
 
 // Internal helper macro.
-#define CLOUDVIEWER_CALL_ISPC_KERNEL_(ISPCKernel, start, end, ...)       \
+#define CLOUDVIEWER_CALL_ISPC_KERNEL_(ISPCKernel, start, end, ...)            \
     utility::LogError(                                                   \
             "ISPC module disabled. Unable to call vectorized kernel {}", \
             CLOUDVIEWER_STRINGIFY(ISPCKernel));
@@ -197,28 +207,28 @@ void ParallelFor(const Device& device,
 #endif
 
 /// Internal helper macro.
-#define CLOUDVIEWER_OVERLOADED_LAMBDA_(T, ISPCKernel, ...)                              \
-    [&](T, int64_t start, int64_t end) {                                                \
-        CLOUDVIEWER_CALL_ISPC_KERNEL_(                                                  \
-                CLOUDVIEWER_CONCAT(ISPCKernel, CLOUDVIEWER_CONCAT(_, T)), start, end,   \
-                __VA_ARGS__);                                                           \
+#define CLOUDVIEWER_OVERLOADED_LAMBDA_(T, ISPCKernel, ...)                       \
+    [&](T, int64_t start, int64_t end) {                                    \
+        CLOUDVIEWER_CALL_ISPC_KERNEL_(                                           \
+                CLOUDVIEWER_CONCAT(ISPCKernel, CLOUDVIEWER_CONCAT(_, T)), start, end, \
+                __VA_ARGS__);                                               \
     }
 
-/// CLOUDVIEWER_VECTORIZED(ISPCKernel, ...)
+/// OPEN3D_VECTORIZED(ISPCKernel, ...)
 ///
 /// Defines a lambda function to call the provided kernel.
 ///
-/// Use the CLOUDVIEWER_EXPORT_TEMPLATE_VECTORIZED macro to define the
+/// Use the OPEN3D_EXPORT_TEMPLATE_VECTORIZED macro to define the
 /// kernel in the ISPC source file.
 ///
 /// Note: The arguments to the kernel only have to exist if ISPC support is
 /// enabled via BUILD_ISPC_MODULE=ON.
-#define CLOUDVIEWER_VECTORIZED(ISPCKernel, ...)                             \
-    [&](int64_t start, int64_t end) {                                       \
+#define OPEN3D_VECTORIZED(ISPCKernel, ...)                             \
+    [&](int64_t start, int64_t end) {                                  \
         CLOUDVIEWER_CALL_ISPC_KERNEL_(ISPCKernel, start, end, __VA_ARGS__); \
     }
 
-/// CLOUDVIEWER_TEMPLATE_VECTORIZED(T, ISPCKernel, ...)
+/// OPEN3D_TEMPLATE_VECTORIZED(T, ISPCKernel, ...)
 ///
 /// Defines a lambda function to call the provided template-like kernel.
 /// Supported types:
@@ -226,12 +236,12 @@ void ParallelFor(const Device& device,
 /// - unsigned + signed {8,16,32,64} bit integers,
 /// - float, double
 ///
-/// Use the CLOUDVIEWER_EXPORT_TEMPLATE_VECTORIZED macro to define the
+/// Use the OPEN3D_EXPORT_TEMPLATE_VECTORIZED macro to define the
 /// kernel in the ISPC source file.
 ///
 /// Note: The arguments to the kernel only have to exist if ISPC support is
 /// enabled via BUILD_ISPC_MODULE=ON.
-#define CLOUDVIEWER_TEMPLATE_VECTORIZED(T, ISPCKernel, ...)                        \
+#define OPEN3D_TEMPLATE_VECTORIZED(T, ISPCKernel, ...)                        \
     [&](int64_t start, int64_t end) {                                         \
         static_assert(std::is_arithmetic<T>::value,                           \
                       "Data type is not an arithmetic type");                 \
@@ -255,7 +265,6 @@ void ParallelFor(const Device& device,
                             CLOUDVIEWER_STRINGIFY(ISPCKernel));                    \
                 })(T{}, start, end);                                          \
     }
-
 
 }  // namespace core
 }  // namespace cloudViewer

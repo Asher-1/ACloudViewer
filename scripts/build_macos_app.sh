@@ -15,7 +15,7 @@ export BUILD_TENSORFLOW_OPS=OFF
 export PYTHON_VERSION=$1
 export ACloudViewer_INSTALL=~/cloudViewer_install
 export ENV_NAME="cloudViewer"
-export NPROC=$(nproc)
+export NPROC=$(getconf _NPROCESSORS_ONLN)
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 

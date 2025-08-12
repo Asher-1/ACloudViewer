@@ -31,6 +31,12 @@
 #include "io/rpc/DummyReceiver.h"
 #include "io/rpc/RemoteFunctions.h"
 #include "io/rpc/ZMQContext.h"
+#include "io/rpc/Messages.h"
+
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/t/geometry/PointCloud.h"
+#include "cloudViewer/t/geometry/TriangleMesh.h"
+#include "cloudViewer/t/geometry/LineSet.h"
 #include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/tensor_type_caster.h"
 #include "pybind/docstring.h"
@@ -192,6 +198,109 @@ void pybind_rpc(py::module& m_io) {
                      "A Connection object. Use None to automatically create "
                      "the connection."},
             });
+
+    // Convert a serialized SetMeshData msgpack buffer into meta (tag, step) and geometry
+    // for TensorBoard plugin reading path. Exposed as data_buffer_to_meta_geometry(buf: bytes)
+    m.def(
+            "data_buffer_to_meta_geometry",
+            [](py::bytes py_buf) {
+                // Convert Python bytes to a contiguous buffer
+                std::string buf = py_buf;
+                msgpack::object_handle oh = msgpack::unpack(buf.data(), buf.size());
+                // Expect a Reply followed by Status OK and then SetMeshData
+                msgpack::object obj = oh.get();
+                // The buffer is packed as [Reply, Status, SetMeshData]
+                // We walk it as an array to access elements by index safely.
+                if (obj.type != msgpack::type::ARRAY || obj.via.array.size < 3) {
+                    return py::make_tuple("", 0, py::none());
+                }
+                // Element 2 should be SetMeshData
+                messages::SetMeshData mesh_msg{};
+                try {
+                    obj.via.array.ptr[2].convert(mesh_msg);
+                } catch (const std::exception&) {
+                    return py::make_tuple("", 0, py::none());
+                }
+
+                // Construct Tensor-based geometry from MeshData
+                using cloudViewer::core::Tensor;
+                using cloudViewer::core::Device;
+                using cloudViewer::core::Float32;
+                using cloudViewer::core::Int32;
+
+                auto to_tensor = [](const messages::Array& arr, cloudViewer::core::Dtype dtype) {
+                    return Tensor(arr.Ptr<uint8_t>(),
+                                  {arr.shape.begin(), arr.shape.end()},
+                                  dtype, Device("CPU:0")).Contiguous();
+                };
+
+                // Primary vertices are required; infer geometry type by presence of faces/lines
+                Tensor vertices;
+                if (!mesh_msg.data.vertices.CheckNonEmpty()) {
+                    return py::make_tuple("", 0, py::none());
+                }
+                // dtype: try float32 by default
+                vertices = to_tensor(mesh_msg.data.vertices, Float32);
+
+                // Collect attributes
+                std::map<std::string, Tensor> vattrs;
+                for (const auto& kv : mesh_msg.data.vertex_attributes) {
+                    vattrs.emplace(kv.first, to_tensor(kv.second, Float32));
+                }
+
+                // Triangle mesh path
+                if (mesh_msg.data.faces.CheckNonEmpty()) {
+                    Tensor faces_t = to_tensor(mesh_msg.data.faces, Int32);
+                    cloudViewer::t::geometry::TriangleMesh tmesh;
+                    tmesh.SetVertexPositions(vertices);
+                    if (faces_t.NumElements()) {
+                        tmesh.SetTriangleIndices(faces_t);
+                    }
+                    for (const auto& kv : vattrs) {
+                        if (kv.first == "colors") {
+                            tmesh.SetVertexColors(kv.second);
+                        } else if (kv.first == "normals") {
+                            tmesh.SetVertexNormals(kv.second);
+                        } else {
+                            tmesh.SetVertexAttr(kv.first, kv.second);
+                        }
+                    }
+                    return py::make_tuple(mesh_msg.path, mesh_msg.time, tmesh);
+                }
+
+                // LineSet path
+                if (mesh_msg.data.lines.CheckNonEmpty()) {
+                    Tensor lines_t = to_tensor(mesh_msg.data.lines, Int32);
+                    cloudViewer::t::geometry::LineSet lset;
+                    lset.SetPointPositions(vertices);
+                    if (lines_t.NumElements()) {
+                        lset.SetLineIndices(lines_t);
+                    }
+                    for (const auto& kv : vattrs) {
+                        if (kv.first == "colors") {
+                            lset.SetLineColors(kv.second);
+                        } else {
+                            lset.SetPointAttr(kv.first, kv.second);
+                        }
+                    }
+                    return py::make_tuple(mesh_msg.path, mesh_msg.time, lset);
+                }
+
+                // Default to PointCloud
+                cloudViewer::t::geometry::PointCloud pcd(vertices);
+                for (const auto& kv : vattrs) {
+                    if (kv.first == "colors") {
+                        pcd.SetPointColors(kv.second);
+                    } else if (kv.first == "normals") {
+                        pcd.SetPointNormals(kv.second);
+                    } else {
+                        pcd.SetPointAttr(kv.first, kv.second);
+                    }
+                }
+                return py::make_tuple(mesh_msg.path, mesh_msg.time, pcd);
+            },
+            "Parse a serialized SetMeshData msgpack buffer into (path, time, geometry)."
+    );
 }
 
 }  // namespace io

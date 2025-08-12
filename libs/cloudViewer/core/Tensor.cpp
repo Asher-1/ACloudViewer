@@ -1,52 +1,38 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/Tensor.h"
+#include "cloudViewer/core/Tensor.h"
 
+#include <numeric>
 #include <sstream>
 
-#include "core/AdvancedIndexing.h"
-#include "core/Blob.h"
-#include "core/Device.h"
-#include "core/Dispatch.h"
-#include "core/Dtype.h"
-#include "core/ShapeUtil.h"
-#include "core/SizeVector.h"
-#include "core/TensorKey.h"
-#include "core/kernel/Arange.h"
-#include "core/kernel/Kernel.h"
-#include "core/linalg/Det.h"
-#include "core/linalg/Inverse.h"
-#include "core/linalg/LU.h"
-#include "core/linalg/LeastSquares.h"
-#include "core/linalg/Matmul.h"
-#include "core/linalg/SVD.h"
-#include "core/linalg/Solve.h"
-#include "core/linalg/Tri.h"
-#include "t/io/NumpyIO.h"
+#include "cloudViewer/core/AdvancedIndexing.h"
+#include "cloudViewer/core/Blob.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/core/Dispatch.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/ShapeUtil.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "cloudViewer/core/TensorCheck.h"
+#include "cloudViewer/core/TensorFunction.h"
+#include "cloudViewer/core/TensorKey.h"
+#include "cloudViewer/core/kernel/Arange.h"
+#include "cloudViewer/core/kernel/IndexReduction.h"
+#include "cloudViewer/core/kernel/Kernel.h"
+#include "cloudViewer/core/linalg/Det.h"
+#include "cloudViewer/core/linalg/Inverse.h"
+#include "cloudViewer/core/linalg/LU.h"
+#include "cloudViewer/core/linalg/LeastSquares.h"
+#include "cloudViewer/core/linalg/Matmul.h"
+#include "cloudViewer/core/linalg/SVD.h"
+#include "cloudViewer/core/linalg/Solve.h"
+#include "cloudViewer/core/linalg/Tri.h"
+#include "cloudViewer/t/io/NumpyIO.h"
 #include <Logging.h>
 
 namespace cloudViewer {
@@ -120,10 +106,10 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
     return core::Undefined;
 }
 
-/// CloudViewer DLPack Tensor manager.
-class CloudViewerDLManagedTensor {
+/// Open3D DLPack Tensor manager.
+class Open3DDLManagedTensor {
 private:
-    CloudViewerDLManagedTensor(const Tensor& o3d_tensor) {
+    Open3DDLManagedTensor(const Tensor& o3d_tensor) {
         o3d_tensor_ = o3d_tensor;
 
         // Prepare dl_device_type
@@ -162,17 +148,17 @@ private:
         dl_tensor.ctx = dl_context;
         dl_tensor.ndim = static_cast<int>(o3d_tensor_.GetShape().size());
         dl_tensor.dtype = dl_data_type;
-        // The shape pointer is alive for the lifetime of CloudViewerDLManagedTensor.
+        // The shape pointer is alive for the lifetime of Open3DDLManagedTensor.
         dl_tensor.shape =
                 const_cast<int64_t*>(o3d_tensor_.GetShapeRef().data());
         // The strides pointer is alive for the lifetime of
-        // CloudViewerDLManagedTensor.
+        // Open3DDLManagedTensor.
         dl_tensor.strides =
                 const_cast<int64_t*>(o3d_tensor_.GetStridesRef().data());
         dl_tensor.byte_offset = 0;
 
         dl_managed_tensor_.manager_ctx = this;
-        dl_managed_tensor_.deleter = &CloudViewerDLManagedTensor::Deleter;
+        dl_managed_tensor_.deleter = &Open3DDLManagedTensor::Deleter;
         dl_managed_tensor_.dl_tensor = dl_tensor;
     }
 
@@ -185,15 +171,151 @@ public:
     /// and ultimately it decreases the reference count to the actual data
     /// buffer (i.e. `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
     static DLManagedTensor* Create(const Tensor& o3d_tensor) {
-        CloudViewerDLManagedTensor* o3d_dl_tensor =
-                new CloudViewerDLManagedTensor(o3d_tensor);
+        Open3DDLManagedTensor* o3d_dl_tensor =
+                new Open3DDLManagedTensor(o3d_tensor);
         return &o3d_dl_tensor->dl_managed_tensor_;
     }
 
     static void Deleter(DLManagedTensor* arg) {
-        delete static_cast<CloudViewerDLManagedTensor*>(arg->manager_ctx);
+        delete static_cast<Open3DDLManagedTensor*>(arg->manager_ctx);
     }
 };
+
+struct Tensor::Iterator::Impl {
+    Tensor* tensor_;
+    int64_t index_;
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for Iterator::operator->.
+};
+
+Tensor::Iterator::Iterator(pointer tensor, int64_t index)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = tensor;
+    impl_->index_ = index;
+}
+
+Tensor::Iterator::Iterator(const Tensor::Iterator& other)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = other.impl_->tensor_;
+    impl_->index_ = other.impl_->index_;
+}
+
+// Empty destructor since Impl is incomplete type in Tensor.h.
+// https://stackoverflow.com/a/34073093/1255535
+Tensor::Iterator::~Iterator() {}
+
+Tensor::Iterator::reference Tensor::Iterator::operator*() const {
+    return impl_->tensor_->operator[](impl_->index_);
+}
+
+Tensor::Iterator::pointer Tensor::Iterator::operator->() const {
+    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
+    return &impl_->tensor_slice_;
+}
+
+Tensor::Iterator& Tensor::Iterator::operator++() {
+    impl_->index_++;
+    return *this;
+}
+
+Tensor::Iterator Tensor::Iterator::operator++(int) {
+    Iterator tmp(impl_->tensor_, impl_->index_);
+    impl_->index_++;
+    return tmp;
+}
+
+bool Tensor::Iterator::operator==(const Tensor::Iterator& other) const {
+    return impl_->tensor_ == other.impl_->tensor_ &&
+           impl_->index_ == other.impl_->index_;
+}
+
+bool Tensor::Iterator::operator!=(const Tensor::Iterator& other) const {
+    return !(*this == other);
+}
+
+Tensor::Iterator Tensor::begin() {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return Iterator(this, 0);
+}
+
+Tensor::Iterator Tensor::end() {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return Iterator(this, shape_[0]);
+}
+
+struct Tensor::ConstIterator::Impl {
+    const Tensor* tensor_;
+    int64_t index_;
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for ConstIterator::operator->.
+};
+
+Tensor::ConstIterator::ConstIterator(pointer tensor, int64_t index)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = tensor;
+    impl_->index_ = index;
+}
+
+Tensor::ConstIterator::ConstIterator(const Tensor::ConstIterator& other)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = other.impl_->tensor_;
+    impl_->index_ = other.impl_->index_;
+}
+
+// Empty destructor since Impl is incomplete type in Tensor.h.
+// https://stackoverflow.com/a/34073093/1255535
+Tensor::ConstIterator::~ConstIterator() {}
+
+Tensor::ConstIterator::reference Tensor::ConstIterator::operator*() const {
+    return impl_->tensor_->operator[](impl_->index_);
+}
+
+Tensor::ConstIterator::pointer Tensor::ConstIterator::operator->() const {
+    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
+    return &impl_->tensor_slice_;
+}
+
+Tensor::ConstIterator& Tensor::ConstIterator::operator++() {
+    impl_->index_++;
+    return *this;
+}
+
+Tensor::ConstIterator Tensor::ConstIterator::operator++(int) {
+    ConstIterator tmp(impl_->tensor_, impl_->index_);
+    impl_->index_++;
+    return tmp;
+}
+
+bool Tensor::ConstIterator::operator==(
+        const Tensor::ConstIterator& other) const {
+    return impl_->tensor_ == other.impl_->tensor_ &&
+           impl_->index_ == other.impl_->index_;
+}
+
+bool Tensor::ConstIterator::operator!=(
+        const Tensor::ConstIterator& other) const {
+    return !(*this == other);
+}
+
+Tensor::ConstIterator Tensor::cbegin() const {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return ConstIterator(this, 0);
+}
+
+Tensor::ConstIterator Tensor::cend() const {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return ConstIterator(this, shape_[0]);
+}
 
 // Equivalent to `Tensor& operator=(const Tensor& other) & = default;`.
 // Manual implentaiton is need to avoid MSVC bug (error C2580:  multiple
@@ -219,16 +341,28 @@ Tensor& Tensor::operator=(Tensor&& other) & {
     return *this;
 }
 
-/// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`
+/// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`.
 Tensor& Tensor::operator=(const Tensor& other) && {
     kernel::Copy(other, *this);
     return *this;
 }
 
-/// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`
+/// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`.
 Tensor& Tensor::operator=(Tensor&& other) && {
     kernel::Copy(other, *this);
     return *this;
+}
+
+Tensor Tensor::ReinterpretCast(const core::Dtype& dtype) const {
+    if (dtype_.ByteSize() != dtype.ByteSize()) {
+        utility::LogError(
+                "Cannot reinterpret cast between data-types of different "
+                "sizes. Expected data-type of {} bytes ({}), but got "
+                "data-type {} of {} bytes.",
+                dtype_.ByteSize(), dtype_.ToString(), dtype.ToString(),
+                dtype.ByteSize());
+    }
+    return Tensor(shape_, strides_, data_ptr_, dtype, blob_);
 }
 
 Tensor Tensor::Empty(const SizeVector& shape,
@@ -267,10 +401,10 @@ Tensor Tensor::Diag(const Tensor& input) {
     return diag;
 }
 
-Tensor Tensor::Arange(Scalar start,
-                      Scalar stop,
-                      Scalar step,
-                      Dtype dtype,
+Tensor Tensor::Arange(const Scalar start,
+                      const Scalar stop,
+                      const Scalar step,
+                      const Dtype dtype,
                       const Device& device) {
     start.AssertSameScalarType(stop,
                                "start must have the same scalar type as stop.");
@@ -308,6 +442,9 @@ Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+        if (NumDims() == 0) {
+            utility::LogError("Cannot slice a scalar (0-dim) tensor.");
+        }
         TensorKey tk_new = tk.InstantiateDimSize(shape_[0]);
         return Slice(0, tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
@@ -450,15 +587,9 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
     return *this;
 }
 
-/// Assign (copy) values from another Tensor, shape, dtype, device may change.
-void Tensor::Assign(const Tensor& other) {
-    shape_ = other.shape_;
-    strides_ = shape_util::DefaultStrides(shape_);
-    dtype_ = other.dtype_;
-    blob_ = std::make_shared<Blob>(shape_.NumElements() * dtype_.ByteSize(),
-                                   other.GetDevice());
-    data_ptr_ = blob_->GetDataPtr();
-    kernel::Copy(other, *this);
+Tensor Tensor::Append(const Tensor& other,
+                      const utility::optional<int64_t>& axis) const {
+    return core::Append(*this, other, axis);
 }
 
 /// Broadcast Tensor to a new broadcastable shape
@@ -519,6 +650,42 @@ Tensor Tensor::Reshape(const SizeVector& dst_shape) const {
     }
 }
 
+Tensor Tensor::Flatten(int64_t start_dim /*= 0*/,
+                       int64_t end_dim /*= -1*/) const {
+    int64_t num_dims = NumDims();
+    if (num_dims == 0) {
+        // Flattening a 0-d tensor is equivalent to flattening the tensor
+        // reshaped to 1-d. Technically, we cannot have a start_dim or end_dim,
+        // since a 0-d tensor cannot be indexed, e.g. np.array(100)[0] is not
+        // valid. But start_dim = 0 and end_dim = -1 are the default parameter
+        // values so we make an exception case for 0-d. We reshape it to 1-d for
+        // boundary checks of start_dim and end_dim.
+        return Reshape({1}).Flatten(start_dim, end_dim);
+    }
+    core::SizeVector shape = GetShape();
+    core::SizeVector dst_shape;
+    start_dim = shape_util::WrapDim(start_dim, num_dims, false);
+    end_dim = shape_util::WrapDim(end_dim, num_dims, false);
+    if (end_dim < start_dim) {
+        utility::LogError(
+                "start_dim {} must be smaller or equal to end_dim {}.",
+                start_dim, end_dim);
+    }
+    // Multiply the flattened dimensions together.
+    int64_t flat_dimension_size = 1;
+    for (int64_t dim = 0; dim < num_dims; dim++) {
+        if (dim >= start_dim && dim <= end_dim) {
+            flat_dimension_size *= shape[dim];
+            if (dim == end_dim) {
+                dst_shape.push_back(flat_dimension_size);
+            }
+        } else {
+            dst_shape.push_back(shape[dim]);
+        }
+    }
+    return Reshape(dst_shape);
+}
+
 Tensor Tensor::View(const SizeVector& dst_shape) const {
     SizeVector inferred_dst_shape =
             shape_util::InferShape(dst_shape, NumElements());
@@ -537,7 +704,7 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     }
 }
 
-Tensor Tensor::To(Dtype dtype, bool copy) const {
+Tensor Tensor::To(Dtype dtype, bool copy /*= false*/) const {
     if (!copy && dtype_ == dtype) {
         return *this;
     }
@@ -551,7 +718,7 @@ Tensor Tensor::To(Dtype dtype, bool copy) const {
     return dst_tensor;
 }
 
-Tensor Tensor::To(const Device& device, bool copy) const {
+Tensor Tensor::To(const Device& device, bool copy /*= false*/) const {
     if (!copy && GetDevice() == device) {
         return *this;
     }
@@ -560,7 +727,9 @@ Tensor Tensor::To(const Device& device, bool copy) const {
     return dst_tensor;
 }
 
-Tensor Tensor::To(const Device& device, Dtype dtype, bool copy) const {
+Tensor Tensor::To(const Device& device,
+                  Dtype dtype,
+                  bool copy /*= false*/) const {
     Tensor dst_tensor = To(dtype, copy);
     dst_tensor = dst_tensor.To(device, copy);
     return dst_tensor;
@@ -579,9 +748,9 @@ Tensor Tensor::Contiguous() const {
 std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
-    if (IsCUDA() || !IsContiguous()) {
+    if (IsCUDA() || IsSYCL() || !IsContiguous()) {
         Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
-        rc << host_contiguous_tensor.ToString(false, "");
+        rc << host_contiguous_tensor.ToString(false, indent);
     } else {
         if (shape_.NumElements() == 0) {
             rc << indent;
@@ -703,23 +872,19 @@ Tensor Tensor::Slice(int64_t dim,
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
     if (NumDims() == 0) {
-        const std::string error_prefix =
-                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
         if (index_tensors.size() != 1) {
-            utility::LogError("{}, but got {} index tensors.", error_prefix,
-                              index_tensors.size());
+            utility::LogError(
+                    "A 0-D tensor can only be indexed by a 0-D boolean tensor, "
+                    "but got {} index tensors.",
+                    index_tensors.size());
         }
         Tensor index_tensor = index_tensors[0];
-        index_tensor.AssertShape(
-                {}, fmt::format("{}, but got shape {}.", error_prefix,
-                                index_tensor.GetShape().ToString()));
-        index_tensor.AssertDtype(
-                core::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
-                                        index_tensor.GetDtype().ToString()));
+        core::AssertTensorShape(index_tensor, {});
+        core::AssertTensorDtype(index_tensor, core::Bool);
 
         if (index_tensor.IsNonZero()) {
             // E.g. np.array(5)[np.array(True)].
-            return *this;
+            return Clone();
         } else {
             // E.g. np.array(5)[np.array(False)].
             // The output tensor becomes 1D of 0 element.
@@ -739,19 +904,15 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
     if (NumDims() == 0) {
-        const std::string error_prefix =
-                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
         if (index_tensors.size() != 1) {
-            utility::LogError("{}, but got {} index tensors.", error_prefix,
-                              index_tensors.size());
+            utility::LogError(
+                    "A 0-D tensor can only be indexed by a 0-D boolean tensor, "
+                    "but got {} index tensors.",
+                    index_tensors.size());
         }
         Tensor index_tensor = index_tensors[0];
-        index_tensor.AssertShape(
-                {}, fmt::format("{}, but got shape {}.", error_prefix,
-                                index_tensor.GetShape().ToString()));
-        index_tensor.AssertDtype(
-                core::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
-                                        index_tensor.GetDtype().ToString()));
+        core::AssertTensorShape(index_tensor, {});
+        core::AssertTensorDtype(index_tensor, core::Bool);
 
         // Example index set
         // t = np.array(5)
@@ -793,6 +954,43 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
 
     kernel::IndexSet(src_tensor, pre_processed_dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
+}
+
+void Tensor::IndexAdd_(int64_t dim, const Tensor& index, const Tensor& src) {
+    if (index.NumDims() != 1) {
+        utility::LogError("IndexAdd_ only supports 1D index tensors.");
+    }
+
+    // Dim check.
+    if (dim < 0) {
+        utility::LogError("IndexAdd_ only supports sum at non-negative dim.");
+    }
+    if (NumDims() <= dim) {
+        utility::LogError("Sum dim {} exceeds tensor dim {}.", dim, NumDims());
+    }
+
+    // shape check
+    if (src.NumDims() != NumDims()) {
+        utility::LogError(
+                "IndexAdd_ only supports src tensor with same dimension as "
+                "this tensor.");
+    }
+    for (int64_t d = 0; d < NumDims(); ++d) {
+        if (d != dim && src.GetShape(d) != GetShape(d)) {
+            utility::LogError(
+                    "IndexAdd_ only supports src tensor with same shape as "
+                    "this "
+                    "tensor except dim {}.",
+                    dim);
+        }
+    }
+
+    // Type check.
+    AssertTensorDtype(index, core::Int64);
+    AssertTensorDtype(*this, src.GetDtype());
+
+    // Apply kernel.
+    kernel::IndexAdd_(dim, index, src, *this);
 }
 
 Tensor Tensor::Permute(const SizeVector& dims) const {
@@ -859,12 +1057,19 @@ Tensor Tensor::T() const {
     }
 }
 
-double Tensor::Det() const { return core::Det(*this); }
+double Tensor::Det() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+    return core::Det(*this);
+}
 
 Tensor Tensor::Add(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Add(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Add);
+
     return dst_tensor;
 }
 
@@ -878,7 +1083,11 @@ Tensor Tensor::Add(Scalar value) const {
 }
 
 Tensor Tensor::Add_(const Tensor& value) {
-    kernel::Add(*this, value, *this);
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Add);
+
     return *this;
 }
 
@@ -890,9 +1099,13 @@ Tensor Tensor::Add_(Scalar value) {
 }
 
 Tensor Tensor::Sub(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Sub(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Sub);
+
     return dst_tensor;
 }
 
@@ -906,7 +1119,11 @@ Tensor Tensor::Sub(Scalar value) const {
 }
 
 Tensor Tensor::Sub_(const Tensor& value) {
-    kernel::Sub(*this, value, *this);
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Sub);
+
     return *this;
 }
 
@@ -918,9 +1135,13 @@ Tensor Tensor::Sub_(Scalar value) {
 }
 
 Tensor Tensor::Mul(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Mul(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Mul);
+
     return dst_tensor;
 }
 
@@ -934,7 +1155,11 @@ Tensor Tensor::Mul(Scalar value) const {
 }
 
 Tensor Tensor::Mul_(const Tensor& value) {
-    kernel::Mul(*this, value, *this);
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Mul);
+
     return *this;
 }
 
@@ -946,9 +1171,13 @@ Tensor Tensor::Mul_(Scalar value) {
 }
 
 Tensor Tensor::Div(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Div(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Div);
+
     return dst_tensor;
 }
 
@@ -962,7 +1191,10 @@ Tensor Tensor::Div(Scalar value) const {
 }
 
 Tensor Tensor::Div_(const Tensor& value) {
-    kernel::Div(*this, value, *this);
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Div);
     return *this;
 }
 
@@ -981,11 +1213,7 @@ Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
 }
 
 Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
-    if (dtype_ != core::Float32 && dtype_ != core::Float64) {
-        utility::LogError(
-                "Can only compute mean for Float32 or Float64, got {} instead.",
-                dtype_.ToString());
-    }
+    AssertTensorDtypes(*this, {Float32, Float64});
 
     // Following Numpy's semantics, reduction on 0-sized Tensor will result in
     // NaNs and a warning. A straightforward method is used now. Later it can be
@@ -1191,6 +1419,8 @@ Tensor Tensor::LogicalNot_() {
 }
 
 Tensor Tensor::LogicalAnd(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
@@ -1208,6 +1438,8 @@ Tensor Tensor::LogicalAnd(Scalar value) const {
 }
 
 Tensor Tensor::LogicalAnd_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalAnd);
     return *this;
 }
@@ -1221,6 +1453,8 @@ Tensor Tensor::LogicalAnd_(Scalar value) {
 }
 
 Tensor Tensor::LogicalOr(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
@@ -1238,6 +1472,8 @@ Tensor Tensor::LogicalOr(Scalar value) const {
 }
 
 Tensor Tensor::LogicalOr_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalOr);
     return *this;
 }
@@ -1250,6 +1486,8 @@ Tensor Tensor::LogicalOr_(Scalar value) {
 }
 
 Tensor Tensor::LogicalXor(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
@@ -1267,6 +1505,8 @@ Tensor Tensor::LogicalXor(Scalar value) const {
 }
 
 Tensor Tensor::LogicalXor_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalXor);
     return *this;
 }
@@ -1280,6 +1520,8 @@ Tensor Tensor::LogicalXor_(Scalar value) {
 }
 
 Tensor Tensor::Gt(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Gt);
@@ -1296,6 +1538,8 @@ Tensor Tensor::Gt(Scalar value) const {
 }
 
 Tensor Tensor::Gt_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Gt);
     return *this;
 }
@@ -1308,6 +1552,8 @@ Tensor Tensor::Gt_(Scalar value) {
 }
 
 Tensor Tensor::Lt(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Lt);
@@ -1324,6 +1570,8 @@ Tensor Tensor::Lt(Scalar value) const {
 }
 
 Tensor Tensor::Lt_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Lt);
     return *this;
 }
@@ -1336,6 +1584,8 @@ Tensor Tensor::Lt_(Scalar value) {
 }
 
 Tensor Tensor::Ge(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ge);
@@ -1352,6 +1602,8 @@ Tensor Tensor::Ge(Scalar value) const {
 }
 
 Tensor Tensor::Ge_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ge);
     return *this;
 }
@@ -1364,6 +1616,8 @@ Tensor Tensor::Ge_(Scalar value) {
 }
 
 Tensor Tensor::Le(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Le);
@@ -1380,6 +1634,8 @@ Tensor Tensor::Le(Scalar value) const {
 }
 
 Tensor Tensor::Le_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Le);
     return *this;
 }
@@ -1392,6 +1648,8 @@ Tensor Tensor::Le_(Scalar value) {
 }
 
 Tensor Tensor::Eq(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Eq);
@@ -1408,6 +1666,8 @@ Tensor Tensor::Eq(Scalar value) const {
 }
 
 Tensor Tensor::Eq_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Eq);
     return *this;
 }
@@ -1420,6 +1680,8 @@ Tensor Tensor::Eq_(Scalar value) {
 }
 
 Tensor Tensor::Ne(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ne);
@@ -1436,6 +1698,8 @@ Tensor Tensor::Ne(Scalar value) const {
 }
 
 Tensor Tensor::Ne_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ne);
     return *this;
 }
@@ -1509,18 +1773,8 @@ Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
     return dst;
 }
 
-bool Tensor::AllEqual(const Tensor& other) const {
-    AssertTensorDevice(other, GetDevice());
-    AssertTensorDtype(other, GetDtype());
-
-    if (shape_ != other.shape_) {
-        return false;
-    }
-    return (*this == other).All().Item<bool>();
-}
-
 DLManagedTensor* Tensor::ToDLPack() const {
-    return CloudViewerDLManagedTensor::Create(*this);
+    return Open3DDLManagedTensor::Create(*this);
 }
 
 Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
@@ -1539,7 +1793,7 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
 
     Dtype dtype = DLDataTypeToDtype(src->dl_tensor.dtype);
 
-    // CloudViewer Blob's expects an std::function<void(void*)> deleter.
+    // Open3D Blob's expects an std::function<void(void*)> deleter.
     auto deleter = [src](void* dummy) -> void {
         if (src->deleter != nullptr) {
             src->deleter(const_cast<DLManagedTensor*>(src));
@@ -1575,140 +1829,14 @@ Tensor Tensor::Load(const std::string& file_name) {
     return t::io::ReadNpy(file_name);
 }
 
-struct Tensor::Iterator::Impl {
-    Tensor* tensor_;
-    int64_t index_;
-    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
-                           // as the original tensor. This allows taking the &
-                           // of the tensor for Iterator::operator->.
-};
+bool Tensor::AllEqual(const Tensor& other) const {
+    AssertTensorDevice(other, GetDevice());
+    AssertTensorDtype(other, GetDtype());
 
-Tensor::Iterator::Iterator(pointer tensor, int64_t index)
-    : impl_(std::make_unique<Impl>()) {
-    impl_->tensor_ = tensor;
-    impl_->index_ = index;
-}
-
-Tensor::Iterator::Iterator(const Tensor::Iterator& other)
-    : impl_(std::make_unique<Impl>()) {
-    impl_->tensor_ = other.impl_->tensor_;
-    impl_->index_ = other.impl_->index_;
-}
-
-// Empty destructor since Impl is incomplete type in Tensor.h.
-// https://stackoverflow.com/a/34073093/1255535
-Tensor::Iterator::~Iterator() {}
-
-Tensor::Iterator::reference Tensor::Iterator::operator*() const {
-    return impl_->tensor_->operator[](impl_->index_);
-}
-
-Tensor::Iterator::pointer Tensor::Iterator::operator->() const {
-    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
-    return &impl_->tensor_slice_;
-}
-
-Tensor::Iterator& Tensor::Iterator::operator++() {
-    impl_->index_++;
-    return *this;
-}
-
-Tensor::Iterator Tensor::Iterator::operator++(int) {
-    Iterator tmp(impl_->tensor_, impl_->index_);
-    impl_->index_++;
-    return tmp;
-}
-
-bool Tensor::Iterator::operator==(const Tensor::Iterator& other) const {
-    return impl_->tensor_ == other.impl_->tensor_ &&
-           impl_->index_ == other.impl_->index_;
-}
-
-bool Tensor::Iterator::operator!=(const Tensor::Iterator& other) const {
-    return !(*this == other);
-}
-
-Tensor::Iterator Tensor::begin() {
-    if (NumDims() == 0) {
-        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    if (shape_ != other.shape_) {
+        return false;
     }
-    return Iterator(this, 0);
-}
-
-Tensor::Iterator Tensor::end() {
-    if (NumDims() == 0) {
-        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
-    }
-    return Iterator(this, shape_[0]);
-}
-
-struct Tensor::ConstIterator::Impl {
-    const Tensor* tensor_;
-    int64_t index_;
-    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
-                           // as the original tensor. This allows taking the &
-                           // of the tensor for ConstIterator::operator->.
-};
-
-Tensor::ConstIterator::ConstIterator(pointer tensor, int64_t index)
-    : impl_(std::make_unique<Impl>()) {
-    impl_->tensor_ = tensor;
-    impl_->index_ = index;
-}
-
-Tensor::ConstIterator::ConstIterator(const Tensor::ConstIterator& other)
-    : impl_(std::make_unique<Impl>()) {
-    impl_->tensor_ = other.impl_->tensor_;
-    impl_->index_ = other.impl_->index_;
-}
-
-// Empty destructor since Impl is incomplete type in Tensor.h.
-// https://stackoverflow.com/a/34073093/1255535
-Tensor::ConstIterator::~ConstIterator() {}
-
-Tensor::ConstIterator::reference Tensor::ConstIterator::operator*() const {
-    return impl_->tensor_->operator[](impl_->index_);
-}
-
-Tensor::ConstIterator::pointer Tensor::ConstIterator::operator->() const {
-    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
-    return &impl_->tensor_slice_;
-}
-
-Tensor::ConstIterator& Tensor::ConstIterator::operator++() {
-    impl_->index_++;
-    return *this;
-}
-
-Tensor::ConstIterator Tensor::ConstIterator::operator++(int) {
-    ConstIterator tmp(impl_->tensor_, impl_->index_);
-    impl_->index_++;
-    return tmp;
-}
-
-bool Tensor::ConstIterator::operator==(
-        const Tensor::ConstIterator& other) const {
-    return impl_->tensor_ == other.impl_->tensor_ &&
-           impl_->index_ == other.impl_->index_;
-}
-
-bool Tensor::ConstIterator::operator!=(
-        const Tensor::ConstIterator& other) const {
-    return !(*this == other);
-}
-
-Tensor::ConstIterator Tensor::cbegin() const {
-    if (NumDims() == 0) {
-        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
-    }
-    return ConstIterator(this, 0);
-}
-
-Tensor::ConstIterator Tensor::cend() const {
-    if (NumDims() == 0) {
-        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
-    }
-    return ConstIterator(this, shape_[0]);
+    return (*this == other).All().Item<bool>();
 }
 
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
@@ -1717,17 +1845,9 @@ bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
 }
 
 Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
-    if (GetDevice() != other.GetDevice()) {
-        utility::LogError("Device mismatch {} != {}.", GetDevice().ToString(),
-                          other.GetDevice().ToString());
-    }
-    if (dtype_ != other.dtype_) {
-        utility::LogError("Dtype mismatch {} != {}.", dtype_.ToString(),
-                          other.dtype_.ToString());
-    }
-    if (shape_ != other.shape_) {
-        utility::LogError("Shape mismatch {} != {}.", shape_, other.shape_);
-    }
+    AssertTensorDevice(other, GetDevice());
+    AssertTensorDtype(other, GetDtype());
+    AssertTensorShape(other, GetShape());
 
     Tensor lhs = this->To(core::Float64);
     Tensor rhs = other.To(core::Float64);
@@ -1737,87 +1857,52 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
 }
 
 bool Tensor::IsSame(const Tensor& other) const {
+    AssertTensorDevice(other, GetDevice());
     return blob_ == other.blob_ && shape_ == other.shape_ &&
            strides_ == other.strides_ && data_ptr_ == other.data_ptr_ &&
            dtype_ == other.dtype_;
 }
 
-void Tensor::AssertShape(const SizeVector& expected_shape,
-                         const std::string& error_msg) const {
-    if (shape_ != expected_shape) {
-        if (error_msg.empty()) {
-            utility::LogError(
-                    "Tensor has shape {}, but it is expected to be {}.", shape_,
-                    expected_shape);
-        } else {
-            utility::LogError(
-                    "Tensor has shape {}, but it is expected to be {}: {}",
-                    shape_, expected_shape, error_msg);
-        }
-    }
-}
-
-void Tensor::AssertShapeCompatible(const DynamicSizeVector& expected_shape,
-                                   const std::string& error_msg) const {
-    GetShape().AssertCompatible(expected_shape, error_msg);
-}
-
-void Tensor::AssertDevice(const Device& expected_device,
-                          const std::string& error_msg) const {
-    if (GetDevice() != expected_device) {
-        if (error_msg.empty()) {
-            utility::LogError("Tensor has device {}, but is expected to be {}",
-                              GetDevice().ToString(),
-                              expected_device.ToString());
-        } else {
-            utility::LogError(
-                    "Tensor has device {}, but is expected to be {}: {}",
-                    GetDevice().ToString(), expected_device.ToString(),
-                    error_msg);
-        }
-    }
-}
-
-void Tensor::AssertDtype(const Dtype& expected_dtype,
-                         const std::string& error_msg) const {
-    if (GetDtype() != expected_dtype) {
-        if (error_msg.empty()) {
-            utility::LogError("Tensor has dtype {}, but is expected to be {}.",
-                              GetDtype().ToString(), expected_dtype.ToString());
-        } else {
-            utility::LogError(
-                    "Tensor has dtype {}, but is expected to be {}: {}",
-                    GetDtype().ToString(), expected_dtype.ToString(),
-                    error_msg);
-        }
-    }
-}
-
 Tensor Tensor::Matmul(const Tensor& rhs) const {
+    AssertTensorDevice(rhs, GetDevice());
+    AssertTensorDtype(rhs, GetDtype());
+
     Tensor output;
     core::Matmul(*this, rhs, output);
     return output;
 }
 
 Tensor Tensor::Solve(const Tensor& rhs) const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+    AssertTensorDevice(rhs, GetDevice());
+    AssertTensorDtype(rhs, GetDtype());
+
     Tensor output;
     core::Solve(*this, rhs, output);
     return output;
 }
 
 Tensor Tensor::LeastSquares(const Tensor& rhs) const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+    AssertTensorDevice(rhs, GetDevice());
+    AssertTensorDtype(rhs, GetDtype());
+
     Tensor output;
     core::LeastSquares(*this, rhs, output);
     return output;
 }
 
 std::tuple<Tensor, Tensor, Tensor> Tensor::LU(const bool permute_l) const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     core::Tensor permutation, lower, upper;
     core::LU(*this, permutation, lower, upper, permute_l);
     return std::make_tuple(permutation, lower, upper);
 }
 
 std::tuple<Tensor, Tensor> Tensor::LUIpiv() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     core::Tensor ipiv, output;
     core::LUIpiv(*this, ipiv, output);
     return std::make_tuple(ipiv, output);
@@ -1842,12 +1927,16 @@ std::tuple<Tensor, Tensor> Tensor::Triul(const int diagonal) const {
 }
 
 Tensor Tensor::Inverse() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     Tensor output;
     core::Inverse(*this, output);
     return output;
 }
 
 std::tuple<Tensor, Tensor, Tensor> Tensor::SVD() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     Tensor U, S, VT;
     core::SVD(*this, U, S, VT);
     return std::tie(U, S, VT);

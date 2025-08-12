@@ -1,38 +1,18 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
+
 #include <string>
 #include <vector>
 
-#include <Helper.h>
-#include <Logging.h>
-
 namespace cloudViewer {
 namespace core {
+
 /// Device context specifying device type and device id.
 /// For CPU, there is only one device with id 0.
 class Device {
@@ -41,6 +21,7 @@ public:
     enum class DeviceType {
         CPU = 0,
         CUDA = 1,
+        SYCL = 2,  // SYCL gpu_selector_v.
     };
 
     /// Default constructor -> "CPU:0".
@@ -67,6 +48,9 @@ public:
     /// Returns true iff device type is CUDA.
     inline bool IsCUDA() const { return device_type_ == DeviceType::CUDA; }
 
+    /// Returns true iff device type is SYCL GPU.
+    inline bool IsSYCL() const { return device_type_ == DeviceType::SYCL; }
+
     /// Returns string representation of device, e.g. "CPU:0", "CUDA:0".
     std::string ToString() const;
 
@@ -87,6 +71,9 @@ public:
 
     /// Returns a vector of available CUDA device.
     static std::vector<Device> GetAvailableCUDADevices();
+
+    /// Returns a vector of available SYCL device.
+    static std::vector<Device> GetAvailableSYCLDevices();
 
     /// Print all available devices.
     static void PrintAvailableDevices();
@@ -112,6 +99,10 @@ public:
     inline bool IsCUDA() const {
         return GetDevice().GetType() == Device::DeviceType::CUDA;
     }
+
+    inline bool IsSYCL() const {
+        return GetDevice().GetType() == Device::DeviceType::SYCL;
+    }
 };
 
 }  // namespace core
@@ -122,6 +113,14 @@ template <>
 struct hash<cloudViewer::core::Device> {
     std::size_t operator()(const cloudViewer::core::Device& device) const {
         return std::hash<std::string>{}(device.ToString());
+    }
+};
+
+template <>
+struct less<cloudViewer::core::Device> {
+    bool operator()(const cloudViewer::core::Device& lhs,
+                    const cloudViewer::core::Device& rhs) const {
+        return lhs.ToString() < rhs.ToString();
     }
 };
 }  // namespace std

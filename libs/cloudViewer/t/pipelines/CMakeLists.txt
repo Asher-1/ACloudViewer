@@ -28,6 +28,7 @@ target_sources(tpipelines PRIVATE
 target_sources(tpipelines PRIVATE
     registration/Registration.cpp
     registration/TransformationEstimation.cpp
+    registration/Feature.cpp
 )
 
 target_sources(tpipelines PRIVATE
@@ -37,7 +38,7 @@ target_sources(tpipelines PRIVATE
 )
 
 target_sources(tpipelines PRIVATE
-    voxelhashing/Model.cpp
+    slam/Model.cpp
 )
 
 cloudViewer_show_and_abort_on_warning(tpipelines)

@@ -1579,6 +1579,17 @@ import_3rdparty_library(3rdparty_msgpack
         )
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_msgpack)
 
+# UVAtlas
+include(${CloudViewer_3RDPARTY_DIR}/uvatlas/uvatlas.cmake)
+import_3rdparty_library(3rdparty_uvatlas
+    HIDDEN
+    INCLUDE_DIRS ${UVATLAS_INCLUDE_DIRS}
+    LIB_DIR      ${UVATLAS_LIB_DIR}
+    LIBRARIES    ${UVATLAS_LIBRARIES}
+    DEPENDS      ext_uvatlas
+)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_uvatlas)
+
 # TBB
 if(USE_SYSTEM_TBB)
     find_package_3rdparty_library(3rdparty_tbb

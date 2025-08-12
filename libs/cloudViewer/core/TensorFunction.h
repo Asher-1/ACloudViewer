@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "core/Tensor.h"
+#include "cloudViewer/core/Tensor.h"
 #include <Optional.h>
 
 namespace cloudViewer {

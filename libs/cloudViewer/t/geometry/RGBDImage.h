@@ -1,33 +1,14 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include <RGBDImage.h>
-#include "t/geometry/Image.h"
+#include "cloudViewer/geometry/RGBDImage.h"
+#include "cloudViewer/t/geometry/Image.h"
 
 namespace cloudViewer {
 namespace t {
@@ -35,12 +16,13 @@ namespace geometry {
 
 /// \brief RGBDImage A pair of color and depth images.
 ///
-/// For most procesing, the image pair should be aligned (same viewpoint and
+/// For most processing, the image pair should be aligned (same viewpoint and
 /// resolution).
 class RGBDImage : public Geometry {
 public:
     /// \brief Default Comnstructor.
     RGBDImage() : Geometry(Geometry::GeometryType::RGBDImage, 2) {}
+
     /// \brief Parameterized Constructor.
     ///
     /// \param color The color image.
@@ -60,7 +42,18 @@ public:
         }
     }
 
-    ~RGBDImage() override{};
+    core::Device GetDevice() const override {
+        core::Device color_device = color_.GetDevice();
+        core::Device depth_device = depth_.GetDevice();
+        if (color_device != depth_device) {
+            utility::LogError(
+                    "Color {} and depth {} are not on the same device.",
+                    color_device.ToString(), depth_device.ToString());
+        }
+        return color_device;
+    }
+
+    ~RGBDImage() override {};
 
     /// Clear stored data.
     RGBDImage &Clear() override;
@@ -74,7 +67,7 @@ public:
     /// Compute min 2D coordinates for the data (always {0,0}).
     core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Int64);
-    };
+    }
 
     /// Compute max 2D coordinates for the data.
     core::Tensor GetMaxBound() const {
@@ -82,7 +75,7 @@ public:
                 std::vector<int64_t>{color_.GetCols() + depth_.GetCols(),
                                      color_.GetRows()},
                 {2}, core::Int64);
-    };
+    }
 
     /// Transfer the RGBD image to a specified device.
     /// \param device The targeted device to convert to.
@@ -97,23 +90,10 @@ public:
     /// Returns copy of the RGBD image on the same device.
     RGBDImage Clone() const { return To(color_.GetDevice(), /*copy=*/true); }
 
-    /// Transfer the RGBD image to CPU.
-    ///
-    /// If the RGBD image is already on CPU, no copy will be performed.
-    RGBDImage CPU() const { return To(core::Device("CPU:0")); }
-
-    /// Transfer the RGBD image to a CUDA device.
-    ///
-    /// If the RGBD image is already on the specified CUDA device, no copy will
-    /// be performed.
-    RGBDImage CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    }
-
     /// Convert to the legacy RGBDImage format.
     cloudViewer::geometry::RGBDImage ToLegacy() const {
         return cloudViewer::geometry::RGBDImage(color_.ToLegacy(),
-                                                depth_.ToLegacy());
+                                           depth_.ToLegacy());
     }
 
     /// Text description.

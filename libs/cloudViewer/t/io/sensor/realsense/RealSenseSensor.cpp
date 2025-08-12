@@ -1,30 +1,11 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "t/io/sensor/realsense/RealSenseSensor.h"
+#include "cloudViewer/t/io/sensor/realsense/RealSenseSensor.h"
 
 #include <json/json.h>
 
@@ -32,9 +13,9 @@
 #include <thread>
 #include <vector>
 
-#include "t/io/sensor/realsense/RealSensePrivate.h"
-#include <Logging.h>
+#include "cloudViewer/t/io/sensor/realsense/RealSensePrivate.h"
 #include <FileSystem.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -43,19 +24,19 @@ namespace io {
 bool RealSenseSensor::ListDevices() {
     auto all_device_info = EnumerateDevices();
     if (all_device_info.empty()) {
-        cloudViewer::utility::LogWarning("No RealSense devices detected.");
+        utility::LogWarning("No RealSense devices detected.");
         return false;
     } else {
         size_t sensor_index = 0;
         for (auto& dev_info : all_device_info) {
-            cloudViewer::utility::LogInfo("[{}] {}: {}", sensor_index++, dev_info.name,
+            utility::LogInfo("[{}] {}: {}", sensor_index++, dev_info.name,
                              dev_info.serial);
             for (auto& config : dev_info.valid_configs)
-                cloudViewer::utility::LogInfo("\t{}: [{}]", config.first,
+                utility::LogInfo("\t{}: [{}]", config.first,
                                  fmt::join(config.second, " | "));
         }
-        cloudViewer::utility::LogInfo(
-                "cloudViewer only supports synchronized color and depth capture "
+        utility::LogInfo(
+                "Open3D only supports synchronized color and depth capture "
                 "(color_fps = depth_fps).");
         return true;
     }
@@ -149,7 +130,7 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
         rs2::context ctx;
         auto device_list = ctx.query_devices();
         if (sensor_index >= device_list.size()) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "No device for sensor_index {}. Only {} devices detected.",
                     sensor_index, device_list.size());
         } else {
@@ -159,14 +140,14 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
         }
     }
     if (!filename.empty()) {
-        if (cloudViewer::utility::filesystem::FileExists(filename_)) {
+        if (utility::filesystem::FileExists(filename_)) {
             enable_recording_ = false;
-            cloudViewer::utility::LogError("Will not overwrite existing file {}.", filename);
+            utility::LogError("Will not overwrite existing file {}.", filename);
         }
         const std::string parent_dir =
-                cloudViewer::utility::filesystem::GetFileParentDirectory(filename_);
-        if (!cloudViewer::utility::filesystem::DirectoryExists(parent_dir)) {
-            cloudViewer::utility::filesystem::MakeDirectoryHierarchy(parent_dir);
+                utility::filesystem::GetFileParentDirectory(filename_);
+        if (!utility::filesystem::DirectoryExists(parent_dir)) {
+            utility::filesystem::MakeDirectoryHierarchy(parent_dir);
         }
         filename_ = filename;
         enable_recording_ = true;
@@ -206,7 +187,7 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
     RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
     return true;
 } catch (const rs2::error& e) {
-    cloudViewer::utility::LogError(
+    utility::LogError(
             "Invalid RealSense camera configuration, or camera not connected:"
             "\n{}: {}",
             rs2_exception_type_to_string(e.get_type()), e.what());
@@ -215,7 +196,7 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
 
 bool RealSenseSensor::StartCapture(bool start_record) {
     if (is_capturing_) {
-        cloudViewer::utility::LogWarning("Capture already in progress.");
+        utility::LogWarning("Capture already in progress.");
         return true;
     }
     try {
@@ -228,16 +209,16 @@ bool RealSenseSensor::StartCapture(bool start_record) {
         RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
 
         is_capturing_ = true;
-        cloudViewer::utility::LogInfo(
+        utility::LogInfo(
                 "Capture started with RealSense camera {}",
                 profile.get_device().get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
         if (enable_recording_) {
-            cloudViewer::utility::LogInfo("Recording {}to bag file {}",
+            utility::LogInfo("Recording {}to bag file {}",
                              start_record ? "" : "[Paused] ", filename_);
         }
         return true;
     } catch (const rs2::error& e) {
-        cloudViewer::utility::LogError("StartCapture() failed: {}: {}",
+        utility::LogError("StartCapture() failed: {}: {}",
                           rs2_exception_type_to_string(e.get_type()), e.what());
         return false;
     }
@@ -247,7 +228,7 @@ void RealSenseSensor::PauseRecord() {
     if (!enable_recording_ || !is_recording_) return;
     pipe_->get_active_profile().get_device().as<rs2::recorder>().pause();
     is_recording_ = false;
-    cloudViewer::utility::LogDebug("Recording paused.");
+    utility::LogDebug("Recording paused.");
 }
 
 void RealSenseSensor::ResumeRecord() {
@@ -257,16 +238,16 @@ void RealSenseSensor::ResumeRecord() {
                                .get_device()
                                .as<rs2::recorder>()) {
             dev.resume();
-            cloudViewer::utility::LogDebug("Recording resumed.");
+            utility::LogDebug("Recording resumed.");
         } else {
             rs_config_->enable_record_to_file(filename_);
             pipe_.reset(new rs2::pipeline);
             pipe_->start(*rs_config_);
-            cloudViewer::utility::LogDebug("Recording started.");
+            utility::LogDebug("Recording started.");
         }
         is_recording_ = true;
     } catch (const rs2::error& e) {
-        cloudViewer::utility::LogError("ResumeRecord() failed: {}: {}",
+        utility::LogError("ResumeRecord() failed: {}: {}",
                           rs2_exception_type_to_string(e.get_type()), e.what());
     }
 }
@@ -274,7 +255,7 @@ void RealSenseSensor::ResumeRecord() {
 geometry::RGBDImage RealSenseSensor::CaptureFrame(bool wait,
                                                   bool align_depth_to_color) {
     if (!is_capturing_) {
-        cloudViewer::utility::LogError("Please StartCapture() first.");
+        utility::LogError("Please StartCapture() first.");
         return geometry::RGBDImage();
     }
     try {
@@ -298,7 +279,7 @@ geometry::RGBDImage RealSenseSensor::CaptureFrame(bool wait,
                 metadata_.depth_dt_);
         return current_frame_;
     } catch (const rs2::error& e) {
-        cloudViewer::utility::LogError("CaptureFrame() failed: {}: {}",
+        utility::LogError("CaptureFrame() failed: {}: {}",
                           rs2_exception_type_to_string(e.get_type()), e.what());
         return geometry::RGBDImage();
     }
@@ -309,7 +290,7 @@ void RealSenseSensor::StopCapture() {
         pipe_->stop();
         is_recording_ = false;
         is_capturing_ = false;
-        cloudViewer::utility::LogInfo("Capture stopped.");
+        utility::LogInfo("Capture stopped.");
     }
 }
 

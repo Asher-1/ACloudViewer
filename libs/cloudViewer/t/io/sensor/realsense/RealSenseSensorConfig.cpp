@@ -1,30 +1,11 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "t/io/sensor/realsense/RealSenseSensorConfig.h"
+#include "cloudViewer/t/io/sensor/realsense/RealSenseSensorConfig.h"
 
 #include <json/json.h>
 
@@ -35,9 +16,9 @@
 #include <tuple>
 #include <unordered_map>
 
-#include "camera/PinholeCameraIntrinsic.h"
-#include "t/io/sensor/RGBDVideoMetadata.h"
-#include "t/io/sensor/realsense/RealSensePrivate.h"
+#include <camera/PinholeCameraIntrinsic.h>
+#include "cloudViewer/t/io/sensor/RGBDVideoMetadata.h"
+#include "cloudViewer/t/io/sensor/realsense/RealSensePrivate.h"
 #include <Logging.h>
 
 namespace cloudViewer {
@@ -200,8 +181,11 @@ rs2::config RealSenseSensorConfig::ConvertToNativeConfig() const {
         if (it != config_.cend() && !it->second.empty()) {
             auto res = it->second.c_str();
             char *remaining;
-            width = strtol(res, &remaining, 10);  // [640],480 - return 0 if bad format
-            height = strtol(remaining + 1, nullptr, 10);  // 640,[480] - return 0 if bad format or no comma
+            width = strtol(res, &remaining,
+                           10);  // [640],480 - return 0 if bad format
+            height = strtol(
+                    remaining + 1, nullptr,
+                    10);  // 640,[480] - return 0 if bad format or no comma
         }
         return std::make_tuple(width, height, format);
     };
@@ -225,7 +209,7 @@ void RealSenseSensorConfig::GetPixelDtypes(const rs2::pipeline_profile &profile,
             RealSenseSensorConfig::get_dtype_channels(
                     static_cast<int>(rs_color.format()));
     if (metadata.color_dt_ != core::UInt8) {
-        cloudViewer::utility::LogError("Only 8 bit unsigned int color is supported!");
+        utility::LogError("Only 8 bit unsigned int color is supported!");
     }
     const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
                                   .as<rs2::video_stream_profile>();
@@ -233,14 +217,14 @@ void RealSenseSensorConfig::GetPixelDtypes(const rs2::pipeline_profile &profile,
                                  static_cast<int>(rs_depth.format()))
                                  .first;
     if (metadata.depth_dt_ != core::UInt16) {
-        cloudViewer::utility::LogError("Only 16 bit unsigned int depth is supported!");
+        utility::LogError("Only 16 bit unsigned int depth is supported!");
     }
 }
 
 Json::Value RealSenseSensorConfig::GetMetadataJson(
         const rs2::pipeline_profile &profile) {
     if (!profile) {
-        cloudViewer::utility::LogError("Invalid RealSense pipeline profile.");
+        utility::LogError("Invalid RealSense pipeline profile.");
     }
     Json::Value value;
 
@@ -268,7 +252,7 @@ Json::Value RealSenseSensorConfig::GetMetadataJson(
                                     .substr(11);  // remove RS2_FORMAT_ prefix
     value["fps"] = rs_color.fps();
     if (value["fps"] != rs_depth.fps()) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Different frame rates for color ({} fps) and depth ({} fps) "
                 "streams is not supported.",
                 value["fps"], rs_depth.fps());

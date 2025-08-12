@@ -1,34 +1,15 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/AdvancedIndexing.h"
+#include "cloudViewer/core/AdvancedIndexing.h"
 
-#include "core/ShapeUtil.h"
-#include "core/SizeVector.h"
-#include "core/Tensor.h"
+#include "cloudViewer/core/ShapeUtil.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "cloudViewer/core/Tensor.h"
 
 namespace cloudViewer {
 namespace core {
@@ -225,8 +206,8 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // If the indexed_shape_ contains a dimension of size 0 but the
     // replacement shape does not, the index is out of bounds. This is because
     // there is no valid number to index an empty tensor.
-    // Normally, out of bounds is detected in the advanded indexing kernel. We
-    // detecte here for more helpful error message.
+    // Normally, out of bounds is detected in the advanced indexing kernel. We
+    // detected here for more helpful error message.
     auto contains_zero = [](const SizeVector& vals) -> bool {
         return std::any_of(vals.begin(), vals.end(),
                            [](int64_t val) { return val == 0; });

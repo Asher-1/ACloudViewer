@@ -1,41 +1,36 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "t/geometry/kernel/IPPImage.h"
+#include "cloudViewer/t/geometry/kernel/IPPImage.h"
+
+#include <unordered_map>
+
+#if IPP_VERSION_INT < \
+        20211000  // macOS IPP v2021.9.11 uses old directory layout
+#include <ippi.h>
 
 #include <iw++/iw_image_color.hpp>
 #include <iw++/iw_image_filter.hpp>
 #include <iw++/iw_image_op.hpp>
 #include <iw++/iw_image_transform.hpp>
+#else  // Linux and Windows IPP >=v2021.10 uses new directory layout
+#include <ipp/ippi.h>
 
-#include "core/Dtype.h"
-#include "core/ParallelFor.h"
-#include "core/ShapeUtil.h"
-#include "core/Tensor.h"
-#include "t/geometry/Image.h"
+#include <ipp/iw++/iw_image_color.hpp>
+#include <ipp/iw++/iw_image_filter.hpp>
+#include <ipp/iw++/iw_image_op.hpp>
+#include <ipp/iw++/iw_image_transform.hpp>
+#endif
+
+#include "cloudViewer/core/Dispatch.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/ShapeUtil.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/t/geometry/Image.h"
 #include <Logging.h>
 
 namespace cloudViewer {
@@ -52,7 +47,7 @@ void To(const core::Tensor &src_im,
 
     auto src_dtype = src_im.GetDtype();
     auto dst_dtype = dst_im.GetDtype();
-    // Create IPP wrappers for all CloudViewer tensors
+    // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(src_dtype), src_im.GetShape(2) /* channels */,
@@ -67,14 +62,14 @@ void To(const core::Tensor &src_im,
     try {
         ::ipp::iwiScale(ipp_src_im, ipp_dst_im, scale, offset);
     } catch (const ::ipp::IwException &e) {
-        // See comments in icv/include/ippicv_types.h for m_status meaning
+        // See comments in ipp/ipptypes.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
     }
 }
 
 void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
     auto dtype = src_im.GetDtype();
-    // Create IPP wrappers for all CloudViewer tensors
+    // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -90,16 +85,16 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
         ::ipp::iwiColorConvert(ipp_src_im, ::ipp::iwiColorRGB, ipp_dst_im,
                                ::ipp::iwiColorGray);
     } catch (const ::ipp::IwException &e) {
-        // See comments in icv/include/ippicv_types.h for m_status meaning
+        // See comments in ipp/ipptypes.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
     }
 }
 
-void Resize(const cloudViewer::core::Tensor &src_im,
-            cloudViewer::core::Tensor &dst_im,
-            t::geometry::Image::InterpType interp_type) {
+void Resize(const core::Tensor &src_im,
+            core::Tensor &dst_im,
+            Image::InterpType interp_type) {
     auto dtype = src_im.GetDtype();
-    // Create IPP wrappers for all CloudViewer tensors
+    // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -111,25 +106,25 @@ void Resize(const cloudViewer::core::Tensor &src_im,
             0 /* border buffer size */, dst_im.GetDataPtr(),
             dst_im.GetStride(0) * dtype.ByteSize());
 
-    static const std::unordered_map<t::geometry::Image::InterpType,
-                                    IppiInterpolationType>
+    static const std::unordered_map<Image::InterpType, IppiInterpolationType>
             type_dict = {
-                    {t::geometry::Image::InterpType::Nearest, ippNearest},
-                    {t::geometry::Image::InterpType::Linear, ippLinear},
-                    {t::geometry::Image::InterpType::Cubic, ippCubic},
-                    {t::geometry::Image::InterpType::Lanczos, ippLanczos},
-                    {t::geometry::Image::InterpType::Super, ippSuper},
+                    {Image::InterpType::Nearest, ippNearest},
+                    {Image::InterpType::Linear, ippLinear},
+                    {Image::InterpType::Cubic, ippCubic},
+                    {Image::InterpType::Lanczos, ippLanczos},
+                    {Image::InterpType::Super, ippSuper},
             };
 
     auto it = type_dict.find(interp_type);
     if (it == type_dict.end()) {
-        utility::LogError("Unsupported interp type {}", static_cast<int>(interp_type));
+        utility::LogError("Unsupported interp type {}",
+                          static_cast<int>(interp_type));
     }
 
     try {
         ::ipp::iwiResize(ipp_src_im, ipp_dst_im, it->second);
     } catch (const ::ipp::IwException &e) {
-        // See comments in icv/include/ippicv_types.h for m_status meaning
+        // See comments in ipp/ipptypes.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
     }
 }
@@ -144,7 +139,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
                                core::UInt8, src_im.GetDevice());
 
     auto dtype = src_im.GetDtype();
-    // Create IPP wrappers for all CloudViewer tensors
+    // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -166,19 +161,19 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
                 ::ipp::IwDefault(), /* Do not use IwiFilterMorphologyParams() */
                 ippBorderRepl);
     } catch (const ::ipp::IwException &e) {
-        // See comments in icv/include/ippicv_types.h for m_status meaning
+        // See comments in ipp/ipptypes.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
     }
 }
 
-void Filter(const cloudViewer::core::Tensor &src_im,
-            cloudViewer::core::Tensor &dst_im,
-            const cloudViewer::core::Tensor &kernel) {
+void Filter(const core::Tensor &src_im,
+            core::Tensor &dst_im,
+            const core::Tensor &kernel) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
 
-    // Create IPP wrappers for all CloudViewer tensors
+    // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -198,7 +193,7 @@ void Filter(const cloudViewer::core::Tensor &src_im,
     try {
         ::ipp::iwiFilter(ipp_src_im, ipp_dst_im, ipp_kernel);
     } catch (const ::ipp::IwException &e) {
-        // See comments in icv/include/ippicv_types.h for m_status meaning
+        // See comments in ipp/ipptypes.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
     }
 };
@@ -212,7 +207,7 @@ void FilterBilateral(const core::Tensor &src_im,
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
 
-    // Create IPP wrappers for all CloudViewer tensors
+    // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -229,7 +224,7 @@ void FilterBilateral(const core::Tensor &src_im,
                                   value_sigma * value_sigma,
                                   distance_sigma * distance_sigma);
     } catch (const ::ipp::IwException &e) {
-        // See comments in icv/include/ippicv_types.h for m_status meaning
+        // See comments in ipp/ipptypes.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
     }
 }
@@ -242,7 +237,7 @@ void FilterGaussian(const core::Tensor &src_im,
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
 
-    // Create IPP wrappers for all CloudViewer tensors
+    // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -257,7 +252,7 @@ void FilterGaussian(const core::Tensor &src_im,
     try {
         ::ipp::iwiFilterGaussian(ipp_src_im, ipp_dst_im, kernel_size, sigma);
     } catch (const ::ipp::IwException &e) {
-        // See comments in icv/include/ippicv_types.h for m_status meaning
+        // See comments in ipp/ipptypes.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
     }
 }
@@ -276,7 +271,7 @@ void FilterSobel(const core::Tensor &src_im,
                           kernel_size);
     }
 
-    // Create IPP wrappers for all CloudViewer tensors
+    // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(src_im.GetDtype()), src_im.GetShape(2) /* channels */,
@@ -305,11 +300,89 @@ void FilterSobel(const core::Tensor &src_im,
         // so we need to negate it in-place.
         dst_im_dx.Neg_();
     } catch (const ::ipp::IwException &e) {
-        // See comments in icv/include/ippicv_types.h for m_status meaning
+        // See comments in ipp/ipptypes.h for m_status meaning
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
     }
 }
+
+// Plain IPP functions
+
+void Remap(const core::Tensor &src_im,       /*{Ws, Hs, C}*/
+           const core::Tensor &dst2src_xmap, /*{Wd, Hd}, float*/
+           const core::Tensor &dst2src_ymap, /*{Wd, Hd}, float*/
+           core::Tensor &dst_im,             /*{Wd, Hd, C}*/
+           Image::InterpType interp_type) {
+    auto dtype = src_im.GetDtype();
+    if (dtype != dst_im.GetDtype()) {
+        utility::LogError(
+                "Source ({}) and destination ({}) image dtypes are different!",
+                dtype.ToString(), dst_im.GetDtype().ToString());
+    }
+    if (dst2src_xmap.GetDtype() != core::Float32) {
+        utility::LogError("dst2src_xmap dtype ({}) must be Float32.",
+                          dst2src_xmap.GetDtype().ToString());
+    }
+    if (dst2src_ymap.GetDtype() != core::Float32) {
+        utility::LogError("dst2src_ymap dtype ({}) must be Float32.",
+                          dst2src_ymap.GetDtype().ToString());
+    }
+
+    static const std::unordered_map<Image::InterpType, int> interp_dict = {
+            {Image::InterpType::Nearest, IPPI_INTER_NN},
+            {Image::InterpType::Linear, IPPI_INTER_LINEAR},
+            {Image::InterpType::Cubic, IPPI_INTER_CUBIC},
+            {Image::InterpType::Lanczos, IPPI_INTER_LANCZOS},
+            /* {Image::InterpType::Cubic2p_CatmullRom, */
+            /*  IPPI_INTER_CUBIC2P_CATMULLROM}, */
+    };
+
+    auto interp_it = interp_dict.find(interp_type);
+    if (interp_it == interp_dict.end()) {
+        utility::LogError("Unsupported interp type {}",
+                          static_cast<int>(interp_type));
+    }
+
+    IppiSize src_size{static_cast<int>(src_im.GetShape(1)),
+                      static_cast<int>(src_im.GetShape(0))},
+            dst_roi_size{static_cast<int>(dst_im.GetShape(1)),
+                         static_cast<int>(dst_im.GetShape(0))};
+    IppiRect src_roi{0, 0, static_cast<int>(src_im.GetShape(1)),
+                     static_cast<int>(src_im.GetShape(0))};
+    IppStatus sts = ippStsNoErr;
+
+    int src_step = src_im.GetDtype().ByteSize() * src_im.GetStride(0);
+    int dst_step = dst_im.GetDtype().ByteSize() * dst_im.GetStride(0);
+    int xmap_step =
+            dst2src_xmap.GetDtype().ByteSize() * dst2src_xmap.GetStride(0);
+    int ymap_step =
+            dst2src_ymap.GetDtype().ByteSize() * dst2src_ymap.GetStride(0);
+    if (src_im.GetDtype() == core::Float32 && src_im.GetShape(2) == 4) {
+        /* IPPAPI(IppStatus, ippiRemap_32f_C4R, (const Ipp32f* pSrc, IppiSize
+         * srcSize, */
+        /*     int srcStep, IppiRect srcROI, const Ipp32f* pxMap, int xMapStep,
+         */
+        /*     const Ipp32f* pyMap, int yMapStep, Ipp32f* pDst, int dstStep, */
+        /*     IppiSize dstRoiSize, int interpolation)) */
+        const auto p_src_im = src_im.GetDataPtr<float>();
+        auto p_dst_im = dst_im.GetDataPtr<float>();
+        const auto p_dst2src_xmap = dst2src_xmap.GetDataPtr<float>();
+        const auto p_dst2src_ymap = dst2src_ymap.GetDataPtr<float>();
+        sts = ippiRemap_32f_C4R(p_src_im, src_size, src_step, src_roi,
+                                p_dst2src_xmap, xmap_step, p_dst2src_ymap,
+                                ymap_step, p_dst_im, dst_step, dst_roi_size,
+                                interp_it->second);
+    } else {
+        utility::LogError(
+                "Remap not implemented for dtype ({}) and channels ({}).",
+                src_im.GetDtype().ToString(), src_im.GetShape(2));
+    }
+    if (sts != ippStsNoErr) {
+        // See comments in icv/include/ippicv_types.h for meaning
+        utility::LogError("IPP remap error {}", ippGetStatusString(sts));
+    }
+}
 }  // namespace ipp
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace cloudViewer

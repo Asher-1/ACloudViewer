@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core/hashmap/Hashmap.h"
+#include "core/hashmap/HashMap.h"
 
 #include <unordered_map>
 
@@ -54,7 +54,7 @@ TEST_P(HashmapPermuteDevices, Init) {
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
     int init_capacity = n * 2;
-    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
+    core::HashMap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
                           device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
@@ -80,7 +80,7 @@ TEST_P(HashmapPermuteDevices, Find) {
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
     int init_capacity = n * 2;
-    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
+    core::HashMap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
                           device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
@@ -129,7 +129,7 @@ TEST_P(HashmapPermuteDevices, Insert) {
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
     int init_capacity = n * 2;
-    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
+    core::HashMap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
                           device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
@@ -194,7 +194,7 @@ TEST_P(HashmapPermuteDevices, Erase) {
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
     int init_capacity = n * 2;
-    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
+    core::HashMap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
                           device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
@@ -254,7 +254,7 @@ TEST_P(HashmapPermuteDevices, Rehash) {
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
     int init_capacity = n * 2;
-    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
+    core::HashMap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
                           device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
