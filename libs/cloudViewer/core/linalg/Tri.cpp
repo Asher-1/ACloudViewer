@@ -1,34 +1,15 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/linalg/Tri.h"
+#include "cloudViewer/core/linalg/Tri.h"
 
-#include "core/CUDAUtils.h"
-#include "core/Tensor.h"
-#include "core/linalg/TriImpl.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/linalg/TriImpl.h"
 
 namespace cloudViewer {
 namespace core {
@@ -62,6 +43,12 @@ void Triu(const Tensor& A, Tensor& output, const int diagonal) {
 #else
         utility::LogError("Unimplemented device.");
 #endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        TriuSYCL(A.Contiguous(), output, diagonal);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
     } else {
         TriuCPU(A.Contiguous(), output, diagonal);
     }
@@ -75,6 +62,12 @@ void Tril(const Tensor& A, Tensor& output, const int diagonal) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
         TrilCUDA(A.Contiguous(), output, diagonal);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        TrilSYCL(A.Contiguous(), output, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif
@@ -92,6 +85,12 @@ void Triul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
         TriulCUDA(A.Contiguous(), upper, lower, diagonal);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        TriulSYCL(A.Contiguous(), upper, lower, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif

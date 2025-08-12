@@ -77,7 +77,9 @@ function(cloudViewer_set_global_properties target)
     endif()
 
     target_include_directories(${target} PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/core/include>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/eCV_io/include>
         $<INSTALL_INTERFACE:${CloudViewer_INSTALL_INCLUDE_DIR}>
     )
 

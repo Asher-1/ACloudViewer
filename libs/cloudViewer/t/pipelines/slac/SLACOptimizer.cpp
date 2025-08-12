@@ -1,35 +1,17 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: Asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "t/pipelines/slac/SLACOptimizer.h"
+#include "cloudViewer/t/pipelines/slac/SLACOptimizer.h"
 
-#include "core/EigenConverter.h"
-#include "core/nns/NearestNeighborSearch.h"
-#include "io/PointCloudIO.h"
-#include "t/pipelines/slac/FillInLinearSystemImpl.h"
+#include "cloudViewer/core/EigenConverter.h"
+#include "cloudViewer/core/TensorCheck.h"
+#include "cloudViewer/core/nns/NearestNeighborSearch.h"
+#include "cloudViewer/io/PointCloudIO.h"
+#include "cloudViewer/t/pipelines/slac/FillInLinearSystemImpl.h"
 #include <FileSystem.h>
 
 namespace cloudViewer {
@@ -92,9 +74,9 @@ static std::vector<std::string> PreprocessPointClouds(
 // shaped CorrespondenceSet, where C is the number of correspondences such that
 //
 // For getting correspondence indexed pointclouds:
-//  source_indexed_pcd = source.GetPoints()
+//  source_indexed_pcd = source.GetPointPositions()
 //                            .IndexGet({correspondence_set.T()[0]});
-//  target_indexed_pcd = target.GetPoints()
+//  target_indexed_pcd = target.GetPointPositions()
 //                            .IndexGet({correspondence_set.T()[1]});
 //
 // For getting the i-th correspondence pair:
@@ -155,30 +137,30 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
         float fitness_threshold,
         bool debug) {
     core::Device device = tpcd_i.GetDevice();
-    core::Dtype dtype = tpcd_i.GetPoints().GetDtype();
+    core::Dtype dtype = tpcd_i.GetPointPositions().GetDtype();
 
-    tpcd_j.GetPoints().AssertDevice(device);
-    tpcd_j.GetPoints().AssertDtype(dtype);
+    core::AssertTensorDevice(tpcd_j.GetPointPositions(), device);
+    core::AssertTensorDtype(tpcd_j.GetPointPositions(), dtype);
 
-    // TODO (@rishabh): AssertTransformation / IsTransformation.
-    T_i.AssertShape({4, 4});
-    T_j.AssertShape({4, 4});
-    T_ij.AssertShape({4, 4});
+    core::AssertTensorShape(T_i, {4, 4});
+    core::AssertTensorShape(T_j, {4, 4});
+    core::AssertTensorShape(T_ij, {4, 4});
 
     PointCloud tpcd_i_transformed_Tij = tpcd_i.Clone();
-    tpcd_i_transformed_Tij.Transform(T_ij.To(device, dtype));
+    tpcd_i_transformed_Tij.Transform(T_ij);
 
     // Obtain correspondence via nns, between tpcd_i_transformed_Tij and tpcd_j.
-    core::nns::NearestNeighborSearch tpcd_j_nns(tpcd_j.GetPoints());
+    core::nns::NearestNeighborSearch tpcd_j_nns(tpcd_j.GetPointPositions());
     bool check = tpcd_j_nns.HybridIndex(distance_threshold);
     if (!check) {
-        utility::LogError(
-                "[NearestNeighborSearch::HybridSearch] Index is not set.");
+        utility::LogError("Index is not set.");
     }
     core::Tensor target_indices, residual_distances_Tij, neighbour_counts;
     std::tie(target_indices, residual_distances_Tij, neighbour_counts) =
-            tpcd_j_nns.HybridSearch(tpcd_i_transformed_Tij.GetPoints(),
+            tpcd_j_nns.HybridSearch(tpcd_i_transformed_Tij.GetPointPositions(),
                                     distance_threshold, 1);
+
+    target_indices = target_indices.To(core::Int64);
 
     // Get the correspondence_set Transformed of shape {C, 2}.
     core::Tensor correspondence_set =
@@ -186,17 +168,17 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
 
     // Get correspondence indexed pointcloud.
     PointCloud tpcd_i_indexed(
-            tpcd_i.GetPoints().IndexGet({correspondence_set.T()[0]}));
+            tpcd_i.GetPointPositions().IndexGet({correspondence_set.T()[0]}));
     PointCloud tpcd_j_indexed(
-            tpcd_j.GetPoints().IndexGet({correspondence_set.T()[1]}));
+            tpcd_j.GetPointPositions().IndexGet({correspondence_set.T()[1]}));
 
     // Inlier Ratio is calculated on pointclouds transformed by their pose in
     // model frame, to reject any suspicious pair.
-    tpcd_i_indexed.Transform(T_i.To(device, dtype));
-    tpcd_j_indexed.Transform(T_j.To(device, dtype));
+    tpcd_i_indexed.Transform(T_i);
+    tpcd_j_indexed.Transform(T_j);
 
-    core::Tensor residual =
-            (tpcd_i_indexed.GetPoints() - tpcd_j_indexed.GetPoints());
+    core::Tensor residual = (tpcd_i_indexed.GetPointPositions() -
+                             tpcd_j_indexed.GetPointPositions());
     core::Tensor square_residual = (residual * residual).Sum({1});
     core::Tensor inliers =
             square_residual.Le(distance_threshold * distance_threshold);

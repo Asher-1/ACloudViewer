@@ -29,7 +29,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "core/hashmap/Hashmap.h"
+#include "core/hashmap/HashMap.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -123,7 +123,7 @@ void pybind_pointcloud(py::module& m) {
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
                 return pointcloud.VoxelDownSample(
-                        voxel_size, core::HashmapBackend::Default);
+                        voxel_size, core::HashBackendType::Default);
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);

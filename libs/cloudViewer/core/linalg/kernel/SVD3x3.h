@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 /**************************************************************************
 **
@@ -33,7 +14,7 @@
 **  with minimal branching and elementary floating point operations,
 **  University of Wisconsin - Madison technical report TR1690, May 2011
 **
-** 	Implementated by: Kui Wu
+** 	Implemented by: Kui Wu
 **	kwu@cs.utah.edu
 **  Modified by: Wei Dong and Rishabh Singh
 **
@@ -43,23 +24,30 @@
 
 #pragma once
 
-#include "core/CUDAUtils.h"
-#include "t/geometry/kernel/GeometryMacros.h"
+#include <cmath>
+
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
 #include <cuda.h>
 #endif
 
 #include "math.h"
-#include "core/linalg/kernel/Matrix.h"
+#include "cloudViewer/core/linalg/kernel/Matrix.h"
 
 #define gone 1065353216
 #define gsine_pi_over_eight 1053028117
 
 #define gcosine_pi_over_eight 1064076127
-#define gsmall_number 1.e-12f
-#define gtiny_number 1.e-20f
-#define gfour_gamma_squared 5.8284273147583007813f
+#define gtiny_number 1.e-20
+#define gfour_gamma_squared 5.8284273147583007813
+
+#ifndef __CUDACC__
+using std::abs;
+using std::max;
+using std::sqrt;
+#endif
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
 #define __fadd_rn(x, y) __fadd_rn(x, y)
@@ -84,7 +72,6 @@
 #define __rsqrt_rn(x) (1.0 / sqrt(x))
 #endif
 
-
 namespace cloudViewer {
 namespace core {
 namespace linalg {
@@ -107,6 +94,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
                                                       double *U_3x3,
                                                       double *S_3x1,
                                                       double *V_3x3) {
+    double gsmall_number = 1.e-12;
+
     un<double> Sa11, Sa21, Sa31, Sa12, Sa22, Sa32, Sa13, Sa23, Sa33;
     un<double> Su11, Su21, Su31, Su12, Su22, Su32, Su13, Su23, Su33;
     un<double> Sv11, Sv21, Sv31, Sv12, Sv22, Sv32, Sv13, Sv23, Sv33;
@@ -125,9 +114,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Sa32.f = A_3x3[7];
     Sa33.f = A_3x3[8];
 
-    //###########################################################
-    // Compute normal equations matrix
-    //###########################################################
+    // ###########################################################
+    //  Compute normal equations matrix
+    // ###########################################################
 
     Ss11.f = Sa11.f * Sa11.f;
     Stmp1.f = Sa21.f * Sa21.f;
@@ -170,9 +159,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Sqvvy.f = 0.f;
     Sqvvz.f = 0.f;
 
-    //###########################################################
-    // Solve symmetric eigenproblem using Jacobi iteration
-    //###########################################################
+    // ###########################################################
+    //  Solve symmetric eigenproblem using Jacobi iteration
+    // ###########################################################
     for (int i = 0; i < 4; i++) {
         Ssh.f = Ss21.f * 0.5f;
         Stmp5.f = __dsub_rn(Ss11.f, Ss22.f);
@@ -211,9 +200,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
         printf("GPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
                Sch.f);
 #endif
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __dadd_rn(Stmp1.f, Stmp2.f);
         Ss33.f = Ss33.f * Stmp3.f;
@@ -252,9 +241,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -317,9 +306,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
                Sch.f);
 #endif
 
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __dadd_rn(Stmp1.f, Stmp2.f);
         Ss11.f = Ss11.f * Stmp3.f;
@@ -358,9 +347,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -424,9 +413,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
                Sch.f);
 #endif
 
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __dadd_rn(Stmp1.f, Stmp2.f);
         Ss22.f = Ss22.f * Stmp3.f;
@@ -465,9 +454,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -486,9 +475,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
 #endif
     }
 
-    //###########################################################
-    // Normalize quaternion for matrix V
-    //###########################################################
+    // ###########################################################
+    //  Normalize quaternion for matrix V
+    // ###########################################################
 
     Stmp2.f = Sqvs.f * Sqvs.f;
     Stmp1.f = Sqvvx.f * Sqvvx.f;
@@ -511,9 +500,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Sqvvy.f = Sqvvy.f * Stmp1.f;
     Sqvvz.f = Sqvvz.f * Stmp1.f;
 
-    //###########################################################
-    // Transform quaternion to matrix V
-    //###########################################################
+    // ###########################################################
+    //  Transform quaternion to matrix V
+    // ###########################################################
 
     Stmp1.f = Sqvvx.f * Sqvvx.f;
     Stmp2.f = Sqvvy.f * Sqvvy.f;
@@ -543,9 +532,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Sv32.f = __dadd_rn(Stmp2.f, Sv32.f);
     Sv13.f = __dadd_rn(Stmp3.f, Sv13.f);
 
-    ///###########################################################
+    /// ###########################################################
     // Multiply (from the right) with V
-    //###########################################################
+    // ###########################################################
 
     Stmp2.f = Sa12.f;
     Stmp3.f = Sa13.f;
@@ -601,9 +590,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Stmp1.f = Sv33.f * Stmp3.f;
     Sa33.f = __dadd_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Permute columns such that the singular values are sorted
-    //###########################################################
+    // ###########################################################
+    //  Permute columns such that the singular values are sorted
+    // ###########################################################
 
     Stmp1.f = Sa11.f * Sa11.f;
     Stmp4.f = Sa21.f * Sa21.f;
@@ -785,9 +774,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Sv23.f = Sv23.f * Stmp4.f;
     Sv33.f = Sv33.f * Stmp4.f;
 
-    //###########################################################
-    // Construct QR factorization of A*V (=U*D) using Givens rotations
-    //###########################################################
+    // ###########################################################
+    //  Construct QR factorization of A*V (=U*D) using Givens rotations
+    // ###########################################################
 
     Su11.f = 1.f;
     Su12.f = 0.f;
@@ -805,8 +794,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
 
     Stmp5.f = 0.f;
     Sch.f = __dsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = fmax(Sch.f, Sa11.f);
-    Sch.f = fmax(Sch.f, gsmall_number);
+    Sch.f = max(Sch.f, Sa11.f);
+    Sch.f = max(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -852,9 +841,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __dadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa11.f;
     Stmp2.f = Ss.f * Sa21.f;
@@ -877,9 +866,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Sa13.f = __dadd_rn(Sa13.f, Stmp2.f);
     Sa23.f = __dsub_rn(Sa23.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su11.f;
     Stmp2.f = Ss.f * Su12.f;
@@ -910,8 +899,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
 
     Stmp5.f = 0.f;
     Sch.f = __dsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = fmax(Sch.f, Sa11.f);
-    Sch.f = fmax(Sch.f, gsmall_number);
+    Sch.f = max(Sch.f, Sa11.f);
+    Sch.f = max(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -957,9 +946,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __dadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa11.f;
     Stmp2.f = Ss.f * Sa31.f;
@@ -982,9 +971,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Sa13.f = __dadd_rn(Sa13.f, Stmp2.f);
     Sa33.f = __dsub_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su11.f;
     Stmp2.f = Ss.f * Su13.f;
@@ -1015,8 +1004,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
 
     Stmp5.f = 0.f;
     Sch.f = __dsub_rn(Stmp5.f, Sa22.f);
-    Sch.f = fmax(Sch.f, Sa22.f);
-    Sch.f = fmax(Sch.f, gsmall_number);
+    Sch.f = max(Sch.f, Sa22.f);
+    Sch.f = max(Sch.f, gsmall_number);
     Stmp5.ui = (Sa22.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1062,9 +1051,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __dadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa21.f;
     Stmp2.f = Ss.f * Sa31.f;
@@ -1087,9 +1076,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
     Sa23.f = __dadd_rn(Sa23.f, Stmp2.f);
     Sa33.f = __dsub_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su12.f;
     Stmp2.f = Ss.f * Su13.f;
@@ -1144,6 +1133,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
                                                      float *U_3x3,
                                                      float *S_3x1,
                                                      float *V_3x3) {
+    float gsmall_number = 1.e-12;
+
     un<float> Sa11, Sa21, Sa31, Sa12, Sa22, Sa32, Sa13, Sa23, Sa33;
     un<float> Su11, Su21, Su31, Su12, Su22, Su32, Su13, Su23, Su33;
     un<float> Sv11, Sv21, Sv31, Sv12, Sv22, Sv32, Sv13, Sv23, Sv33;
@@ -1162,9 +1153,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Sa32.f = A_3x3[7];
     Sa33.f = A_3x3[8];
 
-    //###########################################################
-    // Compute normal equations matrix
-    //###########################################################
+    // ###########################################################
+    //  Compute normal equations matrix
+    // ###########################################################
 
     Ss11.f = Sa11.f * Sa11.f;
     Stmp1.f = Sa21.f * Sa21.f;
@@ -1207,9 +1198,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Sqvvy.f = 0.f;
     Sqvvz.f = 0.f;
 
-    //###########################################################
-    // Solve symmetric eigenproblem using Jacobi iteration
-    //###########################################################
+    // ###########################################################
+    //  Solve symmetric eigenproblem using Jacobi iteration
+    // ###########################################################
     for (int i = 0; i < 4; i++) {
         Ssh.f = Ss21.f * 0.5f;
         Stmp5.f = __fsub_rn(Ss11.f, Ss22.f);
@@ -1248,9 +1239,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
         printf("GPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
                Sch.f);
 #endif
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __fadd_rn(Stmp1.f, Stmp2.f);
         Ss33.f = Ss33.f * Stmp3.f;
@@ -1289,9 +1280,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -1354,9 +1345,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
                Sch.f);
 #endif
 
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __fadd_rn(Stmp1.f, Stmp2.f);
         Ss11.f = Ss11.f * Stmp3.f;
@@ -1395,9 +1386,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -1461,9 +1452,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
                Sch.f);
 #endif
 
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __fadd_rn(Stmp1.f, Stmp2.f);
         Ss22.f = Ss22.f * Stmp3.f;
@@ -1502,9 +1493,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -1523,9 +1514,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
 #endif
     }
 
-    //###########################################################
-    // Normalize quaternion for matrix V
-    //###########################################################
+    // ###########################################################
+    //  Normalize quaternion for matrix V
+    // ###########################################################
 
     Stmp2.f = Sqvs.f * Sqvs.f;
     Stmp1.f = Sqvvx.f * Sqvvx.f;
@@ -1548,9 +1539,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Sqvvy.f = Sqvvy.f * Stmp1.f;
     Sqvvz.f = Sqvvz.f * Stmp1.f;
 
-    //###########################################################
-    // Transform quaternion to matrix V
-    //###########################################################
+    // ###########################################################
+    //  Transform quaternion to matrix V
+    // ###########################################################
 
     Stmp1.f = Sqvvx.f * Sqvvx.f;
     Stmp2.f = Sqvvy.f * Sqvvy.f;
@@ -1580,9 +1571,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Sv32.f = __fadd_rn(Stmp2.f, Sv32.f);
     Sv13.f = __fadd_rn(Stmp3.f, Sv13.f);
 
-    ///###########################################################
+    /// ###########################################################
     // Multiply (from the right) with V
-    //###########################################################
+    // ###########################################################
 
     Stmp2.f = Sa12.f;
     Stmp3.f = Sa13.f;
@@ -1638,9 +1629,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Stmp1.f = Sv33.f * Stmp3.f;
     Sa33.f = __fadd_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Permute columns such that the singular values are sorted
-    //###########################################################
+    // ###########################################################
+    //  Permute columns such that the singular values are sorted
+    // ###########################################################
 
     Stmp1.f = Sa11.f * Sa11.f;
     Stmp4.f = Sa21.f * Sa21.f;
@@ -1822,9 +1813,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Sv23.f = Sv23.f * Stmp4.f;
     Sv33.f = Sv33.f * Stmp4.f;
 
-    //###########################################################
-    // Construct QR factorization of A*V (=U*D) using Givens rotations
-    //###########################################################
+    // ###########################################################
+    //  Construct QR factorization of A*V (=U*D) using Givens rotations
+    // ###########################################################
 
     Su11.f = 1.f;
     Su12.f = 0.f;
@@ -1842,8 +1833,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = fmax(Sch.f, Sa11.f);
-    Sch.f = fmax(Sch.f, gsmall_number);
+    Sch.f = max(Sch.f, Sa11.f);
+    Sch.f = max(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1889,9 +1880,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __fadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa11.f;
     Stmp2.f = Ss.f * Sa21.f;
@@ -1914,9 +1905,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Sa13.f = __fadd_rn(Sa13.f, Stmp2.f);
     Sa23.f = __fsub_rn(Sa23.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su11.f;
     Stmp2.f = Ss.f * Su12.f;
@@ -1947,8 +1938,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = fmax(Sch.f, Sa11.f);
-    Sch.f = fmax(Sch.f, gsmall_number);
+    Sch.f = max(Sch.f, Sa11.f);
+    Sch.f = max(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1994,9 +1985,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __fadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa11.f;
     Stmp2.f = Ss.f * Sa31.f;
@@ -2019,9 +2010,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Sa13.f = __fadd_rn(Sa13.f, Stmp2.f);
     Sa33.f = __fsub_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su11.f;
     Stmp2.f = Ss.f * Su13.f;
@@ -2052,8 +2043,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa22.f);
-    Sch.f = fmax(Sch.f, Sa22.f);
-    Sch.f = fmax(Sch.f, gsmall_number);
+    Sch.f = max(Sch.f, Sa22.f);
+    Sch.f = max(Sch.f, gsmall_number);
     Stmp5.ui = (Sa22.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -2099,9 +2090,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __fadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa21.f;
     Stmp2.f = Ss.f * Sa31.f;
@@ -2124,9 +2115,9 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
     Sa23.f = __fadd_rn(Sa23.f, Stmp2.f);
     Sa33.f = __fsub_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su12.f;
     Stmp2.f = Ss.f * Su13.f;
@@ -2187,17 +2178,17 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void solve_svd3x3(
     scalar_t S[3];
     svd3x3(A_3x3, U, S, V);
 
-    //###########################################################
-    // Sigma^+
-    //###########################################################
+    // ###########################################################
+    //  Sigma^+
+    // ###########################################################
     const scalar_t epsilon = 1e-10;
     S[0] = abs(S[0]) < epsilon ? 0 : 1.0 / S[0];
     S[1] = abs(S[1]) < epsilon ? 0 : 1.0 / S[1];
     S[2] = abs(S[2]) < epsilon ? 0 : 1.0 / S[2];
 
-    //###########################################################
-    // (Sigma^+) * UT
-    //###########################################################
+    // ###########################################################
+    //  (Sigma^+) * UT
+    // ###########################################################
     scalar_t S_UT[9];
 
     S_UT[0] = U[0] * S[0];
@@ -2210,15 +2201,15 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void solve_svd3x3(
     S_UT[7] = U[5] * S[2];
     S_UT[8] = U[8] * S[2];
 
-    //###########################################################
-    // Ainv = V * [(Sigma^+) * UT]
-    //###########################################################
+    // ###########################################################
+    //  Ainv = V * [(Sigma^+) * UT]
+    // ###########################################################
     scalar_t Ainv[9] = {0};
     matmul3x3_3x3(V, S_UT, Ainv);
 
-    //###########################################################
-    // x = Ainv * b
-    //###########################################################
+    // ###########################################################
+    //  x = Ainv * b
+    // ###########################################################
 
     matmul3x3_3x1(Ainv, B_3x1, X_3x1);
 }

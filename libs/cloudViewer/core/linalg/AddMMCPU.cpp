@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/linalg/AddMM.h"
-#include "core/linalg/BlasWrapper.h"
-#include "core/linalg/LinalgUtils.h"
+#include "cloudViewer/core/linalg/AddMM.h"
+#include "cloudViewer/core/linalg/BlasWrapper.h"
+#include "cloudViewer/core/linalg/LinalgUtils.h"
 #include <Logging.h>
 
 namespace cloudViewer {

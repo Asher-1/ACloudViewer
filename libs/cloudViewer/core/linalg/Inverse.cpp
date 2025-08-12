@@ -1,34 +1,16 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/linalg/Inverse.h"
+#include "cloudViewer/core/linalg/Inverse.h"
 
 #include <unordered_map>
-#include "core/CUDAUtils.h"
-#include "core/linalg/LinalgHeadersCPU.h"
+
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/linalg/LinalgHeadersCPU.h"
 
 namespace cloudViewer {
 namespace core {
@@ -74,14 +56,28 @@ void Inverse(const Tensor &A, Tensor &output) {
 #else
         utility::LogError("Unimplemented device.");
 #endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        Tensor ipiv = Tensor::Empty({n}, core::Int64, device);
+        void *ipiv_data = ipiv.GetDataPtr();
+
+        // LAPACKE supports getri, A is in-place modified as output.
+        Tensor A_T = A.T().To(device, /*copy=*/true);
+        void *A_data = A_T.GetDataPtr();
+
+        InverseSYCL(A_data, ipiv_data, nullptr, n, dtype, device);
+        output = A_T.T();
+#else
+        utility::LogError("Unimplemented device.");
+#endif
     } else {
         Dtype ipiv_dtype;
-        if (sizeof(CLOUDVIEWER_CPU_LINALG_INT) == 4) {
+        if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
             ipiv_dtype = core::Int32;
-        } else if (sizeof(CLOUDVIEWER_CPU_LINALG_INT) == 8) {
+        } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
             ipiv_dtype = core::Int64;
         } else {
-            utility::LogError("Unsupported CLOUDVIEWER_CPU_LINALG_INT type.");
+            utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }
         Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
         void *ipiv_data = ipiv.GetDataPtr();
@@ -94,6 +90,5 @@ void Inverse(const Tensor &A, Tensor &output) {
         output = A_T.T();
     }
 }
-
 }  // namespace core
 }  // namespace cloudViewer

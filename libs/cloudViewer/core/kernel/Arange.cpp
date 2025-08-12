@@ -1,48 +1,27 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/kernel/Arange.h"
+#include "cloudViewer/core/kernel/Arange.h"
 
-#include "core/Tensor.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/TensorCheck.h"
 
 namespace cloudViewer {
 namespace core {
 namespace kernel {
 
 Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
-    start.AssertShape({}, "Start tensor must have shape {}.");
-    stop.AssertShape({}, "Stop tensor must have shape {}.");
-    step.AssertShape({}, "Step tensor must have shape {}.");
+    AssertTensorShape(start, {});
+    AssertTensorShape(stop, {});
+    AssertTensorShape(step, {});
 
-    Device device = start.GetDevice();
-    Device::DeviceType device_type = device.GetType();
-    stop.AssertDevice(device,
-                      "Stop must have the same dtype and device as start.");
-    step.AssertDevice(device,
-                      "Step must have the same dtype and device as start.");
+    const Device device = start.GetDevice();
+    AssertTensorDevice(stop, device);
+    AssertTensorDevice(step, device);
 
     int64_t num_elements = 0;
     bool is_arange_valid = true;
@@ -82,9 +61,15 @@ Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
     // Output.
     Tensor dst = Tensor({num_elements}, dtype, device);
 
-    if (device_type == Device::DeviceType::CPU) {
+    if (device.IsCPU()) {
         ArangeCPU(start, stop, step, dst);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ArangeSYCL(start, stop, step, dst);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         ArangeCUDA(start, stop, step, dst);
 #else

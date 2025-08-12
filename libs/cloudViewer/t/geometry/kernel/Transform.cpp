@@ -1,33 +1,15 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: Asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "t/geometry/kernel/Transform.h"
+#include "cloudViewer/t/geometry/kernel/Transform.h"
 
-#include "core/CUDAUtils.h"
-#include "core/ShapeUtil.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/ShapeUtil.h"
+#include "cloudViewer/core/TensorCheck.h"
 
 namespace cloudViewer {
 namespace t {
@@ -36,20 +18,17 @@ namespace kernel {
 namespace transform {
 
 void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
-    points.AssertShapeCompatible({utility::nullopt, 3});
-    transformation.AssertShape({4, 4});
-    core::Dtype dtype = points.GetDtype();
-    transformation.AssertDtype(dtype);
-    core::Device device = points.GetDevice();
-    transformation.AssertDevice(device);
+    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(transformation, {4, 4});
 
     core::Tensor points_contiguous = points.Contiguous();
-    core::Tensor transformation_contiguous = transformation.Contiguous();
+    core::Tensor transformation_contiguous =
+            transformation.To(points.GetDevice(), points.GetDtype())
+                    .Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (points.IsCPU()) {
         TransformPointsCPU(transformation_contiguous, points_contiguous);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (points.IsCUDA()) {
         CUDA_CALL(TransformPointsCUDA, transformation_contiguous,
                   points_contiguous);
     } else {
@@ -61,20 +40,17 @@ void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
 
 void TransformNormals(const core::Tensor& transformation,
                       core::Tensor& normals) {
-    normals.AssertShapeCompatible({utility::nullopt, 3});
-    transformation.AssertShape({4, 4});
-    core::Dtype dtype = normals.GetDtype();
-    transformation.AssertDtype(dtype);
-    core::Device device = normals.GetDevice();
-    transformation.AssertDevice(device);
+    core::AssertTensorShape(normals, {utility::nullopt, 3});
+    core::AssertTensorShape(transformation, {4, 4});
 
     core::Tensor normals_contiguous = normals.Contiguous();
-    core::Tensor transformation_contiguous = transformation.Contiguous();
+    core::Tensor transformation_contiguous =
+            transformation.To(normals.GetDevice(), normals.GetDtype())
+                    .Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (normals.IsCPU()) {
         TransformNormalsCPU(transformation_contiguous, normals_contiguous);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (normals.IsCUDA()) {
         CUDA_CALL(TransformNormalsCUDA, transformation_contiguous,
                   normals_contiguous);
     } else {
@@ -87,24 +63,19 @@ void TransformNormals(const core::Tensor& transformation,
 void RotatePoints(const core::Tensor& R,
                   core::Tensor& points,
                   const core::Tensor& center) {
-    points.AssertShapeCompatible({utility::nullopt, 3});
-    R.AssertShape({3, 3});
-    center.AssertShape({3});
-    core::Dtype dtype = points.GetDtype();
-    R.AssertDtype(dtype);
-    center.AssertDtype(dtype);
-    core::Device device = points.GetDevice();
-    R.AssertDevice(device);
-    center.AssertDevice(device);
+    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(center, {3});
 
     core::Tensor points_contiguous = points.Contiguous();
-    core::Tensor R_contiguous = R.Contiguous();
-    core::Tensor center_contiguous = center.Contiguous();
+    core::Tensor R_contiguous =
+            R.To(points.GetDevice(), points.GetDtype()).Contiguous();
+    core::Tensor center_contiguous =
+            center.To(points.GetDevice(), points.GetDtype()).Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (points.IsCPU()) {
         RotatePointsCPU(R_contiguous, points_contiguous, center_contiguous);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (points.IsCUDA()) {
         CUDA_CALL(RotatePointsCUDA, R_contiguous, points_contiguous,
                   center_contiguous);
     } else {
@@ -115,20 +86,16 @@ void RotatePoints(const core::Tensor& R,
 }
 
 void RotateNormals(const core::Tensor& R, core::Tensor& normals) {
-    normals.AssertShapeCompatible({utility::nullopt, 3});
-    R.AssertShape({3, 3});
-    core::Dtype dtype = normals.GetDtype();
-    R.AssertDtype(dtype);
-    core::Device device = normals.GetDevice();
-    R.AssertDevice(device);
+    core::AssertTensorShape(normals, {utility::nullopt, 3});
+    core::AssertTensorShape(R, {3, 3});
 
     core::Tensor normals_contiguous = normals.Contiguous();
-    core::Tensor R_contiguous = R.Contiguous();
+    core::Tensor R_contiguous =
+            R.To(normals.GetDevice(), normals.GetDtype()).Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (normals.IsCPU()) {
         RotateNormalsCPU(R_contiguous, normals_contiguous);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (normals.IsCUDA()) {
         CUDA_CALL(RotateNormalsCUDA, R_contiguous, normals_contiguous);
     } else {
         utility::LogError("Unimplemented device");

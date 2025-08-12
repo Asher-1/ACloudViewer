@@ -1,36 +1,18 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <vector>
 
-#include "core/Indexer.h"
-#include "core/SizeVector.h"
-#include "core/Tensor.h"
+#include "cloudViewer/core/Indexer.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/Macro.h"
 
 namespace cloudViewer {
 namespace core {
@@ -68,7 +50,7 @@ public:
             const Tensor& tensor, const std::vector<Tensor>& index_tensors);
 
     /// Expand all tensors to the broadcasted shape, 0-dim tensors are ignored.
-    /// Thorws exception if the common broadcasted shape does not exist.
+    /// Throws exception if the common broadcasted shape does not exist.
     static std::pair<std::vector<Tensor>, SizeVector>
     ExpandToCommonShapeExceptZeroDim(const std::vector<Tensor>& index_tensors);
 
@@ -146,7 +128,7 @@ public:
         if (indexed_shape.size() != indexed_strides.size()) {
             utility::LogError(
                     "Internal error: indexed_shape's ndim {} does not equal to "
-                    "indexd_strides' ndim {}",
+                    "indexed_strides' ndim {}",
                     indexed_shape.size(), indexed_strides.size());
         }
         num_indices_ = indexed_shape.size();
@@ -202,8 +184,8 @@ public:
         for (int64_t i = 0; i < num_indices_; ++i) {
             int64_t index = *(reinterpret_cast<int64_t*>(
                     indexer_.GetInputPtr(i + 1, workload_idx)));
-            assert(index >= -indexed_shape_[i] && index < indexed_shape_[i] &&
-                   "Index out of bounds");
+            CLOUDVIEWER_ASSERT(index >= -indexed_shape_[i] &&
+                          index < indexed_shape_[i] && "Index out of bounds.");
             index += indexed_shape_[i] * (index < 0);
             offset += index * indexed_strides_[i];
         }

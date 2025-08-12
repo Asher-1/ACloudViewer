@@ -67,3 +67,75 @@
 //     CLOUDVIEWER_ASSERT(condition && "Error message");
 // For host-only code, consider using utility::LogError();
 #define CLOUDVIEWER_ASSERT(...) assert((__VA_ARGS__))
+
+// OPEN3D macro compatibility layer
+#ifndef OPEN3D_STRINGIFY
+#define OPEN3D_STRINGIFY(x) #x
+#endif
+
+#ifndef OPEN3D_ASSERT
+#define OPEN3D_ASSERT(...) CLOUDVIEWER_ASSERT(__VA_ARGS__)
+#endif
+
+// Provide function name macro and map OPEN3D_FUNCTION
+#ifndef CLOUDVIEWER_FUNCTION
+#if defined(__GNUC__) || defined(__clang__)
+#define CLOUDVIEWER_FUNCTION __PRETTY_FUNCTION__
+#elif defined(_MSC_VER)
+#define CLOUDVIEWER_FUNCTION __FUNCSIG__
+#else
+#define CLOUDVIEWER_FUNCTION __func__
+#endif
+#endif
+
+#ifndef OPEN3D_FUNCTION
+#define OPEN3D_FUNCTION CLOUDVIEWER_FUNCTION
+#endif
+
+// Device / host-device qualifiers used across CloudViewer codebase
+#ifndef CLOUDVIEWER_DEVICE
+#if defined(__CUDACC__) || defined(__HIPCC__)
+#define CLOUDVIEWER_DEVICE __device__
+#else
+#define CLOUDVIEWER_DEVICE
+#endif
+#endif
+
+#ifndef CLOUDVIEWER_HOST_DEVICE
+#if defined(__CUDACC__) || defined(__HIPCC__)
+#define CLOUDVIEWER_HOST_DEVICE __host__ __device__
+#else
+#define CLOUDVIEWER_HOST_DEVICE
+#endif
+#endif
+
+#ifndef CLOUDVIEWER_HOST
+#if defined(__CUDACC__) || defined(__HIPCC__)
+#define CLOUDVIEWER_HOST __host__
+#else
+#define CLOUDVIEWER_HOST
+#endif
+#endif
+
+// Force inline used by CUDA/SIMD helpers
+#ifndef CLOUDVIEWER_FORCE_INLINE
+#if defined(_MSC_VER)
+#define CLOUDVIEWER_FORCE_INLINE __forceinline
+#else
+#define CLOUDVIEWER_FORCE_INLINE inline __attribute__((always_inline))
+#endif
+#endif
+
+// Map Open3D visibility macros to CloudViewer equivalents for compatibility
+#ifndef OPEN3D_API
+#define OPEN3D_API CLOUDVIEWER_API
+#endif
+#ifndef OPEN3D_DLL_EXPORT
+#define OPEN3D_DLL_EXPORT CLOUDVIEWER_DLL_EXPORT
+#endif
+#ifndef OPEN3D_DLL_IMPORT
+#define OPEN3D_DLL_IMPORT CLOUDVIEWER_DLL_IMPORT
+#endif
+#ifndef OPEN3D_DLL_LOCAL
+#define OPEN3D_DLL_LOCAL CLOUDVIEWER_DLL_LOCAL
+#endif

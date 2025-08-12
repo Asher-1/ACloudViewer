@@ -1,46 +1,19 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/Dispatch.h"
-#include "core/Dtype.h"
-#include "core/MemoryManager.h"
-#include "core/ParallelFor.h"
-#include "core/SizeVector.h"
-#include "core/Tensor.h"
-#include "t/geometry/kernel/GeometryIndexer.h"
-#include "t/geometry/kernel/GeometryMacros.h"
-#include "t/geometry/kernel/PointCloud.h"
-#include "t/geometry/kernel/PointCloudImpl.h"
-#include <Logging.h>
+#include "cloudViewer/t/geometry/kernel/PointCloudImpl.h"
 
 namespace cloudViewer {
 namespace t {
 namespace geometry {
 namespace kernel {
 namespace pointcloud {
+
+using std::round;
 
 void ProjectCPU(
         core::Tensor& depth,
@@ -67,7 +40,7 @@ void ProjectCPU(
         color_indexer = NDArrayIndexer(image_colors.value().get(), 2);
     }
 
-    ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
+    core::ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
         float x = points_ptr[3 * workload_idx + 0];
         float y = points_ptr[3 * workload_idx + 1];
         float z = points_ptr[3 * workload_idx + 2];
@@ -78,6 +51,8 @@ void ProjectCPU(
 
         // coordinate in image (in pixel)
         transform_indexer.Project(xc, yc, zc, &u, &v);
+        u = round(u);
+        v = round(v);
         if (!depth_indexer.InBoundary(u, v) || zc <= 0 || zc > depth_max) {
             return;
         }
@@ -85,22 +60,20 @@ void ProjectCPU(
         float* depth_ptr = depth_indexer.GetDataPtr<float>(
                 static_cast<int64_t>(u), static_cast<int64_t>(v));
         float d = zc * depth_scale;
-        // TODO: this can be wrong if ParallelFor is not implmented with OpenMP.
+        // TODO: this can be wrong if ParallelFor is not implemented with
+        // OpenMP.
 #pragma omp critical(ProjectCPU)
         {
             if (*depth_ptr == 0 || *depth_ptr >= d) {
                 *depth_ptr = d;
 
                 if (has_colors) {
-                    uint8_t* color_ptr = color_indexer.GetDataPtr<uint8_t>(
+                    float* color_ptr = color_indexer.GetDataPtr<float>(
                             static_cast<int64_t>(u), static_cast<int64_t>(v));
 
-                    color_ptr[0] = static_cast<uint8_t>(
-                            point_colors_ptr[3 * workload_idx + 0] * 255.0);
-                    color_ptr[1] = static_cast<uint8_t>(
-                            point_colors_ptr[3 * workload_idx + 1] * 255.0);
-                    color_ptr[2] = static_cast<uint8_t>(
-                            point_colors_ptr[3 * workload_idx + 2] * 255.0);
+                    color_ptr[0] = point_colors_ptr[3 * workload_idx + 0];
+                    color_ptr[1] = point_colors_ptr[3 * workload_idx + 1];
+                    color_ptr[2] = point_colors_ptr[3 * workload_idx + 2];
                 }
             }
         }

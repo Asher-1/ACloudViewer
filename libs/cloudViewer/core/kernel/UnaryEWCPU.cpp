@@ -1,52 +1,65 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cmath>
 #include <cstring>
 
-#include "core/Dispatch.h"
-#include "core/Dtype.h"
-#include "core/Indexer.h"
-#include "core/MemoryManager.h"
-#include "core/ParallelFor.h"
-#include "core/SizeVector.h"
-#include "core/Tensor.h"
-#include "core/kernel/UnaryEW.h"
+#include "cloudViewer/core/Dispatch.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/Indexer.h"
+#include "cloudViewer/core/MemoryManager.h"
+#include "cloudViewer/core/ParallelFor.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/kernel/UnaryEW.h"
 #include <Logging.h>
+
+#ifdef BUILD_ISPC_MODULE
+#include "UnaryEWCPU_ispc.h"
+#endif
 
 namespace cloudViewer {
 namespace core {
 namespace kernel {
 
-template <typename func_t>
-static void LaunchUnaryEWKernel(const Indexer& indexer, const func_t& func) {
+template <typename element_func_t>
+static void LaunchUnaryEWKernel(const Indexer& indexer,
+                                const element_func_t& element_func) {
     ParallelFor(Device("CPU:0"), indexer.NumWorkloads(),
-                [&indexer, &func](int64_t i) {
-                    func(indexer.GetInputPtr(0, i), indexer.GetOutputPtr(i));
+                [&indexer, &element_func](int64_t i) {
+                    element_func(indexer.GetInputPtr(0, i),
+                                 indexer.GetOutputPtr(i));
                 });
+}
+
+template <typename src_t, typename dst_t, typename element_func_t>
+static void LaunchUnaryEWKernel(const Indexer& indexer,
+                                const element_func_t& element_func) {
+    ParallelFor(Device("CPU:0"), indexer.NumWorkloads(),
+                [&indexer, &element_func](int64_t i) {
+                    element_func(indexer.GetInputPtr<src_t>(0, i),
+                                 indexer.GetOutputPtr<dst_t>(i));
+                });
+}
+
+template <typename src_t,
+          typename dst_t,
+          typename element_func_t,
+          typename vec_func_t>
+static void LaunchUnaryEWKernel(const Indexer& indexer,
+                                const element_func_t& element_func,
+                                const vec_func_t& vec_func) {
+    ParallelFor(
+            Device("CPU:0"), indexer.NumWorkloads(),
+            [&indexer, &element_func](int64_t i) {
+                element_func(indexer.GetInputPtr<src_t>(0, i),
+                             indexer.GetOutputPtr<dst_t>(i));
+            },
+            vec_func);
 }
 
 template <typename src_t, typename dst_t>
@@ -81,10 +94,20 @@ static void CPUCosElementKernel(const void* src, void* dst) {
             static_cast<scalar_t>(std::cos(*static_cast<const scalar_t*>(src)));
 }
 
-template <typename scalar_t>
+template <typename scalar_t,
+          typename std::enable_if<std::is_integral<scalar_t>::value,
+                                  int>::type = 0>
 static void CPUNegElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) =
-            static_cast<scalar_t>(-*static_cast<const scalar_t*>(src));
+    using signed_scalar_t = std::make_signed_t<scalar_t>;
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            -static_cast<signed_scalar_t>(*static_cast<const scalar_t*>(src)));
+}
+
+template <typename scalar_t,
+          typename std::enable_if<!std::is_integral<scalar_t>::value,
+                                  int>::type = 0>
+static void CPUNegElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = -*static_cast<const scalar_t*>(src);
 }
 
 template <typename scalar_t>
@@ -182,8 +205,8 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
                 using src_t = scalar_t;
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                     using dst_t = scalar_t;
-                    LaunchUnaryEWKernel(indexer,
-                                        CPUCopyElementKernel<src_t, dst_t>);
+                    LaunchUnaryEWKernel<src_t, dst_t>(
+                            indexer, CPUCopyElementKernel<src_t, dst_t>);
                 });
             });
         }
@@ -191,94 +214,142 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
 }
 
 void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
-    // src and dst have been chaged to have the same shape, device
+    // src and dst have been changed to have the same shape, device
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
 
-    auto assert_dtype_is_float = [](Dtype dtype) -> void {
-        if (dtype != core::Float32 && dtype != core::Float64) {
-            utility::LogError(
-                    "Only supports Float32 and Float64, but {} is used.",
-                    dtype.ToString());
-        }
-    };
-
     if (op_code == UnaryEWOpCode::LogicalNot) {
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-            if (dst_dtype == src_dtype) {
-                Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
-                LaunchUnaryEWKernel(
-                        indexer,
-                        CPULogicalNotElementKernel<scalar_t, scalar_t>);
-            } else if (dst_dtype == core::Bool) {
-                Indexer indexer({src}, dst,
-                                DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
-                LaunchUnaryEWKernel(indexer,
-                                    CPULogicalNotElementKernel<scalar_t, bool>);
-            } else {
-                utility::LogError(
-                        "Boolean op's output type must be boolean or the "
-                        "same type as the input.");
-            }
-        });
+        if (dst_dtype == src_dtype) {
+            Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
+#ifdef BUILD_ISPC_MODULE
+            ispc::Indexer ispc_indexer = indexer.ToISPC();
+#endif
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+                LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                        indexer, CPULogicalNotElementKernel<scalar_t, scalar_t>,
+                        OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                   CPULogicalNotElementKernel,
+                                                   &ispc_indexer));
+            });
+        } else if (dst_dtype == core::Bool) {
+            Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+#ifdef BUILD_ISPC_MODULE
+            ispc::Indexer ispc_indexer = indexer.ToISPC();
+#endif
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+                LaunchUnaryEWKernel<scalar_t, bool>(
+                        indexer, CPULogicalNotElementKernel<scalar_t, bool>,
+                        OPEN3D_TEMPLATE_VECTORIZED(
+                                scalar_t, CPULogicalNotElementKernel_bool,
+                                &ispc_indexer));
+            });
+        } else {
+            utility::LogError(
+                    "Boolean op's output type must be boolean or the "
+                    "same type as the input.");
+        }
     } else if (op_code == UnaryEWOpCode::IsNan ||
                op_code == UnaryEWOpCode::IsInf ||
                op_code == UnaryEWOpCode::IsFinite) {
-        assert_dtype_is_float(src_dtype);
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+#ifdef BUILD_ISPC_MODULE
+        ispc::Indexer ispc_indexer = indexer.ToISPC();
+#endif
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             if (op_code == UnaryEWOpCode::IsNan) {
-                LaunchUnaryEWKernel(indexer, CPUIsNanElementKernel<scalar_t>);
+                LaunchUnaryEWKernel<scalar_t, bool>(
+                        indexer, CPUIsNanElementKernel<scalar_t>,
+                        OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                   CPUIsNanElementKernel,
+                                                   &ispc_indexer));
             } else if (op_code == UnaryEWOpCode::IsInf) {
-                LaunchUnaryEWKernel(indexer, CPUIsInfElementKernel<scalar_t>);
-
+                // A vectorized isinf function is not defined, so use scalar
+                // version instead.
+                LaunchUnaryEWKernel<scalar_t, bool>(
+                        indexer, CPUIsInfElementKernel<scalar_t>);
             } else if (op_code == UnaryEWOpCode::IsFinite) {
-                LaunchUnaryEWKernel(indexer,
-                                    CPUIsFiniteElementKernel<scalar_t>);
+                // A vectorized isfinite function is not defined, so use scalar
+                // version instead.
+                LaunchUnaryEWKernel<scalar_t, bool>(
+                        indexer, CPUIsFiniteElementKernel<scalar_t>);
             }
         });
     } else {
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
+#ifdef BUILD_ISPC_MODULE
+        ispc::Indexer ispc_indexer = indexer.ToISPC();
+#endif
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case UnaryEWOpCode::Sqrt:
-                    assert_dtype_is_float(src_dtype);
-                    LaunchUnaryEWKernel(indexer,
-                                        CPUSqrtElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUSqrtElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPUSqrtElementKernel,
+                                                       &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Sin:
-                    assert_dtype_is_float(src_dtype);
-                    LaunchUnaryEWKernel(indexer, CPUSinElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUSinElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPUSinElementKernel,
+                                                       &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Cos:
-                    assert_dtype_is_float(src_dtype);
-                    LaunchUnaryEWKernel(indexer, CPUCosElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUCosElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPUCosElementKernel,
+                                                       &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Neg:
-                    LaunchUnaryEWKernel(indexer, CPUNegElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUNegElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPUNegElementKernel,
+                                                       &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Exp:
-                    assert_dtype_is_float(src_dtype);
-                    LaunchUnaryEWKernel(indexer, CPUExpElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUExpElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPUExpElementKernel,
+                                                       &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Abs:
-                    LaunchUnaryEWKernel(indexer, CPUAbsElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUAbsElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPUAbsElementKernel,
+                                                       &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Floor:
-                    LaunchUnaryEWKernel(indexer,
-                                        CPUFloorElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUFloorElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPUFloorElementKernel,
+                                                       &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Ceil:
-                    LaunchUnaryEWKernel(indexer,
-                                        CPUCeilElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUCeilElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPUCeilElementKernel,
+                                                       &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Round:
-                    LaunchUnaryEWKernel(indexer,
-                                        CPURoundElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPURoundElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPURoundElementKernel,
+                                                       &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Trunc:
-                    LaunchUnaryEWKernel(indexer,
-                                        CPUTruncElementKernel<scalar_t>);
+                    LaunchUnaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUTruncElementKernel<scalar_t>,
+                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                                                       CPUTruncElementKernel,
+                                                       &ispc_indexer));
                     break;
                 default:
                     utility::LogError("Unimplemented op_code for UnaryEWCPU");

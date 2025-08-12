@@ -102,7 +102,6 @@
 #include "t/geometry/Image.h"
 #include "t/geometry/PointCloud.h"
 #include "t/geometry/RGBDImage.h"
-#include "t/geometry/TSDFVoxelGrid.h"
 #include "t/geometry/TensorMap.h"
 #include "t/geometry/TriangleMesh.h"
 #include "t/io/ImageIO.h"

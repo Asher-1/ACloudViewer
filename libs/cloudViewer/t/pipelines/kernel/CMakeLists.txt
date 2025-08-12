@@ -5,6 +5,9 @@ target_sources(tpipelines_kernel  PRIVATE
     ComputeTransformCPU.cpp
     FillInLinearSystem.cpp
     FillInLinearSystemCPU.cpp
+    Feature.cpp
+    Registration.cpp
+    RegistrationCPU.cpp
     RGBDOdometry.cpp
     RGBDOdometryCPU.cpp
     TransformationConverter.cpp

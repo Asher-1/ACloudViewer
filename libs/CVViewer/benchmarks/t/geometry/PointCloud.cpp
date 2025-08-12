@@ -85,7 +85,7 @@ void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
 void VoxelDownSample(benchmark::State& state,
                      const core::Device& device,
                      float voxel_size,
-                     const core::HashmapBackend& backend) {
+                     const core::HashBackendType& backend) {
     t::geometry::PointCloud pcd;
     // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
     // remove_nan_points
@@ -153,12 +153,12 @@ BENCHMARK_CAPTURE(ToLegacyPointCloud, CUDA, core::Device("CUDA:0"))
 
 #ifdef BUILD_CUDA_MODULE
 #define ENUM_VOXELDOWNSAMPLE_BACKEND()                                 \
-    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashmapBackend::TBB)   \
-    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashmapBackend::Slab) \
-    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashmapBackend::StdGPU)
+    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashBackendType::TBB)   \
+    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashBackendType::Slab) \
+    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashBackendType::StdGPU)
 #else
 #define ENUM_VOXELDOWNSAMPLE_BACKEND() \
-    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashmapBackend::TBB)
+    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashBackendType::TBB)
 #endif
 
 BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_01, 0.01)

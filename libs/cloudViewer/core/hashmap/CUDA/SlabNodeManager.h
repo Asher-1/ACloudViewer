@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // Copyright 2019 Saman Ashkiani
@@ -43,12 +24,12 @@
 #include <thrust/device_vector.h>
 
 #include <memory>
-#include <random>
 
-#include "core/CUDAUtils.h"
-#include "core/MemoryManager.h"
-#include "core/hashmap/CUDA/SlabMacros.h"
-#include "core/hashmap/HashmapBuffer.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/MemoryManager.h"
+#include "cloudViewer/core/hashmap/CUDA/SlabMacros.h"
+#include "cloudViewer/core/hashmap/HashBackendBuffer.h"
+#include <Random.h>
 
 namespace cloudViewer {
 namespace core {
@@ -59,9 +40,9 @@ class Slab {
 public:
     /// Each element is an internal ptr to a kv pair managed by the
     /// InternalMemoryManager. Can be converted to a real ptr.
-    addr_t kv_pair_ptrs[kWarpSize - 1];
+    buf_index_t kv_pair_ptrs[kWarpSize - 1];
     /// An internal ptr managed by InternalNodeManager.
-    addr_t next_slab_ptr;
+    buf_index_t next_slab_ptr;
 };
 
 class SlabNodeManagerImpl {
@@ -74,7 +55,7 @@ public:
           super_block_index_(0) {}
 
     __device__ __forceinline__ uint32_t* get_unit_ptr_from_slab(
-            const addr_t& next_slab_ptr, const uint32_t& lane_id) {
+            const buf_index_t& next_slab_ptr, const uint32_t& lane_id) {
         return super_blocks_ + addressDecoder(next_slab_ptr) + lane_id;
     }
     __device__ __forceinline__ uint32_t* get_ptr_for_bitmap(
@@ -150,7 +131,7 @@ public:
     // This function, frees a recently allocated memory unit by a single thread.
     // Since it is untouched, there shouldn't be any worries for the actual
     // memory contents to be reset again.
-    __device__ void FreeUntouched(addr_t ptr) {
+    __device__ void FreeUntouched(buf_index_t ptr) {
         atomicAnd(super_blocks_ +
                           getSuperBlockIndex(ptr) * kUIntsPerSuperBlock +
                           getMemBlockIndex(ptr) * kSlabsPerBlock +
@@ -160,24 +141,24 @@ public:
 
 private:
     __device__ __host__ __forceinline__ uint32_t
-    getSuperBlockIndex(addr_t address) const {
+    getSuperBlockIndex(buf_index_t address) const {
         return address >> kSuperBlockMaskBits;
     }
     __device__ __host__ __forceinline__ uint32_t
-    getMemBlockIndex(addr_t address) const {
+    getMemBlockIndex(buf_index_t address) const {
         return ((address >> kBlockMaskBits) & 0x1FFFF);
     }
-    __device__ __host__ __forceinline__ addr_t
-    getMemBlockAddress(addr_t address) const {
+    __device__ __host__ __forceinline__ buf_index_t
+    getMemBlockAddress(buf_index_t address) const {
         return (kBitmapsPerSuperBlock +
                 getMemBlockIndex(address) * kUIntsPerBlock);
     }
     __device__ __host__ __forceinline__ uint32_t
-    getMemUnitIndex(addr_t address) const {
+    getMemUnitIndex(buf_index_t address) const {
         return address & 0x3FF;
     }
-    __device__ __host__ __forceinline__ addr_t
-    getMemUnitAddress(addr_t address) {
+    __device__ __host__ __forceinline__ buf_index_t
+    getMemUnitAddress(buf_index_t address) {
         return getMemUnitIndex(address) * kWarpSize;
     }
 
@@ -202,13 +183,14 @@ private:
                   memory_block_index_ * kSlabsPerBlock + (threadIdx.x & 0x1f));
     }
 
-    __host__ __device__ addr_t addressDecoder(addr_t address_ptr_index) {
+    __host__ __device__ buf_index_t
+    addressDecoder(buf_index_t address_ptr_index) {
         return getSuperBlockIndex(address_ptr_index) * kUIntsPerSuperBlock +
                getMemBlockAddress(address_ptr_index) +
                getMemUnitIndex(address_ptr_index) * kWarpSize;
     }
 
-    __host__ __device__ void print_address(addr_t address_ptr_index) {
+    __host__ __device__ void print_address(buf_index_t address_ptr_index) {
         printf("Super block Index: %d, Memory block index: %d, Memory unit "
                "index: "
                "%d\n",
@@ -238,8 +220,7 @@ class SlabNodeManager {
 public:
     SlabNodeManager(const Device& device) : device_(device) {
         /// Random coefficients for allocator's hash function.
-        std::mt19937 rng(time(0));
-        impl_.hash_coef_ = rng();
+        impl_.hash_coef_ = utility::random::RandUint32();
 
         /// In the light version, we put num_super_blocks super blocks within
         /// a single array.
@@ -252,18 +233,18 @@ public:
     ~SlabNodeManager() { MemoryManager::Free(impl_.super_blocks_, device_); }
 
     void Reset() {
-        CLOUDVIEWER_CUDA_CHECK(cudaMemset(
+        OPEN3D_CUDA_CHECK(cudaMemset(
                 impl_.super_blocks_, 0xFF,
                 kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t)));
 
         for (uint32_t i = 0; i < kSuperBlocks; i++) {
             // setting bitmaps into zeros:
-            CLOUDVIEWER_CUDA_CHECK(cudaMemset(
+            OPEN3D_CUDA_CHECK(cudaMemset(
                     impl_.super_blocks_ + i * kUIntsPerSuperBlock, 0x00,
                     kBlocksPerSuperBlock * kSlabsPerBlock * sizeof(uint32_t)));
         }
         cuda::Synchronize();
-        CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
+        OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 
     std::vector<int> CountSlabsPerSuperblock() {
@@ -281,7 +262,7 @@ public:
                                         core::cuda::GetStream()>>>(
                 impl_, thrust::raw_pointer_cast(slabs_per_superblock.data()));
         cuda::Synchronize();
-        CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
+        OPEN3D_CUDA_CHECK(cudaGetLastError());
 
         std::vector<int> result(num_super_blocks);
         thrust::copy(slabs_per_superblock.begin(), slabs_per_superblock.end(),

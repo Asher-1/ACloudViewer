@@ -1,157 +1,256 @@
+#pragma once
+
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "core/Dtype.h"
-#include "core/Tensor.h"
-#include "core/hashmap/HashmapBuffer.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/hashmap/HashBackendBuffer.h"
+#include "cloudViewer/core/hashmap/DeviceHashBackend.h"
 
 namespace cloudViewer {
 namespace core {
 
-class DeviceHashmap;
+// Backward-compatibility aliases for migrated code paths
+using Hashmap = class HashMap;
+using HashmapBackend = enum HashBackendType;
 
-enum class HashmapBackend { Slab, StdGPU, TBB, Default };
+// Minimal 3D integer block key and hasher to support TSDF raycasting on CPU
+template <typename T, int N>
+struct Block {
+    Block() { for (int i = 0; i < N; ++i) data_[i] = T{}; }
+    void Set(int i, T v) { data_[i] = v; }
+    T Get(int i) const { return data_[i]; }
+    bool operator==(const Block& other) const {
+        for (int i = 0; i < N; ++i) if (data_[i] != other.data_[i]) return false;
+        return true;
+    }
+    T data_[N];
+};
 
-class Hashmap {
+template <typename T, int N>
+struct BlockHash {
+    size_t operator()(const Block<T, N>& b) const noexcept {
+        size_t h = 1469598103934665603ull;
+        for (int i = 0; i < N; ++i) {
+            h ^= static_cast<size_t>(b.Get(i)) + 0x9e3779b97f4a7c15ull + (h << 6) + (h >> 2);
+        }
+        return h;
+    }
+};
+
+class DeviceHashBackend;
+
+enum class HashBackendType { Slab, StdGPU, TBB, Default };
+
+ class HashMap : public IsDevice {
 public:
-    /// Constructor for primitive types, supporting element shapes.
-    /// Example:
-    /// Key is int<3> coordinate:
-    /// - dtype_key = core::Int32
-    /// - element_shape_key = {3}
-    Hashmap(int64_t init_capacity,
-            const Dtype& dtype_key,
-            const Dtype& dtype_value,
-            const SizeVector& element_shape_key,
-            const SizeVector& element_shape_value,
+    /// Initialize a hash map given a key and a value dtype and element shape.
+    HashMap(int64_t init_capacity,
+            const Dtype& key_dtype,
+            const SizeVector& key_element_shape,
+            const Dtype& value_dtype,
+            const SizeVector& value_element_shapes,
             const Device& device,
-            const HashmapBackend& backend = HashmapBackend::Default);
+            const HashBackendType& backend = HashBackendType::Default);
 
-    ~Hashmap(){};
 
-    /// Rehash expects extra memory space at runtime, since it consists of
-    /// 1) dumping all key value pairs to a buffer
-    /// 2) deallocate old hash table
-    /// 3) create a new hash table
-    /// 4) parallel insert dumped key value pairs
-    void Rehash(int64_t buckets);
+    /// Initialize a hash map given a key dtype and element shape, and a vector
+    /// of value dtypes and element shapes for values stored in structure of
+    /// arrays.
+    HashMap(int64_t init_capacity,
+            const Dtype& key_dtype,
+            const SizeVector& key_element_shape,
+            const std::vector<Dtype>& dtypes_value,
+            const std::vector<SizeVector>& element_shapes_value,
+            const Device& device,
+            const HashBackendType& backend = HashBackendType::Default);
+
+
+    /// Default destructor.
+    ~HashMap() = default;
+
+    /// Reserve the internal hash map with the given capacity by rehashing.
+    void Reserve(int64_t capacity);
 
     /// Parallel insert arrays of keys and values in Tensors.
-    /// Return addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    /// masks: success insertions, must be combined with addrs in advanced
+    /// Return: output_buf_indices stores buffer indices that access buffer
+    /// tensors obtained from GetKeyTensor() and GetValueTensor() via advanced
     /// indexing.
-    void Insert(const Tensor& input_keys,
-                const Tensor& input_values,
-                Tensor& output_addrs,
-                Tensor& output_masks);
+    /// NOTE: output_buf_indices are stored in Int32. A conversion to
+    /// Int64 is required for further indexing.
+    /// Return: output_masks stores if the insertion is
+    /// a success or failure (key already exists).
+    std::pair<Tensor, Tensor> Insert(const Tensor& input_keys,
+                                     const Tensor& input_values);
+
+    /// Parallel insert arrays of keys and a structure of value arrays in
+    /// Tensors.
+    /// Return: output_buf_indices and output_masks, their role are the same as
+    /// in single value Insert interface.
+    std::pair<Tensor, Tensor> Insert(
+            const Tensor& input_keys,
+            const std::vector<Tensor>& input_values_soa);
 
     /// Parallel activate arrays of keys in Tensor.
-    /// Specifically useful for large value elements (e.g., a tensor), where we
-    /// can do in-place management after activation.
-    /// Return addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    /// masks: success insertions, must be combined with addrs in advanced
-    /// indexing.
-    void Activate(const Tensor& input_keys,
-                  Tensor& output_addrs,
-                  Tensor& output_masks);
+    /// Specifically useful for large value elements (e.g., a 3D tensor), where
+    /// we can do in-place management after activation.
+    /// Return: output_buf_indices and output_masks, their roles are the same
+    /// as in Insert.
+    std::pair<Tensor, Tensor> Activate(const Tensor& input_keys);
 
     /// Parallel find an array of keys in Tensor.
-    /// Return addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    /// masks: success insertions, must be combined with addrs in advanced
-    /// indexing.
-    void Find(const Tensor& input_keys,
-              Tensor& output_addrs,
-              Tensor& output_masks);
+    /// Return: output_buf_indices, its role is the same as in Insert.
+    /// Return: output_masks stores if the finding is a success or failure (key
+    /// not found).
+    std::pair<Tensor, Tensor> Find(const Tensor& input_keys);
 
     /// Parallel erase an array of keys in Tensor.
-    /// Output masks is a bool Tensor.
-    /// Return masks: success insertions, must be combined with addrs in
-    /// advanced indexing.
+    /// Return: output_masks stores if the erase is a success or failure (key
+    /// not found all already erased in another thread).
+    Tensor Erase(const Tensor& input_keys);
+
+    /// Parallel collect all indices in the buffer corresponding to the active
+    /// entries in the hash map.
+    /// Return output_buf_indices, collected buffer indices.
+    Tensor GetActiveIndices() const;
+
+    /// Same as Insert with a single value array, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
+    void Insert(const Tensor& input_keys,
+                const Tensor& input_values,
+                Tensor& output_buf_indices,
+                Tensor& output_masks);
+
+    /// Same as Insert with a SoA of values, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
+    void Insert(const Tensor& input_keys,
+                const std::vector<Tensor>& input_values_soa,
+                Tensor& output_buf_indices,
+                Tensor& output_masks);
+
+    /// Same as Activate, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
+    void Activate(const Tensor& input_keys,
+                  Tensor& output_buf_indices,
+                  Tensor& output_masks);
+
+    /// Same as Find, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
+    void Find(const Tensor& input_keys,
+              Tensor& output_buf_indices,
+              Tensor& output_masks);
+
+    /// Same as Erase, but takes output_masks as input. If its shape and
+    /// type matches, reallocation is not needed.
     void Erase(const Tensor& input_keys, Tensor& output_masks);
 
-    /// Parallel collect all iterators in the hash table
-    /// Return addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    void GetActiveIndices(Tensor& output_indices) const;
+    /// Same as GetActiveIndices, but takes output_buf_indices as input. If its
+    /// shape and type matches, reallocation is not needed.
+    void GetActiveIndices(Tensor& output_buf_indices) const;
 
-    /// Clear stored map without reallocating memory.
+    /// Clear stored map without reallocating the buffers.
     void Clear();
 
-    Hashmap Clone() const;
-    Hashmap To(const Device& device, bool copy = false) const;
-    Hashmap CPU() const;
-    Hashmap CUDA(int device_id = 0) const;
+    /// Save active keys and values to a npz file at 'key' and 'value_{:03d}'.
+    /// The number of values is stored in 'n_values'.
+    /// The file name should end with 'npz', otherwise 'npz' will be added as an
+    /// extension.
+    void Save(const std::string& file_name);
 
+    /// Load active keys and values from a npz file that contains 'key',
+    /// 'n_values', 'value_{:03d}'.
+    static HashMap Load(const std::string& file_name);
+
+    /// Clone the hash map with buffers.
+    HashMap Clone() const;
+
+    /// Convert the hash map to another device.
+    HashMap To(const Device& device, bool copy = false) const;
+
+    /// Get the size (number of active entries) of the hash map.
     int64_t Size() const;
 
+    /// Get the capacity of the hash map.
     int64_t GetCapacity() const;
+
+    /// Get the number of buckets of the internal hash map.
     int64_t GetBucketCount() const;
-    Device GetDevice() const;
-    int64_t GetKeyBytesize() const;
-    int64_t GetValueBytesize() const;
 
-    Tensor& GetKeyBuffer() const;
-    Tensor& GetValueBuffer() const;
+    /// Get the device of the hash map.
+    Device GetDevice() const override;
 
+    /// Get the key tensor buffer to be used along with buf_indices and masks.
+    /// Example:
+    /// GetKeyTensor().IndexGet({buf_indices.To(core::Int64).IndexGet{masks}})
     Tensor GetKeyTensor() const;
-    Tensor GetValueTensor() const;
 
-    /// Return number of elems per bucket.
-    /// High performance not required, so directly returns a vector.
+    /// Get the values tensor buffers to be used along with buf_indices and
+    /// masks. Example:
+    /// GetValueTensors()[0].IndexGet({buf_indices.To(core::Int64).IndexGet{masks}})
+    std::vector<Tensor> GetValueTensors() const;
+
+    /// Get the i-th value tensor buffer to be used along with buf_indices and
+    /// masks. Example:
+    /// GetValueTensors(0).IndexGet({buf_indices.To(core::Int64).IndexGet{masks}})
+    Tensor GetValueTensor(size_t index = 0) const;
+
+    /// Return number of elements per bucket.
     std::vector<int64_t> BucketSizes() const;
 
     /// Return size / bucket_count.
     float LoadFactor() const;
 
-    std::shared_ptr<DeviceHashmap> GetDeviceHashmap() const {
-        return device_hashmap_;
-    }
+     /// Return the implementation of the device hash backend.
+     std::shared_ptr<DeviceHashBackend> GetDeviceHashBackend() const {
+         return device_hashmap_;
+     }
+     // Back-compat alias expected by callers migrated from older API
+     
 
 protected:
-    void AssertKeyDtype(const Dtype& dtype_key,
-                        const SizeVector& elem_shape) const;
-    void AssertValueDtype(const Dtype& dtype_val,
-                          const SizeVector& elem_shape) const;
+    void Init(int64_t init_capacity,
+              const Device& device,
+              const HashBackendType& backend);
 
-    Dtype GetKeyDtype() const { return dtype_key_; }
-    Dtype GetValueDtype() const { return dtype_value_; }
+    void InsertImpl(const Tensor& input_keys,
+                    const std::vector<Tensor>& input_values_soa,
+                    Tensor& output_buf_indices,
+                    Tensor& output_masks,
+                    bool is_activate_op = false);
 
-private:
-    std::shared_ptr<DeviceHashmap> device_hashmap_;
+    void CheckKeyLength(const Tensor& input_keys) const;
+    void CheckKeyValueLengthCompatibility(
+            const Tensor& input_keys,
+            const std::vector<Tensor>& input_values_soa) const;
+    void CheckKeyCompatibility(const Tensor& input_keys) const;
+    void CheckValueCompatibility(
+            const std::vector<Tensor>& input_values_soa) const;
 
-    Dtype dtype_key_;
-    Dtype dtype_value_;
+    void PrepareIndicesOutput(Tensor& output_buf_indices, int64_t length) const;
+    void PrepareMasksOutput(Tensor& output_masks, int64_t length) const;
 
-    SizeVector element_shape_key_;
-    SizeVector element_shape_value_;
+    std::pair<int64_t, std::vector<int64_t>> GetCommonValueSizeDivisor();
+
+ private:
+     std::shared_ptr<DeviceHashBackend> device_hashmap_;
+
+    Dtype key_dtype_;
+    SizeVector key_element_shape_;
+
+    std::vector<Dtype> dtypes_value_;
+    std::vector<SizeVector> element_shapes_value_;
 };
 
 }  // namespace core
