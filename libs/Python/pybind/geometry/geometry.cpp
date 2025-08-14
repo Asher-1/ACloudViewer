@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // CV_CORE_LIB
@@ -34,12 +15,12 @@
 #include <RGBDImage.h>
 #include <VoxelGrid.h>
 #include <ecv2DLabel.h>
-#include <ecvCoordinateSystem.h>
 #include <ecv2DViewportLabel.h>
 #include <ecv2DViewportObject.h>
 #include <ecvBox.h>
 #include <ecvCameraSensor.h>
 #include <ecvCone.h>
+#include <ecvCoordinateSystem.h>
 #include <ecvCylinder.h>
 #include <ecvDish.h>
 #include <ecvExtru.h>
@@ -549,16 +530,9 @@ void pybind_geometry_classes(py::module& m) {
     docstring::ClassMethodDocInject(m, "ccObject", "is_a");
 
     // cloudViewer.geometry.Geometry.Type
-    py::enum_<CV_TYPES::GeometryType> geometry_type(geometry, "Type",
-                                                    py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    geometry_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Geometry types.";
-            }),
-            py::none(), py::none(), "");
-
-    geometry_type.value("CUSTOM_H_OBJECT", CV_TYPES::CUSTOM_H_OBJECT)
+    py::native_enum<CV_TYPES::GeometryType>(geometry, "Type", "enum.Enum",
+                                            "Enum class for Geometry types.")
+            .value("CUSTOM_H_OBJECT", CV_TYPES::CUSTOM_H_OBJECT)
             .value("MESH", CV_TYPES::MESH)
             .value("LINESET", CV_TYPES::LINESET)
             .value("FACET", CV_TYPES::FACET)
@@ -594,7 +568,8 @@ void pybind_geometry_classes(py::module& m) {
             .value("MATERIAL_SET", CV_TYPES::MATERIAL_SET)
             .value("VIEWPORT_2D_LABEL", CV_TYPES::VIEWPORT_2D_LABEL)
             .value("VIEWPORT_2D_OBJECT", CV_TYPES::VIEWPORT_2D_OBJECT)
-            .export_values();
+            .export_values()
+            .finalize();
 
     // cloudViewer.geometry.ccDrawableObject
     py::class_<ccDrawableObject, PyDrawableObjectBase<ccDrawableObject>,

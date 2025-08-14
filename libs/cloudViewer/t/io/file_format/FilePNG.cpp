@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -84,7 +84,7 @@ bool WriteImageToPNG(const std::string &filename,
         utility::LogWarning("Write PNG failed: unsupported image data.");
         return false;
     }
-    if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
+    if (quality == kCloudViewerImageIODefaultQuality)  // Set default quality
     {
         quality = 6;
     }
@@ -118,7 +118,7 @@ bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
         utility::LogWarning("Write PNG failed: unsupported image data.");
         return false;
     }
-    if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
+    if (quality == kCloudViewerImageIODefaultQuality)  // Set default quality
     {
         quality = 6;
     }

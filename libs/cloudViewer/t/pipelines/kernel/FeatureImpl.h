@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ using std::min;
 #endif
 
 template <typename scalar_t>
-OPEN3D_HOST_DEVICE void ComputePairFeature(const scalar_t *p1,
+CLOUDVIEWER_HOST_DEVICE void ComputePairFeature(const scalar_t *p1,
                                            const scalar_t *n1,
                                            const scalar_t *p2,
                                            const scalar_t *n2,
@@ -85,7 +85,7 @@ OPEN3D_HOST_DEVICE void ComputePairFeature(const scalar_t *p1,
 }
 
 template <typename scalar_t>
-OPEN3D_HOST_DEVICE void UpdateSPFHFeature(const scalar_t *feature,
+CLOUDVIEWER_HOST_DEVICE void UpdateSPFHFeature(const scalar_t *feature,
                                           int64_t idx,
                                           scalar_t hist_incr,
                                           scalar_t *spfh) {

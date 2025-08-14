@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ void To(const core::Tensor &src_im,
 
     auto src_dtype = src_im.GetDtype();
     auto dst_dtype = dst_im.GetDtype();
-    // Create IPP wrappers for all Open3D tensors
+    // Create IPP wrappers for all CloudViewer tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(src_dtype), src_im.GetShape(2) /* channels */,
@@ -69,7 +69,7 @@ void To(const core::Tensor &src_im,
 
 void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
     auto dtype = src_im.GetDtype();
-    // Create IPP wrappers for all Open3D tensors
+    // Create IPP wrappers for all CloudViewer tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -94,7 +94,7 @@ void Resize(const core::Tensor &src_im,
             core::Tensor &dst_im,
             Image::InterpType interp_type) {
     auto dtype = src_im.GetDtype();
-    // Create IPP wrappers for all Open3D tensors
+    // Create IPP wrappers for all CloudViewer tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -139,7 +139,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
                                core::UInt8, src_im.GetDevice());
 
     auto dtype = src_im.GetDtype();
-    // Create IPP wrappers for all Open3D tensors
+    // Create IPP wrappers for all CloudViewer tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -173,7 +173,7 @@ void Filter(const core::Tensor &src_im,
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
 
-    // Create IPP wrappers for all Open3D tensors
+    // Create IPP wrappers for all CloudViewer tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -207,7 +207,7 @@ void FilterBilateral(const core::Tensor &src_im,
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
 
-    // Create IPP wrappers for all Open3D tensors
+    // Create IPP wrappers for all CloudViewer tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -237,7 +237,7 @@ void FilterGaussian(const core::Tensor &src_im,
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
 
-    // Create IPP wrappers for all Open3D tensors
+    // Create IPP wrappers for all CloudViewer tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(dtype), src_im.GetShape(2) /* channels */,
@@ -271,7 +271,7 @@ void FilterSobel(const core::Tensor &src_im,
                           kernel_size);
     }
 
-    // Create IPP wrappers for all Open3D tensors
+    // Create IPP wrappers for all CloudViewer tensors
     const ::ipp::IwiImage ipp_src_im(
             ::ipp::IwiSize(src_im.GetShape(1), src_im.GetShape(0)),
             ToIppDataType(src_im.GetDtype()), src_im.GetShape(2) /* channels */,

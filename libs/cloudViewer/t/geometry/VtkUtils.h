@@ -2,9 +2,9 @@
 // Include guard to avoid multiple inclusion and default argument redefinitions
 #pragma once
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ vtkSmartPointer<vtkImageData> CreateVtkImageDataFromTensor(core::Tensor& tensor,
 /// The returned vtkPolyData object may directly use the memory of the tensors
 /// stored inside the Geometry object. Therefore, the Geometry object must be
 /// kept alive until the returned vtkPolyData object is deleted.
-/// \param geometry Open3D geometry object, e.g., a TriangleMesh.
+/// \param geometry CloudViewer geometry object, e.g., a TriangleMesh.
 /// \param copy If true always create a copy of the data.
 /// \param point_attr_include A set of keys to select which point/vertex
 ///  attributes should be added. Note that the primary key may be included and
@@ -84,7 +84,7 @@ TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
 LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata, bool copy = false);
 
 /// Sweeps the geometry rotationally about an axis.
-/// \param geometry Open3D geometry object, e.g., a TriangleMesh.
+/// \param geometry CloudViewer geometry object, e.g., a TriangleMesh.
 /// \param angle The rotation angle in degree.
 /// \param axis The rotation axis.
 /// \param resolution The resolution defines the number of intermediate
@@ -116,7 +116,7 @@ LineSet ExtrudeRotationLineSet(const PointCloud& pointcloud,
                                bool capping = true);
 
 /// Sweeps the geometry along a direction vector.
-/// \param geometry Open3D geometry object, e.g., a TriangleMesh.
+/// \param geometry CloudViewer geometry object, e.g., a TriangleMesh.
 /// \param vector The direction vector.
 /// \param scale Scalar factor which essentially scales the direction vector.
 /// \param capping If true adds caps to the mesh.

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -11,7 +11,7 @@
 #include "cloudViewer/t/geometry/TriangleMesh.h"
 #include "cloudViewer/t/geometry/kernel/TriangleMeshImpl.h"
 #include <Parallel.h>
-#include <Random.h>
+#include "cloudViewer/utility/Random.h"
 
 namespace cloudViewer {
 namespace t {

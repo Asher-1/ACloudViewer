@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -26,7 +26,6 @@
 
 #include <Optional.h>
 
-#undef CLOUDVIEWER_FORCE_INLINE
 #define CLOUDVIEWER_FORCE_INLINE __forceinline__
 #define CLOUDVIEWER_HOST_DEVICE __host__ __device__
 #define CLOUDVIEWER_DEVICE __device__
@@ -41,7 +40,6 @@
 
 #else  // #ifdef BUILD_CUDA_MODULE
 
-#undef CLOUDVIEWER_FORCE_INLINE
 #define CLOUDVIEWER_FORCE_INLINE inline
 #define CLOUDVIEWER_HOST_DEVICE
 #define CLOUDVIEWER_DEVICE
@@ -226,22 +224,22 @@ public:
 
 namespace cuda {
 
-/// Returns the number of available CUDA devices. Returns 0 if Open3D is not
+/// Returns the number of available CUDA devices. Returns 0 if CloudViewer is not
 /// compiled with CUDA support.
 int DeviceCount();
 
-/// Returns true if Open3D is compiled with CUDA support and at least one
+/// Returns true if CloudViewer is compiled with CUDA support and at least one
 /// compatible CUDA device is detected.
 bool IsAvailable();
 
 /// Releases CUDA memory manager cache. This is typically used for debugging.
 void ReleaseCache();
 
-/// Calls cudaDeviceSynchronize() for all CUDA devices. If Open3D is not
+/// Calls cudaDeviceSynchronize() for all CUDA devices. If CloudViewer is not
 /// compiled with CUDA this function has no effect.
 void Synchronize();
 
-/// Calls cudaDeviceSynchronize() for the specified device. If Open3D is not
+/// Calls cudaDeviceSynchronize() for the specified device. If CloudViewer is not
 /// compiled with CUDA or if \p device is not a CUDA device, this function has
 /// no effect.
 /// \param device The device to be synchronized.

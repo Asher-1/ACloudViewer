@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -75,7 +75,7 @@ void EstimateRange(const core::Tensor& block_keys,
                    float depth_max,
                    core::Tensor& fragment_buffer);
 
-void RayCast(const std::shared_ptr<core::HashMap>& hashmap,
+void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              const TensorMap& block_value_map,
              const core::Tensor& range_map,
              TensorMap& renderings_map,
@@ -180,7 +180,7 @@ void EstimateRangeCPU(const core::Tensor& block_keys,
                       core::Tensor& fragment_buffer);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
-void RayCastCPU(const std::shared_ptr<core::HashMap>& hashmap,
+void RayCastCPU(std::shared_ptr<core::HashMap>& hashmap,
                 const TensorMap& block_value_map,
                 const core::Tensor& range_map,
                 TensorMap& renderings_map,

@@ -33,22 +33,18 @@ namespace cloudViewer {
 namespace utility {
 
 void pybind_logging(py::module& m) {
-    py::enum_<VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
-                                 "VerbosityLevel");
-    vl.value("Error", VerbosityLevel::Error)
+    py::native_enum<VerbosityLevel>(m, "VerbosityLevel", "enum.Enum",
+                                    "Enum class for VerbosityLevel.")
+            .value("Error", VerbosityLevel::Error)
             .value("Warning", VerbosityLevel::Warning)
             .value("Info", VerbosityLevel::Info)
             .value("Debug", VerbosityLevel::Debug)
-            .export_values();
-    // Trick to write docs without listing the members in the enum class again.
-    vl.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for VerbosityLevel.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
 
     m.def("set_verbosity_level", &SetVerbosityLevel,
-          "Set global verbosity level of CloudViewer", py::arg("verbosity_level"));
+          "Set global verbosity level of CloudViewer",
+          py::arg("verbosity_level"));
     docstring::FunctionDocInject(
             m, "set_verbosity_level",
             {{"verbosity_level",

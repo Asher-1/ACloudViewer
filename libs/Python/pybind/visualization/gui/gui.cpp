@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -184,11 +184,14 @@ enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
 
 void pybind_gui_classes(py::module &m) {
     // ---- FontStyle ----
-    py::enum_<FontStyle> font_style(m, "FontStyle", "Font style");
+    py::native_enum<FontStyle> font_style(m, "FontStyle", "enum.Enum",
+                                          "Font style.");
     font_style.value("NORMAL", FontStyle::NORMAL)
             .value("BOLD", FontStyle::BOLD)
             .value("ITALIC", FontStyle::ITALIC)
-            .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC);
+            .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC)
+            .export_values()
+            .finalize();
 
     // ---- FontDescription ----
     py::class_<FontDescription> fd(m, "FontDescription",
@@ -633,9 +636,10 @@ void pybind_gui_classes(py::module &m) {
     //  2) if the object is never added, the memory will be leaked.
     py::class_<Widget, UnownedPointer<Widget>> widget(m, "Widget",
                                                       "Base widget class");
-    py::enum_<EventCallbackResult> widget_event_callback_result(
-            widget, "EventCallbackResult", "Returned by event handlers",
-            py::arithmetic());
+
+    py::native_enum<EventCallbackResult> widget_event_callback_result(
+            widget, "EventCallbackResult", "enum.Enum",
+            "Returned by event handlers.");
     widget_event_callback_result
             .value("IGNORED", EventCallbackResult::IGNORED,
                    "Event handler ignored the event, widget will "
@@ -788,7 +792,7 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def_property(
                     "color_value", &ColorEdit::GetValue,
-                    (void (ColorEdit::*)(const Color &)) & ColorEdit::SetValue,
+                    (void(ColorEdit::*)(const Color &)) & ColorEdit::SetValue,
                     "Color value (gui.Color)")
             .def("set_on_value_changed", &ColorEdit::SetOnValueChanged,
                  "Calls f(Color) when color changes by user input");
@@ -801,19 +805,18 @@ void pybind_gui_classes(py::module &m) {
             .def("clear_items", &Combobox::ClearItems, "Removes all items")
             .def("add_item", &Combobox::AddItem, "Adds an item to the end")
             .def("change_item",
-                 (void (Combobox::*)(int, const char *)) & Combobox::ChangeItem,
+                 (void(Combobox::*)(int, const char *)) & Combobox::ChangeItem,
                  "Changes the text of the item at index: "
                  "change_item(index, newtext)")
             .def("change_item",
-                 (void (Combobox::*)(const char *, const char *)) &
+                 (void(Combobox::*)(const char *, const char *)) &
                          Combobox::ChangeItem,
                  "Changes the text of the matching item: "
                  "change_item(text, newtext)")
             .def("remove_item",
-                 (void (Combobox::*)(const char *)) & Combobox::RemoveItem,
+                 (void(Combobox::*)(const char *)) & Combobox::RemoveItem,
                  "Removes the first item of the given text")
-            .def("remove_item",
-                 (void (Combobox::*)(int)) & Combobox::RemoveItem,
+            .def("remove_item", (void(Combobox::*)(int)) & Combobox::RemoveItem,
                  "Removes the item at the index")
             .def_property_readonly("number_of_items",
                                    &Combobox::GetNumberOfItems,
@@ -835,11 +838,13 @@ void pybind_gui_classes(py::module &m) {
     py::class_<UIImage, UnownedPointer<UIImage>> uiimage(
             m, "UIImage", "A bitmap suitable for displaying with ImageWidget");
 
-    py::enum_<UIImage::Scaling> uiimage_scaling(uiimage, "Scaling",
-                                                py::arithmetic());
+    py::native_enum<UIImage::Scaling> uiimage_scaling(
+            uiimage, "Scaling", "enum.Enum", "UIImage::Scaling.");
     uiimage_scaling.value("NONE", UIImage::Scaling::NONE)
             .value("ANY", UIImage::Scaling::ANY)
-            .value("ASPECT", UIImage::Scaling::ASPECT);
+            .value("ASPECT", UIImage::Scaling::ASPECT)
+            .export_values()
+            .finalize();
 
     uiimage.def(py::init<>([](const char *path) { return new UIImage(path); }),
                 "Creates a UIImage from the image at the specified path")
@@ -978,16 +983,13 @@ void pybind_gui_classes(py::module &m) {
     // ---- NumberEdit ----
     py::class_<NumberEdit, UnownedPointer<NumberEdit>, Widget> numedit(
             m, "NumberEdit", "Allows the user to enter a number.");
-    py::enum_<NumberEdit::Type> numedit_type(numedit, "Type", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    numedit_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for NumberEdit types.";
-            }),
-            py::none(), py::none(), "");
+
+    py::native_enum<NumberEdit::Type> numedit_type(
+            numedit, "Type", "enum.Enum", "Enum class for NumberEdit types.");
     numedit_type.value("INT", NumberEdit::Type::INT)
             .value("DOUBLE", NumberEdit::Type::DOUBLE)
-            .export_values();
+            .export_values()
+            .finalize();
 
     numedit.def(py::init<NumberEdit::Type>(),
                 "Creates a NumberEdit that is either integers (INT) or "
@@ -1111,14 +1113,10 @@ void pybind_gui_classes(py::module &m) {
 
     py::class_<PySceneWidget, UnownedPointer<PySceneWidget>, Widget> scene(
             m, "SceneWidget", "Displays 3D content");
-    py::enum_<SceneWidget::Controls> scene_ctrl(scene, "Controls",
-                                                py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    scene_ctrl.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class describing mouse interaction.";
-            }),
-            py::none(), py::none(), "");
+
+    py::native_enum<SceneWidget::Controls> scene_ctrl(
+            scene, "Controls", "enum.Enum",
+            "Enum class describing mouse interaction.");
     scene_ctrl.value("ROTATE_CAMERA", SceneWidget::Controls::ROTATE_CAMERA)
             .value("ROTATE_CAMERA_SPHERE",
                    SceneWidget::Controls::ROTATE_CAMERA_SPHERE)
@@ -1127,7 +1125,8 @@ void pybind_gui_classes(py::module &m) {
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
             .value("ROTATE_MODEL", SceneWidget::Controls::ROTATE_MODEL)
             .value("PICK_POINTS", SceneWidget::Controls::PICK_POINTS)
-            .export_values();
+            .export_values()
+            .finalize();
 
     scene.def(py::init<>(),
               "Creates an empty SceneWidget. Assign a Scene with the 'scene' "
@@ -1196,16 +1195,13 @@ void pybind_gui_classes(py::module &m) {
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(
             m, "Slider", "A slider widget for visually selecting numbers");
-    py::enum_<Slider::Type> slider_type(slider, "Type", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    slider_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Slider types.";
-            }),
-            py::none(), py::none(), "");
+
+    py::native_enum<Slider::Type> slider_type(slider, "Type", "enum.Enum",
+                                              "Enum class for Slider types.");
     slider_type.value("INT", Slider::Type::INT)
             .value("DOUBLE", Slider::Type::DOUBLE)
-            .export_values();
+            .export_values()
+            .finalize();
 
     slider.def(py::init<Slider::Type>(),
                "Creates a NumberEdit that is either integers (INT) or "
@@ -1656,16 +1652,13 @@ void pybind_gui_classes(py::module &m) {
     // ---- FileDialog ----
     py::class_<FileDialog, UnownedPointer<FileDialog>, Dialog> filedlg(
             m, "FileDialog", "File picker dialog");
-    py::enum_<FileDialog::Mode> filedlg_mode(filedlg, "Mode", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    filedlg_mode.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for FileDialog modes.";
-            }),
-            py::none(), py::none(), "");
+
+    py::native_enum<FileDialog::Mode> filedlg_mode(filedlg, "Mode", "enum.Enum",
+                                              "Enum class for FileDialog modes.");
     filedlg_mode.value("OPEN", FileDialog::Mode::OPEN)
             .value("SAVE", FileDialog::Mode::SAVE)
-            .export_values();
+            .export_values()
+            .finalize();
     filedlg.def(py::init<FileDialog::Mode, const char *, const Theme &>(),
                 "Creates either an open or save file dialog. The first "
                 "parameter is either FileDialog.OPEN or FileDialog.SAVE. The "

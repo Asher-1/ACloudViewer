@@ -16,6 +16,7 @@
 // ##########################################################################
 
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 
 #include <ecvGBLSensor.h>
 
@@ -28,10 +29,12 @@ void define_ccGBLSensor(py::module &m)
 {
     py::class_<ccGBLSensor, ccSensor> pyccGBLSensor(m, "ccGBLSensor");
 
-    py::enum_<ccGBLSensor::ROTATION_ORDER>(pyccGBLSensor, "ROTATION_ORDER")
+    py::native_enum<ccGBLSensor::ROTATION_ORDER>(
+        pyccGBLSensor, "ROTATION_ORDER", "enum.Enum", "ccGBLSensor ROTATION_ORDER.")
         .value("YAW_THEN_PITCH", ccGBLSensor::ROTATION_ORDER::YAW_THEN_PITCH)
         .value("PITCH_THEN_YAW", ccGBLSensor::ROTATION_ORDER::PITCH_THEN_YAW)
-        .export_values();
+        .export_values()
+        .finalize();
 
     pyccGBLSensor
         .def(py::init<ccGBLSensor::ROTATION_ORDER>(),

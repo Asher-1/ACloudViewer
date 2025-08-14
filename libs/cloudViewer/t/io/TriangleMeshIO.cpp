@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -182,7 +182,7 @@ bool ReadTriangleMeshFromNPZ(
                 mesh.GetMaterial().SetDefaultProperties();
             }
             mesh.GetMaterial().SetTextureMap(key, geometry::Image(attr.second));
-            // Note: due to quirk of Open3D shader implementation if we have a
+            // Note: due to quirk of CloudViewer shader implementation if we have a
             // metallic texture we need to set the metallic scalar propert to
             // 1.0
             if (key == "metallic") {

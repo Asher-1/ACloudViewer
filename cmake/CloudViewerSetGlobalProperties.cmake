@@ -83,6 +83,11 @@ function(cloudViewer_set_global_properties target)
         $<INSTALL_INTERFACE:${CloudViewer_INSTALL_INCLUDE_DIR}>
     )
 
+    # fix issues: fatal error: msgpack.hpp
+    if (TARGET 3rdparty_msgpack)
+        target_include_directories(${target} PUBLIC ${MSGPACK_INCLUDE_DIRS})
+    endif()
+
     # Required for static linking zeromq
     target_compile_definitions(${target} PRIVATE ZMQ_STATIC)
 
@@ -91,6 +96,13 @@ function(cloudViewer_set_global_properties target)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
         if (BUILD_CACHED_CUDA_MANAGER)
             target_compile_definitions(${target} PRIVATE BUILD_CACHED_CUDA_MANAGER)
+        endif()
+        # Ensure CUDA headers like <cuda.h> are available to all targets that
+        # include headers such as `cloudViewer/core/CUDAUtils.h` when CUDA is enabled.
+        # This mirrors CloudViewer's approach and fixes compile errors in examples/tools/apps
+        # that directly include CloudViewer headers under BUILD_CUDA_MODULE.
+        if (DEFINED CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES)
+            target_include_directories(${target} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
         endif()
     endif()
     if (BUILD_GUI)

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Image.h>
@@ -54,22 +35,18 @@ static const std::unordered_map<std::string, std::string>
                 {"num_of_levels ", "Levels of the image pyramid"},
                 {"with_gaussian_filter",
                  "When ``True``, image in the pyramid will first be filtered "
-                 "by a 3x3 Gaussian kernel before down sampling."}
-};
+                 "by a 3x3 Gaussian kernel before down sampling."}};
 
 void pybind_image(py::module &m) {
-    py::enum_<geometry::Image::FilterType> image_filter_type(m, "ImageFilterType");
-    image_filter_type.value("Gaussian3", geometry::Image::FilterType::Gaussian3)
-            .value("Gaussian5", geometry::Image::FilterType::Gaussian5)
-            .value("Gaussian7", geometry::Image::FilterType::Gaussian7)
-            .value("Sobel3dx", geometry::Image::FilterType::Sobel3Dx)
-            .value("Sobel3dy", geometry::Image::FilterType::Sobel3Dy)
-            .export_values();
-    image_filter_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Image filter types.";
-            }),
-            py::none(), py::none(), "");
+    py::native_enum<Image::FilterType>(m, "ImageFilterType", "enum.Enum",
+                                       "Enum class for Image filter types.")
+            .value("Gaussian3", Image::FilterType::Gaussian3)
+            .value("Gaussian5", Image::FilterType::Gaussian5)
+            .value("Gaussian7", Image::FilterType::Gaussian7)
+            .value("Sobel3dx", Image::FilterType::Sobel3Dx)
+            .value("Sobel3dy", Image::FilterType::Sobel3Dy)
+            .export_values()
+            .finalize();
 
     py::class_<geometry::Image, PyGeometry<geometry::Image>,
                std::shared_ptr<geometry::Image>, ccHObject>
@@ -165,50 +142,53 @@ void pybind_image(py::module &m) {
                                     "buffer "
                                     "data.");
                  })
-            .def("filter",
-                 [](const geometry::Image &input,
-                    geometry::Image::FilterType filter_type) {
-                     if (input.num_of_channels_ != 1 ||
-                         input.bytes_per_channel_ != 4) {
-                         auto input_f = input.CreateFloatImage();
-                         auto output = input_f->Filter(filter_type);
-                         return *output;
-                     } else {
-                         auto output = input.Filter(filter_type);
-                         return *output;
-                     }
-                 },
-                 "Function to filter Image", "filter_type"_a)
+            .def(
+                    "filter",
+                    [](const geometry::Image &input,
+                       geometry::Image::FilterType filter_type) {
+                        if (input.num_of_channels_ != 1 ||
+                            input.bytes_per_channel_ != 4) {
+                            auto input_f = input.CreateFloatImage();
+                            auto output = input_f->Filter(filter_type);
+                            return *output;
+                        } else {
+                            auto output = input.Filter(filter_type);
+                            return *output;
+                        }
+                    },
+                    "Function to filter Image", "filter_type"_a)
             .def("flip_vertical", &geometry::Image::FlipVertical,
                  "Function to flip image vertically (upside down)")
             .def("flip_horizontal", &geometry::Image::FlipHorizontal,
                  "Function to flip image horizontally (from left to right)")
-            .def("create_pyramid",
-                 [](const geometry::Image &input, size_t num_of_levels,
-                    bool with_gaussian_filter) {
-                     if (input.num_of_channels_ != 1 ||
-                         input.bytes_per_channel_ != 4) {
-                         auto input_f = input.CreateFloatImage();
-                         auto output = input_f->CreatePyramid(
-                                 num_of_levels, with_gaussian_filter);
-                         return output;
-                     } else {
-                         auto output = input.CreatePyramid(
-                                 num_of_levels, with_gaussian_filter);
-                         return output;
-                     }
-                 },
-                 "Function to create ImagePyramid", "num_of_levels"_a,
-                 "with_gaussian_filter"_a)
-            .def_static("filter_pyramid",
-                        [](const geometry::ImagePyramid &input,
-                           geometry::Image::FilterType filter_type) {
-                            auto output = geometry::Image::FilterPyramid(
-                                    input, filter_type);
+            .def(
+                    "create_pyramid",
+                    [](const geometry::Image &input, size_t num_of_levels,
+                       bool with_gaussian_filter) {
+                        if (input.num_of_channels_ != 1 ||
+                            input.bytes_per_channel_ != 4) {
+                            auto input_f = input.CreateFloatImage();
+                            auto output = input_f->CreatePyramid(
+                                    num_of_levels, with_gaussian_filter);
                             return output;
-                        },
-                        "Function to filter ImagePyramid", "image_pyramid"_a,
-                        "filter_type"_a);
+                        } else {
+                            auto output = input.CreatePyramid(
+                                    num_of_levels, with_gaussian_filter);
+                            return output;
+                        }
+                    },
+                    "Function to create ImagePyramid", "num_of_levels"_a,
+                    "with_gaussian_filter"_a)
+            .def_static(
+                    "filter_pyramid",
+                    [](const geometry::ImagePyramid &input,
+                       geometry::Image::FilterType filter_type) {
+                        auto output = geometry::Image::FilterPyramid(
+                                input, filter_type);
+                        return output;
+                    },
+                    "Function to filter ImagePyramid", "image_pyramid"_a,
+                    "filter_type"_a);
 
     docstring::ClassMethodDocInject(m, "Image", "filter",
                                     map_shared_argument_docstrings);

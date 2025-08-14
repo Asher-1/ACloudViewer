@@ -18,6 +18,34 @@ function(cloudViewer_set_cloudViewer_lib_properties target)
     else ()
         target_compile_definitions(${target} PRIVATE CLOUDVIEWER_ENABLE_DLL_EXPORTS)
     endif()
+
+    # Hide all 3rd party symbols, e.g. from header libraries.
+    get_target_property(TARGET_TYPE ${target} TYPE)
+    if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
+        if (APPLE)
+            file(GENERATE OUTPUT libCloudViewer.map CONTENT
+                [=[*cloudViewer*
+                *CloudViewer*
+                ]=])
+            target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
+                -Wl,-exported_symbols_list
+                "${CMAKE_CURRENT_BINARY_DIR}/libCloudViewer.map" >)
+        elseif (UNIX)   # Linux
+            file(GENERATE OUTPUT libCloudViewer.map CONTENT
+                [=[{
+                    global:
+                        *cloudViewer*;
+                        extern "C++" {
+                            cloudViewer::*;
+                        };
+                    local: *;
+                };]=])
+            target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
+            "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libCloudViewer.map" >)
+        elseif (WIN32)
+            # TODO(Sameer): Only export cloudViewer symbols
+        endif()
+    endif()
 endfunction()
 
 project( ${CLOUDVIEWER_APP_NAME} )
@@ -33,6 +61,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewer.h.in"
 # Subdirectories
 add_subdirectory(core)
 set_target_properties(core PROPERTIES FOLDER "Modules")
+add_subdirectory(data)
+set_target_properties(data PROPERTIES FOLDER "Modules")
 add_subdirectory(t/geometry)
 set_target_properties(tgeometry PROPERTIES FOLDER "Modules")
 add_subdirectory(t/io)
@@ -72,6 +102,7 @@ endif()
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
 target_sources(${CLOUDVIEWER_APP_NAME} PRIVATE
     $<TARGET_OBJECTS:core>
+    $<TARGET_OBJECTS:data>
     $<TARGET_OBJECTS:tgeometry>
     $<TARGET_OBJECTS:tgeometry_kernel>
     $<TARGET_OBJECTS:io>
@@ -79,6 +110,7 @@ target_sources(${CLOUDVIEWER_APP_NAME} PRIVATE
     $<TARGET_OBJECTS:ml_contrib>
     $<TARGET_OBJECTS:pipelines>
     $<TARGET_OBJECTS:tpipelines>
+    $<TARGET_OBJECTS:tpipelines_kernel>
     $<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
 )
@@ -97,6 +129,7 @@ endif()
 
 # Source group for Visual Studio
 add_source_group(core)
+add_source_group(data)
 add_source_group(tgeometry)
 add_source_group(io)
 add_source_group(tio)

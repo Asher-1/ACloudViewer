@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -129,7 +129,7 @@ core::Dtype GetDtype(e_ply_type type) {
     }
 }
 
-// Map ply attributes to Open3D point cloud attributes
+// Map ply attributes to CloudViewer point cloud attributes
 std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
         const std::string &name) {
     // Positions attribute.
@@ -409,7 +409,7 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    ply_add_comment(ply_file, "Created by Open3D");
+    ply_add_comment(ply_file, "Created by CloudViewer");
     ply_add_element(ply_file, "vertex", num_points);
 
     std::vector<AttributePtr> attribute_ptrs;

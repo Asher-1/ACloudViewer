@@ -14,6 +14,7 @@ target_sources(pybind PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/tensor_function.cpp
         ${CMAKE_CURRENT_LIST_DIR}/tensor.cpp
         ${CMAKE_CURRENT_LIST_DIR}/tensorlist.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/tensor_type_caster.cpp
         )
 
 target_sources(pybind PRIVATE

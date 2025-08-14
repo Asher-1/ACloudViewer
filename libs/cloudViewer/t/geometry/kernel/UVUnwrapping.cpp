@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,6 +14,23 @@
 #endif
 #include <tbb/parallel_for.h>
 #include <UVAtlas.h>
+// SAL macros from UVAtlas/DirectX headers may conflict with libstdc++ internals
+// (e.g., variable names like __out in <locale_conv.h>). Undefine them immediately
+// after including UVAtlas to avoid breaking standard headers on GCC/Clang.
+#ifdef __out
+#undef __out
+#endif
+#ifdef __in
+#undef __in
+#endif
+#ifdef __inout
+#undef __inout
+#endif
+// Some headers may accidentally clobber NULL; ensure it's defined for C++
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL 0
 #ifdef CV_RESTORE_EMIT_MACRO
 #  pragma pop_macro("emit")
 #  undef CV_RESTORE_EMIT_MACRO

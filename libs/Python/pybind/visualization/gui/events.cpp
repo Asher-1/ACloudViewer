@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -27,6 +27,7 @@
 #include "visualization/gui/Events.h"
 
 #include <Logging.h>
+
 #include "pybind/visualization/gui/gui.h"
 #include "pybind11/functional.h"
 
@@ -35,35 +36,39 @@ namespace visualization {
 namespace gui {
 
 void pybind_gui_events(py::module& m) {
-    py::enum_<MouseButton> buttons(m, "MouseButton", "Mouse button identifiers",
-                                   py::arithmetic());
+    py::native_enum<MouseButton> buttons(m, "MouseButton", "enum.Enum",
+                                         "Mouse button identifiers.");
     buttons.value("NONE", MouseButton::NONE)
             .value("LEFT", MouseButton::LEFT)
             .value("MIDDLE", MouseButton::MIDDLE)
             .value("RIGHT", MouseButton::RIGHT)
             .value("BUTTON4", MouseButton::BUTTON4)
             .value("BUTTON5", MouseButton::BUTTON5)
-            .export_values();
+            .export_values()
+            .finalize();
 
-    py::enum_<KeyModifier> key_mod(m, "KeyModifier", "Key modifier identifiers",
-                                   py::arithmetic());
+    py::native_enum<KeyModifier> key_mod(m, "KeyModifier", "enum.Enum",
+                                         "Key modifier identifiers.");
     key_mod.value("NONE", KeyModifier::NONE)
             .value("SHIFT", KeyModifier::SHIFT)
             .value("CTRL", KeyModifier::CTRL)
             .value("ALT", KeyModifier::ALT)
             .value("META", KeyModifier::META)
-            .export_values();
+            .export_values()
+            .finalize();
 
     py::class_<MouseEvent> mouse_event(m, "MouseEvent",
                                        "Object that stores mouse events");
-    py::enum_<MouseEvent::Type> mouse_event_type(mouse_event, "Type",
-                                                 py::arithmetic());
+
+    py::native_enum<MouseEvent::Type> mouse_event_type(
+            mouse_event, "Type", "enum.Enum", "MouseEvent::Type.");
     mouse_event_type.value("MOVE", MouseEvent::Type::MOVE)
             .value("BUTTON_DOWN", MouseEvent::Type::BUTTON_DOWN)
             .value("DRAG", MouseEvent::Type::DRAG)
             .value("BUTTON_UP", MouseEvent::Type::BUTTON_UP)
             .value("WHEEL", MouseEvent::Type::WHEEL)
-            .export_values();
+            .export_values()
+            .finalize();
     mouse_event.def_readwrite("type", &MouseEvent::type, "Mouse event type")
             .def_readwrite("x", &MouseEvent::x,
                            "x coordinate  of the mouse event")
@@ -172,8 +177,8 @@ void pybind_gui_events(py::module& m) {
                     },
                     "Is mouse wheel event from a trackpad");
 
-    py::enum_<KeyName> key_name(m, "KeyName",
-                                "Names of keys. Used by KeyEvent.key");
+    py::native_enum<KeyName> key_name(m, "KeyName", "enum.Enum",
+                                      "Names of keys. Used by KeyEvent.key.");
     key_name.value("NONE", KeyName::KEY_NONE)
             .value("BACKSPACE", KeyName::KEY_BACKSPACE)
             .value("TAB", KeyName::KEY_TAB)
@@ -266,15 +271,18 @@ void pybind_gui_events(py::module& m) {
             .value("PAGE_UP", KeyName::KEY_PAGEUP)
             .value("PAGE_DOWN", KeyName::KEY_PAGEDOWN)
             .value("UNKNOWN", KeyName::KEY_UNKNOWN)
-            .export_values();
+            .export_values()
+            .finalize();
 
     py::class_<KeyEvent> key_event(m, "KeyEvent",
                                    "Object that stores mouse events");
-    py::enum_<KeyEvent::Type> key_event_type(key_event, "Type",
-                                             py::arithmetic());
+
+    py::native_enum<KeyEvent::Type> key_event_type(
+            key_event, "Type", "enum.Enum", "KeyEvent::Type.");
     key_event_type.value("DOWN", KeyEvent::Type::DOWN)
             .value("UP", KeyEvent::Type::UP)
-            .export_values();
+            .export_values()
+            .finalize();
     key_event.def_readwrite("type", &KeyEvent::type, "Key event type")
             .def_readwrite("key", &KeyEvent::key,
                            "This is the actual key that was pressed, not the "

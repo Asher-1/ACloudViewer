@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -335,7 +335,7 @@ public:
     /// t2 = t[0:4:2]
     /// ```
     ///
-    /// The equivalent Open3D C++ calls:
+    /// The equivalent CloudViewer C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
     /// Tensor t1 = t.GetItem(TensorIndex(2));
@@ -355,7 +355,7 @@ public:
     /// t1 = t[1, 0:4:2]
     /// ```
     ///
-    /// The equivalent Open3D C++ calls:
+    /// The equivalent CloudViewer C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
     /// Tensor t1 = t.GetItem({TensorIndex(2), TensorSlice(0, 4, 2)});
@@ -375,7 +375,7 @@ public:
     /// t[0:4:2] = np.empty((2, 5), dtype=np.float32)
     /// ```
     ///
-    /// The equivalent Open3D C++ calls:
+    /// The equivalent CloudViewer C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
     /// t.SetItem(TensorIndex(2), Tensor({5}, core::Float32));
@@ -391,7 +391,7 @@ public:
     /// t[2, 0:4:2] = np.empty((2, 5), dtype=np.float32)
     /// ```
     ///
-    /// The equivalent Open3D C++ calls:
+    /// The equivalent CloudViewer C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
     /// t.SetItem({TensorIndex(2), TensorSlice(0, 4, 2)},
@@ -1350,7 +1350,7 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     AssertTemplateDtype<bool>();
 
     // std::vector<bool> possibly implements 1-bit-sized boolean storage.
-    // Open3D uses 1-byte-sized boolean storage for easy indexing.
+    // CloudViewer uses 1-byte-sized boolean storage for easy indexing.
     std::vector<uint8_t> init_vals_uchar(init_vals.size());
     std::transform(init_vals.begin(), init_vals.end(), init_vals_uchar.begin(),
                    [](bool v) -> uint8_t { return static_cast<uint8_t>(v); });
@@ -1370,7 +1370,7 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
                                 GetDtype().ByteSize() * NumElements());
 
     // std::vector<bool> possibly implements 1-bit-sized boolean storage.
-    // Open3D uses 1-byte-sized boolean storage for easy indexing.
+    // CloudViewer uses 1-byte-sized boolean storage for easy indexing.
     std::transform(values_uchar.begin(), values_uchar.end(), values.begin(),
                    [](uint8_t v) -> bool { return static_cast<bool>(v); });
     return values;

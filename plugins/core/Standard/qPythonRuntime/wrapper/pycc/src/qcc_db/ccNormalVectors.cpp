@@ -16,6 +16,7 @@
 // ##########################################################################
 
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
@@ -43,7 +44,8 @@ void define_ccNormalVectors(py::module &m)
             static_cast<CompressedNormType (*)(const CCVector3 &N)>(&ccNormalVectors::GetNormIndex),
             "N"_a);
 
-    py::enum_<ccNormalVectors::Orientation>(pyNormalVectors, "Orientation")
+    py::native_enum<ccNormalVectors::Orientation>(
+        pyNormalVectors, "Orientation", "enum.Enum", "ccNormalVectors::Orientation.")
         .value("PLUS_X", ccNormalVectors::Orientation::PLUS_X)
         .value("MINUS_X", ccNormalVectors::Orientation::MINUS_X)
         .value("PLUS_Y", ccNormalVectors::Orientation::PLUS_Y)
@@ -56,7 +58,9 @@ void define_ccNormalVectors(py::module &m)
         .value("PREVIOUS", ccNormalVectors::Orientation::PREVIOUS)
         .value("PLUS_SENSOR_ORIGIN", ccNormalVectors::Orientation::PLUS_SENSOR_ORIGIN)
         .value("MINUS_SENSOR_ORIGIN", ccNormalVectors::Orientation::MINUS_SENSOR_ORIGIN)
-        .value("UNDEFINED", ccNormalVectors::Orientation::UNDEFINED);
+        .value("UNDEFINED", ccNormalVectors::Orientation::UNDEFINED)
+        .export_values()
+        .finalize();
 
     // TODO NormsIndexTable type cause symbols problems at runtime when the .so of the plugin is
     // loaded pyNormalVectors

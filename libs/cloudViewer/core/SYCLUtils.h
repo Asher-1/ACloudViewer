@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ int SYCLDemo();
 /// Print available SYCL devices.
 ///
 /// \param print_all If true, prints all SYCL devices. Otherwise, prints only
-/// devices that are available for Open3D.
+/// devices that are available for CloudViewer.
 void PrintSYCLDevices(bool print_all = false);
 
 /// Returns true if there is at least one SYCL device available.

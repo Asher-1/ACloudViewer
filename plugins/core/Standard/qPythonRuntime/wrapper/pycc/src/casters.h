@@ -28,6 +28,7 @@
 // clang-format off
 #undef slots
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 #include <Python.h>
 // clang-format on
 

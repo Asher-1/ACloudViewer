@@ -64,6 +64,38 @@ std::string GetEnvVar(const std::string &env_var) {
     }
 }
 
+std::string GetHomeDirectory() {
+    std::string home_dir = "";
+#ifdef _WIN32
+    // %USERPROFILE%
+    // %HOMEDRIVE%
+    // %HOMEPATH%
+    // %HOME%
+    // C:/
+    home_dir = GetEnvVar("USERPROFILE");
+    if (home_dir.empty() || !DirectoryExists(home_dir)) {
+        home_dir = GetEnvVar("HOMEDRIVE");
+        if (home_dir.empty() || !DirectoryExists(home_dir)) {
+            home_dir = GetEnvVar("HOMEPATH");
+            if (home_dir.empty() || !DirectoryExists(home_dir)) {
+                home_dir = GetEnvVar("HOME");
+                if (home_dir.empty() || !DirectoryExists(home_dir)) {
+                    home_dir = "C:/";
+                }
+            }
+        }
+    }
+#else
+    // $HOME
+    // /
+    home_dir = GetEnvVar("HOME");
+    if (home_dir.empty() || !DirectoryExists(home_dir)) {
+        home_dir = "/";
+    }
+#endif
+    return home_dir;
+}
+
 std::string EnsureTrailingSlash(const std::string &str) {
     if (str.length() > 0) {
         if (str.back() != '/') {

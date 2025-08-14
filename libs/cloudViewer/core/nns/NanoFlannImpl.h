@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 #pragma once
@@ -24,7 +24,7 @@ namespace nns {
 /// NanoFlann Index Holder.
 template <int METRIC, class TReal, class TIndex>
 struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
-    /// This class is the Adaptor for connecting Open3D Tensor and NanoFlann.
+    /// This class is the Adaptor for connecting CloudViewer Tensor and NanoFlann.
     struct DataAdaptor {
         DataAdaptor(size_t dataset_size,
                     int dimension,

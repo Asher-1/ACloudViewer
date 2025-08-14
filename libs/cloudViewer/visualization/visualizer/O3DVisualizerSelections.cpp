@@ -32,7 +32,7 @@
 #include "ecvPointCloud.h"
 
 #include "visualization/gui/SceneWidget.h"
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Scene.h"
 
@@ -41,8 +41,8 @@ namespace visualization {
 namespace visualizer {
 
 namespace {
-rendering::Material MakeMaterial() {
-    rendering::Material m;
+rendering::MaterialRecord MakeMaterial() {
+    rendering::MaterialRecord m;
     m.shader = "defaultUnlit";
     m.base_color = {1.0f, 0.0f, 1.0f, 1.0f};
     return m;

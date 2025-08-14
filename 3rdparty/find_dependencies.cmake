@@ -752,11 +752,25 @@ endif ()
 
 # cutlass
 if (BUILD_CUDA_MODULE)
-    include(${CloudViewer_3RDPARTY_DIR}/cutlass/cutlass.cmake)
-    import_3rdparty_library(3rdparty_cutlass
+    if(USE_SYSTEM_CUTLASS)
+        find_path(3rdparty_cutlass_INCLUDE_DIR NAMES cutlass/cutlass.h)
+        if(3rdparty_cutlass_INCLUDE_DIR)
+            add_library(3rdparty_cutlass INTERFACE)
+            target_include_directories(3rdparty_cutlass INTERFACE ${3rdparty_cutlass_INCLUDE_DIR})
+            if(NOT BUILD_SHARED_LIBS)
+                install(TARGETS 3rdparty_cutlass EXPORT ${PROJECT_NAME}Targets)
+            endif()
+        else()
+            set(USE_SYSTEM_CUTLASS OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_CUTLASS)
+        include(${CloudViewer_3RDPARTY_DIR}/cutlass/cutlass.cmake)
+        import_3rdparty_library(3rdparty_cutlass
             INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
-            DEPENDS ext_cutlass
-            )
+            DEPENDS      ext_cutlass
+        )
+    endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_cutlass)
 endif ()
 
@@ -1035,6 +1049,75 @@ if (BUILD_LIBREALSENSE)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_librealsense)
     endif()
 endif ()
+
+# Curl
+# - Curl should be linked before PNG, otherwise it will have undefined symbols.
+# - openssl.cmake needs to be included before curl.cmake, for the
+#   BORINGSSL_ROOT_DIR variable.
+if(USE_SYSTEM_CURL)
+    pkg_config_3rdparty_library(3rdparty_curl
+        SEARCH_ARGS libcurl
+    )
+    if(NOT 3rdparty_curl_FOUND)
+        set(USE_SYSTEM_CURL OFF)
+    endif()
+endif()
+
+if(USE_SYSTEM_OPENSSL)
+    find_package_3rdparty_library(3rdparty_openssl
+        PACKAGE OpenSSL
+        REQUIRED
+        TARGETS OpenSSL::Crypto
+    )
+    if(NOT 3rdparty_openssl_FOUND)
+        set(USE_SYSTEM_OPENSSL OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_OPENSSL)
+    # BoringSSL
+    include(${CloudViewer_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+    import_3rdparty_library(3rdparty_openssl
+        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+        LIB_DIR      ${BORINGSSL_LIB_DIR}
+        LIBRARIES    ${BORINGSSL_LIBRARIES}
+        DEPENDS      ext_zlib ext_boringssl
+    )
+endif()
+
+if(NOT USE_SYSTEM_CURL)
+    if (APPLE)
+        message(SEND_ERROR "Please build with USE_SYSTEM_CURL=ON for macOS to prevent linker errors.")
+    endif()
+    include(${CloudViewer_3RDPARTY_DIR}/curl/curl.cmake)
+    import_3rdparty_library(3rdparty_curl
+        INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        LIB_DIR      ${CURL_LIB_DIR}
+        LIBRARIES    ${CURL_LIBRARIES}
+        DEPENDS      ext_zlib ext_curl
+    )
+    if(APPLE)
+        # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
+        # Link frameworks   : https://stackoverflow.com/a/18330634/1255535
+        # Fixes error:
+        # ```
+        # Undefined symbols for architecture arm64:
+        # "_SCDynamicStoreCopyProxies", referenced from:
+        #     _Curl_resolv in libcurl.a(hostip.c.o)
+        # ```
+        # The "Foundation" framework is already linked by GLFW.
+        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration -framework Foundation")
+    elseif(UNIX)
+        find_library(LIBIDN2 NAMES idn2 libidn2 libidn2.so.0  )
+        if(LIBIDN2)
+            target_link_libraries(3rdparty_curl INTERFACE ${LIBIDN2})
+        endif()
+    endif()
+    target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
+endif()
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_curl 3rdparty_openssl)
 
 # PNG
 if (USE_SYSTEM_PNG)
@@ -1572,12 +1655,36 @@ else()
 endif()
 
 # msgpack
-include(${CloudViewer_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
-import_3rdparty_library(3rdparty_msgpack
-        INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
-        DEPENDS ext_msgpack-c
+if(USE_SYSTEM_MSGPACK)
+    find_package_3rdparty_library(3rdparty_msgpack
+        PACKAGE msgpack-cxx
+        TARGETS msgpack-cxx
+    )
+    if(NOT 3rdparty_msgpack_FOUND)
+        find_package_3rdparty_library(3rdparty_msgpack
+            PACKAGE msgpack
+            TARGETS msgpackc
         )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_msgpack)
+    endif()
+    if(NOT 3rdparty_msgpack_FOUND)
+        pkg_config_3rdparty_library(3rdparty_msgpack
+            SEARCH_ARGS msgpack
+        )
+        if(NOT 3rdparty_msgpack_FOUND)
+            set(USE_SYSTEM_MSGPACK OFF)
+        endif()
+    endif()
+endif()
+if(NOT USE_SYSTEM_MSGPACK)
+    include(${CloudViewer_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
+    import_3rdparty_library(3rdparty_msgpack
+        INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
+        DEPENDS      ext_msgpack-c
+    )
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_msgpack)
+else()
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_msgpack)
+endif()
 
 # UVAtlas
 include(${CloudViewer_3RDPARTY_DIR}/uvatlas/uvatlas.cmake)
@@ -2244,7 +2351,7 @@ endif()
 # why compiling from source on windows
 # main reason: use prebuild pcl and vtk with conda 
 # which indeed not compiled vtk with qt support on windows
-if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
+if (NOT USE_SYSTEM_PCL AND WIN32)
     find_package(Boost REQUIRED COMPONENTS
                  filesystem
                  iostreams)
@@ -2258,7 +2365,7 @@ if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
     endif ()
     import_3rdparty_library(3rdparty_vtk
         INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
-        LIB_DIR ${VTK_LIBRARIES_DIRS}
+        LIB_DIR ${VTK_LIB_DIR}
         LIBRARIES ${VTK_LIBRARIES}
         DEPENDS ext_vtk
     )
@@ -2288,208 +2395,119 @@ if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
         message(STATUS "QHULL_ROOT: ${QHULL_ROOT}")
         target_link_libraries(3rdparty_pcl INTERFACE QHULL::QHULL)
     endif()
-    # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
     # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
 else()
-    find_package(Boost REQUIRED COMPONENTS
-                 filesystem
-                 iostreams)
-    find_package_3rdparty_library(3rdparty_vtk
-        PACKAGE VTK
-        TARGETS
-            VTK::FiltersGeneral
-            VTK::FiltersSources
-            VTK::FiltersModeling
-            VTK::FiltersCore
-            VTK::CommonExecutionModel
-            VTK::CommonDataModel
-            VTK::CommonTransforms
-            VTK::CommonMath
-            VTK::CommonMisc
-            VTK::CommonSystem
-            VTK::CommonCore
-            VTK::kissfft
-            VTK::pugixml
-            VTK::vtksys
-    )
+    # must build vtk from source due to boost
+    if(NOT USE_SYSTEM_VTK AND TARGET 3rdparty_boost)
+        include(${CloudViewer_3RDPARTY_DIR}/vtk/vtk_build.cmake)
+        import_3rdparty_library(3rdparty_vtk
+            HIDDEN
+            INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
+            LIB_DIR      ${VTK_LIB_DIR}
+            LIBRARIES    ${VTK_LIBRARIES}
+            DEPENDS      ext_vtk ext_boost
+        )
+        if(UNIX AND NOT APPLE)
+            target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
+        endif()
+        set(3rdparty_pcl "")
+    else()
+        if(USE_PCL_BACKEND)
+            find_package_3rdparty_library(3rdparty_pcl
+                PACKAGE PCL
+                TARGETS
+                    pcl_io
+                    pcl_ml
+                    pcl_common
+                    pcl_io_ply
+                    pcl_keypoints
+                    pcl_tracking
+                    pcl_octree
+                    pcl_kdtree
+                    pcl_search
+                    pcl_filters
+                    pcl_surface
+                    pcl_features
+                    pcl_recognition
+                    pcl_registration
+                    pcl_segmentation
+                    pcl_visualization
+                    pcl_sample_consensus
+                    Boost::system
+                    Boost::filesystem
+                    Boost::iostreams
+                    FLANN::FLANN
+                    QHULL::QHULL
+            )
+            if(NOT 3rdparty_pcl_FOUND)
+                set(USE_SYSTEM_PCL OFF)
+            else()
+                set(PCL_VERSION ${3rdparty_pcl_VERSION})
+                add_definitions( ${PCL_DEFINITIONS} )
+            endif()
+        endif()
 
-    # find_package_3rdparty_library(3rdparty_vtk
-    #     PACKAGE VTK
-    #     TARGETS
-    #         VTK::WrappingTools
-    #         VTK::WebPython
-    #         VTK::WebCore
-    #         VTK::Python
-    #         VTK::vtksys
-    #         VTK::WebGLExporter
-    #         VTK::ViewsInfovis
-    #         VTK::CommonColor
-    #         VTK::ViewsContext2D
-    #         VTK::loguru
-    #         VTK::TestingRendering
-    #         VTK::TestingCore
-    #         VTK::RenderingQt
-    #         VTK::PythonContext2D
-    #         VTK::RenderingVolumeOpenGL2
-    #         VTK::glew
-    #         VTK::opengl
-    #         VTK::RenderingMatplotlib
-    #         VTK::PythonInterpreter
-    #         VTK::RenderingLabel
-    #         VTK::octree
-    #         VTK::RenderingLOD
-    #         VTK::RenderingLICOpenGL2
-    #         VTK::RenderingImage
-    #         VTK::RenderingContextOpenGL2
-    #         VTK::IOXdmf2
-    #         VTK::libxml2
-    #         VTK::xdmf2
-    #         VTK::hdf5
-    #         VTK::IOVeraOut
-    #         VTK::IOTecplotTable
-    #         VTK::utf8
-    #         VTK::IOSegY
-    #         VTK::IOXdmf3
-    #         VTK::xdmf3
-    #         VTK::IOParallelXML
-    #         VTK::IOPLY
-    #         VTK::IOOggTheora
-    #         VTK::theora
-    #         VTK::ogg
-    #         VTK::IONetCDF
-    #         VTK::netcdf
-    #         VTK::libproj
-    #         VTK::IOMotionFX
-    #         VTK::pegtl
-    #         VTK::IOParallel
-    #         VTK::jsoncpp
-    #         VTK::IOMINC
-    #         VTK::IOLSDyna
-    #         VTK::IOInfovis
-    #         VTK::zlib
-    #         VTK::IOImport
-    #         VTK::IOIOSS
-    #         VTK::fmt
-    #         VTK::ioss
-    #         VTK::cgns
-    #         VTK::exodusII
-    #         VTK::IOFFMPEG
-    #         VTK::IOVideo
-    #         VTK::IOMovie
-    #         VTK::IOExportPDF
-    #         VTK::libharu
-    #         VTK::IOExportGL2PS
-    #         VTK::RenderingGL2PSOpenGL2
-    #         VTK::gl2ps
-    #         VTK::png
-    #         VTK::IOExport
-    #         VTK::RenderingVtkJS
-    #         VTK::nlohmannjson
-    #         VTK::RenderingSceneGraph
-    #         VTK::IOExodus
-    #         VTK::IOEnSight
-    #         VTK::IOCityGML
-    #         VTK::pugixml
-    #         VTK::IOChemistry
-    #         VTK::IOCesium3DTiles
-    #         VTK::IOGeometry
-    #         VTK::IOCONVERGECFD
-    #         VTK::IOHDF
-    #         VTK::IOCGNSReader
-    #         VTK::IOAsynchronous
-    #         VTK::IOAMR
-    #         VTK::InteractionImage
-    #         VTK::ImagingStencil
-    #         VTK::ImagingStatistics
-    #         VTK::ImagingMorphological
-    #         VTK::ImagingMath
-    #         VTK::ImagingFourier
-    #         VTK::IOSQL
-    #         VTK::sqlite
-    #         VTK::GUISupportQt
-    #         VTK::GeovisCore
-    #         VTK::InfovisLayout
-    #         VTK::ViewsCore
-    #         VTK::InteractionWidgets
-    #         VTK::RenderingVolume
-    #         VTK::RenderingAnnotation
-    #         VTK::ImagingHybrid
-    #         VTK::ImagingColor
-    #         VTK::InteractionStyle
-    #         VTK::FiltersTopology
-    #         VTK::FiltersSelection
-    #         VTK::FiltersSMP
-    #         VTK::FiltersPython
-    #         VTK::FiltersProgrammable
-    #         VTK::FiltersPoints
-    #         VTK::FiltersVerdict
-    #         VTK::verdict
-    #         VTK::FiltersParallelImaging
-    #         VTK::FiltersParallelDIY2
-    #         VTK::FiltersImaging
-    #         VTK::ImagingGeneral
-    #         VTK::FiltersGeneric
-    #         VTK::FiltersFlowPaths
-    #         VTK::eigen
-    #         VTK::FiltersAMR
-    #         VTK::FiltersParallel
-    #         VTK::FiltersTexture
-    #         VTK::FiltersModeling
-    #         VTK::DomainsChemistryOpenGL2
-    #         VTK::RenderingOpenGL2
-    #         VTK::RenderingHyperTreeGrid
-    #         VTK::RenderingUI
-    #         VTK::FiltersHyperTree
-    #         VTK::FiltersHybrid
-    #         VTK::DomainsChemistry
-    #         VTK::CommonPython
-    #         VTK::WrappingPythonCore
-    #         VTK::ChartsCore
-    #         VTK::InfovisCore
-    #         VTK::FiltersExtraction
-    #         VTK::ParallelDIY
-    #         VTK::diy2
-    #         VTK::IOXML
-    #         VTK::IOXMLParser
-    #         VTK::expat
-    #         VTK::ParallelCore
-    #         VTK::IOLegacy
-    #         VTK::IOCore
-    #         VTK::doubleconversion
-    #         VTK::lz4
-    #         VTK::lzma
-    #         VTK::FiltersStatistics
-    #         VTK::ImagingSources
-    #         VTK::IOImage
-    #         VTK::DICOMParser
-    #         VTK::jpeg
-    #         VTK::metaio
-    #         VTK::tiff
-    #         VTK::RenderingContext2D
-    #         VTK::RenderingFreeType
-    #         VTK::freetype
-    #         VTK::kwiml
-    #         VTK::RenderingCore
-    #         VTK::FiltersSources
-    #         VTK::ImagingCore
-    #         VTK::FiltersGeometry
-    #         VTK::FiltersGeneral
-    #         VTK::CommonComputationalGeometry
-    #         VTK::FiltersCore
-    #         VTK::CommonExecutionModel
-    #         VTK::CommonDataModel
-    #         VTK::CommonSystem
-    #         VTK::CommonMisc
-    #         VTK::exprtk
-    #         VTK::CommonTransforms
-    #         VTK::CommonMath
-    #         VTK::kissfft
-    #         VTK::CommonCore
-    # )
-    if(NOT 3rdparty_vtk_FOUND)
-        set(USE_SYSTEM_VTK OFF)
+        find_package_3rdparty_library(3rdparty_vtk
+            PACKAGE VTK
+            TARGETS
+                VTK::ChartsCore
+                VTK::CommonColor
+                VTK::CommonComputationalGeometry
+                VTK::CommonCore
+                VTK::CommonDataModel
+                VTK::CommonExecutionModel
+                VTK::CommonMath
+                VTK::CommonMisc
+                VTK::CommonTransforms
+                VTK::FiltersCore
+                VTK::FiltersExtraction
+                VTK::FiltersGeneral
+                VTK::FiltersGeometry
+                VTK::FiltersModeling
+                VTK::FiltersSources
+                VTK::ImagingCore
+                VTK::ImagingSources
+                VTK::InteractionImage
+                VTK::InteractionStyle
+                VTK::InteractionWidgets
+                VTK::IOCore
+                VTK::IOGeometry
+                VTK::IOImage
+                VTK::IOLegacy
+                VTK::IOPLY
+                VTK::RenderingAnnotation
+                VTK::RenderingCore
+                VTK::RenderingContext2D
+                VTK::RenderingLOD
+                VTK::RenderingFreeType
+                VTK::ViewsCore
+                VTK::ViewsContext2D
+                VTK::RenderingQt
+                VTK::RenderingOpenGL2
+                VTK::RenderingContextOpenGL2
+                VTK::GUISupportQt
+                VTK::CommonSystem
+                VTK::kissfft
+                VTK::pugixml
+                VTK::vtksys
+                VTK::FiltersFlowPaths # vtkStreamTracer
+                VTK::IOLSDyna         # vtkLSDynaReader
+                VTK::RenderingLabel   # vtkLabeledDataMapper
+                VTK::IOChemistry      # vtkPDBReader
+                VTK::IOExport         # vtkVRMLExporter
+                VTK::ViewsInfovis     # vtkSCurveSpline
+        )
+        if(NOT 3rdparty_vtk_FOUND)
+            set(USE_SYSTEM_VTK OFF)
+        else()
+            set(VTK_VERSION ${3rdparty_vtk_VERSION})
+            if(TARGET 3rdparty_pcl)
+                target_link_libraries(3rdparty_pcl INTERFACE 3rdparty_vtk)
+            endif()
+        endif()
     endif()
-    set(3rdparty_pcl "")
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
 endif()
 
 # Compactify list of external modules.

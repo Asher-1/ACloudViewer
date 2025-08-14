@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ public:
                                RGBDVideoMetadata &metadata);
 
 public:
-    /// Convert rs2_format enum to Open3D Dtype and number of channels
+    /// Convert rs2_format enum to CloudViewer Dtype and number of channels
     /// \param rs2_format_enum An int is accepted instead of rs2_format enum
     /// to prevent dependence on the realsense headers.
     static std::pair<core::Dtype, uint8_t> get_dtype_channels(

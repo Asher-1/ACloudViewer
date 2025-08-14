@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ void ComputeVertexNormalsCUDA(const core::Tensor& triangles,
         scalar_t* vertex_normals_ptr = vertex_normals.GetDataPtr<scalar_t>();
         core::ParallelFor(
                 vertex_normals.GetDevice(), n,
-                [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                     int64_t idx = 3 * workload_idx;
                     int64_t triangle_id1 = triangle_ptr[idx];
                     int64_t triangle_id2 = triangle_ptr[idx + 1];

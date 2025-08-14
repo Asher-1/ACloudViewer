@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -719,8 +719,8 @@ public:
 
     core::Device GetDevice() const override { return device_; }
 
-    /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
-    /// \param mesh_legacy Legacy Open3D TriangleMesh.
+    /// Create a TriangleMesh from a legacy CloudViewer TriangleMesh.
+    /// \param mesh_legacy Legacy CloudViewer TriangleMesh.
     /// \param float_dtype Float32 or Float64, used to store floating point
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
@@ -733,7 +733,7 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
-    /// Convert to a legacy Open3D TriangleMesh.
+    /// Convert to a legacy CloudViewer TriangleMesh.
     cloudViewer::geometry::TriangleMesh ToLegacy() const;
 
     /// Convert a TriangleMeshModel (e.g. as read from a file with

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ bool RealSenseSensor::ListDevices() {
                                  fmt::join(config.second, " | "));
         }
         utility::LogInfo(
-                "Open3D only supports synchronized color and depth capture "
+                "CloudViewer only supports synchronized color and depth capture "
                 "(color_fps = depth_fps).");
         return true;
     }

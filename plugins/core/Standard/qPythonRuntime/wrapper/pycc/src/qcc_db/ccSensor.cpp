@@ -16,6 +16,7 @@
 // ##########################################################################
 
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 
 #include <ecvGenericDisplayTools.h>
 #include <ecvSensor.h>
@@ -27,9 +28,11 @@ using namespace pybind11::literals;
 
 void define_ccSensor(py::module &m)
 {
-    py::enum_<CC_SENSOR_TYPE>(m, "CC_SENSOR_TYPE")
+    py::native_enum<CC_SENSOR_TYPE>(m, "CC_SENSOR_TYPE", "enum.Enum", "CC_SENSOR_TYPE.")
         .value("UNKNOWN_SENSOR", CC_SENSOR_TYPE::UNKNOWN_SENSOR)
-        .value("GROUND_BASED_LIDAR", CC_SENSOR_TYPE::GROUND_BASED_LIDAR);
+        .value("GROUND_BASED_LIDAR", CC_SENSOR_TYPE::GROUND_BASED_LIDAR)
+        .export_values()
+        .finalize();
 
     py::class_<ccSensor, ccHObject>(m, "ccSensor")
         .def(py::init<const QString &>())

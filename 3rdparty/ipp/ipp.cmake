@@ -58,7 +58,7 @@ ExternalProject_Add(ext_ipp
     URL ${IPP_URL} 
     URL_HASH SHA256=${IPP_HASH}
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/ipp"
-    # Copy all libs from lib/tl/tbb to lib/ since Open3D cmake scripts only support one LIB_DIR per dependency
+    # Copy all libs from lib/tl/tbb to lib/ since CloudViewer cmake scripts only support one LIB_DIR per dependency
     UPDATE_COMMAND ${COPY_TBB_COMMAND} <SOURCE_DIR>/${IPP_SUBPATH}lib/tl/tbb/. <SOURCE_DIR>/${IPP_SUBPATH}lib/
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""

@@ -1,9 +1,7 @@
-#pragma once
-
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,45 +10,17 @@
 #include "cloudViewer/core/Device.h"
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/Tensor.h"
-#include "cloudViewer/core/hashmap/HashBackendBuffer.h"
 #include "cloudViewer/core/hashmap/DeviceHashBackend.h"
+#include "cloudViewer/core/hashmap/HashBackendBuffer.h"
 
 namespace cloudViewer {
 namespace core {
-
-// Backward-compatibility aliases for migrated code paths
-using Hashmap = class HashMap;
-using HashmapBackend = enum HashBackendType;
-
-// Minimal 3D integer block key and hasher to support TSDF raycasting on CPU
-template <typename T, int N>
-struct Block {
-    Block() { for (int i = 0; i < N; ++i) data_[i] = T{}; }
-    void Set(int i, T v) { data_[i] = v; }
-    T Get(int i) const { return data_[i]; }
-    bool operator==(const Block& other) const {
-        for (int i = 0; i < N; ++i) if (data_[i] != other.data_[i]) return false;
-        return true;
-    }
-    T data_[N];
-};
-
-template <typename T, int N>
-struct BlockHash {
-    size_t operator()(const Block<T, N>& b) const noexcept {
-        size_t h = 1469598103934665603ull;
-        for (int i = 0; i < N; ++i) {
-            h ^= static_cast<size_t>(b.Get(i)) + 0x9e3779b97f4a7c15ull + (h << 6) + (h >> 2);
-        }
-        return h;
-    }
-};
 
 class DeviceHashBackend;
 
 enum class HashBackendType { Slab, StdGPU, TBB, Default };
 
- class HashMap : public IsDevice {
+class HashMap : public IsDevice {
 public:
     /// Initialize a hash map given a key and a value dtype and element shape.
     HashMap(int64_t init_capacity,
@@ -60,7 +30,6 @@ public:
             const SizeVector& value_element_shapes,
             const Device& device,
             const HashBackendType& backend = HashBackendType::Default);
-
 
     /// Initialize a hash map given a key dtype and element shape, and a vector
     /// of value dtypes and element shapes for values stored in structure of
@@ -72,7 +41,6 @@ public:
             const std::vector<SizeVector>& element_shapes_value,
             const Device& device,
             const HashBackendType& backend = HashBackendType::Default);
-
 
     /// Default destructor.
     ~HashMap() = default;
@@ -212,12 +180,11 @@ public:
     /// Return size / bucket_count.
     float LoadFactor() const;
 
-     /// Return the implementation of the device hash backend.
-     std::shared_ptr<DeviceHashBackend> GetDeviceHashBackend() const {
-         return device_hashmap_;
-     }
-     // Back-compat alias expected by callers migrated from older API
-     
+    /// Return the implementation of the device hash backend.
+    std::shared_ptr<DeviceHashBackend> GetDeviceHashBackend() const {
+        return device_hashmap_;
+    }
+    // Back-compat alias expected by callers migrated from older API
 
 protected:
     void Init(int64_t init_capacity,
@@ -243,8 +210,8 @@ protected:
 
     std::pair<int64_t, std::vector<int64_t>> GetCommonValueSizeDivisor();
 
- private:
-     std::shared_ptr<DeviceHashBackend> device_hashmap_;
+private:
+    std::shared_ptr<DeviceHashBackend> device_hashmap_;
 
     Dtype key_dtype_;
     SizeVector key_element_shape_;

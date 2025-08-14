@@ -1,11 +1,11 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// Adapted for Open3D.
+// Adapted for CloudViewer.
 // Commit 75e164f61d391979b4829bf2746a5d74b94e95f2 2022-01-21
 // Documentation:
 // https://llvm.org/docs/ProgrammersManual.html#llvm-adt-smallvector-h

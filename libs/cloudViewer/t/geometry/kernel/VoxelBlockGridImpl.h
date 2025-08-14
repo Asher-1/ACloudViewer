@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -538,7 +538,7 @@ void RayCastCUDA
 #else
 void RayCastCPU
 #endif
-        (const std::shared_ptr<core::HashMap>& hashmap,
+        (std::shared_ptr<core::HashMap>& hashmap,
          const TensorMap& block_value_map,
          const core::Tensor& range,
          TensorMap& renderings_map,

@@ -79,6 +79,14 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         apt-file \
         net-tools \
         mesa-utils \
+        # for others
+        zlib1g \
+        zlib1g-dev \
+        libssl-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libncursesw5-dev \
         # for opencv
         libjpeg-dev \
         libpng-dev \

@@ -27,8 +27,6 @@
 #include "core/hashmap/HashMap.h"
 
 #include <Logging.h>
-#include <pybind11/cast.h>
-#include <pybind11/pytypes.h>
 
 #include "core/MemoryManager.h"
 #include "core/Tensor.h"
@@ -40,7 +38,47 @@
 
 namespace cloudViewer {
 namespace core {
+const std::unordered_map<std::string, std::string> argument_docs = {
+        {"init_capacity", "Initial capacity of a hash container."},
+        {"key_dtype", "Data type for the input key tensor."},
+        {"key_element_shape",
+         "Element shape for the input key tensor. E.g. (3) for 3D "
+         "coordinate keys."},
+        {"value_dtype", "Data type for the input value tensor."},
+        {"value_dtypes", "List of data type for the input value tensors."},
+        {"value_element_shape",
+         "Element shape for the input value tensor. E.g. (1) for mapped "
+         "index."},
+        {"value_element_shapes",
+         "List of element shapes for the input value tensors. E.g. ((8,8,8,1), "
+         "(8,8,8,3)) for "
+         "mapped weights and RGB colors stored in 8^3 element arrays."},
+        {"device",
+         "Compute device to store and operate on the hash container."},
+        {"copy",
+         "If true, a new tensor is always created; if false, the copy is "
+         "avoided when the original tensor already has the targeted dtype."},
+        {"keys",
+         "Input keys stored in a tensor of shape (N, key_element_shape)."},
+        {"values",
+         "Input values stored in a tensor of shape (N, value_element_shape)."},
+        {"list_values",
+         "List of input values stored in tensors of corresponding shapes."},
+        {"capacity", "New capacity for rehashing."},
+        {"file_name", "File name of the corresponding .npz file."},
+        {"values_buffer_id", "Index of the value buffer tensor."},
+        {"device_id", "Target CUDA device ID."}};
+
 void pybind_core_hashmap(py::module& m) {
+    // Expose backend enum so Python users can select implementations
+    py::native_enum<HashBackendType>(m, "HashBackendType", "enum.Enum")
+            .value("Slab", HashBackendType::Slab)
+            .value("StdGPU", HashBackendType::StdGPU)
+            .value("TBB", HashBackendType::TBB)
+            .value("Default", HashBackendType::Default)
+            .export_values()
+            .finalize();
+
     py::class_<HashMap> hashmap(
             m, "HashMap",
             "A HashMap is a map from key to data wrapped by Tensors.");
@@ -183,7 +221,7 @@ void pybind_core_hashmap(py::module& m) {
     hashmap.def_property_readonly("is_cuda", &HashMap::IsCUDA);
 }
 
-void pybind_core_hashset_definitions(py::module& m) {
+void pybind_core_hashset(py::module& m) {
     py::class_<HashSet> hashset(
             m, "HashSet",
             "A HashSet is an unordered set of keys wrapped by Tensors.");

@@ -4,6 +4,7 @@ target_sources(pybind PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/viewcontrol.cpp
         ${CMAKE_CURRENT_LIST_DIR}/visualization.cpp
         ${CMAKE_CURRENT_LIST_DIR}/visualizer.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/rendering/material.cpp  # for RPC serialization
         )
 
 if (BUILD_GUI)
