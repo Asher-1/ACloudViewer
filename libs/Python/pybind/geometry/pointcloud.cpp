@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Image.h>
@@ -138,20 +119,16 @@ void pybind_pointcloud(py::module& m) {
                            "Maximum radius threshold.");
 
     // ccPointCloud::RansacParams::RANSAC_PRIMITIVE_TYPES
-    py::enum_<geometry::RansacParams::RANSAC_PRIMITIVE_TYPES>
-            ransac_primitive_type(ransacParam, "RANSAC_PRIMITIVE_TYPES",
-                                  py::arithmetic());
-    ransac_primitive_type.value("Plane", geometry::RansacParams::RPT_PLANE)
+    py::native_enum<geometry::RansacParams::RANSAC_PRIMITIVE_TYPES>(
+            ransacParam, "RANSAC_PRIMITIVE_TYPES", "enum.Enum",
+            "Enum class for Ransac Primitive types.")
+            .value("Plane", geometry::RansacParams::RPT_PLANE)
             .value("Sphere", geometry::RansacParams::RPT_SPHERE)
             .value("Cylinder", geometry::RansacParams::RPT_CYLINDER)
             .value("Cone", geometry::RansacParams::RPT_CONE)
             .value("Torus", geometry::RansacParams::RPT_TORUS)
-            .export_values();
-    ransac_primitive_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Ransac Primitive types.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
 #endif
 
     py::class_<ccPointCloud, PyGeometry<ccPointCloud>,

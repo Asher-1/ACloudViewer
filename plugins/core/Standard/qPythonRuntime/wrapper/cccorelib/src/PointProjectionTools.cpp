@@ -16,12 +16,13 @@
 // ##########################################################################
 
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 
 #include <CVGeom.h>
+#include <CVPointCloud.h>
 #include <GenericCloud.h>
 #include <GenericIndexedMesh.h>
 #include <GenericProgressCallback.h>
-#include <CVPointCloud.h>
 #include <PointProjectionTools.h>
 #include <SquareMatrix.h>
 
@@ -32,9 +33,12 @@ void define_PointProjectionTools(py::module &cccorelib)
 {
     using cloudViewer::PointProjectionTools;
 
-    py::enum_<cloudViewer::TRIANGULATION_TYPES>(cccorelib, "TRIANGULATION_TYPES")
+    py::native_enum<cloudViewer::TRIANGULATION_TYPES>(
+        cccorelib, "TRIANGULATION_TYPES", "enum.Enum", "cloudViewer::TRIANGULATION_TYPES.")
         .value("DELAUNAY_2D_AXIS_ALIGNED", cloudViewer::TRIANGULATION_TYPES::DELAUNAY_2D_AXIS_ALIGNED)
-        .value("DELAUNAY_2D_BEST_LS_PLANE", cloudViewer::TRIANGULATION_TYPES::DELAUNAY_2D_BEST_LS_PLANE);
+        .value("DELAUNAY_2D_BEST_LS_PLANE", cloudViewer::TRIANGULATION_TYPES::DELAUNAY_2D_BEST_LS_PLANE)
+        .export_values()
+        .finalize();
 
     py::class_<cloudViewer::SquareMatrixTpl<double>> PySquareMatrixd(cccorelib, "SquareMatrixd");
 
@@ -62,16 +66,16 @@ void define_PointProjectionTools(py::module &cccorelib)
                     "progressCb"_a = nullptr)
         .def_static("applyTransformation",
                     static_cast<cloudViewer::PointCloud *(*)(cloudViewer::GenericCloud *,
-                                                           PointProjectionTools::Transformation &,
-                                                           cloudViewer::GenericProgressCallback *)>(
+                                                             PointProjectionTools::Transformation &,
+                                                             cloudViewer::GenericProgressCallback *)>(
                         &PointProjectionTools::applyTransformation),
                     "cloud"_a,
                     "trans"_a,
                     "progressCb"_a = nullptr)
         .def_static("applyTransformation",
                     static_cast<cloudViewer::PointCloud *(*)(cloudViewer::GenericIndexedCloud *,
-                                                           PointProjectionTools::Transformation &,
-                                                           cloudViewer::GenericProgressCallback *)>(
+                                                             PointProjectionTools::Transformation &,
+                                                             cloudViewer::GenericProgressCallback *)>(
                         &PointProjectionTools::applyTransformation),
                     "cloud"_a,
                     "trans"_a,

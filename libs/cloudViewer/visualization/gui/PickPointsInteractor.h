@@ -41,7 +41,7 @@ namespace visualization {
 
 namespace rendering {
 class Camera;
-struct Material;
+struct MaterialRecord;
 class MatrixInteractorLogic;
 class CloudViewerScene;
 }  // namespace rendering
@@ -98,7 +98,7 @@ public:
 protected:
     void OnPickImageDone(std::shared_ptr<geometry::Image> img);
 
-    rendering::Material MakeMaterial();
+    rendering::MaterialRecord MakeMaterial();
 
 private:
     rendering::CloudViewerScene* scene_;

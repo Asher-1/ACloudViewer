@@ -16,6 +16,7 @@
 // ##########################################################################
 
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
@@ -101,10 +102,13 @@ void define_ccLog(py::module &m)
     False
 )pbdoc");
 
-    py::enum_<CVLog::MessageLevelFlags>(PyccLog, "MessageLevelFlags")
+    py::native_enum<CVLog::MessageLevelFlags>(
+        PyccLog, "MessageLevelFlags", "enum.Enum", "CVLog::MessageLevelFlags.")
         .value("LOG_VERBOSE", CVLog::MessageLevelFlags::LOG_VERBOSE)
         .value("LOG_STANDARD", CVLog::MessageLevelFlags::LOG_STANDARD)
         .value("LOG_IMPORTANT", CVLog::MessageLevelFlags::LOG_IMPORTANT)
         .value("LOG_WARNING", CVLog::MessageLevelFlags::LOG_WARNING)
-        .value("LOG_ERROR", CVLog::MessageLevelFlags::LOG_ERROR);
+        .value("LOG_ERROR", CVLog::MessageLevelFlags::LOG_ERROR)
+        .export_values()
+        .finalize();
 }

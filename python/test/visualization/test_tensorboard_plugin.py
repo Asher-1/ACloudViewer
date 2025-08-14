@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.cloudViewer.org                            -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2023 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
@@ -22,7 +22,7 @@ try:
 except AttributeError:
     pytestmark = pytest.mark.skip(reason="BoundingBox3D not available.")
 
-import cloudViewer as o3d
+import cloudViewer as cv3d
 from cloudViewer.visualization.tensorboard_plugin import summary
 from cloudViewer.visualization.tensorboard_plugin.util import to_dict_batch
 from cloudViewer.visualization.tensorboard_plugin.util import CloudViewerPluginDataReader
@@ -31,8 +31,8 @@ from cloudViewer.visualization.tensorboard_plugin.util import CloudViewerPluginD
 @pytest.fixture
 def geometry_data():
     """Common geometry data for tests"""
-    cube = (o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True),
-            o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True))
+    cube = (cv3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True),
+            cv3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True))
     cube[0].compute_vertex_normals()
     cube[1].compute_vertex_normals()
 
@@ -59,7 +59,7 @@ def geometry_data():
         for step in range(3))
 
     cube_ls = tuple(
-        o3d.geometry.LineSet.create_from_triangle_mesh(c) for c in cube)
+        cv3d.geometry.LineSet.create_from_triangle_mesh(c) for c in cube)
 
     colors = (((1.0, 0.0, 0.0), (0.0, 1.0, 1.0)),
               ((0.0, 1.0, 0.0), (1.0, 0.0, 1.0)), ((0.0, 0.0, 1.0), (1.0, 1.0,
@@ -127,7 +127,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     writer = tf.summary.create_file_writer(logdir)
 
     rng = np.random.default_rng()
-    tensor_converter = (tf.convert_to_tensor, o3d.core.Tensor.from_numpy,
+    tensor_converter = (tf.convert_to_tensor, cv3d.core.Tensor.from_numpy,
                         np.array)
 
     cube, material = geometry_data['cube'], geometry_data['material']
@@ -234,7 +234,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
     writer = SummaryWriter(logdir)
 
     rng = np.random.default_rng()
-    tensor_converter = (torch.from_numpy, o3d.core.Tensor.from_numpy, np.array)
+    tensor_converter = (torch.from_numpy, cv3d.core.Tensor.from_numpy, np.array)
 
     cube, material = geometry_data['cube'], geometry_data['material']
     cube_custom_prop = geometry_data['cube_custom_prop']
@@ -353,11 +353,11 @@ def check_material_dict(o3d_geo, material, batch_idx):
 @pytest.fixture
 def logdir():
     """Extract logdir zip to provide logdir for tests, cleanup afterwards."""
-    data_descriptor = o3d.data.DataDescriptor(
-        url=o3d.data.cloudViewer_downloads_prefix +
+    data_descriptor = cv3d.data.DataDescriptor(
+        url=cv3d.data.cloudViewer_downloads_prefix +
         "20220301-data/test_tensorboard_plugin.zip",
         md5="746612f1d3b413236091d263bff29dc9")
-    test_data = o3d.data.DownloadDataset(
+    test_data = cv3d.data.DownloadDataset(
         prefix="TestTensorboardPlugin",
         data_descriptor=data_descriptor,
     )
@@ -390,11 +390,11 @@ def test_plugin_data_reader(geometry_data, logdir):
     for step in range(3):
         for batch_idx in range(max_outputs):
             cube[batch_idx].paint_uniform_color(colors[step][batch_idx])
-            cube_ref = o3d.t.geometry.TriangleMesh.from_legacy(cube[batch_idx])
+            cube_ref = cv3d.t.geometry.TriangleMesh.from_legacy(cube[batch_idx])
             cube_ref.triangle.indices = cube_ref.triangle.indices.to(
-                o3d.core.int32)
+                cv3d.core.int32)
             cube_ref.vertex.colors = (cube_ref.vertex.colors * 255).to(
-                o3d.core.uint8)
+                cv3d.core.uint8)
 
             cube_out = reader.read_geometry("test_tensorboard_plugin", "cube",
                                             step, batch_idx, step_to_idx)[0]
@@ -424,11 +424,11 @@ def test_plugin_data_reader(geometry_data, logdir):
             check_material_dict(cube_pcd_out, material, batch_idx)
 
             cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
-            cube_ls_ref = o3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
+            cube_ls_ref = cv3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
             cube_ls_ref.line.indices = cube_ls_ref.line.indices.to(
-                o3d.core.int32)
+                cv3d.core.int32)
             cube_ls_ref.line.colors = (cube_ls_ref.line.colors * 255).to(
-                o3d.core.uint8)
+                cv3d.core.uint8)
 
             cube_ls_out = reader.read_geometry("test_tensorboard_plugin",
                                                "cube_ls", step, batch_idx,
@@ -442,10 +442,10 @@ def test_plugin_data_reader(geometry_data, logdir):
             bbox_ls_out, data_bbox_proto = reader.read_geometry(
                 "test_tensorboard_plugin", "bboxes", step, batch_idx,
                 step_to_idx)
-            bbox_ls_ref = o3d.t.geometry.LineSet.from_legacy(
+            bbox_ls_ref = cv3d.t.geometry.LineSet.from_legacy(
                 BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
             bbox_ls_ref.line.indices = bbox_ls_ref.line.indices.to(
-                o3d.core.int32)
+                cv3d.core.int32)
             assert (bbox_ls_out.point.positions == bbox_ls_ref.point.positions
                    ).all()
             assert (bbox_ls_out.line.indices == bbox_ls_ref.line.indices).all()

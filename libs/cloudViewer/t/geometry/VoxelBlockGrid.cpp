@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -393,7 +393,7 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
     TensorMap block_value_map =
             ConstructTensorMap(*block_hashmap_, name_attr_map_);
     kernel::voxel_grid::RayCast(
-            block_hashmap_->GetDeviceHashBackend(), block_value_map, range_minmax_map, renderings_map,
+            block_hashmap_, block_value_map, range_minmax_map, renderings_map,
             intrinsic, extrinsic, height, width, block_resolution_, voxel_size_,
             depth_scale, depth_min, depth_max, weight_threshold,
             trunc_voxel_multiplier, range_map_down_factor);

@@ -74,12 +74,14 @@ void define_qcc_io(py::module &m)
 {
     py::class_<ecvGlobalShiftManager> PyccGlobalShiftManager(m, "ccGlobalShiftManager");
 
-    py::enum_<ecvGlobalShiftManager::Mode>(PyccGlobalShiftManager, "Mode")
+    py::native_enum<ecvGlobalShiftManager::Mode>(
+        PyccGlobalShiftManager, "Mode", "enum.Enum", "ecvGlobalShiftManager::Mode.")
         .value("NO_DIALOG", ecvGlobalShiftManager::Mode::NO_DIALOG)
         .value("NO_DIALOG_AUTO_SHIFT", ecvGlobalShiftManager::Mode::NO_DIALOG_AUTO_SHIFT)
         .value("DIALOG_IF_NECESSARY", ecvGlobalShiftManager::Mode::DIALOG_IF_NECESSARY)
         .value("ALWAYS_DISPLAY_DIALOG", ecvGlobalShiftManager::Mode::ALWAYS_DISPLAY_DIALOG)
-        .export_values();
+        .export_values()
+        .finalize();
 
     py::class_<FileIOFilter> PyFileIOFilter(m, "FileIOFilter");
     PyFileIOFilter

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -337,7 +337,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
         ai_mat->AddProperty(&shading_mode, 1, AI_MATKEY_SHADING_MODEL);
 
         // Set base material properties
-        // NOTE: not all properties supported by Open3D are supported by Assimp.
+        // NOTE: not all properties supported by CloudViewer are supported by Assimp.
         // Those properties (reflectivity, anisotropy) are not exported
         if (mesh.GetMaterial().HasBaseColor()) {
             auto c = mesh.GetMaterial().GetBaseColor();

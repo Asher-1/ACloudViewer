@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -33,7 +33,7 @@ struct SYCLDevice {
     size_t max_work_group_size;  ///< Preferred work group size
     bool fp64;  ///< Double precision support, else need to emulate.
     bool usm_device_allocations;  ///< USM device allocations required for
-                                  ///< Open3D.
+                                  ///< CloudViewer.
 };
 
 /// Singleton SYCL context manager. It maintains:
@@ -55,10 +55,10 @@ public:
     /// Returns a list of all available SYCL devices.
     std::vector<Device> GetAvailableSYCLDevices();
 
-    /// Get the default SYCL queue given an Open3D device.
+    /// Get the default SYCL queue given an CloudViewer device.
     sycl::queue GetDefaultQueue(const Device& device);
 
-    /// Get SYCL device properties given an Open3D device.
+    /// Get SYCL device properties given an CloudViewer device.
     SYCLDevice GetDeviceProperties(const Device& device) {
         return devices_.at(device);
     };
@@ -66,7 +66,7 @@ public:
 private:
     SYCLContext();
 
-    /// Map from available Open3D SYCL devices to their properties.
+    /// Map from available CloudViewer SYCL devices to their properties.
     std::map<Device, SYCLDevice> devices_;
 };
 

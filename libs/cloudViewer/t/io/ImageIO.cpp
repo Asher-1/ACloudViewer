@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@
 #include "cloudViewer/t/geometry/kernel/GeometryIndexer.h"
 #include <FileSystem.h>
 #include <Logging.h>
-#include <Random.h>
+#include "cloudViewer/utility/Random.h"
 
 namespace cloudViewer {
 namespace t {
@@ -77,7 +77,7 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
 
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,
-                int quality /* = kOpen3DImageIODefaultQuality*/) {
+                int quality /* = kCloudViewerImageIODefaultQuality*/) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {

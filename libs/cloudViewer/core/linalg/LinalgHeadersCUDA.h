@@ -1,14 +1,14 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // This file contains headers for BLAS/LAPACK implementations for CUDA.
 //
 // For developers, please make sure that this file is not ultimately included in
-// Open3D.h.
+// CloudViewer.h.
 
 #pragma once
 

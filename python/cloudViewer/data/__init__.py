@@ -26,7 +26,7 @@
 
 """Minimal data download helpers for tests and examples.
 
-This module provides a lightweight replacement for Open3D's `o3d.data` API
+This module provides a lightweight replacement for CloudViewer's `o3d.data` API
 that is sufficient for internal tests which expect:
 
 - `cloudViewer.data.DataDescriptor`

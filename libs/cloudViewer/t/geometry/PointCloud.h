@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -638,13 +638,13 @@ public:
             int stride = 1,
             bool with_normals = false);
 
-    /// Create a PointCloud from a legacy Open3D PointCloud.
+    /// Create a PointCloud from a legacy CloudViewer PointCloud.
     static PointCloud FromLegacy(
             const cloudViewer::geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
-    /// Convert to a legacy Open3D PointCloud.
+    /// Convert to a legacy CloudViewer PointCloud.
     cloudViewer::geometry::PointCloud ToLegacy() const;
 
     /// Project a point cloud to a depth image.

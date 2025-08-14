@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -327,6 +327,6 @@ void __CLOUDVIEWER_GET_LAST_CUDA_ERROR(const char* message,
 #endif
 
 // C interface to provide un-mangled function to Python ctypes
-extern "C" CLOUDVIEWER_DLL_EXPORT int open3d_core_cuda_device_count() {
+extern "C" CLOUDVIEWER_DLL_EXPORT int cloudViewer_core_cuda_device_count() {
     return cloudViewer::core::cuda::DeviceCount();
 }

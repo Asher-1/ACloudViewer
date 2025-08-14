@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,346 +26,336 @@
 
 #pragma once
 
-#include <Image.h>
-#include "cloudViewer/t/geometry/Image.h"
-
 #include <Eigen/Core>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 
-#include "visualization/rendering/Gradient.h"
+#include "cloudViewer/t/geometry/Image.h"
 
 namespace cloudViewer {
 namespace visualization {
 namespace rendering {
+struct MaterialRecord;
 
-struct Material {
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+class Material {
+public:
+    using TextureMaps = std::unordered_map<std::string, t::geometry::Image>;
+    using ScalarPropertyMap = std::unordered_map<std::string, float>;
+    using VectorPropertyMap = std::unordered_map<
+            std::string,
+            Eigen::Vector4f,
+            std::hash<std::string>,
+            std::equal_to<std::string>,
+            Eigen::aligned_allocator<
+                    std::pair<const std::string, Eigen::Vector4f>>>;
 
-    std::string name;
+    /// Create an empty, invalid material
+    Material() = default;
+
+    Material(const Material &mat) = default;
+
+    /// Convert from MaterialRecord
+    static Material FromMaterialRecord(const MaterialRecord &mat);
+
+    Material &operator=(const Material &other) = default;
+
+    /// Create an empty but valid material for the specified material name
+    Material(const std::string &material_name)
+        : material_name_(material_name) {}
+
+    /// Sets a number of properties to the defaults expected by CloudViewer
+    /// shaders
+    void SetDefaultProperties();
 
     /// Returns true if the Material was not created with the default
     /// constructor and therefore has a valid shader name.
-    bool IsValid() const { return !name.empty(); }
+    bool IsValid() const { return !material_name_.empty(); }
 
-    // Rendering attributes
-    bool has_alpha = false;
+    /// Get the name of the material.
+    const std::string &GetMaterialName() const { return material_name_; }
 
-    // PBR Material properties and maps
-    Eigen::Vector4f base_color = Eigen::Vector4f(1.f, 1.f, 1.f, 1.f);
-    float base_metallic = 0.f;
-    float base_roughness = 1.f;
-    float base_reflectance = 0.5f;
-    float base_clearcoat = 0.f;
-    float base_clearcoat_roughness = 0.f;
-    float base_anisotropy = 0.f;
+    /// String reprentation for printing.
+    std::string ToString() const;
 
-    // PBR material properties for refractive materials
-    float thickness = 1.f;
-    float transmission = 1.f;
-    Eigen::Vector3f absorption_color =
-            Eigen::Vector3f(1.f, 1.f, 1.f);  // linear color
-    float absorption_distance = 1.f;
+    /// Returns the texture map map
+    const TextureMaps &GetTextureMaps() const { return texture_maps_; }
 
-    float point_size = 3.f;
-    float line_width = 1.f;  // only used with shader = "unlitLine"
-
-    std::shared_ptr<geometry::Image> albedo_img;
-    std::shared_ptr<geometry::Image> normal_img;
-    std::shared_ptr<geometry::Image> ao_img;
-    std::shared_ptr<geometry::Image> metallic_img;
-    std::shared_ptr<geometry::Image> roughness_img;
-    std::shared_ptr<geometry::Image> reflectance_img;
-    std::shared_ptr<geometry::Image> clearcoat_img;
-    std::shared_ptr<geometry::Image> clearcoat_roughness_img;
-    std::shared_ptr<geometry::Image> anisotropy_img;
-
-    // Combined images
-    std::shared_ptr<geometry::Image> ao_rough_metal_img;
-
-    // Colormap (incompatible with other settings except point_size)
-    // Values for 'value' must be in [0, 1] and the vector must be sorted
-    // by increasing value. 'shader' must be "unlitGradient".
-    std::shared_ptr<Gradient> gradient;
-    float scalar_min = 0.0f;
-    float scalar_max = 1.0f;
-
-    // Colors are assumed to be sRGB and tone-mapped accordingly.
-    // If tone-mapping is disabled, then colors would be in linear RGB space,
-    // in which case this should be set to false. If necessary, colors will be
-    // linearized on the CPU.
-    bool sRGB_color = true;
-
-    // Unlike the material property sRGB_color which is used to indicate that
-    // source colors are in sRGB colorspace, sRGB_vertex_color indicates that
-    // per-vertex colors are in sRGB space and should be passed to the GPU as
-    // sRGB color.
-    bool sRGB_vertex_color = false;
-
-    // Background image (shader = "unlitBackground")
-    float aspect_ratio = 0.0f;  // 0: uses base_color; >0: uses albedo_img
-
-    // Infinite ground plane
-    float ground_plane_axis = 0.f;  // 0: XZ; >0: XY; <0: YZ
-
-    // Generic material properties
-    std::unordered_map<std::string, Eigen::Vector4f> generic_params;
-    std::unordered_map<std::string, geometry::Image> generic_imgs;
-
-    std::string shader = "defaultUnlit";
-
-    // ---- Open3D v0.19 compatibility API (declarations) ----
-    // Lifecycle / naming
-    Material &SetDefaultProperties();
-    Material &SetMaterialName(const std::string &mat_name);
-    const std::string &GetMaterialName() const;
-
-    // Scalar material properties (query-only, use fields to set)
-    bool HasBaseColor() const;
-    Eigen::Vector4f GetBaseColor() const;
-
-    bool HasBaseRoughness() const;
-    float GetBaseRoughness() const;
-
-    bool HasBaseMetallic() const;
-    float GetBaseMetallic() const;
-
-    bool HasBaseReflectance() const;
-    float GetBaseReflectance() const;
-
-    bool HasBaseClearcoat() const;
-    float GetBaseClearcoat() const;
-
-    bool HasBaseClearcoatRoughness() const;
-    float GetBaseClearcoatRoughness() const;
-
-    bool HasAnisotropy() const;
-    float GetAnisotropy() const;
-
-    bool HasEmissiveColor() const;
-    Eigen::Vector4f GetEmissiveColor() const;
-
-    // Individual texture maps
-    bool HasAlbedoMap() const;
-    cloudViewer::t::geometry::Image GetAlbedoMap() const;
-    Material &SetAlbedoMap(const cloudViewer::t::geometry::Image &img);
-
-    bool HasNormalMap() const;
-    cloudViewer::t::geometry::Image GetNormalMap() const;
-
-    bool HasAOMap() const;
-    cloudViewer::t::geometry::Image GetAOMap() const;
-
-    bool HasMetallicMap() const;
-    cloudViewer::t::geometry::Image GetMetallicMap() const;
-
-    bool HasRoughnessMap() const;
-    cloudViewer::t::geometry::Image GetRoughnessMap() const;
-
-    bool HasReflectanceMap() const;
-    cloudViewer::t::geometry::Image GetReflectanceMap() const;
-
-    bool HasClearcoatMap() const;
-    cloudViewer::t::geometry::Image GetClearcoatMap() const;
-
-    bool HasClearcoatRoughnessMap() const;
-    cloudViewer::t::geometry::Image GetClearcoatRoughnessMap() const;
-
-    bool HasAnisotropyMap() const;
-    cloudViewer::t::geometry::Image GetAnisotropyMap() const;
-
-    bool HasAORoughnessMetalMap() const;
-    cloudViewer::t::geometry::Image GetAORoughnessMetalMap() const;
-
-    // Generic maps and utilities
-    Material &SetTextureMap(const std::string &key, const geometry::Image &img);
-    Material &SetTextureMap(const std::string &key,
-                            const cloudViewer::t::geometry::Image &img);
-    std::unordered_map<std::string, cloudViewer::t::geometry::Image>
-    GetTextureMaps() const;
-
-    Material &SetScalarProperty(const std::string &key, float value);
-
-    // MaterialRecord ↔ Material compatibility (passthrough in this fork)
-    static Material FromMaterialRecord(const Material &rec);
-};
-
-// ---- Inline compat helpers mirroring Open3D v0.19 Material API ----
-inline Material &Material::SetDefaultProperties() {
-    // Minimal defaults consistent with existing renderer expectations
-    name = "defaultUnlit";
-    shader = "defaultUnlit";
-    has_alpha = false;
-    sRGB_color = true;
-    return *this;
-}
-
-inline Material &Material::SetMaterialName(const std::string &mat_name) {
-    name = mat_name;
-    return *this;
-}
-
-inline const std::string &Material::GetMaterialName() const { return name; }
-
-inline bool Material::HasBaseColor() const { return true; }
-inline Eigen::Vector4f Material::GetBaseColor() const { return base_color; }
-
-inline bool Material::HasBaseRoughness() const { return true; }
-inline float Material::GetBaseRoughness() const { return base_roughness; }
-
-inline bool Material::HasBaseMetallic() const { return true; }
-inline float Material::GetBaseMetallic() const { return base_metallic; }
-
-inline bool Material::HasBaseReflectance() const { return true; }
-inline float Material::GetBaseReflectance() const { return base_reflectance; }
-
-inline bool Material::HasBaseClearcoat() const { return true; }
-inline float Material::GetBaseClearcoat() const { return base_clearcoat; }
-
-inline bool Material::HasBaseClearcoatRoughness() const { return true; }
-inline float Material::GetBaseClearcoatRoughness() const {
-    return base_clearcoat_roughness;
-}
-
-inline bool Material::HasAnisotropy() const { return true; }
-inline float Material::GetAnisotropy() const { return base_anisotropy; }
-
-// Emissive color compatibility (not exposed in fields yet → default black)
-inline bool Material::HasEmissiveColor() const { return false; }
-inline Eigen::Vector4f Material::GetEmissiveColor() const {
-    return Eigen::Vector4f(0.f, 0.f, 0.f, 1.f);
-}
-
-// Individual texture map helpers (t::geometry::Image API)
-inline bool Material::HasAlbedoMap() const { return static_cast<bool>(albedo_img); }
-inline cloudViewer::t::geometry::Image Material::GetAlbedoMap() const {
-    return albedo_img ? cloudViewer::t::geometry::Image::FromLegacy(*albedo_img)
-                      : cloudViewer::t::geometry::Image();
-}
-inline Material &Material::SetAlbedoMap(const cloudViewer::t::geometry::Image &img) {
-    albedo_img = std::make_shared<geometry::Image>(img.ToLegacy());
-    return *this;
-}
-
-inline bool Material::HasNormalMap() const { return static_cast<bool>(normal_img); }
-inline cloudViewer::t::geometry::Image Material::GetNormalMap() const {
-    return normal_img ? cloudViewer::t::geometry::Image::FromLegacy(*normal_img)
-                      : cloudViewer::t::geometry::Image();
-}
-
-inline bool Material::HasAOMap() const { return static_cast<bool>(ao_img); }
-inline cloudViewer::t::geometry::Image Material::GetAOMap() const {
-    return ao_img ? cloudViewer::t::geometry::Image::FromLegacy(*ao_img)
-                  : cloudViewer::t::geometry::Image();
-}
-
-inline bool Material::HasMetallicMap() const { return static_cast<bool>(metallic_img); }
-inline cloudViewer::t::geometry::Image Material::GetMetallicMap() const {
-    return metallic_img ? cloudViewer::t::geometry::Image::FromLegacy(*metallic_img)
-                        : cloudViewer::t::geometry::Image();
-}
-
-inline bool Material::HasRoughnessMap() const { return static_cast<bool>(roughness_img); }
-inline cloudViewer::t::geometry::Image Material::GetRoughnessMap() const {
-    return roughness_img ? cloudViewer::t::geometry::Image::FromLegacy(*roughness_img)
-                         : cloudViewer::t::geometry::Image();
-}
-
-inline bool Material::HasReflectanceMap() const { return static_cast<bool>(reflectance_img); }
-inline cloudViewer::t::geometry::Image Material::GetReflectanceMap() const {
-    return reflectance_img
-                   ? cloudViewer::t::geometry::Image::FromLegacy(*reflectance_img)
-                   : cloudViewer::t::geometry::Image();
-}
-
-inline bool Material::HasClearcoatMap() const { return static_cast<bool>(clearcoat_img); }
-inline cloudViewer::t::geometry::Image Material::GetClearcoatMap() const {
-    return clearcoat_img ? cloudViewer::t::geometry::Image::FromLegacy(*clearcoat_img)
-                         : cloudViewer::t::geometry::Image();
-}
-
-inline bool Material::HasClearcoatRoughnessMap() const {
-    return static_cast<bool>(clearcoat_roughness_img);
-}
-inline cloudViewer::t::geometry::Image Material::GetClearcoatRoughnessMap() const {
-    return clearcoat_roughness_img
-                   ? cloudViewer::t::geometry::Image::FromLegacy(*clearcoat_roughness_img)
-                   : cloudViewer::t::geometry::Image();
-}
-
-inline bool Material::HasAnisotropyMap() const { return static_cast<bool>(anisotropy_img); }
-inline cloudViewer::t::geometry::Image Material::GetAnisotropyMap() const {
-    return anisotropy_img
-                   ? cloudViewer::t::geometry::Image::FromLegacy(*anisotropy_img)
-                   : cloudViewer::t::geometry::Image();
-}
-
-inline bool Material::HasAORoughnessMetalMap() const {
-    return static_cast<bool>(ao_rough_metal_img);
-}
-inline cloudViewer::t::geometry::Image Material::GetAORoughnessMetalMap() const {
-    return ao_rough_metal_img
-                   ? cloudViewer::t::geometry::Image::FromLegacy(*ao_rough_metal_img)
-                   : cloudViewer::t::geometry::Image();
-}
-
-// Generic texture map API used by NPZ IO
-inline Material &Material::SetTextureMap(const std::string &key,
-                                         const geometry::Image &img) {
-    if (key == "albedo") albedo_img = std::make_shared<geometry::Image>(img);
-    else if (key == "normal") normal_img = std::make_shared<geometry::Image>(img);
-    else if (key == "ao") ao_img = std::make_shared<geometry::Image>(img);
-    else if (key == "metallic") metallic_img = std::make_shared<geometry::Image>(img);
-    else if (key == "roughness") roughness_img = std::make_shared<geometry::Image>(img);
-    else if (key == "reflectance") reflectance_img = std::make_shared<geometry::Image>(img);
-    else if (key == "clearcoat") clearcoat_img = std::make_shared<geometry::Image>(img);
-    else if (key == "clearcoat_roughness" || key == "clearCoatRoughness")
-        clearcoat_roughness_img = std::make_shared<geometry::Image>(img);
-    else if (key == "anisotropy") anisotropy_img = std::make_shared<geometry::Image>(img);
-    else generic_imgs[key] = img;
-    return *this;
-}
-
-inline Material &Material::SetTextureMap(const std::string &key,
-                                         const cloudViewer::t::geometry::Image &img) {
-    return SetTextureMap(key, img.ToLegacy());
-}
-
-inline std::unordered_map<std::string, cloudViewer::t::geometry::Image>
-Material::GetTextureMaps() const {
-    std::unordered_map<std::string, cloudViewer::t::geometry::Image> maps;
-    if (albedo_img) maps["albedo"] = cloudViewer::t::geometry::Image::FromLegacy(*albedo_img);
-    if (normal_img) maps["normal"] = cloudViewer::t::geometry::Image::FromLegacy(*normal_img);
-    if (ao_img) maps["ao"] = cloudViewer::t::geometry::Image::FromLegacy(*ao_img);
-    if (metallic_img) maps["metallic"] = cloudViewer::t::geometry::Image::FromLegacy(*metallic_img);
-    if (roughness_img) maps["roughness"] = cloudViewer::t::geometry::Image::FromLegacy(*roughness_img);
-    if (reflectance_img) maps["reflectance"] = cloudViewer::t::geometry::Image::FromLegacy(*reflectance_img);
-    if (clearcoat_img) maps["clearcoat"] = cloudViewer::t::geometry::Image::FromLegacy(*clearcoat_img);
-    if (clearcoat_roughness_img)
-        maps["clearcoat_roughness"] = cloudViewer::t::geometry::Image::FromLegacy(*clearcoat_roughness_img);
-    if (anisotropy_img) maps["anisotropy"] = cloudViewer::t::geometry::Image::FromLegacy(*anisotropy_img);
-    if (ao_rough_metal_img)
-        maps["ao_rough_metal"] = cloudViewer::t::geometry::Image::FromLegacy(*ao_rough_metal_img);
-    for (const auto &kv : generic_imgs) {
-        maps[kv.first] = cloudViewer::t::geometry::Image::FromLegacy(kv.second);
+    /// Get images (texture maps) of this Material. Throws exception if the
+    /// image does not exist.
+    ///
+    /// \param key Map name
+    const t::geometry::Image &GetTextureMap(const std::string &key) const {
+        return texture_maps_.at(key);
     }
-    return maps;
-}
 
-inline Material &Material::SetScalarProperty(const std::string &key, float value) {
-    if (key == "metallic") base_metallic = value;
-    else if (key == "roughness") base_roughness = value;
-    else if (key == "reflectance") base_reflectance = value;
-    else if (key == "clearcoat") base_clearcoat = value;
-    else if (key == "clearcoat_roughness" || key == "clearCoatRoughness")
-        base_clearcoat_roughness = value;
-    else if (key == "anisotropy") base_anisotropy = value;
-    else generic_params[key] = Eigen::Vector4f(value, 0.f, 0.f, 0.f);
-    return *this;
-}
+    /// Returns the map of scalar properties
+    const ScalarPropertyMap &GetScalarProperties() const {
+        return scalar_properties_;
+    }
 
-// From MaterialRecord compatibility: accept Material passthrough
-inline Material Material::FromMaterialRecord(const Material &rec) { return rec; }
+    /// Get scalar properties of this Material. Throws exception if the property
+    /// does not exist.
+    ///
+    /// \param key Property name
+    float GetScalarProperty(const std::string &key) const {
+        return scalar_properties_.at(key);
+    }
+
+    /// Returns the map of vector properties
+    const VectorPropertyMap &GetVectorProperties() const {
+        return vector_properties_;
+    }
+
+    /// Get vector properties of this Material. Throws exception if the property
+    /// does not exist.
+    ///
+    /// \param key Property name
+    Eigen::Vector4f GetVectorProperty(const std::string &key) const {
+        return vector_properties_.at(key);
+    }
+
+    /// Set texture map. If map already exists it is overwritten, otherwise a
+    /// new key/image will be created.
+    ///
+    /// \param key map name
+    /// \param image Image associated with map name
+    void SetTextureMap(const std::string &key, const t::geometry::Image &image);
+
+    /// Set scalar property. If property already exists it is overwritten,
+    /// otherwise a new key/value will be created.
+    ///
+    /// \param key property name
+    /// \param value Value to assign to property name
+    void SetScalarProperty(const std::string &key, float value) {
+        scalar_properties_[key] = value;
+    }
+
+    /// Set vector property. If property already exists it is overwritten,
+    /// otherwise a new key/value will be created.
+    ///
+    /// \param key property name
+    /// \param value Value to assign to property name
+    void SetVectorProperty(const std::string &key,
+                           const Eigen::Vector4f &value) {
+        vector_properties_[key] = value;
+    }
+
+    /// Set material name. The material name should match the name of a built
+    // in or user specified shader. The name is NOT checked to ensure it is
+    // valid.
+    ///
+    /// \param shader The name of the shader.
+    void SetMaterialName(const std::string &material_name) {
+        material_name_ = material_name;
+    }
+
+    /// Return true if the map exists
+    ///
+    /// \param key Map name
+    bool HasTextureMap(const std::string &key) const {
+        return texture_maps_.count(key) > 0;
+    }
+
+    /// Return true if the property exists
+    ///
+    /// \param key Property name
+    bool HasScalarProperty(const std::string &key) const {
+        return scalar_properties_.count(key) > 0;
+    }
+
+    /// Return true if the property exists
+    ///
+    /// \param key Property name
+    bool HasVectorProperty(const std::string &key) const {
+        return vector_properties_.count(key) > 0;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ///
+    /// The following are convenience methods for common PBR material properties
+    ///
+    ////////////////////////////////////////////////////////////////////////////
+    const t::geometry::Image &GetAlbedoMap() const {
+        return GetTextureMap("albedo");
+    }
+    const t::geometry::Image &GetNormalMap() const {
+        return GetTextureMap("normal");
+    }
+    const t::geometry::Image &GetAOMap() const {
+        return GetTextureMap("ambient_occlusion");
+    }
+    const t::geometry::Image &GetMetallicMap() const {
+        return GetTextureMap("metallic");
+    }
+    const t::geometry::Image &GetRoughnessMap() const {
+        return GetTextureMap("roughness");
+    }
+    const t::geometry::Image &GetReflectanceMap() const {
+        return GetTextureMap("reflectance");
+    }
+    const t::geometry::Image &GetClearcoatMap() const {
+        return GetTextureMap("clear_coat");
+    }
+    const t::geometry::Image &GetClearcoatRoughnessMap() const {
+        return GetTextureMap("clear_coat_roughness");
+    }
+    const t::geometry::Image &GetAnisotropyMap() const {
+        return GetTextureMap("anisotropy");
+    }
+    /// Ambient occlusion, roughness, and metallic maps in a single 3 channel
+    /// texture. Commonly used in glTF models.
+    const t::geometry::Image &GetAORoughnessMetalMap() const {
+        return GetTextureMap("ao_rough_metal");
+    }
+
+    bool HasAlbedoMap() const { return HasTextureMap("albedo"); }
+    bool HasNormalMap() const { return HasTextureMap("normal"); }
+    bool HasAOMap() const { return HasTextureMap("ambient_occlusion"); }
+    bool HasMetallicMap() const { return HasTextureMap("metallic"); }
+    bool HasRoughnessMap() const { return HasTextureMap("roughness"); }
+    bool HasReflectanceMap() const { return HasTextureMap("reflectance"); }
+    bool HasClearcoatMap() const { return HasTextureMap("clear_coat"); }
+    bool HasClearcoatRoughnessMap() const {
+        return HasTextureMap("clear_coat_roughness");
+    }
+    bool HasAnisotropyMap() const { return HasTextureMap("anisotropy"); }
+    bool HasAORoughnessMetalMap() const {
+        return HasTextureMap("ao_rough_metal");
+    }
+
+    void SetAlbedoMap(const t::geometry::Image &image) {
+        SetTextureMap("albedo", image);
+    }
+    void SetNormalMap(const t::geometry::Image &image) {
+        SetTextureMap("normal", image);
+    }
+    void SetAOMap(const t::geometry::Image &image) {
+        SetTextureMap("ambient_occlusion", image);
+    }
+    void SetMetallicMap(const t::geometry::Image &image) {
+        SetTextureMap("metallic", image);
+    }
+    void SetRoughnessMap(const t::geometry::Image &image) {
+        SetTextureMap("roughness", image);
+    }
+    void SetReflectanceMap(const t::geometry::Image &image) {
+        SetTextureMap("reflectance", image);
+    }
+    void SetClearcoatMap(const t::geometry::Image &image) {
+        SetTextureMap("clear_coat", image);
+    }
+    void SetClearcoatRoughnessMap(const t::geometry::Image &image) {
+        SetTextureMap("clear_coat_roughness", image);
+    }
+    void SetAnisotropyMap(const t::geometry::Image &image) {
+        SetTextureMap("anisotropy", image);
+    }
+    void SetAORoughnessMetalMap(const t::geometry::Image &image) {
+        SetTextureMap("ao_rough_metal", image);
+    }
+
+    Eigen::Vector4f GetBaseColor() const {
+        return GetVectorProperty("base_color");
+    }
+    float GetBaseMetallic() const { return GetScalarProperty("metallic"); }
+    float GetBaseRoughness() const { return GetScalarProperty("roughness"); }
+    float GetBaseReflectance() const {
+        return GetScalarProperty("reflectance");
+    }
+    float GetBaseClearcoat() const { return GetScalarProperty("clear_coat"); }
+    float GetBaseClearcoatRoughness() const {
+        return GetScalarProperty("clear_coat_roughness");
+    }
+    float GetAnisotropy() const { return GetScalarProperty("anisotropy"); }
+    float GetThickness() const { return GetScalarProperty("thickness"); }
+    float GetTransmission() const { return GetScalarProperty("transmission"); }
+    Eigen::Vector4f GetAbsorptionColor() const {
+        return GetVectorProperty("absorption_color");
+    }
+    float GetAbsorptionDistance() const {
+        return GetScalarProperty("absorption_distance");
+    }
+    Eigen::Vector4f GetEmissiveColor() const {
+        return GetVectorProperty("emissive_color");
+    }
+
+    bool HasBaseColor() const { return HasVectorProperty("base_color"); }
+    bool HasBaseMetallic() const { return HasScalarProperty("metallic"); }
+    bool HasBaseRoughness() const { return HasScalarProperty("roughness"); }
+    bool HasBaseReflectance() const { return HasScalarProperty("reflectance"); }
+    bool HasBaseClearcoat() const { return HasScalarProperty("clear_coat"); }
+    bool HasBaseClearcoatRoughness() const {
+        return HasScalarProperty("clear_coat_roughness");
+    }
+    bool HasAnisotropy() const { return HasScalarProperty("anisotropy"); }
+    bool HasThickness() const { return HasScalarProperty("thickness"); }
+    bool HasTransmission() const { return HasScalarProperty("transmission"); }
+    bool HasAbsorptionColor() const {
+        return HasVectorProperty("absorption_color");
+    }
+    bool HasAbsorptionDistance() const {
+        return HasScalarProperty("absorption_distance");
+    }
+    bool HasEmissiveColor() const {
+        return HasVectorProperty("emissive_color");
+    }
+
+    void SetBaseColor(const Eigen::Vector4f &value) {
+        SetVectorProperty("base_color", value);
+    }
+    void SetBaseMetallic(float value) { SetScalarProperty("metallic", value); }
+    void SetBaseRoughness(float value) {
+        SetScalarProperty("roughness", value);
+    }
+    void SetBaseReflectance(float value) {
+        SetScalarProperty("reflectance", value);
+    }
+    void SetBaseClearcoat(float value) {
+        SetScalarProperty("clear_coat", value);
+    }
+    void SetBaseClearcoatRoughness(float value) {
+        SetScalarProperty("clear_coat_roughness", value);
+    }
+    void SetAnisotropy(float value) { SetScalarProperty("anisotropy", value); }
+    void SetThickness(float value) { SetScalarProperty("thickness", value); }
+    void SetTransmission(float value) {
+        SetScalarProperty("transmission", value);
+    }
+    void SetAbsorptionColor(const Eigen::Vector4f &value) {
+        SetVectorProperty("absorption_color", value);
+    }
+    void SetAbsorptionDistance(float value) {
+        SetScalarProperty("absorption_distance", value);
+    }
+    void SetEmissiveColor(const Eigen::Vector4f &value) {
+        SetVectorProperty("emissive_color", value);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ///
+    /// The following are convenience methods for Pointclouds and LineSet
+    /// shaders
+    ///
+    ////////////////////////////////////////////////////////////////////////////
+    float GetPointSize() const { return GetScalarProperty("point_size"); }
+    float GetLineWidth() const { return GetScalarProperty("line_width"); }
+
+    bool HasPointSize() const { return HasScalarProperty("point_size"); }
+    bool HasLineWidth() const { return HasScalarProperty("line_width"); }
+
+    void SetPointSize(float value) { SetScalarProperty("point_size", value); }
+    void SetLineWidth(float value) { SetScalarProperty("line_width", value); }
+
+    /// Fills a legacy MaterialRecord constructed from this Material
+    void ToMaterialRecord(MaterialRecord &record) const;
+
+private:
+    std::string material_name_;
+    TextureMaps texture_maps_;
+    ScalarPropertyMap scalar_properties_;
+    VectorPropertyMap vector_properties_;
+};
 
 }  // namespace rendering
 }  // namespace visualization

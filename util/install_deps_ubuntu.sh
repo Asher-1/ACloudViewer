@@ -19,6 +19,7 @@ deps=(
     libxcb-shm0
     libglu1-mesa-dev
     python3-dev
+    libssl-dev
     # Filament build-from-source
     clang
     libc++-dev

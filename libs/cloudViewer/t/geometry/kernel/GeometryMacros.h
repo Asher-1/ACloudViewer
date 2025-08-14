@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ __device__ double atomicAdd(double *address, double val) {
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
 #endif
 
-// Compatibility: map CloudViewer atomic macro to Open3D's
+// Compatibility: map CloudViewer atomic macro to CloudViewer's
 #ifndef CLOUDVIEWER_ATOMIC_ADD
 #define CLOUDVIEWER_ATOMIC_ADD(X, Y) OPEN3D_ATOMIC_ADD(X, Y)
 #endif

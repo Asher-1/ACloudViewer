@@ -1,36 +1,20 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pybind/visualization/visualization_trampoline.h" // must include first
+// clang-format off
+#include "pybind/visualization/visualization_trampoline.h"  // must include first
+// clang-format on
+
 #include "visualization/visualizer/RenderOption.h"
+
+#include <IJsonConvertibleIO.h>
 
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"
-
-#include <IJsonConvertibleIO.h>
 
 namespace cloudViewer {
 namespace visualization {
@@ -48,22 +32,24 @@ void pybind_renderoption(py::module &m) {
                  [](const visualization::RenderOption &vc) {
                      return std::string("RenderOption");
                  })
-            .def("load_from_json",
-                 [](visualization::RenderOption &ro,
-                    const std::string &filename) {
-                     io::ReadIJsonConvertible(filename, ro);
-                 },
-                 "Function to load visualization::RenderOption from a JSON "
-                 "file.",
-                 "filename"_a)
-            .def("save_to_json",
-                 [](visualization::RenderOption &ro,
-                    const std::string &filename) {
-                     io::WriteIJsonConvertible(filename, ro);
-                 },
-                 "Function to save visualization::RenderOption to a JSON "
-                 "file.",
-                 "filename"_a)
+            .def(
+                    "load_from_json",
+                    [](visualization::RenderOption &ro,
+                       const std::string &filename) {
+                        io::ReadIJsonConvertible(filename, ro);
+                    },
+                    "Function to load visualization::RenderOption from a JSON "
+                    "file.",
+                    "filename"_a)
+            .def(
+                    "save_to_json",
+                    [](visualization::RenderOption &ro,
+                       const std::string &filename) {
+                        io::WriteIJsonConvertible(filename, ro);
+                    },
+                    "Function to save visualization::RenderOption to a JSON "
+                    "file.",
+                    "filename"_a)
             .def_readwrite(
                     "background_color",
                     &visualization::RenderOption::background_color_,
@@ -108,15 +94,11 @@ void pybind_renderoption(py::module &m) {
                                     {{"filename", "Path to file."}});
 
     // This is a nested class, but now it's bind to the module
-    // o3d.visualization.PointColorOption
-    py::enum_<visualization::RenderOption::PointColorOption>
-            enum_point_color_option(m, "PointColorOption", py::arithmetic(),
-                                    "PointColorOption");
-    enum_point_color_option.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for point color for ``PointCloud``.";
-            }),
-            py::none(), py::none(), "");
+    // cv3d.visualization.PointColorOption
+    py::native_enum<visualization::RenderOption::PointColorOption>
+            enum_point_color_option(
+                    m, "PointColorOption", "enum.Enum",
+                    "Enum class for point color for ``PointCloud``.");
     enum_point_color_option
             .value("Default",
                    visualization::RenderOption::PointColorOption::Default)
@@ -130,35 +112,28 @@ void pybind_renderoption(py::module &m) {
                    visualization::RenderOption::PointColorOption::ZCoordinate)
             .value("Normal",
                    visualization::RenderOption::PointColorOption::Normal)
-            .export_values();
+            .export_values()
+            .finalize();
 
     // This is a nested class, but now it's bind to the module
-    // o3d.visualization.MeshShadeOption
-    py::enum_<visualization::RenderOption::MeshShadeOption>
-            enum_mesh_shade_option(m, "MeshShadeOption", py::arithmetic(),
-                                   "MeshShadeOption");
-    enum_mesh_shade_option.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for mesh shading for ``TriangleMesh``.";
-            }),
-            py::none(), py::none(), "");
+    // cv3d.visualization.MeshShadeOption
+    py::native_enum<visualization::RenderOption::MeshShadeOption>
+            enum_mesh_shade_option(
+                    m, "MeshShadeOption", "enum.Enum",
+                    "Enum class for mesh shading for ``TriangleMesh``.");
     enum_mesh_shade_option
             .value("Default",
                    visualization::RenderOption::MeshShadeOption::FlatShade)
             .value("Color",
                    visualization::RenderOption::MeshShadeOption::SmoothShade)
-            .export_values();
+            .export_values()
+            .finalize();
 
     // This is a nested class, but now it's bind to the module
-    // o3d.visualization.MeshColorOption
-    py::enum_<visualization::RenderOption::MeshColorOption>
-            enum_mesh_clor_option(m, "MeshColorOption", py::arithmetic(),
-                                  "MeshColorOption");
-    enum_mesh_clor_option.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for color for ``TriangleMesh``.";
-            }),
-            py::none(), py::none(), "");
+    // cv3d.visualization.MeshColorOption
+    py::native_enum<visualization::RenderOption::MeshColorOption>
+            enum_mesh_clor_option(m, "MeshColorOption", "enum.Enum",
+                                  "Enum class for color for ``TriangleMesh``.");
     enum_mesh_clor_option
             .value("Default",
                    visualization::RenderOption::MeshColorOption::Default)
@@ -171,7 +146,8 @@ void pybind_renderoption(py::module &m) {
                    visualization::RenderOption::MeshColorOption::ZCoordinate)
             .value("Normal",
                    visualization::RenderOption::MeshColorOption::Normal)
-            .export_values();
+            .export_values()
+            .finalize();
 }
 
 void pybind_renderoption_method(py::module &m) {}

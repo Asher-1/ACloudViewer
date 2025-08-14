@@ -55,7 +55,7 @@ except ImportError:
 class CppFormatter:
 
     standard_header = """// ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -137,7 +137,7 @@ class CppFormatter:
 class PythonFormatter:
 
     standard_header = """# ----------------------------------------------------------------------------
-# -                        CloudViewer: www.cloudViewer.org                            -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT

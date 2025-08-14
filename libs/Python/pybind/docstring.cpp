@@ -1,30 +1,14 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "pybind/docstring.h"
+
+#include <Helper.h>
+#include <Logging.h>
 
 #include <regex>
 #include <sstream>
@@ -32,9 +16,6 @@
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
-
-#include <Helper.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace docstring {
@@ -157,8 +138,9 @@ size_t FunctionDoc::ParseSummary() {
         overload_docs_.push_back(OverloadDocs{});
         size_t result_type_pos = arrow_pos + 4;
         size_t summary_start_pos =
-                result_type_pos +
-                utility::WordLength(pybind_doc_, result_type_pos, "._:,[]() ,");
+                result_type_pos + utility::WordLength(pybind_doc_,
+                                                      result_type_pos,
+                                                      "._:,[]() ,\"");
         summary_end_pos =
                 pybind_doc_.find(". " + name_ + "(", summary_start_pos);
         if (summary_end_pos == std::string::npos)
@@ -177,8 +159,9 @@ size_t FunctionDoc::ParseSummary() {
 
 void FunctionDoc::ParseArguments() {
     // Parse docstrings of arguments
-    // Input: "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> cloudViewer.bar"
-    // Goal: split to {"arg0: float", "arg1: float = 1.0", "arg2: int = 1"} and
+    // Input: "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) ->
+    // cloudViewer.bar" Goal: split to {"arg0: float", "arg1: float = 1.0",
+    // "arg2: int = 1"} and
     //       call function to parse each argument respectively
     std::vector<std::string> argument_tokens = GetArgumentTokens(
             pybind_doc_.substr(doc_pos_[0], doc_pos_[1] - doc_pos_[0]));
@@ -194,9 +177,9 @@ void FunctionDoc::ParseReturn() {
     if (arrow_pos != std::string::npos && arrow_pos > doc_pos_[0]) {
         size_t result_type_pos = arrow_pos + 4;
         std::string return_type = pybind_doc_.substr(
-                result_type_pos,
-                utility::WordLength(pybind_doc_, result_type_pos,
-                                    "._:,[]() ,"));
+            result_type_pos,
+            utility::WordLength(pybind_doc_, result_type_pos,
+                                "._:,[]() ,\""));
         overload_docs_.back().return_doc_.type_ = StringCleanAll(return_type);
     }
 }
@@ -298,17 +281,9 @@ std::string FunctionDoc::ToGoogleDocString() const {
     return rc.str();
 }
 
-std::string FunctionDoc::NamespaceFix(const std::string& s) {
-    std::string rc = std::regex_replace(s, std::regex("::(\\S)"), ".$1");
-    rc = std::regex_replace(rc, std::regex("cloudViewer\\.(cpu|cuda)\\.pybind\\."),
-                            "cloudViewer.");
-    return rc;
-}
-
 std::string FunctionDoc::StringCleanAll(std::string& s,
                                         const std::string& white_space) {
     std::string rc = utility::StripString(s, white_space);
-    rc = NamespaceFix(rc);
     return rc;
 }
 
@@ -322,7 +297,7 @@ ArgumentDoc FunctionDoc::ParseArgumentToken(const std::string& argument_token) {
     std::smatch matches;
     if (std::regex_search(argument_token, matches, rgx_with_default)) {
         argument_doc.name_ = matches[1].str();
-        argument_doc.type_ = NamespaceFix(matches[2].str());
+        argument_doc.type_ = matches[2].str();
         argument_doc.default_ = matches[3].str();
 
         // Handle long default value. Long default has multiple lines and thus
@@ -344,7 +319,7 @@ ArgumentDoc FunctionDoc::ParseArgumentToken(const std::string& argument_token) {
                 "([A-Za-z_][A-Za-z\\d_:\\.\\[\\]\\(\\) ,]*)");
         if (std::regex_search(argument_token, matches, rgx_without_default)) {
             argument_doc.name_ = matches[1].str();
-            argument_doc.type_ = NamespaceFix(matches[2].str());
+            argument_doc.type_ = matches[2].str();
         }
     }
 

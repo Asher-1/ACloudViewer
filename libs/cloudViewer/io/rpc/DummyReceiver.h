@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -27,7 +27,7 @@
 #pragma once
 
 #include "io/rpc/MessageUtils.h"
-#include "io/rpc/ReceiverBase.h"
+#include "io/rpc/ZMQReceiver.h"
 
 namespace cloudViewer {
 namespace io {
@@ -35,47 +35,9 @@ namespace rpc {
 
 /// Receiver implementation which always returns a successful status.
 /// This class is meant for testing puproses.
-class DummyReceiver : public ReceiverBase {
+class DummyReceiver : public ZMQReceiver {
 public:
-    DummyReceiver(const std::string& address, int timeout)
-        : ReceiverBase(address, timeout) {}
-
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetMeshData& msg,
-            const MsgpackObject& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::GetMeshData& msg,
-            const MsgpackObject& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetCameraData& msg,
-            const MsgpackObject& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetProperties& msg,
-            const MsgpackObject& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetActiveCamera& msg,
-            const MsgpackObject& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetTime& msg,
-            const MsgpackObject& obj) override {
-        return CreateStatusOKMsg();
-    }
+    DummyReceiver(const std::string& address, int timeout);
 };
 
 }  // namespace rpc

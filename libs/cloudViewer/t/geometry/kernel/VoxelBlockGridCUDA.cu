@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@
 #include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
 #include "cloudViewer/t/geometry/kernel/VoxelBlockGrid.h"
 #include "cloudViewer/t/geometry/kernel/VoxelBlockGridImpl.h"
-#include "cloudViewer/utility/Logging.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -28,9 +28,9 @@ namespace kernel {
 namespace voxel_grid {
 
 struct Coord3i {
-    OPEN3D_HOST_DEVICE Coord3i(index_t x, index_t y, index_t z)
+    CLOUDVIEWER_HOST_DEVICE Coord3i(index_t x, index_t y, index_t z)
         : x_(x), y_(y), z_(z) {}
-    OPEN3D_HOST_DEVICE bool operator==(const Coord3i &other) const {
+    CLOUDVIEWER_HOST_DEVICE bool operator==(const Coord3i &other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
 
@@ -59,7 +59,7 @@ void PointCloudTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     index_t *count_ptr = static_cast<index_t *>(count.GetDataPtr());
 
     core::ParallelFor(hashmap->GetDevice(), n,
-                      [=] OPEN3D_DEVICE(index_t workload_idx) {
+                      [=] CLOUDVIEWER_DEVICE(index_t workload_idx) {
                           float x = pcd_ptr[3 * workload_idx + 0];
                           float y = pcd_ptr[3 * workload_idx + 1];
                           float z = pcd_ptr[3 * workload_idx + 2];
@@ -142,7 +142,7 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     index_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx) {
+        core::ParallelFor(device, n, [=] CLOUDVIEWER_DEVICE(index_t workload_idx) {
             index_t y = (workload_idx / cols_strided) * stride;
             index_t x = (workload_idx % cols_strided) * stride;
 
@@ -210,7 +210,7 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     bool *block_masks_ptr = block_masks.GetDataPtr<bool>();
     count[0] = 0;
     core::ParallelFor(device, total_block_count,
-                      [=] OPEN3D_DEVICE(index_t workload_idx) {
+                      [=] CLOUDVIEWER_DEVICE(index_t workload_idx) {
                           if (block_masks_ptr[workload_idx]) {
                               index_t idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
                               index_t offset_lhs = 3 * idx;

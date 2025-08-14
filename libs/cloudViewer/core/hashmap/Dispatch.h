@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -45,11 +45,11 @@
 // TODO: dispatch more combinations.
 #define DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(DTYPE, DIM, ...)                   \
     [&] {                                                                     \
-        if (DTYPE == cloudViewer::core::Int64) {                                   \
+        if (DTYPE == cloudViewer::core::Int64) {                              \
             DIM_SWITCHER(int64_t, DIM, __VA_ARGS__)                           \
-        } else if (DTYPE == cloudViewer::core::Int32) {                            \
+        } else if (DTYPE == cloudViewer::core::Int32) {                       \
             DIM_SWITCHER(int, DIM, __VA_ARGS__)                               \
-        } else if (DTYPE == cloudViewer::core::Int16) {                            \
+        } else if (DTYPE == cloudViewer::core::Int16) {                       \
             DIM_SWITCHER(short, DIM, __VA_ARGS__)                             \
         } else {                                                              \
             utility::LogError(                                                \

@@ -1,35 +1,16 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <AutoIO.h>
 #include <FeatureIO.h>
 #include <IJsonConvertibleIO.h>
 #include <ImageIO.h>
-#include <OctreeIO.h>
 #include <LineSetIO.h>
+#include <OctreeIO.h>
 #include <PinholeCameraTrajectoryIO.h>
 #include <VoxelGridIO.h>
 #include <camera/PinholeCameraIntrinsic.h>
@@ -105,18 +86,14 @@ static const std::unordered_map<std::string, std::string>
 };
 
 void pybind_class_io(py::module &m_io) {
-    py::enum_<FileGeometry> geom_type(m_io, "FileGeometry", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    geom_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Geometry types";
-            }),
-            py::none(), py::none(), "");
-    geom_type.value("CONTENTS_UKNWOWN", FileGeometry::CONTENTS_UNKNOWN)
+    py::native_enum<FileGeometry>(m_io, "FileGeometry", "enum.Enum",
+                                  "Geometry types.")
+            .value("CONTENTS_UKNWOWN", FileGeometry::CONTENTS_UNKNOWN)
             .value("CONTAINS_POINTS", FileGeometry::CONTAINS_POINTS)
             .value("CONTAINS_LINES", FileGeometry::CONTAINS_LINES)
             .value("CONTAINS_TRIANGLES", FileGeometry::CONTAINS_TRIANGLES)
-            .export_values();
+            .export_values()
+            .finalize();
     m_io.def(
             "read_file_geometry_type", &ReadFileGeometryType,
             "Returns the type of geometry of the file. This is a faster way of "

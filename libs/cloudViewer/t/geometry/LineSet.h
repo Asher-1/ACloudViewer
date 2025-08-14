@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -346,8 +346,8 @@ public:
     /// \brief Returns the device attribute of this LineSet.
     core::Device GetDevice() const override { return device_; }
 
-    /// Create a LineSet from a legacy Open3D LineSet.
-    /// \param lineset_legacy Legacy Open3D LineSet.
+    /// Create a LineSet from a legacy CloudViewer LineSet.
+    /// \param lineset_legacy Legacy CloudViewer LineSet.
     /// \param float_dtype Float32 or Float64, used to store floating point
     /// values, e.g. points, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
@@ -359,7 +359,7 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
-    /// Convert to a legacy Open3D LineSet.
+    /// Convert to a legacy CloudViewer LineSet.
     cloudViewer::geometry::LineSet ToLegacy() const;
 
     /// Create an axis-aligned bounding box from point attribute "positions".

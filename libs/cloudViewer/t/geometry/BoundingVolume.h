@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -9,9 +9,7 @@
 
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/TensorCheck.h"
-#include "cloudViewer/geometry/AxisAlignedBoundingBox.h"
-#include "cloudViewer/geometry/OrientedBoundingBox.h"
-#include "eCV_db/include/ecvOrientedBBox.h"
+#include "cloudViewer/geometry/BoundingVolume.h"
 #include "cloudViewer/t/geometry/DrawableGeometry.h"
 #include "cloudViewer/t/geometry/Geometry.h"
 #include <Logging.h>
@@ -195,13 +193,13 @@ public:
     /// Text description.
     std::string ToString() const;
 
-    /// Convert to a legacy Open3D axis-aligned box.
+    /// Convert to a legacy CloudViewer axis-aligned box.
     cloudViewer::geometry::AxisAlignedBoundingBox ToLegacy() const;
 
     /// Convert to an oriented box.
     OrientedBoundingBox GetOrientedBoundingBox() const;
 
-    /// Create an AxisAlignedBoundingBox from a legacy Open3D
+    /// Create an AxisAlignedBoundingBox from a legacy CloudViewer
     /// axis-aligned box.
     ///
     /// \param box Legacy AxisAlignedBoundingBox.
@@ -421,7 +419,7 @@ public:
     /// Text description.
     std::string ToString() const;
 
-    /// Convert to a legacy Open3D oriented box.
+    /// Convert to a legacy CloudViewer oriented box.
     cloudViewer::geometry::OrientedBoundingBox ToLegacy() const;
 
     /// Convert to an axis-aligned box.
@@ -435,7 +433,7 @@ public:
     static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox &aabb);
 
-    /// Create an OrientedBoundingBox from a legacy Open3D oriented box.
+    /// Create an OrientedBoundingBox from a legacy CloudViewer oriented box.
     ///
     /// \param box Legacy OrientedBoundingBox.
     /// \param dtype The data type of the box for min_bound max_bound and color.

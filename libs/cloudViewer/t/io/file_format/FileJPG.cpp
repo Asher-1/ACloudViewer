@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -111,7 +111,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
 
 bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
-                     int quality /* = kOpen3DImageIODefaultQuality*/) {
+                     int quality /* = kCloudViewerImageIODefaultQuality*/) {
     if (image.IsEmpty()) {
         utility::LogWarning("Write JPG failed: image has no data.");
         return false;
@@ -121,7 +121,7 @@ bool WriteImageToJPG(const std::string &filename,
         utility::LogWarning("Write JPG failed: unsupported image data.");
         return false;
     }
-    if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
+    if (quality == kCloudViewerImageIODefaultQuality)  // Set default quality
         quality = 90;
     if (quality < 0 || quality > 100) {
         utility::LogWarning(

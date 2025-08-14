@@ -6,6 +6,7 @@ if (USE_PCL_BACKEND)
     project(QPCL_ENGINE_LIB)
 
     # CURRENT DIR
+    set(CMAKE_INCLUDE_CURRENT_DIR ON)
     file(GLOB header_list *.h)
     file(GLOB_RECURSE ui_list ${CMAKE_CURRENT_SOURCE_DIR}/*.ui)
 
@@ -157,11 +158,8 @@ if (USE_PCL_BACKEND)
             Qt5::Widgets
             Qt5::PrintSupport
             Qt5::OpenGL)
-    if (NOT USE_SYSTEM_PCL AND NOT USE_SYSTEM_VTK)
-        target_link_libraries(${PROJECT_NAME} 3rdparty_pcl 3rdparty_vtk)
-    else()
-        target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES} ${VTK_LIBRARIES})
-    endif()
+
+    target_link_libraries(${PROJECT_NAME} 3rdparty_pcl)
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD)
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_PCL_BACKEND)

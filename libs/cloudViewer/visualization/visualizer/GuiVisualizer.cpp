@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,11 +26,11 @@
 
 #include "visualization/visualizer/GuiVisualizer.h"
 
+#include <CloudViewerConfig.h>
 #include <FileSystem.h>
 #include <Image.h>
 #include <ImageIO.h>
 #include <Logging.h>
-#include <CloudViewerConfig.h>
 #include <ecvBBox.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
@@ -41,6 +41,7 @@
 #include "io/ModelIO.h"
 #include "io/PointCloudIO.h"
 #include "io/TriangleMeshIO.h"
+#include "io/rpc/ZMQReceiver.h"
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Button.h"
 #include "visualization/gui/Checkbox.h"
@@ -58,7 +59,7 @@
 #include "visualization/gui/VectorEdit.h"
 #include "visualization/rendering/Camera.h"
 #include "visualization/rendering/CloudViewerScene.h"
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Model.h"
 #include "visualization/rendering/RenderToBuffer.h"
 #include "visualization/rendering/RendererHandle.h"
@@ -68,7 +69,7 @@
 #include "visualization/visualizer/GuiSettingsModel.h"
 #include "visualization/visualizer/GuiSettingsView.h"
 #include "visualization/visualizer/GuiWidgets.h"
-#include "visualization/visualizer/Receiver.h"
+#include "visualization/visualizer/MessageProcessor.h"
 
 #define LOAD_IN_NEW_WINDOW 0
 
@@ -332,13 +333,14 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<gui::SceneWidget> scene_wgt_;
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
-    std::shared_ptr<Receiver> receiver_;
+    std::shared_ptr<io::rpc::ZMQReceiver> receiver_;
+    std::shared_ptr<MessageProcessor> message_processor_;
 
     struct Settings {
         CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-        rendering::Material lit_material_;
-        rendering::Material unlit_material_;
-        rendering::Material normal_depth_material_;
+        rendering::MaterialRecord lit_material_;
+        rendering::MaterialRecord unlit_material_;
+        rendering::MaterialRecord normal_depth_material_;
 
         GuiSettingsModel model_;
         std::shared_ptr<gui::Vert> wgt_base;
@@ -580,8 +582,7 @@ GuiVisualizer::GuiVisualizer(const std::string &title, int width, int height)
 }
 
 GuiVisualizer::GuiVisualizer(
-        const std::vector<std::shared_ptr<const ccHObject>>
-                &geometries,
+        const std::vector<std::shared_ptr<const ccHObject>> &geometries,
         const std::string &title,
         int width,
         int height,
@@ -591,6 +592,20 @@ GuiVisualizer::GuiVisualizer(
       impl_(new GuiVisualizer::Impl()) {
     Init();
     SetGeometry(geometries[0], false);  // also updates the camera
+
+    // Create a message processor for incoming messages.
+    auto on_geometry = [this](std::shared_ptr<ccHObject> geom,
+                              const std::string &path, int time,
+                              const std::string &layer) {
+        // Rather than duplicating the logic to figure out the correct material,
+        // just add with the default material and pretend the user changed the
+        // current material and update everyone's material.
+        impl_->scene_wgt_->GetScene()->AddGeometry(path, geom.get(),
+                                                   rendering::MaterialRecord());
+        impl_->UpdateFromModel(GetRenderer(), true);
+    };
+    impl_->message_processor_ =
+            std::make_shared<MessageProcessor>(this, on_geometry);
 }
 
 void GuiVisualizer::Init() {
@@ -784,14 +799,14 @@ void GuiVisualizer::AddItemsToAppMenu(
     }
 }
 
-void GuiVisualizer::SetGeometry(
-        std::shared_ptr<const ccHObject> geometry, bool loaded_model) {
+void GuiVisualizer::SetGeometry(std::shared_ptr<const ccHObject> geometry,
+                                bool loaded_model) {
     auto scene3d = impl_->scene_wgt_->GetScene();
     scene3d->ClearGeometry();
 
     impl_->SetMaterialsToDefault();
 
-    rendering::Material loaded_material;
+    rendering::MaterialRecord loaded_material;
     if (loaded_model) {
         scene3d->AddModel(MODEL_NAME, impl_->loaded_model_);
         impl_->settings_.model_.SetDisplayingPointClouds(false);
@@ -887,18 +902,8 @@ void GuiVisualizer::Layout(const gui::LayoutContext &context) {
 }
 
 void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-    auto on_geometry = [this](std::shared_ptr<ccHObject> geom,
-                              const std::string &path, int time,
-                              const std::string &layer) {
-        // Rather than duplicating the logic to figure out the correct material,
-        // just add with the default material and pretend the user changed the
-        // current material and update everyone's material.
-        impl_->scene_wgt_->GetScene()->AddGeometry(path, geom.get(),
-                                                   rendering::Material());
-        impl_->UpdateFromModel(GetRenderer(), true);
-    };
-    impl_->receiver_ =
-            std::make_shared<Receiver>(address, timeout, this, on_geometry);
+    impl_->receiver_ = std::make_shared<io::rpc::ZMQReceiver>(address, timeout);
+    impl_->receiver_->SetMessageProcessor(impl_->message_processor_);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();

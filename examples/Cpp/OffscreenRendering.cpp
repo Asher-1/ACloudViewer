@@ -54,7 +54,7 @@ int main(int argc, const char *argv[]) {
                                  EngineInstance::GetResourceManager());
     auto *scene = new CloudViewerScene(*renderer);
 
-    Material mat;
+    MaterialRecord mat;
     mat.shader = "defaultLit";
     auto torus = ccMesh::CreateTorus();
     torus->computeVertexNormals();

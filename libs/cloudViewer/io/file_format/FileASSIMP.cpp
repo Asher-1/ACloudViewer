@@ -42,7 +42,7 @@
 #include "io/FileFormatIO.h"
 #include "io/ModelIO.h"
 #include "io/TriangleMeshIO.h"
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Model.h"
 
 #define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
@@ -431,7 +431,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
-        visualization::rendering::Material cv3d_mat;
+        visualization::rendering::MaterialRecord cv3d_mat;
 
         cv3d_mat.name = mat->GetName().C_Str();
 

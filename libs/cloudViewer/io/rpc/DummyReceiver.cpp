@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -28,10 +28,18 @@
 
 #include <zmq.hpp>
 
+#include "io/rpc/DummyMessageProcessor.h"
 #include "io/rpc/Messages.h"
 
 namespace cloudViewer {
 namespace io {
-namespace rpc {}  // namespace rpc
+namespace rpc {
+
+DummyReceiver::DummyReceiver(const std::string& address, int timeout)
+    : ZMQReceiver(address, timeout) {
+    SetMessageProcessor(std::make_shared<DummyMessageProcessor>());
+}
+
+}  // namespace rpc
 }  // namespace io
 }  // namespace cloudViewer

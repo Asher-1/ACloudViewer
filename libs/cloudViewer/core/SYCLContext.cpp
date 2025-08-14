@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@ namespace cloudViewer {
 namespace core {
 namespace sy {
 
-OPEN3D_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device);
+CLOUDVIEWER_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device);
 
 SYCLContext &SYCLContext::GetInstance() {
     static thread_local SYCLContext instance;
@@ -67,7 +67,7 @@ SYCLDevice::SYCLDevice(const sycl::device &sycl_device) {
     if (!usm_device_allocations) {
         utility::LogWarning(
                 "SYCL device {} does not support USM device allocations. "
-                "Open3D SYCL support may not work.",
+                "CloudViewer SYCL support may not work.",
                 name);
     }
 }

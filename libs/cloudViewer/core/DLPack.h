@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -12,7 +12,7 @@
 // License:
 // https://github.com/dmlc/dlpack/blob/master/LICENSE
 //
-// Open3D changes:
+// CloudViewer changes:
 // No changes except for automatic style changed by clang-format.
 
 /*!

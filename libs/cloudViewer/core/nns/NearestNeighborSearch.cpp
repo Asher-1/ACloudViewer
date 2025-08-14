@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ bool NearestNeighborSearch::KnnIndex() {
         return knn_index_->SetTensorData(dataset_points_, index_dtype_);
 #else
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
+                "-DBUILD_CUDA_MODULE=OFF. Please recompile CloudViewer with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
@@ -48,7 +48,7 @@ bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
 #else
         utility::LogError(
                 "FixedRadiusIndex with GPU tensor is disabled since "
-                "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
+                "-DBUILD_CUDA_MODULE=OFF. Please recompile CloudViewer with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
 
@@ -67,7 +67,7 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
                                                   radius.value(), index_dtype_);
 #else
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
+                "-DBUILD_CUDA_MODULE=OFF. Please recompile CloudViewer with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
 

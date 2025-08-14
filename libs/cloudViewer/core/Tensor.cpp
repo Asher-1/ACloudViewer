@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
     return core::Undefined;
 }
 
-/// Open3D DLPack Tensor manager.
+/// CloudViewer DLPack Tensor manager.
 class Open3DDLManagedTensor {
 private:
     Open3DDLManagedTensor(const Tensor& o3d_tensor) {
@@ -1793,7 +1793,7 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
 
     Dtype dtype = DLDataTypeToDtype(src->dl_tensor.dtype);
 
-    // Open3D Blob's expects an std::function<void(void*)> deleter.
+    // CloudViewer Blob's expects an std::function<void(void*)> deleter.
     auto deleter = [src](void* dummy) -> void {
         if (src->deleter != nullptr) {
             src->deleter(const_cast<DLManagedTensor*>(src));

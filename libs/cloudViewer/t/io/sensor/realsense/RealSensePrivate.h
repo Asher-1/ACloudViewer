@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// PRIVATE RealSense header for compiling Open3D. Do not #include outside
-// Open3D.
+// PRIVATE RealSense header for compiling CloudViewer. Do not #include outside
+// CloudViewer.
 #pragma once
 
 #include <librealsense2/rs.hpp>

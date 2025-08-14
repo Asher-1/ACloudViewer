@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -84,7 +84,7 @@ int SYCLDemo() {
 
 #ifdef BUILD_SYCL_MODULE
 
-OPEN3D_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device) {
+CLOUDVIEWER_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device) {
     auto device_type = device.get_info<sycl::info::device::device_type>();
     switch (device_type) {
         case sycl::info::device_type::cpu:
@@ -130,7 +130,7 @@ void PrintSYCLDevices(bool print_all) {
     }
 
     int nd = 0;
-    utility::LogInfo("# Open3D SYCL device");
+    utility::LogInfo("# CloudViewer SYCL device");
     try {
         auto dev = sycl::device(sycl::gpu_selector_v);
         utility::LogInfo("- Device(\"SYCL:{}\"): {}", nd,
@@ -140,7 +140,7 @@ void PrintSYCLDevices(bool print_all) {
     }
     try {
         auto dev = sycl::device(sycl::cpu_selector_v);
-        utility::LogInfo("# Open3D SYCL device (CPU fallback)");
+        utility::LogInfo("# CloudViewer SYCL device (CPU fallback)");
         utility::LogInfo("- Device(\"SYCL:{}\"): {}", nd,
                          SYCLDeviceToString(dev));
     } catch (const sycl::exception &e) {  // No SYCL CPU available.

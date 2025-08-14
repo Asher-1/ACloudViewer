@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -29,7 +29,7 @@ std::shared_ptr<geometry::Image> CreateImageFromFile(
 /// \return return true if the read function is successful, false otherwise.
 bool ReadImage(const std::string &filename, geometry::Image &image);
 
-constexpr int kOpen3DImageIODefaultQuality = -1;
+constexpr int kCloudViewerImageIODefaultQuality = -1;
 
 /// The general entrance for writing an Image to a file
 /// The function calls write functions based on the extension name of filename.
@@ -53,23 +53,23 @@ constexpr int kOpen3DImageIODefaultQuality = -1;
 ///        Supported number of channels are 1 and 3.
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,
-                int quality = kOpen3DImageIODefaultQuality);
+                int quality = kCloudViewerImageIODefaultQuality);
 
 bool ReadImageFromPNG(const std::string &filename, geometry::Image &image);
 
 bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,
-                     int quality = kOpen3DImageIODefaultQuality);
+                     int quality = kCloudViewerImageIODefaultQuality);
 
 bool WriteImageToPNGInMemory(std::vector<uint8_t> &output_buffer,
                              const geometry::Image &image,
-                             int quality = kOpen3DImageIODefaultQuality);
+                             int quality = kCloudViewerImageIODefaultQuality);
 
 bool ReadImageFromJPG(const std::string &filename, geometry::Image &image);
 
 bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
-                     int quality = kOpen3DImageIODefaultQuality);
+                     int quality = kCloudViewerImageIODefaultQuality);
 
 /// Simulate depth image noise from a given noise distortion model. The
 /// distortion model is based on *Teichman et. al. "Unsupervised intrinsic
