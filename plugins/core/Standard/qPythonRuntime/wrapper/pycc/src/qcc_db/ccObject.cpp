@@ -16,14 +16,15 @@
 // ##########################################################################
 
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+#include <ecvBBox.h>
 #include <ecvGenericDisplayTools.h>
 #include <ecvHObject.h>
 #include <ecvObject.h>
 #include <ecvShiftedObject.h>
-#include <ecvBBox.h>
 
 #include "../casters.h"
 
@@ -186,13 +187,15 @@ void define_ccObject(py::module &m)
         The key / name of the metadata to remove
 )pbdoc");
 
-    py::enum_<ccHObject::DEPENDENCY_FLAGS>(m, "DEPENDENCY_FLAGS")
+    py::native_enum<ccHObject::DEPENDENCY_FLAGS>(
+        m, "DEPENDENCY_FLAGS", "enum.Enum", "ccHObject::DEPENDENCY_FLAGS.")
         .value("DP_NONE", ccHObject::DEPENDENCY_FLAGS::DP_NONE)
         .value("DP_NOTIFY_OTHER_ON_DELETE", ccHObject::DEPENDENCY_FLAGS::DP_NOTIFY_OTHER_ON_DELETE)
         .value("DP_NOTIFY_OTHER_ON_UPDATE", ccHObject::DEPENDENCY_FLAGS::DP_NOTIFY_OTHER_ON_UPDATE)
         .value("DP_DELETE_OTHER", ccHObject::DEPENDENCY_FLAGS::DP_DELETE_OTHER)
         .value("DP_PARENT_OF_OTHER", ccHObject::DEPENDENCY_FLAGS::DP_PARENT_OF_OTHER)
-        .export_values();
+        .export_values()
+        .finalize();
 
     py::class_<ccHObject, ccObject, ccDrawableObject>(m, "ccHObject", R"pbdoc(
     ACloudViewer's hierarchical object

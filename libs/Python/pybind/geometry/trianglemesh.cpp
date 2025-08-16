@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Image.h>
@@ -40,15 +21,17 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_trianglemesh(py::module& m) {
-    py::enum_<ccMesh::MESH_SCALAR_FIELD_PROCESS>(m,
-                                                 "MeshScalarFieldProcessType")
+    py::native_enum<ccMesh::MESH_SCALAR_FIELD_PROCESS>(
+            m, "MeshScalarFieldProcessType", "enum.Enum",
+            "Method for mesh scalar field process.")
             .value("SMOOTH_MESH_SF",
                    ccMesh::MESH_SCALAR_FIELD_PROCESS::SMOOTH_MESH_SF,
                    "Smooth Scalar fields.")
             .value("ENHANCE_MESH_SF",
                    ccMesh::MESH_SCALAR_FIELD_PROCESS::ENHANCE_MESH_SF,
                    "Enhance Scalar fields.")
-            .export_values();
+            .export_values()
+            .finalize();
 
     py::class_<ccMesh, PyGeometry<ccMesh>, std::shared_ptr<ccMesh>,
                ccGenericMesh, ccHObject>
@@ -457,18 +440,19 @@ void pybind_trianglemesh(py::module& m) {
                  "data: RGB colors of vertices.",
                  "colors"_a)
             .def(
-               "set_vertex_colors",
-               [](ccMesh& mesh, const Eigen::Vector3d& color) {
-                    ccPointCloud* vertices =
-                                   ccHObjectCaster::ToPointCloud(&mesh);
-                    if (!vertices) {
-                         throw std::runtime_error("empty vertex found in mesh.");
-                    }
-                    std::vector<Eigen::Vector3d> color_vec;
-                    color_vec.resize(vertices->size(), color);
-                    mesh.setVertexColors(color_vec);
-               },
-               "Sets the associated vertices cloud (warning)", "cloud"_a)
+                    "set_vertex_colors",
+                    [](ccMesh& mesh, const Eigen::Vector3d& color) {
+                        ccPointCloud* vertices =
+                                ccHObjectCaster::ToPointCloud(&mesh);
+                        if (!vertices) {
+                            throw std::runtime_error(
+                                    "empty vertex found in mesh.");
+                        }
+                        std::vector<Eigen::Vector3d> color_vec;
+                        color_vec.resize(vertices->size(), color);
+                        mesh.setVertexColors(color_vec);
+                    },
+                    "Sets the associated vertices cloud (warning)", "cloud"_a)
             .def("get_vertex_colors", &ccMesh::getVertexColors,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
                  "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
@@ -545,7 +529,7 @@ void pybind_trianglemesh(py::module& m) {
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.",
                  "triangle_areas"_a)
-            .def("get_volume", (double (ccMesh::*)() const) & ccMesh::getVolume,
+            .def("get_volume", (double(ccMesh::*)() const) & ccMesh::getVolume,
                  "Function that computes the volume of the mesh, under the "
                  "condition that it is watertight and orientable.")
             .def("sample_points_uniformly", &ccMesh::samplePointsUniformly,
@@ -639,7 +623,8 @@ void pybind_trianglemesh(py::module& m) {
                         "vidx2"_a)
             .def_static(
                     "triangulate",
-                    [](ccGenericPointCloud& cloud, cloudViewer::TRIANGULATION_TYPES type,
+                    [](ccGenericPointCloud& cloud,
+                       cloudViewer::TRIANGULATION_TYPES type,
                        bool update_normals, PointCoordinateType max_edge_length,
                        unsigned char dim) {
                         return std::shared_ptr<ccMesh>(ccMesh::Triangulate(
@@ -761,15 +746,14 @@ void pybind_trianglemesh(py::module& m) {
                         "cylinder_height"_a = 5.0, "cone_height"_a = 4.0,
                         "resolution"_a = 20, "cylinder_split"_a = 4,
                         "cone_split"_a = 1)
-            .def_static("create_coordinate_frame",
-                        &ccMesh::CreateCoordinateFrame,
-                        "Factory function to create a coordinate frame mesh. "
-                        "The coordinate "
-                        "frame will be centered at ``origin``. The x, y, z "
-                        "axis will be "
-                        "rendered as red, green, and blue arrows respectively.",
-                        "size"_a = 1.0,
-                        "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
+            .def_static(
+                    "create_coordinate_frame", &ccMesh::CreateCoordinateFrame,
+                    "Factory function to create a coordinate frame mesh. "
+                    "The coordinate "
+                    "frame will be centered at ``origin``. The x, y, z "
+                    "axis will be "
+                    "rendered as red, green, and blue arrows respectively.",
+                    "size"_a = 1.0, "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
             .def_static("create_moebius", &ccMesh::CreateMoebius,
                         "Factory function to create a Moebius strip.",
                         "length_split"_a = 70, "width_split"_a = 15,
@@ -946,8 +930,7 @@ void pybind_trianglemesh(py::module& m) {
               "If true calls number of mesh cleanup functions to remove "
               "unreferenced vertices and degenerate triangles"}});
     docstring::ClassMethodDocInject(
-            m, "ccMesh", "crop",
-            {{"bounding_box", "ccBBox to crop points"}});
+            m, "ccMesh", "crop", {{"bounding_box", "ccBBox to crop points"}});
     docstring::ClassMethodDocInject(m, "ccMesh", "get_volume");
     docstring::ClassMethodDocInject(
             m, "ccMesh", "sample_points_uniformly",

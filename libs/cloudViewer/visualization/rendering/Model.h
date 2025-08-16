@@ -27,7 +27,7 @@
 #pragma once
 
 #include <ecvMesh.h>
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -41,7 +41,7 @@ struct TriangleMeshModel {
     };
 
     std::vector<MeshInfo> meshes_;
-    std::vector<visualization::rendering::Material> materials_;
+    std::vector<visualization::rendering::MaterialRecord> materials_;
 };
 
 }  // namespace rendering

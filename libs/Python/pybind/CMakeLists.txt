@@ -9,9 +9,11 @@ message(STATUS "PYTHON VERSION: " ${PYTHON_VERSION})
 
 include_directories(${CloudViewer_SOURCE_DIR})
 pybind11_add_module(pybind)
+set_target_properties(pybind PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED YES)
 
 add_subdirectory(camera)
 add_subdirectory(core)
+add_subdirectory(data)
 add_subdirectory(geometry)
 add_subdirectory(io)
 add_subdirectory(ml)
@@ -37,12 +39,12 @@ target_sources(pybind PRIVATE
         docstring.cpp
         cloudViewer_pybind.cpp
         pybind_utils.cpp
-        )
+)
 
 # Include with `#include "pybind/geometry/xxx.h`
 target_include_directories(pybind PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
-        )
+)
 
 # Suppress Pybind11 warnings
 target_include_directories(pybind SYSTEM PRIVATE

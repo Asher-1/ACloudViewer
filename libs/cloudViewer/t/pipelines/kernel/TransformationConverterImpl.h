@@ -1,36 +1,17 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                                                 -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Private header. Do not include in CloudViewer.h.
+// Private header. Do not include in Open3d.h.
 
 #pragma once
 
 #include <cmath>
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 
 namespace cloudViewer {
 namespace t {
@@ -60,6 +41,24 @@ CLOUDVIEWER_HOST_DEVICE inline void PoseToTransformationImpl(
     transformation_ptr[10] = cos(pose_ptr[1]) * cos(pose_ptr[0]);
 }
 
+/// Shared implementation for TransformationToPose function.
+/// Reference method: utility::TransformMatrix4dToVector6d.
+template <typename scalar_t>
+CLOUDVIEWER_HOST_DEVICE inline void TransformationToPoseImpl(
+        scalar_t *pose_ptr, const scalar_t *transformation_ptr) {
+    const scalar_t sy = sqrt(transformation_ptr[0] * transformation_ptr[0] +
+                             transformation_ptr[4] * transformation_ptr[4]);
+    if (!(sy < 1e-6)) {
+        pose_ptr[0] = atan2(transformation_ptr[9], transformation_ptr[10]);
+        pose_ptr[1] = atan2(-transformation_ptr[8], sy);
+        pose_ptr[2] = atan2(transformation_ptr[4], transformation_ptr[0]);
+    } else {
+        pose_ptr[0] = atan2(-transformation_ptr[6], transformation_ptr[5]);
+        pose_ptr[1] = atan2(-transformation_ptr[8], sy);
+        pose_ptr[2] = 0;
+    }
+}
+
 #ifdef BUILD_CUDA_MODULE
 /// \brief Helper function for PoseToTransformationCUDA.
 /// Do not call this independently, as it only sets the transformation part
@@ -68,6 +67,14 @@ CLOUDVIEWER_HOST_DEVICE inline void PoseToTransformationImpl(
 template <typename scalar_t>
 void PoseToTransformationCUDA(scalar_t *transformation_ptr,
                               const scalar_t *pose_ptr);
+
+/// \brief Helper function for TransformationToPoseCUDA.
+/// Do not call this independently, as it only sets the rotation part in the
+/// pose, using the Transformation, the rest is set in the parent function
+/// TransformationToPose.
+template <typename scalar_t>
+void TransformationToPoseCUDA(scalar_t *pose_ptr,
+                              const scalar_t *transformation_ptr);
 #endif
 
 }  // namespace kernel

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,14 +26,17 @@
 
 #include "visualization/visualizer/O3DVisualizer.h"
 
-#include <ecvHObject.h>
 #include <camera/PinholeCameraIntrinsic.h>
+#include <ecvHObject.h>
+
 #include "t/geometry/Geometry.h"
 #include "visualization/gui/Dialog.h"
 #include "visualization/gui/Window.h"
+// clang-format off
 #include "visualization/rendering/Model.h"
 #include "visualization/rendering/CloudViewerScene.h"
 #include "pybind/visualization/visualization.h"
+// clang-format on
 
 namespace cloudViewer {
 namespace visualization {
@@ -69,9 +72,8 @@ void pybind_o3dvisualizer(py::module& m) {
     py::class_<O3DVisualizer, UnownedPointer<O3DVisualizer>, gui::Window>
             o3dvis(m, "O3DVisualizer", "Visualization object used by draw()");
 
-    py::enum_<O3DVisualizer::Shader> dv_shader(o3dvis, "Shader",
-                                               "Scene-level rendering options");
-    dv_shader
+    py::native_enum<O3DVisualizer::Shader>(o3dvis, "Shader", "enum.Enum",
+                                           "Scene-level rendering options.")
             .value("STANDARD", O3DVisualizer::Shader::STANDARD,
                    "Pixel colors from standard lighting model")
             .value("UNLIT", O3DVisualizer::Shader::UNLIT,
@@ -80,15 +82,18 @@ void pybind_o3dvisualizer(py::module& m) {
                    "Pixel colors correspond to surface normal")
             .value("DEPTH", O3DVisualizer::Shader::DEPTH,
                    "Pixel colors correspond to depth buffer value")
-            .export_values();
+            .export_values()
+            .finalize();
 
-    py::enum_<O3DVisualizer::TickResult> tick_result(
-            o3dvis, "TickResult", "Return value from animation tick callback");
-    tick_result
+    py::native_enum<O3DVisualizer::TickResult>(
+            o3dvis, "TickResult", "enum.Enum",
+            "Return value from animation tick callback.")
             .value("NO_CHANGE", O3DVisualizer::TickResult::NO_CHANGE,
                    "Signals that no change happened and no redraw is required")
             .value("REDRAW", O3DVisualizer::TickResult::REDRAW,
-                   "Signals that a redraw is required");
+                   "Signals that a redraw is required")
+            .export_values()
+            .finalize();
 
     py::class_<O3DVisualizer::DrawObject> drawobj(
             o3dvis, "DrawObject",
@@ -120,8 +125,8 @@ void pybind_o3dvisualizer(py::module& m) {
                           "visiblity may not correspond with this "
                           "value");
 
-    o3dvis.def(py::init<const std::string, int, int>(), "title"_a = "CloudViewer",
-               "width"_a = 1024, "height"_a = 768,
+    o3dvis.def(py::init<const std::string, int, int>(),
+               "title"_a = "CloudViewer", "width"_a = 1024, "height"_a = 768,
                "Creates a O3DVisualizer object")
             // selected functions inherited from Window
             .def_property("os_frame", &O3DVisualizer::GetOSFrame,
@@ -187,7 +192,7 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("add_geometry",
                  py::overload_cast<const std::string&,
                                    std::shared_ptr<ccHObject>,
-                                   const rendering::Material*,
+                                   const rendering::MaterialRecord*,
                                    const std::string&, double, bool>(
                          &O3DVisualizer::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
@@ -197,7 +202,7 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("add_geometry",
                  py::overload_cast<const std::string&,
                                    std::shared_ptr<t::geometry::Geometry>,
-                                   const rendering::Material*,
+                                   const rendering::MaterialRecord*,
                                    const std::string&, double, bool>(
                          &O3DVisualizer::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
@@ -209,8 +214,8 @@ void pybind_o3dvisualizer(py::module& m) {
                  py::overload_cast<
                          const std::string&,
                          std::shared_ptr<rendering::TriangleMeshModel>,
-                         const rendering::Material*, const std::string&, double,
-                         bool>(&O3DVisualizer::AddGeometry),
+                         const rendering::MaterialRecord*, const std::string&,
+                         double, bool>(&O3DVisualizer::AddGeometry),
                  "name"_a, "model"_a, "material"_a = nullptr, "group"_a = "",
                  "time"_a = 0.0, "is_visible"_a = true,
                  "Adds a TriangleMeshModel: add_geometry(name, model, "
@@ -220,14 +225,14 @@ void pybind_o3dvisualizer(py::module& m) {
             .def(
                     "add_geometry",
                     [](py::object dv, const py::dict& d) {
-                        rendering::Material* material = nullptr;
+                        rendering::MaterialRecord* material = nullptr;
                         std::string group = "";
                         double time = 0;
                         bool is_visible = true;
 
                         std::string name = py::cast<std::string>(d["name"]);
                         if (d.contains("material")) {
-                            material = py::cast<rendering::Material*>(
+                            material = py::cast<rendering::MaterialRecord*>(
                                     d["material"]);
                         }
                         if (d.contains("group")) {
@@ -251,7 +256,7 @@ void pybind_o3dvisualizer(py::module& m) {
                     "following elements:\n"
                     "name: unique name of the object (required)\n"
                     "geometry: the geometry or t.geometry object (required)\n"
-                    "material: a visualization.rendering.Material object "
+                    "material: a visualization.rendering.MaterialRecord object "
                     "(optional)\n"
                     "group: a string declaring the group it is a member of "
                     "(optional)\n"
@@ -385,9 +390,10 @@ void pybind_o3dvisualizer(py::module& m) {
                     },
                     &O3DVisualizer::SetLineWidth,
                     "Gets/sets width of lines (in units of pixels)")
-            .def_property_readonly("scene", &O3DVisualizer::GetScene,
-                                   "Returns the rendering.CloudViewerScene object "
-                                   "for low-level manipulation")
+            .def_property_readonly(
+                    "scene", &O3DVisualizer::GetScene,
+                    "Returns the rendering.CloudViewerScene object "
+                    "for low-level manipulation")
             .def_property(
                     "current_time",
                     // MSVC doesn't like this for some reason

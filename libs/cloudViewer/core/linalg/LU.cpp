@@ -1,43 +1,24 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/linalg/LU.h"
+#include "cloudViewer/core/linalg/LU.h"
 
-#include "core/CUDAUtils.h"
-#include "core/linalg/LUImpl.h"
-#include "core/linalg/LinalgHeadersCPU.h"
-#include "core/linalg/Tri.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/linalg/LUImpl.h"
+#include "cloudViewer/core/linalg/LinalgHeadersCPU.h"
+#include "cloudViewer/core/linalg/Tri.h"
 
 namespace cloudViewer {
 namespace core {
 
 // Get column permutation tensor from ipiv (swapping index array).
-static core::Tensor GetColPermutation(const Tensor& ipiv,
-                                      int number_of_indices,
-                                      int number_of_rows) {
+static Tensor GetColPermutation(const Tensor& ipiv,
+                                int number_of_indices,
+                                int number_of_rows) {
     Tensor full_ipiv =
             Tensor::Arange(0, number_of_rows, 1, core::Int32, Device("CPU:0"));
     Tensor ipiv_cpu = ipiv.To(Device("CPU:0"), core::Int32, /*copy=*/false);
@@ -61,14 +42,14 @@ static void OutputToPLU(const Tensor& output,
                         const Tensor& ipiv,
                         const bool permute_l) {
     int n = output.GetShape()[0];
-    core::Device device = output.GetDevice();
+    Device device = output.GetDevice();
 
     // Get upper and lower matrix from output matrix.
     Triul(output, upper, lower, 0);
     // Get column permutation vector from pivot indices vector.
     Tensor col_permutation = GetColPermutation(ipiv, ipiv.GetShape()[0], n);
     // Creating "Permutation Matrix (P in P.A = L.U)".
-    permutation = core::Tensor::Eye(n, output.GetDtype(), device)
+    permutation = Tensor::Eye(n, output.GetDtype(), device)
                           .IndexGet({col_permutation});
     // Calculating P in A = P.L.U. [P.Inverse() = P.T()].
     permutation = permutation.T().Contiguous();
@@ -107,28 +88,34 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
     // elements as U, (diagonal elements of L are unity), and ipiv array,
     // which has the pivot indices (for 1 <= i <= min(M,N), row i of the
     // matrix was interchanged with row IPIV(i).
+    int64_t ipiv_len = std::min(rows, cols);
     if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
-        int64_t ipiv_len = std::min(rows, cols);
-        ipiv = core::Tensor::Empty({ipiv_len}, core::Int32, device);
+        ipiv = Tensor::Empty({ipiv_len}, core::Int32, device);
         void* ipiv_data = ipiv.GetDataPtr();
         LUCUDA(A_data, ipiv_data, rows, cols, dtype, device);
 #else
         utility::LogInfo("Unimplemented device.");
 #endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ipiv = Tensor::Empty({ipiv_len}, core::Int64, device);
+        void* ipiv_data = ipiv.GetDataPtr();
+        LUSYCL(A_data, ipiv_data, rows, cols, dtype, device);
+#else
+        utility::LogInfo("Unimplemented device.");
+#endif
     } else {
         Dtype ipiv_dtype;
-        if (sizeof(CLOUDVIEWER_CPU_LINALG_INT) == 4) {
+        if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
             ipiv_dtype = core::Int32;
-        } else if (sizeof(CLOUDVIEWER_CPU_LINALG_INT) == 8) {
+        } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
             ipiv_dtype = core::Int64;
         } else {
-            utility::LogError("Unsupported CLOUDVIEWER_CPU_LINALG_INT type.");
+            utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }
-
-        int64_t ipiv_len = std::min(rows, cols);
-        ipiv = core::Tensor::Empty({ipiv_len}, ipiv_dtype, device);
+        ipiv = Tensor::Empty({ipiv_len}, ipiv_dtype, device);
         void* ipiv_data = ipiv.GetDataPtr();
         LUCPU(A_data, ipiv_data, rows, cols, dtype, device);
     }
@@ -144,7 +131,7 @@ void LU(const Tensor& A,
     AssertTensorDtypes(A, {Float32, Float64});
 
     // Get output matrix and ipiv.
-    core::Tensor ipiv, output;
+    Tensor ipiv, output;
     LUIpiv(A, ipiv, output);
 
     // Decompose output in P, L, U matrix form.

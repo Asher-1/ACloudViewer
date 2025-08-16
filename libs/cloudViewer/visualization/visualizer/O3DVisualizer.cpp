@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,13 +26,13 @@
 
 #include "visualization/visualizer/O3DVisualizer.h"
 
+#include <CloudViewerConfig.h>
 #include <FileSystem.h>
 #include <Image.h>
 #include <ImageIO.h>
 #include <LineSet.h>
 #include <Logging.h>
 #include <Octree.h>
-#include <CloudViewerConfig.h>
 #include <VoxelGrid.h>
 #include <ecvPointCloud.h>
 
@@ -40,6 +40,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "io/rpc/ZMQReceiver.h"
 #include "t/geometry/PointCloud.h"
 #include "t/geometry/TriangleMesh.h"
 #include "visualization/gui/Application.h"
@@ -63,8 +64,8 @@
 #include "visualization/rendering/Model.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/visualizer/GuiWidgets.h"
+#include "visualization/visualizer/MessageProcessor.h"
 #include "visualization/visualizer/O3DVisualizerSelections.h"
-#include "visualization/visualizer/Receiver.h"
 
 #define GROUPS_USE_TREE 1
 
@@ -306,7 +307,8 @@ struct O3DVisualizer::Impl {
     bool selections_need_update_ = true;
     std::function<void(double)> on_animation_;
     std::function<bool()> on_animation_tick_;
-    std::shared_ptr<Receiver> receiver_;
+    std::shared_ptr<io::rpc::ZMQReceiver> receiver_;
+    std::shared_ptr<MessageProcessor> message_processor_;
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
@@ -821,7 +823,7 @@ struct O3DVisualizer::Impl {
                      std::shared_ptr<ccHObject> geom,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
                      std::shared_ptr<rendering::TriangleMeshModel> model,
-                     const rendering::Material *material,
+                     const rendering::MaterialRecord *material,
                      const std::string &group,
                      double time,
                      bool is_visible) {
@@ -831,7 +833,7 @@ struct O3DVisualizer::Impl {
         }
         bool is_default_color = false;
         bool no_shadows = false;
-        Material mat;
+        MaterialRecord mat;
         t::geometry::PointCloud *valid_tpcd = nullptr;
 
         if (material) {
@@ -876,7 +878,8 @@ struct O3DVisualizer::Impl {
                 has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
                 no_shadows = true;
             } else if (aabb) {
-                has_colors = (aabb->getColor() != Eigen::Vector3d{0.0, 0.0, 0.0});
+                has_colors =
+                        (aabb->getColor() != Eigen::Vector3d{0.0, 0.0, 0.0});
                 no_shadows = true;
             } else if (mesh) {
                 has_normals = !mesh->hasNormals();
@@ -911,8 +914,7 @@ struct O3DVisualizer::Impl {
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
 
             // Finally assign material properties if geometry is a triangle mesh
-            auto tmesh =
-                    std::dynamic_pointer_cast<ccMesh>(geom);
+            auto tmesh = std::dynamic_pointer_cast<ccMesh>(geom);
             if (tmesh && tmesh->materials_.size() > 0) {
                 // Only a single material is supported for TriangleMesh so we
                 // just grab the first one we find. Users should be using
@@ -1230,7 +1232,7 @@ struct O3DVisualizer::Impl {
     }
 
     void OverrideMaterial(const std::string &name,
-                          const Material &original_material,
+                          const MaterialRecord &original_material,
                           O3DVisualizer::Shader shader) {
         bool is_lines = (original_material.shader == "unlitLine");
         auto scene = scene_->GetScene();
@@ -1240,7 +1242,7 @@ struct O3DVisualizer::Impl {
             (shader == Shader::UNLIT && is_lines)) {
             scene->ModifyGeometryMaterial(name, original_material);
         } else {
-            Material m = original_material;
+            MaterialRecord m = original_material;
             m.shader = GetShaderString(shader);
             scene->ModifyGeometryMaterial(name, m);
         }
@@ -1295,10 +1297,10 @@ struct O3DVisualizer::Impl {
         Eigen::Vector3f sun_dir = {0.577f, -0.577f, -0.577f};
         auto scene = scene_->GetScene();
         scene->SetLighting(profile.profile, sun_dir);
-        ui_state_.use_ibl =
-                (profile.profile != CloudViewerScene::LightingProfile::HARD_SHADOWS);
-        ui_state_.use_sun =
-                (profile.profile != CloudViewerScene::LightingProfile::NO_SHADOWS);
+        ui_state_.use_ibl = (profile.profile !=
+                             CloudViewerScene::LightingProfile::HARD_SHADOWS);
+        ui_state_.use_sun = (profile.profile !=
+                             CloudViewerScene::LightingProfile::NO_SHADOWS);
         ui_state_.ibl_intensity =
                 int(scene->GetScene()->GetIndirectLightIntensity());
         ui_state_.sun_intensity =
@@ -1807,6 +1809,19 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     : Window(title, width, height), impl_(new O3DVisualizer::Impl()) {
     impl_->Construct(this);
 
+    // Create a message processor for incoming messages.
+    auto on_geometry = [this](std::shared_ptr<ccHObject> geom,
+                              const std::string &path, int time,
+                              const std::string &layer) {
+        impl_->AddGeometry(path, geom, nullptr, nullptr, nullptr, layer, time,
+                           true);
+        if (impl_->objects_.size() == 1) {
+            impl_->ResetCameraToDefault();
+        }
+    };
+    impl_->message_processor_ =
+            std::make_shared<MessageProcessor>(this, on_geometry);
+
     // Create the app menu. We will take over the existing menubar (if any)
     // since a) we need to cache a pointer, and b) we should be the only
     // window, since the whole point of this class is to have an easy way to
@@ -1859,18 +1874,9 @@ CloudViewerScene *O3DVisualizer::GetScene() const {
 }
 
 void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-    auto on_geometry = [this](std::shared_ptr<ccHObject> geom,
-                              const std::string &path, int time,
-                              const std::string &layer) {
-        impl_->AddGeometry(path, geom, nullptr, nullptr, nullptr, layer, time,
-                           true);
-        if (impl_->objects_.size() == 1) {
-            impl_->ResetCameraToDefault();
-        }
-    };
+    impl_->receiver_ = std::make_shared<io::rpc::ZMQReceiver>(address, timeout);
+    impl_->receiver_->SetMessageProcessor(impl_->message_processor_);
 
-    impl_->receiver_ =
-            std::make_shared<Receiver>(address, timeout, this, on_geometry);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();
@@ -1923,7 +1929,7 @@ void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<ccHObject> geom,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1934,7 +1940,7 @@ void O3DVisualizer::AddGeometry(
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<t::geometry::Geometry> tgeom,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1945,7 +1951,7 @@ void O3DVisualizer::AddGeometry(
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<rendering::TriangleMeshModel> model,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
