@@ -91,6 +91,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DWITH_SIMD=ON \
         -DUSE_SIMD=ON \
         -DPACKAGE=ON \
+        -DUSE_PCL_BACKEND=ON \
         -DBUILD_WEBRTC=OFF \
         -DBUILD_OPENCV=ON \
         -DBUILD_RECONSTRUCTION=ON \
@@ -152,6 +153,17 @@ Build:
         make -j24
         make install -j24
 ```
+
+## Debug wheel
+
+```
+1. gdb python
+
+2. run -c "import cloudViewer"
+
+3. bt
+```
+
 
 ## Prerequisites
 

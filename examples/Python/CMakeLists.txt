@@ -14,6 +14,8 @@ file(GLOB PY_reconstruction_FILES "reconstruction/*.py")
 source_group("reconstruction" FILES ${PY_reconstruction_FILES})
 file(GLOB PY_reconstruction_system_TUTORIAL_FILES "reconstruction_system/*.py")
 source_group("reconstruction_system" FILES ${PY_reconstruction_system_TUTORIAL_FILES})
+file(GLOB PY_t_reconstruction_system_TUTORIAL_FILES "t_reconstruction_system/*.py")
+source_group("t_reconstruction_system" FILES ${PY_t_reconstruction_system_TUTORIAL_FILES})
 file(GLOB PY_utility_TUTORIAL_FILES "utility/*.py")
 source_group("utility" FILES ${PY_utility_TUTORIAL_FILES})
 file(GLOB PY_visualization_TUTORIAL_FILES "visualization/*.py")
@@ -27,6 +29,7 @@ ${PY_misc_TUTORIAL_FILES}
 ${PY_pipelines_TUTORIAL_FILES}
 ${PY_reconstruction_FILES}
 ${PY_reconstruction_system_TUTORIAL_FILES}
+${PY_t_reconstruction_system_TUTORIAL_FILES}
 ${PY_utility_TUTORIAL_FILES}
 ${PY_visualization_TUTORIAL_FILES})
 set_target_properties(Python PROPERTIES FOLDER "examples/")

@@ -55,6 +55,7 @@ function(cloudViewer_print_configuration_summary)
             Eigen3
             BLAS
             curl
+            openssl
             filament
             fmt
             GLEW

@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: asher-1.github.io                    -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018 asher-1.github.io
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 # Workaround when multiple copies of the OpenMP runtime have been linked to
@@ -151,6 +132,20 @@ if _build_config["BUILD_CUDA_MODULE"]:
         " CUDA devices.",
         ImportWarning,)
     try:
+        if sys.platform == "win32" and sys.version_info >= (3, 8):
+            # Since Python 3.8, the PATH environment variable is not used to find DLLs anymore.
+            # To allow Windows users to use Open3D with CUDA without running into dependency-problems,
+            # look for the CUDA bin directory in PATH and explicitly add it to the DLL search path.
+            cuda_bin_path = None
+            for path in os.environ['PATH'].split(';'):
+                # search heuristic: look for a path containing "cuda" and "bin" in this order.
+                if re.search(r'cuda.*bin', path, re.IGNORECASE):
+                    cuda_bin_path = path
+                    break
+
+            if cuda_bin_path:
+                os.add_dll_directory(cuda_bin_path)
+                
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
         _pybind_cuda = load_cdll(str(next((Path(__file__).parent / 'cuda').glob('pybind*'))))
@@ -158,6 +153,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
             from cloudViewer.cuda.pybind import (
                 core,
                 camera,
+                data,
                 geometry,
                 io,
                 pipelines,
@@ -207,6 +203,7 @@ if __DEVICE_API__ == 'cpu':
         from cloudViewer.cpu.pybind import (
             core,
             camera,
+            data,
             geometry,
             io,
             pipelines,
@@ -322,4 +319,4 @@ def _jupyter_nbextension_paths():
         'require': 'cloudViewer/extension'
     }]
     
-del os, re, sys, platform, CDLL, load_cdll, find_library, Path, warnings, _insert_pybind_names
+del os, re, sys, platform, CDLL, load_cdll, try_load_cdll, find_library, Path, warnings, _insert_pybind_names

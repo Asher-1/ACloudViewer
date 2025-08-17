@@ -80,7 +80,6 @@ endif ()
 
 # PCL ENGINE LIB
 if (USE_PCL_BACKEND)
-    # include( CMakePCLLibs )
 	add_subdirectory( PCLEngine ) # must always be included after eCV_db and eCV_io (dependency)
 endif()
 

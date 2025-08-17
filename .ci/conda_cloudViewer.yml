@@ -5,6 +5,8 @@ dependencies:
   - python=3.8
   # - eigen=3.4.*
   - ninja
+  - curl
+  - openssl
   - boost=1.84.*
   - cgal=5.*
   - qt=5.15.*

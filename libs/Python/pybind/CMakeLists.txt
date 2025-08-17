@@ -9,7 +9,6 @@ message(STATUS "PYTHON VERSION: " ${PYTHON_VERSION})
 
 include_directories(${CloudViewer_SOURCE_DIR})
 pybind11_add_module(pybind)
-set_target_properties(pybind PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED YES)
 
 add_subdirectory(camera)
 add_subdirectory(core)
