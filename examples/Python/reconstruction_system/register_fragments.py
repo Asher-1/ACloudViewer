@@ -32,7 +32,7 @@ def preprocess_point_cloud(pcd, config):
 def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
     distance_threshold = config["voxel_size"] * 1.4
     if config["global_registration"] == "fgr":
-        result = cv3d.pipelines.registration.registration_fast_based_on_feature_matching(
+        result = cv3d.pipelines.registration.registration_fgr_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh,
             cv3d.pipelines.registration.FastGlobalRegistrationOption(
                 maximum_correspondence_distance=distance_threshold))

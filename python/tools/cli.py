@@ -15,7 +15,7 @@ import cloudViewer as cv3d
 import cloudViewer.app as app
 
 
-class _Open3DArgumentParser(argparse.ArgumentParser):
+class _CloudViewerArgumentParser(argparse.ArgumentParser):
 
     def error(self, message):
         print(f"Error: {message}\n", file=sys.stderr)
@@ -113,7 +113,7 @@ def _example_help_categories():
         "\nTo view the example in each category, run one of the following commands:\n"
     )
     for category in sorted(_get_example_categories()):
-        msg += f"  open3d example --list {category}\n"
+        msg += f"  cloudViewer example --list {category}\n"
     return msg
 
 
@@ -149,7 +149,7 @@ def _example(parser, args):
                     _get_examples_in_category(category)):
                 print(f"  {category}/{examples_in_category}")
             print("\nTo view all examples, run:")
-            print("  open3d example --list\n")
+            print("  cloudViewer example --list\n")
             return 0
         else:
             print(
@@ -224,15 +224,15 @@ def _draw_webrtc(parser, args):
 
 def main():
     print(f"***************************************************\n"
-          f"* Open3D: A Modern Library for 3D Data Processing *\n"
-          f"*                                                 *\n"
-          f"* Version {cv3d.__version__: <22}                  *\n"
-          f"* Docs    https://www.open3d.org/docs             *\n"
-          f"* Code    https://github.com/isl-org/Open3D       *\n"
+          f"* CloudViewer: A Modern Library for 3D Data Processing  *\n"
+          f"*                                                       *\n"
+          f"* Version {cv3d.__version__: <22}                       *\n"
+          f"* Docs    https://www.cloudViewer.org/docs                   *\n"
+          f"* Code    https://github.com/Asher-1/ACloudViewer       *\n"
           f"***************************************************")
 
-    main_parser = _Open3DArgumentParser(
-        description="Open3D commad-line tools",
+    main_parser = _CloudViewerArgumentParser(
+        description="CloudViewer commad-line tools",
         add_help=False,
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -240,7 +240,7 @@ def main():
         "-V",
         "--version",
         action="version",
-        version="Open3D " + cv3d.__version__,
+        version="CloudViewer " + cv3d.__version__,
         help="Show program's version number and exit.",
     )
     main_parser.add_argument("-h",
@@ -254,11 +254,11 @@ def main():
         help="Select one of these commands.\n ")
 
     example_help = (
-        "View or run an Open3D example. Example usage: \n"
-        "  open3d example --list                                  # List examples\n"
-        "  open3d example --list geometry                         # List examples in geometry\n"
-        "  open3d example geometry/point_cloud_convex_hull        # Run an example\n"
-        "  open3d example --show geometry/point_cloud_convex_hull # Show source code of an example\n\n"
+        "View or run an CloudViewer example. Example usage: \n"
+        "  cloudViewer example --list                                  # List examples\n"
+        "  cloudViewer example --list geometry                         # List examples in geometry\n"
+        "  cloudViewer example geometry/point_cloud_convex_hull        # Run an example\n"
+        "  cloudViewer example --show geometry/point_cloud_convex_hull # Show source code of an example\n\n"
     )
     parser_example = subparsers.add_parser(
         "example",
@@ -285,10 +285,10 @@ def main():
         action="store_true",
         help="List all categories or examples available\n"
         "usage:\n"
-        "  open3d example --list \n"
-        "  open3d example --list [category]\n"
+        "  cloudViewer example --list \n"
+        "  cloudViewer example --list [category]\n"
         "e.g.:\n"
-        "  open3d example --list geometry\n ",
+        "  cloudViewer example --list geometry\n ",
     )
     parser_example.add_argument(
         "-s",
@@ -298,9 +298,9 @@ def main():
         action="store_true",
         help="Show example source code instead of running it\n"
         "usage:\n"
-        "  open3d example --show [category]/[example_name]\n"
+        "  cloudViewer example --show [category]/[example_name]\n"
         "e.g.:\n"
-        "  open3d example --show geometry/triangle_mesh_deformation\n",
+        "  cloudViewer example --show geometry/triangle_mesh_deformation\n",
     )
     parser_example.add_argument("-h",
                                 "--help",
@@ -310,8 +310,8 @@ def main():
 
     draw_help = (
         "Load and visualize a 3D model. Example usage:\n"
-        "  open3d draw                                            # Start a blank Open3D viewer\n"
-        "  open3d draw path/to/model_file                         # Visualize a 3D model file\n\n"
+        "  cloudViewer draw                                            # Start a blank CloudViewer viewer\n"
+        "  cloudViewer draw path/to/model_file                         # Visualize a 3D model file\n\n"
     )
     parser_draw = subparsers.add_parser(
         "draw",
@@ -334,8 +334,8 @@ def main():
         "Load and visualize a 3D model in a browser with WebRTC. Optionally, you can\n"
         "customize the serving IP address and port with WEBRTC_IP and WEBRTC_PORT\n"
         "environment variables. Example usage:\n"
-        "  open3d draw_web path/to/model_file            # Visualize at http://localhost:8888\n"
-        "  open3d draw_web --bind_all path/to/model_file # Serve to the entire local network\n"
+        "  cloudViewer draw_web path/to/model_file            # Visualize at http://localhost:8888\n"
+        "  cloudViewer draw_web --bind_all path/to/model_file # Serve to the entire local network\n"
         "                                                # at http://hostname.domainname:8888\n"
     )
     parser_draw_web = subparsers.add_parser(

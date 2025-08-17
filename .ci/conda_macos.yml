@@ -5,6 +5,8 @@ dependencies:
   - python=3.8
   # - eigen=3.4.*
   - ninja
+  - curl
+  - openssl
   - pkg-config
   - boost=1.84.*
   - qt=5.15.* # reconstruction

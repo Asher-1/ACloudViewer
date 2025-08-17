@@ -5,6 +5,8 @@ dependencies:
   - python=3.8
   # - eigen=3.4.*
   - ninja
+  - curl
+  - openssl
   - qt=5.15.* # reconstruction
   - ffmpeg=6.1.*
   - xerces-c=3.2.* # reconstruction

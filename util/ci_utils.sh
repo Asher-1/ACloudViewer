@@ -297,6 +297,7 @@ build_gui_app() {
                 "-DWITH_IPP=ON"
                 "-DWITH_SIMD=ON"
                 "-DWITH_PCL_NURBS=$WITH_PCL_NURBS"
+                "-DUSE_PCL_BACKEND=ON"
                 "-DUSE_SIMD=ON"
                 "-DPACKAGE=$PACKAGE"
                 "-DBUILD_OPENCV=ON"

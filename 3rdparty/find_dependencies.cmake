@@ -1059,6 +1059,7 @@ if(USE_SYSTEM_CURL)
         SEARCH_ARGS libcurl
     )
     if(NOT 3rdparty_curl_FOUND)
+        message(WARNING "Cannot found libcurl and set USE_SYSTEM_CURL=OFF.")
         set(USE_SYSTEM_CURL OFF)
     endif()
 endif()
@@ -1070,6 +1071,7 @@ if(USE_SYSTEM_OPENSSL)
         TARGETS OpenSSL::Crypto
     )
     if(NOT 3rdparty_openssl_FOUND)
+        message(WARNING "Cannot found OpenSSL and set USE_SYSTEM_OPENSSL=OFF.")
         set(USE_SYSTEM_OPENSSL OFF)
     endif()
 endif()
@@ -1079,7 +1081,6 @@ if(NOT USE_SYSTEM_OPENSSL)
     import_3rdparty_library(3rdparty_openssl
         INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
         INCLUDE_ALL
-        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
         LIB_DIR      ${BORINGSSL_LIB_DIR}
         LIBRARIES    ${BORINGSSL_LIBRARIES}
         DEPENDS      ext_zlib ext_boringssl
@@ -1096,7 +1097,7 @@ if(NOT USE_SYSTEM_CURL)
         INCLUDE_ALL
         LIB_DIR      ${CURL_LIB_DIR}
         LIBRARIES    ${CURL_LIBRARIES}
-        DEPENDS      ext_zlib ext_curl
+        DEPENDS      ext_zlib ext_curl 3rdparty_openssl
     )
     if(APPLE)
         # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
@@ -1629,7 +1630,7 @@ list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM 3rdparty_opengl)
 # RPC interface
 # zeromq
 if(USE_SYSTEM_ZEROMQ)
-    opkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
+    pkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
     if(NOT 3rdparty_zeromq_FOUND)
         set(USE_USE_SYSTEM_ZEROMQ OFF)
     endif()
@@ -2351,7 +2352,7 @@ endif()
 # why compiling from source on windows
 # main reason: use prebuild pcl and vtk with conda 
 # which indeed not compiled vtk with qt support on windows
-if (NOT USE_SYSTEM_PCL AND WIN32)
+if (WIN32)
     find_package(Boost REQUIRED COMPONENTS
                  filesystem
                  iostreams)
@@ -2373,33 +2374,72 @@ if (NOT USE_SYSTEM_PCL AND WIN32)
         target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
     endif()
 
-    include(${CloudViewer_3RDPARTY_DIR}/pcl/pcl_build.cmake)
-    import_3rdparty_library(3rdparty_pcl
-        INCLUDE_DIRS ${PCL_INCLUDE_DIRS}
-        LIB_DIR ${PCL_LIBRARY_DIRS}
-        LIBRARIES ${PCL_LIBRARIES}
-        DEPENDS ext_pcl
-    )
+    if (USE_PCL_BACKEND)
+        include(${CloudViewer_3RDPARTY_DIR}/pcl/pcl_build.cmake)
+        import_3rdparty_library(3rdparty_pcl
+            INCLUDE_DIRS ${PCL_INCLUDE_DIRS}
+            LIB_DIR ${PCL_LIBRARY_DIRS}
+            LIBRARIES ${PCL_LIBRARIES}
+            DEPENDS ext_pcl
+        )
 
-    add_dependencies(3rdparty_pcl 3rdparty_vtk)
-    target_link_libraries(3rdparty_pcl INTERFACE 3rdparty_vtk)
-    target_link_libraries(3rdparty_pcl INTERFACE Boost::filesystem Boost::iostreams)
-    list(APPEND CMAKE_MODULE_PATH "${CloudViewer_3RDPARTY_DIR}/CMake/pcl_cmake")
-    find_package(FLANN REQUIRED)
-    if (FLANN_FOUND)
-        message(STATUS "FLANN_ROOT: ${FLANN_ROOT}")
-        target_link_libraries(3rdparty_pcl INTERFACE FLANN::FLANN)
-    endif()
-    find_package(Qhull REQUIRED)
-    if (QHULL_FOUND)
-        message(STATUS "QHULL_ROOT: ${QHULL_ROOT}")
-        target_link_libraries(3rdparty_pcl INTERFACE QHULL::QHULL)
+        add_dependencies(3rdparty_pcl 3rdparty_vtk)
+        target_link_libraries(3rdparty_pcl INTERFACE 3rdparty_vtk)
+        target_link_libraries(3rdparty_pcl INTERFACE Boost::filesystem Boost::iostreams)
+        list(APPEND CMAKE_MODULE_PATH "${CloudViewer_3RDPARTY_DIR}/CMake/pcl_cmake")
+        find_package(FLANN REQUIRED)
+        if (FLANN_FOUND)
+            message(STATUS "FLANN_ROOT: ${FLANN_ROOT}")
+            target_link_libraries(3rdparty_pcl INTERFACE FLANN::FLANN)
+        endif()
+        find_package(Qhull REQUIRED)
+        if (QHULL_FOUND)
+            message(STATUS "QHULL_ROOT: ${QHULL_ROOT}")
+            target_link_libraries(3rdparty_pcl INTERFACE QHULL::QHULL)
+        endif()
+        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
     endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
-    # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
 else()
+    # PCL
+    if(USE_PCL_BACKEND AND USE_SYSTEM_PCL)
+        find_package_3rdparty_library(3rdparty_pcl
+            PACKAGE PCL
+            TARGETS
+                pcl_io
+                pcl_ml
+                pcl_common
+                pcl_io_ply
+                pcl_keypoints
+                pcl_tracking
+                pcl_octree
+                pcl_kdtree
+                pcl_search
+                pcl_filters
+                pcl_surface
+                pcl_features
+                pcl_recognition
+                pcl_registration
+                pcl_segmentation
+                pcl_visualization
+                pcl_sample_consensus
+                Boost::system
+                Boost::filesystem
+                Boost::iostreams
+                FLANN::FLANN
+                QHULL::QHULL
+        )
+        if(NOT 3rdparty_pcl_FOUND)
+            message(WARNING "PCL not found in system")
+            set(USE_SYSTEM_PCL OFF)
+        else()
+            set(PCL_VERSION ${3rdparty_pcl_VERSION})
+            add_definitions( ${PCL_DEFINITIONS} )
+        endif()
+    endif()
+
     # must build vtk from source due to boost
-    if(NOT USE_SYSTEM_VTK AND TARGET 3rdparty_boost)
+    if(NOT USE_SYSTEM_VTK)
         include(${CloudViewer_3RDPARTY_DIR}/vtk/vtk_build.cmake)
         import_3rdparty_library(3rdparty_vtk
             HIDDEN
@@ -2411,43 +2451,8 @@ else()
         if(UNIX AND NOT APPLE)
             target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
         endif()
-        set(3rdparty_pcl "")
     else()
-        if(USE_PCL_BACKEND)
-            find_package_3rdparty_library(3rdparty_pcl
-                PACKAGE PCL
-                TARGETS
-                    pcl_io
-                    pcl_ml
-                    pcl_common
-                    pcl_io_ply
-                    pcl_keypoints
-                    pcl_tracking
-                    pcl_octree
-                    pcl_kdtree
-                    pcl_search
-                    pcl_filters
-                    pcl_surface
-                    pcl_features
-                    pcl_recognition
-                    pcl_registration
-                    pcl_segmentation
-                    pcl_visualization
-                    pcl_sample_consensus
-                    Boost::system
-                    Boost::filesystem
-                    Boost::iostreams
-                    FLANN::FLANN
-                    QHULL::QHULL
-            )
-            if(NOT 3rdparty_pcl_FOUND)
-                set(USE_SYSTEM_PCL OFF)
-            else()
-                set(PCL_VERSION ${3rdparty_pcl_VERSION})
-                add_definitions( ${PCL_DEFINITIONS} )
-            endif()
-        endif()
-
+        # VTK
         find_package_3rdparty_library(3rdparty_vtk
             PACKAGE VTK
             TARGETS
@@ -2497,17 +2502,25 @@ else()
                 VTK::IOChemistry      # vtkPDBReader
                 VTK::IOExport         # vtkVRMLExporter
                 VTK::ViewsInfovis     # vtkSCurveSpline
+                # for MacOS
+                VTK::ParallelMPI      # vtkMultiProcessStream and vtkMultiProcessController
+                VTK::ParallelCore
         )
         if(NOT 3rdparty_vtk_FOUND)
+            message(WARNING "VTK not found in system")
             set(USE_SYSTEM_VTK OFF)
         else()
             set(VTK_VERSION ${3rdparty_vtk_VERSION})
-            if(TARGET 3rdparty_pcl)
-                target_link_libraries(3rdparty_pcl INTERFACE 3rdparty_vtk)
-            endif()
         endif()
     endif()
+    if(TARGET 3rdparty_pcl)
+        target_link_libraries(3rdparty_pcl INTERFACE 3rdparty_vtk)
+    endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
+endif()
+
+if (USE_PCL_BACKEND AND NOT TARGET 3rdparty_pcl)
+    message(FATAL_ERROR "PCL backend is enabled but PCL is not found. Please install PCL or disable PCL backend.")
 endif()
 
 # Compactify list of external modules.

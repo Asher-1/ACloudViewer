@@ -42,6 +42,7 @@ ExternalProject_Add(
         -DCURL_USE_OPENSSL=ON
         -DCURL_USE_LIBPSL=OFF
         -DOPENSSL_ROOT_DIR=${BORINGSSL_ROOT_DIR}
+        -DZLIB_ROOT=${CMAKE_BINARY_DIR}/zlib
         ${curl_cmake_extra_args}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
@@ -57,5 +58,3 @@ if(MSVC)
 else()
     set(CURL_LIBRARIES ${curl_lib_name})
 endif()
-
-add_dependencies(ext_curl ext_boringssl)
