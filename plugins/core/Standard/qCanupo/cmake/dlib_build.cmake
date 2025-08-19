@@ -1,5 +1,10 @@
 include(ExternalProject)
 
+# Suppress CMP0135 warning
+if (POLICY CMP0135)
+    cmake_policy(SET CMP0135 OLD)
+endif()
+
 set(lib_name dlib)
 
 ExternalProject_Add(ext_dlib

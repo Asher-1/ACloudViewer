@@ -88,7 +88,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          brew install ccache curl
+          brew install ccache
 
           # Fix gfortran not found issue
           ln -s $(which gfortran-13) /usr/local/bin/gfortran
@@ -298,7 +298,7 @@ jobs:
           curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
           https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
           brew install -f libomp-11.1.0.bottle.tar.gz
-          brew install ccache curl
+          brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
