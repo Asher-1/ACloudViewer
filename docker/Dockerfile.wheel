@@ -89,6 +89,7 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libreadline-dev \
         libsqlite3-dev \
         libncursesw5-dev \
+        libcurl4-openssl-dev \
         # for opencv
         libavcodec-dev \
         libavformat-dev \

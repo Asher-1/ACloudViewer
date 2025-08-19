@@ -562,7 +562,7 @@ function(import_shared_3rdparty_library name ext_target)
                     COMMAND ${CMAKE_COMMAND} -E
                     copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
                 )
-                message(STATUS "install_name_tool -id "@rpath/${library_filename}" ${arg_LIB_DIR}/${library_filename}")
+                message(STATUS "install_name_tool -id @rpath/${library_filename} ${arg_LIB_DIR}/${library_filename}")
             else()
                 # deploy for debugging
                 add_custom_command(TARGET ${ext_target}
@@ -2409,7 +2409,6 @@ else()
                 pcl_io
                 pcl_ml
                 pcl_common
-                pcl_io_ply
                 pcl_keypoints
                 pcl_tracking
                 pcl_octree
@@ -2503,7 +2502,6 @@ else()
                 VTK::IOExport         # vtkVRMLExporter
                 VTK::ViewsInfovis     # vtkSCurveSpline
                 # for MacOS
-                VTK::ParallelMPI      # vtkMultiProcessStream and vtkMultiProcessController
                 VTK::ParallelCore
         )
         if(NOT 3rdparty_vtk_FOUND)

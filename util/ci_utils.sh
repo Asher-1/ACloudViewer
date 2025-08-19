@@ -194,10 +194,10 @@ build_mac_wheel() {
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_BENCHMARKS=OFF"
-        "-DBUILD_AZURE_KINECT=ON"
+        "-DBUILD_AZURE_KINECT=OFF" # not supported on macos
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE" # some issues with network locally
         "-DWITH_OPENMP=ON"
-        "-DWITH_IPP=ON"
+        "-DWITH_IPP=OFF" # not supported on macos
         "-DWITH_SIMD=ON"
         "-DUSE_SIMD=ON"
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel

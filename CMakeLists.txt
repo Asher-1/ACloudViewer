@@ -5,6 +5,24 @@ cmake_minimum_required(VERSION 3.19)
 # deduplication with CUDA, and to simplify generator expressions for selecting
 # compile flags and setting global hardened link flags.
 
+# Suppress CMP0167 warning
+if (POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)
+endif()
+# Suppress CMP0153 warning
+if (POLICY CMP0153)
+    cmake_policy(SET CMP0153 OLD)
+endif()
+# Suppress CMP0135 warning
+if (POLICY CMP0135)
+    cmake_policy(SET CMP0135 OLD)
+endif()
+# Set OpenGL policy
+if(NOT USE_SYSTEM_GLFW)
+    cmake_policy(SET CMP0072 OLD)
+endif()
+cmake_policy(GET CMP0072 CMP0072_VALUE)
+
 include(cmake/CMakeVersionConfig.cmake)
 
 # One shouldn't generate the BUILD project directly in the SOURCES folder!
@@ -281,12 +299,6 @@ if (PREFER_OSX_HOMEBREW)
     set(CMAKE_FIND_FRAMEWORK LAST)
     set(CMAKE_FIND_APPBUNDLE LAST)
 endif ()
-
-# Set OpenGL policy
-if (NOT USE_SYSTEM_GLFW)
-    cmake_policy(SET CMP0072 OLD)
-endif ()
-cmake_policy(GET CMP0072 CMP0072_VALUE)
 
 # Set BLAS/LAPACK library preference.
 if (LINUX_AARCH64)
