@@ -146,11 +146,15 @@ jobs:
             echo "OpenMP_ROOT=/usr/local/opt/libomp" >> $GITHUB_ENV
           fi
 
-          export PATH=${HOME}/QtIFW-4.6.1-darwin/bin:$PATH
-          export PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
-          export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
-          export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+          export PATH="${HOME}/QtIFW-4.6.1-darwin/bin:$PATH"
+          export PATH="/usr/local/var/homebrew/linked/ccache/libexec:$PATH"
+          export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
+
+          # just for libcurl search
+          PKG_CONFIG_DEBUG=1 pkg-config --libs libcurl
+          find $CONDA_PREFIX -name "libcurl.pc" 2>/dev/null
 
           echo "DEVELOPER_BUILD is ${{ env.DEVELOPER_BUILD }}"
           echo "INSTALL_DIR is ${{ env.INSTALL_DIR }}"
@@ -332,10 +336,14 @@ jobs:
             echo "OpenMP_ROOT=/usr/local/opt/libomp" >> $GITHUB_ENV
           fi
 
-          export PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
-          export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
-          export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+          export PATH="/usr/local/var/homebrew/linked/ccache/libexec:$PATH"
+          export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
+
+          # just for libcurl search
+          PKG_CONFIG_DEBUG=1 pkg-config --libs libcurl
+          find $CONDA_PREFIX -name "libcurl.pc" 2>/dev/null
 
           echo "DEVELOPER_BUILD is ${{ env.DEVELOPER_BUILD }}"
 
