@@ -112,7 +112,6 @@ void pybind_renderoption(py::module &m) {
                    visualization::RenderOption::PointColorOption::ZCoordinate)
             .value("Normal",
                    visualization::RenderOption::PointColorOption::Normal)
-            .export_values()
             .finalize();
 
     // This is a nested class, but now it's bind to the module
@@ -126,7 +125,6 @@ void pybind_renderoption(py::module &m) {
                    visualization::RenderOption::MeshShadeOption::FlatShade)
             .value("Color",
                    visualization::RenderOption::MeshShadeOption::SmoothShade)
-            .export_values()
             .finalize();
 
     // This is a nested class, but now it's bind to the module
@@ -146,7 +144,6 @@ void pybind_renderoption(py::module &m) {
                    visualization::RenderOption::MeshColorOption::ZCoordinate)
             .value("Normal",
                    visualization::RenderOption::MeshColorOption::Normal)
-            .export_values()
             .finalize();
 }
 

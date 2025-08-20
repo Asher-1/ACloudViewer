@@ -63,7 +63,6 @@ void pybind_core_device(py::module &m) {
             .value("CPU", Device::DeviceType::CPU)
             .value("CUDA", Device::DeviceType::CUDA)
             .value("SYCL", Device::DeviceType::SYCL)
-            .export_values()
             .finalize();
 }
 

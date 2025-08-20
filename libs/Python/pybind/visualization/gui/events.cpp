@@ -44,7 +44,6 @@ void pybind_gui_events(py::module& m) {
             .value("RIGHT", MouseButton::RIGHT)
             .value("BUTTON4", MouseButton::BUTTON4)
             .value("BUTTON5", MouseButton::BUTTON5)
-            .export_values()
             .finalize();
 
     py::native_enum<KeyModifier> key_mod(m, "KeyModifier", "enum.Enum",
@@ -54,7 +53,6 @@ void pybind_gui_events(py::module& m) {
             .value("CTRL", KeyModifier::CTRL)
             .value("ALT", KeyModifier::ALT)
             .value("META", KeyModifier::META)
-            .export_values()
             .finalize();
 
     py::class_<MouseEvent> mouse_event(m, "MouseEvent",
@@ -67,7 +65,6 @@ void pybind_gui_events(py::module& m) {
             .value("DRAG", MouseEvent::Type::DRAG)
             .value("BUTTON_UP", MouseEvent::Type::BUTTON_UP)
             .value("WHEEL", MouseEvent::Type::WHEEL)
-            .export_values()
             .finalize();
     mouse_event.def_readwrite("type", &MouseEvent::type, "Mouse event type")
             .def_readwrite("x", &MouseEvent::x,
@@ -271,7 +268,6 @@ void pybind_gui_events(py::module& m) {
             .value("PAGE_UP", KeyName::KEY_PAGEUP)
             .value("PAGE_DOWN", KeyName::KEY_PAGEDOWN)
             .value("UNKNOWN", KeyName::KEY_UNKNOWN)
-            .export_values()
             .finalize();
 
     py::class_<KeyEvent> key_event(m, "KeyEvent",
@@ -281,7 +277,6 @@ void pybind_gui_events(py::module& m) {
             key_event, "Type", "enum.Enum", "KeyEvent::Type.");
     key_event_type.value("DOWN", KeyEvent::Type::DOWN)
             .value("UP", KeyEvent::Type::UP)
-            .export_values()
             .finalize();
     key_event.def_readwrite("type", &KeyEvent::type, "Key event type")
             .def_readwrite("key", &KeyEvent::key,

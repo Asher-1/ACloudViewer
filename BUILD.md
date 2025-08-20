@@ -154,10 +154,20 @@ Build:
         make install -j24
 ```
 
-## Debug wheel
+## Debug wheel (Linux)
 
 ```
 1. gdb python
+
+2. run -c "import cloudViewer"
+
+3. bt
+```
+
+## Debug wheel (MacOS)
+
+```
+1. lldb python
 
 2. run -c "import cloudViewer"
 

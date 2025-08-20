@@ -12,8 +12,8 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include "ecvHObject.h"
 
@@ -127,6 +127,9 @@ public:
     /// Add a voxel with specified grid index and color.
     void AddVoxel(const Voxel &voxel);
 
+    /// Remove a voxel with specified grid index.
+    void RemoveVoxel(const Eigen::Vector3i &idx);
+
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(
             const Eigen::Vector3i &index) const;
@@ -190,30 +193,42 @@ public:
                                                   double height,
                                                   double depth);
 
-    /// Creates a VoxelGrid from a given ccPointCloud. The color value of a
-    /// given voxel is the average color value of the points that fall into it
-    /// (if the ccPointCloud has colors). The bounds of the created VoxelGrid
-    /// are computed from the ccPointCloud.
+    /// \enum VoxelPoolingMode
     ///
-    /// \param input The input ccPointCloud.
-    /// \param voxel_size Voxel size of of the VoxelGrid construction.
-    static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
-            const ccPointCloud &input, double voxel_size);
+    /// \brief Possible ways of determining voxel color from PointCloud.
+    enum class VoxelPoolingMode { AVG, MIN, MAX, SUM };
 
-    /// Creates a VoxelGrid from a given ccPointCloud. The color value of a
-    /// given voxel is the average color value of the points that fall into it
-    /// (if the ccPointCloud has colors). The bounds of the created VoxelGrid
-    /// are defined by the given parameters.
+    /// Creates a VoxelGrid from a given PointCloud. The color value of a given
+    /// voxel is determined by the VoxelPoolingMode, e.g. by default the average
+    /// color value of the points that fall into it (if the
+    /// PointCloud has colors).
+    /// The bounds of the created VoxelGrid are computed from the PointCloud.
     ///
-    /// \param input The input ccPointCloud.
+    /// \param input The input PointCloud.
+    /// \param voxel_size Voxel size of of the VoxelGrid construction.
+    /// \param color_mode Mode of determining color for each voxel.
+    static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
+            const ccPointCloud &input,
+            double voxel_size,
+            VoxelPoolingMode color_mode = VoxelPoolingMode::AVG);
+
+    /// Creates a VoxelGrid from a given PointCloud. The color value of a given
+    /// voxel is determined by the VoxelPoolingMode, e.g. by default the average
+    /// color value of the points that fall into it (if the
+    /// PointCloud has colors).
+    /// The bounds of the created VoxelGrid are defined by the given parameters.
+    ///
+    /// \param input The input PointCloud.
     /// \param voxel_size Voxel size of of the VoxelGrid construction.
     /// \param min_bound Minimum boundary point for the VoxelGrid to create.
     /// \param max_bound Maximum boundary point for the VoxelGrid to create.
+    /// \param color_mode Mode of determining color for each voxel.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloudWithinBounds(
             const ccPointCloud &input,
             double voxel_size,
             const Eigen::Vector3d &min_bound,
-            const Eigen::Vector3d &max_bound);
+            const Eigen::Vector3d &max_bound,
+            VoxelPoolingMode color_mode = VoxelPoolingMode::AVG);
 
     /// Creates a VoxelGrid from a given ccMesh. No color information is
     /// converted. The bounds of the created VoxelGrid are computed from the
@@ -263,7 +278,13 @@ class ECV_DB_LIB_API AvgColorVoxel {
 public:
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-    AvgColorVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
+    AvgColorVoxel()
+        : num_of_points_(0),
+          color_(0.0, 0.0, 0.0),
+          min_color_(Eigen::Vector3d::Constant(
+                  std::numeric_limits<double>::max())),
+          max_color_(Eigen::Vector3d::Constant(
+                  std::numeric_limits<double>::lowest())) {}
 
 public:
     void Add(const Eigen::Vector3i &voxel_index) {
@@ -291,10 +312,20 @@ public:
         }
     }
 
+    Eigen::Vector3d GetMinColor() const { return min_color_; }
+
+    Eigen::Vector3d GetMaxColor() const { return max_color_; }
+
+    Eigen::Vector3d GetSumColor() const { return color_; }
+
 public:
     int num_of_points_;
     Eigen::Vector3i voxel_index_;
     Eigen::Vector3d color_;
+
+private:
+    Eigen::Vector3d min_color_;
+    Eigen::Vector3d max_color_;
 };
 
 }  // namespace geometry

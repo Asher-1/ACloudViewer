@@ -190,7 +190,6 @@ void pybind_gui_classes(py::module &m) {
             .value("BOLD", FontStyle::BOLD)
             .value("ITALIC", FontStyle::ITALIC)
             .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC)
-            .export_values()
             .finalize();
 
     // ---- FontDescription ----
@@ -843,7 +842,6 @@ void pybind_gui_classes(py::module &m) {
     uiimage_scaling.value("NONE", UIImage::Scaling::NONE)
             .value("ANY", UIImage::Scaling::ANY)
             .value("ASPECT", UIImage::Scaling::ASPECT)
-            .export_values()
             .finalize();
 
     uiimage.def(py::init<>([](const char *path) { return new UIImage(path); }),

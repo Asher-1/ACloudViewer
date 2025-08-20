@@ -530,9 +530,17 @@ void pybind_geometry_classes(py::module& m) {
     docstring::ClassMethodDocInject(m, "ccObject", "is_a");
 
     // cloudViewer.geometry.Geometry.Type
-    py::native_enum<CV_TYPES::GeometryType>(geometry, "Type", "enum.Enum",
-                                            "Enum class for Geometry types.")
-            .value("CUSTOM_H_OBJECT", CV_TYPES::CUSTOM_H_OBJECT)
+    // must use py::enum_ instead of py::native_enum
+    py::enum_<CV_TYPES::GeometryType> geometry_type(geometry, "Type",
+                                                    py::arithmetic());
+    // Trick to write docs without listing the members in the enum class again.
+    geometry_type.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Enum class for Geometry types.";
+            }),
+            py::none(), py::none(), "");
+
+    geometry_type.value("CUSTOM_H_OBJECT", CV_TYPES::CUSTOM_H_OBJECT)
             .value("MESH", CV_TYPES::MESH)
             .value("LINESET", CV_TYPES::LINESET)
             .value("FACET", CV_TYPES::FACET)
@@ -568,8 +576,7 @@ void pybind_geometry_classes(py::module& m) {
             .value("MATERIAL_SET", CV_TYPES::MATERIAL_SET)
             .value("VIEWPORT_2D_LABEL", CV_TYPES::VIEWPORT_2D_LABEL)
             .value("VIEWPORT_2D_OBJECT", CV_TYPES::VIEWPORT_2D_OBJECT)
-            .export_values()
-            .finalize();
+            .export_values();
 
     // cloudViewer.geometry.ccDrawableObject
     py::class_<ccDrawableObject, PyDrawableObjectBase<ccDrawableObject>,

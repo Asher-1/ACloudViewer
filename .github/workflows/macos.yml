@@ -79,7 +79,7 @@ jobs:
           sed -i "" "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       # DGM: without caching, using conda on Windows takes a long time...
-      - name: Set up Python version
+      - name: Set up Python environment
         uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: cloudViewer
@@ -115,7 +115,7 @@ jobs:
           ls -hal ~/QtIFW-4.6.1-darwin/bin
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
-      - name: Config and build
+      - name: Config and build APP
         shell: bash -l {0}
         run: |
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
@@ -301,7 +301,7 @@ jobs:
           brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
-      - name: Config and build wheel
+      - name: Config and build Wheel
         shell: bash -l {0}
         run: |
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
