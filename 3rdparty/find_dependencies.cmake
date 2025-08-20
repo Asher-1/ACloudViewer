@@ -1346,6 +1346,14 @@ import_3rdparty_library(3rdparty_poisson
         )
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_poisson)
 
+# Minizip
+if(WITH_MINIZIP)
+    pkg_config_3rdparty_library(3rdparty_minizip
+        SEARCH_ARGS minizip
+    )
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_minizip)
+endif()
+
 # Googletest
 if (BUILD_UNIT_TESTS)
     if (USE_SYSTEM_GOOGLETEST)
