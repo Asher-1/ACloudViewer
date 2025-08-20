@@ -422,7 +422,6 @@ void pybind_rendering_classes(py::module &m) {
             .value("MEDIUM", ColorGradingParams::Quality::kMedium)
             .value("HIGH", ColorGradingParams::Quality::kHigh)
             .value("ULTRA", ColorGradingParams::Quality::kUltra)
-            .export_values()
             .finalize();
 
     py::native_enum<ColorGradingParams::ToneMapping> cgp_tone(
@@ -436,7 +435,6 @@ void pybind_rendering_classes(py::module &m) {
             .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
             .value("DISPLAY_RANGE",
                    ColorGradingParams::ToneMapping::kDisplayRange)
-            .export_values()
             .finalize();
 
     color_grading

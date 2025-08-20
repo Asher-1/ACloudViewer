@@ -76,7 +76,6 @@ void pybind_core_hashmap(py::module& m) {
             .value("StdGPU", HashBackendType::StdGPU)
             .value("TBB", HashBackendType::TBB)
             .value("Default", HashBackendType::Default)
-            .export_values()
             .finalize();
 
     py::class_<HashMap> hashmap(

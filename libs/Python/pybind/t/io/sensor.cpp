@@ -43,7 +43,6 @@ void pybind_sensor(py::module &m) {
     py::native_enum<SensorType>(m, "SensorType", "enum.Enum", "Sensor type.")
             .value("AZURE_KINECT", SensorType::AZURE_KINECT)
             .value("REAL_SENSE", SensorType::REAL_SENSE)
-            .export_values()
             .finalize();
 
     // Class RGBD video metadata
