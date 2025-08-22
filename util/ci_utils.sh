@@ -352,7 +352,7 @@ build_gui_app() {
                 "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
                 "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
                 "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
-                )
+    )
     
     set -x # Echo commands on
     echo

@@ -89,7 +89,7 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
     data_interface_.reset(new Eigen::Map<const Eigen::MatrixXd>((const double *)data_.data(), dimension_, dataset_size_));
     nanoflann_index_.reset(
             new KDTree_t(dimension_, std::cref(*data_interface_), 15));
-    nanoflann_index_->index->buildIndex();
+    nanoflann_index_->index_->buildIndex();
     return true;
 }
 
