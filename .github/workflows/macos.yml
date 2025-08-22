@@ -88,7 +88,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          brew install ccache
+          brew install ccache pkg-config
 
           # Fix gfortran not found issue
           ln -s $(which gfortran-13) /usr/local/bin/gfortran
@@ -276,7 +276,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ccache
+          brew install ccache pkg-config
 
           # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
           ln -s $(which gfortran-13) /usr/local/bin/gfortran

@@ -73,7 +73,8 @@ else ()
 endif ()
 list( APPEND CMAKE_PREFIX_PATH ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib )
 
-find_package(PkgConfig QUIET)
+# find_package(PkgConfig QUIET)
+find_package(PkgConfig REQUIRED)
 
 # build_3rdparty_library(name ...)
 #
