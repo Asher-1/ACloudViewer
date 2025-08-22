@@ -152,7 +152,7 @@ jobs:
           export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
 
-          # just for libcurl search
+          # just logging libcurl search results
           PKG_CONFIG_DEBUG=1 pkg-config --libs libcurl
           find $CONDA_PREFIX -name "libcurl.pc" 2>/dev/null
 
@@ -164,6 +164,7 @@ jobs:
           source util/ci_utils.sh
           build_gui_app with_conda package_installer
           ccache -s
+
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
           DEVEL_PKG_NAME="$(basename ${{ env.INSTALL_DIR }}/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
@@ -341,7 +342,7 @@ jobs:
           export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
 
-          # just for libcurl search
+          # just logging libcurl search results
           PKG_CONFIG_DEBUG=1 pkg-config --libs libcurl
           find $CONDA_PREFIX -name "libcurl.pc" 2>/dev/null
 
@@ -352,6 +353,7 @@ jobs:
           source util/ci_utils.sh
           build_mac_wheel with_conda build_realsense
           ccache -s
+
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudViewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 

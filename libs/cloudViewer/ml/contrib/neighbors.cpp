@@ -218,7 +218,7 @@ void batch_nanoflann_neighbors(std::vector<PointXYZ>& queries,
     // ***********************
 
     // Search params
-    nanoflann::SearchParams search_params;
+    nanoflann::SearchParameters search_params;
     search_params.sorted = true;
 
     for (auto& p0 : queries) {

@@ -845,12 +845,12 @@ if (USE_SYSTEM_GLEW)
 endif ()
 if (NOT USE_SYSTEM_GLEW)
     build_3rdparty_library(3rdparty_glew DIRECTORY glew
-            HEADER
-            SOURCES
+        HEADER
+        SOURCES
             src/glew.c
-            INCLUDE_DIRS
+        INCLUDE_DIRS
             include/
-            )
+    )
     if (ENABLE_HEADLESS_RENDERING)
         target_compile_definitions(3rdparty_glew PUBLIC GLEW_OSMESA)
     endif ()
@@ -956,9 +956,9 @@ if (NOT USE_SYSTEM_JPEG)
     include(${CloudViewer_3RDPARTY_DIR}/libjpeg-turbo/libjpeg-turbo.cmake)
     import_3rdparty_library(3rdparty_jpeg
             INCLUDE_DIRS ${JPEG_TURBO_INCLUDE_DIRS}
-            LIB_DIR ${JPEG_TURBO_LIB_DIR}
-            LIBRARIES ${JPEG_TURBO_LIBRARIES}
-            DEPENDS ext_turbojpeg
+            LIB_DIR      ${JPEG_TURBO_LIB_DIR}
+            LIBRARIES    ${JPEG_TURBO_LIBRARIES}
+            DEPENDS      ext_turbojpeg
             )
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_jpeg)
 else()
@@ -998,10 +998,10 @@ if (USE_SYSTEM_LIBLZF)
 endif ()
 if (NOT USE_SYSTEM_LIBLZF)
     build_3rdparty_library(3rdparty_liblzf DIRECTORY liblzf
-            SOURCES
+        SOURCES
             liblzf/lzf_c.c
             liblzf/lzf_d.c
-            )
+    )
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_liblzf)
 else()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_liblzf)
@@ -1010,7 +1010,7 @@ endif()
 # tritriintersect
 build_3rdparty_library(3rdparty_tritriintersect DIRECTORY tomasakeninemoeller
         INCLUDE_DIRS include/
-        )
+)
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_tritriintersect)
 
 # librealsense SDK
@@ -1059,8 +1059,9 @@ if(USE_SYSTEM_CURL)
         SEARCH_ARGS libcurl
     )
     if(NOT 3rdparty_curl_FOUND)
-        message(WARNING "Cannot found libcurl and set USE_SYSTEM_CURL=OFF.")
-        set(USE_SYSTEM_CURL OFF)
+        message(WARNING "Cannot found libcurl and set USE_SYSTEM_CURL=OFF and USE_SYSTEM_OPENSSL=OFF.")
+        set(USE_SYSTEM_CURL     OFF)
+        set(USE_SYSTEM_OPENSSL  OFF)
     endif()
 endif()
 
@@ -1169,11 +1170,11 @@ list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM 3rdparty_rply)
 
 # tinyfiledialogs
 build_3rdparty_library(3rdparty_tinyfiledialogs DIRECTORY tinyfiledialogs
-        SOURCES
+    SOURCES
         include/tinyfiledialogs/tinyfiledialogs.c
-        INCLUDE_DIRS
+    INCLUDE_DIRS
         include/
-        )
+)
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_tinyfiledialogs)
 
 # tinygltf
@@ -1233,24 +1234,24 @@ endif()
 if (NOT USE_SYSTEM_QHULLCPP)
     include(${CloudViewer_3RDPARTY_DIR}/qhull/qhull.cmake)
     build_3rdparty_library(3rdparty_qhull_r DIRECTORY ${QHULL_SOURCE_DIR}
-    SOURCES
-        src/libqhull_r/global_r.c
-        src/libqhull_r/stat_r.c
-        src/libqhull_r/geom2_r.c
-        src/libqhull_r/poly2_r.c
-        src/libqhull_r/merge_r.c
-        src/libqhull_r/libqhull_r.c
-        src/libqhull_r/geom_r.c
-        src/libqhull_r/poly_r.c
-        src/libqhull_r/qset_r.c
-        src/libqhull_r/mem_r.c
-        src/libqhull_r/random_r.c
-        src/libqhull_r/usermem_r.c
-        src/libqhull_r/io_r.c
-        src/libqhull_r/user_r.c
-        src/libqhull_r/rboxlib_r.c
-    INCLUDE_DIRS
-        src/
+        SOURCES
+            src/libqhull_r/global_r.c
+            src/libqhull_r/stat_r.c
+            src/libqhull_r/geom2_r.c
+            src/libqhull_r/poly2_r.c
+            src/libqhull_r/merge_r.c
+            src/libqhull_r/libqhull_r.c
+            src/libqhull_r/geom_r.c
+            src/libqhull_r/poly_r.c
+            src/libqhull_r/qset_r.c
+            src/libqhull_r/mem_r.c
+            src/libqhull_r/random_r.c
+            src/libqhull_r/usermem_r.c
+            src/libqhull_r/io_r.c
+            src/libqhull_r/user_r.c
+            src/libqhull_r/rboxlib_r.c
+        INCLUDE_DIRS
+            src/
     )
     build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
         SOURCES
@@ -1276,7 +1277,7 @@ if (NOT USE_SYSTEM_QHULLCPP)
             src/libqhullcpp/RoadLogEvent.cpp
         INCLUDE_DIRS
             src/
-        )
+    )
     target_link_libraries(3rdparty_qhullcpp PRIVATE 3rdparty_qhull_r)
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_qhullcpp)
 else()
@@ -1368,17 +1369,15 @@ if (BUILD_UNIT_TESTS)
     if (NOT USE_SYSTEM_GOOGLETEST)
         include(${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake)
         build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
-                SOURCES
+            SOURCES
                 googletest/src/gtest-all.cc
                 googlemock/src/gmock-all.cc
-                INCLUDE_DIRS
+            INCLUDE_DIRS
                 googletest/include/
                 googletest/
                 googlemock/include/
                 googlemock/
-                DEPENDS
-                ext_googletest
-                )
+        )
     endif ()
 endif ()
 
@@ -1402,14 +1401,13 @@ if (BUILD_GUI)
     if (NOT USE_SYSTEM_IMGUI)
         include(${CloudViewer_3RDPARTY_DIR}/imgui/imgui.cmake)
         build_3rdparty_library(3rdparty_imgui DIRECTORY ${IMGUI_SOURCE_DIR}
-                SOURCES
+            SOURCES
                 imgui_demo.cpp
                 imgui_draw.cpp
+                imgui_tables.cpp
                 imgui_widgets.cpp
                 imgui.cpp
-                DEPENDS
-                ext_imgui
-                )
+        )
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_imgui)
     else()
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_imgui)
@@ -1755,7 +1753,6 @@ if (USE_BLAS)
     if (NOT USE_SYSTEM_BLAS)
         # Install gfortran first for compiling OpenBLAS/Lapack from source.
         message(STATUS "Building OpenBLAS with LAPACK from source")
-        set(BLAS_BUILD_FROM_SOURCE ON)
 
         find_program(gfortran_bin "gfortran")
         if (gfortran_bin)
@@ -1794,22 +1791,36 @@ if (USE_BLAS)
         endif ()
 
         if (LINUX_AARCH64 OR APPLE_AARCH64)
-            # Find libgfortran.a and libgcc.a inside the gfortran library search
-            # directories. This ensures that the library matches the compiler.
-            # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
-            find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-            find_library(gcc_lib NAMES libgcc.a PATHS ${gfortran_lib_dirs} REQUIRED)
-            target_link_libraries(3rdparty_blas INTERFACE
-                    ${gfortran_lib}
-                    ${gcc_lib}
-                    )
-            if (APPLE_AARCH64)
+            if(APPLE_AARCH64)
+                # Find libgfortran.a and libgcc.a inside the gfortran library search
+                # directories. This ensures that the library matches the compiler.
+                # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
+                find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
+            endif()
+            if(LINUX_AARCH64)
+                # On some aarch64 systems, libgfortran.a is not compiled with -fPIC,
+                # which prevents it from being used in a shared library.
+                # We link the shared version (-lgfortran) instead.
+                # TODO: This requires packaging libgfortran with the Python
+                # wheel
+                find_library(gfortran_lib NAMES libgfortran${CMAKE_SHARED_LIBRARY_SUFFIX} PATHS ${gfortran_lib_dirs} REQUIRED)
+                find_library(gcc_lib      NAMES libgcc_s${CMAKE_SHARED_LIBRARY_SUFFIX}      PATHS ${gfortran_lib_dirs} REQUIRED)
+            endif()
+            target_link_libraries(3rdparty_blas INTERFACE ${gfortran_lib} ${gcc_lib})
+            if(APPLE_AARCH64)
                 find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
                 target_link_libraries(3rdparty_blas INTERFACE
-                        ${quadmath_lib})
+                    ${quadmath_lib})
                 # Suppress Apple compiler warnigns.
-                target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
-            endif ()
+                if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+                    message(WARNING "All link warnings have been disabled on Apple Silicon builds "
+                        "due to the large number of spurious warnings that are generated. If you "
+                        "need to see link warnings please build with -DCMAKE_BUILD_TYPE=Debug.")
+                    target_link_options(3rdparty_blas INTERFACE "-Wl,-w")
+                    target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
+                endif()
+            endif()
         elseif (UNIX AND NOT APPLE)
             # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
             # The temporary solution is to link the shared library libgfortran.so.
@@ -1831,7 +1842,7 @@ if (USE_BLAS)
             #   - libgcc.a
             #   - libquadmath.a
             target_link_libraries(3rdparty_blas INTERFACE gfortran)
-            target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+            # target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
         endif ()
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_blas)
     endif ()

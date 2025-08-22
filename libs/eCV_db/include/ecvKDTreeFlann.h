@@ -133,7 +133,7 @@ public:
         indices.resize(knn);
         distance2.resize(knn);
         std::vector<Eigen::Index> indices_eigen(knn);
-        int k = nanoflann_index_->index->knnSearch(
+        int k = nanoflann_index_->index_->knnSearch(
                 query.data(), knn, indices_eigen.data(), distance2.data());
         indices.resize(k);
         distance2.resize(k);
@@ -147,17 +147,16 @@ public:
                      std::vector<int> &indices,
                      std::vector<double> &distance2) const {
         // This is optimized code for heavily repeated search.
-        // Since max_nn is not given, we let flann to do its own memory
-        // management. Other flann::Index::radiusSearch() implementations lose
-        // performance due to memory management and CPU caching.
-        if (data_.empty() || dataset_size_ <= 0 ||
-            size_t(query.rows()) != dimension_) {
+        // Since max_nn is not given, we let flann to do its own memory management.
+        // Other flann::Index::radiusSearch() implementations lose performance due
+        // to memory management and CPU caching.
+        if (data_.empty() || dataset_size_ <= 0 || size_t(query.rows()) != dimension_) {
             return -1;
         }
-        std::vector<std::pair<Eigen::Index, double>> indices_dists;
-        int k = nanoflann_index_->index->radiusSearch(
+        std::vector<nanoflann::ResultItem<Eigen::Index, double>> indices_dists;
+        int k = nanoflann_index_->index_->radiusSearch(
                 query.data(), radius * radius, indices_dists,
-                nanoflann::SearchParams(-1, 0.0));
+                nanoflann::SearchParameters(0.0));
         indices.resize(k);
         distance2.resize(k);
         for (int i = 0; i < k; ++i) {
@@ -183,7 +182,7 @@ public:
         }
         distance2.resize(max_nn);
         std::vector<Eigen::Index> indices_eigen(max_nn);
-        int k = nanoflann_index_->index->knnSearch(
+        int k = nanoflann_index_->index_->knnSearch(
                 query.data(), max_nn, indices_eigen.data(), distance2.data());
         k = std::distance(
                 distance2.begin(),

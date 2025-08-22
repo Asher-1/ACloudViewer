@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
-# This script builds WebRTC for CloudViewer for Ubuntu and macOS. For Windows, see
+# This script builds WebRTC for ACloudViewer for Ubuntu and macOS. For Windows, see
 # .github/workflows/webrtc.yml
 #
 # Usage:
@@ -13,12 +13,12 @@ set -euox pipefail
 # $ download_webrtc_sources
 # $ build_webrtc
 # A webrtc_<commit>_platform.tar.gz file will be created that can be used to
-# build CloudViewer with WebRTC support.
+# build ACloudViewer with WebRTC support.
 #
 # Procedure:
 #
 # 1) Download depot_tools, webrtc to following directories:
-#    ├── Oepn3D
+#    ├── ACloudViewer
 #    ├── depot_tools
 #    └── webrtc
 #        ├── .gclient
@@ -42,7 +42,7 @@ DEPOT_TOOLS_COMMIT=${DEPOT_TOOLS_COMMIT:-e1a98941d3ab10549be6d82d0686bb0fb91ec90
 GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI:-0}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 SUDO=${SUDO:-sudo}                           # Set to command if running inside docker
-export PATH="$PWD/../depot_tools":${PATH}    # $(basename $PWD) == CloudViewer
+export PATH="$PWD/../depot_tools":${PATH}    # $(basename $PWD) == ACloudViewer
 export DEPOT_TOOLS_UPDATE=0
 
 install_dependencies_ubuntu() {
@@ -80,7 +80,7 @@ install_dependencies_ubuntu() {
 }
 
 download_webrtc_sources() {
-    # PWD=CloudViewer
+    # PWD=ACloudViewer
     pushd ..
     echo Get depot_tools
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
@@ -105,16 +105,16 @@ download_webrtc_sources() {
 }
 
 build_webrtc() {
-    # PWD=CloudViewer
-    CLOUDVIEWER_DIR="$PWD"
+    # PWD=ACloudViewer
+    ACLOUDVIEWER_DIR="$PWD"
     echo Apply patches
     cp 3rdparty/webrtc/{CMakeLists.txt,webrtc_common.cmake} ../webrtc
     git -C ../webrtc/src apply \
-        "CLOUDVIEWER_DIR"/3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch
+        "ACLOUDVIEWER_DIR"/3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch
     git -C ../webrtc/src/build apply \
-        "CLOUDVIEWER_DIR"/3rdparty/webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch
+        "ACLOUDVIEWER_DIR"/3rdparty/webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch
     git -C ../webrtc/src/third_party apply \
-        "CLOUDVIEWER_DIR"/3rdparty/webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
+        "ACLOUDVIEWER_DIR"/3rdparty/webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
     WEBRTC_COMMIT_SHORT=$(git -C ../webrtc/src rev-parse --short=7 HEAD)
 
     echo Build WebRTC
@@ -125,21 +125,21 @@ build_webrtc() {
         ..
     make -j$NPROC
     make install
-    popd # PWD=CloudViewer
+    popd # PWD=ACloudViewer
     pushd ..
     tree -L 2 webrtc_release || ls webrtc_release/*
 
     echo Package WebRTC
     if [[ $(uname -s) == 'Linux' ]]; then
         tar -czf \
-            "CLOUDVIEWER_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz" \
+            "ACLOUDVIEWER_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz" \
             webrtc_release
     elif [[ $(uname -s) == 'Darwin' ]]; then
         tar -czf \
-            "CLOUDVIEWER_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz" \
+            "ACLOUDVIEWER_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz" \
             webrtc_release
     fi
-    popd # PWD=CloudViewer
+    popd # PWD=ACloudViewer
     webrtc_package=$(ls webrtc_*.tar.gz)
     cmake -E sha256sum "$webrtc_package" | tee "checksum_${webrtc_package%%.*}.txt"
     ls -alh "$webrtc_package"
