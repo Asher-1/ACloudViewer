@@ -1089,9 +1089,9 @@ if(NOT USE_SYSTEM_OPENSSL)
 endif()
 
 if(NOT USE_SYSTEM_CURL)
-    if (APPLE)
-        message(SEND_ERROR "Please build with USE_SYSTEM_CURL=ON for macOS to prevent linker errors.")
-    endif()
+    # if (APPLE)
+    #     message(SEND_ERROR "Please build with USE_SYSTEM_CURL=ON for macOS to prevent linker errors.")
+    # endif()
     include(${CloudViewer_3RDPARTY_DIR}/curl/curl.cmake)
     import_3rdparty_library(3rdparty_curl
         INCLUDE_DIRS ${CURL_INCLUDE_DIRS}

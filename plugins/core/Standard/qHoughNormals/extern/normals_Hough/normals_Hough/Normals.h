@@ -182,7 +182,7 @@ public:
 		//kd tree creation
 		//build de kd_tree
 		kd_tree tree(3, pts, 10 /* max leaf */ );
-		tree.index->buildIndex();
+		tree.index_->buildIndex();
 
 		//create the density estimation for each point
 		densities.resize(pts.rows());
@@ -198,7 +198,7 @@ public:
 			std::vector<Eigen::MatrixX3d::Index> pointIdxSearch(k_density + 1);
 			std::vector<double> pointSquaredDistance(k_density + 1);
 			//knn for k_density+1 because the point is itself include in the search tree
-			tree.index->knnSearch(&pt_query[0], k_density + 1, &pointIdxSearch[0], &pointSquaredDistance[0]);
+			tree.index_->knnSearch(&pt_query[0], k_density + 1, &pointIdxSearch[0], &pointSquaredDistance[0]);
 			double d = 0;
 			for (size_t i = 0; i < pointSquaredDistance.size(); i++)
 			{
@@ -238,7 +238,7 @@ public:
 			const Eigen::Vector3d& pt_query = pts.row(n);
 			pointIdxSearch.resize(neighborhood_size);
 			pointSquaredDistance.resize(neighborhood_size);
-			tree.index->knnSearch(&pt_query[0], neighborhood_size, &pointIdxSearch[0], &pointSquaredDistance[0]);
+			tree.index_->knnSearch(&pt_query[0], neighborhood_size, &pointIdxSearch[0], &pointSquaredDistance[0]);
 
 			if (use_density)
 				list_of_triplets(trip, rotations*n_planes, pointIdxSearch, vecInt);
