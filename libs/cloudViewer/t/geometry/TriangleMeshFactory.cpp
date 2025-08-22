@@ -5,13 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifdef CLOUDVIEWER_WITH_VTK
 #include <vtkFlyingEdges3D.h>
 #include <vtkLinearExtrusionFilter.h>
 #include <vtkNew.h>
 #include <vtkTextSource.h>
 #include <vtkTriangleFilter.h>
-#endif
 
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/t/geometry/TriangleMesh.h"
@@ -91,7 +89,8 @@ TriangleMesh TriangleMesh::CreateSphere(double radius,
                                         core::Dtype int_dtype,
                                         const core::Device &device) {
     std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateSphere(radius, resolution);
+            cloudViewer::geometry::TriangleMesh::CreateSphere(radius,
+                                                              resolution);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
                                                  int_dtype, device);
@@ -145,8 +144,8 @@ TriangleMesh TriangleMesh::CreateCylinder(double radius,
                                           core::Dtype int_dtype,
                                           const core::Device &device) {
     std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateCylinder(radius, height,
-                                                           resolution, split);
+            cloudViewer::geometry::TriangleMesh::CreateCylinder(
+                    radius, height, resolution, split);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
                                                  int_dtype, device);
@@ -163,7 +162,7 @@ TriangleMesh TriangleMesh::CreateCone(double radius,
                                       const core::Device &device) {
     std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
             cloudViewer::geometry::TriangleMesh::CreateCone(radius, height,
-                                                       resolution, split);
+                                                            resolution, split);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
                                                  int_dtype, device);
@@ -216,7 +215,8 @@ TriangleMesh TriangleMesh::CreateCoordinateFrame(double size,
                                                  core::Dtype int_dtype,
                                                  const core::Device &device) {
     std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateCoordinateFrame(size, origin);
+            cloudViewer::geometry::TriangleMesh::CreateCoordinateFrame(size,
+                                                                       origin);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
                                                  int_dtype, device);
@@ -261,8 +261,6 @@ TriangleMesh TriangleMesh::CreateText(const std::string &text,
                           int_dtype.ToString());
     }
 
-    
-#ifdef CLOUDVIEWER_WITH_VTK
     vtkNew<vtkTextSource> vector_text;
     vector_text->SetText(text.c_str());
     vector_text->BackingOff();
@@ -288,10 +286,6 @@ TriangleMesh TriangleMesh::CreateText(const std::string &text,
     tmesh.GetTriangleIndices() =
             tmesh.GetTriangleIndices().To(device, int_dtype);
     return tmesh;
-#else
-    utility::LogWarning("CreateText requires VTK; returning empty mesh");
-    return TriangleMesh(device);
-#endif
 }
 
 TriangleMesh TriangleMesh::CreateIsosurfaces(
@@ -302,8 +296,6 @@ TriangleMesh TriangleMesh::CreateIsosurfaces(
     core::AssertTensorShape(volume, {core::None, core::None, core::None});
     core::AssertTensorDtypes(volume, {core::Float32, core::Float64});
 
-    
-#ifdef CLOUDVIEWER_WITH_VTK
     auto image_data = vtkutils::CreateVtkImageDataFromTensor(
             const_cast<core::Tensor &>(volume));
     vtkNew<vtkFlyingEdges3D> method;
@@ -316,10 +308,6 @@ TriangleMesh TriangleMesh::CreateIsosurfaces(
     auto polydata = method->GetOutput();
     auto tmesh = CreateTriangleMeshFromVtkPolyData(polydata);
     return tmesh.To(device);
-#else
-    utility::LogWarning("CreateIsosurfaces requires VTK; returning empty mesh");
-    return TriangleMesh(device);
-#endif
 }
 
 }  // namespace geometry

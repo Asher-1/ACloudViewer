@@ -35,8 +35,8 @@ void pybind_renderoption(py::module &m) {
             .def(
                     "load_from_json",
                     [](visualization::RenderOption &ro,
-                       const std::string &filename) {
-                        io::ReadIJsonConvertible(filename, ro);
+                       const fs::path &filename) {
+                        io::ReadIJsonConvertible(filename.string(), ro);
                     },
                     "Function to load visualization::RenderOption from a JSON "
                     "file.",
@@ -44,8 +44,8 @@ void pybind_renderoption(py::module &m) {
             .def(
                     "save_to_json",
                     [](visualization::RenderOption &ro,
-                       const std::string &filename) {
-                        io::WriteIJsonConvertible(filename, ro);
+                       const fs::path &filename) {
+                        io::WriteIJsonConvertible(filename.string(), ro);
                     },
                     "Function to save visualization::RenderOption to a JSON "
                     "file.",

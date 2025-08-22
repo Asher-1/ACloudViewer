@@ -1,17 +1,52 @@
 ACloudViewer Version History
 ============================
 
+v3.9.3 (Asher) - 08/22/2025
+----------------------
 
-## v3.9.3
+## ACloudViewer 3.9.3 Release Notes
+We are excited to present ACloudViewer 3.9.3!
+
+We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
+
 - New features:
     -   Add ScaleBar support!
 		-   [add some cmake tools](./scripts/cmake/README.md)
+		-   Add Doppler ICP in tensor registration pipeline
+		-   Support in memory loading of XYZ files
+		-   Add Python pathlib support for file IO
+		-   Add albedo texture to a mesh from calibrated images.
+		-   New FlyingEdges algorithm for extracting an isosurface (triangle mesh) from a dense 3D volume.
+		-   Add Doppler ICP in tensor registration pipeline
+		-   New Doppler ICP registration for FMCW Lidars
 
 - Bug fixes:
-    -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
+    -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13
     -   Fix windows ci issues with migrate VS 16 2019 to VS 17 2022 and replace windows-2019 with windows-2022
-    -   Fix ubuntu ci issues that replacing runs on: ubuntu-20.04 with runs-on: ubuntu-22.04 
     -   Fix the display issues with text on macos
+    -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available
+    -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly
+    -   Fix tensor based TSDF integration example.
+    -   Fix for depth estimation for VoxelBlockGrid
+    -   raycasting scene: Allow setting of number of threads that are used for building a raycasting scene
+    -   Fix Python bindings for CUDA device synchronization, voxel grid saving
+    -   Fix geometry picker Error when LineSet objects are presented
+    -   Fix regression in printing cuda tensor from 🐛
+
+- Enhancements:
+    -   Update 3rparty version
+    -   Exposed more functionality in SLAM and odometry pipelines
+    -   Reserve fragment buffer for VoxelBlockGrid operations
+    -   select_by_index method to Feature class
+    -   Support msgpack versions without cmake
+    -   lowercase types when reading PCD files
+
+### supported platform:
+- Windows `x86/64`
+- Linux `x86/64`
+- MacOS `X64 && arm64 (M1-4)`
+
+
 
 v3.9.2 (Asher) - 12/22/2024
 ----------------------

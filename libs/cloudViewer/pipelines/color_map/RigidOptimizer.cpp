@@ -7,15 +7,15 @@
 
 #include "pipelines/color_map/RigidOptimizer.h"
 
+#include <FileSystem.h>
+#include <ImageIO.h>
+#include <Optional.h>
+#include <Parallel.h>
+#include <PinholeCameraTrajectoryIO.h>
+
 #include <memory>
 #include <vector>
 
-#include <FileSystem.h>
-#include <Optional.h>
-#include <Parallel.h>
-
-#include <ImageIO.h>
-#include <PinholeCameraTrajectoryIO.h>
 #include "io/TriangleMeshIO.h"
 #include "pipelines/color_map/ColorMapUtils.h"
 #include "pipelines/color_map/ImageWarpingField.h"
@@ -71,7 +71,7 @@ static void ComputeJacobianAndResidualRigid(
     w = 1.0;  // Dummy.
 }
 
-ccMesh RunRigidOptimizer(
+std::pair<ccMesh, camera::PinholeCameraTrajectory> RunRigidOptimizer(
         const ccMesh& mesh,
         const std::vector<geometry::RGBDImage>& images_rgbd,
         const camera::PinholeCameraTrajectory& camera_trajectory,
@@ -102,20 +102,25 @@ ccMesh RunRigidOptimizer(
             if (cloudViewer::utility::filesystem::DirectoryExists(dir)) {
                 cloudViewer::utility::LogInfo("Directory exists: {}.", dir);
             } else {
-                if (cloudViewer::utility::filesystem::MakeDirectoryHierarchy(dir)) {
-                    cloudViewer::utility::LogInfo("Directory created: {}.", dir);
+                if (cloudViewer::utility::filesystem::MakeDirectoryHierarchy(
+                            dir)) {
+                    cloudViewer::utility::LogInfo("Directory created: {}.",
+                                                  dir);
                 } else {
-                    cloudViewer::utility::LogError("Making directory failed: {}.", dir);
+                    cloudViewer::utility::LogError(
+                            "Making directory failed: {}.", dir);
                 }
             }
         }
     }
 
-    cloudViewer::utility::LogDebug("[ColorMapOptimization] CreateUtilImagesFromRGBD");
+    cloudViewer::utility::LogDebug(
+            "[ColorMapOptimization] CreateUtilImagesFromRGBD");
     std::tie(images_gray, images_dx, images_dy, images_color, images_depth) =
             CreateUtilImagesFromRGBD(images_rgbd);
 
-    cloudViewer::utility::LogDebug("[ColorMapOptimization] CreateDepthBoundaryMasks");
+    cloudViewer::utility::LogDebug(
+            "[ColorMapOptimization] CreateDepthBoundaryMasks");
     images_mask = CreateDepthBoundaryMasks(
             images_depth, option.depth_threshold_for_discontinuity_check_,
             option.half_dilation_kernel_size_for_discontinuity_map_);
@@ -128,7 +133,8 @@ ccMesh RunRigidOptimizer(
         }
     }
 
-    cloudViewer::utility::LogDebug("[ColorMapOptimization] CreateVertexAndImageVisibility");
+    cloudViewer::utility::LogDebug(
+            "[ColorMapOptimization] CreateVertexAndImageVisibility");
     std::tie(visibility_vertex_to_image, visibility_image_to_vertex) =
             CreateVertexAndImageVisibility(
                     opt_mesh, images_depth, images_mask, opt_camera_trajectory,
@@ -139,10 +145,10 @@ ccMesh RunRigidOptimizer(
     std::vector<double> proxy_intensity;
     int total_num_ = 0;
     int n_camera = int(opt_camera_trajectory.parameters_.size());
-    SetProxyIntensityForVertex(opt_mesh, images_gray, cloudViewer::utility::nullopt,
-                               opt_camera_trajectory,
-                               visibility_vertex_to_image, proxy_intensity,
-                               option.image_boundary_margin_);
+    SetProxyIntensityForVertex(
+            opt_mesh, images_gray, cloudViewer::utility::nullopt,
+            opt_camera_trajectory, visibility_vertex_to_image, proxy_intensity,
+            option.image_boundary_margin_);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
         cloudViewer::utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
@@ -173,15 +179,15 @@ ccMesh RunRigidOptimizer(
             Eigen::Vector6d JTr;
             double r2;
             std::tie(JTJ, JTr, r2) =
-                    cloudViewer::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+                    cloudViewer::utility::ComputeJTJandJTr<Eigen::Matrix6d,
+                                                           Eigen::Vector6d>(
                             f_lambda, int(visibility_image_to_vertex[c].size()),
                             false);
 
             bool is_success;
             Eigen::Matrix4d delta;
-            std::tie(is_success, delta) =
-                    cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ,
-                                                                         JTr);
+            std::tie(is_success, delta) = cloudViewer::utility::
+                    SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
             pose = delta * pose;
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
 #pragma omp critical(RunRigidOptimizer)
@@ -190,20 +196,20 @@ ccMesh RunRigidOptimizer(
                 total_num_ += int(visibility_image_to_vertex[c].size());
             }
         }
-        cloudViewer::utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})", residual,
-                          residual / total_num_);
-        SetProxyIntensityForVertex(opt_mesh, images_gray, cloudViewer::utility::nullopt,
-                                   opt_camera_trajectory,
-                                   visibility_vertex_to_image, proxy_intensity,
-                                   option.image_boundary_margin_);
+        cloudViewer::utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})",
+                                       residual, residual / total_num_);
+        SetProxyIntensityForVertex(
+                opt_mesh, images_gray, cloudViewer::utility::nullopt,
+                opt_camera_trajectory, visibility_vertex_to_image,
+                proxy_intensity, option.image_boundary_margin_);
 
         if (!option.debug_output_dir_.empty()) {
             // Save opt_mesh.
-            SetGeometryColorAverage(opt_mesh, images_color, cloudViewer::utility::nullopt,
-                                    opt_camera_trajectory,
-                                    visibility_vertex_to_image,
-                                    option.image_boundary_margin_,
-                                    option.invisible_vertex_color_knn_);
+            SetGeometryColorAverage(
+                    opt_mesh, images_color, cloudViewer::utility::nullopt,
+                    opt_camera_trajectory, visibility_vertex_to_image,
+                    option.image_boundary_margin_,
+                    option.invisible_vertex_color_knn_);
             std::string file_name = fmt::format(
                     "{}/iter_{}.ply",
                     option.debug_output_dir_ + "/rigid/opt_mesh", itr);
@@ -219,12 +225,12 @@ ccMesh RunRigidOptimizer(
     }
 
     cloudViewer::utility::LogDebug("[ColorMapOptimization] Set Mesh Color");
-    SetGeometryColorAverage(opt_mesh, images_color, cloudViewer::utility::nullopt,
-                            opt_camera_trajectory, visibility_vertex_to_image,
-                            option.image_boundary_margin_,
-                            option.invisible_vertex_color_knn_);
+    SetGeometryColorAverage(
+            opt_mesh, images_color, cloudViewer::utility::nullopt,
+            opt_camera_trajectory, visibility_vertex_to_image,
+            option.image_boundary_margin_, option.invisible_vertex_color_knn_);
 
-    return opt_mesh;
+    return std::make_pair(opt_mesh, opt_camera_trajectory);
 }
 
 }  // namespace color_map

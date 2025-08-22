@@ -41,12 +41,12 @@
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentRenderToBuffer.h"
 
-
 namespace {
 
 const double RUNLOOP_DELAY_SEC = 0.010;
 
 std::string FindResourcePath(int argc, const char *argv[]) {
+    namespace cvfs = cloudViewer::utility::filesystem;
     std::string argv0;
     if (argc != 0 && argv) {
         argv0 = argv[0];
@@ -68,12 +68,12 @@ std::string FindResourcePath(int argc, const char *argv[]) {
         // is absolute path, we're done
     } else {
         // relative path:  prepend working directory
-        auto cwd = cloudViewer::utility::filesystem::GetWorkingDirectory();
+        auto cwd = cvfs::GetWorkingDirectory();
 #ifdef __APPLE__
         // When running an app from the command line with the full relative
-        // path (e.g. `bin/CloudViewer.app/Contents/MacOS/CloudViewer`), the working
-        // directory can be set to the resources directory, in which case
-        // a) we are done, and b) cwd + / + argv0 is wrong.
+        // path (e.g. `bin/CloudViewer.app/Contents/MacOS/CloudViewer`), the
+        // working directory can be set to the resources directory, in which
+        // case a) we are done, and b) cwd + / + argv0 is wrong.
         if (cwd.rfind("/Contents/Resources") == cwd.size() - 19) {
             return cwd;
         }
@@ -87,11 +87,19 @@ std::string FindResourcePath(int argc, const char *argv[]) {
     }
 #endif  // __APPLE__
 
-    auto resource_path = path + "/resources";
-    if (!cloudViewer::utility::filesystem::DirectoryExists(resource_path)) {
-        return path + "/../resources";  // building with Xcode
+    for (auto &subpath :
+         {"/resources", "/../resources" /*building with Xcode */,
+          "/share/resources" /* GNU */,
+          "/share/cloudViewer/resources" /* GNU */}) {
+        cloudViewer::utility::LogInfo("Checking for resources in {}",
+                                      path + subpath);
+        if (cvfs::DirectoryExists(path + subpath)) {
+            return path + subpath;
+        }
     }
-    return resource_path;
+    cloudViewer::utility::LogError("Could not find resource directory.");
+
+    return "";
 }
 
 }  // namespace
@@ -177,7 +185,7 @@ void Application::ShowMessageBox(const char *title, const char *message) {
     utility::LogInfo("{}", message);
 
     auto alert = cloudViewer::make_shared<Window>((title ? title : "Alert"),
-                                          Window::FLAG_TOPMOST);
+                                                  Window::FLAG_TOPMOST);
     auto em = alert->GetTheme().font_size;
     auto layout = cloudViewer::make_shared<Vert>(em, Margins(em));
     auto msg = cloudViewer::make_shared<Label>(message);
