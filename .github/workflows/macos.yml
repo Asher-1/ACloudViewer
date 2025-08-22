@@ -39,7 +39,7 @@ jobs:
         # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
         os: [macos-13, macos-14]
-        python_version: ['3.11']
+        python_version: ['3.12']
     env:
       BUILD_SHARED_LIBS: OFF
       BUILD_CUDA_MODULE: OFF
@@ -274,20 +274,10 @@ jobs:
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE }}
 
-      - name: Install python dependencies
-        shell: bash -l {0}
-        run: |
-          echo "Using python: $(which python)"
-          python --version
-          echo -n "Using pip: $(which pip)"
-          python -m pip --version
-          echo "Using cmake: $(which cmake)"
-          cmake --version
-          source util/ci_utils.sh
-          install_python_dependencies
-
       - name: Install dependencies
         run: |
+          brew install ccache
+
           # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
           ln -s $(which gfortran-13) /usr/local/bin/gfortran
 
@@ -303,7 +293,7 @@ jobs:
           curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
           https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
           brew install -f libomp-11.1.0.bottle.tar.gz
-          brew install ccache
+
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build Wheel
@@ -349,9 +339,14 @@ jobs:
           echo "DEVELOPER_BUILD is ${{ env.DEVELOPER_BUILD }}"
 
           ccache -s
+          
           echo "Start to build wheel package On MacOS..."
           source util/ci_utils.sh
+
+          install_python_dependencies
+
           build_mac_wheel with_conda build_realsense
+
           ccache -s
 
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudViewer*.whl)"

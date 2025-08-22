@@ -144,12 +144,12 @@ void pybind_visualization_utility_methods(py::module &m) {
             [](const std::vector<std::shared_ptr<const ccHObject>>
                        &geometry_ptrs,
                const std::string &window_name, int width, int height, int left,
-               int top, const std::string &json_filename) {
+               int top, const fs::path &json_filename) {
                 std::string current_dir =
                         cloudViewer::utility::filesystem::GetWorkingDirectory();
                 visualization::DrawGeometriesWithCustomAnimation(
                         geometry_ptrs, window_name, width, height, left, top,
-                        json_filename);
+                        json_filename.string());
                 cloudViewer::utility::filesystem::ChangeWorkingDirectory(
                         current_dir);
             },
@@ -247,9 +247,9 @@ void pybind_visualization_utility_methods(py::module &m) {
 
     m.def(
             "read_selection_polygon_volume",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 visualization::SelectionPolygonVolume vol;
-                io::ReadIJsonConvertible(filename, vol);
+                io::ReadIJsonConvertible(filename.string(), vol);
                 return vol;
             },
             "Function to read visualization::SelectionPolygonVolume from file",

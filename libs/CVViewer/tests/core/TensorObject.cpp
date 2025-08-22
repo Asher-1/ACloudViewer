@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Helper.h>
+
 #include <cmath>
 #include <limits>
 
@@ -15,7 +17,6 @@
 #include "core/Tensor.h"
 #include "core/TensorList.h"
 #include "core/kernel/Kernel.h"
-#include <Helper.h>
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
@@ -58,7 +59,9 @@ private:
     void *ptr_;
 };
 
-static_assert(std::is_pod<TestObject>(), "TestObject must be a POD.");
+static_assert(std::is_standard_layout<TestObject>::value &&
+                      std::is_trivial<TestObject>::value,
+              "TestObject must be a StandardLayout and TrivialType type.");
 static const int64_t byte_size = sizeof(TestObject);
 static const std::string class_name = "TestObject";
 

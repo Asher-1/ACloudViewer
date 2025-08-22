@@ -7,16 +7,16 @@
 
 #include "pipelines/color_map/NonRigidOptimizer.h"
 
+#include <FileSystem.h>
+#include <ImageIO.h>
+#include <Parallel.h>
+#include <PinholeCameraTrajectoryIO.h>
+
 #include <memory>
 #include <vector>
 
-#include <FileSystem.h>
-#include <Parallel.h>
-
-#include <ImageIO.h>
-#include <PinholeCameraTrajectoryIO.h>
-#include "io/TriangleMeshIO.h"
 #include "io/ImageWarpingFieldIO.h"
+#include "io/TriangleMeshIO.h"
 #include "pipelines/color_map/ColorMapUtils.h"
 #include "pipelines/color_map/ImageWarpingField.h"
 
@@ -201,7 +201,7 @@ static void ComputeJacobianAndResidualNonRigid(
     r = (gray - proxy_intensity[vid]);
 }
 
-ccMesh RunNonRigidOptimizer(
+std::pair<ccMesh, camera::PinholeCameraTrajectory> RunNonRigidOptimizer(
         const ccMesh& mesh,
         const std::vector<geometry::RGBDImage>& images_rgbd,
         const camera::PinholeCameraTrajectory& camera_trajectory,
@@ -395,7 +395,7 @@ ccMesh RunNonRigidOptimizer(
                             option.image_boundary_margin_,
                             option.invisible_vertex_color_knn_);
 
-    return opt_mesh;
+    return std::make_pair(opt_mesh, opt_camera_trajectory);
 }
 
 }  // namespace color_map

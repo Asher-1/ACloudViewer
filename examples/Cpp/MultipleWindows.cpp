@@ -18,7 +18,6 @@ using namespace cloudViewer::visualization;
 
 const int WIDTH = 1024;
 const int HEIGHT = 768;
-const std::string DATA_PATH = "../../../examples/test_data/ICP/cloud_bin_0.pcd";
 const Eigen::Vector3f CENTER_OFFSET(0.0f, 0.0f, -3.0f);
 const std::string CLOUD_NAME = "points";
 
@@ -91,10 +90,11 @@ private:
 
         ccBBox bounds;
         Eigen::Vector3d extent;
+        data::DemoICPPointClouds demo_icp_pointclouds;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
             cloud_ = cloudViewer::make_shared<ccPointCloud>();
-            io::ReadPointCloud(DATA_PATH, *cloud_);
+            io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *cloud_);
             bounds = cloud_->getAxisAlignedBoundingBox();
             extent = bounds.getExtent();
         }

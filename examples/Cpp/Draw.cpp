@@ -75,14 +75,16 @@ void MultiObjects() {
                          big_bbox, sphere_bbox, lines, lines_colored});
 }
 
-void Actions(const std::string test_dir) {
+void Actions() {
     const char *SOURCE_NAME = "Source";
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
     auto bunny = cloudViewer::make_shared<ccMesh>();
     bunny->createInternalCloud();
-    io::ReadTriangleMesh(test_dir + "/Bunny.ply", *bunny);
+    data::BunnyMesh bunny_data;
+    io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
+
     if (bunny->isEmpty()) {
         utility::LogError(
                 "Please download the Standford Bunny dataset using:\n"
@@ -151,7 +153,7 @@ Eigen::Matrix4d_u GetICPTransform(
     return result.transformation_;
 }
 
-void Selections(const std::string test_dir) {
+void Selections() {
     std::cout << "Selection example:" << std::endl;
     std::cout << "  One set:  pick three points from the source (yellow), "
               << std::endl;
@@ -164,18 +166,19 @@ void Selections(const std::string test_dir) {
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
-    const auto cloud0_path = test_dir + "/ICP/cloud_bin_0.pcd";
-    const auto cloud1_path = test_dir + "/ICP/cloud_bin_2.pcd";
+    data::DemoICPPointClouds demo_icp_pointclouds;
     auto source = cloudViewer::make_shared<ccPointCloud>();
-    io::ReadPointCloud(cloud0_path, *source);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *source);
     if (source->isEmpty()) {
-        utility::LogError("Could not open {}", cloud0_path);
+        utility::LogError("Could not open {}",
+                          demo_icp_pointclouds.GetPaths(0));
         return;
     }
     auto target = cloudViewer::make_shared<ccPointCloud>();
-    io::ReadPointCloud(cloud1_path, *target);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(1), *target);
     if (target->isEmpty()) {
-        utility::LogError("Could not open {}", cloud1_path);
+        utility::LogError("Could not open {}",
+                          demo_icp_pointclouds.GetPaths(1));
         return;
     }
     source->paintUniformColor({1.000, 0.706, 0.000});
@@ -256,19 +259,8 @@ void Selections(const std::string test_dir) {
 }
 
 int main(int argc, char **argv) {
-    if (argc <= 1) {
-        utility::LogError("missing input directionary!");
-        return 0;
-    }
-    std::string TEST_DIR(argv[1]);
-    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
-        utility::LogError(
-                "This example needs to be run from the <build>/bin/examples "
-                "directory");
-    }
-
     SingleObject();
     MultiObjects();
-    Actions(TEST_DIR);
-    Selections(TEST_DIR);
+    Actions();
+    Selections();
 }

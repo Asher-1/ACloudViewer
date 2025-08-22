@@ -13,6 +13,14 @@
 #undef emit
 #endif
 #include <tbb/parallel_for_each.h>
+#include <vtkBooleanOperationPolyDataFilter.h>
+#include <vtkCleanPolyData.h>
+#include <vtkClipPolyData.h>
+#include <vtkCutter.h>
+#include <vtkFillHolesFilter.h>
+#include <vtkPlane.h>
+#include <vtkQuadricDecimation.h>
+
 #include "cloudViewer/t/geometry/VtkUtils.h"
 using namespace cloudViewer::t::geometry::vtkutils;
 
@@ -391,15 +399,17 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
     {
         const auto colors = mesh_legacy.getVertexColors();
         if (!colors.empty()) {
-            mesh.SetVertexColors(core::eigen_converter::EigenVector3dVectorToTensor(
-                    colors, float_dtype, device));
+            mesh.SetVertexColors(
+                    core::eigen_converter::EigenVector3dVectorToTensor(
+                            colors, float_dtype, device));
         }
     }
     {
         const auto normals = mesh_legacy.getVertexNormals();
         if (!normals.empty()) {
-            mesh.SetVertexNormals(core::eigen_converter::EigenVector3dVectorToTensor(
-                    normals, float_dtype, device));
+            mesh.SetVertexNormals(
+                    core::eigen_converter::EigenVector3dVectorToTensor(
+                            normals, float_dtype, device));
         }
     }
     {
@@ -448,17 +458,19 @@ cloudViewer::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
         mesh_legacy.setEigenVertices(verts);
     }
     if (HasVertexColors()) {
-        mesh_legacy.setVertexColors(core::eigen_converter::TensorToEigenVector3dVector(
-                GetVertexColors()));
+        mesh_legacy.setVertexColors(
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        GetVertexColors()));
     }
     if (HasVertexNormals()) {
-        mesh_legacy.setVertexNormals(core::eigen_converter::TensorToEigenVector3dVector(
-                GetVertexNormals()));
+        mesh_legacy.setVertexNormals(
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        GetVertexNormals()));
     }
     if (HasTriangleIndices()) {
         const auto tris = core::eigen_converter::TensorToEigenVector3iVector(
                 GetTriangleIndices());
-        for (const auto& t : tris) {
+        for (const auto &t : tris) {
             mesh_legacy.addTriangle(static_cast<unsigned>(t(0)),
                                     static_cast<unsigned>(t(1)),
                                     static_cast<unsigned>(t(2)));
@@ -509,11 +521,13 @@ cloudViewer::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
         }
         // Convert maps
         if (tmat.HasAlbedoMap()) {
-            legacy_mat.albedo = std::make_shared<cloudViewer::geometry::Image>();
+            legacy_mat.albedo =
+                    std::make_shared<cloudViewer::geometry::Image>();
             *legacy_mat.albedo = tmat.GetAlbedoMap().ToLegacy();
         }
         if (tmat.HasNormalMap()) {
-            legacy_mat.normalMap = std::make_shared<cloudViewer::geometry::Image>();
+            legacy_mat.normalMap =
+                    std::make_shared<cloudViewer::geometry::Image>();
             *legacy_mat.normalMap = tmat.GetNormalMap().ToLegacy();
         }
         if (tmat.HasAOMap()) {
@@ -522,11 +536,13 @@ cloudViewer::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
             *legacy_mat.ambientOcclusion = tmat.GetAOMap().ToLegacy();
         }
         if (tmat.HasMetallicMap()) {
-            legacy_mat.metallic = std::make_shared<cloudViewer::geometry::Image>();
+            legacy_mat.metallic =
+                    std::make_shared<cloudViewer::geometry::Image>();
             *legacy_mat.metallic = tmat.GetMetallicMap().ToLegacy();
         }
         if (tmat.HasRoughnessMap()) {
-            legacy_mat.roughness = std::make_shared<cloudViewer::geometry::Image>();
+            legacy_mat.roughness =
+                    std::make_shared<cloudViewer::geometry::Image>();
             *legacy_mat.roughness = tmat.GetRoughnessMap().ToLegacy();
         }
         if (tmat.HasReflectanceMap()) {
@@ -535,7 +551,8 @@ cloudViewer::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
             *legacy_mat.reflectance = tmat.GetReflectanceMap().ToLegacy();
         }
         if (tmat.HasClearcoatMap()) {
-            legacy_mat.clearCoat = std::make_shared<cloudViewer::geometry::Image>();
+            legacy_mat.clearCoat =
+                    std::make_shared<cloudViewer::geometry::Image>();
             *legacy_mat.clearCoat = tmat.GetClearcoatMap().ToLegacy();
         }
         if (tmat.HasClearcoatRoughnessMap()) {
@@ -545,7 +562,8 @@ cloudViewer::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
                     tmat.GetClearcoatRoughnessMap().ToLegacy();
         }
         if (tmat.HasAnisotropyMap()) {
-            legacy_mat.anisotropy = std::make_shared<cloudViewer::geometry::Image>();
+            legacy_mat.anisotropy =
+                    std::make_shared<cloudViewer::geometry::Image>();
             *legacy_mat.anisotropy = tmat.GetAnisotropyMap().ToLegacy();
         }
     }
@@ -595,7 +613,6 @@ TriangleMesh TriangleMesh::ComputeConvexHull(bool joggle_inputs) const {
 TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
                                      const core::Tensor &normal) const {
     using namespace vtkutils;
-#ifdef CLOUDVIEWER_WITH_VTK
     core::AssertTensorShape(point, {3});
     core::AssertTensorShape(normal, {3});
     // allow int types for convenience
@@ -622,10 +639,6 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     cleaner->Update();
     auto clipped_polydata = cleaner->GetOutput();
     return CreateTriangleMeshFromVtkPolyData(clipped_polydata);
-#else
-    utility::LogWarning("ClipPlane requires VTK; returning original mesh");
-    return *this;
-#endif
 }
 
 LineSet TriangleMesh::SlicePlane(
@@ -633,7 +646,6 @@ LineSet TriangleMesh::SlicePlane(
         const core::Tensor &normal,
         const std::vector<double> contour_values) const {
     using namespace vtkutils;
-#ifdef CLOUDVIEWER_WITH_VTK
     core::AssertTensorShape(point, {3});
     core::AssertTensorShape(normal, {3});
     // allow int types for convenience
@@ -665,16 +677,11 @@ LineSet TriangleMesh::SlicePlane(
     auto slices_polydata = cutter->GetOutput();
 
     return CreateLineSetFromVtkPolyData(slices_polydata);
-#else
-    utility::LogWarning("SlicePlane requires VTK; returning empty LineSet");
-    return LineSet(core::Device("CPU:0"));
-#endif
 }
 
 TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
         double target_reduction, bool preserve_volume) const {
     using namespace vtkutils;
-#ifdef CLOUDVIEWER_WITH_VTK
     if (target_reduction >= 1.0 || target_reduction < 0) {
         utility::LogError(
                 "target_reduction must be in the range [0,1) but is {}",
@@ -692,10 +699,6 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
     auto decimated_polydata = decimate->GetOutput();
 
     return CreateTriangleMeshFromVtkPolyData(decimated_polydata);
-#else
-    utility::LogWarning("SimplifyQuadricDecimation requires VTK; returning original mesh");
-    return *this;
-#endif
 }
 
 namespace {
@@ -704,7 +707,6 @@ TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
                               double tolerance,
                               int op) {
     using namespace vtkutils;
-#ifdef CLOUDVIEWER_WITH_VTK
     // exclude triangle attributes because they will not be preserved
     auto polydata_A = CreateVtkPolyDataFromGeometry(
             mesh_A, mesh_A.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
@@ -727,38 +729,26 @@ TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
     auto out_polydata = boolean_filter->GetOutput();
 
     return CreateTriangleMeshFromVtkPolyData(out_polydata);
-#else
-    utility::LogWarning("Boolean operations require VTK; returning original A");
-    return mesh_A;
-#endif
 }
 }  // namespace
 
 TriangleMesh TriangleMesh::BooleanUnion(const TriangleMesh &mesh,
                                         double tolerance) const {
-    int op = 0;
-#ifdef CLOUDVIEWER_WITH_VTK
-    op = vtkBooleanOperationPolyDataFilter::VTK_UNION;
-#endif
-    return BooleanOperation(*this, mesh, tolerance, op);
+    return BooleanOperation(*this, mesh, tolerance,
+                            vtkBooleanOperationPolyDataFilter::VTK_UNION);
 }
 
 TriangleMesh TriangleMesh::BooleanIntersection(const TriangleMesh &mesh,
                                                double tolerance) const {
-    int op = 0;
-#ifdef CLOUDVIEWER_WITH_VTK
-    op = vtkBooleanOperationPolyDataFilter::VTK_INTERSECTION;
-#endif
-    return BooleanOperation(*this, mesh, tolerance, op);
+    return BooleanOperation(
+            *this, mesh, tolerance,
+            vtkBooleanOperationPolyDataFilter::VTK_INTERSECTION);
 }
 
 TriangleMesh TriangleMesh::BooleanDifference(const TriangleMesh &mesh,
                                              double tolerance) const {
-    int op = 0;
-#ifdef CLOUDVIEWER_WITH_VTK
-    op = vtkBooleanOperationPolyDataFilter::VTK_DIFFERENCE;
-#endif
-    return BooleanOperation(*this, mesh, tolerance, op);
+    return BooleanOperation(*this, mesh, tolerance,
+                            vtkBooleanOperationPolyDataFilter::VTK_DIFFERENCE);
 }
 
 AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
@@ -771,7 +761,6 @@ OrientedBoundingBox TriangleMesh::GetOrientedBoundingBox() const {
 
 TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     using namespace vtkutils;
-#ifdef CLOUDVIEWER_WITH_VTK
     // do not include triangle attributes because they will not be preserved by
     // the hole filling algorithm
     auto polydata = CreateVtkPolyDataFromGeometry(
@@ -782,10 +771,6 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     fill_holes->Update();
     auto result = fill_holes->GetOutput();
     return CreateTriangleMeshFromVtkPolyData(result);
-#else
-    utility::LogWarning("FillHoles requires VTK; returning original mesh");
-    return *this;
-#endif
 }
 
 std::tuple<float, int, int> TriangleMesh::ComputeUVAtlas(
@@ -1669,7 +1654,8 @@ struct TupleEdgeHash {
 template <typename T>
 static std::unordered_map<Edge<T>, std::vector<size_t>, TupleEdgeHash>
 GetEdgeToTrianglesMap(const core::Tensor &tris_cpu) {
-    std::unordered_map<Edge<T>, std::vector<size_t>, TupleEdgeHash> tris_per_edge;
+    std::unordered_map<Edge<T>, std::vector<size_t>, TupleEdgeHash>
+            tris_per_edge;
     auto AddEdge = [&](T vidx0, T vidx1, int64_t tidx) {
         tris_per_edge[GetOrderedEdge(vidx0, vidx1)].push_back(tidx);
     };

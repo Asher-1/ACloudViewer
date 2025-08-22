@@ -49,7 +49,7 @@ void AddDrawWindow(const std::vector<std::shared_ptr<ccHObject>> &geometries,
 
 // Create a window with an empty box and a custom action button for adding a
 // new visualization vindow.
-void EmptyBox(const std::string& path) {
+void EmptyBox() {
     const double pc_rad = 1.0;
     const double r = 0.4;
 
@@ -62,7 +62,8 @@ void EmptyBox(const std::string& path) {
                 utility::LogInfo("new_window_action called");
                 auto mesh = cloudViewer::make_shared<ccMesh>();
                 mesh->createInternalCloud();
-                io::ReadTriangleMesh(path + "/knot.ply", *mesh);
+                data::KnotMesh knot_data;
+                io::ReadTriangleMesh(knot_data.GetPath(), *mesh);
                 mesh->computeVertexNormals();
                 AddDrawWindow({mesh}, "CloudViewer pcd", 640, 480);
             };
@@ -117,22 +118,13 @@ void PrintHelp() {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2 ||
-        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
-        PrintHelp();
-        return 1;
-    }
-
-    if (!utility::filesystem::DirectoryExists(argv[1])) {
-        utility::LogError("Invalid test_dir: {}", argv[1]);
-    }
     visualization::webrtc_server::WebRTCWindowSystem::GetInstance()
             ->EnableWebRTC();
 
     // Uncomment this line to see more WebRTC loggings
-//    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    // utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    EmptyBox(argv[1]);
+    EmptyBox();
     BoxWithObjects();
     visualization::gui::Application::GetInstance().Run();
 }

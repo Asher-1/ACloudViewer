@@ -107,30 +107,24 @@ int main(int argc, char *argv[]) {
 
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
-    std::string log_filename =
-            utility::GetProgramOptionAsString(argc, argv, "--log");
-    std::string pcd_dirname =
-            utility::GetProgramOptionAsString(argc, argv, "--dir");
-    if (pcd_dirname.empty()) {
-        pcd_dirname =
-                utility::filesystem::GetFileParentDirectory(log_filename) +
-                "pcds/";
-    }
+
+    data::DemoICPPointClouds sample_data;
 
     std::vector<std::tuple<int, int, int>> metadata;
     std::vector<Eigen::Matrix4d> transformations;
-    ReadLogFile(log_filename, metadata, transformations);
+    ReadLogFile(sample_data.GetTransformationLogPath(), metadata,
+                transformations);
 
     for (size_t k = 0; k < metadata.size(); k++) {
         auto i = std::get<0>(metadata[k]), j = std::get<1>(metadata[k]);
         utility::LogInfo("Showing matched point cloud #{:d} and #{:d}.", i, j);
-        auto pcd_target = io::CreatePointCloudFromFile(
-                pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd");
+        auto pcd_target =
+                io::CreatePointCloudFromFile(sample_data.GetPaths()[i]);
 
         pcd_target->resizeTheRGBTable();
         pcd_target->setRGBColor(ecvColor::Rgb::FromEigen(color_palette[0]));
-        auto pcd_source = io::CreatePointCloudFromFile(
-                pcd_dirname + "cloud_bin_" + std::to_string(j) + ".pcd");
+        auto pcd_source =
+                io::CreatePointCloudFromFile(sample_data.GetPaths()[j]);
         pcd_source->resizeTheRGBTable();
         pcd_source->setRGBColor(ecvColor::Rgb::FromEigen(color_palette[1]));
         pcd_source->transform(transformations[k]);

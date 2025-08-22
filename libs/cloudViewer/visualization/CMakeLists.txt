@@ -77,6 +77,7 @@ if (BUILD_GUI)
         rendering/filament/LineSetBuffers.cpp
         rendering/filament/PointCloudBuffers.cpp
         rendering/filament/TriangleMeshBuffers.cpp
+        rendering/filament/GaussianSplatBuffers.cpp
     )
 
     target_sources(visualization PRIVATE
@@ -91,6 +92,10 @@ if (BUILD_GUI)
         visualizer/GuiWidgets.cpp
         visualizer/O3DVisualizer.cpp
         visualizer/O3DVisualizerSelections.cpp
+    )
+
+    target_sources(visualization PRIVATE
+        app/Viewer.cpp
     )
 endif()
 

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/O3DVisualizer.h"
@@ -41,6 +22,7 @@
 #include <unordered_set>
 
 #include "io/rpc/ZMQReceiver.h"
+#include "t/geometry/LineSet.h"
 #include "t/geometry/PointCloud.h"
 #include "t/geometry/TriangleMesh.h"
 #include "visualization/gui/Application.h"
@@ -80,6 +62,7 @@ namespace {
 static const std::string kShaderLit = "defaultLit";
 static const std::string kShaderUnlit = "defaultUnlit";
 static const std::string kShaderUnlitLines = "unlitLine";
+static const std::string kShaderGaussianSplat = "gaussianSplat";
 
 static const std::string kDefaultIBL = "default";
 
@@ -849,6 +832,7 @@ struct O3DVisualizer::Impl {
         } else {  // branch only applies to geometries
             bool has_colors = false;
             bool has_normals = false;
+            bool is_gaussian_splat = false;
 
             auto cloud = std::dynamic_pointer_cast<ccPointCloud>(geom);
             auto lines = std::dynamic_pointer_cast<geometry::LineSet>(geom);
@@ -863,16 +847,22 @@ struct O3DVisualizer::Impl {
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
             auto t_mesh =
                     std::dynamic_pointer_cast<t::geometry::TriangleMesh>(tgeom);
+            auto t_lines =
+                    std::dynamic_pointer_cast<t::geometry::LineSet>(tgeom);
 
             if (cloud) {
                 has_colors = cloud->hasColors();
                 has_normals = cloud->hasNormals();
             } else if (t_cloud) {
+                if (t_cloud->IsGaussianSplat()) is_gaussian_splat = true;
                 has_colors = t_cloud->HasPointColors();
                 has_normals = t_cloud->HasPointNormals();
                 valid_tpcd = t_cloud.get();
             } else if (lines) {
                 has_colors = !lines->colors_.empty();
+                no_shadows = true;
+            } else if (t_lines) {
+                has_colors = t_lines->HasLineColors();
                 no_shadows = true;
             } else if (obb) {
                 has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
@@ -885,7 +875,8 @@ struct O3DVisualizer::Impl {
                 has_normals = !mesh->hasNormals();
                 has_colors = true;  // always want base_color as white
             } else if (t_mesh) {
-                has_normals = !t_mesh->HasVertexNormals();
+                has_normals = t_mesh->HasVertexNormals() ||
+                              t_mesh->HasTriangleNormals();
                 has_colors = true;  // always want base_color as white
             } else if (voxel_grid) {
                 has_normals = false;
@@ -910,6 +901,10 @@ struct O3DVisualizer::Impl {
                 mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
                 mat.shader = kShaderLit;
                 is_default_color = false;
+            }
+            if (is_gaussian_splat) {
+                mat.shader = kShaderGaussianSplat;
+                mat.sh_degree = t_cloud->GaussianSplatGetSHOrder();
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
 

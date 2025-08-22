@@ -150,8 +150,8 @@ cmake   -DDEVELOPER_BUILD=OFF \
         ..
 
 Build: 
-        make -j24
-        make install -j24
+        make "-j$(nproc)"
+        make install "-j$(nproc)"
 ```
 
 MacOS:(Manually)

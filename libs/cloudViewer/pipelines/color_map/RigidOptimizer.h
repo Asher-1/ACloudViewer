@@ -7,13 +7,14 @@
 
 #pragma once
 
+#include <Image.h>
+#include <RGBDImage.h>
+#include <ecvMesh.h>
+
 #include <memory>
 #include <vector>
 
 #include "camera/PinholeCameraTrajectory.h"
-#include <Image.h>
-#include <RGBDImage.h>
-#include <ecvMesh.h>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -67,7 +68,7 @@ struct RigidOptimizerOption {
     std::string debug_output_dir_ = "";
 };
 
-ccMesh RunRigidOptimizer(
+std::pair<ccMesh, camera::PinholeCameraTrajectory> RunRigidOptimizer(
         const ccMesh& mesh,
         const std::vector<geometry::RGBDImage>& images_rgbd,
         const camera::PinholeCameraTrajectory& camera_trajectory,

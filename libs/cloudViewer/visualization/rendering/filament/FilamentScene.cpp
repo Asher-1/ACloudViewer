@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
@@ -121,7 +102,8 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
          ResourceManager::kDefaultUnlitPolygonOffsetShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
         {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
-        {"unlitLine", ResourceManager::kDefaultLineShader}};
+        {"unlitLine", ResourceManager::kDefaultLineShader},
+        {"gaussianSplat", ResourceManager::kGaussianSplatShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -460,7 +442,8 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 #ifndef NDEBUG
-void OutputMaterialProperties(const visualization::rendering::MaterialRecord& mat) {
+void OutputMaterialProperties(
+        const visualization::rendering::MaterialRecord& mat) {
     utility::LogInfo("Material {}", mat.name);
     utility::LogInfo("\tAlpha: {}", mat.has_alpha);
     utility::LogInfo("\tBase Color: {},{},{},{}", mat.base_color.x(),
@@ -750,8 +733,9 @@ FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
         using namespace filament::math;
         transform_mgr.create(geom->filament_entity);
         itransform = transform_mgr.getInstance(geom->filament_entity);
-        transform_mgr.create(geom->filament_entity, itransform,
-                             mat4f::translation(filament::math::float3{0.0f, 0.0f, 0.0f}));
+        transform_mgr.create(
+                geom->filament_entity, itransform,
+                mat4f::translation(filament::math::float3{0.0f, 0.0f, 0.0f}));
     }
     return itransform;
 }
@@ -876,6 +860,32 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
             //             rendering::TextureSamplerParameters::Pretty())
             // .SetTexture("anisotropyMap", maps.anisotropy_map,
             //             rendering::TextureSamplerParameters::Pretty())
+            .Finish();
+}
+
+void FilamentScene::UpdateGaussianSplat(GeometryMaterialInstance& geom_mi) {
+    auto& material = geom_mi.properties;
+    auto& maps = geom_mi.maps;
+
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", material.base_color, false)
+            .SetParameter("pointSize", material.point_size)
+            .SetParameter("baseRoughness", material.base_roughness)
+            .SetParameter("baseMetallic", material.base_metallic)
+            .SetParameter("reflectance", material.base_reflectance)
+            .SetParameter("clearCoat", material.base_clearcoat)
+            .SetParameter("clearCoatRoughness",
+                          material.base_clearcoat_roughness)
+            .SetParameter("anisotropy", material.base_anisotropy)
+            .SetParameter("shDegree", material.sh_degree)
+            .SetTexture("albedo", maps.albedo_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("normalMap", maps.normal_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("ao_rough_metalMap", maps.ao_rough_metal_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("reflectanceMap", maps.reflectance_map,
+                        rendering::TextureSamplerParameters::Pretty())
             .Finish();
 }
 
@@ -1163,6 +1173,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
         UpdateUnlitPolygonOffsetShader(geom.mat);
+    } else if (props.shader == "gaussianSplat") {
+        UpdateGaussianSplat(geom.mat);
     } else {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
@@ -1679,9 +1691,9 @@ void FilamentScene::CreateBackgroundGeometry() {
 
         quad.reserve(2);
         quad.addEigenVertices({{-1.0, -1.0, 0.0},
-                          {1.0, -1.0, 0.0},
-                          {1.0, 1.0, 0.0},
-                          {-1.0, 1.0, 0.0}});
+                               {1.0, -1.0, 0.0},
+                               {1.0, 1.0, 0.0},
+                               {-1.0, 1.0, 0.0}});
         quad.addTriangles({{0, 1, 2}, {0, 2, 3}});
 
         MaterialRecord m;

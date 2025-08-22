@@ -9,8 +9,8 @@
 #include <memory>
 #include <string>
 
-#include "OnlineSLAMUtil.h"
 #include "CloudViewer.h"
+#include "OnlineSLAMUtil.h"
 
 std::pair<std::vector<std::string>, std::vector<std::string>> LoadFilenames(
         const std::string dataset_path) {
