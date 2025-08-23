@@ -2390,62 +2390,63 @@ if (BUILD_RECONSTRUCTION)
 endif ()
 
 # opencv
-if (USE_SYSTEM_OPENCV)
-    find_package_3rdparty_library(3rdparty_opencv
-            PUBLIC
-            PACKAGE OpenCV
-            INCLUDE_DIRS OpenCV_INCLUDE_DIRS
-            LIBRARIES OpenCV_LIBRARIES
-            )
-    if (3rdparty_opencv_FOUND)
-        message(STATUS "Using system Opencv")
-        message(STATUS "OpenCV version: ${3rdparty_opencv_VERSION}")
-        if (NOT 3rdparty_opencv_VERSION VERSION_LESS "3.4.0")
-            add_compile_definitions(HAVE_OPENCV3)
-            message(STATUS "defined HAVE_OPENCV3")
+if (BUILD_OPENCV) # only needed by plugins: qAutoSeg, qManualSeg and q3DMASC
+    if (USE_SYSTEM_OPENCV)
+        find_package_3rdparty_library(3rdparty_opencv
+                PUBLIC
+                PACKAGE OpenCV
+                INCLUDE_DIRS OpenCV_INCLUDE_DIRS
+                LIBRARIES OpenCV_LIBRARIES
+                )
+        if (3rdparty_opencv_FOUND)
+            message(STATUS "Using system Opencv")
+            message(STATUS "OpenCV version: ${3rdparty_opencv_VERSION}")
+            if (NOT 3rdparty_opencv_VERSION VERSION_LESS "3.4.0")
+                add_compile_definitions(HAVE_OPENCV3)
+                message(STATUS "defined HAVE_OPENCV3")
 
-            set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${3rdparty_opencv_INCLUDE_DIRS})
-            include(CheckIncludeFileCXX)
+                set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${3rdparty_opencv_INCLUDE_DIRS})
+                include(CheckIncludeFileCXX)
 
-            check_include_file_cxx(opencv2/ccalib/omnidir.hpp HAVE_OPENCV_CONTRIB)
-            if (HAVE_OPENCV_CONTRIB)
-                add_compile_definitions(HAVE_OPENCV_CONTRIB)
-                set(WITH_OPENCV_CONTRIB ON)
+                check_include_file_cxx(opencv2/ccalib/omnidir.hpp HAVE_OPENCV_CONTRIB)
+                if (HAVE_OPENCV_CONTRIB)
+                    add_compile_definitions(HAVE_OPENCV_CONTRIB)
+                    set(WITH_OPENCV_CONTRIB ON)
+                else ()
+                    message(STATUS "OPENCV_CONTRIB NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
+                endif ()
+
+                check_include_file_cxx(opencv2/xfeatures2d/nonfree.hpp HAVE_OPENCV_XFEATURES2D_NONFREE)
+                if (HAVE_OPENCV_XFEATURES2D_NONFREE)
+                    add_compile_definitions(HAVE_OPENCV_XFEATURES2D_NONFREE)
+                else ()
+                    message(STATUS "OPENCV_XFEATURES2D_NONFREE NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
+                endif ()
+
+                check_include_file_cxx(opencv2/cudafeatures2d.hpp HAVE_OPENCV_CUDAFEATURES2D)
+                if (HAVE_OPENCV_CUDAFEATURES2D)
+                    add_compile_definitions(HAVE_OPENCV_CUDAFEATURES2D)
+                else ()
+                    message(STATUS "OPENCV_CUDAFEATURES2D NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY")
+                endif ()
+
             else ()
-                message(STATUS "OPENCV_CONTRIB NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
+                add_compile_definitions(HAVE_OPENCV2)
             endif ()
 
-            check_include_file_cxx(opencv2/xfeatures2d/nonfree.hpp HAVE_OPENCV_XFEATURES2D_NONFREE)
-            if (HAVE_OPENCV_XFEATURES2D_NONFREE)
-                add_compile_definitions(HAVE_OPENCV_XFEATURES2D_NONFREE)
-            else ()
-                message(STATUS "OPENCV_XFEATURES2D_NONFREE NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
+            # enable GPU enhanced SURF features
+            # if BOTH CUDA and the OPENCV contrib cuda features are available
+            if (CUDA_FOUND AND HAVE_OPENCV_CUDAFEATURES2D)
+                add_compile_definitions(HAVE_CUDA)
+                message(STATUS "defined HAVE_CUDA")
+                set(CUDA_CUDART_LIBRARY_OPTIONAL ${CUDA_CUDART_LIBRARY})
             endif ()
-
-            check_include_file_cxx(opencv2/cudafeatures2d.hpp HAVE_OPENCV_CUDAFEATURES2D)
-            if (HAVE_OPENCV_CUDAFEATURES2D)
-                add_compile_definitions(HAVE_OPENCV_CUDAFEATURES2D)
-            else ()
-                message(STATUS "OPENCV_CUDAFEATURES2D NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY")
-            endif ()
-
         else ()
-            add_compile_definitions(HAVE_OPENCV2)
+            set(USE_SYSTEM_OPENCV OFF)
+            message(STATUS "Build Opencv from source")
         endif ()
-
-        # enable GPU enhanced SURF features
-        # if BOTH CUDA and the OPENCV contrib cuda features are available
-        if (CUDA_FOUND AND HAVE_OPENCV_CUDAFEATURES2D)
-            add_compile_definitions(HAVE_CUDA)
-            message(STATUS "defined HAVE_CUDA")
-            set(CUDA_CUDART_LIBRARY_OPTIONAL ${CUDA_CUDART_LIBRARY})
-        endif ()
-    else ()
-        set(USE_SYSTEM_OPENCV OFF)
-        message(STATUS "Build Opencv from source")
     endif ()
-endif ()
-if (BUILD_OPENCV) # only needed by plugins: qAutoSeg and qManualSeg
+    
     if (NOT USE_SYSTEM_OPENCV)
         include(${CloudViewer_3RDPARTY_DIR}/opencv/opencv_build.cmake)
         if (WIN32)

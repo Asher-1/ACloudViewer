@@ -672,7 +672,7 @@ void pybind_trianglemesh(py::module& m) {
                     "triangulate_two_polylines",
                     [](ccPolyline& poly1, ccPolyline& poly2) {
                         return std::shared_ptr<ccMesh>(
-                                ccMesh::TriangulateTwoPolylines(&poly1,
+                                ccMesh::cloudViewer(&poly1,
                                                                 &poly2));
                     },
                     "Creates a Delaunay 2.5D mesh from two polylines.",
