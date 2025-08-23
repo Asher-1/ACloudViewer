@@ -263,9 +263,11 @@ function(pkg_config_3rdparty_library name)
         add_library(${name} INTERFACE)
         target_include_directories(${name} SYSTEM INTERFACE ${pc_${name}_INCLUDE_DIRS})
         target_link_libraries(${name} INTERFACE ${pc_${name}_LINK_LIBRARIES})
+        message(STATUS "Linking ${name} against: ${pc_${name}_LINK_LIBRARIES}")
         foreach(flag IN LISTS pc_${name}_CFLAGS_OTHER)
             if(flag MATCHES "-D(.*)")
                 target_compile_definitions(${name} INTERFACE ${CMAKE_MATCH_1})
+                message(STATUS "Adding compile definition ${CMAKE_MATCH_1}")
             endif()
         endforeach()
         if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
@@ -277,6 +279,101 @@ function(pkg_config_3rdparty_library name)
         message(STATUS "Unable to find installed third-party library ${name}")
         set(${name}_FOUND FALSE PARENT_SCOPE)
     endif()
+endfunction()
+
+# ==============================================================
+# manual_pkg_config_target
+# Manually parse .pc file and create CMake INTERFACE target
+# Parameter:
+#   TARGET_NAME - the target name
+#   PC_FILE     - .pc file full path
+# ==============================================================
+function(manual_pkg_config_target TARGET_NAME PC_FILE)
+    if(NOT EXISTS "${PC_FILE}")
+        message(WARNING "pkg-config file not found: ${PC_FILE}")
+        set(${TARGET_NAME}_FOUND FALSE PARENT_SCOPE)
+    endif()
+
+    # Initialize variables for parsed data
+    set(PC_LIB_DIR "")
+    set(PC_INCLUDE_DIRS "")
+    set(PC_VERSION "")
+    set(PC_NAME "")
+    set(PC_LIB_NAME "")
+    set(VAR_MAP "")
+
+    file(STRINGS "${PC_FILE}" PC_LINES)
+    foreach(LINE IN LISTS PC_LINES)
+        if(LINE MATCHES "^([a-zA-Z_]+)=([^ \n]+)$")
+            list(APPEND VAR_MAP "${CMAKE_MATCH_1}=${CMAKE_MATCH_2}")
+        endif()
+    endforeach()
+
+    set(CHANGED TRUE)
+    while(CHANGED)
+        set(CHANGED FALSE)
+        foreach(PAIR IN LISTS VAR_MAP)
+            string(REPLACE "=" ";" PAIR_LIST "${PAIR}")
+            list(GET PAIR_LIST 0 KEY)
+            list(GET PAIR_LIST 1 VALUE)
+            
+            if(VALUE MATCHES "\\\${([^}]+)}")
+                set(MATCH_VAR "${CMAKE_MATCH_1}")
+                foreach(INNER_PAIR IN LISTS VAR_MAP)
+                    if(INNER_PAIR MATCHES "^${MATCH_VAR}=(.*)$")
+                        string(REPLACE "\${${MATCH_VAR}}" "${CMAKE_MATCH_1}" VALUE "${VALUE}")
+                        set(CHANGED TRUE)
+                    endif()
+                endforeach()
+                list(REMOVE_ITEM VAR_MAP "${PAIR}")
+                list(APPEND VAR_MAP "${KEY}=${VALUE}")
+            endif()
+        endforeach()
+    endwhile()
+
+    foreach(LINE IN LISTS PC_LINES)
+        foreach(PAIR IN LISTS VAR_MAP)
+            string(REPLACE "=" ";" PAIR_LIST "${PAIR}")
+            list(GET PAIR_LIST 0 KEY)
+            list(GET PAIR_LIST 1 VALUE)
+            string(REPLACE "\${${KEY}}" "${VALUE}" LINE "${LINE}")
+        endforeach()
+
+        if(LINE MATCHES "^libdir=(.*)$")
+            set(PC_LIB_DIR "${CMAKE_MATCH_1}")
+        elseif(LINE MATCHES "^includedir=(.*)$")
+            set(PC_INCLUDE_DIRS "${CMAKE_MATCH_1}")
+        elseif(LINE MATCHES "^Name: (.*)$")
+            set(PC_NAME "${CMAKE_MATCH_1}")
+            string(REGEX REPLACE "^lib" "" PC_LIB_NAME "${CMAKE_MATCH_1}")
+        elseif(LINE MATCHES "^Version: (.*)$")
+            set(PC_VERSION "${CMAKE_MATCH_1}")
+        endif()
+    endforeach()
+
+    message(STATUS "Using installed third-party library ${TARGET_NAME} ${PC_VERSION}: ${PC_INCLUDE_DIRS}")
+    add_library(${TARGET_NAME} INTERFACE)
+    
+    set(TARGET_PC_LIBRARIES "${PC_LIB_DIR}/${PC_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    target_link_libraries(${TARGET_NAME} INTERFACE ${TARGET_PC_LIBRARIES})
+    target_include_directories(${TARGET_NAME} SYSTEM INTERFACE ${PC_INCLUDE_DIRS})
+    if(PC_VERSION)
+        set_property(TARGET ${TARGET_NAME} PROPERTY VERSION "${PC_VERSION}")
+    endif()
+    
+    message(STATUS "Manually configured ${TARGET_NAME} from ${PC_FILE}")
+    message(STATUS "Libraries: ${TARGET_PC_LIBRARIES}")
+    message(STATUS "Include directories: ${PC_INCLUDE_DIRS}")
+    if(PC_VERSION)
+        message(STATUS "Found ${PC_LIB_NAME} Version: ${PC_VERSION}")
+    endif()
+
+    if(NOT BUILD_SHARED_LIBS)
+        install(TARGETS ${TARGET_NAME} EXPORT ${PROJECT_NAME}Targets)
+    endif()
+
+    set(${TARGET_NAME}_FOUND TRUE PARENT_SCOPE)
+    add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
 endfunction()
 
 # find_package_3rdparty_library(name ...)
@@ -1056,9 +1153,14 @@ endif ()
 # - openssl.cmake needs to be included before curl.cmake, for the
 #   BORINGSSL_ROOT_DIR variable.
 if(USE_SYSTEM_CURL)
-    pkg_config_3rdparty_library(3rdparty_curl
-        SEARCH_ARGS libcurl
-    )
+    if (APPLE AND BUILD_WITH_CONDA)
+        set(CURL_PC_FILE "${CONDA_PREFIX}/lib/pkgconfig/libcurl.pc")
+        manual_pkg_config_target(3rdparty_curl "${CURL_PC_FILE}")
+    else()
+        pkg_config_3rdparty_library(3rdparty_curl
+            SEARCH_ARGS libcurl
+        )
+    endif()
     if(NOT 3rdparty_curl_FOUND)
         message(WARNING "Cannot found libcurl and set USE_SYSTEM_CURL=OFF and USE_SYSTEM_OPENSSL=OFF.")
         set(USE_SYSTEM_CURL     OFF)

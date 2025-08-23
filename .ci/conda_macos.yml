@@ -5,7 +5,7 @@ dependencies:
   - python=3.8
   # - eigen=3.4.*
   - ninja
-  - libcurl
+  - libcurl=8.14.*
   - openssl
   - pkg-config
   - boost=1.84.*
