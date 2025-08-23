@@ -23,5 +23,6 @@ if __name__ == "__main__":
 
     octree = cv3d.geometry.Octree(max_depth=4)
     octree.convert_from_point_cloud(pcd, size_expand=0.01)
+    print(octree)
     print('Displaying octree ..')
     cv3d.visualization.draw([octree])

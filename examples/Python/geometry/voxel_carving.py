@@ -72,7 +72,8 @@ def voxel_carving(mesh,
         height=cubic_size,
         depth=cubic_size,
         voxel_size=cubic_size / voxel_resolution,
-        origin=[-cubic_size / 2.0, -cubic_size / 2.0, -cubic_size / 2.0])
+        origin=[-cubic_size / 2.0, -cubic_size / 2.0, -cubic_size / 2.0],
+        color=[1.0, 0.7, 0.0])
 
     # rescale geometry
     camera_sphere = preprocess(camera_sphere)

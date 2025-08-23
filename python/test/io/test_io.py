@@ -19,7 +19,7 @@ def test_in_memory_xyz():
     pc1 = cv3d.io.read_point_cloud_from_bytes(pcb1, "mem::xyz")
     assert len(pc1.get_points()) == 3
     # Reading/Writing bytes from PointCloud
-    pc2 = cv3d.geometry.PointCloud()
+    pc2 = cv3d.geometry.ccPointCloud()
     pc2_points = np.array([[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]])
     pc2.set_points(cv3d.utility.Vector3dVector(pc2_points))
     pcb2 = cv3d.io.write_point_cloud_to_bytes(pc2, "mem::xyz")

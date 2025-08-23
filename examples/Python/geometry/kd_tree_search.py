@@ -12,6 +12,7 @@ if __name__ == "__main__":
     print("Load a point cloud and paint it gray.")
     sample_pcd_data = cv3d.data.PCDPointCloud()
     pcd = cv3d.io.read_point_cloud(sample_pcd_data.path)
+    print(pcd)
     pcd.paint_uniform_color([0.5, 0.5, 0.5])
     pcd_tree = cv3d.geometry.KDTreeFlann(pcd)
 

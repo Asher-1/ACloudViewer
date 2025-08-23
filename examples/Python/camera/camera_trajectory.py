@@ -37,7 +37,7 @@ if __name__ == "__main__":
         im2 = cv3d.io.read_image(redwood_rgbd.color_paths[i])
         im = cv3d.geometry.RGBDImage.create_from_color_and_depth(
             im2, im1, 1000.0, 5.0, False)
-        pcd = cv3d.geometry.PointCloud.create_from_rgbd_image(
+        pcd = cv3d.geometry.ccPointCloud.create_from_rgbd_image(
             im, trajectory.parameters[i].intrinsic,
             trajectory.parameters[i].extrinsic)
         pcds.append(pcd)
