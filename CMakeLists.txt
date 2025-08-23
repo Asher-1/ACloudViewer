@@ -263,13 +263,13 @@ if (BUILD_WITH_CONDA)
     endif()
     message(STATUS "Building with conda env at ${CONDA_PREFIX}")
 
-     # add Conda's pkgconfig directory to PKG_CONFIG_PATH
-    if (WIN32)
-        set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${CONDA_PREFIX}/Library/pkgconfig")
-    else()
-        set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${CONDA_PREFIX}/lib/pkgconfig")
-    endif()
-    message(STATUS "Updated PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
+    # add Conda's pkgconfig directory to PKG_CONFIG_PATH
+    # if (WIN32)
+    #     set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${CONDA_PREFIX}/Library/pkgconfig")
+    # else()
+    #     set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${CONDA_PREFIX}/lib/pkgconfig")
+    # endif()
+    # message(STATUS "Updated PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
 endif()
 
 # Default build type on single-config generators.
