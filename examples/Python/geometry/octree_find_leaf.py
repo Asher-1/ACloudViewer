@@ -16,12 +16,11 @@ if __name__ == "__main__":
     # Fit to unit cube.
     pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
               center=pcd.get_center())
-    pcd.colors = cv3d.utility.Vector3dVector(np.random.uniform(0, 1,
-                                                              size=(N, 3)))
+    pcd.set_colors(cv3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(N, 3))))
 
     octree = cv3d.geometry.Octree(max_depth=4)
     octree.convert_from_point_cloud(pcd, size_expand=0.01)
     print('Displaying input octree ...')
     cv3d.visualization.draw([octree])
     print('Finding leaf node containing the first point of pointcloud ...')
-    print(octree.locate_leaf_node(pcd.points[0]))
+    print(octree.locate_leaf_node(pcd.get_points()[0]))

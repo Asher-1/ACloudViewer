@@ -203,9 +203,7 @@ def extract_pointcloud(volume, config, file_name=None):
     if config.engine == 'legacy':
         mesh = volume.extract_triangle_mesh()
 
-        pcd = cv3d.geometry.PointCloud()
-        pcd.points = mesh.vertices
-        pcd.colors = mesh.vertex_colors
+        pcd = mesh.get_associated_cloud()
 
         if file_name is not None:
             cv3d.io.write_point_cloud(file_name, pcd)

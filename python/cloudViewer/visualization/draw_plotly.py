@@ -15,15 +15,15 @@ from dash import Dash
 
 
 def get_point_object(geometry, point_sample_factor=1):
-    points = np.asarray(geometry.points)
+    points = np.asarray(geometry.get_points())
     colors = None
     if geometry.has_colors():
-        colors = np.asarray(geometry.colors)
+        colors = np.asarray(geometry.get_colors())
     elif geometry.has_normals():
-        colors = (0.5, 0.5, 0.5) + np.asarray(geometry.normals) * 0.5
+        colors = (0.5, 0.5, 0.5) + np.asarray(geometry.get_normals()) * 0.5
     else:
         geometry.paint_uniform_color((1.0, 0.0, 0.0))
-        colors = np.asarray(geometry.colors)
+        colors = np.asarray(geometry.get_colors())
     if (point_sample_factor > 0 and point_sample_factor < 1):
         indices = np.random.choice(len(points),
                                    (int)(len(points) * point_sample_factor),
@@ -86,7 +86,7 @@ def get_lineset_object(geometry):
     x = []
     y = []
     z = []
-    line_points = np.asarray(geometry.points)[np.asarray(geometry.lines)]
+    line_points = np.asarray(geometry.get_points())[np.asarray(geometry.lines)]
     for point in line_points:
         x.extend([point[k % 2][0] for k in range(2)] + [None])
         y.extend([point[k % 2][1] for k in range(2)] + [None])
