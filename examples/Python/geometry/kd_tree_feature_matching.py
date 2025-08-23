@@ -25,11 +25,11 @@ if __name__ == "__main__":
     feature1 = o3d.io.read_feature(demo_data.fpfh_feature_paths[1])
 
     fpfh_tree = o3d.geometry.KDTreeFlann(feature1)
-    for i in range(len(pcd0.points)):
+    for i in range(len(pcd0.get_points())):
         [_, idx, _] = fpfh_tree.search_knn_vector_xd(feature0.data[:, i], 1)
-        dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
+        dis = np.linalg.norm(pcd0.get_points()[i] - pcd1.get_points()[idx[0]])
         c = (0.2 - np.fmin(dis, 0.2)) / 0.2
-        pcd0.colors[i] = [c, c, c]
+        pcd0.set_color(i, [c, c, c])
     o3d.visualization.draw_geometries([pcd0])
     print("")
 
@@ -40,10 +40,10 @@ if __name__ == "__main__":
     feature1 = o3d.io.read_feature(demo_data.l32d_feature_paths[1])
 
     fpfh_tree = o3d.geometry.KDTreeFlann(feature1)
-    for i in range(len(pcd0.points)):
+    for i in range(len(pcd0.get_points())):
         [_, idx, _] = fpfh_tree.search_knn_vector_xd(feature0.data[:, i], 1)
-        dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
+        dis = np.linalg.norm(pcd0.get_points()[i] - pcd1.get_points()[idx[0]])
         c = (0.2 - np.fmin(dis, 0.2)) / 0.2
-        pcd0.colors[i] = [c, c, c]
+        pcd0.set_color(i, [c, c, c])
     o3d.visualization.draw_geometries([pcd0])
     print("")

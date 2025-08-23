@@ -57,7 +57,12 @@ void pybind_boundingvolume(py::module &m) {
                  "``float64`` array of shape ``(3, )``", "color"_a)
             .def("get_color", &cloudViewer::OrientedBoundingBox::getColor,
                  "``float64`` array of shape ``(3, )``")
+            .def("color", &cloudViewer::OrientedBoundingBox::getColor,
+                 "``float64`` array of shape ``(3, )``")
             .def("get_box_points",
+                 &cloudViewer::OrientedBoundingBox::getBoxPoints,
+                 "Returns the eight points that define the bounding box.")
+            .def("box_points",
                  &cloudViewer::OrientedBoundingBox::getBoxPoints,
                  "Returns the eight points that define the bounding box.")
             .def("clear", &cloudViewer::OrientedBoundingBox::Clear,
@@ -92,7 +97,9 @@ void pybind_boundingvolume(py::module &m) {
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "get_max_extent");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "set_color");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "get_color");
+    docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "color");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "get_box_points");
+    docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "box_points");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox",
                                     "get_point_indices_within_bounding_box",
                                     {{"points", "A list of points."}});
