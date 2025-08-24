@@ -186,10 +186,10 @@ def time_animation():
     for i in range(1, n):
         amount = float(i) / float(n - 1)
         cloud = cv3d.geometry.ccPointCloud()
-        pts = np.asarray(orig.points)
+        pts = np.asarray(orig.get_points())
         pts = pts * (1.0 + amount * expand) + [amount * v for v in drift_dir]
-        cloud.points = cv3d.utility.Vector3dVector(pts)
-        cloud.colors = orig.colors
+        cloud.set_points(cv3d.utility.Vector3dVector(pts))
+        cloud.set_colors(orig.get_colors())
         clouds.append({
             "name": "points at t=" + str(i),
             "geometry": cloud,

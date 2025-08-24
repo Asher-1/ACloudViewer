@@ -172,6 +172,8 @@ jobs:
             -DBUILD_BENCHMARKS=OFF `
             -DBUILD_OPENCV=ON `
             -DBUILD_RECONSTRUCTION=ON `
+            -DUSE_PCL_BACKEND=ON `
+            -DWITH_PCL_NURBS=ON `
             -DCVCORELIB_USE_CGAL=ON `
             -DCVCORELIB_SHARED=ON `
             -DCVCORELIB_USE_QT_CONCURRENT=ON `

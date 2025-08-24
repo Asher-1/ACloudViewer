@@ -1,33 +1,15 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "core/Tensor.h"
 
-#include <vector>
 #include <Optional.h>
+
+#include <vector>
 
 #include "core/Blob.h"
 #include "core/CUDAUtils.h"
@@ -37,11 +19,11 @@
 #include "core/Scalar.h"
 #include "core/SizeVector.h"
 #include "core/TensorKey.h"
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/core.h"
 #include "pybind/core/tensor_converter.h"
 #include "pybind/core/tensor_type_caster.h"
 #include "pybind/docstring.h"
-#include "pybind/cloudViewer_pybind.h"
 #include "pybind/pybind_utils.h"
 
 #define CONST_ARG const
@@ -176,37 +158,40 @@
                 .cpp_name(self);                                          \
     });
 
-#define BIND_REDUCTION_OP(py_name, cpp_name)                            \
-    tensor.def(                                                         \
-            #py_name,                                                   \
+#define BIND_REDUCTION_OP(py_name, cpp_name)                                   \
+    tensor.def(                                                                \
+            #py_name,                                                          \
             [](const Tensor& tensor, const utility::optional<SizeVector>& dim, \
-               bool keepdim) {                                          \
-                SizeVector reduction_dims;                              \
-                if (dim.has_value()) {                                  \
-                    reduction_dims = dim.value();                       \
-                } else {                                                \
-                    for (int64_t i = 0; i < tensor.NumDims(); i++) {    \
-                        reduction_dims.push_back(i);                    \
-                    }                                                   \
-                }                                                       \
-                return tensor.cpp_name(reduction_dims, keepdim);        \
-            },                                                          \
+               bool keepdim) {                                                 \
+                SizeVector reduction_dims;                                     \
+                if (dim.has_value()) {                                         \
+                    reduction_dims = dim.value();                              \
+                } else {                                                       \
+                    for (int64_t i = 0; i < tensor.NumDims(); i++) {           \
+                        reduction_dims.push_back(i);                           \
+                    }                                                          \
+                }                                                              \
+                return tensor.cpp_name(reduction_dims, keepdim);               \
+            },                                                                 \
             "dim"_a = py::none(), "keepdim"_a = false);
 
-#define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)                   \
-    tensor.def(                                                           \
-            #py_name,                                                     \
-            [](const Tensor& tensor, const utility::optional<SizeVector>& dim) { \
-                SizeVector reduction_dims;                                \
-                if (dim.has_value()) {                                    \
-                    reduction_dims = dim.value();                         \
-                } else {                                                  \
-                    for (int64_t i = 0; i < tensor.NumDims(); i++) {      \
-                        reduction_dims.push_back(i);                      \
-                    }                                                     \
-                }                                                         \
-                return tensor.cpp_name(reduction_dims);                   \
-            },                                                            \
+// TODO (rishabh): add this behavior to the cpp implementation. Refer to the
+// Tensor::Any and Tensor::All ops.
+#define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)              \
+    tensor.def(                                                      \
+            #py_name,                                                \
+            [](const Tensor& tensor,                                 \
+               const utility::optional<SizeVector>& dim) {           \
+                SizeVector reduction_dims;                           \
+                if (dim.has_value()) {                               \
+                    reduction_dims = dim.value();                    \
+                } else {                                             \
+                    for (int64_t i = 0; i < tensor.NumDims(); i++) { \
+                        reduction_dims.push_back(i);                 \
+                    }                                                \
+                }                                                    \
+                return tensor.cpp_name(reduction_dims);              \
+            },                                                       \
             "dim"_a = py::none());
 
 namespace cloudViewer {
@@ -246,6 +231,7 @@ static void BindTensorCreation(py::module& m,
             },
             "Create Tensor with a given shape.", "shape"_a,
             "dtype"_a = py::none(), "device"_a = py::none());
+
     docstring::ClassMethodDocInject(m, "Tensor", py_name, argument_docs);
 }
 
@@ -269,6 +255,7 @@ void pybind_core_tensor(py::module& m) {
     py::class_<Tensor> tensor(
             m, "Tensor",
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
+    m.attr("capsule") = py::module_::import("typing").attr("Any");
 
     // o3c.Tensor(np.array([[0, 1, 2], [3, 4, 5]]), dtype=None, device=None).
     tensor.def(py::init([](const py::array& np_array,
@@ -352,6 +339,36 @@ void pybind_core_tensor(py::module& m) {
     BindTensorFullCreation<bool>(m, tensor);
     docstring::ClassMethodDocInject(m, "Tensor", "full", argument_docs);
 
+    // Pickling support.
+    // The tensor will be on the same device after deserialization.
+    // Non contiguous tensors will be converted to contiguous tensors after
+    // deserialization.
+    tensor.def(py::pickle(
+            [](const Tensor& t) {
+                // __getstate__
+                return py::make_tuple(t.GetDevice(),
+                                      TensorToPyArray(t.To(Device("CPU:0"))));
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 2) {
+                    utility::LogError(
+                            "Cannot unpickle Tensor! Expecting a tuple of size "
+                            "2.");
+                }
+                const Device& device = t[0].cast<Device>();
+                if (!device.IsAvailable()) {
+                    utility::LogWarning(
+                            "Device {} is not available, tensor will be "
+                            "created on CPU.",
+                            device.ToString());
+                    return PyArrayToTensor(t[1].cast<py::array>(), true);
+                } else {
+                    return PyArrayToTensor(t[1].cast<py::array>(), true)
+                            .To(device);
+                }
+            }));
+
     tensor.def_static(
             "eye",
             [](int64_t n, utility::optional<Dtype> dtype,
@@ -376,22 +393,22 @@ void pybind_core_tensor(py::module& m) {
             },
             "Create a 1D tensor with evenly spaced values in the given "
             "interval.",
-            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "stop"_a, py::pos_only(), py::kw_only(), "dtype"_a = py::none(),
+            "device"_a = py::none());
     tensor.def_static(
             "arange",
-            [](utility::optional<int64_t> start, int64_t stop,
-               utility::optional<int64_t> step, utility::optional<Dtype> dtype,
+            [](int64_t start, int64_t stop, utility::optional<int64_t> step,
+               utility::optional<Dtype> dtype,
                utility::optional<Device> device) {
                 return Tensor::Arange(
-                        start.has_value() ? start.value() : 0, stop,
-                        step.has_value() ? step.value() : 1,
+                        start, stop, step.has_value() ? step.value() : 1,
                         dtype.has_value() ? dtype.value() : core::Int64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create a 1D tensor with evenly spaced values in the given "
             "interval.",
-            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
-            "dtype"_a = py::none(), "device"_a = py::none());
+            "start"_a, "stop"_a, "step"_a = py::none(), "dtype"_a = py::none(),
+            py::kw_only(), "device"_a = py::none());
 
     // Tensor creation from arange for float.
     tensor.def_static(
@@ -405,49 +422,81 @@ void pybind_core_tensor(py::module& m) {
             },
             "Create a 1D tensor with evenly spaced values in the given "
             "interval.",
-            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "stop"_a, py::pos_only(), py::kw_only(), "dtype"_a = py::none(),
+            "device"_a = py::none());
     tensor.def_static(
             "arange",
-            [](utility::optional<double> start, double stop,
-               utility::optional<double> step, utility::optional<Dtype> dtype,
+            [](double start, double stop, utility::optional<double> step,
+               utility::optional<Dtype> dtype,
                utility::optional<Device> device) {
                 return Tensor::Arange(
-                        start.has_value() ? start.value() : 0.0, stop,
-                        step.has_value() ? step.value() : 1.0,
+                        start, stop, step.has_value() ? step.value() : 1.0,
                         dtype.has_value() ? dtype.value() : core::Float64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create a 1D tensor with evenly spaced values in the given "
             "interval.",
-            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
-            "dtype"_a = py::none(), "device"_a = py::none());
+            "start"_a, "stop"_a, "step"_a = py::none(), "dtype"_a = py::none(),
+            py::kw_only(), "device"_a = py::none());
+
+    tensor.def(
+            "append",
+            [](const Tensor& tensor, const Tensor& values,
+               const utility::optional<int64_t> axis) {
+                if (axis.has_value()) {
+                    return tensor.Append(values, axis);
+                }
+                return tensor.Append(values);
+            },
+            R"(Appends the `values` tensor, along the given axis and returns
+a copy of the original tensor. Both the tensors must have same data-type
+device, and number of dimensions. All dimensions must be the same, except the
+dimension along the axis the tensors are to be appended.
+
+This is the similar to NumPy's semantics:
+- https://numpy.org/doc/stable/reference/generated/numpy.append.html
+
+Returns:
+    A copy of the tensor with `values` appended to axis. Note that append
+    does not occur in-place: a new array is allocated and filled. If axis
+    is None, out is a flattened tensor.
+
+Example:
+    >>> a = o3d.core.Tensor([[0, 1], [2, 3]])
+    >>> b = o3d.core.Tensor([[4, 5]])
+    >>> a.append(b, axis = 0)
+    [[0 1],
+     [2 3],
+     [4 5]]
+    Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+
+    >>> a.append(b)
+    [0 1 2 3 4 5]
+    Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
+            "values"_a, "axis"_a = py::none());
 
     // Device transfer.
     tensor.def(
+            "cpu",
+            [](const Tensor& tensor) {
+                return tensor.To(core::Device("CPU:0"));
+            },
+            "Transfer the tensor to CPU. If the tensor "
+            "is already on CPU, no copy will be performed.");
+    tensor.def(
             "cuda",
             [](const Tensor& tensor, int device_id) {
-                if (!cuda::IsAvailable()) {
-                    utility::LogError(
-                            "CUDA is not available, cannot copy Tensor.");
-                }
-                if (device_id < 0 || device_id >= cuda::DeviceCount()) {
-                    utility::LogError(
-                            "Invalid device_id {}, must satisfy 0 <= "
-                            "device_id < {}",
-                            device_id, cuda::DeviceCount());
-                }
-                return tensor.To(Device(Device::DeviceType::CUDA, device_id));
+                return tensor.To(core::Device("CUDA", device_id));
             },
+            "Transfer the tensor to a CUDA device. If the tensor is already "
+            "on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
-    tensor.def("cpu", [](const Tensor& tensor) {
-        return tensor.To(Device(Device::DeviceType::CPU, 0));
-    });
 
     // Buffer I/O for Numpy and DLPack(PyTorch).
     tensor.def("numpy", &core::TensorToPyArray);
 
     tensor.def_static("from_numpy", [](py::array np_array) {
-        return core::PyArrayToTensor(np_array, true);
+        return core::PyArrayToTensor(np_array, /*inplace=*/true);
     });
 
     tensor.def("to_dlpack", [](const Tensor& tensor) {
@@ -652,6 +701,31 @@ Ref:
                "underlying memory will be used.");
     tensor.def("is_contiguous", &Tensor::IsContiguous,
                "Returns True if the underlying memory buffer is contiguous.");
+    tensor.def(
+            "flatten", &Tensor::Flatten,
+            R"(Flattens input by reshaping it into a one-dimensional tensor. If
+start_dim or end_dim are passed, only dimensions starting with start_dim
+and ending with end_dim are flattened. The order of elements in input is
+unchanged.
+
+Unlike NumPy’s flatten, which always copies input’s data, this function
+may return the original object, a view, or copy. If no dimensions are
+flattened, then the original object input is returned. Otherwise, if
+input can be viewed as the flattened shape, then that view is returned.
+Finally, only if the input cannot be viewed as the flattened shape is
+input’s data copied.
+
+Ref:
+- https://pytorch.org/docs/stable/tensors.html
+- aten/src/ATen/native/TensorShape.cpp
+- aten/src/ATen/TensorUtils.cpp)",
+            "start_dim"_a = 0, "end_dim"_a = -1);
+    docstring::ClassMethodDocInject(
+            m, "Tensor", "flatten",
+            {{"start_dim", "The first dimension to flatten (inclusive)."},
+             {"end_dim",
+              "The last dimension to flatten, starting from start_dim "
+              "(inclusive)."}});
 
     // See "emulating numeric types" section for Python built-in numeric ops.
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
@@ -715,7 +789,7 @@ Ref:
     BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ixor__, LogicalXor_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rxor__, LogicalXor);
 
-    // BinaryEW: comparsion ops.
+    // BinaryEW: comparison ops.
     BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(gt, Gt, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(gt_, Gt_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__gt__, Gt, CONST_ARG);
@@ -751,7 +825,7 @@ Ref:
     tensor.def_property_readonly("is_cpu", &Tensor::IsCPU);
     tensor.def_property_readonly("is_cuda", &Tensor::IsCUDA);
 
-        // Length and iterator.
+    // Length and iterator.
     tensor.def("__len__", &Tensor::GetLength);
     tensor.def(
             "__iter__",

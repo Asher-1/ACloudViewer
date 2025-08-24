@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2023 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -176,7 +176,7 @@ public:
 };
 
 #define REG_KB(type, itype)                                                \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerKnnSearch")                        \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerKnnSearch")                   \
                                     .Device(DEVICE_CPU)                    \
                                     .TypeConstraint<type>("T")             \
                                     .TypeConstraint<itype>("index_dtype"), \

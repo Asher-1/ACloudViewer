@@ -22,7 +22,9 @@
 #ifndef CU_TEX_IMAGE_H
 #define CU_TEX_IMAGE_H
 
+#ifndef PBA_NO_GPU
 #include <cuda_runtime.h>
+#endif
 
 namespace pba {
 

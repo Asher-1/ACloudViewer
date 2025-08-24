@@ -41,8 +41,8 @@
 
 // ECV_IO_LIB
 #include <ecvMesh.h>
-#include <ecvScalarField.h>
 #include <ecvPointCloud.h>
+#include <ecvScalarField.h>
 
 // QT
 #include <QFileInfo>
@@ -342,7 +342,8 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
 PointCoordinateType UnpackBinaryPCDElement(const char *data_ptr,
                                            const char type,
                                            const int size) {
-    if (type == 'I') {
+    const char type_uppercase = std::toupper(type, std::locale());
+    if (type_uppercase == 'I') {
         if (size == 1) {
             std::int8_t data;
             memcpy(&data, data_ptr, sizeof(data));
@@ -358,7 +359,7 @@ PointCoordinateType UnpackBinaryPCDElement(const char *data_ptr,
         } else {
             return static_cast<PointCoordinateType>(0.0);
         }
-    } else if (type == 'U') {
+    } else if (type_uppercase == 'U') {
         if (size == 1) {
             std::uint8_t data;
             memcpy(&data, data_ptr, sizeof(data));
@@ -374,7 +375,7 @@ PointCoordinateType UnpackBinaryPCDElement(const char *data_ptr,
         } else {
             return static_cast<PointCoordinateType>(0.0);
         }
-    } else if (type == 'F') {
+    } else if (type_uppercase == 'F') {
         if (size == 4) {
             float data;
             memcpy(&data, data_ptr, sizeof(data));
@@ -416,12 +417,13 @@ PointCoordinateType UnpackASCIIPCDElement(const char *data_ptr,
                                           const char type,
                                           const int size) {
     char *end;
-    if (type == 'I') {
+    const char type_uppercase = std::toupper(type, std::locale());
+    if (type_uppercase == 'I') {
         return static_cast<PointCoordinateType>(std::strtol(data_ptr, &end, 0));
-    } else if (type == 'U') {
+    } else if (type_uppercase == 'U') {
         return static_cast<PointCoordinateType>(
                 std::strtoul(data_ptr, &end, 0));
-    } else if (type == 'F') {
+    } else if (type_uppercase == 'F') {
         return static_cast<PointCoordinateType>(std::strtod(data_ptr, &end));
     }
     return static_cast<PointCoordinateType>(0.0);
@@ -433,13 +435,14 @@ ecvColor::Rgb UnpackASCIIPCDColor(const char *data_ptr,
     if (size == 4) {
         std::uint8_t data[4] = {0, 0, 0, 0};
         char *end;
-        if (type == 'I') {
+        const char type_uppercase = std::toupper(type, std::locale());
+        if (type_uppercase == 'I') {
             std::int32_t value = std::strtol(data_ptr, &end, 0);
             memcpy(data, &value, 4);
-        } else if (type == 'U') {
+        } else if (type_uppercase == 'U') {
             std::uint32_t value = std::strtoul(data_ptr, &end, 0);
             memcpy(data, &value, 4);
-        } else if (type == 'F') {
+        } else if (type_uppercase == 'F') {
             float value = std::strtof(data_ptr, &end);
             memcpy(data, &value, 4);
         }
@@ -1160,6 +1163,37 @@ bool ReadPointCloudFromXYZ(const std::string &filename,
     }
 }
 
+bool ReadPointCloudInMemoryFromXYZ(const unsigned char *buffer,
+                                   const size_t length,
+                                   ccPointCloud &pointcloud,
+                                   const ReadPointCloudOption &params) {
+    try {
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(static_cast<int64_t>(length));
+
+        std::string content(reinterpret_cast<const char *>(buffer), length);
+        std::istringstream ibs(content);
+        pointcloud.clear();
+        int i = 0;
+        double x, y, z;
+        std::string line;
+        while (std::getline(ibs, line)) {
+            if (sscanf(line.c_str(), "%lf %lf %lf", &x, &y, &z) == 3) {
+                pointcloud.addEigenPoint(Eigen::Vector3d(x, y, z));
+            }
+            if (++i % 1000 == 0) {
+                reporter.Update(ibs.tellg());
+            }
+        }
+        reporter.Finish();
+
+        return true;
+    } catch (const std::exception &e) {
+        utility::LogWarning("Read XYZ failed with exception: {}", e.what());
+        return false;
+    }
+}
+
 bool WritePointCloudToXYZ(const std::string &filename,
                           const ccPointCloud &pointcloud,
                           const WritePointCloudOption &params) {
@@ -1185,6 +1219,41 @@ bool WritePointCloudToXYZ(const std::string &filename,
                 reporter.Update(i);
             }
         }
+        reporter.Finish();
+        return true;
+    } catch (const std::exception &e) {
+        utility::LogWarning("Write XYZ failed with exception: {}", e.what());
+        return false;
+    }
+}
+
+bool WritePointCloudInMemoryToXYZ(unsigned char *&buffer,
+                                  size_t &length,
+                                  const ccPointCloud &pointcloud,
+                                  const WritePointCloudOption &params) {
+    try {
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(pointcloud.size());
+
+        std::string content;
+        for (size_t i = 0; i < pointcloud.size(); i++) {
+            const Eigen::Vector3d &point = pointcloud.getEigenPoint(i);
+            std::string line = utility::FastFormatString(
+                    "%.10f %.10f %.10f\n", point(0), point(1), point(2));
+            content.append(line);
+            if (i % 1000 == 0) {
+                reporter.Update(i);
+            }
+        }
+        // nothing to report...
+        if (content.length() == 0) {
+            reporter.Finish();
+            return false;
+        }
+        length = content.length();
+        buffer = new unsigned char[length];  // we do this for the caller
+        std::memcpy(buffer, content.c_str(), length);
+
         reporter.Finish();
         return true;
     } catch (const std::exception &e) {

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Image.h>
@@ -40,15 +21,17 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_trianglemesh(py::module& m) {
-    py::enum_<ccMesh::MESH_SCALAR_FIELD_PROCESS>(m,
-                                                 "MeshScalarFieldProcessType")
+    py::native_enum<ccMesh::MESH_SCALAR_FIELD_PROCESS>(
+            m, "MeshScalarFieldProcessType", "enum.Enum",
+            "Method for mesh scalar field process.")
             .value("SMOOTH_MESH_SF",
                    ccMesh::MESH_SCALAR_FIELD_PROCESS::SMOOTH_MESH_SF,
                    "Smooth Scalar fields.")
             .value("ENHANCE_MESH_SF",
                    ccMesh::MESH_SCALAR_FIELD_PROCESS::ENHANCE_MESH_SF,
                    "Enhance Scalar fields.")
-            .export_values();
+            .export_values()
+            .finalize();
 
     py::class_<ccMesh, PyGeometry<ccMesh>, std::shared_ptr<ccMesh>,
                ccGenericMesh, ccHObject>
@@ -388,6 +371,8 @@ void pybind_trianglemesh(py::module& m) {
                  "set triangle indices by index", "index"_a, "triangle"_a)
             .def("get_triangle", &ccMesh::getTriangle,
                  "get triangle indices by index", "index"_a)
+            .def("triangle", &ccMesh::getTriangle,
+                 "get triangle indices by index", "index"_a)
             .def("add_triangles", &ccMesh::addTriangles,
                  "``int`` array of shape ``(num_triangles, 3)``, use "
                  "``numpy.asarray()`` to access data: List of "
@@ -405,9 +390,16 @@ void pybind_trianglemesh(py::module& m) {
                  "``numpy.asarray()`` to access data: List of "
                  "triangles denoted by the index of points forming "
                  "the triangle.")
+            .def("triangles", &ccMesh::getTriangles,
+                 "``int`` array of shape ``(num_triangles, 3)``, use "
+                 "``numpy.asarray()`` to access data: List of "
+                 "triangles denoted by the index of points forming "
+                 "the triangle.")
             .def("set_triangle_normal", &ccMesh::setTriangleNorm,
                  "set triangle normal by index", "index"_a, "triangle_normal"_a)
             .def("get_triangle_normal", &ccMesh::getTriangleNorm,
+                 "get triangle indices by index", "index"_a)
+            .def("triangle_normal", &ccMesh::getTriangleNorm,
                  "get triangle indices by index", "index"_a)
             .def("set_triangle_normals", &ccMesh::setTriangleNorms,
                  "``int`` array of shape ``(num_triangles, 3)``, use "
@@ -420,10 +412,17 @@ void pybind_trianglemesh(py::module& m) {
                  "``numpy.asarray()`` to access data: List of "
                  "triangles denoted by the index of points forming "
                  "the triangle.")
+            .def("triangle_normals", &ccMesh::getTriangleNorms,
+                 "``int`` array of shape ``(num_triangles, 3)``, use "
+                 "``numpy.asarray()`` to access data: List of "
+                 "triangles denoted by the index of points forming "
+                 "the triangle.")
             .def("set_vertice", &ccMesh::setVertice,
                  "set vertex coordinate by given index.", "index"_a,
                  "vertice"_a)
             .def("get_vertice", &ccMesh::getVertice,
+                 "get vertex coordinate by given index.", "index"_a)
+            .def("vertice", &ccMesh::getVertice,
                  "get vertex coordinate by given index.", "index"_a)
             .def("set_vertices", &ccMesh::addEigenVertices,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
@@ -434,9 +433,15 @@ void pybind_trianglemesh(py::module& m) {
                  "``float64`` array of shape ``(num_vertices, 3)``, "
                  "use ``numpy.asarray()`` to access data: Vertex "
                  "coordinates.")
+            .def("vertices", &ccMesh::getEigenVertices,
+                 "``float64`` array of shape ``(num_vertices, 3)``, "
+                 "use ``numpy.asarray()`` to access data: Vertex "
+                 "coordinates.")
             .def("set_vertex_normal", &ccMesh::setVertexNormal,
                  "set vertex normal by given index.", "index"_a, "normal"_a)
             .def("get_vertex_normal", &ccMesh::getVertexNormal,
+                 "get vertex normal by given index.", "index"_a)
+            .def("vertex_normal", &ccMesh::getVertexNormal,
                  "get vertex normal by given index.", "index"_a)
             .def("set_vertex_normals", &ccMesh::addVertexNormals,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
@@ -447,9 +452,15 @@ void pybind_trianglemesh(py::module& m) {
                  "``float64`` array of shape ``(num_vertices, 3)``, "
                  "use ``numpy.asarray()`` to access data: Vertex "
                  "normals.")
+            .def("vertex_normals", &ccMesh::getVertexNormals,
+                 "``float64`` array of shape ``(num_vertices, 3)``, "
+                 "use ``numpy.asarray()`` to access data: Vertex "
+                 "normals.")
             .def("set_vertex_color", &ccMesh::setVertexColor,
                  "set vertex color by given index.", "index"_a, "color"_a)
             .def("get_vertex_color", &ccMesh::getVertexColor,
+                 "get vertex color by given index.", "index"_a)
+            .def("vertex_color", &ccMesh::getVertexColor,
                  "get vertex color by given index.", "index"_a)
             .def("set_vertex_colors", &ccMesh::addVertexColors,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
@@ -457,19 +468,24 @@ void pybind_trianglemesh(py::module& m) {
                  "data: RGB colors of vertices.",
                  "colors"_a)
             .def(
-               "set_vertex_colors",
-               [](ccMesh& mesh, const Eigen::Vector3d& color) {
-                    ccPointCloud* vertices =
-                                   ccHObjectCaster::ToPointCloud(&mesh);
-                    if (!vertices) {
-                         throw std::runtime_error("empty vertex found in mesh.");
-                    }
-                    std::vector<Eigen::Vector3d> color_vec;
-                    color_vec.resize(vertices->size(), color);
-                    mesh.setVertexColors(color_vec);
-               },
-               "Sets the associated vertices cloud (warning)", "cloud"_a)
+                    "set_vertex_colors",
+                    [](ccMesh& mesh, const Eigen::Vector3d& color) {
+                        ccPointCloud* vertices =
+                                ccHObjectCaster::ToPointCloud(&mesh);
+                        if (!vertices) {
+                            throw std::runtime_error(
+                                    "empty vertex found in mesh.");
+                        }
+                        std::vector<Eigen::Vector3d> color_vec;
+                        color_vec.resize(vertices->size(), color);
+                        mesh.setVertexColors(color_vec);
+                    },
+                    "Sets the associated vertices cloud (warning)", "cloud"_a)
             .def("get_vertex_colors", &ccMesh::getVertexColors,
+                 "``float64`` array of shape ``(num_vertices, 3)``, "
+                 "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
+                 "data: RGB colors of vertices.")
+            .def("vertex_colors", &ccMesh::getVertexColors,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
                  "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                  "data: RGB colors of vertices.")
@@ -525,12 +541,12 @@ void pybind_trianglemesh(py::module& m) {
                  "Indices of vertices to be selected.",
                  "indices"_a, "cleanup"_a = true)
             .def("crop",
-                 (std::shared_ptr<ccMesh>(ccMesh::*)(const ccBBox&) const) &
+                 (std::shared_ptr<ccMesh> (ccMesh::*)(const ccBBox&) const) &
                          ccMesh::crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("crop",
-                 (std::shared_ptr<ccMesh>(ccMesh::*)(const ecvOrientedBBox&)
+                 (std::shared_ptr<ccMesh> (ccMesh::*)(const ecvOrientedBBox&)
                           const) &
                          ccMesh::crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
@@ -639,7 +655,8 @@ void pybind_trianglemesh(py::module& m) {
                         "vidx2"_a)
             .def_static(
                     "triangulate",
-                    [](ccGenericPointCloud& cloud, cloudViewer::TRIANGULATION_TYPES type,
+                    [](ccGenericPointCloud& cloud,
+                       cloudViewer::TRIANGULATION_TYPES type,
                        bool update_normals, PointCoordinateType max_edge_length,
                        unsigned char dim) {
                         return std::shared_ptr<ccMesh>(ccMesh::Triangulate(
@@ -761,15 +778,14 @@ void pybind_trianglemesh(py::module& m) {
                         "cylinder_height"_a = 5.0, "cone_height"_a = 4.0,
                         "resolution"_a = 20, "cylinder_split"_a = 4,
                         "cone_split"_a = 1)
-            .def_static("create_coordinate_frame",
-                        &ccMesh::CreateCoordinateFrame,
-                        "Factory function to create a coordinate frame mesh. "
-                        "The coordinate "
-                        "frame will be centered at ``origin``. The x, y, z "
-                        "axis will be "
-                        "rendered as red, green, and blue arrows respectively.",
-                        "size"_a = 1.0,
-                        "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
+            .def_static(
+                    "create_coordinate_frame", &ccMesh::CreateCoordinateFrame,
+                    "Factory function to create a coordinate frame mesh. "
+                    "The coordinate "
+                    "frame will be centered at ``origin``. The x, y, z "
+                    "axis will be "
+                    "rendered as red, green, and blue arrows respectively.",
+                    "size"_a = 1.0, "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
             .def_static("create_moebius", &ccMesh::CreateMoebius,
                         "Factory function to create a Moebius strip.",
                         "length_split"_a = 70, "width_split"_a = 15,
@@ -847,24 +863,34 @@ void pybind_trianglemesh(py::module& m) {
     docstring::ClassMethodDocInject(m, "ccMesh", "has_adjacency_list");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertices");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertice");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertice");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertice");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertices");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertices");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertex_normal");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertex_normals");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertex_normal");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertex_normal");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertex_normals");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertex_normals");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertex_colors");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertex_color");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertex_color");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertex_color");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertex_colors");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertex_colors");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_triangle");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_triangles");
+    docstring::ClassMethodDocInject(m, "ccMesh", "triangle");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_triangle");
+    docstring::ClassMethodDocInject(m, "ccMesh", "triangles");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_triangles");
     docstring::ClassMethodDocInject(m, "ccMesh", "add_triangles");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_triangle_normal");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_triangle_normals");
+    docstring::ClassMethodDocInject(m, "ccMesh", "triangle_normal");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_triangle_normal");
+    docstring::ClassMethodDocInject(m, "ccMesh", "triangle_normals");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_triangle_normals");
     docstring::ClassMethodDocInject(m, "ccMesh", "has_triangles");
     docstring::ClassMethodDocInject(m, "ccMesh", "has_triangle_uvs");
@@ -946,8 +972,7 @@ void pybind_trianglemesh(py::module& m) {
               "If true calls number of mesh cleanup functions to remove "
               "unreferenced vertices and degenerate triangles"}});
     docstring::ClassMethodDocInject(
-            m, "ccMesh", "crop",
-            {{"bounding_box", "ccBBox to crop points"}});
+            m, "ccMesh", "crop", {{"bounding_box", "ccBBox to crop points"}});
     docstring::ClassMethodDocInject(m, "ccMesh", "get_volume");
     docstring::ClassMethodDocInject(
             m, "ccMesh", "sample_points_uniformly",
