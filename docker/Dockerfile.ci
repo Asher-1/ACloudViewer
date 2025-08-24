@@ -74,19 +74,8 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         cmake \
         wget \
         curl \
-        vim \
-        tree \
-        apt-file \
-        net-tools \
         mesa-utils \
-        # for others
-        zlib1g \
-        zlib1g-dev \
-        libssl-dev \
-        libbz2-dev \
-        libreadline-dev \
-        libsqlite3-dev \
-        libncursesw5-dev \
+        # for curl dep
         libcurl4-openssl-dev \
         # for opencv
         libjpeg-dev \
@@ -105,7 +94,6 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         openmpi-common \
         gfortran \
         ninja-build \
-        libgtest-dev \
         libusb-dev \
         freeglut3-dev \
         pkg-config \
@@ -126,17 +114,8 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libxcb-keysyms1 \
         libxcb-xinerama0 \
         libxkbcommon-x11-0 \
-        libxcb-render-util0
-
-
-# Dependencies: basic
-RUN apt-get update && apt-get install -y \
-    git  \
-    wget \
-    curl \
-    build-essential \
-    pkg-config \
- && rm -rf /var/lib/apt/lists/*
+        libxcb-render-util0 \
+        rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -185,12 +164,15 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 # ACloudViewer C++ dependencies
 RUN ./util/install_deps_ubuntu.sh assume-yes
 
+# save disk space
+RUN rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
 # Build ACloudViewer app installer
-RUN echo "Start Build ACloudViewer apps installer..." \
-    && rm -rf ${ACloudViewer_BUILD}/* \
-    && ./docker/build_gui_app_conda.sh ${PYTHON_VERSION} \
+RUN echo "Start Build ACloudViewer apps installer..."                           \
+    && rm -rf ${ACloudViewer_BUILD}/*                                           \
+    && ./docker/build_gui_app_conda.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}   \
     && rm -rf ${ACloudViewer_BUILD}/*
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 

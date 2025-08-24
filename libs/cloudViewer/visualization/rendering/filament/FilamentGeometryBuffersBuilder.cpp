@@ -33,7 +33,10 @@
 #include <ecvMesh.h>
 #include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
-#include <t/geometry/PointCloud.h>
+
+#include "cloudViewer/t/geometry/LineSet.h"
+#include "cloudViewer/t/geometry/PointCloud.h"
+#include "cloudViewer/t/geometry/TriangleMesh.h"
 
 namespace cloudViewer {
 namespace visualization {
