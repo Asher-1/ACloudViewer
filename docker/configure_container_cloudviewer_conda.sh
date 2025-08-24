@@ -63,7 +63,7 @@ export PATH="/root/miniconda3/bin:$PATH:$BUNDLE_CLOUDVIEWER_ML" \
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 # build ACloudViewer app installer
-rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app_conda.sh 3.8
+rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app_conda.sh 3.8 "OFF"
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.8
 
 test cloudViewer
