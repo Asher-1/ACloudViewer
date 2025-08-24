@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-import open3d as cv3d
+import cloudViewer as cv3d
 import numpy as np
 
 if __name__ == "__main__":

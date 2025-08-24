@@ -78,6 +78,7 @@ bool Visualizer::CreateVisualizerWindow(
         const bool visible /* = true*/) {
     window_name_ = window_name;
     if (window_) {  // window already created
+        utility::LogDebug("[Visualizer] Reusing window.");
         UpdateWindowTitle();
         glfwSetWindowPos(window_, left, top);
         glfwSetWindowSize(window_, width, height);
@@ -300,6 +301,14 @@ bool Visualizer::AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
     if (!is_initialized_) {
         return false;
     }
+
+    if (!geometry_ptr.get()) {
+        utility::LogWarning(
+                "[AddGeometry] Invalid pointer. Possibly a null pointer or "
+                "None was passed in.");
+        return false;
+    }
+
     glfwMakeContextCurrent(window_);
     std::shared_ptr<glsl::GeometryRenderer> renderer_ptr;
     if (geometry_ptr->isKindOf(CV_TYPES::CUSTOM_H_OBJECT)) {
