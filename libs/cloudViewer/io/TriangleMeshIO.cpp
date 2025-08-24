@@ -238,7 +238,7 @@ bool ReadTriangleMesh(const std::string& filename,
             mesh.getVerticeSize());
     if (mesh.hasVertices() && !mesh.hasTriangles()) {
         utility::LogWarning(
-                "ccMesh appears to be a geometry::PointCloud "
+                "ccMesh appears to be a geometry::ccPointCloud "
                 "(only contains vertices, but no triangles).");
     }
     return success;
