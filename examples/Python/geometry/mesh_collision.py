@@ -17,7 +17,8 @@ if __name__ == "__main__":
     print("Intersection tests")
     print("#" * 80)
     np.random.seed(30)
-    bbox = cv3d.geometry.ccMesh.create_box(20, 20, 20).translate((-10, -10, -10))
+    bbox = cv3d.geometry.ccMesh.create_box(20, 20, 20).translate(
+        (-10, -10, -10))
     meshes = [cv3d.geometry.ccMesh.create_box() for _ in range(20)]
     meshes.append(cv3d.geometry.ccMesh.create_sphere())
     meshes.append(cv3d.geometry.ccMesh.create_cone())

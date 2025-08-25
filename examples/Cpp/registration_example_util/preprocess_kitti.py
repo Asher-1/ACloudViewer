@@ -54,8 +54,8 @@ def preprocess_and_save(source_folder,
     filenames = get_file_list(source_folder, ".bin")
 
     print(
-        "Converting .bin to .ply files and pre-processing from frame {} to index {}".format(start_idx, end_idx)
-    )
+        "Converting .bin to .ply files and pre-processing from frame {} to index {}"
+        .format(start_idx, end_idx))
 
     if end_idx < start_idx:
         raise RuntimeError("End index must be smaller than start index.")
@@ -79,7 +79,8 @@ def preprocess_and_save(source_folder,
         # convert to Float32 dtype.
         tpcd = cv3d.t.geometry.PointCloud.from_legacy(voxel_down_pcd)
         tpcd.point["points"] = tpcd.point["points"].to(cv3d.core.Dtype.Float32)
-        tpcd.point["normals"] = tpcd.point["normals"].to(cv3d.core.Dtype.Float32)
+        tpcd.point["normals"] = tpcd.point["normals"].to(
+            cv3d.core.Dtype.Float32)
 
         # extract name from path.
         name = str(path).rsplit('/', 1)[-1]

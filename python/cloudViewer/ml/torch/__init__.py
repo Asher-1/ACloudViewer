@@ -20,9 +20,9 @@ _cv3d_torch_version = _verp(_build_config["Pytorch_VERSION"])
 if _verp(_torch.__version__).release[:2] != _cv3d_torch_version.release[:2]:
     match_torch_ver = '.'.join(
         str(v) for v in _cv3d_torch_version.release[:2] + ('*',))
-    raise Exception('Version mismatch: CloudViewer needs PyTorch version {}, but '
-                    'version {} is installed!'.format(match_torch_ver,
-                                                      _torch.__version__))
+    raise Exception(
+        'Version mismatch: CloudViewer needs PyTorch version {}, but '
+        'version {} is installed!'.format(match_torch_ver, _torch.__version__))
 
 # Precompiled wheels at
 # https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2
@@ -53,7 +53,7 @@ if (_build_config["BUILD_CUDA_MODULE"] and
 
 --------------------------------------------------------------------------------
 """)
-    
+
 _lib_path = []
 # allow overriding the path to the op library with an env var.
 if 'CLOUDVIEWER_TORCH_OP_LIB' in _os.environ:

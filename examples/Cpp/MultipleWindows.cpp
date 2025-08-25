@@ -50,8 +50,9 @@ private:
     void OnSnapshot() {
         n_snapshots_ += 1;
         snapshot_pos_ = gui::Point(snapshot_pos_.x + 50, snapshot_pos_.y + 50);
-        auto title = std::string("CloudViewer - Multi-Window Demo (Snapshot #") +
-                     std::to_string(n_snapshots_) + ")";
+        auto title =
+                std::string("CloudViewer - Multi-Window Demo (Snapshot #") +
+                std::to_string(n_snapshots_) + ")";
         auto new_vis = cloudViewer::make_shared<visualizer::O3DVisualizer>(
                 title, WIDTH, HEIGHT);
 
@@ -107,7 +108,8 @@ private:
                     std::lock_guard<std::mutex> lock(cloud_lock_);
                     main_vis_->AddGeometry(CLOUD_NAME, cloud_, &mat);
                     main_vis_->ResetCameraToDefault();
-                    Eigen::Vector3f center = bounds.getGeometryCenter().cast<float>();
+                    Eigen::Vector3f center =
+                            bounds.getGeometryCenter().cast<float>();
                     main_vis_->SetupCamera(60, center, center + CENTER_OFFSET,
                                            {0.0f, -1.0f, 0.0f});
                 });

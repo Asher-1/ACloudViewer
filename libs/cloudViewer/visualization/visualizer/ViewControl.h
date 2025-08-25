@@ -6,14 +6,15 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-
-#include "visualization/utility/GLHelper.h"
-#include "visualization/visualizer/ViewParameters.h"
-
+// clang-format off
+#include "visualization/utility/GLHelper.h" // must include first
+// clang-format on
 #include <ecvBBox.h>
 #include <ecvHObject.h>
 #include <ecvOrientedBBox.h>
+
 #include "camera/PinholeCameraParameters.h"
+#include "visualization/visualizer/ViewParameters.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -55,10 +56,10 @@ public:
     bool ConvertToViewParameters(ViewParameters &status) const;
     bool ConvertFromViewParameters(const ViewParameters &status);
 
-	void SetZoom(const double zoom);
-	void SetUp(const Eigen::Vector3d &up);
-	void SetFront(const Eigen::Vector3d &front);
-	void SetLookat(const Eigen::Vector3d &lookat);
+    void SetZoom(const double zoom);
+    void SetUp(const Eigen::Vector3d &up);
+    void SetFront(const Eigen::Vector3d &front);
+    void SetLookat(const Eigen::Vector3d &lookat);
 
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view).
@@ -129,26 +130,25 @@ public:
     /// corner of the window client area.
     virtual void Roll(double x);
 
-    const ccBBox &GetBoundingBox() const {
-        return bounding_box_;
-    }
+    const ccBBox &GetBoundingBox() const { return bounding_box_; }
 
     void ResetBoundingBox() { bounding_box_.clear(); }
 
     void FitInGeometry(const ccHObject &geometry) {
         if (geometry.isKindOf(CV_TYPES::POINT_CLOUD) ||
-			geometry.isKindOf(CV_TYPES::MESH) ||
+            geometry.isKindOf(CV_TYPES::MESH) ||
             geometry.isKindOf(CV_TYPES::MESH_BASE) ||
-			geometry.isKindOf(CV_TYPES::LINESET) ||
-			geometry.isKindOf(CV_TYPES::POLY_LINE) ||
-			geometry.isKindOf(CV_TYPES::FACET) ||
-			geometry.isKindOf(CV_TYPES::POINT_OCTREE2) ||
-			geometry.isKindOf(CV_TYPES::VOXEL_GRID) ||
-			geometry.isKindOf(CV_TYPES::RGBD_IMAGE) ||
-			geometry.isKindOf(CV_TYPES::IMAGE2) || 
-			geometry.isKindOf(CV_TYPES::BBOX) ||
-			geometry.isKindOf(CV_TYPES::ORIENTED_BBOX)) {
-            bounding_box_ += (const_cast<ccHObject &>(geometry)).getAxisAlignedBoundingBox();
+            geometry.isKindOf(CV_TYPES::LINESET) ||
+            geometry.isKindOf(CV_TYPES::POLY_LINE) ||
+            geometry.isKindOf(CV_TYPES::FACET) ||
+            geometry.isKindOf(CV_TYPES::POINT_OCTREE2) ||
+            geometry.isKindOf(CV_TYPES::VOXEL_GRID) ||
+            geometry.isKindOf(CV_TYPES::RGBD_IMAGE) ||
+            geometry.isKindOf(CV_TYPES::IMAGE2) ||
+            geometry.isKindOf(CV_TYPES::BBOX) ||
+            geometry.isKindOf(CV_TYPES::ORIENTED_BBOX)) {
+            bounding_box_ += (const_cast<ccHObject &>(geometry))
+                                     .getAxisAlignedBoundingBox();
         }
         SetProjectionParameters();
     }

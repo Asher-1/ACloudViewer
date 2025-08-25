@@ -65,10 +65,10 @@ class PoseGraphWrapper:
 
             pose_graph.edges.append(
                 cv3d.pipelines.registration.PoseGraphEdge(ki,
-                                                         kj,
-                                                         trans,
-                                                         info,
-                                                         uncertain=is_loop))
+                                                          kj,
+                                                          trans,
+                                                          info,
+                                                          uncertain=is_loop))
         return pose_graph
 
     def _graph2dicts(self):
@@ -103,7 +103,7 @@ class PoseGraphWrapper:
         # In-place optimization
         cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
         cv3d.pipelines.registration.global_optimization(self.pose_graph, method,
-                                                       criteria, option)
+                                                        criteria, option)
         cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Info)
 
         # Update dicts

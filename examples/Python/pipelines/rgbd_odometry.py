@@ -34,12 +34,16 @@ if __name__ == "__main__":
     odo_init = np.identity(4)
     print(option)
 
-    [success_color_term, trans_color_term, info] = cv3d.pipelines.odometry.compute_rgbd_odometry(
-         source_rgbd_image, target_rgbd_image, pinhole_camera_intrinsic,
-         odo_init, cv3d.pipelines.odometry.RGBDOdometryJacobianFromColorTerm(), option)
-    [success_hybrid_term, trans_hybrid_term, info] = cv3d.pipelines.odometry.compute_rgbd_odometry(
-         source_rgbd_image, target_rgbd_image, pinhole_camera_intrinsic,
-         odo_init, cv3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
+    [success_color_term, trans_color_term,
+     info] = cv3d.pipelines.odometry.compute_rgbd_odometry(
+         source_rgbd_image, target_rgbd_image,
+         pinhole_camera_intrinsic, odo_init,
+         cv3d.pipelines.odometry.RGBDOdometryJacobianFromColorTerm(), option)
+    [success_hybrid_term, trans_hybrid_term,
+     info] = cv3d.pipelines.odometry.compute_rgbd_odometry(
+         source_rgbd_image, target_rgbd_image,
+         pinhole_camera_intrinsic, odo_init,
+         cv3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
 
     if success_color_term:
         print("Using RGB-D Odometry")

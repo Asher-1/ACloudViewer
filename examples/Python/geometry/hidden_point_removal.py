@@ -65,7 +65,8 @@ if __name__ == "__main__":
     mesh, pt_map = pcl.hidden_point_removal([4, 0, 0], 100)
 
     print("Add back colors using the point map")
-    mesh.set_vertex_colors(cv3d.utility.Vector3dVector(colors[np.asarray(pt_map)]))
+    mesh.set_vertex_colors(
+        cv3d.utility.Vector3dVector(colors[np.asarray(pt_map)]))
 
     print("Visualize the result")
     mesh.compute_vertex_normals()

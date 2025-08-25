@@ -75,7 +75,8 @@ def wrap_polyline(points, color):
 
 def generate_from_file():
     entity = cv3d.io.read_entity("../../test_data/polylines/polylines.bin")
-    polylines = entity.filter_children(recursive=False, filter=cv3d.geometry.ccHObject.POLY_LINE)
+    polylines = entity.filter_children(recursive=False,
+                                       filter=cv3d.geometry.ccHObject.POLY_LINE)
     print(polylines)
     for poly in polylines:
         poly.set_color([0, 0, 1])
@@ -97,8 +98,10 @@ def polylines_generator():
 if __name__ == "__main__":
     cv3d.utility.set_verbosity_level(cv3d.utility.Debug)
     for name, polys in polylines_generator():
-        print("{}: line width {}, color {}".format(name, polys[0].get_width(), polys[0].get_color()))
-        print("{}: isClosed {}, 2D_mode {}".format(name, polys[0].is_closed(), polys[0].is_2d_mode()))
+        print("{}: line width {}, color {}".format(name, polys[0].get_width(),
+                                                   polys[0].get_color()))
+        print("{}: isClosed {}, 2D_mode {}".format(name, polys[0].is_closed(),
+                                                   polys[0].is_2d_mode()))
         cv3d.visualization.draw_geometries(polys)
 
         vertex_list = []

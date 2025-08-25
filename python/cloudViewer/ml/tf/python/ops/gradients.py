@@ -281,6 +281,7 @@ def _sparse_conv_transpose_grad(op, grad):
 
     return [filter_grad] + [None] + [inp_features_grad] + [None] * 7
 
+
 @_ops.RegisterGradient("CloudViewerTrilinearDevoxelize")
 def _trilinear_devoxelize_gradient(op, grad_out, grad_inds, grad_wgts):
 

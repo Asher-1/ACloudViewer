@@ -304,7 +304,7 @@ class ContinuousConv(tf.keras.layers.Layer):
                 if return_distances:
                     if self.radius_search_metric == 'L2':
                         neighbors_distance_normalized = self.nns.neighbors_distance / (
-                                radius * radius)
+                            radius * radius)
                     else:  # L1
                         neighbors_distance_normalized = self.nns.neighbors_distance / radius
 
@@ -330,7 +330,7 @@ class ContinuousConv(tf.keras.layers.Layer):
         num_pairs = tf.shape(neighbors_index)[0]
         self._avg_neighbors = tf.dtypes.cast(
             num_pairs, tf.float32) / tf.dtypes.cast(
-            tf.shape(out_positions)[0], tf.float32)
+                tf.shape(out_positions)[0], tf.float32)
 
         extents_rank2 = extents
         while extents_rank2.shape.rank < 2:

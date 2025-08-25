@@ -106,7 +106,8 @@ def non_manifold_vertex():
 
 def open_box():
     mesh = cv3d.geometry.ccMesh.create_box()
-    mesh.set_triangles(cv3d.utility.Vector3iVector(np.asarray(mesh.get_triangles())[:-2]))
+    mesh.set_triangles(
+        cv3d.utility.Vector3iVector(np.asarray(mesh.get_triangles())[:-2]))
     mesh.compute_vertex_normals()
     return mesh
 
@@ -129,7 +130,8 @@ def _relative_path(path):
 
 
 def knot():
-    mesh = cv3d.io.read_triangle_mesh(_relative_path("../../test_data/knot.ply"))
+    mesh = cv3d.io.read_triangle_mesh(
+        _relative_path("../../test_data/knot.ply"))
     mesh.compute_vertex_normals()
     return mesh
 
@@ -224,13 +226,13 @@ def print_2D_array_for_cpp(prefix, values, fmt):
 
 
 def print_mesh_for_cpp(mesh, prefix=""):
-    print_2D_array_for_cpp(f"{prefix}vertices_", np.asarray(mesh.get_vertices()),
-                           ".6f")
+    print_2D_array_for_cpp(f"{prefix}vertices_",
+                           np.asarray(mesh.get_vertices()), ".6f")
     print_2D_array_for_cpp(f"{prefix}vertex_normals_",
                            np.asarray(mesh.get_vertex_normals()), ".6f")
     print_2D_array_for_cpp(f"{prefix}vertex_colors_",
                            np.asarray(mesh.get_vertex_colors()), ".6f")
-    print_2D_array_for_cpp(f"{prefix}triangles_", np.asarray(mesh.get_triangles()),
-                           "d")
+    print_2D_array_for_cpp(f"{prefix}triangles_",
+                           np.asarray(mesh.get_triangles()), "d")
     print_2D_array_for_cpp(f"{prefix}triangle_normals_",
                            np.asarray(mesh.get_triangle_normals()), ".6f")

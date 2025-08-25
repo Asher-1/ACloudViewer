@@ -9,9 +9,11 @@ import json
 import argparse
 import sys
 import cloudViewer as o3d
+
 sys.path.append("../utility")
 from file import *
 from visualization import *
+
 sys.path.append(".")
 from initialize_config import *
 

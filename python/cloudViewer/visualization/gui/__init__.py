@@ -12,5 +12,6 @@ if "@BUILD_GUI@" == "ON":
     else:
         from cloudViewer.cpu.pybind.visualization.gui import *
 else:
-    print("CloudViewer was not compiled with BUILD_GUI, but script is importing "
-          "cloudViewer.visualization.gui")
+    print(
+        "CloudViewer was not compiled with BUILD_GUI, but script is importing "
+        "cloudViewer.visualization.gui")

@@ -9,6 +9,7 @@ import cloudViewer as cv3d
 
 import os
 import sys
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, '../Misc'))
 import meshes
@@ -39,8 +40,9 @@ if __name__ == "__main__":
         colors = np.random.uniform(0, 1, size=(n_verts, 3))
         mesh.set_vertex_colors(cv3d.utility.Vector3dVector(colors))
 
-        print("original mesh has %d triangles and %d vertices" % (np.asarray(
-            mesh.get_triangles()).shape[0], np.asarray(mesh.get_vertices()).shape[0]))
+        print("original mesh has %d triangles and %d vertices" %
+              (np.asarray(mesh.get_triangles()).shape[0],
+               np.asarray(mesh.get_vertices()).shape[0]))
         cv3d.visualization.draw_geometries([mesh])
 
         mesh_up = mesh.subdivide_midpoint(

@@ -7,8 +7,10 @@
 import argparse
 import json
 import sys
+
 sys.path.append("../utility")
 from file import *
+
 sys.path.append(".")
 from initialize_config import *
 from register_fragments import *

@@ -77,4 +77,5 @@ class TensorList(cv3d.pybind.core.TensorList):
             return SizeVector(shape)
         else:
             raise TypeError(
-                "shape must be int, list or tuple, but was {}.".format(type(shape)))
+                "shape must be int, list or tuple, but was {}.".format(
+                    type(shape)))

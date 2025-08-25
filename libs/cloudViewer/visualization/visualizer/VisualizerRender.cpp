@@ -5,7 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+// clang-format off
 #include "visualization/visualizer/Visualizer.h" // must include first
+// clang-format on
 #include "camera/PinholeCameraTrajectory.h"
 
 #include <Logging.h>

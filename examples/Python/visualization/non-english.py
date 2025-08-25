@@ -78,6 +78,7 @@ def main():
     w = ExampleWindow()
     gui.Application.instance.run()
 
+
 class ExampleWindow:
     MENU_CHECKABLE = 1
     MENU_DISABLED = 2
@@ -196,7 +197,8 @@ class ExampleWindow:
 
         # Add a list of items
         lv = gui.ListView()
-        lv.set_items(["Ground", "Trees", "Buildings" "Cars", "People"])
+        lv.set_items(["Ground", "Trees", "Buildings"
+                      "Cars", "People"])
         lv.selected_index = lv.selected_index + 2  # initially is -1, so now 1
         lv.set_on_selection_changed(self._on_list)
         collapse.add_child(lv)

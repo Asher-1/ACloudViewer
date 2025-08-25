@@ -26,14 +26,14 @@ def slam(depth_file_names, color_file_names, intrinsic, config):
 
     T_frame_to_model = cv3d.core.Tensor(np.identity(4))
     model = cv3d.t.pipelines.slam.Model(config.voxel_size, 16,
-                                       config.block_count, T_frame_to_model,
-                                       device)
+                                        config.block_count, T_frame_to_model,
+                                        device)
     depth_ref = cv3d.t.io.read_image(depth_file_names[0])
     input_frame = cv3d.t.pipelines.slam.Frame(depth_ref.rows, depth_ref.columns,
-                                             intrinsic, device)
+                                              intrinsic, device)
     raycast_frame = cv3d.t.pipelines.slam.Frame(depth_ref.rows,
-                                               depth_ref.columns, intrinsic,
-                                               device)
+                                                depth_ref.columns, intrinsic,
+                                                device)
 
     poses = []
 

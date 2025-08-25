@@ -39,7 +39,8 @@ def custom_draw_geometry_with_rotation(pcd):
         ctr.rotate(10.0, 0.0)
         return False
 
-    cv3d.visualization.draw_geometries_with_animation_callback([pcd], rotate_view)
+    cv3d.visualization.draw_geometries_with_animation_callback([pcd],
+                                                               rotate_view)
 
 
 def custom_draw_geometry_load_option(pcd):
@@ -80,7 +81,8 @@ def custom_draw_geometry_with_key_callback(pcd):
     key_to_callback[ord("R")] = load_render_option
     key_to_callback[ord(",")] = capture_depth
     key_to_callback[ord(".")] = capture_image
-    cv3d.visualization.draw_geometries_with_key_callbacks([pcd], key_to_callback)
+    cv3d.visualization.draw_geometries_with_key_callbacks([pcd],
+                                                          key_to_callback)
 
 
 def custom_draw_geometry_with_camera_trajectory(pcd):
@@ -88,7 +90,8 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
     custom_draw_geometry_with_camera_trajectory.trajectory =\
             cv3d.io.read_pinhole_camera_trajectory(
                     "../../test_data/camera_trajectory.json")
-    custom_draw_geometry_with_camera_trajectory.vis = cv3d.visualization.Visualizer()
+    custom_draw_geometry_with_camera_trajectory.vis = cv3d.visualization.Visualizer(
+    )
     if not os.path.exists("../../test_data/image/"):
         os.makedirs("../../test_data/image/")
     if not os.path.exists("../../test_data/depth/"):

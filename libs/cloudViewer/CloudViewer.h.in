@@ -8,7 +8,9 @@
 #pragma once
 
 // Note: do not modify CloudViewer.h, modify CloudViewer.h.in instead
+// clang-format off
 #include "visualization/visualizer/ViewControl.h"  // must include first
+// clang-format on
 #include "CloudViewerConfig.h"
 #include "AutoIO.h"
 #include "CVGeom.h"
@@ -44,6 +46,7 @@
 #include "ecvColorTypes.h"
 #include "ecvFacet.h"
 #include "ecvFeature.h"
+#include "ecvHObjectCaster.h"
 #include "ecvHalfEdgeMesh.h"
 #include "ecvKDTreeFlann.h"
 #include "ecvMesh.h"

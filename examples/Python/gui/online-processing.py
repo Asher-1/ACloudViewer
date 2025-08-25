@@ -91,7 +91,7 @@ class PipelineModel:
                 with open(camera_config_file) as ccf:
                     self.camera.init_sensor(cv3d.t.io.RealSenseSensorConfig(
                         json.load(ccf)),
-                        filename=filename)
+                                            filename=filename)
             else:
                 self.camera.init_sensor(filename=filename)
             self.camera.start_capture(start_record=False)
@@ -175,8 +175,9 @@ class PipelineModel:
             n_pts += self.pcd_frame.point['points'].shape[0]
             if frame_id % 60 == 0 and frame_id > 0:
                 t0, t1 = t1, time.perf_counter()
-                log.debug(f"\nframe_id = {frame_id}, \t {(t1 - t0) * 1000. / 60:0.2f}"
-                          f"ms/frame \t {(t1 - t0) * 1e9 / n_pts} ms/Mp\t")
+                log.debug(
+                    f"\nframe_id = {frame_id}, \t {(t1 - t0) * 1000. / 60:0.2f}"
+                    f"ms/frame \t {(t1 - t0) * 1e9 / n_pts} ms/Mp\t")
                 n_pts = 0
             frame_elements = {
                 'color': self.rgbd_frame.color.cpu(),
@@ -279,8 +280,7 @@ class PipelineView:
         self.pcdview.scene.set_lighting(
             rendering.CloudViewerScene.LightingProfile.SOFT_SHADOWS, [0, -6, 0])
         # Point cloud bounds, depends on the sensor range
-        self.pcd_bounds = cv3d.geometry.ccBBox([-3, -3, 0],
-                                               [3, 3, 6])
+        self.pcd_bounds = cv3d.geometry.ccBBox([-3, -3, 0], [3, 3, 6])
         self.camera_view()  # Initially look from the camera
         em = self.window.theme.font_size
 
@@ -391,9 +391,9 @@ class PipelineView:
             self.flag_gui_init = True
 
         update_flags = (
-                rendering.Scene.UPDATE_POINTS_FLAG |
-                rendering.Scene.UPDATE_COLORS_FLAG |
-                (rendering.Scene.UPDATE_NORMALS_FLAG if self.flag_normals else 0))
+            rendering.Scene.UPDATE_POINTS_FLAG |
+            rendering.Scene.UPDATE_COLORS_FLAG |
+            (rendering.Scene.UPDATE_NORMALS_FLAG if self.flag_normals else 0))
         self.pcdview.scene.scene.update_geometry('pcd', frame_elements['pcd'],
                                                  update_flags)
 
@@ -527,7 +527,7 @@ if __name__ == "__main__":
     parser.add_argument('--rgbd-video', help='RGBD video file (RealSense bag)')
     parser.add_argument('--device',
                         help='Device to run computations. e.g. cpu:0 or cuda:0 '
-                             'Default is CUDA GPU if available, else CPU.')
+                        'Default is CUDA GPU if available, else CPU.')
 
     args = parser.parse_args()
     if args.camera_config and args.rgbd_video:

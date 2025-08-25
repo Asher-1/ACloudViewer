@@ -527,7 +527,8 @@ protected:
                     geometry::AxisAlignedBoundingBox bbox(
                             Eigen::Vector3d(-5, -5, -5),
                             Eigen::Vector3d(5, 5, 5));
-                    Eigen::Vector3f center = bbox.getGeometryCenter().cast<float>();
+                    Eigen::Vector3f center =
+                            bbox.getGeometryCenter().cast<float>();
                     this->widget3d_->SetupCamera(60, bbox, center);
                     this->widget3d_->LookAt(center,
                                             center - Eigen::Vector3f{0, 1, 3},

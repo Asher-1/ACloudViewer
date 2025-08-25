@@ -88,7 +88,8 @@ def preprocess_and_save(source_folder,
         # convert to Float32 dtype.
         tpcd = cv3d.t.geometry.PointCloud.from_legacy(voxel_down_pcd)
         tpcd.point["points"] = tpcd.point["points"].to(cv3d.core.Dtype.Float32)
-        tpcd.point["normals"] = tpcd.point["normals"].to(cv3d.core.Dtype.Float32)
+        tpcd.point["normals"] = tpcd.point["normals"].to(
+            cv3d.core.Dtype.Float32)
 
         # extract name from path.
         name = str(path).rsplit('/', 1)[-1]

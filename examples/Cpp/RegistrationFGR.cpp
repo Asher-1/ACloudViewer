@@ -22,8 +22,8 @@ PreprocessPointCloud(const char *file_name, const float voxel_size) {
     pcd_down->estimateNormals(
             cloudViewer::geometry::KDTreeSearchParamHybrid(2 * voxel_size, 30));
     auto pcd_fpfh = utility::ComputeFPFHFeature(
-            *pcd_down,
-            cloudViewer::geometry::KDTreeSearchParamHybrid(5 * voxel_size, 100));
+            *pcd_down, cloudViewer::geometry::KDTreeSearchParamHybrid(
+                               5 * voxel_size, 100));
     return std::make_tuple(pcd, pcd_down, pcd_fpfh);
 }
 

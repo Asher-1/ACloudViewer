@@ -17,7 +17,8 @@ from cloudViewer_test import list_devices
 def test_icp_convergence_criteria_constructor(device):
 
     # Constructor.
-    convergence_criteria = cv3d.t.pipelines.registration.ICPConvergenceCriteria()
+    convergence_criteria = cv3d.t.pipelines.registration.ICPConvergenceCriteria(
+    )
 
     # Checking default values.
     assert convergence_criteria.max_iteration == 30

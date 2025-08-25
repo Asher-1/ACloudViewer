@@ -151,12 +151,14 @@ int main(int argc, char *argv[]) {
 
         if (!is_geometry_added) {
             if (!depth_vis.CreateVisualizerWindow(
-                        "CloudViewer || RealSense || Depth", depth_image_ptr->width_,
-                        depth_image_ptr->height_, 15, 50) ||
+                        "CloudViewer || RealSense || Depth",
+                        depth_image_ptr->width_, depth_image_ptr->height_, 15,
+                        50) ||
                 !depth_vis.AddGeometry(depth_image_ptr) ||
                 !color_vis.CreateVisualizerWindow(
-                        "CloudViewer || RealSense || Color", color_image_ptr->width_,
-                        color_image_ptr->height_, 675, 50) ||
+                        "CloudViewer || RealSense || Color",
+                        color_image_ptr->width_, color_image_ptr->height_, 675,
+                        50) ||
                 !color_vis.AddGeometry(color_image_ptr)) {
                 utility::LogError("Window creation failed!");
                 return 0;

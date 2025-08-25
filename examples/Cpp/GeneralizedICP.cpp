@@ -35,8 +35,7 @@ using namespace cloudViewer;
 void VisualizeRegistration(const ccPointCloud &source,
                            const ccPointCloud &target,
                            const Eigen::Matrix4d &Transformation) {
-    std::shared_ptr<ccPointCloud> source_transformed_ptr(
-            new ccPointCloud);
+    std::shared_ptr<ccPointCloud> source_transformed_ptr(new ccPointCloud);
     std::shared_ptr<ccPointCloud> target_ptr(new ccPointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;
@@ -89,12 +88,14 @@ int main(int argc, char *argv[]) {
         float voxel_size = voxel_sizes[i];
 
         auto source_down = source->voxelDownSample(voxel_size);
-        source_down->estimateNormals(cloudViewer::geometry::KDTreeSearchParamHybrid(
-                voxel_size * 2.0, 30));
+        source_down->estimateNormals(
+                cloudViewer::geometry::KDTreeSearchParamHybrid(voxel_size * 2.0,
+                                                               30));
 
         auto target_down = target->voxelDownSample(voxel_size);
-        target_down->estimateNormals(cloudViewer::geometry::KDTreeSearchParamHybrid(
-                voxel_size * 2.0, 30));
+        target_down->estimateNormals(
+                cloudViewer::geometry::KDTreeSearchParamHybrid(voxel_size * 2.0,
+                                                               30));
 
         auto result = pipelines::registration::RegistrationGeneralizedICP(
                 *source_down, *target_down, 0.07, trans,

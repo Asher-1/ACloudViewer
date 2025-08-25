@@ -66,14 +66,14 @@ def main(config, keys):
     if len(color_files) != len(depth_files):
         raise ValueError(
             "The number of color images {} must equal to the number of depth images {}."
-                .format(len(color_files), len(depth_files)))
+            .format(len(color_files), len(depth_files)))
 
     camera = cv3d.io.read_pinhole_camera_trajectory(
         os.path.join(path, config["template_global_traj"]))
     if len(color_files) != len(camera.parameters):
         raise ValueError(
             "The number of color images {} must equal to the number of camera parameters {}."
-                .format(len(color_files), len(depth_files)))
+            .format(len(color_files), len(depth_files)))
 
     color_files, depth_files = collect_keyframe_rgbd(color_files, depth_files,
                                                      keys)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
                         type=str,
                         required=True,
                         help='path to the config for the dataset '
-                             'preprocessed by the Reconstruction System')
+                        'preprocessed by the Reconstruction System')
     parser.add_argument(
         '--keys',
         type=str,
@@ -146,7 +146,7 @@ if __name__ == "__main__":
                         type=int,
                         default=10,
                         help='sampling rate that evenly sample key frames '
-                             'if key.txt is not provided')
+                        'if key.txt is not provided')
     args = parser.parse_args()
 
     cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)

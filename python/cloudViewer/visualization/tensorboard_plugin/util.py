@@ -440,8 +440,8 @@ class RenderUpdate:
     DICT_COLORMAPS = {
         name: {
             # float -> uint8, and RGB -> RGBA
-            point.value: _float_to_u8(point.color) + (255,)
-            for point in cmap.points
+            point.value:
+                _float_to_u8(point.color) + (255,) for point in cmap.points
         } for name, cmap in _CMAPS.items()
     }
     LABELLUT_COLORS = tuple(
@@ -578,7 +578,7 @@ class RenderUpdate:
                 else:
                     tm["__" + prop] = tm[prop]  # backup
                     tm[prop] = cv3d.core.Tensor.empty(tm["__" + prop].shape,
-                                                     tm["__" + prop].dtype)
+                                                      tm["__" + prop].dtype)
                 self.swap_list.append((tm, prop))
                 return
             if "__" + prop in tm:  # __prop -> prop
@@ -603,7 +603,11 @@ class RenderUpdate:
                 show += "__" + prop + repr(tm["__" + prop][:0])
             self.backup_list = []
 
-    def apply(self, cv3dvis, geometry_name, geometry, inference_data_proto=None):
+    def apply(self,
+              cv3dvis,
+              geometry_name,
+              geometry,
+              inference_data_proto=None):
         """Apply the RenderUpdate to a geometry.
 
         Args:
@@ -837,7 +841,8 @@ def to_dict_batch(cv3d_geometry_list):
 
     else:
         raise NotImplementedError(
-            f"Geometry type {type(cv3d_geometry_list[0])} is not supported yet.")
+            f"Geometry type {type(cv3d_geometry_list[0])} is not supported yet."
+        )
 
     # remove empty arrays
     for prop in tuple(geo_dict.keys()):

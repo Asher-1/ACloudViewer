@@ -167,7 +167,8 @@ int main(int argc, char *argv[]) {
                 return true;
             });
 
-    vis.CreateVisualizerWindow("CloudViewer Intel RealSense bag player", 1920, 540);
+    vis.CreateVisualizerWindow("CloudViewer Intel RealSense bag player", 1920,
+                               540);
     utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.");

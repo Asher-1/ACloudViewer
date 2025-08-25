@@ -10,27 +10,28 @@ import numpy as np
 import pytest
 
 import sys, os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from cloudViewer_test import list_devices
 
 
 @pytest.mark.parametrize("device", list_devices())
 def test_creation(device):
-    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64, cv3d.core.Dtype.Int64,
-                               device)
+    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64,
+                                cv3d.core.Dtype.Int64, device)
     assert hashmap.size() == 0
 
 
 @pytest.mark.parametrize("device", list_devices())
 def test_insertion(device):
-    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64, cv3d.core.Dtype.Int64,
-                               device)
+    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64,
+                                cv3d.core.Dtype.Int64, device)
     keys = cv3d.core.Tensor([100, 300, 500, 700, 900, 900],
-                           dtype=cv3d.core.Dtype.Int64,
-                           device=device)
+                            dtype=cv3d.core.Dtype.Int64,
+                            device=device)
     values = cv3d.core.Tensor([1, 3, 5, 7, 9, 9],
-                             dtype=cv3d.core.Dtype.Int64,
-                             device=device)
+                              dtype=cv3d.core.Dtype.Int64,
+                              device=device)
     iterators, masks = hashmap.insert(keys, values)
     assert masks.to(cv3d.core.Dtype.Int64).sum() == 5
 
@@ -58,11 +59,11 @@ def test_insertion(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_activate(device):
-    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64, cv3d.core.Dtype.Int64,
-                               device)
+    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64,
+                                cv3d.core.Dtype.Int64, device)
     keys = cv3d.core.Tensor([100, 300, 500, 700, 900, 900],
-                           dtype=cv3d.core.Dtype.Int64,
-                           device=device)
+                            dtype=cv3d.core.Dtype.Int64,
+                            device=device)
     iterators, masks = hashmap.activate(keys)
     assert masks.to(cv3d.core.Dtype.Int64).sum() == 5
 
@@ -83,19 +84,19 @@ def test_activate(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_find(device):
-    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64, cv3d.core.Dtype.Int64,
-                               device)
+    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64,
+                                cv3d.core.Dtype.Int64, device)
     keys = cv3d.core.Tensor([100, 300, 500, 700, 900],
-                           dtype=cv3d.core.Dtype.Int64,
-                           device=device)
+                            dtype=cv3d.core.Dtype.Int64,
+                            device=device)
     values = cv3d.core.Tensor([1, 3, 5, 7, 9],
-                             dtype=cv3d.core.Dtype.Int64,
-                             device=device)
+                              dtype=cv3d.core.Dtype.Int64,
+                              device=device)
     hashmap.insert(keys, values)
 
     keys = cv3d.core.Tensor([100, 200, 500],
-                           dtype=cv3d.core.Dtype.Int64,
-                           device=device)
+                            dtype=cv3d.core.Dtype.Int64,
+                            device=device)
     iterators, masks = hashmap.find(keys)
     keys, values = hashmap.unpack_iterators(iterators, masks)
 
@@ -112,19 +113,19 @@ def test_find(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_erase(device):
-    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64, cv3d.core.Dtype.Int64,
-                               device)
+    hashmap = cv3d.core.Hashmap(10, cv3d.core.Dtype.Int64,
+                                cv3d.core.Dtype.Int64, device)
     keys = cv3d.core.Tensor([100, 300, 500, 700, 900],
-                           dtype=cv3d.core.Dtype.Int64,
-                           device=device)
+                            dtype=cv3d.core.Dtype.Int64,
+                            device=device)
     values = cv3d.core.Tensor([1, 3, 5, 7, 9],
-                             dtype=cv3d.core.Dtype.Int64,
-                             device=device)
+                              dtype=cv3d.core.Dtype.Int64,
+                              device=device)
     hashmap.insert(keys, values)
 
     keys = cv3d.core.Tensor([100, 200, 500],
-                           dtype=cv3d.core.Dtype.Int64,
-                           device=device)
+                            dtype=cv3d.core.Dtype.Int64,
+                            device=device)
     masks = hashmap.erase(keys)
 
     assert masks[0].item() == True

@@ -6,8 +6,10 @@
 // ----------------------------------------------------------------------------
 
 
+// clang-format off
 #include <visualization/visualizer/Visualizer.h> // must include first
 #include <visualization/visualizer/VisualizerWithEditing.h>
+// clang-format on
 
 #include <Logging.h>
 #include <FileSystem.h>

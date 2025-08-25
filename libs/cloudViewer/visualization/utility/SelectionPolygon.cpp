@@ -5,9 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-
+// clang-format off
 #include "visualization/utility/GLHelper.h"  // must include first!
 #include "visualization/utility/SelectionPolygon.h"
+// clang-format on
 
 #include <Logging.h>
 #include <ecvMesh.h>

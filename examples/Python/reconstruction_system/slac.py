@@ -7,6 +7,7 @@
 import numpy as np
 import cloudViewer as cv3d
 import sys
+
 sys.path.append("../utility")
 from file import join, get_file_list, write_poses_to_log
 

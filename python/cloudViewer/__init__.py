@@ -29,7 +29,8 @@ from pathlib import Path
 import warnings
 from cloudViewer._build_config import _build_config
 
-MAIN_LIB_PATH=Path(__file__).parent / "lib"
+MAIN_LIB_PATH = Path(__file__).parent / "lib"
+
 
 def load_cdll(path):
     """
@@ -45,6 +46,7 @@ def load_cdll(path):
     else:
         return CDLL(str(path))
 
+
 def try_load_cdll(so_name):
     """
     Wrapper around ctypes.CDLL to take care of Linux compatibility.
@@ -55,19 +57,22 @@ def try_load_cdll(so_name):
             if len(libs_file_list) > 1:
                 warnings.warn(
                     f"cloudViewer Found multiple libs named: {libs_file_list}",
-                    ImportWarning,)
+                    ImportWarning,
+                )
             load_cdll(str(next(MAIN_LIB_PATH.glob(so_name))))
     except OSError as os_error:
         match = re.search(r'lib[^/]+\.so[^\s:]*', str(os_error))
         missing_so_name = match.group(0) if match else ''
         warnings.warn(
             f"{os_error} when loading {libs_file_list}, maybe you should load {missing_so_name} first",
-            ImportWarning,)
+            ImportWarning,
+        )
     except StopIteration as e:  # so_name not available
         warnings.warn(
             f"{e} \nFailed to load {libs_file_list}.",
             ImportWarning,
         )
+
 
 if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
                                        find_library('c++')):
@@ -89,10 +94,11 @@ if os.path.exists(MAIN_LIB_PATH):
     else:
         os.environ['PATH'] = LIB_PATH + ":" + os.environ['PATH']
 
-    if platform.system() == "Linux":  # must load shared library in order on linux
+    if platform.system(
+    ) == "Linux":  # must load shared library in order on linux
         # os.environ['LD_LIBRARY_PATH'] = LIB_PATH + ":" +  os.environ.get('LD_LIBRARY_PATH', '')
         os.environ['LD_LIBRARY_PATH'] = LIB_PATH
-        try_load_cdll('libtbb*') # fix missing libtbb.so
+        try_load_cdll('libtbb*')  # fix missing libtbb.so
         try_load_cdll('libicudata*')
         try_load_cdll('libicuuc*')
         try_load_cdll('libicui18n*')
@@ -118,7 +124,6 @@ if os.path.exists(MAIN_LIB_PATH):
         # no need?
         load_cdll(str(next(MAIN_LIB_PATH.glob('lib*'))))
 
-
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
@@ -127,10 +132,11 @@ if _build_config["BUILD_CUDA_MODULE"]:
         load_cdll(str(next((Path(__file__).parent / 'cpu').glob('pybind*'))))
     except StopIteration:
         warnings.warn(
-        "cloudViewer was built with CUDA support, but cloudViewer CPU Python "
-        "bindings were not found. cloudViewer will not work on systems without"
-        " CUDA devices.",
-        ImportWarning,)
+            "cloudViewer was built with CUDA support, but cloudViewer CPU Python "
+            "bindings were not found. cloudViewer will not work on systems without"
+            " CUDA devices.",
+            ImportWarning,
+        )
     try:
         if sys.platform == "win32" and sys.version_info >= (3, 8):
             # Since Python 3.8, the PATH environment variable is not used to find DLLs anymore.
@@ -145,10 +151,11 @@ if _build_config["BUILD_CUDA_MODULE"]:
 
             if cuda_bin_path:
                 os.add_dll_directory(cuda_bin_path)
-                
+
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
-        _pybind_cuda = load_cdll(str(next((Path(__file__).parent / 'cuda').glob('pybind*'))))
+        _pybind_cuda = load_cdll(
+            str(next((Path(__file__).parent / 'cuda').glob('pybind*'))))
         if _pybind_cuda.cloudViewer_core_cuda_device_count() > 0:
             from cloudViewer.cuda.pybind import (
                 core,
@@ -161,10 +168,10 @@ if _build_config["BUILD_CUDA_MODULE"]:
                 t,
             )
             from cloudViewer.cuda import pybind
-            
+
             if _build_config["BUILD_RECONSTRUCTION"]:
                 from cloudViewer.cuda.pybind import reconstruction
-                
+
             __DEVICE_API__ = 'cuda'
         else:
             warnings.warn(
@@ -187,18 +194,19 @@ if _build_config["BUILD_CUDA_MODULE"]:
             ImportWarning,
         )
 
-
 if __DEVICE_API__ == 'cpu':
     if sys.platform == "win32":
         try:  # StopIteration if cpu version not available
-            load_cdll(str(next((Path(__file__).parent / 'cpu').glob('pybind*'))))
+            load_cdll(str(next(
+                (Path(__file__).parent / 'cpu').glob('pybind*'))))
         except StopIteration:
             warnings.warn(
                 "cloudViewer CPU Python bindings were not found. cloudViewer will not work on systems.",
-                ImportWarning, )
+                ImportWarning,
+            )
         except Exception as e:
             warnings.warn(str(e))
-            
+
     try:
         from cloudViewer.cpu.pybind import (
             core,
@@ -236,6 +244,7 @@ def _insert_pybind_names(skip_names=()):
                 submodules[subname] = sys.modules[modname]
     sys.modules.update(submodules)
 
+
 import cloudViewer.visualization
 
 _insert_pybind_names(skip_names=("ml",))
@@ -263,13 +272,15 @@ if _build_config["BUILD_JUPYTER_EXTENSION"]:
         except NameError:
             pass
     else:
-        warnings.warn("cloudViewer WebVisualizer is not supported on ARM for now.",
-                RuntimeWarning)
+        warnings.warn(
+            "cloudViewer WebVisualizer is not supported on ARM for now.",
+            RuntimeWarning)
 
 # CLOUDVIEWER_ML_ROOT points to the root of the CloudViewer-ML repo.
 # If set this will override the integrated CloudViewer-ML.
 if 'CLOUDVIEWER_ML_ROOT' in os.environ:
-    print('Using external CloudViewer-ML in {}'.format(os.environ['CLOUDVIEWER_ML_ROOT']))
+    print('Using external CloudViewer-ML in {}'.format(
+        os.environ['CLOUDVIEWER_ML_ROOT']))
     sys.path.append(os.environ['CLOUDVIEWER_ML_ROOT'])
 import cloudViewer.ml
 
@@ -318,5 +329,6 @@ def _jupyter_nbextension_paths():
         'dest': 'cloudViewer',
         'require': 'cloudViewer/extension'
     }]
-    
+
+
 del os, re, sys, platform, CDLL, load_cdll, try_load_cdll, find_library, Path, warnings, _insert_pybind_names

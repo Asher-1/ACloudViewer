@@ -23,8 +23,10 @@ if __name__ == "__main__":
     is_ci = False
     # Read RGBD images
     rgbd_images = []
-    depth_image_path = get_file_list(os.path.join(path, "depth/"), extension=".png")
-    color_image_path = get_file_list(os.path.join(path, "image/"), extension=".png")
+    depth_image_path = get_file_list(os.path.join(path, "depth/"),
+                                     extension=".png")
+    color_image_path = get_file_list(os.path.join(path, "image/"),
+                                     extension=".png")
     assert (len(depth_image_path) == len(color_image_path))
     for i in range(len(depth_image_path)):
         depth = cv3d.io.read_image(os.path.join(depth_image_path[i]))
@@ -36,10 +38,12 @@ if __name__ == "__main__":
                 rgbd_image,
                 cv3d.camera.PinholeCameraIntrinsic(
                     cv3d.camera.PinholeCameraIntrinsicParameters.
-                        PrimeSenseDefault))
+                    PrimeSenseDefault))
             cv3d.visualization.draw_geometries([pcd])
         rgbd_images.append(rgbd_image)
 
     # Read camera pose and mesh
-    camera = cv3d.io.read_pinhole_camera_trajectory(os.path.join(path, "scene/trajectory.log"))
-    mesh = cv3d.io.read_triangle_mesh(os.path.join(path, "scene", "integrated.ply"))
+    camera = cv3d.io.read_pinhole_camera_trajectory(
+        os.path.join(path, "scene/trajectory.log"))
+    mesh = cv3d.io.read_triangle_mesh(
+        os.path.join(path, "scene", "integrated.ply"))

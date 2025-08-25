@@ -43,7 +43,7 @@ int merge_database(const std::string& database_path1,
     return MergeDatabase(database_path1, database_path2, merged_database_path);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     cloudViewer::utility::SetVerbosityLevel(
             cloudViewer::utility::VerbosityLevel::Debug);
 
@@ -71,7 +71,8 @@ int main(int argc, char **argv) {
         std::string database_path1 = argv[2];
         std::string database_path2 = argv[3];
         std::string merged_database_path = argv[4];
-        flag = merge_database(database_path1, database_path2, merged_database_path);
+        flag = merge_database(database_path1, database_path2,
+                              merged_database_path);
     } else {
         cloudViewer::utility::LogError("unsupported option: {}", option);
     }

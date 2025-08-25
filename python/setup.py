@@ -33,8 +33,10 @@ from setuptools.command.install import install as _install
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
 data_files_spec = [
-    ('share/jupyter/nbextensions/cloudViewer', 'cloudViewer/nbextension', '*.*'),
-    ('share/jupyter/labextensions/cloudViewer', 'cloudViewer/labextension', '**'),
+    ('share/jupyter/nbextensions/cloudViewer', 'cloudViewer/nbextension',
+     '*.*'),
+    ('share/jupyter/labextensions/cloudViewer', 'cloudViewer/labextension',
+     '**'),
     ('share/jupyter/labextensions/cloudViewer', '.', 'install.json'),
     ('etc/jupyter/nbconfig/notebook.d', '.', 'cloudViewer.json'),
 ]
@@ -75,6 +77,7 @@ else:
 # Force platform specific wheel.
 # https://stackoverflow.com/a/45150383/1255535
 try:
+
     class bdist_wheel(_bdist_wheel):
 
         def finalize_options(self):
@@ -88,7 +91,8 @@ try:
             if plat[:5] == "linux":
                 libc = ctypes.CDLL("libc.so.6")
                 libc.gnu_get_libc_version.restype = ctypes.c_char_p
-                GLIBC_VER = libc.gnu_get_libc_version().decode("utf8").split(".")
+                GLIBC_VER = libc.gnu_get_libc_version().decode("utf8").split(
+                    ".")
                 plat = f"manylinux_{GLIBC_VER[0]}_{GLIBC_VER[1]}{plat[5:]}"
             elif plat[:6] == "macosx":
                 # If the Python interpreter is an universal2 app the resulting wheel is tagged as
@@ -96,7 +100,6 @@ try:
                 plat = plat.replace("universal2", platform.machine())
 
             return python, abi, plat
-
 
     cmdclass['bdist_wheel'] = bdist_wheel
 
@@ -181,13 +184,14 @@ name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
 # cloudViewer-cpu wheel for Linux OR Windows x86_64
-if (sys.platform.startswith("linux") or sys.platform.startswith("win32")) and platform.machine() in (
-        'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
+if (sys.platform.startswith("linux") or
+        sys.platform.startswith("win32")) and platform.machine() in (
+            'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
     name += "-cpu"
     long_description += ("\n\nThis wheel only contains CPU functionality. "
                          "Use the cloudViewer wheel for full functionality.")
     classifiers.remove("Environment :: GPU :: NVIDIA CUDA")
-    
+
 setup_args = dict(
     name=name,
     version='@PROJECT_VERSION@',

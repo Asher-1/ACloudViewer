@@ -96,7 +96,7 @@ def prepare_benchmark_data():
 
         print(f"loading the random dataset, random_1e{log10_n}.npy...")
         points = queries = cv3d.core.Tensor(np.load(npy_file),
-                                           dtype=cv3d.core.Float32)
+                                            dtype=cv3d.core.Float32)
         queries = queries[::10]
         filename = os.path.basename(npy_file)
         datasets[filename] = {'points': points, 'queries': queries}

@@ -27,11 +27,11 @@ def preprocess_point_cloud(pcd, voxel_size):
     pcd_down = pcd.voxel_down_sample(voxel_size)
     pcd_down.estimate_normals(
         cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0,
-                                             max_nn=30))
+                                              max_nn=30))
     pcd_fpfh = cv3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
         cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5.0,
-                                             max_nn=100),
+                                              max_nn=100),
     )
     return (pcd_down, pcd_fpfh)
 
@@ -106,8 +106,8 @@ if __name__ == "__main__":
             checkers=[
                 cv3d.pipelines.registration.
                 CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                cv3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                    distance_threshold),
+                cv3d.pipelines.registration.
+                CorrespondenceCheckerBasedOnDistance(distance_threshold),
             ],
             criteria=cv3d.pipelines.registration.RANSACConvergenceCriteria(
                 args.max_iterations, args.confidence),
@@ -140,8 +140,8 @@ if __name__ == "__main__":
             checkers=[
                 cv3d.pipelines.registration.
                 CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                cv3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                    distance_threshold),
+                cv3d.pipelines.registration.
+                CorrespondenceCheckerBasedOnDistance(distance_threshold),
             ],
             criteria=cv3d.pipelines.registration.RANSACConvergenceCriteria(
                 args.max_iterations, args.confidence),

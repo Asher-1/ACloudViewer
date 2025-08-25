@@ -12,8 +12,10 @@ def evaluate(pcd_target, pcd_source, feature_target, feature_source):
     tree_target = cv3d.geometry.KDTreeFlann(feature_target)
     pt_dis = np.zeros(len(pcd_source.get_points()))
     for i in range(len(pcd_source.get_points())):
-        [_, idx, _] = tree_target.search_knn_vector_xd(feature_source.data[:, i], 1)
-        pt_dis[i] = np.linalg.norm(pcd_source.get_point(i) - pcd_target.get_point(idx[0]))
+        [_, idx,
+         _] = tree_target.search_knn_vector_xd(feature_source.data[:, i], 1)
+        pt_dis[i] = np.linalg.norm(
+            pcd_source.get_point(i) - pcd_target.get_point(idx[0]))
     return pt_dis
 
 

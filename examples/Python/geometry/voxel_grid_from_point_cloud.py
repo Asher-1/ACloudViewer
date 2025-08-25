@@ -17,12 +17,12 @@ if __name__ == "__main__":
     # Fit to unit cube.
     pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
               center=pcd.get_center())
-    pcd.set_colors(cv3d.utility.Vector3dVector(np.random.uniform(0, 1,
-                                                              size=(N, 3))))
+    pcd.set_colors(
+        cv3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(N, 3))))
     print('Displaying input point cloud ...')
     cv3d.visualization.draw([pcd])
 
     print('Displaying voxel grid ...')
-    voxel_grid = cv3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
-                                                                voxel_size=0.05)
+    voxel_grid = cv3d.geometry.VoxelGrid.create_from_point_cloud(
+        pcd, voxel_size=0.05)
     cv3d.visualization.draw([voxel_grid])

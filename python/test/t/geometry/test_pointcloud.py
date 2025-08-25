@@ -12,6 +12,7 @@ import pytest
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from cloudViewer_test import list_devices
 
@@ -42,7 +43,8 @@ def test_constructor_and_accessors(device):
 
     # Edit and access values.
     pcd.point["points"][0] = cv3c.Tensor([1, 2, 3], dtype, device)
-    assert pcd.point["points"][0].allclose(cv3c.Tensor([1, 2, 3], dtype, device))
+    assert pcd.point["points"][0].allclose(cv3c.Tensor([1, 2, 3], dtype,
+                                                       device))
 
     # Pushback.
     pcd.synchronized_push_back({"points": one_point, "colors": one_color})
@@ -55,19 +57,18 @@ def test_from_legacy(device):
     dtype = cv3c.Dtype.Float32
 
     legacy_pcd = cv3d.geometry.ccPointCloud()
-    legacy_pcd.set_points(cv3d.utility.Vector3dVector(
-        np.array([
+    legacy_pcd.set_points(
+        cv3d.utility.Vector3dVector(np.array([
             [0, 1, 2],
             [3, 4, 5],
         ])))
-    legacy_pcd.set_colors(cv3d.utility.Vector3dVector(
-        np.array([
+    legacy_pcd.set_colors(
+        cv3d.utility.Vector3dVector(np.array([
             [6, 7, 8],
             [9, 10, 11],
         ])))
 
-    pcd = cv3d.t.geometry.PointCloud.from_legacy(
-        legacy_pcd, dtype, device)
+    pcd = cv3d.t.geometry.PointCloud.from_legacy(legacy_pcd, dtype, device)
     assert pcd.point["points"].as_tensor().allclose(
         cv3c.Tensor([
             [0, 1, 2],
@@ -122,7 +123,8 @@ def test_member_functions(device):
             [50, 60, 3],
         ], dtype, device))
     assert pcd.get_min_bound().allclose(cv3c.Tensor([1, 2, 3], dtype, device))
-    assert pcd.get_max_bound().allclose(cv3c.Tensor([50, 60, 40], dtype, device))
+    assert pcd.get_max_bound().allclose(cv3c.Tensor([50, 60, 40], dtype,
+                                                    device))
     assert pcd.get_center().allclose(cv3c.Tensor([27, 24, 21], dtype, device))
 
     # transform.

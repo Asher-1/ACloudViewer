@@ -53,7 +53,8 @@ def test_color_map():
     mesh = cv3d.io.read_triangle_mesh(
         os.path.join(path, "scene", "integrated.ply"))
     verts = np.asarray(mesh.get_vertices())
-    mesh_colors = np.tile([0.40322907, 0.37276872, 0.54375919], (verts.shape[0], 1))
+    mesh_colors = np.tile([0.40322907, 0.37276872, 0.54375919],
+                          (verts.shape[0], 1))
     # mesh_colors = [0.40322907, 0.37276872, 0.54375919]
     mesh.set_vertex_colors(cv3d.utility.Vector3dVector(mesh_colors))
     # mesh.set_vertex_colors(mesh_colors)

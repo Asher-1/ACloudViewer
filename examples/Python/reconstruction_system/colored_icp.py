@@ -26,10 +26,12 @@ def multiscale_icp(source,
         source_down = source.voxel_down_sample(voxel_size[scale])
         target_down = target.voxel_down_sample(voxel_size[scale])
         source_down.estimate_normals(
-            cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] * 2.0,
+            cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
+                                                  2.0,
                                                   max_nn=30))
         target_down.estimate_normals(
-            cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] * 2.0,
+            cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
+                                                  2.0,
                                                   max_nn=30))
         result_icp = cv3d.pipelines.registration.registration_colored_icp(
             source_down, target_down, distance_threshold,

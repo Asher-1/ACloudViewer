@@ -114,7 +114,8 @@ def voxel_carving(mesh,
             voxel_carving.carve_depth_map(cv3d.geometry.Image(depth), param)
         else:
             voxel_carving.carve_silhouette(cv3d.geometry.Image(depth), param)
-        print("Carve view %03d/%03d" % (cid + 1, len(camera_sphere.get_vertices())))
+        print("Carve view %03d/%03d" %
+              (cid + 1, len(camera_sphere.get_vertices())))
 
     vis.destroy_window()
 
@@ -150,7 +151,8 @@ def voxel_carving(mesh,
         print(voxel_carving)
         cv3d.visualization.draw_geometries([voxel_carving])
 
-        print("combined voxels (carved + surface from %s) together with mesh" % surface_method)
+        print("combined voxels (carved + surface from %s) together with mesh" %
+              surface_method)
         print(voxel_carving_surface)
         cv3d.visualization.draw_geometries([voxel_carving_surface, mesh])
 

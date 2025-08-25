@@ -35,7 +35,7 @@ if __name__ == "__main__":
         pose_graph_data.pose_graph_fragment_path)
     print(pose_graph_fragment)
     cv3d.pipelines.registration.global_optimization(pose_graph_fragment, method,
-                                                   criteria, option)
+                                                    criteria, option)
     cv3d.io.write_pose_graph(
         os.path.join('pose_graph_example_fragment_optimized.json'),
         pose_graph_fragment)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         pose_graph_data.pose_graph_global_path)
     print(pose_graph_global)
     cv3d.pipelines.registration.global_optimization(pose_graph_global, method,
-                                                   criteria, option)
+                                                    criteria, option)
     cv3d.io.write_pose_graph(
         os.path.join('pose_graph_example_global_optimized.json'),
         pose_graph_global)
