@@ -71,7 +71,8 @@ def custom_mouse_action(pcd):
     vis.create_window()
     vis.add_geometry(pcd)
     vis.run()
-    
+
+
 if __name__ == "__main__":
     ply_data = cv3d.data.PLYPointCloud()
     pcd = cv3d.io.read_point_cloud(ply_data.path)

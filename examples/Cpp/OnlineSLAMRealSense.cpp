@@ -9,8 +9,8 @@
 #include <memory>
 #include <string>
 
-#include "OnlineSLAMUtil.h"
 #include "CloudViewer.h"
+#include "OnlineSLAMUtil.h"
 
 void PrintHelp() {
     using namespace cloudViewer;

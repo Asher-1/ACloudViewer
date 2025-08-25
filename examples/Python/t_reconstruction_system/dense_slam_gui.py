@@ -330,11 +330,11 @@ class ReconstructionWindow:
         depth_ref = cv3d.t.io.read_image(depth_file_names[0])
         color_ref = cv3d.t.io.read_image(color_file_names[0])
         input_frame = cv3d.t.pipelines.slam.Frame(depth_ref.rows,
-                                                 depth_ref.columns, intrinsic,
-                                                 device)
+                                                  depth_ref.columns, intrinsic,
+                                                  device)
         raycast_frame = cv3d.t.pipelines.slam.Frame(depth_ref.rows,
-                                                   depth_ref.columns, intrinsic,
-                                                   device)
+                                                    depth_ref.columns,
+                                                    intrinsic, device)
 
         input_frame.set_data_from_image('depth', depth_ref)
         input_frame.set_data_from_image('color', color_ref)

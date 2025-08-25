@@ -5,11 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "CloudViewer.h"
-
-#include <ecvHObjectCaster.h>
-
 #include <iostream>
+
+#include "CloudViewer.h"
 
 void PrintHelp() {
     using namespace cloudViewer;

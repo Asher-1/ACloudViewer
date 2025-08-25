@@ -13,23 +13,22 @@
 
 using namespace cloudViewer;
 
-std::tuple<std::shared_ptr<ccPointCloud>,
-           std::shared_ptr<utility::Feature>>
+std::tuple<std::shared_ptr<ccPointCloud>, std::shared_ptr<utility::Feature>>
 PreprocessPointCloud(const char *file_name) {
     auto pcd = cloudViewer::io::CreatePointCloudFromFile(file_name);
     auto pcd_down = pcd->voxelDownSample(0.05);
     pcd_down->estimateNormals(
             cloudViewer::geometry::KDTreeSearchParamHybrid(0.1, 30));
     auto pcd_fpfh = utility::ComputeFPFHFeature(
-            *pcd_down, cloudViewer::geometry::KDTreeSearchParamHybrid(0.25, 100));
+            *pcd_down,
+            cloudViewer::geometry::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
 
 void VisualizeRegistration(const ccPointCloud &source,
                            const ccPointCloud &target,
                            const Eigen::Matrix4d &Transformation) {
-    std::shared_ptr<ccPointCloud> source_transformed_ptr(
-            new ccPointCloud);
+    std::shared_ptr<ccPointCloud> source_transformed_ptr(new ccPointCloud);
     std::shared_ptr<ccPointCloud> target_ptr(new ccPointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;

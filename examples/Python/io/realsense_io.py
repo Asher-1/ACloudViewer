@@ -136,7 +136,7 @@ def main():
     app = gui.Application.instance
     app.initialize()
     o3dvis = cv3d.visualization.O3DVisualizer("Open3D: PointCloud video", 1024,
-                                             768)
+                                              768)
     o3dvis.show_axes = True
     # set view: fov, eye, lookat, up
     o3dvis.setup_camera(45, [0., 0., 0.], [0., 0., -1.], [0., -1., 0.])

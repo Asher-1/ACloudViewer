@@ -23,7 +23,8 @@ if __name__ == "__main__":
     cv3d.visualization.draw_geometries([pcd])
 
     print('run Poisson surface reconstruction')
-    mesh, densities = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(pcd, depth=8)
+    mesh, densities = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(
+        pcd, depth=8)
     mesh.compute_vertex_normals()
     cv3d.io.write_triangle_mesh("poisson_eagle.ply", mesh)
     print(mesh)

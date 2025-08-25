@@ -13,14 +13,14 @@ import pytest
 # test intersection with a single triangle
 def test_cast_rays():
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.Dtype.Float32)
+                                dtype=cv3d.core.Dtype.Float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
     scene = cv3d.t.geometry.RaycastingScene()
     geom_id = scene.add_triangles(vertices, triangles)
 
     rays = cv3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
-                           dtype=cv3d.core.Dtype.Float32)
+                            dtype=cv3d.core.Dtype.Float32)
     ans = scene.cast_rays(rays)
 
     # first ray hits the triangle
@@ -36,7 +36,7 @@ def test_cast_rays():
 # we expect no errors for this test
 def test_cast_lots_of_rays():
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.Dtype.Float32)
+                                dtype=cv3d.core.Dtype.Float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
     scene = cv3d.t.geometry.RaycastingScene()
@@ -56,8 +56,8 @@ def test_add_triangle_mesh():
     scene.add_triangles(cube)
 
     rays = cv3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
-                            [10, 10, 10, 1, 0, 0]],
-                           dtype=cv3d.core.Dtype.Float32)
+                             [10, 10, 10, 1, 0, 0]],
+                            dtype=cv3d.core.Dtype.Float32)
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.numpy(), [2, 1, 0])
@@ -71,8 +71,8 @@ def test_count_intersections():
     scene.add_triangles(cube)
 
     rays = cv3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
-                            [10, 10, 10, 1, 0, 0]],
-                           dtype=cv3d.core.Dtype.Float32)
+                             [10, 10, 10, 1, 0, 0]],
+                            dtype=cv3d.core.Dtype.Float32)
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.numpy(), [2, 1, 0])
@@ -95,14 +95,14 @@ def test_count_lots_of_intersections():
 
 def test_compute_closest_points():
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.Dtype.Float32)
+                                dtype=cv3d.core.Dtype.Float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
     scene = cv3d.t.geometry.RaycastingScene()
     geom_id = scene.add_triangles(vertices, triangles)
 
     query_points = cv3d.core.Tensor([[0.2, 0.1, 1], [10, 10, 10]],
-                                   dtype=cv3d.core.Dtype.Float32)
+                                    dtype=cv3d.core.Dtype.Float32)
     ans = scene.compute_closest_points(query_points)
 
     assert (geom_id == ans['geometry_ids']).all()
@@ -149,7 +149,7 @@ def test_compute_occupancy():
     scene.add_triangles(cube)
 
     query_points = cv3d.core.Tensor([[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5]],
-                                   dtype=cv3d.core.Dtype.Float32)
+                                    dtype=cv3d.core.Dtype.Float32)
     ans = scene.compute_occupancy(query_points)
     np.testing.assert_allclose(ans.numpy(), [1.0, 0.0])
 
@@ -157,7 +157,7 @@ def test_compute_occupancy():
 @pytest.mark.parametrize("shape", ([11], [1, 2, 3], [32, 14]))
 def test_output_shapes(shape):
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.Dtype.Float32)
+                                dtype=cv3d.core.Dtype.Float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
     scene = cv3d.t.geometry.RaycastingScene()

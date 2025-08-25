@@ -8,9 +8,11 @@ import argparse
 import json
 import sys
 import cloudViewer as cv3d
+
 sys.path.append("../utility")
 from file import *
 from visualization import *
+
 sys.path.append(".")
 from initialize_config import *
 from make_fragments import *

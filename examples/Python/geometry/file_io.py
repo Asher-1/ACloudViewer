@@ -18,11 +18,12 @@ if __name__ == "__main__":
     cv3d.io.write_triangle_mesh("copy_of_knot.ply", mesh)
 
     print("Testing IO for textured meshes ...")
-    textured_mesh = cv3d.io.read_triangle_mesh("../../test_data/crate/crate.obj")
+    textured_mesh = cv3d.io.read_triangle_mesh(
+        "../../test_data/crate/crate.obj")
     print(textured_mesh)
     cv3d.io.write_triangle_mesh("copy_of_crate.obj",
-                               textured_mesh,
-                               write_triangle_uvs=True)
+                                textured_mesh,
+                                write_triangle_uvs=True)
     copy_textured_mesh = cv3d.io.read_triangle_mesh('copy_of_crate.obj')
     print(copy_textured_mesh)
     cv3d.visualization.draw_geometries([copy_textured_mesh])

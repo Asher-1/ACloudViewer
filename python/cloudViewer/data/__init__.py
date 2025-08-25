@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Minimal data download helpers for tests and examples.
 
 This module provides a lightweight replacement for CloudViewer's `o3d.data` API
@@ -71,8 +70,7 @@ def _assert_md5(path: Path, expected_md5: str) -> None:
             except OSError:
                 pass
         raise RuntimeError(
-            f"MD5 mismatch: expected {expected_md5}, got {md5sum} for {path}"
-        )
+            f"MD5 mismatch: expected {expected_md5}, got {md5sum} for {path}")
 
 
 def _extract_archive(archive_path: Path, target_dir: Path) -> None:
@@ -94,7 +92,8 @@ class DownloadDataset:
         self.data_descriptor = data_descriptor
 
         # Use a temporary directory for extraction. Caller cleans it up.
-        base_tmp = os.environ.get("CLOUDVIEWER_DATA_TMPDIR", tempfile.gettempdir())
+        base_tmp = os.environ.get("CLOUDVIEWER_DATA_TMPDIR",
+                                  tempfile.gettempdir())
         self.extract_dir = tempfile.mkdtemp(prefix=f"{prefix}-", dir=base_tmp)
 
         # Download into a temporary file under the extract_dir, then extract.

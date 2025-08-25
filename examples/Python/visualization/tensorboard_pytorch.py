@@ -14,6 +14,7 @@ from cloudViewer.visualization.tensorboard_plugin import summary  # noqa
 from cloudViewer.visualization.tensorboard_plugin.util import to_dict_batch
 from torch.utils.tensorboard import SummaryWriter
 import os
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, '../misc'))
 import meshes
@@ -32,10 +33,10 @@ def small_scale(run_name="small_scale"):
     cube = cv3d.geometry.ccMesh.create_box(1, 2, 4, create_uv_map=True)
     cube.compute_vertex_normals()
     cylinder = cv3d.geometry.ccMesh.create_cylinder(radius=1.0,
-                                                         height=2.0,
-                                                         resolution=20,
-                                                         split=4,
-                                                         create_uv_map=True)
+                                                    height=2.0,
+                                                    resolution=20,
+                                                    split=4,
+                                                    create_uv_map=True)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
     for step in range(3):
@@ -55,10 +56,10 @@ def property_reference(run_name="property_reference"):
     cube = cv3d.geometry.ccMesh.create_box(1, 2, 4, create_uv_map=True)
     cube.compute_vertex_normals()
     cylinder = cv3d.geometry.ccMesh.create_cylinder(radius=1.0,
-                                                         height=2.0,
-                                                         resolution=20,
-                                                         split=4,
-                                                         create_uv_map=True)
+                                                    height=2.0,
+                                                    resolution=20,
+                                                    split=4,
+                                                    create_uv_map=True)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
     for step in range(3):
@@ -93,8 +94,10 @@ def large_scale(n_steps=16,
         resolution = base_resolution * (step + 1)
         cylinder_list = []
         mobius_list = []
-        cylinder = cv3d.geometry.ccMesh.create_cylinder(
-            radius=1.0, height=2.0, resolution=resolution, split=4)
+        cylinder = cv3d.geometry.ccMesh.create_cylinder(radius=1.0,
+                                                        height=2.0,
+                                                        resolution=resolution,
+                                                        split=4)
         cylinder.compute_vertex_normals()
         mobius = cv3d.geometry.ccMesh.create_mobius(
             length_split=int(3.5 * resolution),

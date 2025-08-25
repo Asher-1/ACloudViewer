@@ -35,13 +35,13 @@ def integrate(depth_file_names, color_file_names, depth_intrinsic,
             device=device)
     else:
         vbg = cv3d.t.geometry.VoxelBlockGrid(attr_names=('tsdf', 'weight'),
-                                            attr_dtypes=(o3c.float32,
-                                                         o3c.float32),
-                                            attr_channels=((1), (1)),
-                                            voxel_size=3.0 / 512,
-                                            block_resolution=16,
-                                            block_count=50000,
-                                            device=device)
+                                             attr_dtypes=(o3c.float32,
+                                                          o3c.float32),
+                                             attr_channels=((1), (1)),
+                                             voxel_size=3.0 / 512,
+                                             block_resolution=16,
+                                             block_count=50000,
+                                             device=device)
 
     start = time.time()
     for i in tqdm(range(n_files)):

@@ -56,18 +56,20 @@ def full_registration(pcds, max_correspondence_distance_coarse,
                     cv3d.pipelines.registration.PoseGraphNode(
                         np.linalg.inv(odometry)))
                 pose_graph.edges.append(
-                    cv3d.pipelines.registration.PoseGraphEdge(source_id,
-                                                             target_id,
-                                                             transformation_icp,
-                                                             information_icp,
-                                                             uncertain=False))
+                    cv3d.pipelines.registration.PoseGraphEdge(
+                        source_id,
+                        target_id,
+                        transformation_icp,
+                        information_icp,
+                        uncertain=False))
             else:  # loop closure case
                 pose_graph.edges.append(
-                    cv3d.pipelines.registration.PoseGraphEdge(source_id,
-                                                             target_id,
-                                                             transformation_icp,
-                                                             information_icp,
-                                                             uncertain=True))
+                    cv3d.pipelines.registration.PoseGraphEdge(
+                        source_id,
+                        target_id,
+                        transformation_icp,
+                        information_icp,
+                        uncertain=True))
     return pose_graph
 
 

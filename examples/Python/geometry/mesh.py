@@ -20,16 +20,19 @@ if __name__ == "__main__":
     # triangulation
     # DELAUNAY_2D_AXIS_ALIGNED or DELAUNAY_2D_BEST_LS_PLANE.
     triangulation_type = cv3d.geometry.DELAUNAY_2D_BEST_LS_PLANE
-    new_mesh = cv3d.geometry.ccMesh.triangulate(cloud=mesh.get_associated_cloud(), type=triangulation_type)
+    new_mesh = cv3d.geometry.ccMesh.triangulate(
+        cloud=mesh.get_associated_cloud(), type=triangulation_type)
     new_mesh.compute_vertex_normals()
     cv3d.visualization.draw_geometries([new_mesh])
 
     # triangulation between with two polylines
     entity = cv3d.io.read_entity("../../test_data/polylines/polylines.bin")
-    polylines = entity.filter_children(recursive=False, filter=cv3d.geometry.ccHObject.POLY_LINE)
+    polylines = entity.filter_children(recursive=False,
+                                       filter=cv3d.geometry.ccHObject.POLY_LINE)
     print(polylines)
     assert len(polylines) > 1
-    mesh_polys = cv3d.geometry.ccMesh.triangulate_two_polylines(poly1=polylines[0], poly2=polylines[1])
+    mesh_polys = cv3d.geometry.ccMesh.triangulate_two_polylines(
+        poly1=polylines[0], poly2=polylines[1])
     mesh_polys.compute_vertex_normals()
     cv3d.visualization.draw_geometries(polylines + [mesh_polys])
 
@@ -51,8 +54,11 @@ if __name__ == "__main__":
     mesh1 = copy.deepcopy(mesh)
     triangles = np.asarray(mesh1.get_triangles())
     triangle_normals = np.asarray(mesh1.get_triangle_normals())
-    mesh1.set_triangles(cv3d.utility.Vector3iVector(triangles[:len(triangles) // 2, :]))
-    mesh1.set_triangle_normals(cv3d.utility.Vector3dVector(triangle_normals[:len(triangle_normals) // 2, :]))
+    mesh1.set_triangles(
+        cv3d.utility.Vector3iVector(triangles[:len(triangles) // 2, :]))
+    mesh1.set_triangle_normals(
+        cv3d.utility.Vector3dVector(triangle_normals[:len(triangle_normals) //
+                                                     2, :]))
     print(mesh1.get_triangles())
     cv3d.visualization.draw_geometries([mesh1])
 

@@ -108,8 +108,8 @@ void TestMatrixMultiplication(int argc, char **argv) {
     if (argc > 1) {
         test_thread = std::stoi(argv[1]);
     }
-    cloudViewer::utility::LogInfo("Benchmark multithreading up to {:d} threads.",
-                             test_thread);
+    cloudViewer::utility::LogInfo(
+            "Benchmark multithreading up to {:d} threads.", test_thread);
 
     for (int i = 1; i <= test_thread; i *= 2) {
         std::string buff =

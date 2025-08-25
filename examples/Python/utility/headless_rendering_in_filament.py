@@ -14,7 +14,6 @@ PRODUCT_NAME :  PyCharm
 import cloudViewer as cv3d
 import cloudViewer.visualization.rendering as rendering
 
-
 if __name__ == '__main__':
 
     box = cv3d.geometry.ccMesh.create_box(2, 2, 1)

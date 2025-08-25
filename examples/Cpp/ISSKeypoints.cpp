@@ -3,7 +3,8 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// ---------------------------------------------------------------------------- @author Ignacio Vizzo     [ivizzo@uni-bonn.de]
+// ----------------------------------------------------------------------------
+// @author Ignacio Vizzo     [ivizzo@uni-bonn.de]
 //
 // Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
 // ----------------------------------------------------------------------------

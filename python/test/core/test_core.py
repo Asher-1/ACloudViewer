@@ -12,8 +12,10 @@ import pytest
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from cloudViewer_test import list_devices
+
 
 def list_dtypes():
     return [
@@ -72,8 +74,8 @@ def test_creation(device):
     t = cv3d.core.Tensor.empty([2, 3], cv3d.core.Dtype.Float32, device=device)
     assert t.shape == cv3d.core.SizeVector([2, 3])
     t = cv3d.core.Tensor.empty(cv3d.core.SizeVector([2, 3]),
-                              cv3d.core.Dtype.Float32,
-                              device=device)
+                               cv3d.core.Dtype.Float32,
+                               device=device)
     assert t.shape == cv3d.core.SizeVector([2, 3])
 
     # Test zeros and ones
@@ -83,7 +85,10 @@ def test_creation(device):
     np.testing.assert_equal(t.cpu().numpy(), np.ones((2, 3), dtype=np.float32))
 
     # Automatic casting of dtype.
-    t = cv3d.core.Tensor.full((2,), False, cv3d.core.Dtype.Float32, device=device)
+    t = cv3d.core.Tensor.full((2,),
+                              False,
+                              cv3d.core.Dtype.Float32,
+                              device=device)
     np.testing.assert_equal(t.cpu().numpy(),
                             np.full((2,), False, dtype=np.float32))
     t = cv3d.core.Tensor.full((2,), 3.5, cv3d.core.Dtype.UInt8, device=device)
@@ -95,9 +100,9 @@ def test_creation(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_creation_special_shapes(shape, device):
     o3_t = cv3d.core.Tensor.full(shape,
-                                3.14,
-                                cv3d.core.Dtype.Float32,
-                                device=device)
+                                 3.14,
+                                 cv3d.core.Dtype.Float32,
+                                 device=device)
     np_t = np.full(shape, 3.14, dtype=np.float32)
     np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
@@ -283,8 +288,8 @@ def test_binary_ew_ops(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_to(device):
     a = cv3d.core.Tensor(np.array([0.1, 1.2, 2.3, 3.4, 4.5,
-                                  5.6]).astype(np.float32),
-                        device=device)
+                                   5.6]).astype(np.float32),
+                         device=device)
     b = a.to(cv3d.core.Dtype.Int32)
     np.testing.assert_equal(b.cpu().numpy(), np.array([0, 1, 2, 3, 4, 5]))
     assert b.shape == cv3d.core.SizeVector([6])
@@ -338,7 +343,7 @@ def test_getitem(device):
     np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(), np_t[0, 1:3,
                                                                     0:4:2])
     np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].fcpu().numpy(), np_t[0, 1:3,
-                                                                     0:-1:2])
+                                                                      0:-1:2])
     np.testing.assert_equal(o3_t[0, 1, :].cpu().numpy(), np_t[0, 1, :])
 
     # Slice out-of-range
@@ -776,7 +781,10 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 200))
 
     # /
-    a = cv3d.core.Tensor.full((2, 3), 20, cv3d.core.Dtype.Float32, device=device)
+    a = cv3d.core.Tensor.full((2, 3),
+                              20,
+                              cv3d.core.Dtype.Float32,
+                              device=device)
     b = a.div(2)
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 10))
     b = a / 2
@@ -791,7 +799,10 @@ def test_scalar_op(device):
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 20))
 
     # /=
-    a = cv3d.core.Tensor.full((2, 3), 20, cv3d.core.Dtype.Float32, device=device)
+    a = cv3d.core.Tensor.full((2, 3),
+                              20,
+                              cv3d.core.Dtype.Float32,
+                              device=device)
     a.div_(2)
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 10))
     a /= 2
@@ -955,14 +966,14 @@ def test_scalar_op(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_all_any(device):
     a = cv3d.core.Tensor([False, True, True, True],
-                        dtype=cv3d.core.Dtype.Bool,
-                        device=device)
+                         dtype=cv3d.core.Dtype.Bool,
+                         device=device)
     assert not a.all()
     assert a.any()
 
     a = cv3d.core.Tensor([True, True, True, True],
-                        dtype=cv3d.core.Dtype.Bool,
-                        device=device)
+                         dtype=cv3d.core.Dtype.Bool,
+                         device=device)
     assert a.all()
 
     # Empty
@@ -1037,7 +1048,7 @@ def test_item(device):
     assert isinstance(o3_t[0, 0].item(), int)
 
     o3_t = cv3d.core.Tensor.ones((2, 3),
-                                dtype=cv3d.core.Dtype.Bool,
-                                device=device)
+                                 dtype=cv3d.core.Dtype.Bool,
+                                 device=device)
     assert o3_t[0, 0].item() == True
     assert isinstance(o3_t[0, 0].item(), bool)

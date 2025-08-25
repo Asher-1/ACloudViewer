@@ -148,7 +148,7 @@ def run_doppler_icp(args):
     # Move tensor to device.
     init_transform = cv3d.core.Tensor(np.eye(4), device=device)
     transform_vehicle_to_sensor = cv3d.core.Tensor(transform_vehicle_to_sensor,
-                                                  device=device)
+                                                   device=device)
 
     # Compute normals for target.
     target_in_V.estimate_normals(radius=10.0, max_nn=30)
@@ -157,7 +157,8 @@ def run_doppler_icp(args):
     directions = source_in_S.point.positions.numpy()
     norms = np.tile(np.linalg.norm(directions, axis=1), (3, 1)).T
     directions = directions / norms
-    source_in_V.point['directions'] = cv3d.core.Tensor(directions, dtype, device)
+    source_in_V.point['directions'] = cv3d.core.Tensor(directions, dtype,
+                                                       device)
 
     # Setup robust kernels.
     kernel = o3d_reg.robust_kernel.RobustKernel(o3d_reg.robust_kernel.TukeyLoss,

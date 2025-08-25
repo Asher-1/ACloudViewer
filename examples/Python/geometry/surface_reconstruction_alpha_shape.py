@@ -33,7 +33,8 @@ if __name__ == "__main__":
     cv3d.visualization.draw_geometries([pcd])
     for alpha in np.logspace(np.log10(0.5), np.log10(0.01), num=4):
         print("alpha={}".format(alpha))
-        mesh = cv3d.geometry.ccMesh.create_from_point_cloud_alpha_shape(pcd, alpha)
+        mesh = cv3d.geometry.ccMesh.create_from_point_cloud_alpha_shape(
+            pcd, alpha)
         mesh.compute_vertex_normals()
         draw_geometries_with_back_face([mesh])
 

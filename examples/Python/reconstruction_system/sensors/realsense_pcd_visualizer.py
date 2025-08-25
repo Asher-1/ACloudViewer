@@ -26,8 +26,8 @@ class Preset(IntEnum):
 def get_intrinsic_matrix(frame):
     intrinsics = frame.profile.as_video_stream_profile().intrinsics
     out = cv3d.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx,
-                                            intrinsics.fy, intrinsics.ppx,
-                                            intrinsics.ppy)
+                                             intrinsics.fy, intrinsics.ppx,
+                                             intrinsics.ppy)
     return out
 
 
@@ -105,7 +105,8 @@ if __name__ == "__main__":
                 depth_scale=1.0 / depth_scale,
                 depth_trunc=clipping_distance_in_meters,
                 convert_rgb_to_intensity=False)
-            temp = cv3d.geometry.ccPointCloud.create_from_rgbd_image(rgbd_image, intrinsic)
+            temp = cv3d.geometry.ccPointCloud.create_from_rgbd_image(
+                rgbd_image, intrinsic)
             temp.transform(flip_transform)
             pcd.set_points(temp.get_points())
             pcd.set_colors(temp.get_colors())

@@ -92,8 +92,8 @@ def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
             # Vary IBL intensity as a poxy for exposure value. IBL ranges from
             # [0,150000]. We vary it between 20000 and 100000.
             if vary_exposure:
-                cv3dvis.set_ibl_intensity(20000 +
-                                         80000 * triangle_wave(n, n_images / 4))
+                cv3dvis.set_ibl_intensity(20000 + 80000 *
+                                          triangle_wave(n, n_images / 4))
             cv3dvis.post_redraw()
             cv3dvis.export_current_image(f"render-{n:02}.jpg")
             images.append(f"render-{n:02}.jpg")
@@ -123,10 +123,10 @@ def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
         'name': meshfile.name,
         'material': unlit
     }],
-                           show_ui=False,
-                           width=int(width / SCALING),
-                           height=int(height / SCALING),
-                           actions=[("Save Images", rotate_camera_and_shoot)])
+                            show_ui=False,
+                            width=int(width / SCALING),
+                            height=int(height / SCALING),
+                            actions=[("Save Images", rotate_camera_and_shoot)])
 
 
 def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
@@ -140,7 +140,8 @@ def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
     images = list(cv3d.t.io.read_image(imfile) for imfile in calib["images"])
     calib.close()
     start = time.time()
-    with cv3d.utility.VerbosityContextManager(cv3d.utility.VerbosityLevel.Debug):
+    with cv3d.utility.VerbosityContextManager(
+            cv3d.utility.VerbosityLevel.Debug):
         albedo = tmeshes[0].project_images_to_albedo(images, Ks, Rts, 1024,
                                                      True)
     albedo = albedo.linear_transform(scale=albedo_contrast)  # brighten albedo
@@ -159,7 +160,7 @@ def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
         "name": meshfile.name,
         "geometry": tmeshes[0]
     }],
-                           show_ui=True)
+                            show_ui=True)
 
 
 if __name__ == "__main__":

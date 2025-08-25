@@ -9,6 +9,7 @@ import cloudViewer as cv3d
 
 import os
 import sys
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, '../misc'))
 import meshes
@@ -41,15 +42,18 @@ if __name__ == "__main__":
     for mesh in mesh_generator():
         mesh.compute_vertex_normals()
         n_verts = np.asarray(mesh.get_vertices()).shape[0]
-        mesh.set_vertex_colors(cv3d.utility.Vector3dVector(
-            np.random.uniform(0, 1, size=(n_verts, 3))))
+        mesh.set_vertex_colors(
+            cv3d.utility.Vector3dVector(
+                np.random.uniform(0, 1, size=(n_verts, 3))))
 
-        print("original mesh has %d triangles and %d vertices" % (np.asarray(
-            mesh.get_triangles()).shape[0], np.asarray(mesh.get_vertices()).shape[0]))
+        print("original mesh has %d triangles and %d vertices" %
+              (np.asarray(mesh.get_triangles()).shape[0],
+               np.asarray(mesh.get_vertices()).shape[0]))
         cv3d.visualization.draw_geometries([mesh])
 
         voxel_size = max(mesh.get_max_bound() - mesh.get_min_bound()) / 4
-        target_number_of_triangles = np.asarray(mesh.get_triangles()).shape[0] // 2
+        target_number_of_triangles = np.asarray(
+            mesh.get_triangles()).shape[0] // 2
         print('voxel_size = %f' % voxel_size)
 
         mesh_smp = mesh.simplify_vertex_clustering(

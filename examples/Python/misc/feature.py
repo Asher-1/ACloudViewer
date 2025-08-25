@@ -34,8 +34,10 @@ if __name__ == "__main__":
     print("Load their L32D feature and evaluate.")
     print("Black : matching distance > 0.2")
     print("White : matching distance = 0")
-    feature0 = cv3d.io.read_feature("../../test_data/Feature/cloud_bin_0.d32.bin")
-    feature1 = cv3d.io.read_feature("../../test_data/Feature/cloud_bin_1.d32.bin")
+    feature0 = cv3d.io.read_feature(
+        "../../test_data/Feature/cloud_bin_0.d32.bin")
+    feature1 = cv3d.io.read_feature(
+        "../../test_data/Feature/cloud_bin_1.d32.bin")
     fpfh_tree = cv3d.geometry.KDTreeFlann(feature1)
     for i in range(len(pcd0.get_points())):
         [_, idx, _] = fpfh_tree.search_knn_vector_xd(feature0.data[:, i], 1)

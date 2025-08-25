@@ -77,8 +77,8 @@ def test_create_box(device):
     assert box_default.triangle.indices.allclose(triangle_indices_default)
 
     # Test with custom parameters.
-    box_custom = cv3d.t.geometry.TriangleMesh.create_box(2, 3, 4, o3c.float64,
-                                                        o3c.int32, device)
+    box_custom = cv3d.t.geometry.TriangleMesh.create_box(
+        2, 3, 4, o3c.float64, o3c.int32, device)
 
     vertex_positions_custom = o3c.Tensor(
         [
@@ -802,7 +802,7 @@ def test_bake_triangle_attr_textures():
 
 def test_extrude_rotation():
     mesh = cv3d.t.geometry.TriangleMesh([[1, 1, 0], [0.7, 1, 0], [1, 0.7, 0]],
-                                       [[0, 1, 2]])
+                                        [[0, 1, 2]])
     ans = mesh.extrude_rotation(3 * 360, [0, 1, 0],
                                 resolution=3 * 16,
                                 translation=2)
@@ -842,8 +842,8 @@ def test_pickle(device):
 def test_get_surface_area(device):
     # Test with custom parameters.
     cube = cv3d.t.geometry.TriangleMesh.create_box(float_dtype=o3c.float64,
-                                                  int_dtype=o3c.int32,
-                                                  device=device)
+                                                   int_dtype=o3c.int32,
+                                                   device=device)
     np.testing.assert_equal(cube.get_surface_area(), 6)
 
     empty = cv3d.t.geometry.TriangleMesh(device=device)
@@ -1175,7 +1175,7 @@ def test_select_by_index_64(device):
 
 def check_no_unreferenced_vertices(device, int_t, float_t):
     sphere = cv3d.t.geometry.TriangleMesh.create_sphere(1, 3, float_t, int_t,
-                                                       device)
+                                                        device)
     expected_sphere = cv3d.t.geometry.TriangleMesh.create_sphere(
         1, 3, float_t, int_t, device)
 
@@ -1264,8 +1264,8 @@ def test_remove_unreferenced_vertices(device, int_t, float_t):
 @pytest.mark.parametrize("int_t", (o3c.int32, o3c.int64))
 @pytest.mark.parametrize("float_t", (o3c.float32, o3c.float64))
 def test_compute_triangle_areas(device, int_t, float_t):
-    torus = cv3d.t.geometry.TriangleMesh.create_torus(2, 1, 6, 3, float_t, int_t,
-                                                     device)
+    torus = cv3d.t.geometry.TriangleMesh.create_torus(2, 1, 6, 3, float_t,
+                                                      int_t, device)
 
     expected_areas = o3c.Tensor(
         [
@@ -1388,8 +1388,8 @@ def test_remove_non_manifold_edges(device, int_t, float_t):
     test_box.remove_non_manifold_edges()
 
     box = cv3d.t.geometry.TriangleMesh.create_box(float_dtype=float_t,
-                                                 int_dtype=int_t,
-                                                 device=device)
+                                                  int_dtype=int_t,
+                                                  device=device)
     assert test_box.vertex.positions.allclose(verts)
     assert test_box.triangle.indices.allclose(box.triangle.indices)
 

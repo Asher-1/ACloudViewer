@@ -16,19 +16,23 @@ sys.path.append(".")
 from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
-def update_posegrph_for_scene(s, t, transformation, information, odometry, pose_graph):
+def update_posegrph_for_scene(s, t, transformation, information, odometry,
+                              pose_graph):
     if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
-        pose_graph.nodes.append(cv3d.pipelines.registration.PoseGraphNode(odometry_inv))
+        pose_graph.nodes.append(
+            cv3d.pipelines.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
-            cv3d.pipelines.registration.PoseGraphEdge(s, t,
+            cv3d.pipelines.registration.PoseGraphEdge(s,
+                                                      t,
                                                       transformation,
                                                       information,
                                                       uncertain=False))
     else:  # loop closure case
         pose_graph.edges.append(
-            cv3d.pipelines.registration.PoseGraphEdge(s, t,
+            cv3d.pipelines.registration.PoseGraphEdge(s,
+                                                      t,
                                                       transformation,
                                                       information,
                                                       uncertain=True))
@@ -52,25 +56,25 @@ def multiscale_icp(source,
             result_icp = cv3d.pipelines.registration.registration_icp(
                 source_down, target_down, distance_threshold,
                 current_transformation,
-                cv3d.pipelines.registration.TransformationEstimationPointToPoint(
-                ),
+                cv3d.pipelines.registration.
+                TransformationEstimationPointToPoint(),
                 cv3d.pipelines.registration.ICPConvergenceCriteria(
                     max_iteration=iter))
         else:
             source_down.estimate_normals(
                 cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
-                                                             2.0,
+                                                      2.0,
                                                       max_nn=30))
             target_down.estimate_normals(
                 cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
-                                                             2.0,
+                                                      2.0,
                                                       max_nn=30))
             if config["icp_method"] == "point_to_plane":
                 result_icp = cv3d.pipelines.registration.registration_icp(
                     source_down, target_down, distance_threshold,
                     current_transformation,
                     cv3d.pipelines.registration.
-                        TransformationEstimationPointToPlane(),
+                    TransformationEstimationPointToPlane(),
                     cv3d.pipelines.registration.ICPConvergenceCriteria(
                         max_iteration=iter))
             if config["icp_method"] == "color":
@@ -78,7 +82,7 @@ def multiscale_icp(source,
                     source_down, target_down, distance_threshold,
                     current_transformation,
                     cv3d.pipelines.registration.
-                        TransformationEstimationForColoredICP(),
+                    TransformationEstimationForColoredICP(),
                     cv3d.pipelines.registration.ICPConvergenceCriteria(
                         relative_fitness=1e-6,
                         relative_rmse=1e-6,
@@ -88,7 +92,7 @@ def multiscale_icp(source,
                     source_down, target_down, distance_threshold,
                     current_transformation,
                     cv3d.pipelines.registration.
-                        TransformationEstimationForGeneralizedICP(),
+                    TransformationEstimationForGeneralizedICP(),
                     cv3d.pipelines.registration.ICPConvergenceCriteria(
                         relative_fitness=1e-6,
                         relative_rmse=1e-6,
@@ -185,7 +189,8 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
 
     pose_graph_new = cv3d.pipelines.registration.PoseGraph()
     odometry = np.identity(4)
-    pose_graph_new.nodes.append(cv3d.pipelines.registration.PoseGraphNode(odometry))
+    pose_graph_new.nodes.append(
+        cv3d.pipelines.registration.PoseGraphNode(odometry))
     for r in matching_results:
         (odometry, pose_graph_new) = update_posegrph_for_scene(
             matching_results[r].s, matching_results[r].t,

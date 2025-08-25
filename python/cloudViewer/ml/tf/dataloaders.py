@@ -5,7 +5,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Dataloader for TensorFlow."""
 
 import os as _os

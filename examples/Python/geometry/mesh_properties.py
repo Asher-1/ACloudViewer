@@ -21,12 +21,9 @@ def mesh_generator(edge_cases=True):
     # yield "sphere", cv3d.geometry.ccMesh.create_sphere()
     # yield "cone", cv3d.geometry.ccMesh.create_cone()
     # yield "torus", cv3d.geometry.ccMesh.create_torus(radial_resolution=30, tubular_resolution=20)
-    yield "moebius (twists=1)", cv3d.geometry.ccMesh.create_moebius(
-        twists=1)
-    yield "moebius (twists=2)", cv3d.geometry.ccMesh.create_moebius(
-        twists=2)
-    yield "moebius (twists=3)", cv3d.geometry.ccMesh.create_moebius(
-        twists=3)
+    yield "moebius (twists=1)", cv3d.geometry.ccMesh.create_moebius(twists=1)
+    yield "moebius (twists=2)", cv3d.geometry.ccMesh.create_moebius(twists=2)
+    yield "moebius (twists=3)", cv3d.geometry.ccMesh.create_moebius(twists=3)
 
     yield "knot", meshes.knot()
 
@@ -38,6 +35,7 @@ def mesh_generator(edge_cases=True):
 
 
 def check_properties(name, mesh):
+
     def fmt_bool(b):
         return "yes" if b else "no"
 
@@ -70,8 +68,8 @@ def check_properties(name, mesh):
     if not vertex_manifold:
         verts = np.asarray(mesh.get_non_manifold_vertices())
         print("  # visualize non-manifold vertices")
-        pcl = cv3d.geometry.ccPointCloud(
-            points=cv3d.utility.Vector3dVector(np.asarray(mesh.get_vertices())[verts]))
+        pcl = cv3d.geometry.ccPointCloud(points=cv3d.utility.Vector3dVector(
+            np.asarray(mesh.get_vertices())[verts]))
         pcl.paint_uniform_color((0, 0, 1))
         cv3d.visualization.draw_geometries([mesh, pcl])
     if self_intersecting:

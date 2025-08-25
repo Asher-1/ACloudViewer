@@ -5,8 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+// clang-format off
 // must include first to fix glfw issues
 #include "visualization/visualizer/Visualizer.h"
+// clang-format on
 
 #include <FileSystem.h>
 #include <ecvMesh.h>

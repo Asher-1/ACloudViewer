@@ -68,7 +68,6 @@ int main(int argc, char *argv[]) {
     int k = kdtree.SearchRadius(new_cloud_ptr->getEigenPoint(99), r,
                                 new_indices_vec, new_dists_vec);
 
-
     utility::LogInfo("======== {:d}, {:f} ========", k, r);
     for (int i = 0; i < k; i++) {
         utility::LogInfo("{:d}, {:f}", (int)new_indices_vec[i],

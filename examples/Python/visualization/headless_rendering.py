@@ -15,7 +15,8 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
     custom_draw_geometry_with_camera_trajectory.trajectory = \
         cv3d.io.read_pinhole_camera_trajectory(
             "../../test_data/camera_trajectory.json")
-    custom_draw_geometry_with_camera_trajectory.vis = cv3d.visualization.Visualizer()
+    custom_draw_geometry_with_camera_trajectory.vis = cv3d.visualization.Visualizer(
+    )
     if not os.path.exists("../../test_data/image/"):
         os.makedirs("../../test_data/image/")
     if not os.path.exists("../../test_data/depth/"):

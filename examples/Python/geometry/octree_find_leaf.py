@@ -16,7 +16,8 @@ if __name__ == "__main__":
     # Fit to unit cube.
     pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
               center=pcd.get_center())
-    pcd.set_colors(cv3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(N, 3))))
+    pcd.set_colors(
+        cv3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(N, 3))))
     print(pcd)
 
     octree = cv3d.geometry.Octree(max_depth=4)

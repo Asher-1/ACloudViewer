@@ -38,10 +38,9 @@ protected:
                 camera::PinholeCameraTrajectory camera;
                 io::ReadIJsonConvertible("camera.json", camera);
                 auto image_ptr = io::CreateImageFromFile("depth.png");
-                auto pointcloud_ptr =
-                        ccPointCloud::CreateFromDepthImage(
-                                *image_ptr, camera.parameters_[0].intrinsic_,
-                                camera.parameters_[0].extrinsic_);
+                auto pointcloud_ptr = ccPointCloud::CreateFromDepthImage(
+                        *image_ptr, camera.parameters_[0].intrinsic_,
+                        camera.parameters_[0].extrinsic_);
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_K) {

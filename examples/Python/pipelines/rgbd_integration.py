@@ -7,6 +7,7 @@
 import cloudViewer as cv3d
 
 import sys
+
 sys.path.append("../utility")
 sys.path.append("../geometry")
 from trajectory_io import *

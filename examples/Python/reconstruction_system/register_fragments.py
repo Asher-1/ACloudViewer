@@ -21,7 +21,8 @@ def preprocess_point_cloud(pcd, config):
     voxel_size = config["voxel_size"]
     pcd_down = pcd.voxel_down_sample(voxel_size)
     pcd_down.estimate_normals(
-        cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0, max_nn=30))
+        cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0,
+                                              max_nn=30))
     pcd_fpfh = cv3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
         cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5.0,
@@ -40,19 +41,19 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
         result = cv3d.pipelines.registration.registration_ransac_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh, True, distance_threshold,
             cv3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False), 3,
-            [
-                cv3d.pipelines.registration.
+                False), 3, [
+                    cv3d.pipelines.registration.
                     CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                cv3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                    distance_threshold)
-            ],
+                    cv3d.pipelines.registration.
+                    CorrespondenceCheckerBasedOnDistance(distance_threshold)
+                ],
             cv3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.99))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6, 6)))
     information = cv3d.pipelines.registration.get_information_matrix_from_point_clouds(
         source, target, distance_threshold, result.transformation)
-    if information[5, 5] / min(len(source.get_points()), len(target.get_points())) < 0.3:
+    if information[5, 5] / min(len(source.get_points()), len(
+            target.get_points())) < 0.3:
         return (False, np.identity(4), np.zeros((6, 6)))
     return (True, result.transformation, information)
 
@@ -90,7 +91,8 @@ def update_posegrph_for_scene(s, t, transformation, information, odometry,
     if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
-        pose_graph.nodes.append(cv3d.pipelines.registration.PoseGraphNode(odometry_inv))
+        pose_graph.nodes.append(
+            cv3d.pipelines.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
             cv3d.pipelines.registration.PoseGraphEdge(s,
                                                       t,

@@ -15,7 +15,8 @@ import werkzeug
 from werkzeug import wrappers
 
 if sys.platform == 'darwin':
-    raise NotImplementedError("CloudViewer for TensorBoard does not run on macOS.")
+    raise NotImplementedError(
+        "CloudViewer for TensorBoard does not run on macOS.")
 # TODO: Check for GPU / EGL else TensorBoard will crash.
 from cloudViewer.visualization import O3DVisualizer
 from cloudViewer.visualization import gui
@@ -454,8 +455,8 @@ class CloudViewerPlugin(base_plugin.TBPlugin):
         # Dummy window to ensure GUI remains active even if all user windows are
         # closed.
         self._dummy_window = self._gui.run_sync(
-            gui.Application.instance.create_window, "CloudViewer Dummy Window", 32,
-            32)
+            gui.Application.instance.create_window, "CloudViewer Dummy Window",
+            32, 32)
         webrtc_server.register_data_channel_message_callback(
             "tensorboard/show_hide_axes", self._show_hide)
         webrtc_server.register_data_channel_message_callback(
@@ -694,8 +695,8 @@ class CloudViewerPlugin(base_plugin.TBPlugin):
                          max(480, int(float(request.args.get('height', 768)))))
 
         this_window = CloudViewerPluginWindow(self.data_reader,
-                                         "CloudViewer for Tensorboard", win_width,
-                                         win_height)
+                                              "CloudViewer for Tensorboard",
+                                              win_width, win_height)
         with self.window_lock:
             self._windows[this_window.window.uid] = this_window
 

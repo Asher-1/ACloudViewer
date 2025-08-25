@@ -213,8 +213,7 @@ int main(int argc, char *argv[]) {
                     {mesh_ptr}, "Animation", 1920, 1080);
         } else {
             visualization::DrawGeometriesWithCustomAnimation(
-                    {mesh_ptr}, "Animation",
-                    1600, 900, 50, 50, argv[3]);
+                    {mesh_ptr}, "Animation", 1600, 900, 50, 50, argv[3]);
         }
     }
 

@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--slac_integrate",
         help="Step 6) (optional) integrate fragements using slac to make final "
-             "pointcloud / mesh.",
+        "pointcloud / mesh.",
         action="store_true")
     parser.add_argument("--debug_mode",
                         help="turn on debug mode.",
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--device',
         help="(optional) select processing device for slac and slac_integrate. "
-             "[example: cpu:0, cuda:0].",
+        "[example: cpu:0, cuda:0].",
         type=str,
         default='cpu:0')
 

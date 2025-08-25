@@ -11,6 +11,7 @@ import pytest
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from cloudViewer_test import list_devices
 
@@ -23,9 +24,10 @@ from cloudViewer_test import list_devices
 def test_matmul(device, dtype):
     # Shape takes tuple, list or cv3d.core.SizeVector
     a = cv3d.core.Tensor([[1, 2.5, 3], [4, 5, 6.2]], dtype=dtype, device=device)
-    b = cv3d.core.Tensor([[7.5, 8, 9, 10], [11, 12, 13, 14], [15, 16, 17.8, 18]],
-                        dtype=dtype,
-                        device=device)
+    b = cv3d.core.Tensor(
+        [[7.5, 8, 9, 10], [11, 12, 13, 14], [15, 16, 17.8, 18]],
+        dtype=dtype,
+        device=device)
     c = cv3d.core.matmul(a, b)
     assert c.shape == cv3d.core.SizeVector([2, 4])
 
@@ -77,8 +79,8 @@ def test_matmul(device, dtype):
 ])
 def test_inverse(device, dtype):
     a = cv3d.core.Tensor([[7, 2, 1], [0, 3, -1], [-3, 4, 2]],
-                        dtype=dtype,
-                        device=device)
+                         dtype=dtype,
+                         device=device)
 
     if dtype in [cv3d.core.Dtype.Int32, cv3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
@@ -131,8 +133,8 @@ def test_inverse(device, dtype):
 ])
 def test_svd(device, dtype):
     a = cv3d.core.Tensor([[2, 4], [1, 3], [0, 0], [0, 0]],
-                        dtype=dtype,
-                        device=device)
+                         dtype=dtype,
+                         device=device)
     if dtype in [cv3d.core.Dtype.Int32, cv3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
             cv3d.core.svd(a)
@@ -231,9 +233,9 @@ def test_lstsq(device, dtype):
         dtype=dtype,
         device=device)
     b = cv3d.core.Tensor([[8.58, 9.35], [8.26, -4.43], [8.48, -0.70],
-                         [-5.28, -0.26], [5.72, -7.36], [8.93, -2.52]],
-                        dtype=dtype,
-                        device=device)
+                          [-5.28, -0.26], [5.72, -7.36], [8.93, -2.52]],
+                         dtype=dtype,
+                         device=device)
     x = a.lstsq(b)
     x_numpy, _, _, _ = np.linalg.lstsq(a.cpu().numpy(),
                                        b.cpu().numpy(),

@@ -17,9 +17,9 @@ _cv3d_tf_version = _build_config["Tensorflow_VERSION"].split('.')
 if _tf_version.split('.')[:2] != _cv3d_tf_version[:2]:
     _cv3d_tf_version[2] = '*'  # Any patch level is OK
     match_tf_ver = '.'.join(_cv3d_tf_version)
-    raise Exception('Version mismatch: CloudViewer needs Tensorflow version {}, but'
-                    ' version {} is installed!'.format(match_tf_ver,
-                                                       _tf_version))
+    raise Exception(
+        'Version mismatch: CloudViewer needs Tensorflow version {}, but'
+        ' version {} is installed!'.format(match_tf_ver, _tf_version))
 
 from . import layers
 from . import ops

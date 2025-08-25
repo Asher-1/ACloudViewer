@@ -144,7 +144,7 @@ def load_intrinsic(config, key='depth'):
         return intrinsic
     elif config.engine == 'tensor':
         return cv3d.core.Tensor(intrinsic.intrinsic_matrix,
-                               cv3d.core.Dtype.Float64)
+                                cv3d.core.Dtype.Float64)
     else:
         print('Unsupported engine {}'.format(config.engine))
 

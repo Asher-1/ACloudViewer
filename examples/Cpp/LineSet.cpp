@@ -69,7 +69,8 @@ int main(int argc, char *argv[]) {
                              trans_to_origin);
     correspondences.clear();
     for (size_t i = 0; i < new_cloud_ptr->size(); i++) {
-        kdtree.SearchKNN(new_cloud_ptr->getEigenPoint(i), 1, indices_vec, dists_vec);
+        kdtree.SearchKNN(new_cloud_ptr->getEigenPoint(i), 1, indices_vec,
+                         dists_vec);
         correspondences.push_back(std::make_pair(indices_vec[0], (int)i));
     }
     auto new_lineset_ptr =
