@@ -796,7 +796,7 @@ def to_dict_batch(cv3d_geometry_list):
     triangle_uvs = []
     line_colors = []
     line_indices = []
-    if isinstance(cv3d_geometry_list[0], cv3d.geometry.PointCloud):
+    if isinstance(cv3d_geometry_list[0], cv3d.geometry.ccPointCloud):
         for geometry in cv3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.points))
             vertex_colors.append(np.asarray(geometry.colors))
@@ -808,7 +808,7 @@ def to_dict_batch(cv3d_geometry_list):
             'vertex_normals': np.stack(vertex_normals, axis=0),
         }
 
-    elif isinstance(cv3d_geometry_list[0], cv3d.geometry.TriangleMesh):
+    elif isinstance(cv3d_geometry_list[0], cv3d.geometry.ccMesh):
         for geometry in cv3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.vertices))
             vertex_colors.append(np.asarray(geometry.vertex_colors))

@@ -5,11 +5,10 @@
 
 #include <ecvPointCloud.h>
 
+#include "cloudViewer/geometry/Geometry.h"
+
 namespace cloudViewer {
 namespace geometry {
-// Provide legacy alias expected by t::geometry interop code
 using PointCloud = ::ccPointCloud;
 }  // namespace geometry
 }  // namespace cloudViewer
-
-

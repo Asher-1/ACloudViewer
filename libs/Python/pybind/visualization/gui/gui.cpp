@@ -32,6 +32,7 @@
 #include "visualization/gui/ListView.h"
 #include "visualization/gui/NumberEdit.h"
 #include "visualization/gui/ProgressBar.h"
+#include "visualization/gui/RadioButton.h"
 #include "visualization/gui/SceneWidget.h"
 #include "visualization/gui/Slider.h"
 #include "visualization/gui/StackedWidget.h"
@@ -42,6 +43,8 @@
 #include "visualization/gui/TreeView.h"
 #include "visualization/gui/VectorEdit.h"
 #include "visualization/gui/Widget.h"
+#include "visualization/gui/WidgetProxy.h"
+#include "visualization/gui/WidgetStack.h"
 #include "visualization/gui/Window.h"
 #include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Renderer.h"
@@ -130,21 +133,26 @@ void install_cleanup_atexit() {
     }
 }
 
-void InitializeForPython(std::string resource_path /*= ""*/) {
+void InitializeForPython(std::string resource_path /*= ""*/,
+                         bool headless /*= false*/) {
     if (resource_path.empty()) {
         // We need to find the resources directory. Fortunately,
         // Python knows where the module lives (cloudViewer.__file__
         // is the path to
         // __init__.py), so we can use that to find the
         // resources included in the wheel.
-        py::object cv3d = py::module::import("cloudViewer");
-        auto o3d_init_path = cv3d.attr("__file__").cast<std::string>();
+        py::object o3d = py::module::import("cloudViewer");
+        auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
         auto module_path =
                 utility::filesystem::GetFileParentDirectory(o3d_init_path);
         resource_path = module_path + "/resources";
     }
     Application::GetInstance().Initialize(resource_path.c_str());
-    install_cleanup_atexit();
+    // NOTE: The PyOffscreenRenderer takes care of cleaning itself up so the
+    // atext is not necessary
+    if (!headless) {
+        install_cleanup_atexit();
+    }
 }
 
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
@@ -155,26 +163,160 @@ std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
 }
 
 std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
-        rendering::CloudViewerScene *scene, int width, int height) {
+        rendering::CloudViewerScene *scene,
+        int width,
+        int height,
+        bool z_in_view_space /* = false */) {
     return Application::GetInstance().RenderToDepthImage(
             scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
-            height);
+            height, z_in_view_space);
 }
 
 enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
 
-void pybind_gui_classes(py::module &m) {
+class PyImageWidget : public ImageWidget {
+    using Super = ImageWidget;
+
+public:
+    PyImageWidget() : Super() {}
+    /// Uses image from the specified path. Each ImageWidget will use one
+    /// draw call.
+    explicit PyImageWidget(const char *image_path) : Super(image_path) {}
+    /// Uses existing image. Each ImageWidget will use one draw call.
+    explicit PyImageWidget(std::shared_ptr<cloudViewer::geometry::Image> image)
+        : Super(image) {}
+    /// Uses existing image. Each ImageWidget will use one draw call.
+    explicit PyImageWidget(
+            std::shared_ptr<cloudViewer::t::geometry::Image> image)
+        : Super(image) {}
+    /// Uses an existing texture, using texture coordinates
+    /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
+    /// This is useful for using an icon atlas to reduce draw calls.
+    explicit PyImageWidget(
+            cloudViewer::visualization::rendering::TextureHandle texture_id,
+            float u0 = 0.0f,
+            float v0 = 0.0f,
+            float u1 = 1.0f,
+            float v1 = 1.0f)
+        : Super(texture_id, u0, v0, u1, v1) {}
+
+    ~PyImageWidget() = default;
+
+    void SetOnMouse(std::function<int(const MouseEvent &)> f) { on_mouse_ = f; }
+    void SetOnKey(std::function<int(const KeyEvent &)> f) { on_key_ = f; }
+
+    Widget::EventResult Mouse(const MouseEvent &e) override {
+        if (on_mouse_) {
+            switch (EventCallbackResult(on_mouse_(e))) {
+                case EventCallbackResult::CONSUMED:
+                    return Widget::EventResult::CONSUMED;
+                case EventCallbackResult::HANDLED: {
+                    auto result = Super::Mouse(e);
+                    if (result == Widget::EventResult::IGNORED) {
+                        result = Widget::EventResult::CONSUMED;
+                    }
+                    return result;
+                }
+                case EventCallbackResult::IGNORED:
+                default:
+                    return Super::Mouse(e);
+            }
+        } else {
+            return Super::Mouse(e);
+        }
+    }
+
+    Widget::EventResult Key(const KeyEvent &e) override {
+        if (on_key_) {
+            switch (EventCallbackResult(on_key_(e))) {
+                case EventCallbackResult::CONSUMED:
+                    return Widget::EventResult::CONSUMED;
+                case EventCallbackResult::HANDLED: {
+                    auto result = Super::Key(e);
+                    if (result == Widget::EventResult::IGNORED) {
+                        result = Widget::EventResult::CONSUMED;
+                    }
+                    return result;
+                }
+                case EventCallbackResult::IGNORED:
+                default:
+                    return Super::Key(e);
+            }
+        } else {
+            return Super::Key(e);
+        }
+    }
+
+private:
+    std::function<int(const MouseEvent &)> on_mouse_;
+    std::function<int(const KeyEvent &)> on_key_;
+};
+
+class PySceneWidget : public SceneWidget {
+    using Super = SceneWidget;
+
+public:
+    void SetOnMouse(std::function<int(const MouseEvent &)> f) { on_mouse_ = f; }
+    void SetOnKey(std::function<int(const KeyEvent &)> f) { on_key_ = f; }
+
+    Widget::EventResult Mouse(const MouseEvent &e) override {
+        if (on_mouse_) {
+            switch (EventCallbackResult(on_mouse_(e))) {
+                case EventCallbackResult::CONSUMED:
+                    return Widget::EventResult::CONSUMED;
+                case EventCallbackResult::HANDLED: {
+                    auto result = Super::Mouse(e);
+                    if (result == Widget::EventResult::IGNORED) {
+                        result = Widget::EventResult::CONSUMED;
+                    }
+                    return result;
+                }
+                case EventCallbackResult::IGNORED:
+                default:
+                    return Super::Mouse(e);
+            }
+        } else {
+            return Super::Mouse(e);
+        }
+    }
+
+    Widget::EventResult Key(const KeyEvent &e) override {
+        if (on_key_) {
+            switch (EventCallbackResult(on_key_(e))) {
+                case EventCallbackResult::CONSUMED:
+                    return Widget::EventResult::CONSUMED;
+                case EventCallbackResult::HANDLED: {
+                    auto result = Super::Key(e);
+                    if (result == Widget::EventResult::IGNORED) {
+                        result = Widget::EventResult::CONSUMED;
+                    }
+                    return result;
+                }
+                case EventCallbackResult::IGNORED:
+                default:
+                    return Super::Key(e);
+            }
+        } else {
+            return Super::Key(e);
+        }
+    }
+
+private:
+    std::function<int(const MouseEvent &)> on_mouse_;
+    std::function<int(const KeyEvent &)> on_key_;
+};
+
+void pybind_gui_classes(py::module &m_gui) {
     // ---- FontStyle ----
-    py::native_enum<FontStyle> font_style(m, "FontStyle", "enum.Enum",
-                                          "Font style.");
-    font_style.value("NORMAL", FontStyle::NORMAL)
+    py::native_enum<FontStyle>(m_gui, "FontStyle", "enum.Enum", "Font style")
+            .value("NORMAL", FontStyle::NORMAL)
             .value("BOLD", FontStyle::BOLD)
             .value("ITALIC", FontStyle::ITALIC)
             .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC)
             .finalize();
 
     // ---- FontDescription ----
-    py::class_<FontDescription> fd(m, "FontDescription",
+    py::class_<FontDescription> fd(m_gui, "FontDescription",
                                    "Class to describe a custom font");
     fd.def_readonly_static("SANS_SERIF", &FontDescription::SANS_SERIF,
                            "Name of the default sans-serif font that comes "
@@ -219,7 +361,7 @@ void pybind_gui_classes(py::module &m) {
                  "font.");
 
     // ---- Application ----
-    py::class_<Application> application(m, "Application",
+    py::class_<Application> application(m_gui, "Application",
                                         "Global application singleton. This "
                                         "owns the menubar, windows, and event "
                                         "loop");
@@ -379,7 +521,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- LayoutContext ----
     py::class_<LayoutContext> lc(
-            m, "LayoutContext",
+            m_gui, "LayoutContext",
             "Context passed to Window's on_layout callback");
     //    lc.def_readonly("theme", &LayoutContext::theme);
     // Pybind can't return a reference (since Theme is a unique_ptr), so
@@ -394,9 +536,9 @@ void pybind_gui_classes(py::module &m) {
     // to be named the same as the C++ class, though. The holder object cannot
     // be a shared_ptr or we can crash (see comment for UnownedPointer).
     py::class_<Window, UnownedPointer<Window>> window_base(
-            m, "WindowBase", "Application window");
+            m_gui, "WindowBase", "Application window");
     py::class_<PyWindow, UnownedPointer<PyWindow>, Window> window(
-            m, "Window",
+            m_gui, "Window",
             "Application window. Create with "
             "Application.instance.create_window().");
     window.def("__repr__",
@@ -486,7 +628,7 @@ void pybind_gui_classes(py::module &m) {
                     "Gets the rendering.Renderer object for the Window");
 
     // ---- Menu ----
-    py::class_<Menu, UnownedPointer<Menu>> menu(m, "Menu",
+    py::class_<Menu, UnownedPointer<Menu>> menu(m_gui, "Menu",
                                                 "A menu, possibly a menu tree");
     menu.def(py::init<>())
             .def(
@@ -523,7 +665,7 @@ void pybind_gui_classes(py::module &m) {
                     "Sets menu item (un)checked");
 
     // ---- Color ----
-    py::class_<Color> color(m, "Color", "Stores color for gui classes");
+    py::class_<Color> color(m_gui, "Color", "Stores color for gui classes");
     color.def(py::init([](float r, float g, float b, float a) {
                   return new Color(r, g, b, a);
               }),
@@ -551,7 +693,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Theme ----
     // Note: no constructor because themes are created by CloudViewer
-    py::class_<Theme> theme(m, "Theme",
+    py::class_<Theme> theme(m_gui, "Theme",
                             "Theme parameters such as colors used for drawing "
                             "widgets (read-only)");
     theme.def_readonly("font_size", &Theme::font_size,
@@ -566,7 +708,7 @@ void pybind_gui_classes(py::module &m) {
                           "(read-only)");
 
     // ---- Rect ----
-    py::class_<Rect> rect(m, "Rect", "Represents a widget frame");
+    py::class_<Rect> rect(m_gui, "Rect", "Represents a widget frame");
     rect.def(py::init<>())
             .def(py::init<int, int, int, int>())
             .def(py::init([](float x, float y, float w, float h) {
@@ -590,7 +732,7 @@ void pybind_gui_classes(py::module &m) {
             .def("get_bottom", &Rect::GetBottom);
 
     // ---- Size ----
-    py::class_<Size> size(m, "Size", "Size object");
+    py::class_<Size> size(m_gui, "Size", "Size object");
     size.def(py::init<>())
             .def(py::init<int, int>())
             .def(py::init([](float w, float h) {
@@ -614,7 +756,7 @@ void pybind_gui_classes(py::module &m) {
     //  1) adding an object to multiple objects will cause multiple shared_ptrs
     //     to think they own it, leading to a double-free and crash, and
     //  2) if the object is never added, the memory will be leaked.
-    py::class_<Widget, UnownedPointer<Widget>> widget(m, "Widget",
+    py::class_<Widget, UnownedPointer<Widget>> widget(m_gui, "Widget",
                                                       "Base widget class");
 
     py::native_enum<EventCallbackResult> widget_event_callback_result(
@@ -679,8 +821,93 @@ void pybind_gui_classes(py::module &m) {
                  "it requires some internal setup in order to function "
                  "properly");
 
+    // ---- WidgetProxy ----
+    py::class_<WidgetProxy, UnownedPointer<WidgetProxy>, Widget> widgetProxy(
+            m_gui, "WidgetProxy",
+            "Widget container to delegate any widget dynamically."
+            " Widget can not be managed dynamically. Although it is allowed"
+            " to add more child widgets, it's impossible to replace some child"
+            " with new on or remove children. WidgetProxy is designed to solve"
+            " this problem."
+            " When WidgetProxy is created, it's invisible and disabled, so it"
+            " won't be drawn or layout, seeming like it does not exist. When"
+            " a widget is set by  set_widget, all  Widget's APIs will be"
+            " conducted to that child widget. It looks like WidgetProxy is"
+            " that widget."
+            " At any time, a new widget could be set, to replace the old one."
+            " and the old widget will be destroyed."
+            " Due to the content changing after a new widget is set or cleared,"
+            " a relayout of Window might be called after set_widget."
+            " The delegated widget could be retrieved by  get_widget in case"
+            "  you need to access it directly, like get check status of a"
+            " CheckBox. API other than  set_widget and get_widget has"
+            " completely same functions as Widget.");
+    widgetProxy.def(py::init<>(), "Creates a widget proxy")
+            .def("__repr__",
+                 [](const WidgetProxy &c) {
+                     std::stringstream s;
+                     s << "Proxy (" << c.GetFrame().x << ", " << c.GetFrame().y
+                       << "), " << c.GetFrame().width << " x "
+                       << c.GetFrame().height;
+                     return s.str();
+                 })
+            .def(
+                    "set_widget",
+                    [](WidgetProxy &w, UnownedPointer<Widget> proxy) {
+                        w.SetWidget(TakeOwnership<Widget>(proxy));
+                    },
+                    "set a new widget to be delegated by this one."
+                    " After set_widget, the previously delegated widget ,"
+                    " will be abandon all calls to Widget's API will be "
+                    " conducted to widget. Before any set_widget call, "
+                    " this widget is invisible and disabled, seems it "
+                    " does not exist because it won't be drawn or in a "
+                    "layout.")
+            .def("get_widget", &WidgetProxy::GetWidget,
+                 "Retrieve current delegated widget."
+                 "return instance of current delegated widget set by "
+                 "set_widget. An empty pointer will be returned "
+                 "if there is none.");
+
+    // ---- WidgetStack ----
+    py::class_<WidgetStack, UnownedPointer<WidgetStack>, WidgetProxy>
+            widget_stack(m_gui, "WidgetStack",
+                         "A widget stack saves all widgets pushed into by "
+                         "push_widget and always shows the top one. The "
+                         "WidgetStack is a subclass of WidgetProxy, in other"
+                         "words, the topmost widget will delegate itself to "
+                         "WidgetStack. pop_widget will remove the topmost "
+                         "widget and callback set by set_on_top taking the "
+                         "new topmost widget will be called. The WidgetStack "
+                         "disappears in GUI if there is no widget in stack.");
+    widget_stack
+            .def(py::init<>(),
+                 "Creates a widget stack. The widget stack without any"
+                 "widget will not be shown in GUI until set_widget is"
+                 "called to push a widget.")
+            .def("__repr__",
+                 [](const WidgetStack &c) {
+                     std::stringstream s;
+                     s << "Stack (" << c.GetFrame().x << ", " << c.GetFrame().y
+                       << "), " << c.GetFrame().width << " x "
+                       << c.GetFrame().height;
+                     return s.str();
+                 })
+            .def("push_widget", &WidgetStack::PushWidget,
+                 "push a new widget onto the WidgetStack's stack, hiding "
+                 "whatever widget was there before and making the new widget "
+                 "visible.")
+            .def("pop_widget", &WidgetStack::PopWidget,
+                 "pop the topmost widget in the stack. The new topmost widget"
+                 "of stack will be the widget on the show in GUI.")
+            .def("set_on_top", &WidgetStack::SetOnTop,
+                 "Callable[[widget] -> None], called while a widget "
+                 "becomes the topmost of stack after some widget is popped"
+                 "out. It won't be called if a widget is pushed into stack"
+                 "by set_widget.");
+
     // ---- Button ----
-    py::class_<Button, UnownedPointer<Button>, Widget> button(m, "Button",
+    py::class_<Button, UnownedPointer<Button>, Widget> button(m_gui, "Button",
                                                               "Button");
     button.def(py::init<const char *>(), "Creates a button with the given text")
             .def("__repr__",
@@ -738,7 +965,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Checkbox ----
     py::class_<Checkbox, UnownedPointer<Checkbox>, Widget> checkbox(
-            m, "Checkbox", "Checkbox");
+            m_gui, "Checkbox", "Checkbox");
     checkbox.def(py::init<const char *>(),
                  "Creates a checkbox with the given text")
             .def("__repr__",
@@ -757,7 +984,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- ColorEdit ----
     py::class_<ColorEdit, UnownedPointer<ColorEdit>, Widget> coloredit(
-            m, "ColorEdit", "Color picker");
+            m_gui, "ColorEdit", "Color picker");
     coloredit.def(py::init<>())
             .def("__repr__",
                  [](const ColorEdit &c) {
@@ -779,7 +1006,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Combobox ----
     py::class_<Combobox, UnownedPointer<Combobox>, Widget> combobox(
-            m, "Combobox", "Exclusive selection from a pull-down menu");
+            m_gui, "Combobox", "Exclusive selection from a pull-down menu");
     combobox.def(py::init<>(),
                  "Creates an empty combobox. Use add_item() to add items")
             .def("clear_items", &Combobox::ClearItems, "Removes all items")
@@ -798,11 +1025,11 @@ void pybind_gui_classes(py::module &m) {
                  "Removes the first item of the given text")
             .def("remove_item", (void(Combobox::*)(int)) & Combobox::RemoveItem,
                  "Removes the item at the index")
+            .def("get_item", &Combobox::GetItem, "index"_a,
+                 "Returns the item at the given index. Index must be valid.")
             .def_property_readonly("number_of_items",
                                    &Combobox::GetNumberOfItems,
                                    "The number of items (read-only)")
-            .def("get_item", &Combobox::GetItem,
-                 "Returns the item at the given index")
             .def_property("selected_index", &Combobox::GetSelectedIndex,
                           &Combobox::SetSelectedIndex,
                           "The index of the currently selected item")
@@ -814,9 +1041,33 @@ void pybind_gui_classes(py::module &m) {
                  "Arguments are the selected text and selected index, "
                  "respectively");
 
+    // ---- RadioButton ----
+    py::class_<RadioButton, UnownedPointer<RadioButton>, Widget> radiobtn(
+            m_gui, "RadioButton", "Exclusive selection from radio button list");
+    py::native_enum<RadioButton::Type>(radiobtn, "Type", "enum.Enum",
+                                       "Enum class for RadioButton types.")
+            .value("VERT", RadioButton::Type::VERT)
+            .value("HORIZ", RadioButton::Type::HORIZ)
+            .export_values()
+            .finalize();
+    radiobtn.def(py::init<RadioButton::Type>(),
+                 "Creates an empty radio buttons. Use set_items() to add items")
+            .def("set_items", &RadioButton::SetItems,
+                 "Set radio items, each item is a radio button.")
+            .def_property("selected_index", &RadioButton::GetSelectedIndex,
+                          &RadioButton::SetSelectedIndex,
+                          "The index of the currently selected item")
+            .def_property_readonly("selected_value",
+                                   &RadioButton::GetSelectedValue,
+                                   "The text of the currently selected item")
+            .def("set_on_selection_changed",
+                 &RadioButton::SetOnSelectionChanged,
+                 "Calls f(new_idx) when user changes selection");
+
     // ---- ImageWidget ----
     py::class_<UIImage, UnownedPointer<UIImage>> uiimage(
-            m, "UIImage", "A bitmap suitable for displaying with ImageWidget");
+            m_gui, "UIImage",
+            "A bitmap suitable for displaying with ImageWidget");
 
     py::native_enum<UIImage::Scaling> uiimage_scaling(
             uiimage, "Scaling", "enum.Enum", "UIImage::Scaling.");
@@ -838,26 +1089,25 @@ void pybind_gui_classes(py::module &m) {
                           "gui.UIImage.Scaling.ANY: scaled to fit\n"
                           "gui.UIImage.Scaling.ASPECT: scaled to fit but "
                           "keeping the image's aspect ratio");
-
-    py::class_<ImageWidget, UnownedPointer<ImageWidget>, Widget> imagewidget(
-            m, "ImageWidget", "Displays a bitmap");
+    py::class_<PyImageWidget, UnownedPointer<PyImageWidget>, Widget>
+            imagewidget(m_gui, "ImageWidget", "Displays a bitmap");
     imagewidget
-            .def(py::init<>([]() { return new ImageWidget(); }),
+            .def(py::init<>([]() { return new PyImageWidget(); }),
                  "Creates an ImageWidget with no image")
             .def(py::init<>([](const char *path) {
-                     return new ImageWidget(path);
+                     return new PyImageWidget(path);
                  }),
                  "Creates an ImageWidget from the image at the specified path")
             .def(py::init<>([](std::shared_ptr<geometry::Image> image) {
-                     return new ImageWidget(image);
+                     return new PyImageWidget(image);
                  }),
                  "Creates an ImageWidget from the provided image")
             .def(py::init<>([](std::shared_ptr<t::geometry::Image> image) {
-                     return new ImageWidget(image);
+                     return new PyImageWidget(image);
                  }),
                  "Creates an ImageWidget from the provided tgeometry image")
             .def("__repr__",
-                 [](const ImageWidget &il) {
+                 [](const PyImageWidget &il) {
                      std::stringstream s;
                      s << "ImageWidget (" << il.GetFrame().x << ", "
                        << il.GetFrame().y << "), " << il.GetFrame().width
@@ -866,7 +1116,7 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def("update_image",
                  py::overload_cast<std::shared_ptr<geometry::Image>>(
-                         &ImageWidget::UpdateImage),
+                         &PyImageWidget::UpdateImage),
                  "Mostly a convenience function for ui_image.update_image(). "
                  "If 'image' is the same size as the current image, will "
                  "update the texture with the contents of 'image'. This is "
@@ -878,7 +1128,7 @@ void pybind_gui_classes(py::module &m) {
                  "texture resources.")
             .def("update_image",
                  py::overload_cast<std::shared_ptr<t::geometry::Image>>(
-                         &ImageWidget::UpdateImage),
+                         &PyImageWidget::UpdateImage),
                  "Mostly a convenience function for ui_image.update_image(). "
                  "If 'image' is the same size as the current image, will "
                  "update the texture with the contents of 'image'. This is "
@@ -888,14 +1138,24 @@ void pybind_gui_classes(py::module &m) {
                  "same as creating a new UIImage and calling SetUIImage(). "
                  "This is the slow path, and may eventually exhaust internal "
                  "texture resources.")
-            .def_property("ui_image", &ImageWidget::GetUIImage,
-                          &ImageWidget::SetUIImage,
+            .def("set_on_mouse", &PyImageWidget::SetOnMouse,
+                 "Sets a callback for mouse events. This callback is passed "
+                 "a MouseEvent object. The callback must return "
+                 "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
+                 "or EventCallbackResult.CONSUMED.")
+            .def("set_on_key", &PyImageWidget::SetOnKey,
+                 "Sets a callback for key events. This callback is passed "
+                 "a KeyEvent object. The callback must return "
+                 "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
+                 "or EventCallackResult.CONSUMED.")
+            .def_property("ui_image", &PyImageWidget::GetUIImage,
+                          &PyImageWidget::SetUIImage,
                           "Replaces the texture with a new texture. This is "
                           "not a fast path, and is not recommended for video "
                           "as you will exhaust internal texture resources.");
 
     // ---- Label ----
-    py::class_<Label, UnownedPointer<Label>, Widget> label(m, "Label",
+    py::class_<Label, UnownedPointer<Label>, Widget> label(m_gui, "Label",
                                                            "Displays text");
     label.def(py::init([](const char *title = "") { return new Label(title); }),
               "Creates a Label with the given text")
@@ -920,7 +1180,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Label3D ----
     py::class_<Label3D, UnownedPointer<Label3D>> label3d(
-            m, "Label3D", "Displays text in a 3D scene");
+            m_gui, "Label3D", "Displays text in a 3D scene");
     label3d.def(py::init([](const char *text = "",
                             const Eigen::Vector3f &pos = {0.f, 0.f, 0.f}) {
                     return new Label3D(pos, text);
@@ -937,7 +1197,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- ListView ----
     py::class_<ListView, UnownedPointer<ListView>, Widget> listview(
-            m, "ListView", "Displays a list of text");
+            m_gui, "ListView", "Displays a list of text");
     listview.def(py::init<>(), "Creates an empty list")
             .def("__repr__",
                  [](const ListView &lv) {
@@ -961,7 +1221,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- NumberEdit ----
     py::class_<NumberEdit, UnownedPointer<NumberEdit>, Widget> numedit(
-            m, "NumberEdit", "Allows the user to enter a number.");
+            m_gui, "NumberEdit", "Allows the user to enter a number.");
 
     py::native_enum<NumberEdit::Type> numedit_type(
             numedit, "Type", "enum.Enum", "Enum class for NumberEdit types.");
@@ -1019,7 +1279,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- ProgressBar----
     py::class_<ProgressBar, UnownedPointer<ProgressBar>, Widget> progress(
-            m, "ProgressBar", "Displays a progress bar");
+            m_gui, "ProgressBar", "Displays a progress bar");
     progress.def(py::init<>())
             .def("__repr__",
                  [](const ProgressBar &pb) {
@@ -1091,7 +1351,7 @@ void pybind_gui_classes(py::module &m) {
     };
 
     py::class_<PySceneWidget, UnownedPointer<PySceneWidget>, Widget> scene(
-            m, "SceneWidget", "Displays 3D content");
+            m_gui, "SceneWidget", "Displays 3D content");
 
     py::native_enum<SceneWidget::Controls> scene_ctrl(
             scene, "Controls", "enum.Enum",
@@ -1173,7 +1433,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(
-            m, "Slider", "A slider widget for visually selecting numbers");
+            m_gui, "Slider", "A slider widget for visually selecting numbers");
 
     py::native_enum<Slider::Type> slider_type(slider, "Type", "enum.Enum",
                                               "Enum class for Slider types.");
@@ -1219,7 +1479,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- StackedWidget ----
     py::class_<StackedWidget, UnownedPointer<StackedWidget>, Widget> stacked(
-            m, "StackedWidget", "Like a TabControl but without the tabs");
+            m_gui, "StackedWidget", "Like a TabControl but without the tabs");
     stacked.def(py::init<>())
             .def_property("selected_index", &StackedWidget::GetSelectedIndex,
                           &StackedWidget::SetSelectedIndex,
@@ -1227,7 +1487,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- TabControl ----
     py::class_<TabControl, UnownedPointer<TabControl>, Widget> tabctrl(
-            m, "TabControl", "Tab control");
+            m_gui, "TabControl", "Tab control");
     tabctrl.def(py::init<>())
             .def(
                     "add_tab",
@@ -1246,7 +1506,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- TextEdit ----
     py::class_<TextEdit, UnownedPointer<TextEdit>, Widget> textedit(
-            m, "TextEdit", "Allows the user to enter or modify text");
+            m_gui, "TextEdit", "Allows the user to enter or modify text");
     textedit.def(py::init<>(),
                  "Creates a TextEdit widget with an initial value of an empty "
                  "string.")
@@ -1274,7 +1534,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- ToggleSwitch ----
     py::class_<ToggleSwitch, UnownedPointer<ToggleSwitch>, Widget> toggle(
-            m, "ToggleSwitch", "ToggleSwitch");
+            m_gui, "ToggleSwitch", "ToggleSwitch");
     toggle.def(py::init<const char *>(),
                "Creates a toggle switch with the given text")
             .def("__repr__",
@@ -1293,7 +1553,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- TreeView ----
     py::class_<TreeView, UnownedPointer<TreeView>, Widget> treeview(
-            m, "TreeView", "Hierarchical list");
+            m_gui, "TreeView", "Hierarchical list");
     treeview.def(py::init<>(), "Creates an empty TreeView widget")
             .def("__repr__",
                  [](const TreeView &tv) {
@@ -1319,6 +1579,11 @@ void pybind_gui_classes(py::module &m) {
             .def("remove_item", &TreeView::RemoveItem,
                  "Removes an item and all its children (if any)")
             .def("clear", &TreeView::Clear, "Removes all items")
+            .def("get_item", &TreeView::GetItem, "item_id"_a,
+                 "Returns the widget associated with the provided Item ID. For "
+                 "example, to manipulate the widget of the currently selected "
+                 "item you would use the ItemID of the selected_item property "
+                 "with get_item to get the widget.")
             .def_property(
                     "can_select_items_with_children",
                     &TreeView::GetCanSelectItemsWithChildren,
@@ -1338,7 +1603,7 @@ void pybind_gui_classes(py::module &m) {
     // ---- TreeView cells ----
     py::class_<CheckableTextTreeCell, UnownedPointer<CheckableTextTreeCell>,
                Widget>
-            checkable_cell(m, "CheckableTextTreeCell",
+            checkable_cell(m_gui, "CheckableTextTreeCell",
                            "TreeView cell with a checkbox and text");
     checkable_cell
             .def(py::init<>([](const char *text, bool checked,
@@ -1358,7 +1623,7 @@ void pybind_gui_classes(py::module &m) {
                                    "(property is read-only)");
 
     py::class_<LUTTreeCell, UnownedPointer<LUTTreeCell>, Widget> lut_cell(
-            m, "LUTTreeCell",
+            m_gui, "LUTTreeCell",
             "TreeView cell with checkbox, text, and color edit");
     lut_cell.def(py::init<>([](const char *text, bool checked,
                                const Color &color,
@@ -1384,7 +1649,7 @@ void pybind_gui_classes(py::module &m) {
                                    "(property is read-only)");
 
     py::class_<ColormapTreeCell, UnownedPointer<ColormapTreeCell>, Widget>
-            colormap_cell(m, "ColormapTreeCell",
+            colormap_cell(m_gui, "ColormapTreeCell",
                           "TreeView cell with a number edit and color edit");
     colormap_cell
             .def(py::init<>([](float value, const Color &color,
@@ -1410,7 +1675,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- VectorEdit ----
     py::class_<VectorEdit, UnownedPointer<VectorEdit>, Widget> vectoredit(
-            m, "VectorEdit", "Allows the user to edit a 3-space vector");
+            m_gui, "VectorEdit", "Allows the user to edit a 3-space vector");
     vectoredit.def(py::init<>())
             .def("__repr__",
                  [](const VectorEdit &ve) {
@@ -1429,7 +1694,7 @@ void pybind_gui_classes(py::module &m) {
                  "changes the value of a component");
 
     // ---- Margins ----
-    py::class_<Margins, UnownedPointer<Margins>> margins(m, "Margins",
+    py::class_<Margins, UnownedPointer<Margins>> margins(m_gui, "Margins",
                                                          "Margins for layouts");
     margins.def(py::init([](int left, int top, int right, int bottom) {
                     return new Margins(left, top, right, bottom);
@@ -1463,7 +1728,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Layout1D ----
     py::class_<Layout1D, UnownedPointer<Layout1D>, Widget> layout1d(
-            m, "Layout1D", "Layout base class");
+            m_gui, "Layout1D", "Layout base class");
     layout1d
             // TODO: write the proper constructor
             //        .def(py::init([]() { return new Layout1D(Layout1D::VERT,
@@ -1481,7 +1746,7 @@ void pybind_gui_classes(py::module &m) {
                  "extra space as there is available in the layout");
 
     // ---- Vert ----
-    py::class_<Vert, UnownedPointer<Vert>, Layout1D> vlayout(m, "Vert",
+    py::class_<Vert, UnownedPointer<Vert>, Layout1D> vlayout(m_gui, "Vert",
                                                              "Vertical layout");
     vlayout.def(py::init([](int spacing, const Margins &margins) {
                     return new Vert(spacing, margins);
@@ -1505,7 +1770,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- CollapsableVert ----
     py::class_<CollapsableVert, UnownedPointer<CollapsableVert>, Vert>
-            collapsable(m, "CollapsableVert",
+            collapsable(m_gui, "CollapsableVert",
                         "Vertical layout with title, whose contents are "
                         "collapsable");
     collapsable
@@ -1536,6 +1801,10 @@ void pybind_gui_classes(py::module &m) {
                  "window is visible")
             .def("get_is_open", &CollapsableVert::GetIsOpen,
                  "Check if widget is open.")
+            .def("set_text", &CollapsableVert::SetText, "text"_a,
+                 "Sets the text for the CollapsableVert")
+            .def("get_text", &CollapsableVert::GetText,
+                 "Gets the text for the CollapsableVert")
             .def_property("font_id", &CollapsableVert::GetFontId,
                           &CollapsableVert::SetFontId,
                           "Set the font using the FontId returned from "
@@ -1543,7 +1812,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- ScrollableVert ----
     py::class_<ScrollableVert, UnownedPointer<ScrollableVert>, Vert> slayout(
-            m, "ScrollableVert", "Scrollable vertical layout");
+            m_gui, "ScrollableVert", "Scrollable vertical layout");
     slayout.def(py::init([](int spacing, const Margins &margins) {
                     return new ScrollableVert(spacing, margins);
                 }),
@@ -1564,7 +1833,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Horiz ----
     py::class_<Horiz, UnownedPointer<Horiz>, Layout1D> hlayout(
-            m, "Horiz", "Horizontal layout");
+            m_gui, "Horiz", "Horizontal layout");
     hlayout.def(py::init([](int spacing, const Margins &margins) {
                     return new Horiz(spacing, margins);
                 }),
@@ -1588,7 +1857,7 @@ void pybind_gui_classes(py::module &m) {
                           "Sets the preferred height of the layout");
 
     // ---- VGrid ----
-    py::class_<VGrid, UnownedPointer<VGrid>, Widget> vgrid(m, "VGrid",
+    py::class_<VGrid, UnownedPointer<VGrid>, Widget> vgrid(m_gui, "VGrid",
                                                            "Grid layout");
     vgrid.def(py::init([](int n_cols, int spacing, const Margins &margins) {
                   return new VGrid(n_cols, spacing, margins);
@@ -1623,17 +1892,17 @@ void pybind_gui_classes(py::module &m) {
                           "Sets the preferred width of the layout");
 
     // ---- Dialog ----
-    py::class_<Dialog, UnownedPointer<Dialog>, Widget> dialog(m, "Dialog",
+    py::class_<Dialog, UnownedPointer<Dialog>, Widget> dialog(m_gui, "Dialog",
                                                               "Dialog");
     dialog.def(py::init<const char *>(),
                "Creates a dialog with the given title");
 
     // ---- FileDialog ----
     py::class_<FileDialog, UnownedPointer<FileDialog>, Dialog> filedlg(
-            m, "FileDialog", "File picker dialog");
+            m_gui, "FileDialog", "File picker dialog");
 
-    py::native_enum<FileDialog::Mode> filedlg_mode(filedlg, "Mode", "enum.Enum",
-                                              "Enum class for FileDialog modes.");
+    py::native_enum<FileDialog::Mode> filedlg_mode(
+            filedlg, "Mode", "enum.Enum", "Enum class for FileDialog modes.");
     filedlg_mode.value("OPEN", FileDialog::Mode::OPEN)
             .value("SAVE", FileDialog::Mode::SAVE)
             .export_values()

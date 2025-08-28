@@ -291,7 +291,7 @@ This example shows how to create a hemisphere from a sphere::
 
 import cloudViewer as cv3d
 
-sphere = cv3d.t.geometry.TriangleMesh.from_legacy(cv3d.geometry.TriangleMesh.create_sphere())
+sphere = cv3d.t.geometry.TriangleMesh.from_legacy(cv3d.geometry.ccMesh.create_sphere())
 hemisphere = sphere.clip_plane(point=[0,0,0], normal=[1,0,0])
 
 cv3d.visualization.draw(hemisphere)
@@ -658,9 +658,9 @@ The mesh describing the union volume.
 Example:
 This computes the union of a sphere and a cube::
 
- box = cv3d.geometry.TriangleMesh.create_box()
+ box = cv3d.geometry.ccMesh.create_box()
  box = cv3d.t.geometry.TriangleMesh.from_legacy(box)
- sphere = cv3d.geometry.TriangleMesh.create_sphere(0.8)
+ sphere = cv3d.geometry.ccMesh.create_sphere(0.8)
  sphere = cv3d.t.geometry.TriangleMesh.from_legacy(sphere)
 
  ans = box.boolean_union(sphere)
@@ -689,9 +689,9 @@ The mesh describing the intersection volume.
 Example:
 This computes the intersection of a sphere and a cube::
 
- box = cv3d.geometry.TriangleMesh.create_box()
+ box = cv3d.geometry.ccMesh.create_box()
  box = cv3d.t.geometry.TriangleMesh.from_legacy(box)
- sphere = cv3d.geometry.TriangleMesh.create_sphere(0.8)
+ sphere = cv3d.geometry.ccMesh.create_sphere(0.8)
  sphere = cv3d.t.geometry.TriangleMesh.from_legacy(sphere)
 
  ans = box.boolean_intersection(sphere)
@@ -720,9 +720,9 @@ The mesh describing the difference volume.
 Example:
 This subtracts the sphere from the cube volume::
 
- box = cv3d.geometry.TriangleMesh.create_box()
+ box = cv3d.geometry.ccMesh.create_box()
  box = cv3d.t.geometry.TriangleMesh.from_legacy(box)
- sphere = cv3d.geometry.TriangleMesh.create_sphere(0.8)
+ sphere = cv3d.geometry.ccMesh.create_sphere(0.8)
  sphere = cv3d.t.geometry.TriangleMesh.from_legacy(sphere)
 
  ans = box.boolean_difference(sphere)
@@ -848,7 +848,7 @@ We generate a texture storing the xyz coordinates for each texel::
  import cloudViewer as cv3d
  from matplotlib import pyplot as plt
 
- box = cv3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+ box = cv3d.geometry.ccMesh.create_box(create_uv_map=True)
  box = cv3d.t.geometry.TriangleMesh.from_legacy(box)
  box.vertex['albedo'] = box.vertex.positions
 
@@ -903,7 +903,7 @@ texel belongs to::
  import cloudViewer as cv3d
  from matplotlib import pyplot as plt
 
- box = cv3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+ box = cv3d.geometry.ccMesh.create_box(create_uv_map=True)
  box = cv3d.t.geometry.TriangleMesh.from_legacy(box)
  # Creates a triangle attribute 'albedo' which is the triangle index
  # multiplied by (255//12).

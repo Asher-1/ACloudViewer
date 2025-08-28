@@ -8,5 +8,5 @@ target_sources(pybind PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/raycasting_scene.cpp
     ${CMAKE_CURRENT_LIST_DIR}/tensormap.cpp
     ${CMAKE_CURRENT_LIST_DIR}/trianglemesh.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/voxelblockgrid.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/voxel_block_grid.cpp
 )

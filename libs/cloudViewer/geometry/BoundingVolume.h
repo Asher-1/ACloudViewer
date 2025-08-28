@@ -3,8 +3,9 @@
 // Legacy AABB API adapter mapped to core/include/BoundingBox.h
 
 #include <ecvBBox.h>
+#include <ecvOrientedBBox.h>
 
-#include "ecvOrientedBBox.h"
+#include "cloudViewer/geometry/Geometry.h"
 
 namespace cloudViewer {
 namespace geometry {

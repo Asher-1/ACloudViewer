@@ -21,8 +21,7 @@ TetraMesh::CreateFromPointCloud(const ccPointCloud& point_cloud) {
                 "[CreateFromPointCloud] not enough points to create a "
                 "tetrahedral mesh.");
     }
-    return utility::Qhull::ComputeDelaunayTetrahedralization(
-		point_cloud.getPoints());
+    return Qhull::ComputeDelaunayTetrahedralization(point_cloud.getPoints());
 }
 }  // namespace geometry
 }  // namespace cloudViewer

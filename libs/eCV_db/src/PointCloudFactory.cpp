@@ -1388,7 +1388,7 @@ double ccPointCloud::computeResolution() const {
 
 std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
 ccPointCloud::computeConvexHull() const {
-    return cloudViewer::utility::Qhull::ComputeConvexHull(m_points);
+    return cloudViewer::geometry::Qhull::ComputeConvexHull(m_points);
 }
 
 std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
@@ -1421,7 +1421,7 @@ ccPointCloud::hiddenPointRemoval(const Eigen::Vector3d &camera_location,
     std::shared_ptr<ccMesh> visible_mesh;
     std::vector<size_t> pt_map;
     std::tie(visible_mesh, pt_map) =
-            cloudViewer::utility::Qhull::ComputeConvexHull(
+            cloudViewer::geometry::Qhull::ComputeConvexHull(
                     spherical_projection);
 
     // reassign original points to mesh

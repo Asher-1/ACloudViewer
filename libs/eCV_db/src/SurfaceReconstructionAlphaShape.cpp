@@ -47,7 +47,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
                 "[CreateFromPointCloudAlphaShape] "
                 "ComputeDelaunayTetrahedralization");
         std::tie(tetra_mesh, pt_map_computed) =
-                cloudViewer::utility::Qhull::ComputeDelaunayTetrahedralization(
+                cloudViewer::geometry::Qhull::ComputeDelaunayTetrahedralization(
                         pcd.getPoints());
         pt_map = &pt_map_computed;
         cloudViewer::utility::LogDebug(

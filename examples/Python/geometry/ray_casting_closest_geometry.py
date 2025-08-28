@@ -13,9 +13,9 @@ import sys
 
 if __name__ == "__main__":
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box().translate([-1.2, -1.2, 0]))
+        cv3d.geometry.ccMesh.create_box().translate([-1.2, -1.2, 0]))
     sphere = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_sphere(0.5).translate([0.7, 0.8, 0]))
+        cv3d.geometry.ccMesh.create_sphere(0.5).translate([0.7, 0.8, 0]))
 
     scene = cv3d.t.geometry.RaycastingScene()
     # Add triangle meshes and remember ids.

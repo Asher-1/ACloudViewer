@@ -50,7 +50,7 @@ def test_cast_lots_of_rays():
 
 def test_add_triangle_mesh():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -65,7 +65,7 @@ def test_add_triangle_mesh():
 
 def test_count_intersections():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -82,7 +82,7 @@ def test_count_intersections():
 # we expect no errors for this test
 def test_count_lots_of_intersections():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -115,7 +115,7 @@ def test_compute_closest_points():
 
 def test_compute_distance():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -129,7 +129,7 @@ def test_compute_distance():
 
 def test_compute_signed_distance():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -143,7 +143,7 @@ def test_compute_signed_distance():
 
 def test_compute_occupancy():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)

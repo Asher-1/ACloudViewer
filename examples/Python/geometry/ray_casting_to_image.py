@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # Create meshes and convert to cloudViewer.t.geometry.TriangleMesh .
-    cube = cv3d.geometry.TriangleMesh.create_box().translate([0, 0, 0])
+    cube = cv3d.geometry.ccMesh.create_box().translate([0, 0, 0])
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(cube)
-    torus = cv3d.geometry.TriangleMesh.create_torus().translate([0, 0, 2])
+    torus = cv3d.geometry.ccMesh.create_torus().translate([0, 0, 2])
     torus = cv3d.t.geometry.TriangleMesh.from_legacy(torus)
-    sphere = cv3d.geometry.TriangleMesh.create_sphere(radius=0.5).translate(
+    sphere = cv3d.geometry.ccMesh.create_sphere(radius=0.5).translate(
         [1, 2, 3])
     sphere = cv3d.t.geometry.TriangleMesh.from_legacy(sphere)
 

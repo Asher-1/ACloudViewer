@@ -439,7 +439,32 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
     // Convert first material only if one or more are present
     if (mesh_legacy.materials_.size() > 0) {
         const auto &mat = mesh_legacy.materials_.begin()->second;
-        // 当前分支缺少渲染材质细节接口，先跳过材质迁移
+        auto &tmat = mesh.GetMaterial();
+        tmat.SetDefaultProperties();
+        tmat.SetBaseColor(Eigen::Vector4f{mat.baseColor.f4});
+        tmat.SetBaseRoughness(mat.baseRoughness);
+        tmat.SetBaseMetallic(mat.baseMetallic);
+        tmat.SetBaseReflectance(mat.baseReflectance);
+        tmat.SetAnisotropy(mat.baseAnisotropy);
+        tmat.SetBaseClearcoat(mat.baseClearCoat);
+        tmat.SetBaseClearcoatRoughness(mat.baseClearCoatRoughness);
+        // no emissive_color in legacy mesh material
+        if (mat.albedo) tmat.SetAlbedoMap(Image::FromLegacy(*mat.albedo));
+        if (mat.normalMap) tmat.SetNormalMap(Image::FromLegacy(*mat.normalMap));
+        if (mat.roughness)
+            tmat.SetRoughnessMap(Image::FromLegacy(*mat.roughness));
+        if (mat.metallic) tmat.SetMetallicMap(Image::FromLegacy(*mat.metallic));
+        if (mat.reflectance)
+            tmat.SetReflectanceMap(Image::FromLegacy(*mat.reflectance));
+        if (mat.ambientOcclusion)
+            tmat.SetAOMap(Image::FromLegacy(*mat.ambientOcclusion));
+        if (mat.clearCoat)
+            tmat.SetClearcoatMap(Image::FromLegacy(*mat.clearCoat));
+        if (mat.clearCoatRoughness)
+            tmat.SetClearcoatRoughnessMap(
+                    Image::FromLegacy(*mat.clearCoatRoughness));
+        if (mat.anisotropy)
+            tmat.SetAnisotropyMap(Image::FromLegacy(*mat.anisotropy));
     }
     if (mesh_legacy.materials_.size() > 1) {
         utility::LogWarning(
@@ -490,9 +515,9 @@ cloudViewer::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
     // Convert material if the t geometry has a valid one
     auto &tmat = GetMaterial();
     if (tmat.IsValid()) {
-        auto &legacy_map = mesh_legacy.materials_;
-        auto it_insert = legacy_map.emplace("Mat1", ccMesh::Material{});
-        auto &legacy_mat = it_insert.first->second;
+        mesh_legacy.materials_.emplace_back();
+        mesh_legacy.materials_.front().first = "Mat1";
+        auto &legacy_mat = mesh_legacy.materials_.front().second;
         // Convert scalar properties
         if (tmat.HasBaseColor()) {
             legacy_mat.baseColor.f4[0] = tmat.GetBaseColor().x();

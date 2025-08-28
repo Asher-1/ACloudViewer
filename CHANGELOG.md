@@ -19,6 +19,8 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
 		-   New FlyingEdges algorithm for extracting an isosurface (triangle mesh) from a dense 3D volume.
 		-   Add Doppler ICP in tensor registration pipeline
 		-   New Doppler ICP registration for FMCW Lidars
+		-   Add O3DVisualizer API to enable collapse control of verts in the side panel
+		-   Add radio button support
 
 - Bug fixes:
     -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13
@@ -32,6 +34,8 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
     -   Fix Python bindings for CUDA device synchronization, voxel grid saving
     -   Fix geometry picker Error when LineSet objects are presented
     -   Fix regression in printing cuda tensor from 🐛
+    -   Changed TriangleMesh to store materials in a list so they can be accessed by the material index
+    -   Fix render to depth image on Apple Retina displays
 
 - Enhancements:
     -   Update 3rparty version

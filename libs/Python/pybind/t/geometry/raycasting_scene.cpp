@@ -30,7 +30,7 @@ The following shows how to create a scene and compute ray intersections::
     import matplotlib.pyplot as plt
 
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-                                        cv3d.geometry.TriangleMesh.create_box())
+                                        cv3d.geometry.ccMesh.create_box())
 
     # Create scene and add the cube mesh
     scene = cv3d.t.geometry.RaycastingScene()

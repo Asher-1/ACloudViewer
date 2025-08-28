@@ -27,8 +27,8 @@ def test_external_visualizer():
     ev = cv3d.visualization.ExternalVisualizer(address=address)
 
     # create some objects
-    mesh = cv3d.geometry.TriangleMesh.create_torus()
-    pcd = cv3d.geometry.PointCloud(
+    mesh = cv3d.geometry.ccMesh.create_torus()
+    pcd = cv3d.geometry.ccPointCloud(
         cv3d.utility.Vector3dVector(np.random.rand(100, 3)))
     camera = cv3d.camera.PinholeCameraParameters()
     camera.extrinsic = np.eye(4)
