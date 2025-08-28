@@ -31,8 +31,8 @@ from cloudViewer.visualization.tensorboard_plugin.util import CloudViewerPluginD
 @pytest.fixture
 def geometry_data():
     """Common geometry data for tests"""
-    cube = (cv3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True),
-            cv3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True))
+    cube = (cv3d.geometry.ccMesh.create_box(1, 2, 4, create_uv_map=True),
+            cv3d.geometry.ccMesh.create_box(1, 2, 4, create_uv_map=True))
     cube[0].compute_vertex_normals()
     cube[1].compute_vertex_normals()
 

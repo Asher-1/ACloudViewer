@@ -305,11 +305,14 @@ Build:
 ## Debug wheel (Linux)
 
 ```
-1. gdb python
+1. gdb --batch --ex run --ex bt --ex quit --args python3 -c "import cloudViewer"
 
-2. run -c "import cloudViewer"
+或者
 
-3. bt
+2. gdb python3
+3. run -c "import cloudViewer"
+
+4. bt
 ```
 
 ## Debug wheel (MacOS)

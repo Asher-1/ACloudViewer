@@ -311,6 +311,8 @@ public:
 
     // inherited from ccGenericMesh
     bool hasTriNormals() const override;
+    // for compatibility
+    inline bool hasTriangleNormals() const { return hasTriNormals(); }
     void getTriangleNormalIndexes(unsigned triangleIndex,
                                   int& i1,
                                   int& i2,
@@ -700,7 +702,7 @@ public:  // some cloudViewer interface
                 additionalMaps;
     };
 
-    std::unordered_map<std::string, Material> materials_;
+    std::vector<std::pair<std::string, Material>> materials_;
 
     /// List of material ids.
     std::vector<int> triangle_material_ids_;

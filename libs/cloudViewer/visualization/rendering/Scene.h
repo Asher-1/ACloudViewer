@@ -8,6 +8,7 @@
 #pragma once
 
 #include <Eigen.h>
+
 #include <Eigen/Geometry>
 #include <memory>
 #include <vector>
@@ -24,8 +25,9 @@ class Image;
 
 namespace t {
 namespace geometry {
+class Geometry;
 class PointCloud;
-}
+}  // namespace geometry
 }  // namespace t
 
 namespace visualization {
@@ -47,7 +49,8 @@ public:
     static const uint32_t kUpdateUv0Flag = (1 << 3);
 
 #ifdef SIMD_ENABLED
-    using Transform = Eigen::Transform<float, 3, Eigen::Affine, Eigen::DontAlign>;
+    using Transform =
+            Eigen::Transform<float, 3, Eigen::Affine, Eigen::DontAlign>;
 #else
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
 #endif
@@ -81,7 +84,7 @@ public:
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;
     virtual bool AddGeometry(const std::string& object_name,
-                             const t::geometry::PointCloud& point_cloud,
+                             const t::geometry::Geometry& geometry,
                              const MaterialRecord& material,
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;

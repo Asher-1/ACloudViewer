@@ -407,7 +407,7 @@ ccMesh &ccMesh::paintUniformColor(const Eigen::Vector3d &color) {
 
 std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
 ccMesh::computeConvexHull() const {
-    return cloudViewer::utility::Qhull::ComputeConvexHull(getVertices());
+    return cloudViewer::geometry::Qhull::ComputeConvexHull(getVertices());
 }
 
 std::shared_ptr<ccMesh> ccMesh::filterSharpen(int number_of_iterations,

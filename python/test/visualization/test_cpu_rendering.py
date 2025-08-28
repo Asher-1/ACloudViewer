@@ -15,7 +15,7 @@ def draw_box_offscreen():
     import cloudViewer as cv3d
     import cloudViewer.visualization.rendering as rendering
     render = rendering.OffscreenRenderer(640, 480)
-    cube_red = cv3d.geometry.TriangleMesh.create_box(1, 2, 4)
+    cube_red = cv3d.geometry.ccMesh.create_box(1, 2, 4)
     cube_red.compute_vertex_normals()
     cube_red.paint_uniform_color((1.0, 0.0, 0.0))
     default_mat = rendering.MaterialRecord()

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -136,7 +136,8 @@ public:
     void RenderToDepthImage(
             View* view,
             Scene* scene,
-            std::function<void(std::shared_ptr<geometry::Image>)> cb);
+            std::function<void(std::shared_ptr<geometry::Image>)> cb,
+            bool z_in_view_space = false);
 };
 
 }  // namespace rendering
