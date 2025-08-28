@@ -5,10 +5,10 @@
 
 #include <ecvMesh.h>
 
+#include "cloudViewer/geometry/Geometry.h"
+
 namespace cloudViewer {
 namespace geometry {
-using TriangleMesh = ::ccMesh;  // legacy alias for t::geometry interop
+using TriangleMesh = ::ccMesh;
 }  // namespace geometry
 }  // namespace cloudViewer
-
-

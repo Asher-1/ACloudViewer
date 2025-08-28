@@ -123,7 +123,7 @@ ecvMeshBase ecvMeshBase::operator+(const ecvMeshBase &mesh) const {
 
 std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
 ecvMeshBase::computeConvexHull() const {
-    return utility::Qhull::ComputeConvexHull(vertices_);
+    return Qhull::ComputeConvexHull(vertices_);
 }
 
 }  // namespace geometry

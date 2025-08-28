@@ -11,10 +11,10 @@
 #include <unordered_map>
 
 #include "core/hashmap/HashMap.h"
-#include "t/geometry/LineSet.h"
-#include "t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
+#include "t/geometry/LineSet.h"
+#include "t/geometry/TriangleMesh.h"
 
 namespace cloudViewer {
 namespace t {
@@ -368,7 +368,7 @@ Example:
         pcd.orient_normals_consistent_tangent_plane(100)
 
         # Create mesh from point cloud using Poisson Algorithm
-        poisson_mesh = cv3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=8, width=0, scale=1.1, linear_fit=False)[0]
+        poisson_mesh = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(pcd, depth=8, width=0, scale=1.1, linear_fit=False)[0]
         poisson_mesh.paint_uniform_color(np.array([[0.5],[0.5],[0.5]]))
         poisson_mesh.compute_vertex_normals()
         cv3d.visualization.draw_geometries([poisson_mesh])
@@ -381,7 +381,7 @@ Example:
         pcd_robust.orient_normals_consistent_tangent_plane(100, 10, 0.5)
 
         # Create mesh from point cloud using Poisson Algorithm
-        poisson_mesh_robust = cv3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd_robust, depth=8, width=0, scale=1.1, linear_fit=False)[0]
+        poisson_mesh_robust = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(pcd_robust, depth=8, width=0, scale=1.1, linear_fit=False)[0]
         poisson_mesh_robust.paint_uniform_color(np.array([[0.5],[0.5],[0.5]]))
         poisson_mesh_robust.compute_vertex_normals()
 
@@ -610,13 +610,13 @@ Example:
             "get_oriented_bounding_box", &PointCloud::GetOrientedBoundingBox,
             "Create an oriented bounding box from attribute 'positions'.");
     pointcloud.def("crop",
-                   (PointCloud(PointCloud::*)(const AxisAlignedBoundingBox&,
-                                              bool) const) &
+                   (PointCloud (PointCloud::*)(const AxisAlignedBoundingBox&,
+                                               bool) const) &
                            PointCloud::Crop,
                    "Function to crop pointcloud into output pointcloud.",
                    "aabb"_a, "invert"_a = false);
     pointcloud.def("crop",
-                   (PointCloud(PointCloud::*)(const OrientedBoundingBox&, bool)
+                   (PointCloud (PointCloud::*)(const OrientedBoundingBox&, bool)
                             const) &
                            PointCloud::Crop,
                    "Function to crop pointcloud into output pointcloud.",

@@ -83,14 +83,20 @@ public:
     //       from Python, which is using unique_ptr. The pointer must live long
     //       enough to get copied to the GPU by the render thread.
     void AddGeometry(const std::string& name,
-                     const t::geometry::PointCloud* geom,
+                     const t::geometry::Geometry* geom,
                      const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     bool HasGeometry(const std::string& name) const;
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
-    void ModifyGeometryMaterial(const std::string& name, const MaterialRecord& mat);
+    bool GeometryIsVisible(const std::string& name);
+    void SetGeometryTransform(const std::string& name,
+                              const Eigen::Matrix4d& transform);
+    Eigen::Matrix4d GetGeometryTransform(const std::string& name);
+
+    void ModifyGeometryMaterial(const std::string& name,
+                                const MaterialRecord& mat);
     void AddModel(const std::string& name, const TriangleMeshModel& model);
 
     /// Updates all geometries to use this material

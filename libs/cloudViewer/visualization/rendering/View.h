@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,8 +26,9 @@
 
 #pragma once
 
-#include <Eigen/Geometry>
 #include <Eigen.h>
+
+#include <Eigen/Geometry>
 
 #include "visualization/rendering/RendererHandle.h"
 
@@ -73,6 +74,7 @@ public:
     virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
     virtual Mode GetMode() const = 0;
     virtual void SetMode(Mode mode) = 0;
+    virtual void SetWireframe(bool enable) = 0;
 
     virtual void SetSampleCount(int n) = 0;
     virtual int GetSampleCount() const = 0;
@@ -86,6 +88,9 @@ public:
     virtual void SetPostProcessing(bool enabled) = 0;
     virtual void SetAmbientOcclusion(bool enabled,
                                      bool ssct_enabled = false) = 0;
+    virtual void SetBloom(bool enabled,
+                          float strength = 0.5f,
+                          int spread = 6) = 0;
     virtual void SetAntiAliasing(bool enabled, bool temporal = false) = 0;
     virtual void SetShadowing(bool enabled, ShadowType type) = 0;
 
