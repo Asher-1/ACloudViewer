@@ -311,6 +311,8 @@ public:
 
     // inherited from ccGenericMesh
     bool hasTriNormals() const override;
+    // for compatibility
+    inline bool hasTriangleNormals() const { return hasTriNormals(); }
     void getTriangleNormalIndexes(unsigned triangleIndex,
                                   int& i1,
                                   int& i2,
@@ -581,13 +583,13 @@ public:
     true. In this case, all "selected" triangles will be removed from this
     mesh's instance.
 
-            \param	removeSelectedTriangles			specifies if the faces
-    composed only of 'selected' vertices should be removed or not. If true, the
-    visibility array will be automatically unallocated on completion \param
-    newIndexesOfRemainingTriangles	the new indexes of the remaining triangles
-    (if removeSelectedTriangles is true - optional). Must be initially empty or
-    have the same size as the original mesh. \param	withChildEntities
-    whether child entities should be transferred as well (see
+            \param	removeSelectedTriangles			specifies if the
+    faces composed only of 'selected' vertices should be removed or not. If
+    true, the visibility array will be automatically unallocated on completion
+    \param newIndexesOfRemainingTriangles	the new indexes of the remaining
+    triangles (if removeSelectedTriangles is true - optional). Must be initially
+    empty or have the same size as the original mesh. \param
+    withChildEntities whether child entities should be transferred as well (see
     ccHObjectCaster::CloneChildren) \return	the new mesh (if successful) or
     itself if all vertices were visible/selected
     **/
@@ -700,7 +702,7 @@ public:  // some cloudViewer interface
                 additionalMaps;
     };
 
-    std::unordered_map<std::string, Material> materials_;
+    std::vector<std::pair<std::string, Material>> materials_;
 
     /// List of material ids.
     std::vector<int> triangle_material_ids_;

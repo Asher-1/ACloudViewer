@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <IntersectionTest.h>
@@ -426,7 +407,7 @@ ccMesh &ccMesh::paintUniformColor(const Eigen::Vector3d &color) {
 
 std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
 ccMesh::computeConvexHull() const {
-    return cloudViewer::utility::Qhull::ComputeConvexHull(getVertices());
+    return cloudViewer::geometry::Qhull::ComputeConvexHull(getVertices());
 }
 
 std::shared_ptr<ccMesh> ccMesh::filterSharpen(int number_of_iterations,
@@ -900,8 +881,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothTaubin(int number_of_iterations,
 }
 
 int ccMesh::eulerPoincareCharacteristic() const {
-    std::unordered_set<Eigen::Vector2i,
-                       utility::hash_eigen<Eigen::Vector2i>>
+    std::unordered_set<Eigen::Vector2i, utility::hash_eigen<Eigen::Vector2i>>
             edges;
 
     for (auto triangle : getTriangles()) {
@@ -1574,6 +1554,8 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsPoissonDisk(
     // update pcl
     bool has_vert_normal = pcl->hasNormals();
     bool has_vert_color = pcl->hasColors();
+    bool has_textures_ = hasTextures();
+    bool has_triangle_uvs_ = hasTriangleUvs();
     size_t next_free = 0;
     for (size_t idx = 0; idx < pcl->size(); ++idx) {
         if (!deleted[idx]) {
@@ -1584,7 +1566,7 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsPoissonDisk(
                         next_free,
                         pcl->getPointNormal(static_cast<unsigned>(idx)));
             }
-            if (has_vert_color) {
+            if (has_vert_color || (has_textures_ && has_triangle_uvs_)) {
                 pcl->setPointColor(
                         static_cast<unsigned>(next_free),
                         pcl->getPointColor(static_cast<unsigned>(idx)));
@@ -1755,6 +1737,9 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformlyImpl(
     // sample point cloud
     bool has_vert_normal = m_associatedCloud->hasNormals();
     bool has_vert_color = m_associatedCloud->hasColors();
+    bool has_textures_ = hasTextures();
+    bool has_triangle_uvs_ = hasTriangleUvs();
+    bool has_triangle_material_ids_ = hasTriangleMaterialIds();
     if (seed == -1) {
         std::random_device rd;
         seed = rd();
@@ -1769,7 +1754,7 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformlyImpl(
     if (use_triangle_normal && !hasTriNormals()) {
         computeNormals(true);
     }
-    if (has_vert_color) {
+    if (has_vert_color || (has_textures_ && has_triangle_uvs_)) {
         pcd->resizeTheRGBTable();
     }
     size_t point_idx = 0;
@@ -1802,11 +1787,42 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformlyImpl(
             if (use_triangle_normal) {
                 pcd->setPointNormal(point_idx, getTriangleNorm(tidx));
             }
-            if (has_vert_color) {
+            // if there is no texture, sample from vertex color
+            if (has_vert_color && !has_textures_ && !has_triangle_uvs_) {
                 Eigen::Vector3d C = a * cloud->getEigenColor(tri->i1) +
                                     b * cloud->getEigenColor(tri->i2) +
                                     c * cloud->getEigenColor(tri->i3);
                 pcd->setPointColor(point_idx, C);
+            }
+
+            // if there is a texture, sample from texture instead
+            if (has_textures_ && has_triangle_uvs_ &&
+                has_triangle_material_ids_) {
+                Eigen::Vector2d uv = a * triangle_uvs_[3 * tidx] +
+                                     b * triangle_uvs_[3 * tidx + 1] +
+                                     c * triangle_uvs_[3 * tidx + 2];
+                int material_id = triangle_material_ids_[tidx];
+                int w = textures_[material_id].width_;
+                int h = textures_[material_id].height_;
+
+                pcd->setPointColor(
+                        point_idx,
+                        Eigen::Vector3d(
+                                (double)*(textures_[material_id]
+                                                  .PointerAt<uint8_t>(uv(0) * w,
+                                                                      uv(1) * h,
+                                                                      0)) /
+                                        255,
+                                (double)*(textures_[material_id]
+                                                  .PointerAt<uint8_t>(uv(0) * w,
+                                                                      uv(1) * h,
+                                                                      1)) /
+                                        255,
+                                (double)*(textures_[material_id]
+                                                  .PointerAt<uint8_t>(uv(0) * w,
+                                                                      uv(1) * h,
+                                                                      2)) /
+                                        255));
             }
 
             point_idx++;

@@ -72,7 +72,8 @@ def voxel_carving(mesh,
         height=cubic_size,
         depth=cubic_size,
         voxel_size=cubic_size / voxel_resolution,
-        origin=[-cubic_size / 2.0, -cubic_size / 2.0, -cubic_size / 2.0])
+        origin=[-cubic_size / 2.0, -cubic_size / 2.0, -cubic_size / 2.0],
+        color=[1.0, 0.7, 0.0])
 
     # rescale geometry
     camera_sphere = preprocess(camera_sphere)
@@ -113,7 +114,8 @@ def voxel_carving(mesh,
             voxel_carving.carve_depth_map(cv3d.geometry.Image(depth), param)
         else:
             voxel_carving.carve_silhouette(cv3d.geometry.Image(depth), param)
-        print("Carve view %03d/%03d" % (cid + 1, len(camera_sphere.get_vertices())))
+        print("Carve view %03d/%03d" %
+              (cid + 1, len(camera_sphere.get_vertices())))
 
     vis.destroy_window()
 
@@ -149,7 +151,8 @@ def voxel_carving(mesh,
         print(voxel_carving)
         cv3d.visualization.draw_geometries([voxel_carving])
 
-        print("combined voxels (carved + surface from %s) together with mesh" % surface_method)
+        print("combined voxels (carved + surface from %s) together with mesh" %
+              surface_method)
         print(voxel_carving_surface)
         cv3d.visualization.draw_geometries([voxel_carving_surface, mesh])
 

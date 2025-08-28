@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cstdlib>
@@ -68,7 +49,7 @@ void AddDrawWindow(const std::vector<std::shared_ptr<ccHObject>> &geometries,
 
 // Create a window with an empty box and a custom action button for adding a
 // new visualization vindow.
-void EmptyBox(const std::string& path) {
+void EmptyBox() {
     const double pc_rad = 1.0;
     const double r = 0.4;
 
@@ -81,7 +62,8 @@ void EmptyBox(const std::string& path) {
                 utility::LogInfo("new_window_action called");
                 auto mesh = cloudViewer::make_shared<ccMesh>();
                 mesh->createInternalCloud();
-                io::ReadTriangleMesh(path + "/knot.ply", *mesh);
+                data::KnotMesh knot_data;
+                io::ReadTriangleMesh(knot_data.GetPath(), *mesh);
                 mesh->computeVertexNormals();
                 AddDrawWindow({mesh}, "CloudViewer pcd", 640, 480);
             };
@@ -136,22 +118,13 @@ void PrintHelp() {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2 ||
-        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
-        PrintHelp();
-        return 1;
-    }
-
-    if (!utility::filesystem::DirectoryExists(argv[1])) {
-        utility::LogError("Invalid test_dir: {}", argv[1]);
-    }
     visualization::webrtc_server::WebRTCWindowSystem::GetInstance()
             ->EnableWebRTC();
 
     // Uncomment this line to see more WebRTC loggings
-//    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    // utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    EmptyBox(argv[1]);
+    EmptyBox();
     BoxWithObjects();
     visualization::gui::Application::GetInstance().Run();
 }

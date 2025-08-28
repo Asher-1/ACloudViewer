@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.cloudViewer.org                            -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2023 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
@@ -503,8 +503,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
                 },
                 faces=faces[bidx] if len(faces) > 0 else faces,
                 face_attributes={
-                    prop: tensor[bidx]
-                    for prop, tensor in triangle_data.items()
+                    prop: tensor[bidx] for prop, tensor in triangle_data.items()
                 },
                 lines=lines[bidx] if len(lines) > 0 else lines,
                 line_attributes={
@@ -733,7 +732,8 @@ def add_3d(name,
     # TODO(https://github.com/tensorflow/tensorboard/issues/2109): remove fallback
     summary_scope = (getattr(tf.summary.experimental, "summary_scope", None) or
                      tf.summary.summary_scope)
-    with summary_scope(name, "cloudViewer_summary",
+    with summary_scope(name,
+                       "cloudViewer_summary",
                        values=[data, max_outputs, step]) as (tag, unused_scope):
         # Defer preprocessing by passing it as a callable to write(),
         # wrapped in a LazyTensorCreator for backwards compatibility, so that we

@@ -29,7 +29,8 @@ def pointcloud_generator():
     pcl.set_points(cv3d.utility.Vector3dVector(pts))
     yield 'uniform', pcl
 
-    yield 'moebius', cv3d.geometry.ccMesh.create_moebius().sample_points_uniformly(int(1e5))
+    yield 'moebius', cv3d.geometry.ccMesh.create_moebius(
+    ).sample_points_uniformly(int(1e5))
 
     yield 'bunny', meshes.bunny().scale(10).sample_points_uniformly(int(1e5))
 
@@ -75,10 +76,12 @@ if __name__ == "__main__":
     shape.set_points(cv3d.utility.Vector3dVector(pts.T))
     shape.paint_uniform_color([0, 0.651, 0.929])  # blue
 
-    shape.estimate_normals(cv3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30),
+    shape.estimate_normals(cv3d.geometry.KDTreeSearchParamHybrid(radius=0.5,
+                                                                 max_nn=30),
                            fast_normal_computation=True)
     cv3d.visualization.draw_geometries([shape])
 
-    shape.estimate_normals(cv3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30),
+    shape.estimate_normals(cv3d.geometry.KDTreeSearchParamHybrid(radius=0.5,
+                                                                 max_nn=30),
                            fast_normal_computation=False)
     cv3d.visualization.draw_geometries([shape])

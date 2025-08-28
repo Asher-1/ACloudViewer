@@ -25,7 +25,8 @@ def generate_from_point_cloud():
 def generate_from_file():
     print("Load a ply point cloud, print it, and render it")
     entity = cv3d.io.read_entity("../../test_data/facets/facets.bin")
-    facets = entity.filter_children(recursive=False, filter=cv3d.geometry.ccHObject.FACET)
+    facets = entity.filter_children(recursive=False,
+                                    filter=cv3d.geometry.ccHObject.FACET)
     print(facets)
     for facet in facets:
         facet.get_polygon().set_temp_color([0.5, 0, 0])
@@ -47,5 +48,6 @@ if __name__ == "__main__":
     cv3d.utility.set_verbosity_level(cv3d.utility.Debug)
     for name, facets in facets_generator():
         print("{}: RMS {}, Area {}, normal {}".format(name, facets[0].get_rms(),
-                                                      facets[0].get_area(), facets[0].get_normal()))
+                                                      facets[0].get_area(),
+                                                      facets[0].get_normal()))
         cv3d.visualization.draw_geometries(facets)

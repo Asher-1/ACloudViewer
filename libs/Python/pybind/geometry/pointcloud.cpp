@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Image.h>
@@ -138,20 +119,16 @@ void pybind_pointcloud(py::module& m) {
                            "Maximum radius threshold.");
 
     // ccPointCloud::RansacParams::RANSAC_PRIMITIVE_TYPES
-    py::enum_<geometry::RansacParams::RANSAC_PRIMITIVE_TYPES>
-            ransac_primitive_type(ransacParam, "RANSAC_PRIMITIVE_TYPES",
-                                  py::arithmetic());
-    ransac_primitive_type.value("Plane", geometry::RansacParams::RPT_PLANE)
+    py::native_enum<geometry::RansacParams::RANSAC_PRIMITIVE_TYPES>(
+            ransacParam, "RANSAC_PRIMITIVE_TYPES", "enum.Enum",
+            "Enum class for Ransac Primitive types.")
+            .value("Plane", geometry::RansacParams::RPT_PLANE)
             .value("Sphere", geometry::RansacParams::RPT_SPHERE)
             .value("Cylinder", geometry::RansacParams::RPT_CYLINDER)
             .value("Cone", geometry::RansacParams::RPT_CONE)
             .value("Torus", geometry::RansacParams::RPT_TORUS)
-            .export_values();
-    ransac_primitive_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Ransac Primitive types.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
 #endif
 
     py::class_<ccPointCloud, PyGeometry<ccPointCloud>,
@@ -215,13 +192,13 @@ void pybind_pointcloud(py::module& m) {
                  "the indexes from the point cloud.",
                  "sampling_ratio"_a)
             .def("crop",
-                 (std::shared_ptr<ccPointCloud>(ccPointCloud::*)(const ccBBox&)
+                 (std::shared_ptr<ccPointCloud> (ccPointCloud::*)(const ccBBox&)
                           const) &
                          ccPointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
             .def("crop",
-                 (std::shared_ptr<ccPointCloud>(ccPointCloud::*)(
+                 (std::shared_ptr<ccPointCloud> (ccPointCloud::*)(
                          const ecvOrientedBBox&) const) &
                          ccPointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
@@ -311,6 +288,8 @@ void pybind_pointcloud(py::module& m) {
                  "set point coordinate by given index.", "index"_a, "point"_a)
             .def("get_point", &ccPointCloud::getEigenPoint,
                  "get point coordinate by given index.", "index"_a)
+            .def("point", &ccPointCloud::getEigenPoint,
+                 "get point coordinate by given index.", "index"_a)
             .def("set_points",
                  py::overload_cast<const std::vector<Eigen::Vector3d>&>(
                          &ccPointCloud::addPoints),
@@ -322,9 +301,15 @@ void pybind_pointcloud(py::module& m) {
                  "``float64`` array of shape ``(num_points, 3)``, "
                  "use ``numpy.asarray()`` to access data: Points "
                  "coordinates.")
+            .def("points", &ccPointCloud::getEigenPoints,
+                 "``float64`` array of shape ``(num_points, 3)``, "
+                 "use ``numpy.asarray()`` to access data: Points "
+                 "coordinates.")
             .def("set_color", &ccPointCloud::setEigenColor,
                  "set point color by given index.", "index"_a, "color"_a)
             .def("get_color", &ccPointCloud::getEigenColor,
+                 "get point color by given index.", "index"_a)
+            .def("color", &ccPointCloud::getEigenColor,
                  "get point color by given index.", "index"_a)
             .def("set_colors", &ccPointCloud::addEigenColors,
                  "``float64`` array of shape ``(num_points, 3)``, "
@@ -335,9 +320,15 @@ void pybind_pointcloud(py::module& m) {
                  "``float64`` array of shape ``(num_points, 3)``, "
                  "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                  "data: RGB colors of points.")
+            .def("colors", &ccPointCloud::getEigenColors,
+                 "``float64`` array of shape ``(num_points, 3)``, "
+                 "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
+                 "data: RGB colors of points.")
             .def("set_normal", &ccPointCloud::setEigenNormal,
                  "set point normal by given index.", "index"_a, "normal"_a)
             .def("get_normal", &ccPointCloud::getEigenNormal,
+                 "get point normal by given index.", "index"_a)
+            .def("normal", &ccPointCloud::getEigenNormal,
                  "get point normal by given index.", "index"_a)
             .def("set_normals", &ccPointCloud::addEigenNorms,
                  "``float64`` array of shape ``(num_points, 3)``, "
@@ -346,7 +337,9 @@ void pybind_pointcloud(py::module& m) {
             .def("get_normals", &ccPointCloud::getEigenNormals,
                  "``float64`` array of shape ``(num_points, 3)``, "
                  "use ``numpy.asarray()`` to access data: Points normals.")
-
+            .def("normals", &ccPointCloud::getEigenNormals,
+                 "``float64`` array of shape ``(num_points, 3)``, "
+                 "use ``numpy.asarray()`` to access data: Points normals.")
             .def("unalloacte_points", &ccPointCloud::unalloactePoints,
                  "Erases the cloud points.")
             .def("unalloacte_colors", &ccPointCloud::unallocateColors,
@@ -810,15 +803,21 @@ void pybind_pointcloud(py::module& m) {
 
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_point");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_points");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "point");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_point");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "points");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_points");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_color");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_colors");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "color");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_color");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "colors");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_colors");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_normal");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_normals");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "normal");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_normal");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "normals");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_normals");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "normalize_normals");
     docstring::ClassMethodDocInject(

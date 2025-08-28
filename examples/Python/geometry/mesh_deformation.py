@@ -64,7 +64,7 @@ def problem2():
 
 if __name__ == "__main__":
     for mesh, constraint_ids, constraint_pos in [
-        problem0(), problem1(), problem2()
+            problem0(), problem1(), problem2()
     ]:
         constraint_ids = np.array(constraint_ids, dtype=np.int32)
         constraint_pos = cv3d.utility.Vector3dVector(constraint_pos)
@@ -72,7 +72,9 @@ if __name__ == "__main__":
         with cv3d.utility.VerbosityContextManager(
                 cv3d.utility.VerbosityLevel.Debug) as cm:
             mesh_prime = mesh.deform_as_rigid_as_possible(
-                cv3d.utility.IntVector(constraint_ids), constraint_pos, max_iter=50)
+                cv3d.utility.IntVector(constraint_ids),
+                constraint_pos,
+                max_iter=50)
         print("deform took {}[s]".format(time.time() - tic))
         mesh_prime.compute_vertex_normals()
 

@@ -69,7 +69,7 @@ tinyobjloader                v1.0.0                                  MIT license
 Tiny but powerful single file wavefront obj loader
 https://github.com/syoyo/tinyobjloader
 --------------------------------------------------------------------------------
-pybind11                    v2.5.0                                   BSD license
+pybind11                    v3.00.0                                  BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
 --------------------------------------------------------------------------------

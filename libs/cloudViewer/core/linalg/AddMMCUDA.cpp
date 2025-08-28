@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/linalg/AddMM.h"
-#include "core/linalg/BlasWrapper.h"
-#include "core/linalg/LinalgUtils.h"
+#include "cloudViewer/core/linalg/AddMM.h"
+#include "cloudViewer/core/linalg/BlasWrapper.h"
+#include "cloudViewer/core/linalg/LinalgUtils.h"
 #include <Logging.h>
 
 namespace cloudViewer {
@@ -32,7 +32,7 @@ void AddMMCUDA(void* A_data,
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha_ = scalar_t(alpha);
         scalar_t beta_ = scalar_t(beta);
-        CLOUDVIEWER_CUBLAS_CHECK(
+        OPEN3D_CUBLAS_CHECK(
                 gemm_cuda(handle, gemmTrA ? CUBLAS_OP_T : CUBLAS_OP_N,
                           gemmTrB ? CUBLAS_OP_T : CUBLAS_OP_N, m, n, k, &alpha_,
                           static_cast<const scalar_t*>(A_data), lda,

@@ -1,30 +1,11 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/hashmap/Hashmap.h"
+#include "core/hashmap/HashMap.h"
 
 #include <benchmark/benchmark.h>
 
@@ -71,7 +52,7 @@ void HashInsertInt(benchmark::State& state,
                    int capacity,
                    int duplicate_factor,
                    const Device& device,
-                   const HashmapBackend& backend) {
+                   const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
@@ -111,7 +92,7 @@ void HashEraseInt(benchmark::State& state,
                   int capacity,
                   int duplicate_factor,
                   const Device& device,
-                  const HashmapBackend& backend) {
+                  const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
@@ -152,7 +133,7 @@ void HashFindInt(benchmark::State& state,
                  int capacity,
                  int duplicate_factor,
                  const Device& device,
-                 const HashmapBackend& backend) {
+                 const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
@@ -175,7 +156,7 @@ void HashClearInt(benchmark::State& state,
                   int capacity,
                   int duplicate_factor,
                   const Device& device,
-                  const HashmapBackend& backend) {
+                  const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
@@ -224,7 +205,7 @@ void HashRehashInt(benchmark::State& state,
                    int capacity,
                    int duplicate_factor,
                    const Device& device,
-                   const HashmapBackend& backend) {
+                   const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
@@ -285,7 +266,7 @@ void HashInsertInt3(benchmark::State& state,
                     int capacity,
                     int duplicate_factor,
                     const Device& device,
-                    const HashmapBackend& backend) {
+                    const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -328,7 +309,7 @@ void HashEraseInt3(benchmark::State& state,
                    int capacity,
                    int duplicate_factor,
                    const Device& device,
-                   const HashmapBackend& backend) {
+                   const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -372,7 +353,7 @@ void HashFindInt3(benchmark::State& state,
                   int capacity,
                   int duplicate_factor,
                   const Device& device,
-                  const HashmapBackend& backend) {
+                  const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -397,7 +378,7 @@ void HashClearInt3(benchmark::State& state,
                    int capacity,
                    int duplicate_factor,
                    const Device& device,
-                   const HashmapBackend& backend) {
+                   const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -449,7 +430,7 @@ void HashRehashInt3(benchmark::State& state,
                     int capacity,
                     int duplicate_factor,
                     const Device& device,
-                    const HashmapBackend& backend) {
+                    const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -526,12 +507,12 @@ void HashRehashInt3(benchmark::State& state,
 
 #ifdef BUILD_CUDA_MODULE
 #define ENUM_BM_BACKEND(FN)                                    \
-    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashmapBackend::TBB)   \
-    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashmapBackend::Slab) \
-    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashmapBackend::StdGPU)
+    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashBackendType::TBB)   \
+    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashBackendType::Slab) \
+    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashBackendType::StdGPU)
 #else
 #define ENUM_BM_BACKEND(FN) \
-    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashmapBackend::TBB)
+    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashBackendType::TBB)
 #endif
 
 ENUM_BM_BACKEND(HashInsertInt)

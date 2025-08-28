@@ -10,7 +10,6 @@ import sys
 
 PYTHON_FORMAT_DIRS = [
     "examples",
-    "docs",
     "python",
     "util",
 ]
@@ -21,9 +20,11 @@ JUPYTER_FORMAT_DIRS = [
 
 # Note: also modify CPP_FORMAT_DIRS in check_cpp_style.cmake.
 CPP_FORMAT_DIRS = [
-    "cpp",
+    "core",
+    "libs",
+    "eCV",
+    "plugins",
     "examples",
-    "docs/_static",
 ]
 
 # Yapf requires python 3.6+
@@ -55,7 +56,7 @@ except ImportError:
 class CppFormatter:
 
     standard_header = """// ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -137,7 +138,7 @@ class CppFormatter:
 class PythonFormatter:
 
     standard_header = """# ----------------------------------------------------------------------------
-# -                        CloudViewer: www.cloudViewer.org                            -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT

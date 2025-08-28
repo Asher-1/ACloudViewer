@@ -15,9 +15,10 @@ def generate_project(output_path, quality):
 
 
 def gui(database_path="", image_path="", import_path=""):
-    return cv3d.reconstruction.gui.run_graphical_gui(database_path=database_path,
-                                                     image_path=image_path,
-                                                     import_path=import_path)
+    return cv3d.reconstruction.gui.run_graphical_gui(
+        database_path=database_path,
+        image_path=image_path,
+        import_path=import_path)
 
 
 if __name__ == "__main__":

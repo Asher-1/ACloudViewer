@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <json/json.h>
+
 #include <chrono>
 #include <fstream>
 #include <thread>
@@ -156,7 +157,8 @@ int main(int argc, char **argv) {
                 return true;
             });
 
-    vis.CreateVisualizerWindow("CloudViewer Azure Kinect MKV player", 1920, 540);
+    vis.CreateVisualizerWindow("CloudViewer Azure Kinect MKV player", 1920,
+                               540);
     utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.");

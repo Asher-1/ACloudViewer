@@ -1,30 +1,13 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+// clang-format off
 #include "visualization/visualizer/Visualizer.h" // must include first
+// clang-format on
 #include "camera/PinholeCameraTrajectory.h"
 
 #include <Logging.h>
@@ -39,7 +22,7 @@
 #include "visualization/visualizer/ViewParameters.h"
 #include "visualization/visualizer/ViewTrajectory.h"
 
-#if defined(__APPLE__) && defined(BUILD_GUI)
+#if defined(BUILD_GUI)
 namespace bluegl {
 int bind();
 void unbind();
@@ -51,18 +34,24 @@ namespace visualization {
 using namespace cloudViewer;
 
 bool Visualizer::InitOpenGL() {
-#if defined(__APPLE__) && defined(BUILD_GUI)
-    // On macOS, the CloudViewer shared library redirects OpenGL calls to BlueGL's
-    // forwarding functions. bluegl::bind() needs to be called before calling
-    // any OpenGL functions, otherwise the function addresses will be invalid.
+#if defined(BUILD_GUI)
+    // With the current link strategy the OpenGL functions are bound to
+    // Filament's BlueGL internal stubs which are initially null. BlueGL loads
+    // the 'real' OpenGL functions dynamically. In new visualizer, Filament
+    // automatically initializes BlueGL for us, but here we have to do manually
+    // otherwise the OpenGL functions will point to null functions and crash.
     if (bluegl::bind()) {
         utility::LogWarning("Visualizer::InitOpenGL: bluegl::bind() error.");
     }
 #endif
 
     glewExperimental = true;
-    if (glewInit() != GLEW_OK) {
-        utility::LogWarning("Failed to initialize GLEW.");
+    const GLenum init_ret = glewInit();
+    if (init_ret != GLEW_OK && init_ret != GLEW_ERROR_NO_GLX_DISPLAY) {
+        const std::string err_msg{
+                reinterpret_cast<const char *>(glewGetErrorString(init_ret))};
+        utility::LogWarning("Failed to initialize GLEW: {} ({})", err_msg,
+                            init_ret);
         return false;
     }
 

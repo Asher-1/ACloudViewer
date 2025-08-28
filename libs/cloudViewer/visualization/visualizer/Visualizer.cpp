@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/Visualizer.h"
@@ -97,6 +78,7 @@ bool Visualizer::CreateVisualizerWindow(
         const bool visible /* = true*/) {
     window_name_ = window_name;
     if (window_) {  // window already created
+        utility::LogDebug("[Visualizer] Reusing window.");
         UpdateWindowTitle();
         glfwSetWindowPos(window_, left, top);
         glfwSetWindowSize(window_, width, height);
@@ -319,6 +301,14 @@ bool Visualizer::AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
     if (!is_initialized_) {
         return false;
     }
+
+    if (!geometry_ptr.get()) {
+        utility::LogWarning(
+                "[AddGeometry] Invalid pointer. Possibly a null pointer or "
+                "None was passed in.");
+        return false;
+    }
+
     glfwMakeContextCurrent(window_);
     std::shared_ptr<glsl::GeometryRenderer> renderer_ptr;
     if (geometry_ptr->isKindOf(CV_TYPES::CUSTOM_H_OBJECT)) {

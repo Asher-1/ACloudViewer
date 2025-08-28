@@ -1,35 +1,9 @@
 cmake_minimum_required(VERSION ${CLOUDVIEWER_SUBPROJECT_CMAKE_MINIMUM_VERSION})
 
-# Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#
-#     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
-#       its contributors may be used to endorse or promote products derived
-#       from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
-# Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
+# Suppress CMP0167 warning
+if (POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)
+endif()
 
 project(COLMAP)
 
@@ -54,17 +28,17 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeHelper.cmake NO_POLICY_SCOPE)
 
 option(BUILD_COLMAP_GUI "Builds COLMAP GUI" ON)
 option(BOOST_STATIC "With boost static library" OFF)
+option(CUDA_ENABLED "Whether to enable CUDA, if available" ON)
+option(PBA_ENABLED "Whether to enable PBA for parallel BA Optimization" ON)
+option(ALL_SOURCE_TARGET "Whether to create a target for all source files (for Visual Studio / XCode development)" OFF)
 set(GUI_ENABLED ${BUILD_COLMAP_GUI})
 set(OPENMP_ENABLED ${WITH_OPENMP})
-set(CUDA_ENABLED ${BUILD_CUDA_MODULE})
 set(TESTS_ENABLED ${BUILD_UNIT_TESTS})
 set(CGAL_ENABLED ${CVCORELIB_USE_CGAL})
 set(SIMD_ENABLED ${USE_SIMD})
 set(OPENGL_ENABLED ON)
 set(IPO_ENABLED ON)
 set(PROFILING_ENABLED OFF) # Whether to enable google-perftools linker flags
-set(CUDA_ARCHS "Auto" CACHE STRING "List of CUDA architectures for which to \
-generate code, e.g., Auto, All, Maxwell, Pascal, ...")
 
 if (UNIX OR APPLE)
     message(STATUS "set BOOST_STATIC: OFF on macos or linux")
@@ -220,12 +194,15 @@ else ()
     message(STATUS "Disabling interprocedural optimization")
 endif ()
 
-if (CUDA_ENABLED)
+if (BUILD_CUDA_MODULE)
     # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_ARCHITECTURES}")
     if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-        set(CMAKE_CUDA_ARCHITECTURES "native")
+        message(
+            FATAL_ERROR "You must set CMAKE_CUDA_ARCHITECTURES to e.g. 'native', 'all-major', '70', etc. "
+            "More information at https://cmake.org/cmake/help/latest/prop_tgt/CUDA_ARCHITECTURES.html")
     endif()
 
+    set(CUDA_ENABLED ON)
     add_compile_definitions(CUDA_ENABLED)
 
     # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
@@ -234,7 +211,6 @@ if (CUDA_ENABLED)
     # Do not show warnings if the architectures are deprecated.
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
 
-    set(PBA_ENABLED ON)
     message(STATUS "PBA enabled - CUDA ${CUDAToolkit_VERSION} supports modern texture API")
     # Check CUDA version for PBA compatibility
     # if(CUDAToolkit_VERSION VERSION_LESS "12.0")
@@ -247,11 +223,11 @@ if (CUDA_ENABLED)
 
     message(STATUS "Enabling CUDA support (version: ${CUDAToolkit_VERSION},"
             " archs: ${CMAKE_CUDA_ARCHITECTURES})")
-else ()
-    set(CUDA_FOUND OFF)
-    set(PBA_ENABLED OFF)
+else()
+    set(CUDA_ENABLED OFF)
     message(STATUS "Disabling CUDA support")
 endif ()
+message(STATUS "Colmap CUDA enabled: ${CUDA_ENABLED}")
 
 if (GUI_ENABLED AND Qt5_FOUND)
     add_compile_definitions(GUI_ENABLED)
@@ -395,15 +371,9 @@ COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
 
-# Add PBA sources conditionally
-if(PBA_ENABLED)
-    COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
-else()
-    set(LIB_PBA_SRCS "")
-endif()
-
-COLMAP_ADD_SOURCE_DIR(lib/PoissonRecon LIB_POISSON_RECON_SRCS *.h *.cpp *.inl)
+COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/SiftGPU LIB_SIFT_GPU_SRCS *.h *.cpp *.cu)
+COLMAP_ADD_SOURCE_DIR(lib/PoissonRecon LIB_POISSON_RECON_SRCS *.h *.cpp *.inl)
 COLMAP_ADD_SOURCE_DIR(lib/SQLite LIB_SQLITE_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/VLFeat LIB_VLFEAT_SRCS *.h *.c *.tc)
 
@@ -424,35 +394,37 @@ COLMAP_ADD_SOURCE_DIR(src/pipelines PIPELINES_SRCS *.h *.cpp *.cc *.hpp)
 # Add all of the source files to a regular library target, as using a custom
 # target does not allow us to set its C++ include directories (and thus
 # intellisense can't find any of the included files).
-add_library(${COLMAP_SRC_ROOT_FOLDER}
-        ${LIB_FLANN_SRCS}
-        ${LIB_GRACLUS_SRCS}
-        ${LIB_LSD_SRCS}
-        ${LIB_PBA_SRCS}
-        ${LIB_POISSON_RECON_SRCS}
-        ${LIB_SIFT_GPU_SRCS}
-        ${LIB_SQLITE_SRCS}
-        ${LIB_VLFEAT_SRCS}
-        ${BASE_SRCS}
-        ${CONTROLLERS_SRCS}
-        ${ESTIMATORS_SRCS}
-        ${EXE_SRCS}
-        ${FEATURE_SRCS}
-        ${MVS_SRCS}
-        ${OPTIM_SRCS}
-        ${RETRIEVAL_SRCS}
-        ${SFM_SRCS}
-        ${TOOLS_SRCS}
-        ${UI_SRCS}
-        ${UTIL_SRCS}
-        ${PIPELINES_SRCS}
-        )
+if(ALL_SOURCE_TARGET)
+    add_library(${COLMAP_SRC_ROOT_FOLDER}
+            ${LIB_FLANN_SRCS}
+            ${LIB_GRACLUS_SRCS}
+            ${LIB_LSD_SRCS}
+            ${LIB_PBA_SRCS}
+            ${LIB_POISSON_RECON_SRCS}
+            ${LIB_SIFT_GPU_SRCS}
+            ${LIB_SQLITE_SRCS}
+            ${LIB_VLFEAT_SRCS}
+            ${BASE_SRCS}
+            ${CONTROLLERS_SRCS}
+            ${ESTIMATORS_SRCS}
+            ${EXE_SRCS}
+            ${FEATURE_SRCS}
+            ${MVS_SRCS}
+            ${OPTIM_SRCS}
+            ${RETRIEVAL_SRCS}
+            ${SFM_SRCS}
+            ${TOOLS_SRCS}
+            ${UI_SRCS}
+            ${UTIL_SRCS}
+            ${PIPELINES_SRCS}
+            )
 
-# Prevent the library from being compiled automatically.
-set_target_properties(
-        ${COLMAP_SRC_ROOT_FOLDER} PROPERTIES
-        EXCLUDE_FROM_ALL 1
-        EXCLUDE_FROM_DEFAULT_BUILD 1)
+    # Prevent the library from being compiled automatically.
+    set_target_properties(
+            ${COLMAP_SRC_ROOT_FOLDER} PROPERTIES
+            EXCLUDE_FROM_ALL 1
+            EXCLUDE_FROM_DEFAULT_BUILD 1)
+endif()
 
 ################################################################################
 # Install and uninstall scripts

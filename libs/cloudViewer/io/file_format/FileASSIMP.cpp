@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <FileSystem.h>
@@ -42,7 +23,7 @@
 #include "io/FileFormatIO.h"
 #include "io/ModelIO.h"
 #include "io/TriangleMeshIO.h"
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Model.h"
 
 #define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
@@ -234,12 +215,13 @@ bool ReadTriangleMeshUsingASSIMP(
     }
 
     // Now load the materials
+    mesh.materials_.resize(scene->mNumMaterials);
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
         // create material structure to match this name
-        auto& mesh_material =
-                mesh.materials_[std::string(mat->GetName().C_Str())];
+        auto& mesh_material = mesh.materials_[i].second;
+        mesh.materials_[i].first = mat->GetName().C_Str();
 
         using MaterialParameter = ccMesh::Material::MaterialParameter;
 
@@ -275,9 +257,9 @@ bool ReadTriangleMeshUsingASSIMP(
 
         // For legacy visualization support
         if (mesh_material.albedo) {
-            mesh.textures_.push_back(*mesh_material.albedo->FlipVertical());
+            mesh.textures_.emplace_back(*mesh_material.albedo->FlipVertical());
         } else {
-            mesh.textures_.push_back(geometry::Image());
+            mesh.textures_.emplace_back();
         }
     }
 
@@ -431,7 +413,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
-        visualization::rendering::Material cv3d_mat;
+        visualization::rendering::MaterialRecord cv3d_mat;
 
         cv3d_mat.name = mat->GetName().C_Str();
 

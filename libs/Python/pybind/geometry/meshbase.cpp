@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -41,29 +41,36 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_meshbase(py::module& m) {
-    py::enum_<cloudViewer::TRIANGULATION_TYPES>(m, "TriangulationType")
+    py::native_enum<cloudViewer::TRIANGULATION_TYPES>(
+            m, "TriangulationType", "enum.Enum",
+            "Method for mesh triangulation types.")
             .value("DELAUNAY_2D_AXIS_ALIGNED",
                    cloudViewer::TRIANGULATION_TYPES::DELAUNAY_2D_AXIS_ALIGNED,
                    "Triangulation types.")
             .value("DELAUNAY_2D_BEST_LS_PLANE",
                    cloudViewer::TRIANGULATION_TYPES::DELAUNAY_2D_BEST_LS_PLANE,
                    "Triangulation types.")
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<GenericMesh, PyGenericMesh<GenericMesh>,
                std::shared_ptr<GenericMesh>>
             meshbase(m, "GenericMesh",
                      "GenericMesh class. Triangle mesh contains vertices. "
                      "Optionally, the mesh "
                      "may also contain vertex normals and vertex colors.");
-    py::enum_<GenericMesh::SimplificationContraction>(
-            m, "SimplificationContraction")
+
+    py::native_enum<GenericMesh::SimplificationContraction>(
+            m, "SimplificationContraction", "enum.Enum",
+            "Method for mesh simplification contraction.")
             .value("Average", GenericMesh::SimplificationContraction::Average,
                    "The vertex positions are computed by the averaging.")
             .value("Quadric", GenericMesh::SimplificationContraction::Quadric,
                    "The vertex positions are computed by minimizing the "
                    "distance to the adjacent triangle planes.")
-            .export_values();
-    py::enum_<GenericMesh::FilterScope>(m, "FilterScope")
+            .export_values()
+            .finalize();
+    py::native_enum<GenericMesh::FilterScope>(m, "FilterScope", "enum.Enum",
+                                              "Scope for mesh filtering.")
             .value("All", GenericMesh::FilterScope::All,
                    "All properties (color, normal, vertex position) are "
                    "filtered.")
@@ -73,16 +80,19 @@ void pybind_meshbase(py::module& m) {
                    "Only the normal values are filtered.")
             .value("Vertex", GenericMesh::FilterScope::Vertex,
                    "Only the vertex positions are filtered.")
-            .export_values();
-    py::enum_<GenericMesh::DeformAsRigidAsPossibleEnergy>(
-            m, "DeformAsRigidAsPossibleEnergy")
+            .export_values()
+            .finalize();
+    py::native_enum<GenericMesh::DeformAsRigidAsPossibleEnergy>(
+            m, "DeformAsRigidAsPossibleEnergy", "enum.Enum",
+            "Energy model for the as-rigid-as-possible mesh deformation.")
             .value("Spokes", GenericMesh::DeformAsRigidAsPossibleEnergy::Spokes,
-                   "is the original energy as formulated in orkine and Alexa, "
+                   "Is the original energy as formulated in orkine and Alexa, "
                    "\"As-Rigid-As-Possible Surface Modeling\", 2007.")
             .value("Smoothed",
                    GenericMesh::DeformAsRigidAsPossibleEnergy::Smoothed,
-                   "adds a rotation smoothing term to the rotations.")
-            .export_values();
+                   "Adds a rotation smoothing term to the rotations.")
+            .export_values()
+            .finalize();
 
     meshbase.def("__repr__",
                  [](const GenericMesh& mesh) {

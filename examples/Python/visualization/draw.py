@@ -50,7 +50,8 @@ def multi_objects():
     sphere_colored_lit.compute_vertex_normals()
     sphere_colored_lit.paint_uniform_color((0.0, 1.0, 0.0))
     sphere_colored_lit.translate((6, 1, 0))
-    big_bbox = cv3d.geometry.ccBBox((-pc_rad, -3, -pc_rad), (6.0 + r, 1.0 + r, pc_rad))
+    big_bbox = cv3d.geometry.ccBBox((-pc_rad, -3, -pc_rad),
+                                    (6.0 + r, 1.0 + r, pc_rad))
     sphere_bbox = sphere_unlit.get_axis_aligned_bounding_box()
     sphere_bbox.set_color([1.0, 0.5, 0.0])
     lines = cv3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
@@ -122,9 +123,9 @@ def get_icp_transform(source, target, source_indices, target_indices):
 
 def selections():
     source = cv3d.io.read_point_cloud(CURRENT_DIR +
-                                     "/../../test_data/ICP/cloud_bin_0.pcd")
+                                      "/../../test_data/ICP/cloud_bin_0.pcd")
     target = cv3d.io.read_point_cloud(CURRENT_DIR +
-                                     "/../../test_data/ICP/cloud_bin_2.pcd")
+                                      "/../../test_data/ICP/cloud_bin_2.pcd")
     source.paint_uniform_color([1, 0.706, 0])
     target.paint_uniform_color([0, 0.651, 0.929])
 
@@ -186,10 +187,10 @@ def time_animation():
     for i in range(1, n):
         amount = float(i) / float(n - 1)
         cloud = cv3d.geometry.ccPointCloud()
-        pts = np.asarray(orig.points)
+        pts = np.asarray(orig.get_points())
         pts = pts * (1.0 + amount * expand) + [amount * v for v in drift_dir]
-        cloud.points = cv3d.utility.Vector3dVector(pts)
-        cloud.colors = orig.colors
+        cloud.set_points(cv3d.utility.Vector3dVector(pts))
+        cloud.set_colors(orig.get_colors())
         clouds.append({
             "name": "points at t=" + str(i),
             "geometry": cloud,

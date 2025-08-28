@@ -76,7 +76,7 @@ python -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 
 # Python API
 python -c "import cloudViewer as cv3d; \
-           mesh = cv3d.geometry.TriangleMesh.create_sphere(); \
+           mesh = cv3d.geometry.ccMesh.create_sphere(); \
            mesh.compute_vertex_normals(); \
            cv3d.visualization.draw(mesh, raw_mode=True)"
 

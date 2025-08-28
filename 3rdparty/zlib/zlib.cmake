@@ -6,12 +6,6 @@ else()
     set(lib_name z)
 endif()
 
-# Debug output
-message(STATUS "zlib lib_name: ${lib_name}")
-message(STATUS "MSVC: ${MSVC}")
-message(STATUS "CMAKE_STATIC_LIBRARY_PREFIX: ${CMAKE_STATIC_LIBRARY_PREFIX}")
-message(STATUS "CMAKE_STATIC_LIBRARY_SUFFIX: ${CMAKE_STATIC_LIBRARY_SUFFIX}")
-
 find_package(Git QUIET REQUIRED)
 
 ExternalProject_Add(ext_zlib
@@ -26,10 +20,6 @@ ExternalProject_Add(ext_zlib
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        # -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
-        # -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        # Windows specific settings
-        # $<$<BOOL:${MSVC}>:-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON>
         $<$<BOOL:${MSVC}>:-DBUILD_SHARED_LIBS=OFF>
         # zlib needs visible symbols for examples. Disabling example building causes
         # assember error in GPU CI. zlib symbols are hidden during linking.

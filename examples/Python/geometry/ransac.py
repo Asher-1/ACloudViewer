@@ -31,7 +31,8 @@ def pointcloud_generator():
     unit_points = mesh.sample_points_uniformly(int(1e5))
     yield "shapes", unit_points, 0.001, 8.0
 
-    yield "fragment", cv3d.io.read_point_cloud("../../test_data/fragment.ply"), 0.01, 6.0
+    yield "fragment", cv3d.io.read_point_cloud(
+        "../../test_data/fragment.ply"), 0.01, 6.0
 
 
 if __name__ == "__main__":
@@ -66,7 +67,8 @@ if __name__ == "__main__":
         ransac_param.max_normal_deviation_deg = 25
 
         start = time.time()
-        ransac_result = pcl.execute_ransac(params=ransac_param, print_progress=True)
+        ransac_result = pcl.execute_ransac(params=ransac_param,
+                                           print_progress=True)
         print("execute ransac time cost : {}".format(time.time() - start))
         print("detect shape instances number: {}".format(len(ransac_result)))
 
@@ -102,6 +104,7 @@ if __name__ == "__main__":
                 out_mesh += prim
 
             cv3d.visualization.draw_geometries([out_points])
-            cv3d.visualization.draw_geometries([out_points, out_mesh], mesh_show_back_face=True)
+            cv3d.visualization.draw_geometries([out_points, out_mesh],
+                                               mesh_show_back_face=True)
         else:
             print("Cannot detect any shape object!")
