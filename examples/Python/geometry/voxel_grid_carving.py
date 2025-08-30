@@ -42,16 +42,16 @@ def preprocess(model):
     max_bound = model.get_max_bound()
     center = min_bound + (max_bound - min_bound) / 2.0
     scale = np.linalg.norm(max_bound - min_bound) / 2.0
-    vertices = np.asarray(model.vertices)
+    vertices = np.asarray(model.vertices())
     vertices -= center
-    model.vertices = cv3d.utility.Vector3dVector(vertices / scale)
+    model.set_vertices(cv3d.utility.Vector3dVector(vertices / scale))
     return model
 
 
 def voxel_carving(mesh, cubic_size, voxel_resolution, w=300, h=300):
     mesh.compute_vertex_normals()
     camera_sphere = cv3d.geometry.ccMesh.create_sphere(radius=1.0,
-                                                             resolution=10)
+                                                       resolution=10)
 
     # Setup dense voxel grid.
     voxel_carving = cv3d.geometry.VoxelGrid.create_dense(
@@ -75,8 +75,8 @@ def voxel_carving(mesh, cubic_size, voxel_resolution, w=300, h=300):
     param = ctr.convert_to_pinhole_camera_parameters()
 
     # Carve voxel grid.
-    centers_pts = np.zeros((len(camera_sphere.vertices), 3))
-    for cid, xyz in enumerate(camera_sphere.vertices):
+    centers_pts = np.zeros((len(camera_sphere.vertices()), 3))
+    for cid, xyz in enumerate(camera_sphere.vertices()):
         # Get new camera pose.
         trans = get_extrinsic(xyz)
         param.extrinsic = trans
@@ -91,14 +91,13 @@ def voxel_carving(mesh, cubic_size, voxel_resolution, w=300, h=300):
 
         # Depth map carving method.
         voxel_carving.carve_depth_map(cv3d.geometry.Image(depth), param)
-        print("Carve view %03d/%03d" % (cid + 1, len(camera_sphere.vertices)))
+        print("Carve view %03d/%03d" % (cid + 1, len(camera_sphere.vertices())))
     vis.destroy_window()
 
     return voxel_carving
 
 
 if __name__ == "__main__":
-
     armadillo_data = cv3d.data.ArmadilloMesh()
     mesh = cv3d.io.read_triangle_mesh(armadillo_data.path)
     cubic_size = 2.0
