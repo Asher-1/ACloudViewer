@@ -6,9 +6,6 @@ import os
 import random
 import sys
 
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-import cloudViewer_tutorial as cv3dtut
-
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
@@ -70,7 +67,8 @@ def actions():
     SOURCE_NAME = "Source"
     RESULT_NAME = "Result (Poisson reconstruction)"
     TRUTH_NAME = "Ground truth"
-    bunny = cv3dtut.get_bunny_mesh()
+    bunny = cv3d.data.BunnyMesh()
+    bunny = cv3d.io.read_triangle_mesh(bunny.path)
     bunny.paint_uniform_color((1, 0.75, 0))
     bunny.compute_vertex_normals()
     cloud = cv3d.geometry.ccPointCloud()
@@ -122,10 +120,9 @@ def get_icp_transform(source, target, source_indices, target_indices):
 
 
 def selections():
-    source = cv3d.io.read_point_cloud(CURRENT_DIR +
-                                      "/../../test_data/ICP/cloud_bin_0.pcd")
-    target = cv3d.io.read_point_cloud(CURRENT_DIR +
-                                      "/../../test_data/ICP/cloud_bin_2.pcd")
+    pcd_fragments_data = cv3d.data.DemoICPPointClouds()
+    source = cv3d.io.read_point_cloud(pcd_fragments_data.paths[0])
+    target = cv3d.io.read_point_cloud(pcd_fragments_data.paths[1])
     source.paint_uniform_color([1, 0.706, 0])
     target.paint_uniform_color([0, 0.651, 0.929])
 
