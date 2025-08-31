@@ -94,7 +94,7 @@ public:
     std::function<void(const LayoutContext &)> on_layout_;
 
 protected:
-    void Layout(const LayoutContext &context) {
+    void Layout(const LayoutContext &context) override {
         if (on_layout_) {
             // the Python callback sizes the children
             on_layout_(context);
@@ -141,10 +141,10 @@ void InitializeForPython(std::string resource_path /*= ""*/,
         // is the path to
         // __init__.py), so we can use that to find the
         // resources included in the wheel.
-        py::object o3d = py::module::import("cloudViewer");
-        auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
+        py::object cv3d = py::module::import("cloudViewer");
+        auto cv3d_init_path = cv3d.attr("__file__").cast<std::string>();
         auto module_path =
-                utility::filesystem::GetFileParentDirectory(o3d_init_path);
+                utility::filesystem::GetFileParentDirectory(cv3d_init_path);
         resource_path = module_path + "/resources";
     }
     Application::GetInstance().Initialize(resource_path.c_str());
@@ -570,6 +570,11 @@ void pybind_gui_classes(py::module &m_gui) {
                     "and device pixels (read-only)")
             .def_property_readonly("is_visible", &PyWindow::IsVisible,
                                    "True if window is visible (read-only)")
+            .def("set_on_key", &PyWindow::SetOnKeyEvent,
+                 "Sets a callback for key events. This callback is passed "
+                 "a KeyEvent object. The callback must return "
+                 "True to stop more dispatching or False to dispatch"
+                 "to focused widget")
             .def("show", &PyWindow::Show, "Shows or hides the window")
             .def("close", &PyWindow::Close,
                  "Closes the window and destroys it, unless an on_close "

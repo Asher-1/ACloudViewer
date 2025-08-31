@@ -13,7 +13,7 @@
 #include <windows.h>
 #endif
 
-#include <GL/glew.h> // Make sure glew.h is included before gl.h
+#include <GL/glew.h>  // Make sure glew.h is included before gl.h
 #include <GLFW/glfw3.h>
 
 #include <Eigen/Core>
@@ -36,6 +36,8 @@ class Image;
 }  // namespace geometry
 
 namespace visualization {
+
+class GLFWContext;
 
 /// \class Visualizer
 ///
@@ -129,9 +131,8 @@ public:
     /// Visualizer should be updated accordingly.
     ///
     /// \param geometry_ptr The Geometry object.
-    virtual bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr,
-            bool reset_bounding_box = true);
+    virtual bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
+                             bool reset_bounding_box = true);
 
     /// \brief Function to remove geometry from the scene.
     ///
@@ -142,9 +143,8 @@ public:
     /// added by AddGeometry
     ///
     /// \param geometry_ptr The Geometry object.
-    virtual bool RemoveGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr,
-            bool reset_bounding_box = true);
+    virtual bool RemoveGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
+                                bool reset_bounding_box = true);
 
     /// Function to remove all geometries from the scene.
     /// After calling this function, the Visualizer releases the pointer of
@@ -253,6 +253,10 @@ protected:
     // window
     GLFWwindow *window_ = nullptr;
     std::string window_name_ = "CloudViewer";
+    
+    /// \brief Shared GLFW context.
+    std::shared_ptr<GLFWContext> glfw_context_ = nullptr;
+
     Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
     Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
@@ -282,8 +286,7 @@ protected:
     std::unique_ptr<RenderOption> render_option_ptr_;
 
     // geometry to be rendered
-    std::unordered_set<std::shared_ptr<const ccHObject>>
-            geometry_ptrs_;
+    std::unordered_set<std::shared_ptr<const ccHObject>> geometry_ptrs_;
 
     // geometry renderers
     std::unordered_set<std::shared_ptr<glsl::GeometryRenderer>>

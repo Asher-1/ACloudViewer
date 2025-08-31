@@ -42,7 +42,10 @@ int main(int argc, char *argv[]) {
     const std::string filename(argv[2]);
     auto cloud = std::make_shared<ccPointCloud>();
     auto mesh = std::make_shared<ccMesh>();
-    mesh->createInternalCloud();
+    if (!mesh->createInternalCloud()) {
+        utility::LogError("creating internal cloud failed!");
+        return -1;
+    }
     if (option == "mesh") {
         if (!io::ReadTriangleMesh(filename, *mesh)) {
             utility::LogWarning("Failed to read {}", filename);

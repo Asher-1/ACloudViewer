@@ -10,6 +10,8 @@
 #include <Logging.h>
 #include <ecvMesh.h>
 
+#include <memory>
+
 #if defined(__APPLE__) && defined(BUILD_GUI)
 namespace bluegl {
 int bind();
@@ -19,51 +21,71 @@ void unbind();
 
 namespace cloudViewer {
 
-namespace {
+namespace visualization {
 
-class GLFWEnvironmentSingleton {
+/// \brief GLFW context, handled as a singleton.
+class GLFWContext {
 private:
-    GLFWEnvironmentSingleton() { utility::LogDebug("GLFW init."); }
-    GLFWEnvironmentSingleton(const GLFWEnvironmentSingleton &) = delete;
-    GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) =
-            delete;
+    GLFWContext() {
+        utility::LogDebug("GLFW init.");
 
-public:
-    ~GLFWEnvironmentSingleton() {
-        glfwTerminate();
-        utility::LogDebug("GLFW destruct.");
-    }
-
-public:
-    static GLFWEnvironmentSingleton &GetInstance() {
-        static GLFWEnvironmentSingleton singleton;
-        return singleton;
-    }
-
-    static int InitGLFW() {
-        GLFWEnvironmentSingleton::GetInstance();
 #if defined(__APPLE__)
         // On macOS, GLFW changes the directory to the resource directory,
         // which will cause an unexpected change of directory if using a
         // framework build version of Python.
         glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
-        return glfwInit();
+        init_status_ = glfwInit();
+        if (init_status_ != GLFW_TRUE) {
+            glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
+            init_status_ = glfwInit();
+        }
+        if (init_status_ == GLFW_TRUE) init_status_ = glfwGetPlatform();
+        if (init_status_ == GLFW_PLATFORM_NULL) {
+            utility::LogWarning("GLFW initialized for headless rendering.");
+        }
+    }
+
+    GLFWContext(const GLFWContext &) = delete;
+    GLFWContext &operator=(const GLFWContext &) = delete;
+
+public:
+    ~GLFWContext() {
+        if (init_status_ != GLFW_FALSE) {
+            glfwTerminate();
+            init_status_ = GLFW_FALSE;
+            utility::LogDebug("GLFW destruct.");
+        }
+    }
+
+    /// \brief Get the glfwInit status / GLFW_PLATFORM initialized.
+    inline int InitStatus() const { return init_status_; }
+
+    /// \brief Get a shared instance of the GLFW context.
+    static std::shared_ptr<GLFWContext> GetInstance() {
+        static std::weak_ptr<GLFWContext> singleton;
+
+        auto res = singleton.lock();
+        if (res == nullptr) {
+            res = std::shared_ptr<GLFWContext>(new GLFWContext());
+            singleton = res;
+        }
+        return res;
     }
 
     static void GLFWErrorCallback(int error, const char *description) {
         utility::LogWarning("GLFW Error: {}", description);
     }
+
+private:
+    /// \brief Status of the glfwInit call.
+    int init_status_ = GLFW_FALSE;
 };
-
-}  // unnamed namespace
-
-namespace visualization {
 
 Visualizer::Visualizer() {}
 
 Visualizer::~Visualizer() {
-    glfwTerminate();  // to be safe
+    DestroyVisualizerWindow();
 #if defined(__APPLE__) && defined(BUILD_GUI)
     bluegl::unbind();
 #endif
@@ -93,8 +115,10 @@ bool Visualizer::CreateVisualizerWindow(
         return true;
     }
 
-    glfwSetErrorCallback(GLFWEnvironmentSingleton::GLFWErrorCallback);
-    if (!GLFWEnvironmentSingleton::InitGLFW()) {
+    utility::LogDebug("[Visualizer] Creating window.");
+    glfwSetErrorCallback(GLFWContext::GLFWErrorCallback);
+    glfw_context_ = GLFWContext::GetInstance();
+    if (glfw_context_->InitStatus() == GLFW_FALSE) {
         utility::LogWarning("Failed to initialize GLFW");
         return false;
     }
@@ -204,9 +228,17 @@ bool Visualizer::CreateVisualizerWindow(
 }
 
 void Visualizer::DestroyVisualizerWindow() {
+    if (!is_initialized_) {
+        return;
+    }
+
+    utility::LogDebug("[Visualizer] Destroying window.");
     is_initialized_ = false;
     glDeleteVertexArrays(1, &vao_id_);
+    vao_id_ = 0;
     glfwDestroyWindow(window_);
+    window_ = nullptr;
+    glfw_context_.reset();
 }
 
 void Visualizer::RegisterAnimationCallback(

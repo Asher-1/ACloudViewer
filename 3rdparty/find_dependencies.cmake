@@ -960,33 +960,36 @@ else()
 endif()
 
 # GLFW
-if (USE_SYSTEM_GLFW)
+if(USE_SYSTEM_GLFW)
     find_package_3rdparty_library(3rdparty_glfw
-            HEADER
-            PACKAGE glfw3
-            TARGETS glfw
-            )
-    if (NOT 3rdparty_glfw_FOUND)
+        HEADER
+        PACKAGE glfw3
+        VERSION 3.4
+        REQUIRED
+        TARGETS glfw
+    )
+    if(NOT 3rdparty_glfw_FOUND)
         pkg_config_3rdparty_library(3rdparty_glfw
             HEADER
             SEARCH_ARGS glfw3
         )
-        if (NOT 3rdparty_glfw_FOUND)
+        if(NOT 3rdparty_glfw_FOUND)
             set(USE_SYSTEM_GLFW OFF)
-        endif ()
-    endif ()
-endif ()
-if (NOT USE_SYSTEM_GLFW)
-    message(STATUS "Building library 3rdparty_glfw from source")
-    add_subdirectory(${CloudViewer_3RDPARTY_DIR}/GLFW)
+        endif()
+    endif()
+endif()
+if(NOT USE_SYSTEM_GLFW)
+    include(${CloudViewer_3RDPARTY_DIR}/glfw/glfw.cmake)
     import_3rdparty_library(3rdparty_glfw
-            HEADER
-            INCLUDE_DIRS ${CloudViewer_3RDPARTY_DIR}/GLFW/include/
-            LIBRARIES glfw3
-            DEPENDS glfw
-            )
+        HEADER
+        INCLUDE_DIRS ${GLFW_INCLUDE_DIRS}
+        LIB_DIR      ${GLFW_LIB_DIR}
+        LIBRARIES    ${GLFW_LIBRARIES}
+        DEPENDS      ext_glfw
+    )
+
     target_link_libraries(3rdparty_glfw INTERFACE 3rdparty_threads)
-    if (UNIX AND NOT APPLE)
+    if(UNIX AND NOT APPLE)
         find_library(RT_LIBRARY rt)
         if(RT_LIBRARY)
             target_link_libraries(3rdparty_glfw INTERFACE ${RT_LIBRARY})
@@ -998,20 +1001,26 @@ if (NOT USE_SYSTEM_GLFW)
         if(CMAKE_DL_LIBS)
             target_link_libraries(3rdparty_glfw INTERFACE ${CMAKE_DL_LIBS})
         endif()
-    endif ()
-    if (APPLE)
+    endif()
+    if(APPLE)
         find_library(COCOA_FRAMEWORK Cocoa)
         find_library(IOKIT_FRAMEWORK IOKit)
         find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
         find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
-        target_link_libraries(3rdparty_glfw INTERFACE ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK} ${CORE_FOUNDATION_FRAMEWORK} ${CORE_VIDEO_FRAMEWORK})
-    endif ()
-    if (WIN32)
+        target_link_libraries(3rdparty_glfw INTERFACE
+            ${COCOA_FRAMEWORK}
+            ${IOKIT_FRAMEWORK}
+            ${CORE_FOUNDATION_FRAMEWORK}
+            ${CORE_VIDEO_FRAMEWORK}
+        )
+    endif()
+    if(WIN32)
         target_link_libraries(3rdparty_glfw INTERFACE gdi32)
-    endif ()
+    endif()
     list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM 3rdparty_glfw)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_glfw)
 else()
-    list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM 3rdparty_glfw)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_glfw)
 endif()
 if(TARGET 3rdparty_x11)
     target_link_libraries(3rdparty_glfw INTERFACE 3rdparty_x11)

@@ -14,6 +14,7 @@
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
 #include <unordered_set>
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293 4305)
@@ -320,14 +321,12 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     // Build Filament buffers
-    auto geometry_buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
-    if (!geometry_buffer_builder) {
+    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
+    if (!buffer_builder) {
         utility::LogWarning("Geometry type {} is not supported yet!",
                             static_cast<size_t>(geometry.getClassID()));
         return false;
     }
-
-    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
@@ -487,6 +486,7 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                 object_name,
                 RenderableGeometry{object_name,
                                    true,
+                                   false,
                                    true,
                                    true,
                                    true,
@@ -1921,6 +1921,25 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
         container.view->PostRender();
     }
 }
+
+void FilamentScene::HideRefractedMaterials(bool hide) {
+    for (auto geom : geometries_) {
+        if (geom.second.mat.properties.shader == "defaultLitSSR") {
+            if (hide) {
+                if (!geom.second.visible) {
+                    geom.second.was_hidden_before_picking = true;
+                } else {
+                    ShowGeometry(geom.first, false);
+                }
+            } else {
+                if (!geom.second.was_hidden_before_picking) {
+                    ShowGeometry(geom.first, true);
+                }
+            }
+        }
+    }
+}
+
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace cloudViewer

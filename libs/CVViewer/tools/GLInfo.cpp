@@ -23,8 +23,8 @@ void TryGLVersion(int major,
             (forwardCompat ? "GLFW_OPENGL_FORWARD_COMPAT " : "");
     std::string profileStr = "UnknownProfile";
 #define CLOUDVIEWER_CHECK_PROFILESTR(p) \
-    if (profileId == p) {          \
-        profileStr = #p;           \
+    if (profileId == p) {               \
+        profileStr = #p;                \
     }
     CLOUDVIEWER_CHECK_PROFILESTR(GLFW_OPENGL_CORE_PROFILE);
     CLOUDVIEWER_CHECK_PROFILESTR(GLFW_OPENGL_COMPAT_PROFILE);
@@ -32,11 +32,15 @@ void TryGLVersion(int major,
 #undef CLOUDVIEWER_CHECK_PROFILESTR
 
     cloudViewer::utility::LogInfo("TryGLVersion: {:d}.{:d} {}{}", major, minor,
-                     forwardCompatStr, profileStr);
+                                  forwardCompatStr, profileStr);
 
-    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(
+            cloudViewer::utility::VerbosityLevel::Debug);
 
     glfwSetErrorCallback(GLFWErrorCallback);
+#ifdef HEADLESS_RENDERING
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
+#endif
     if (!glfwInit()) {
         cloudViewer::utility::LogError("Failed to initialize GLFW");
     }
@@ -58,12 +62,21 @@ void TryGLVersion(int major,
     }
 
     auto reportGlStringFunc = [](GLenum id, std::string name) {
+// Note: with GLFW 3.3.9 it appears that OpenGL entry points are no longer auto
+// loaded? The else part crashes on Apple with a null pointer.
+#ifdef __APPLE__
+        PFNGLGETSTRINGIPROC _glGetString =
+                (PFNGLGETSTRINGIPROC)glfwGetProcAddress("glGetString");
+        const auto r = _glGetString(id, 0);
+#else
         const auto r = glGetString(id);
+#endif
         if (!r) {
-            cloudViewer::utility::LogWarning("Unable to get info on {} id {:d}", name, id);
+            cloudViewer::utility::LogWarning("Unable to get info on {} id {:d}",
+                                             name, id);
         } else {
             cloudViewer::utility::LogDebug("{}:\t{}", name,
-                              reinterpret_cast<const char *>(r));
+                                           reinterpret_cast<const char *>(r));
         }
     };
 #define CLOUDVIEWER_REPORT_GL_STRING(n) reportGlStringFunc(n, #n)

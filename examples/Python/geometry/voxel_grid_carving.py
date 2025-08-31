@@ -75,8 +75,9 @@ def voxel_carving(mesh, cubic_size, voxel_resolution, w=300, h=300):
     param = ctr.convert_to_pinhole_camera_parameters()
 
     # Carve voxel grid.
-    centers_pts = np.zeros((len(camera_sphere.vertices()), 3))
-    for cid, xyz in enumerate(camera_sphere.vertices()):
+    vertices = np.asarray(camera_sphere.vertices())
+    centers_pts = np.zeros((len(vertices), 3))
+    for cid, xyz in enumerate(vertices):
         # Get new camera pose.
         trans = get_extrinsic(xyz)
         param.extrinsic = trans
@@ -91,7 +92,7 @@ def voxel_carving(mesh, cubic_size, voxel_resolution, w=300, h=300):
 
         # Depth map carving method.
         voxel_carving.carve_depth_map(cv3d.geometry.Image(depth), param)
-        print("Carve view %03d/%03d" % (cid + 1, len(camera_sphere.vertices())))
+        print("Carve view %03d/%03d" % (cid + 1, len(vertices)))
     vis.destroy_window()
 
     return voxel_carving

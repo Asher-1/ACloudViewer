@@ -19,7 +19,7 @@ if __name__ == '__main__':
     box = cv3d.geometry.ccMesh.create_box(2, 2, 1)
     box.compute_vertex_normals()
     render = cv3d.visualization.rendering.OffscreenRenderer(640, 480)
-    grey = rendering.Material()
+    grey = rendering.MaterialRecord()
     grey.base_color = [0.7, 0.7, 0.7, 1.0]
     grey.shader = "defaultLit"
     render.scene.add_geometry("box", box, grey)

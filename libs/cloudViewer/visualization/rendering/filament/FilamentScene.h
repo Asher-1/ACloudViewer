@@ -116,8 +116,7 @@ public:
     void SetGeometryTransform(const std::string& object_name,
                               const Transform& transform) override;
     Transform GetGeometryTransform(const std::string& object_name) override;
-    ccBBox GetGeometryBoundingBox(
-            const std::string& object_name) override;
+    ccBBox GetGeometryBoundingBox(const std::string& object_name) override;
     void GeometryShadows(const std::string& object_name,
                          bool cast_shadows,
                          bool receive_shadows) override;
@@ -212,6 +211,12 @@ public:
 
     void Draw(filament::Renderer& renderer);
 
+    // NOTE: This method is to work around Filament limitation when rendering to
+    // depth buffer. Materials with SSR require multiple passes which causes a
+    // crash with render to depth since we must disable multiple passes (i.e.,
+    // post-processing) in order to get back valid, un-modified depth values.
+    void HideRefractedMaterials(bool hide = true);
+
     // NOTE: Can GetNativeScene be removed?
     filament::Scene* GetNativeScene() const { return scene_; }
 
@@ -261,6 +266,7 @@ private:
     struct RenderableGeometry {
         std::string name;
         bool visible = true;
+        bool was_hidden_before_picking = false;
         bool cast_shadows = true;
         bool receive_shadows = true;
         bool culling_enabled = true;

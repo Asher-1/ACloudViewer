@@ -88,9 +88,10 @@ def voxel_carving(mesh,
     param = ctr.convert_to_pinhole_camera_parameters()
 
     pcd_agg = cv3d.geometry.ccPointCloud()
-    centers_pts = np.zeros((len(camera_sphere.get_vertices()), 3))
+    vertices = np.asarray(camera_sphere.vertices())
+    centers_pts = np.zeros((len(vertices), 3))
     i = 0
-    for cid, xyz in enumerate(camera_sphere.get_vertices()):
+    for cid, xyz in enumerate(vertices):
         # get new camera pose
         trans = get_extrinsic(xyz)
         param.extrinsic = trans
