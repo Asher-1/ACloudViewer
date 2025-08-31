@@ -194,10 +194,10 @@ build_mac_wheel() {
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_BENCHMARKS=OFF"
-        "-DBUILD_AZURE_KINECT=ON"
+        "-DBUILD_AZURE_KINECT=OFF" # not supported on macos
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE" # some issues with network locally
         "-DWITH_OPENMP=ON"
-        "-DWITH_IPPICV=ON"
+        "-DWITH_IPP=OFF" # not supported on macos
         "-DWITH_SIMD=ON"
         "-DUSE_SIMD=ON"
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
@@ -294,9 +294,10 @@ build_gui_app() {
                 "-DBUILD_BENCHMARKS=OFF"
                 "-DBUILD_WEBRTC=OFF"
                 "-DWITH_OPENMP=ON"
-                "-DWITH_IPPICV=ON"
+                "-DWITH_IPP=ON"
                 "-DWITH_SIMD=ON"
                 "-DWITH_PCL_NURBS=$WITH_PCL_NURBS"
+                "-DUSE_PCL_BACKEND=ON"
                 "-DUSE_SIMD=ON"
                 "-DPACKAGE=$PACKAGE"
                 "-DBUILD_OPENCV=ON"
@@ -351,7 +352,7 @@ build_gui_app() {
                 "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
                 "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
                 "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
-                )
+    )
     
     set -x # Echo commands on
     echo
@@ -443,7 +444,7 @@ build_pip_package() {
         "-DUSE_SIMD=ON"
         "-DWITH_SIMD=ON"
         "-DWITH_OPENMP=ON"
-        "-DWITH_IPPICV=ON"
+        "-DWITH_IPP=ON"
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"

@@ -1,38 +1,19 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-//
 
-#include "ml/impl/misc/RadiusSearch.h"
+#include "core/nns/NanoFlannImpl.h"
+#include "core/nns/NeighborSearchCommon.h"
 #include "ml/pytorch/TorchHelper.h"
 #include "ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
-using namespace cloudViewer::ml::impl;
+using namespace cloudViewer::core::nns;
 
-template <class T>
+template <class T, class TIndex>
 void RadiusSearchCPU(const torch::Tensor& points,
                      const torch::Tensor& queries,
                      const torch::Tensor& radii,
@@ -47,9 +28,9 @@ void RadiusSearchCPU(const torch::Tensor& points,
                      torch::Tensor& neighbors_distance) {
     const int batch_size = points_row_splits.size(0) - 1;
     // run radius search for each batch item
-    std::vector<NeighborSearchAllocator<T>> batch_output_allocators(
-            batch_size, NeighborSearchAllocator<T>(points.device().type(),
-                                                   points.device().index())
+    std::vector<NeighborSearchAllocator<T, TIndex>> batch_output_allocators(
+            batch_size, NeighborSearchAllocator<T, TIndex>(
+                                points.device().type(), points.device().index())
 
     );
     int64_t last_neighbors_count = 0;
@@ -69,10 +50,15 @@ void RadiusSearchCPU(const torch::Tensor& points,
         int64_t* neighbors_row_splits_i =
                 (int64_t*)(neighbors_row_splits.data_ptr<int64_t>() +
                            queries_row_splits.data_ptr<int64_t>()[i]);
-        RadiusSearchCPU(neighbors_row_splits_i, num_points_i, points_i,
-                        num_queries_i, queries_i, radius_i, metric,
-                        ignore_query_point, return_distances,
-                        normalize_distances, batch_output_allocators[i]);
+
+        std::unique_ptr<NanoFlannIndexHolderBase> holder =
+                impl::BuildKdTree<T, TIndex>(num_points_i, points_i, 3, metric);
+
+        impl::RadiusSearchCPU<T, TIndex>(
+                holder.get(), neighbors_row_splits_i, num_points_i, points_i,
+                num_queries_i, queries_i, 3, radius_i, metric,
+                ignore_query_point, return_distances, normalize_distances,
+                /* sort */ false, batch_output_allocators[i]);
 
         if (i > 0) {
             for (size_t j = 0; j <= num_queries_i; ++j)
@@ -89,8 +75,8 @@ void RadiusSearchCPU(const torch::Tensor& points,
         return;
     }
 
-    NeighborSearchAllocator<T> output_allocator(points.device().type(),
-                                                points.device().index());
+    NeighborSearchAllocator<T, TIndex> output_allocator(
+            points.device().type(), points.device().index());
 
     // combine results
     int64_t neighbors_index_size = 0;
@@ -99,7 +85,7 @@ void RadiusSearchCPU(const torch::Tensor& points,
         neighbors_index_size += a.NeighborsIndex().size(0);
         neighbors_distance_size += a.NeighborsDistance().size(0);
     }
-    int32_t* neighbors_index_data_ptr;
+    TIndex* neighbors_index_data_ptr;
     T* neighbors_distance_data_ptr;
     output_allocator.AllocIndices(&neighbors_index_data_ptr,
                                   neighbors_index_size);
@@ -126,8 +112,8 @@ void RadiusSearchCPU(const torch::Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-#define INSTANTIATE(T)                                                      \
-    template void RadiusSearchCPU<T>(                                       \
+#define INSTANTIATE(T, TIndex)                                              \
+    template void RadiusSearchCPU<T, TIndex>(                               \
             const torch::Tensor& points, const torch::Tensor& queries,      \
             const torch::Tensor& radii,                                     \
             const torch::Tensor& points_row_splits,                         \
@@ -137,5 +123,8 @@ void RadiusSearchCPU(const torch::Tensor& points,
             torch::Tensor& neighbors_row_splits,                            \
             torch::Tensor& neighbors_distance);
 
-INSTANTIATE(float)
-INSTANTIATE(double)
+INSTANTIATE(float, int32_t)
+INSTANTIATE(float, int64_t)
+INSTANTIATE(double, int32_t)
+INSTANTIATE(double, int64_t)
+

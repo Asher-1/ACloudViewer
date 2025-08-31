@@ -1,0 +1,66 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4789)
+#endif
+
+#include "cloudViewer/visualization/rendering/Material.h"
+
+#include "cloudViewer/visualization/rendering/MaterialRecord.h"
+#include "pybind/cloudViewer_pybind.h"
+
+PYBIND11_MAKE_OPAQUE(
+        std::unordered_map<std::string, cloudViewer::t::geometry::Image>)
+PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, float>)
+// NOTE: The following line triggers buffer overflow warnings on Windows which
+// is why warning 4789 is disabled when building on Windows
+PYBIND11_MAKE_OPAQUE(
+        cloudViewer::visualization::rendering::Material::VectorPropertyMap)
+
+namespace cloudViewer {
+namespace visualization {
+namespace rendering {
+
+void pybind_material(py::module& m) {
+    py::bind_map<std::unordered_map<std::string, t::geometry::Image>>(
+            m, "TextureMaps");
+    py::bind_map<std::unordered_map<std::string, float>>(m, "ScalarProperties");
+    py::bind_map<Material::VectorPropertyMap>(m, "VectorProperties");
+    py::class_<Material, std::shared_ptr<Material>> mat(
+            m, "Material",
+            "Properties (texture maps, scalar and vector) related to "
+            "visualization. Materials are optionally set for 3D geometries "
+            "such as TriangleMesh, LineSets, and PointClouds");
+    mat.def(py::init<>())
+            .def(py::init<Material>(), "", "mat"_a)
+            .def(py::init<const std::string&>(), "", "material_name"_a)
+            .def(py::init(&Material::FromMaterialRecord), "material_record"_a,
+                 "Convert from MaterialRecord.")
+            .def("__repr__", &Material::ToString)
+            .def("set_default_properties", &Material::SetDefaultProperties,
+                 "Fills material with defaults for common PBR material "
+                 "properties used by CloudViewer")
+            .def("is_valid", &Material::IsValid,
+                 "Returns false if material is an empty material")
+            .def_property("material_name", &Material::GetMaterialName,
+                          &Material::SetMaterialName)
+            .def_property_readonly("texture_maps", &Material::GetTextureMaps)
+            .def_property_readonly("scalar_properties",
+                                   &Material::GetScalarProperties)
+            .def_property_readonly("vector_properties",
+                                   &Material::GetVectorProperties);
+}
+
+}  // namespace rendering
+}  // namespace visualization
+}  // namespace cloudViewer
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

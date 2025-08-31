@@ -16,7 +16,8 @@ def merge_database(database_path1, database_path2, out_database_path):
 
 def clean_database(database_path, clean_type):
     # supported type {all, images, features, matches}
-    return cv3d.reconstruction.database.clean_database(database_path, clean_type)
+    return cv3d.reconstruction.database.clean_database(database_path,
+                                                       clean_type)
 
 
 def create_database(database_path):

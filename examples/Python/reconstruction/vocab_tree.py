@@ -4,9 +4,13 @@ import numpy as np
 import cloudViewer as cv3d
 
 
-def build_vocab_tree(database_path, vocab_tree_path, num_visual_words=65536,
-                     num_checks=256, branching=256,
-                     num_iterations=11, max_num_images=-1):
+def build_vocab_tree(database_path,
+                     vocab_tree_path,
+                     num_visual_words=65536,
+                     num_checks=256,
+                     branching=256,
+                     num_iterations=11,
+                     max_num_images=-1):
     """
     build_vocab_tree(database_path, vocab_tree_path, num_visual_words=65536, num_checks=256,
     branching=256, num_iterations=11, max_num_images=-1, num_threads=-1)
@@ -25,15 +29,26 @@ def build_vocab_tree(database_path, vocab_tree_path, num_visual_words=65536,
     Returns:
         int
     """
-    return cv3d.reconstruction.vocab_tree.build_vocab_tree(database_path=database_path, vocab_tree_path=vocab_tree_path,
-                                                           num_visual_words=num_visual_words, num_checks=num_checks,
-                                                           branching=branching, num_iterations=num_iterations,
-                                                           max_num_images=max_num_images)
+    return cv3d.reconstruction.vocab_tree.build_vocab_tree(
+        database_path=database_path,
+        vocab_tree_path=vocab_tree_path,
+        num_visual_words=num_visual_words,
+        num_checks=num_checks,
+        branching=branching,
+        num_iterations=num_iterations,
+        max_num_images=max_num_images)
 
 
-def retrieve_vocab_tree(database_path, vocab_tree_path, output_index_path='', query_image_list_path='',
-                        database_image_list_path='', max_num_images=-1, num_neighbors=5,
-                        num_checks=256, num_images_after_verification=0, max_num_features=-1):
+def retrieve_vocab_tree(database_path,
+                        vocab_tree_path,
+                        output_index_path='',
+                        query_image_list_path='',
+                        database_image_list_path='',
+                        max_num_images=-1,
+                        num_neighbors=5,
+                        num_checks=256,
+                        num_images_after_verification=0,
+                        max_num_features=-1):
     """
     retrieve_vocab_tree(database_path, vocab_tree_path, output_index_path='', query_image_list_path='',
     database_image_list_path='', max_num_images=-1, num_neighbors=5, num_checks=256,
@@ -57,16 +72,17 @@ def retrieve_vocab_tree(database_path, vocab_tree_path, output_index_path='', qu
     Returns:
         int
     """
-    return cv3d.reconstruction.vocab_tree.retrieve_vocab_tree(database_path=database_path,
-                                                              vocab_tree_path=vocab_tree_path,
-                                                              output_index_path=output_index_path,
-                                                              query_image_list_path=query_image_list_path,
-                                                              database_image_list_path=database_image_list_path,
-                                                              max_num_images=max_num_images,
-                                                              num_neighbors=num_neighbors,
-                                                              num_checks=num_checks,
-                                                              num_images_after_verification=num_images_after_verification,
-                                                              max_num_features=max_num_features)
+    return cv3d.reconstruction.vocab_tree.retrieve_vocab_tree(
+        database_path=database_path,
+        vocab_tree_path=vocab_tree_path,
+        output_index_path=output_index_path,
+        query_image_list_path=query_image_list_path,
+        database_image_list_path=database_image_list_path,
+        max_num_images=max_num_images,
+        num_neighbors=num_neighbors,
+        num_checks=num_checks,
+        num_images_after_verification=num_images_after_verification,
+        max_num_features=max_num_features)
 
 
 if __name__ == '__main__':
@@ -77,7 +93,8 @@ if __name__ == '__main__':
     OUTPUT_PATH = "/media/asher/data/datasets/gui_test/out/vocab_tree_index.bin"
     VOCAB_TREE_PATH = "/media/asher/data/datasets/vocab_tree/vocab_tree_flickr100K_words32K.bin"
 
-    flag = build_vocab_tree(database_path=DATABASE_PATH, vocab_tree_path=VOCAB_TREE_PATH)
+    flag = build_vocab_tree(database_path=DATABASE_PATH,
+                            vocab_tree_path=VOCAB_TREE_PATH)
     if flag != 0:
         print("build_vocab_tree failed!")
 

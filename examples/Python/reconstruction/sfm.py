@@ -4,9 +4,19 @@ import numpy as np
 import cloudViewer as cv3d
 
 
-def auto_reconstruction(workspace_path, image_path, mask_path='', vocab_tree_path='', data_type='individual',
-                        quality='high', mesher='poisson', camera_model='SIMPLE_RADIAL', single_camera=False,
-                        sparse=True, dense=True, num_threads=-1, use_gpu=True,
+def auto_reconstruction(workspace_path,
+                        image_path,
+                        mask_path='',
+                        vocab_tree_path='',
+                        data_type='individual',
+                        quality='high',
+                        mesher='poisson',
+                        camera_model='SIMPLE_RADIAL',
+                        single_camera=False,
+                        sparse=True,
+                        dense=True,
+                        num_threads=-1,
+                        use_gpu=True,
                         gpu_index='-1'):
     """
     auto_reconstruction(workspace_path, image_path, mask_path='', vocab_tree_path='', data_type='individual',
@@ -34,18 +44,21 @@ def auto_reconstruction(workspace_path, image_path, mask_path='', vocab_tree_pat
     Returns:
         int
     """
-    return cv3d.reconstruction.sfm.auto_reconstruction(workspace_path=workspace_path,
-                                                       image_path=image_path,
-                                                       mask_path=mask_path,
-                                                       vocab_tree_path=vocab_tree_path,
-                                                       data_type=data_type,
-                                                       quality=quality, mesher=mesher,
-                                                       camera_model=camera_model,
-                                                       single_camera=single_camera,
-                                                       sparse=sparse, dense=dense,
-                                                       num_threads=num_threads,
-                                                       use_gpu=use_gpu,
-                                                       gpu_index=gpu_index)
+    return cv3d.reconstruction.sfm.auto_reconstruction(
+        workspace_path=workspace_path,
+        image_path=image_path,
+        mask_path=mask_path,
+        vocab_tree_path=vocab_tree_path,
+        data_type=data_type,
+        quality=quality,
+        mesher=mesher,
+        camera_model=camera_model,
+        single_camera=single_camera,
+        sparse=sparse,
+        dense=dense,
+        num_threads=num_threads,
+        use_gpu=use_gpu,
+        gpu_index=gpu_index)
 
 
 def bundle_adjustment(input_path, output_path):
@@ -63,9 +76,12 @@ def bundle_adjustment(input_path, output_path):
     Returns:
         int
     """
-    bundle_adjustment_options = cv3d.reconstruction.options.BundleAdjustmentOptions()
-    return cv3d.reconstruction.sfm.bundle_adjustment(input_path=input_path, output_path=output_path,
-                                                     bundle_adjustment_options=bundle_adjustment_options)
+    bundle_adjustment_options = cv3d.reconstruction.options.BundleAdjustmentOptions(
+    )
+    return cv3d.reconstruction.sfm.bundle_adjustment(
+        input_path=input_path,
+        output_path=output_path,
+        bundle_adjustment_options=bundle_adjustment_options)
 
 
 def extract_color(image_path, input_path, output_path):
@@ -81,10 +97,16 @@ def extract_color(image_path, input_path, output_path):
     Returns:
         int
     """
-    return cv3d.reconstruction.sfm.extract_color(image_path=image_path, input_path=input_path, output_path=output_path)
+    return cv3d.reconstruction.sfm.extract_color(image_path=image_path,
+                                                 input_path=input_path,
+                                                 output_path=output_path)
 
 
-def filter_points(input_path, output_path, min_track_len=2, max_reproj_error=4.0, min_tri_angle=1.5):
+def filter_points(input_path,
+                  output_path,
+                  min_track_len=2,
+                  max_reproj_error=4.0,
+                  min_tri_angle=1.5):
     """
     filter_points(input_path, output_path, min_track_len=2, max_reproj_error=4.0, min_tri_angle=1.5)
     Function for the filtering of points
@@ -99,12 +121,19 @@ def filter_points(input_path, output_path, min_track_len=2, max_reproj_error=4.0
     Returns:
         int
     """
-    return cv3d.reconstruction.sfm.filter_points(input_path=input_path, output_path=output_path,
-                                                 min_track_len=min_track_len, max_reproj_error=max_reproj_error,
-                                                 min_tri_angle=min_tri_angle)
+    return cv3d.reconstruction.sfm.filter_points(
+        input_path=input_path,
+        output_path=output_path,
+        min_track_len=min_track_len,
+        max_reproj_error=max_reproj_error,
+        min_tri_angle=min_tri_angle)
 
 
-def hierarchical_mapper(database_path, image_path, output_path, num_workers=-1, image_overlap=50,
+def hierarchical_mapper(database_path,
+                        image_path,
+                        output_path,
+                        num_workers=-1,
+                        image_overlap=50,
                         leaf_max_num_images=500):
     """
     hierarchical_mapper(database_path, image_path, output_path, num_workers=-1, image_overlap=50,
@@ -128,15 +157,23 @@ def hierarchical_mapper(database_path, image_path, output_path, num_workers=-1, 
     Returns:
         int
     """
-    incremental_mapper_options = cv3d.reconstruction.options.IncrementalMapperOptions()
-    return cv3d.reconstruction.sfm.hierarchical_mapper(database_path=database_path, image_path=image_path,
-                                                       output_path=output_path, num_workers=num_workers,
-                                                       image_overlap=image_overlap,
-                                                       leaf_max_num_images=leaf_max_num_images,
-                                                       incremental_mapper_options=incremental_mapper_options)
+    incremental_mapper_options = cv3d.reconstruction.options.IncrementalMapperOptions(
+    )
+    return cv3d.reconstruction.sfm.hierarchical_mapper(
+        database_path=database_path,
+        image_path=image_path,
+        output_path=output_path,
+        num_workers=num_workers,
+        image_overlap=image_overlap,
+        leaf_max_num_images=leaf_max_num_images,
+        incremental_mapper_options=incremental_mapper_options)
 
 
-def normal_mapper(database_path, image_path, input_path, output_path, image_list_path=''):
+def normal_mapper(database_path,
+                  image_path,
+                  input_path,
+                  output_path,
+                  image_list_path=''):
     """
     normal_mapper(database_path, image_path, input_path, output_path, image_list_path='',
     incremental_mapper_options=<cloudViewer.cuda.pybind.reconstruction.options.IncrementalMapperOptions object at 0x7f82ad55ec70>)
@@ -154,14 +191,21 @@ def normal_mapper(database_path, image_path, input_path, output_path, image_list
     Returns:
         int
     """
-    incremental_mapper_options = cv3d.reconstruction.options.IncrementalMapperOptions()
-    return cv3d.reconstruction.sfm.normal_mapper(database_path=database_path, image_path=image_path,
-                                                 input_path=input_path, output_path=output_path,
-                                                 image_list_path=image_list_path,
-                                                 incremental_mapper_options=incremental_mapper_options)
+    incremental_mapper_options = cv3d.reconstruction.options.IncrementalMapperOptions(
+    )
+    return cv3d.reconstruction.sfm.normal_mapper(
+        database_path=database_path,
+        image_path=image_path,
+        input_path=input_path,
+        output_path=output_path,
+        image_list_path=image_list_path,
+        incremental_mapper_options=incremental_mapper_options)
 
 
-def rig_bundle_adjustment(input_path, output_path, rig_config_path, estimate_rig_relative_poses=True,
+def rig_bundle_adjustment(input_path,
+                          output_path,
+                          rig_config_path,
+                          estimate_rig_relative_poses=True,
                           refine_relative_poses=True):
     """
     rig_bundle_adjustment(input_path, output_path, rig_config_path, estimate_rig_relative_poses=True,
@@ -181,15 +225,22 @@ def rig_bundle_adjustment(input_path, output_path, rig_config_path, estimate_rig
     Returns:
         int
     """
-    bundle_adjustment_options = cv3d.reconstruction.options.BundleAdjustmentOptions()
-    return cv3d.reconstruction.sfm.rig_bundle_adjustment(input_path=input_path, output_path=output_path,
-                                                         rig_config_path=rig_config_path,
-                                                         estimate_rig_relative_poses=estimate_rig_relative_poses,
-                                                         refine_relative_poses=refine_relative_poses,
-                                                         bundle_adjustment_options=bundle_adjustment_options)
+    bundle_adjustment_options = cv3d.reconstruction.options.BundleAdjustmentOptions(
+    )
+    return cv3d.reconstruction.sfm.rig_bundle_adjustment(
+        input_path=input_path,
+        output_path=output_path,
+        rig_config_path=rig_config_path,
+        estimate_rig_relative_poses=estimate_rig_relative_poses,
+        refine_relative_poses=refine_relative_poses,
+        bundle_adjustment_options=bundle_adjustment_options)
 
 
-def triangulate_points(database_path, image_path, input_path, output_path, clear_points=False):
+def triangulate_points(database_path,
+                       image_path,
+                       input_path,
+                       output_path,
+                       clear_points=False):
     """
     triangulate_points(database_path, image_path, input_path, output_path, clear_points=False,
     incremental_mapper_options=<cloudViewer.cuda.pybind.reconstruction.options.IncrementalMapperOptions object at 0x7f82ad55ece0>)
@@ -207,11 +258,15 @@ def triangulate_points(database_path, image_path, input_path, output_path, clear
     Returns:
         int
     """
-    incremental_mapper_options = cv3d.reconstruction.options.IncrementalMapperOptions()
-    return cv3d.reconstruction.sfm.triangulate_points(database_path=database_path, image_path=image_path,
-                                                      input_path=input_path, output_path=output_path,
-                                                      clear_points=clear_points,
-                                                      incremental_mapper_options=incremental_mapper_options)
+    incremental_mapper_options = cv3d.reconstruction.options.IncrementalMapperOptions(
+    )
+    return cv3d.reconstruction.sfm.triangulate_points(
+        database_path=database_path,
+        image_path=image_path,
+        input_path=input_path,
+        output_path=output_path,
+        clear_points=clear_points,
+        incremental_mapper_options=incremental_mapper_options)
 
 
 if __name__ == "__main__":

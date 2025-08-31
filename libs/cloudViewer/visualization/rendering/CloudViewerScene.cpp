@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/rendering/CloudViewerScene.h"
@@ -33,7 +14,7 @@
 #include <algorithm>
 
 #include "visualization/gui/Application.h"
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
 
@@ -103,7 +84,7 @@ void RecreateAxis(Scene* scene, const ccBBox& bounds, bool enabled) {
     }
     axis_length = std::max(axis_length, 0.25f * bounds.getCenter().norm());
     auto mesh = CreateAxisGeometry(axis_length);
-    Material mat;
+    MaterialRecord mat;
     mat.shader = "defaultUnlit";
     scene->AddGeometry(kAxisObjectName, *mesh, mat);
     // It looks awkward to have the axis cast a a shadow, and even stranger
@@ -209,25 +190,25 @@ void CloudViewerScene::SetLighting(LightingProfile profile,
         case LightingProfile::DARK_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(5000);
+            scene->SetIndirectLightIntensity(10000);
             scene->SetSunLight(sun_dir, sun_color, 85000);
             break;
         default:
         case LightingProfile::MED_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(7500);
-            scene->SetSunLight(sun_dir, sun_color, 70000);
+            scene->SetIndirectLightIntensity(20000);
+            scene->SetSunLight(sun_dir, sun_color, 80000);
             break;
         case LightingProfile::SOFT_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(15000);
-            scene->SetSunLight(sun_dir, sun_color, 35000);
+            scene->SetIndirectLightIntensity(37500);
+            scene->SetSunLight(sun_dir, sun_color, 75000);
             break;
         case LightingProfile::NO_SHADOWS:
             scene->EnableIndirectLight(true);
-            scene->SetIndirectLightIntensity(20000);
+            scene->SetIndirectLightIntensity(37500);
             scene->EnableSunLight(false);
             break;
     }
@@ -252,7 +233,7 @@ void CloudViewerScene::ClearGeometry() {
 void CloudViewerScene::AddGeometry(
         const std::string& name,
         const ccHObject* geom,
-        const Material& mat,
+        const MaterialRecord& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
     std::string fast_name;
@@ -282,8 +263,8 @@ void CloudViewerScene::AddGeometry(
 
 void CloudViewerScene::AddGeometry(
         const std::string& name,
-        const t::geometry::PointCloud* geom,
-        const Material& mat,
+        const t::geometry::Geometry* geom,
+        const MaterialRecord& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
     std::string fast_name;
@@ -307,7 +288,7 @@ void CloudViewerScene::AddGeometry(
             auto lowq_name = name + kLowQualityModelObjectSuffix;
             auto bbox_geom =
                     geometry::LineSet::CreateFromAxisAlignedBoundingBox(bbox);
-            Material bbox_mat;
+            MaterialRecord bbox_mat;
             bbox_mat.base_color = {1.0f, 0.5f, 0.0f, 1.0f};  // orange
             bbox_mat.shader = "unlitSolidColor";
             scene->AddGeometry(lowq_name, *bbox_geom, bbox_mat);
@@ -341,8 +322,36 @@ void CloudViewerScene::RemoveGeometry(const std::string& name) {
     }
 }
 
+bool CloudViewerScene::GeometryIsVisible(const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->GeometryIsVisible(name);
+}
+
+void CloudViewerScene::SetGeometryTransform(const std::string& name,
+                                            const Eigen::Matrix4d& transform) {
+    auto scene = renderer_.GetScene(scene_);
+    auto g = geometries_.find(name);
+    if (g != geometries_.end()) {
+        const Eigen::Transform<float, 3, Eigen::Affine> t(
+                transform.cast<float>());
+        scene->SetGeometryTransform(name, t);
+        if (!g->second.fast_name.empty()) {
+            scene->SetGeometryTransform(g->second.fast_name, t);
+        }
+        if (!g->second.low_name.empty()) {
+            scene->SetGeometryTransform(g->second.low_name, t);
+        }
+    }
+}
+
+Eigen::Matrix4d CloudViewerScene::GetGeometryTransform(
+        const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->GetGeometryTransform(name).matrix().cast<double>();
+}
+
 void CloudViewerScene::ModifyGeometryMaterial(const std::string& name,
-                                              const Material& mat) {
+                                              const MaterialRecord& mat) {
     auto scene = renderer_.GetScene(scene_);
     scene->OverrideMaterial(name, mat);
     auto it = geometries_.find(name);
@@ -384,7 +393,7 @@ void CloudViewerScene::AddModel(const std::string& name,
     axis_dirty_ = true;
 }
 
-void CloudViewerScene::UpdateMaterial(const Material& mat) {
+void CloudViewerScene::UpdateMaterial(const MaterialRecord& mat) {
     auto scene = renderer_.GetScene(scene_);
     for (auto& g : geometries_) {
         scene->OverrideMaterial(g.second.name, mat);

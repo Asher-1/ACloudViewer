@@ -20,7 +20,8 @@ class ExampleApp:
         # a label in the lower left on top of the SceneWidget to display the
         # coordinate.
         app = gui.Application.instance
-        self.window = app.create_window("CloudViewer - GetCoord Example", 1024, 768)
+        self.window = app.create_window("CloudViewer - GetCoord Example", 1024,
+                                        768)
         # Since we want the label on top of the scene, we cannot use a layout,
         # so we need to manually layout the window's children.
         self.window.set_on_layout(self._on_layout)
@@ -32,7 +33,7 @@ class ExampleApp:
 
         self.widget3d.scene = rendering.CloudViewerScene(self.window.renderer)
 
-        mat = rendering.Material()
+        mat = rendering.MaterialRecord()
         mat.shader = "defaultUnlit"
         # Point size is in native pixels, but "pixel" means different things to
         # different platforms (macOS, in particular), so multiply by Window scale
@@ -108,7 +109,7 @@ def main():
     # If you use a triangle mesh you will probably want to set the material
     # shader to "defaultLit" instead of "defaultUnlit".
     cloud = cv3d.io.read_point_cloud(SCRIPT_DIR +
-                                    "/../../test_data/ICP/cloud_bin_0.pcd")
+                                     "/../../test_data/ICP/cloud_bin_0.pcd")
     ex = ExampleApp(cloud)
 
     app.run()

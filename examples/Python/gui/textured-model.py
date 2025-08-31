@@ -14,7 +14,7 @@ def main():
     model_dir = sys.argv[1]
     model_name = os.path.join(model_dir, os.path.basename(model_dir) + ".obj")
     model = cv3d.io.read_triangle_mesh(model_name)
-    material = cv3d.visualization.rendering.Material()
+    material = cv3d.visualization.rendering.MaterialRecord()
     material.shader = "defaultLit"
 
     albedo_name = os.path.join(model_dir, "albedo.png")

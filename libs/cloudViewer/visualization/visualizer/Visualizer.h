@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -32,7 +13,7 @@
 #include <windows.h>
 #endif
 
-#include <GL/glew.h> // Make sure glew.h is included before gl.h
+#include <GL/glew.h>  // Make sure glew.h is included before gl.h
 #include <GLFW/glfw3.h>
 
 #include <Eigen/Core>
@@ -55,6 +36,8 @@ class Image;
 }  // namespace geometry
 
 namespace visualization {
+
+class GLFWContext;
 
 /// \class Visualizer
 ///
@@ -148,9 +131,8 @@ public:
     /// Visualizer should be updated accordingly.
     ///
     /// \param geometry_ptr The Geometry object.
-    virtual bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr,
-            bool reset_bounding_box = true);
+    virtual bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
+                             bool reset_bounding_box = true);
 
     /// \brief Function to remove geometry from the scene.
     ///
@@ -161,9 +143,8 @@ public:
     /// added by AddGeometry
     ///
     /// \param geometry_ptr The Geometry object.
-    virtual bool RemoveGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr,
-            bool reset_bounding_box = true);
+    virtual bool RemoveGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
+                                bool reset_bounding_box = true);
 
     /// Function to remove all geometries from the scene.
     /// After calling this function, the Visualizer releases the pointer of
@@ -272,6 +253,10 @@ protected:
     // window
     GLFWwindow *window_ = nullptr;
     std::string window_name_ = "CloudViewer";
+    
+    /// \brief Shared GLFW context.
+    std::shared_ptr<GLFWContext> glfw_context_ = nullptr;
+
     Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
     Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
@@ -301,8 +286,7 @@ protected:
     std::unique_ptr<RenderOption> render_option_ptr_;
 
     // geometry to be rendered
-    std::unordered_set<std::shared_ptr<const ccHObject>>
-            geometry_ptrs_;
+    std::unordered_set<std::shared_ptr<const ccHObject>> geometry_ptrs_;
 
     // geometry renderers
     std::unordered_set<std::shared_ptr<glsl::GeometryRenderer>>

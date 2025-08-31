@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.cloudViewer.org                            -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2023 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
@@ -440,8 +440,8 @@ class RenderUpdate:
     DICT_COLORMAPS = {
         name: {
             # float -> uint8, and RGB -> RGBA
-            point.value: _float_to_u8(point.color) + (255,)
-            for point in cmap.points
+            point.value:
+                _float_to_u8(point.color) + (255,) for point in cmap.points
         } for name, cmap in _CMAPS.items()
     }
     LABELLUT_COLORS = tuple(
@@ -578,7 +578,7 @@ class RenderUpdate:
                 else:
                     tm["__" + prop] = tm[prop]  # backup
                     tm[prop] = cv3d.core.Tensor.empty(tm["__" + prop].shape,
-                                                     tm["__" + prop].dtype)
+                                                      tm["__" + prop].dtype)
                 self.swap_list.append((tm, prop))
                 return
             if "__" + prop in tm:  # __prop -> prop
@@ -603,7 +603,11 @@ class RenderUpdate:
                 show += "__" + prop + repr(tm["__" + prop][:0])
             self.backup_list = []
 
-    def apply(self, cv3dvis, geometry_name, geometry, inference_data_proto=None):
+    def apply(self,
+              cv3dvis,
+              geometry_name,
+              geometry,
+              inference_data_proto=None):
         """Apply the RenderUpdate to a geometry.
 
         Args:
@@ -792,7 +796,7 @@ def to_dict_batch(cv3d_geometry_list):
     triangle_uvs = []
     line_colors = []
     line_indices = []
-    if isinstance(cv3d_geometry_list[0], cv3d.geometry.PointCloud):
+    if isinstance(cv3d_geometry_list[0], cv3d.geometry.ccPointCloud):
         for geometry in cv3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.points))
             vertex_colors.append(np.asarray(geometry.colors))
@@ -804,7 +808,7 @@ def to_dict_batch(cv3d_geometry_list):
             'vertex_normals': np.stack(vertex_normals, axis=0),
         }
 
-    elif isinstance(cv3d_geometry_list[0], cv3d.geometry.TriangleMesh):
+    elif isinstance(cv3d_geometry_list[0], cv3d.geometry.ccMesh):
         for geometry in cv3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.vertices))
             vertex_colors.append(np.asarray(geometry.vertex_colors))
@@ -837,7 +841,8 @@ def to_dict_batch(cv3d_geometry_list):
 
     else:
         raise NotImplementedError(
-            f"Geometry type {type(cv3d_geometry_list[0])} is not supported yet.")
+            f"Geometry type {type(cv3d_geometry_list[0])} is not supported yet."
+        )
 
     # remove empty arrays
     for prop in tuple(geo_dict.keys()):

@@ -1,38 +1,20 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/Visualizer.h"
+
 #include <Image.h>
-#include "visualization/visualizer/VisualizerWithEditing.h"
-#include "visualization/visualizer/VisualizerWithKeyCallback.h"
-#include "visualization/visualizer/VisualizerWithVertexSelection.h"
 
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"
 #include "pybind/visualization/visualization_trampoline.h"
+#include "visualization/visualizer/VisualizerWithEditing.h"
+#include "visualization/visualizer/VisualizerWithKeyCallback.h"
+#include "visualization/visualizer/VisualizerWithVertexSelection.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -87,7 +69,7 @@ void pybind_visualizer(py::module &m) {
             .def("close", &Visualizer::Close,
                  "Function to notify the window to be closed")
             .def("reset_view_point", &Visualizer::ResetViewPoint,
-                 "Function to reset view point")
+                 "Function to reset view point", "reset_bounding_box"_a = false)
             .def("update_geometry", &Visualizer::UpdateGeometry,
                  "Function to update geometry. This function must be called "
                  "when geometry has been changed. Otherwise the behavior of "
@@ -96,7 +78,8 @@ void pybind_visualizer(py::module &m) {
             .def("update_renderer", &Visualizer::UpdateRender,
                  "Function to inform render needed to be updated")
             .def("set_full_screen", &Visualizer::SetFullScreen,
-                 "Function to change between fullscreen and windowed")
+                 "Function to change between fullscreen and windowed",
+                 "fullscreen"_a)
             .def("toggle_full_screen", &Visualizer::ToggleFullScreen,
                  "Function to toggle between fullscreen and windowed")
             .def("is_full_screen", &Visualizer::IsFullScreen,
@@ -122,20 +105,39 @@ void pybind_visualizer(py::module &m) {
                  &Visualizer::CaptureScreenFloatBuffer,
                  "Function to capture screen and store RGB in a float buffer",
                  "do_render"_a = false)
-            .def("capture_screen_image", &Visualizer::CaptureScreenImage,
-                 "Function to capture and save a screen image", "filename"_a,
-                 "do_render"_a = false)
+            .def(
+                    "capture_screen_image",
+                    [](Visualizer &self, const fs::path &filename,
+                       bool do_render) {
+                        return self.CaptureScreenImage(filename.string(),
+                                                       do_render);
+                    },
+                    "Function to capture and save a screen image", "filename"_a,
+                    "do_render"_a = false)
             .def("capture_depth_float_buffer",
                  &Visualizer::CaptureDepthFloatBuffer,
                  "Function to capture depth in a float buffer",
                  "do_render"_a = false)
-            .def("capture_depth_image", &Visualizer::CaptureDepthImage,
-                 "Function to capture and save a depth image", "filename"_a,
-                 "do_render"_a = false, "depth_scale"_a = 1000.0)
-            .def("capture_depth_point_cloud",
-                 &Visualizer::CaptureDepthPointCloud,
-                 "Function to capture and save local point cloud", "filename"_a,
-                 "do_render"_a = false, "convert_to_world_coordinate"_a = false)
+            .def(
+                    "capture_depth_image",
+                    [](Visualizer &self, const fs::path &filename,
+                       bool do_render, double depth_scale) {
+                        self.CaptureDepthImage(filename.string(), do_render,
+                                               depth_scale);
+                    },
+                    "Function to capture and save a depth image", "filename"_a,
+                    "do_render"_a = false, "depth_scale"_a = 1000.0)
+            .def(
+                    "capture_depth_point_cloud",
+                    [](Visualizer &self, const fs::path &filename,
+                       bool do_render, bool convert_to_world_coordinate) {
+                        self.CaptureDepthPointCloud(
+                                filename.string(), do_render,
+                                convert_to_world_coordinate);
+                    },
+                    "Function to capture and save local point cloud",
+                    "filename"_a, "do_render"_a = false,
+                    "convert_to_world_coordinate"_a = false)
             .def("get_window_name", &Visualizer::GetWindowName);
 
     py::class_<VisualizerWithKeyCallback,
@@ -161,10 +163,48 @@ void pybind_visualizer(py::module &m) {
             .def("register_key_action_callback",
                  &VisualizerWithKeyCallback::RegisterKeyActionCallback,
                  "Function to register a callback function for a key action "
-                 "event. The callback function takes Visualizer, action and "
-                 "mods as input and returns a boolean indicating if "
-                 "UpdateGeometry() needs to be run.",
-                 "key"_a, "callback_func"_a);
+                 "event. The callback function takes `Visualizer`, `action` "
+                 "and `mods` as input and returns a boolean indicating if "
+                 "`UpdateGeometry()` needs to be run.  The `action` can be one "
+                 "of `GLFW_RELEASE` (0), `GLFW_PRESS` (1) or `GLFW_REPEAT` "
+                 "(2), see `GLFW input interface "
+                 "<https://www.glfw.org/docs/latest/group__input.html>`__. The "
+                 "`mods` specifies the modifier key, see `GLFW modifier key "
+                 "<https://www.glfw.org/docs/latest/group__mods.html>`__",
+                 "key"_a, "callback_func"_a)
+
+            .def("register_mouse_move_callback",
+                 &VisualizerWithKeyCallback::RegisterMouseMoveCallback,
+                 "Function to register a callback function for a mouse move "
+                 "event. The callback function takes Visualizer, x and y mouse "
+                 "position inside the window as input and returns a boolean "
+                 "indicating if UpdateGeometry() needs to be run. `GLFW mouse "
+                 "position <https://www.glfw.org/docs/latest/"
+                 "input_guide.html#input_mouse>`__ for more details.",
+                 "callback_func"_a)
+
+            .def("register_mouse_scroll_callback",
+                 &VisualizerWithKeyCallback::RegisterMouseScrollCallback,
+                 "Function to register a callback function for a mouse scroll "
+                 "event. The callback function takes Visualizer, x and y mouse "
+                 "scroll offset as input and returns a boolean "
+                 "indicating if UpdateGeometry() needs to be run. `GLFW mouse "
+                 "scrolling <https://www.glfw.org/docs/latest/"
+                 "input_guide.html#scrolling>`__ for more details.",
+                 "callback_func"_a)
+
+            .def("register_mouse_button_callback",
+                 &VisualizerWithKeyCallback::RegisterMouseButtonCallback,
+                 "Function to register a callback function for a mouse button "
+                 "event. The callback function takes `Visualizer`, `button`, "
+                 "`action` and `mods` as input and returns a boolean "
+                 "indicating `UpdateGeometry()` needs to be run. The `action` "
+                 "can be one of GLFW_RELEASE (0), GLFW_PRESS (1) or "
+                 "GLFW_REPEAT (2), see `GLFW input interface "
+                 "<https://www.glfw.org/docs/latest/group__input.html>`__.  "
+                 "The `mods` specifies the modifier key, see `GLFW modifier "
+                 "key <https://www.glfw.org/docs/latest/group__mods.html>`__.",
+                 "callback_func"_a);
 
     py::class_<VisualizerWithEditing, PyVisualizer<VisualizerWithEditing>,
                std::shared_ptr<VisualizerWithEditing>>
@@ -172,7 +212,9 @@ void pybind_visualizer(py::module &m) {
                             "Visualizer with editing capabilities.");
     py::detail::bind_default_constructor<VisualizerWithEditing>(
             visualizer_edit);
-    visualizer_edit.def(py::init<double, bool, const std::string &>())
+    visualizer_edit
+            .def(py::init<double, bool, const std::string &>(), "voxel_size"_a,
+                 "use_dialog"_a, "directory"_a)
             .def("__repr__",
                  [](const VisualizerWithEditing &vis) {
                      return std::string("VisualizerWithEditing with name ") +
@@ -197,25 +239,36 @@ void pybind_visualizer(py::module &m) {
                                     "name ") +
                             vis.GetWindowName();
                  })
+            .def("pick_points", &VisualizerWithVertexSelection::PickPoints,
+                 "Function to pick points", "x"_a, "y"_a, "w"_a, "h"_a)
             .def("get_picked_points",
                  &VisualizerWithVertexSelection::GetPickedPoints,
                  "Function to get picked points")
             .def("clear_picked_points",
                  &VisualizerWithVertexSelection::ClearPickedPoints,
                  "Function to clear picked points")
+            .def("add_picked_points",
+                 &VisualizerWithVertexSelection::AddPickedPoints,
+                 "Function to add picked points", "indices"_a)
+            .def("remove_picked_points",
+                 &VisualizerWithVertexSelection::RemovePickedPoints,
+                 "Function to remove picked points", "indices"_a)
             .def("register_selection_changed_callback",
                  &VisualizerWithVertexSelection::
                          RegisterSelectionChangedCallback,
-                 "Registers a function to be called when selection changes")
+                 "Registers a function to be called when selection changes",
+                 "f"_a)
             .def("register_selection_moving_callback",
                  &VisualizerWithVertexSelection::
                          RegisterSelectionMovingCallback,
                  "Registers a function to be called while selection moves. "
                  "Geometry's vertex values can be changed, but do not change"
-                 "the number of vertices.")
+                 "the number of vertices.",
+                 "f"_a)
             .def("register_selection_moved_callback",
                  &VisualizerWithVertexSelection::RegisterSelectionMovedCallback,
-                 "Registers a function to be called after selection moves");
+                 "Registers a function to be called after selection moves",
+                 "f"_a);
 
     py::class_<VisualizerWithVertexSelection::PickedPoint>
             visualizer_vselect_pickedpoint(m, "PickedPoint");

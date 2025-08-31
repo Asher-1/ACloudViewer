@@ -1,34 +1,15 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include "visualization/gui/SceneWidget.h"
 #include "visualization/gui/Window.h"
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/visualizer/O3DVisualizerSelections.h"
 
@@ -65,7 +46,7 @@ public:
         std::shared_ptr<ccHObject> geometry;
         std::shared_ptr<t::geometry::Geometry> tgeometry;
         std::shared_ptr<rendering::TriangleMeshModel> model;
-        rendering::Material material;
+        rendering::MaterialRecord material;
         std::string group;
         double time = 0.0;
         bool is_visible = true;
@@ -79,7 +60,7 @@ public:
                 gui::SceneWidget::Controls::ROTATE_CAMERA;
         Shader scene_shader = Shader::STANDARD;
         bool show_settings = false;
-        bool show_skybox = false;
+        bool show_skybox = true;
         bool show_axes = false;
         bool show_ground = false;
         rendering::Scene::GroundPlane ground_plane =
@@ -93,6 +74,7 @@ public:
 
         bool use_ibl = false;
         bool use_sun = true;
+        bool sun_follows_camera = true;
         std::string ibl_path = "";  // "" is default path
         int ibl_intensity = 0;
         int sun_intensity = 100000;
@@ -117,30 +99,44 @@ public:
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<ccHObject> geom,
-                     const rendering::Material* material = nullptr,
+                     const rendering::MaterialRecord* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
-                     const rendering::Material* material = nullptr,
+                     const rendering::MaterialRecord* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<rendering::TriangleMeshModel> tgeom,
-                     const rendering::Material* material = nullptr,
+                     const rendering::MaterialRecord* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
+    /// Removes the named geometry from the Visualizer
     void RemoveGeometry(const std::string& name);
 
+    /// Updates `update_flags` attributes of named geometry with the matching
+    /// attributes from `tgeom`
+    void UpdateGeometry(const std::string& name,
+                        std::shared_ptr<t::geometry::Geometry> tgeom,
+                        uint32_t update_flags);
+
+    /// Show/hide the named geometry
     void ShowGeometry(const std::string& name, bool show);
 
+    /// Returns Visualizer's internal DrawObject for the named geometry
     DrawObject GetGeometry(const std::string& name) const;
+    rendering::MaterialRecord GetGeometryMaterial(
+            const std::string& name) const;
+
+    void ModifyGeometryMaterial(const std::string& name,
+                                const rendering::MaterialRecord* material);
 
     void Add3DLabel(const Eigen::Vector3f& pos, const char* text);
     void Clear3DLabels();
@@ -160,13 +156,19 @@ public:
 
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
+    void SetIBL(const std::string& path);
+    void SetIBLIntensity(float intensity);
     void ShowAxes(bool show);
     void ShowGround(bool show);
     void SetGroundPlane(rendering::Scene::GroundPlane plane);
+    void EnableSunFollowsCamera(bool enable);
+    void EnableBasicMode(bool enable);
+    void EnableWireframeMode(bool enable);
     void SetPointSize(int point_size);
     void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);
     void SetMouseMode(gui::SceneWidget::Controls mode);
+    void SetPanelOpen(const std::string& name, bool open);
 
     std::vector<O3DVisualizerSelections::SelectionSet> GetSelectionSets() const;
 
@@ -196,7 +198,7 @@ public:
     UIState GetUIState() const;
     rendering::CloudViewerScene* GetScene() const;
 
-    /// Starts the RPC interface. See io/rpc/ReceiverBase for the parameters.
+    /// Starts the RPC interface. See io/rpc/ZMQReceiver for the parameters.
     void StartRPCInterface(const std::string& address, int timeout);
 
     void StopRPCInterface();

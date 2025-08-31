@@ -27,26 +27,42 @@ def primitives_generator(only_show_union=True):
     if not only_show_union:
         yield "Sphere", [sphere]
 
-    torus = cv3d.geometry.ccTorus(inside_radius=1, outside_radius=1.5, rectangular_section=False,
-                                  angle_rad=2 * np.pi, rect_section_height=0, precision=96)
+    torus = cv3d.geometry.ccTorus(inside_radius=1,
+                                  outside_radius=1.5,
+                                  rectangular_section=False,
+                                  angle_rad=2 * np.pi,
+                                  rect_section_height=0,
+                                  precision=96)
     torus.set_color([0.5, 0, 1])
     torus.compute_vertex_normals()
     if not only_show_union:
         yield "Torus", [torus]
 
-    quadric = cv3d.geometry.ccQuadric(min_corner=(-1, -1), max_corner=(1, 1), equation=(1, 1, 1, 1, 1, 1))
+    quadric = cv3d.geometry.ccQuadric(min_corner=(-1, -1),
+                                      max_corner=(1, 1),
+                                      equation=(1, 1, 1, 1, 1, 1))
     quadric.paint_uniform_color((0, 1, 0.5))
     quadric.compute_vertex_normals()
     if not only_show_union:
         yield "Quadric", [quadric]
 
-    truncated_cone = cv3d.geometry.ccCone(bottom_radius=2, top_radius=1, height=4, x_off=0, y_off=0, precision=64)
+    truncated_cone = cv3d.geometry.ccCone(bottom_radius=2,
+                                          top_radius=1,
+                                          height=4,
+                                          x_off=0,
+                                          y_off=0,
+                                          precision=64)
     truncated_cone.set_color([1, 0, 1])
     truncated_cone.compute_vertex_normals()
     if not only_show_union:
         yield "TruncatedCone", [truncated_cone]
 
-    cone = cv3d.geometry.ccCone(bottom_radius=2, top_radius=0, height=4, x_off=0, y_off=0, precision=64)
+    cone = cv3d.geometry.ccCone(bottom_radius=2,
+                                top_radius=0,
+                                height=4,
+                                x_off=0,
+                                y_off=0,
+                                precision=64)
     cone.set_color([1, 0, 1])
     cone.compute_vertex_normals()
     if not only_show_union:

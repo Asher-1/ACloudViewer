@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/ViewControl.h"
@@ -33,8 +14,8 @@
 #endif
 
 #include <GLFW/glfw3.h>
-
 #include <Logging.h>
+
 #include <Eigen/Dense>
 #include <cmath>  // jspark
 
@@ -87,8 +68,8 @@ void ViewControl::SetViewMatrices(
                          ? constant_z_far_
                          : distance_ + 3.0 * bounding_box_.getMaxExtent();
         projection_matrix_ =
-            gl_util::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
-                                -view_ratio_, view_ratio_, z_near_, z_far_);
+                gl_util::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
+                               -view_ratio_, view_ratio_, z_near_, z_far_);
     }
     view_matrix_ = gl_util::LookAt(eye_, lookat_, up_);
     model_matrix_ = model_matrix.cast<GLfloat>();
@@ -121,29 +102,29 @@ bool ViewControl::ConvertFromViewParameters(const ViewParameters &status) {
     front_ = status.front_;
     bounding_box_.minCorner() = status.boundingbox_min_;
     bounding_box_.maxCorner() = status.boundingbox_max_;
-	bounding_box_.setValidity(!bounding_box_.isEmpty());
+    bounding_box_.setValidity(!bounding_box_.isEmpty());
     SetProjectionParameters();
     return true;
 }
 
 void ViewControl::SetLookat(const Eigen::Vector3d &lookat) {
-	lookat_ = lookat;
-	SetProjectionParameters();
+    lookat_ = lookat;
+    SetProjectionParameters();
 }
 
 void ViewControl::SetUp(const Eigen::Vector3d &up) {
-	up_ = up;
-	SetProjectionParameters();
+    up_ = up;
+    SetProjectionParameters();
 }
 
 void ViewControl::SetFront(const Eigen::Vector3d &front) {
-	front_ = front;
-	SetProjectionParameters();
+    front_ = front;
+    SetProjectionParameters();
 }
 
 void ViewControl::SetZoom(const double zoom) {
-	zoom_ = zoom;
-	SetProjectionParameters();
+    zoom_ = zoom;
+    SetProjectionParameters();
 }
 
 bool ViewControl::ConvertToPinholeCameraParameters(
@@ -194,13 +175,16 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
         bool allow_arbitrary) {
     auto intrinsic = parameters.intrinsic_;
     auto extrinsic = parameters.extrinsic_;
-    if (!allow_arbitrary && (window_height_ <= 0 || window_width_ <= 0 ||
-                             window_height_ != intrinsic.height_ ||
-                             window_width_ != intrinsic.width_ ||
-                             intrinsic.intrinsic_matrix_(0, 2) !=
-                                     (double)window_width_ / 2.0 - 0.5 ||
-                             intrinsic.intrinsic_matrix_(1, 2) !=
-                                     (double)window_height_ / 2.0 - 0.5)) {
+
+    constexpr double threshold = 1.e-6;
+    if (!allow_arbitrary &&
+        (window_height_ <= 0 || window_width_ <= 0 ||
+         window_height_ != intrinsic.height_ ||
+         window_width_ != intrinsic.width_ ||
+         std::abs(intrinsic.intrinsic_matrix_(0, 2) -
+                  ((double)window_width_ / 2.0 - 0.5)) > threshold ||
+         std::abs(intrinsic.intrinsic_matrix_(1, 2) -
+                  ((double)window_height_ / 2.0 - 0.5)) > threshold)) {
         utility::LogWarning(
                 "[ViewControl] ConvertFromPinholeCameraParameters() failed "
                 "because window height and width do not match.");

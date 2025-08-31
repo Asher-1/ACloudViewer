@@ -1,32 +1,17 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <string>
+
+#include "cloudViewer/core/Device.h"
 
 namespace cloudViewer {
 namespace t {
@@ -35,7 +20,7 @@ namespace geometry {
 /// \class Geometry
 ///
 /// \brief The base geometry class.
-class Geometry {
+class Geometry : public core::IsDevice {
 public:
     /// \enum GeometryType
     ///
@@ -87,6 +72,9 @@ public:
     /// Returns true iff the geometry is empty.
     virtual bool IsEmpty() const = 0;
 
+    /// Returns the device of the geometry.
+    virtual core::Device GetDevice() const = 0;
+
     /// Returns one of registered geometry types.
     GeometryType GetGeometryType() const { return geometry_type_; }
 
@@ -103,6 +91,34 @@ private:
     /// Number of dimensions of the geometry.
     int dimension_;
     std::string name_;
+};
+/// Metrics for comparing point clouds and triangle meshes.
+enum class Metric {
+    ChamferDistance,    ///< Chamfer Distance
+    HausdorffDistance,  ///< Hausdorff Distance
+    FScore              ///< F-Score
+};
+
+/// Holder for various parameters required by metrics
+struct MetricParameters {
+    /// Radius for computing the F Score. A match between a point and its
+    /// nearest neighbor is sucessful if it is within this radius.
+    std::vector<float> fscore_radius = {0.01};
+    /// Points are sampled uniformly from the surface of triangle meshes before
+    /// distance computation. This specifies the number of points sampled. No
+    /// sampling is done for point clouds.
+    size_t n_sampled_points = 1000;
+    std::string ToString() const {
+        return fmt::format(
+                "MetricParameters: fscore_radius={}, n_sampled_points={}",
+                fscore_radius, n_sampled_points);
+    }
+};
+
+enum class MethodOBBCreate {
+    PCA,             ///< Principal Component Analysis
+    MINIMAL_APPROX,  ///< Minimal OBB approximation
+    MINIMAL_JYLANKI  ///< Minimal OBB by Jylanki
 };
 
 }  // namespace geometry

@@ -1,33 +1,16 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/Visualizer.h"
 
 #include <Logging.h>
 #include <ecvMesh.h>
+
+#include <memory>
 
 #if defined(__APPLE__) && defined(BUILD_GUI)
 namespace bluegl {
@@ -38,51 +21,71 @@ void unbind();
 
 namespace cloudViewer {
 
-namespace {
+namespace visualization {
 
-class GLFWEnvironmentSingleton {
+/// \brief GLFW context, handled as a singleton.
+class GLFWContext {
 private:
-    GLFWEnvironmentSingleton() { utility::LogDebug("GLFW init."); }
-    GLFWEnvironmentSingleton(const GLFWEnvironmentSingleton &) = delete;
-    GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) =
-            delete;
+    GLFWContext() {
+        utility::LogDebug("GLFW init.");
 
-public:
-    ~GLFWEnvironmentSingleton() {
-        glfwTerminate();
-        utility::LogDebug("GLFW destruct.");
-    }
-
-public:
-    static GLFWEnvironmentSingleton &GetInstance() {
-        static GLFWEnvironmentSingleton singleton;
-        return singleton;
-    }
-
-    static int InitGLFW() {
-        GLFWEnvironmentSingleton::GetInstance();
 #if defined(__APPLE__)
         // On macOS, GLFW changes the directory to the resource directory,
         // which will cause an unexpected change of directory if using a
         // framework build version of Python.
         glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
-        return glfwInit();
+        init_status_ = glfwInit();
+        if (init_status_ != GLFW_TRUE) {
+            glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
+            init_status_ = glfwInit();
+        }
+        if (init_status_ == GLFW_TRUE) init_status_ = glfwGetPlatform();
+        if (init_status_ == GLFW_PLATFORM_NULL) {
+            utility::LogWarning("GLFW initialized for headless rendering.");
+        }
+    }
+
+    GLFWContext(const GLFWContext &) = delete;
+    GLFWContext &operator=(const GLFWContext &) = delete;
+
+public:
+    ~GLFWContext() {
+        if (init_status_ != GLFW_FALSE) {
+            glfwTerminate();
+            init_status_ = GLFW_FALSE;
+            utility::LogDebug("GLFW destruct.");
+        }
+    }
+
+    /// \brief Get the glfwInit status / GLFW_PLATFORM initialized.
+    inline int InitStatus() const { return init_status_; }
+
+    /// \brief Get a shared instance of the GLFW context.
+    static std::shared_ptr<GLFWContext> GetInstance() {
+        static std::weak_ptr<GLFWContext> singleton;
+
+        auto res = singleton.lock();
+        if (res == nullptr) {
+            res = std::shared_ptr<GLFWContext>(new GLFWContext());
+            singleton = res;
+        }
+        return res;
     }
 
     static void GLFWErrorCallback(int error, const char *description) {
         utility::LogWarning("GLFW Error: {}", description);
     }
+
+private:
+    /// \brief Status of the glfwInit call.
+    int init_status_ = GLFW_FALSE;
 };
-
-}  // unnamed namespace
-
-namespace visualization {
 
 Visualizer::Visualizer() {}
 
 Visualizer::~Visualizer() {
-    glfwTerminate();  // to be safe
+    DestroyVisualizerWindow();
 #if defined(__APPLE__) && defined(BUILD_GUI)
     bluegl::unbind();
 #endif
@@ -97,6 +100,7 @@ bool Visualizer::CreateVisualizerWindow(
         const bool visible /* = true*/) {
     window_name_ = window_name;
     if (window_) {  // window already created
+        utility::LogDebug("[Visualizer] Reusing window.");
         UpdateWindowTitle();
         glfwSetWindowPos(window_, left, top);
         glfwSetWindowSize(window_, width, height);
@@ -111,8 +115,10 @@ bool Visualizer::CreateVisualizerWindow(
         return true;
     }
 
-    glfwSetErrorCallback(GLFWEnvironmentSingleton::GLFWErrorCallback);
-    if (!GLFWEnvironmentSingleton::InitGLFW()) {
+    utility::LogDebug("[Visualizer] Creating window.");
+    glfwSetErrorCallback(GLFWContext::GLFWErrorCallback);
+    glfw_context_ = GLFWContext::GetInstance();
+    if (glfw_context_->InitStatus() == GLFW_FALSE) {
         utility::LogWarning("Failed to initialize GLFW");
         return false;
     }
@@ -222,9 +228,17 @@ bool Visualizer::CreateVisualizerWindow(
 }
 
 void Visualizer::DestroyVisualizerWindow() {
+    if (!is_initialized_) {
+        return;
+    }
+
+    utility::LogDebug("[Visualizer] Destroying window.");
     is_initialized_ = false;
     glDeleteVertexArrays(1, &vao_id_);
+    vao_id_ = 0;
     glfwDestroyWindow(window_);
+    window_ = nullptr;
+    glfw_context_.reset();
 }
 
 void Visualizer::RegisterAnimationCallback(
@@ -319,6 +333,14 @@ bool Visualizer::AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
     if (!is_initialized_) {
         return false;
     }
+
+    if (!geometry_ptr.get()) {
+        utility::LogWarning(
+                "[AddGeometry] Invalid pointer. Possibly a null pointer or "
+                "None was passed in.");
+        return false;
+    }
+
     glfwMakeContextCurrent(window_);
     std::shared_ptr<glsl::GeometryRenderer> renderer_ptr;
     if (geometry_ptr->isKindOf(CV_TYPES::CUSTOM_H_OBJECT)) {

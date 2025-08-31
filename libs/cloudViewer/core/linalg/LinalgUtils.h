@@ -1,44 +1,23 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include <memory>
 #include <string>
 
-#include "core/Device.h"
-#include "core/Dtype.h"
-#include "core/MemoryManager.h"
-#include "core/linalg/LinalgHeadersCPU.h"
-#include "core/linalg/LinalgHeadersCUDA.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/MemoryManager.h"
+#include "cloudViewer/core/linalg/LinalgHeadersCPU.h"
+#include "cloudViewer/core/linalg/LinalgHeadersCUDA.h"
 #include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
-
 
 #define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)    \
     [&] {                                                \
@@ -53,7 +32,7 @@ namespace core {
         }                                                \
     }()
 
-inline void CLOUDVIEWER_LAPACK_CHECK(CLOUDVIEWER_CPU_LINALG_INT info,
+inline void OPEN3D_LAPACK_CHECK(OPEN3D_CPU_LINALG_INT info,
                                 const std::string& msg) {
     if (info < 0) {
         utility::LogError("{}: {}-th parameter is invalid.", msg, -info);
@@ -63,20 +42,20 @@ inline void CLOUDVIEWER_LAPACK_CHECK(CLOUDVIEWER_CPU_LINALG_INT info,
 }
 
 #ifdef BUILD_CUDA_MODULE
-inline void CLOUDVIEWER_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
+inline void OPEN3D_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
     if (CUBLAS_STATUS_SUCCESS != status) {
         utility::LogError("{}", msg);
     }
 }
 
-inline void CLOUDVIEWER_CUSOLVER_CHECK(cusolverStatus_t status,
+inline void OPEN3D_CUSOLVER_CHECK(cusolverStatus_t status,
                                   const std::string& msg) {
     if (CUSOLVER_STATUS_SUCCESS != status) {
         utility::LogError("{}", msg);
     }
 }
 
-inline void CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
+inline void OPEN3D_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
                                              const std::string& msg,
                                              int* dinfo,
                                              const Device& device) {

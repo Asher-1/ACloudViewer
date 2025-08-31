@@ -126,7 +126,7 @@ ecvOrientedBBox ecvOrientedBBox::CreateFromPoints(
 ecvOrientedBBox ecvOrientedBBox::CreateFromPoints(
         const std::vector<CCVector3>& points) {
     auto mesh =
-            std::get<0>(cloudViewer::utility::Qhull::ComputeConvexHull(points));
+            std::get<0>(cloudViewer::geometry::Qhull::ComputeConvexHull(points));
     ccGenericPointCloud* hull_pcd = mesh->getAssociatedCloud();
     assert(hull_pcd);
 

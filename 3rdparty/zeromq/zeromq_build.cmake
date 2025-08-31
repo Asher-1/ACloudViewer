@@ -34,10 +34,10 @@ ExternalProject_Add(ext_zeromq
     # do not update
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         # Does not seem to work. We have to directly set the flags on Windows.
         #-DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         #-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}-DBUILD_STATIC=ON
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DBUILD_SHARED=OFF
         -DBUILD_TESTS=OFF
         -DENABLE_CPACK=OFF

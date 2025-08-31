@@ -1,32 +1,13 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                                                 -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "core/Tensor.h"
+#include "cloudViewer/core/Tensor.h"
 
 namespace cloudViewer {
 namespace t {
@@ -78,6 +59,13 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
                                  const float depth_outlier_trunc,
                                  const float depth_huber_delta,
                                  const float intensity_huber_delta);
+
+void ComputeOdometryInformationMatrix(const core::Tensor &source_vertex_map,
+                                      const core::Tensor &target_vertex_map,
+                                      const core::Tensor &intrinsic,
+                                      const core::Tensor &source_to_target,
+                                      const float square_dist_thr,
+                                      core::Tensor &information);
 
 }  // namespace odometry
 }  // namespace kernel

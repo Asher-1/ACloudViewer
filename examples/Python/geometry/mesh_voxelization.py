@@ -70,7 +70,8 @@ if __name__ == "__main__":
 
         print("Voxelize point cloud")
         start = time.time()
-        voxel = cv3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size=0.05)
+        voxel = cv3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
+                                                                voxel_size=0.05)
         print("took %.2f milliseconds" % ((time.time() - start) * 1000.0))
         print("")
 
@@ -101,7 +102,8 @@ if __name__ == "__main__":
         print(
             "Element-wise check if points with additive Gaussian noise belong to voxel grid"
         )
-        queries_noise = queries + np.random.normal(0, 0.1, (len(pcd.get_points()), 3))
+        queries_noise = queries + np.random.normal(0, 0.1,
+                                                   (len(pcd.get_points()), 3))
         start = time.time()
         output_noise = voxel_load.check_if_included(
             cv3d.utility.Vector3dVector(queries_noise))

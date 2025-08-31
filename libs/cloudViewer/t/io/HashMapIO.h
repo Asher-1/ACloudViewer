@@ -1,0 +1,33 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <string>
+
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/hashmap/HashMap.h"
+
+namespace cloudViewer {
+namespace t {
+namespace io {
+
+/// Read a hash map's keys and values from a npz file at 'key' and 'value'.
+/// Return a hash map on CPU.
+///
+/// \param filename The npz file name to read from.
+core::HashMap ReadHashMap(const std::string& filename);
+
+/// Save a hash map's keys and values to a npz file at 'key' and 'value'.
+///
+/// \param filename The npz file name to write to.
+/// \param hashmap HashMap to save.
+void WriteHashMap(const std::string& filename, const core::HashMap& hashmap);
+
+}  // namespace io
+}  // namespace t
+}  // namespace cloudViewer

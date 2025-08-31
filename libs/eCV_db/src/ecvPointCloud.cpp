@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #include "ecvPointCloud.h"
 
@@ -1719,9 +1719,10 @@ void ccPointCloud::invalidateBoundingBox() {
 }
 
 void ccPointCloud::addRGBColor(const ecvColor::Rgb& C) {
-    assert(m_rgbColors && m_rgbColors->isAllocated());
+    // allocate colors if necessary
+    if (!hasColors())
+        if (!reserveTheRGBTable()) return;
     m_rgbColors->emplace_back(C);
-
     // We must update the VBOs
     colorsHaveChanged();
 }
@@ -1815,13 +1816,18 @@ void ccPointCloud::getNorms(std::vector<CompressedNormType>& idxes) const {
 }
 
 void ccPointCloud::addNormIndex(CompressedNormType index) {
-    assert(m_normals && m_normals->isAllocated());
+    if (!hasNormals()) {
+        reserveTheNormsTable();
+    }
     m_normals->addElement(index);
 }
 
 void ccPointCloud::addNormAtIndex(const PointCoordinateType* N,
                                   unsigned index) {
-    assert(m_normals && m_normals->isAllocated());
+    if (!hasNormals()) {
+        reserveTheNormsTable();
+    }
+
     // we get the real normal vector corresponding to current index
     CCVector3 P(ccNormalVectors::GetNormal(m_normals->getValue(index)));
     // we add the provided vector (N)
@@ -2359,7 +2365,9 @@ void ccPointCloud::scale(PointCoordinateType fx,
     }
 
     // update the transformation history
-    { m_glTransHistory = scaleTrans * m_glTransHistory; }
+    {
+        m_glTransHistory = scaleTrans * m_glTransHistory;
+    }
 
     notifyGeometryUpdate();  // calls releaseVBOs()
 }

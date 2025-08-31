@@ -24,9 +24,10 @@ if __name__ == '__main__':
         help='path to the dataset.'
         'It should contain 16bit depth images in a folder named depth/'
         'and rgb images in a folder named color/ or rgb/')
-    parser.add_argument('trajectory_path',
-                        type=str,
-                        help='path to the trajectory in cloudViewer\'s .log format')
+    parser.add_argument(
+        'trajectory_path',
+        type=str,
+        help='path to the trajectory in cloudViewer\'s .log format')
     parser.add_argument('--mesh_name',
                         type=str,
                         default='mesh.ply',
@@ -87,7 +88,7 @@ if __name__ == '__main__':
         intrinsic = cv3d.io.read_pinhole_camera_intrinsic(args.intrinsic_path)
 
     intrinsic = cv3d.core.Tensor(intrinsic.intrinsic_matrix,
-                                cv3d.core.Dtype.Float32, device)
+                                 cv3d.core.Dtype.Float32, device)
 
     # Load extrinsics
     trajectory = read_poses_from_log(args.trajectory_path)
@@ -120,7 +121,7 @@ if __name__ == '__main__':
         depth = cv3d.t.geometry.Image.from_legacy(depth, device=device)
 
         extrinsic = cv3d.core.Tensor(extrinsics[i], cv3d.core.Dtype.Float32,
-                                    device)
+                                     device)
 
         start = time.time()
         volume.integrate(depth, rgb, intrinsic, extrinsic, args.depth_scale,

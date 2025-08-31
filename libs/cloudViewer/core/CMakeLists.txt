@@ -1,5 +1,5 @@
-file(GLOB_RECURSE ALL_CORE_HEADER_FILES "*.h")
-add_library(core OBJECT ${ALL_CORE_HEADER_FILES})
+# file(GLOB_RECURSE ALL_CORE_HEADER_FILES "*.h")
+add_library(core OBJECT )
 
 target_sources(core PRIVATE
         AdvancedIndexing.cpp
@@ -8,6 +8,7 @@ target_sources(core PRIVATE
         Dtype.cpp
         Gpu.cpp
         EigenConverter.cpp
+        SYCLUtils.cpp
         Indexer.cpp
         MemoryManager.cpp
         MemoryManagerCached.cpp
@@ -24,29 +25,31 @@ target_sources(core PRIVATE
         )
 
 target_sources(core PRIVATE
-        hashmap/DeviceHashmap.cpp
-        hashmap/Hashmap.cpp
-        )
+        hashmap/HashMap.cpp
+        hashmap/HashSet.cpp
+        hashmap/DeviceHashBackend.cpp
+        hashmap/HashBackendBuffer.cpp
+        hashmap/CPU/CPUHashBackendBuffer.cpp
+        hashmap/CPU/CreateCPUHashBackend.cpp
+)
 
 target_sources(core PRIVATE
-        hashmap/CPU/CreateCPUHashmap.cpp
-        )
-
-target_sources(core PRIVATE
-        kernel/Arange.cpp
-        kernel/ArangeCPU.cpp
-        kernel/BinaryEW.cpp
-        kernel/BinaryEWCPU.cpp
-        kernel/IndexGetSet.cpp
-        kernel/IndexGetSetCPU.cpp
         kernel/Kernel.cpp
+        kernel/Arange.cpp
+        kernel/BinaryEW.cpp
+        kernel/IndexGetSet.cpp
+        kernel/IndexReduction.cpp
         kernel/NonZero.cpp
-        kernel/NonZeroCPU.cpp
         kernel/Reduction.cpp
-        kernel/ReductionCPU.cpp
         kernel/UnaryEW.cpp
+        kernel/ArangeCPU.cpp
+        kernel/BinaryEWCPU.cpp
+        kernel/IndexGetSetCPU.cpp
+        kernel/IndexReductionCPU.cpp
+        kernel/NonZeroCPU.cpp
+        kernel/ReductionCPU.cpp
         kernel/UnaryEWCPU.cpp
-        )
+)
 
 target_sources(core PRIVATE
         linalg/AddMM.cpp
@@ -83,31 +86,32 @@ if (BUILD_CUDA_MODULE)
             )
 
     target_sources(core PRIVATE
-            hashmap/CUDA/CreateCUDAHashmap.cu
-            hashmap/CUDA/CUDAHashmapBufferAccessor.cu
+            hashmap/CUDA/CreateCUDAHashBackend.cu
+            hashmap/CUDA/CUDAHashBackendBuffer.cu
             hashmap/CUDA/SlabNodeManager.cu
             )
 
     target_sources(core PRIVATE
-            kernel/ArangeCUDA.cu
-            kernel/BinaryEWCUDA.cu
-            kernel/IndexGetSetCUDA.cu
-            kernel/NonZeroCUDA.cu
-            kernel/ReductionCUDA.cu
-            kernel/UnaryEWCUDA.cu
-            )
+        kernel/ArangeCUDA.cu
+        kernel/BinaryEWCUDA.cu
+        kernel/IndexGetSetCUDA.cu
+        kernel/IndexReductionCUDA.cu
+        kernel/NonZeroCUDA.cu
+        kernel/ReductionCUDA.cu
+        kernel/UnaryEWCUDA.cu
+     )
 
     target_sources(core PRIVATE
-            linalg/AddMMCUDA.cpp
-            linalg/InverseCUDA.cpp
-            linalg/LeastSquaresCUDA.cpp
-            linalg/LinalgUtils.cpp
-            linalg/LUCUDA.cpp
-            linalg/MatmulCUDA.cpp
-            linalg/SolveCUDA.cpp
-            linalg/SVDCUDA.cpp
-            linalg/TriCUDA.cu
-            )
+        linalg/AddMMCUDA.cpp
+        linalg/InverseCUDA.cpp
+        linalg/LeastSquaresCUDA.cpp
+        linalg/LinalgUtils.cpp
+        linalg/LUCUDA.cpp
+        linalg/MatmulCUDA.cpp
+        linalg/SolveCUDA.cpp
+        linalg/SVDCUDA.cpp
+        linalg/TriCUDA.cu
+        )
 
     target_sources(core PRIVATE
             nns/FixedRadiusSearchOps.cu

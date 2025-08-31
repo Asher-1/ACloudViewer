@@ -12,6 +12,7 @@ pybind11_add_module(pybind)
 
 add_subdirectory(camera)
 add_subdirectory(core)
+add_subdirectory(data)
 add_subdirectory(geometry)
 add_subdirectory(io)
 add_subdirectory(ml)
@@ -37,12 +38,12 @@ target_sources(pybind PRIVATE
         docstring.cpp
         cloudViewer_pybind.cpp
         pybind_utils.cpp
-        )
+)
 
 # Include with `#include "pybind/geometry/xxx.h`
 target_include_directories(pybind PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
-        )
+)
 
 # Suppress Pybind11 warnings
 target_include_directories(pybind SYSTEM PRIVATE

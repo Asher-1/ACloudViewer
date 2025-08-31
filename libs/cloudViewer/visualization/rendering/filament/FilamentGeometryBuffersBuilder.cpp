@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,15 +26,17 @@
 
 #include "visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 
-#include <ecvBBox.h>
-#include <ecvOrientedBBox.h>
 #include <LineSet.h>
-#include <ecvMesh.h>
-#include <ecvPointCloud.h>
-#include <VoxelGrid.h>
 #include <Octree.h>
+#include <VoxelGrid.h>
+#include <ecvBBox.h>
+#include <ecvMesh.h>
+#include <ecvOrientedBBox.h>
+#include <ecvPointCloud.h>
 
-#include <t/geometry/PointCloud.h>
+#include "cloudViewer/t/geometry/LineSet.h"
+#include "cloudViewer/t/geometry/PointCloud.h"
+#include "cloudViewer/t/geometry/TriangleMesh.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -72,7 +74,8 @@ const static std::vector<Eigen::Vector2i> kCuboidLinesVertexIndices{
 static void AddVoxelFaces(ccMesh& mesh,
                           const std::vector<Eigen::Vector3d>& vertices,
                           const Eigen::Vector3d& color) {
-    for (const Eigen::Vector3i& triangle_vertex_indices : kCuboidTrianglesVertexIndices) {
+    for (const Eigen::Vector3i& triangle_vertex_indices :
+         kCuboidTrianglesVertexIndices) {
         int n = int(mesh.getVerticeSize());
         mesh.addTriangle(Eigen::Vector3i(n, n + 1, n + 2));
         mesh.addVertice(vertices[triangle_vertex_indices(0)]);
@@ -108,12 +111,10 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromVoxelGrid(
     assert(baseVertices);
     auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
     auto num_voxels = voxel_grid.voxels_.size();
-    if (!baseVertices->reserve(static_cast<unsigned>(36 * num_voxels)))
-    {
+    if (!baseVertices->reserve(static_cast<unsigned>(36 * num_voxels))) {
         utility::LogError("not enough memory!");
     }
-    if (!baseVertices->reserveTheRGBTable())
-    {
+    if (!baseVertices->reserveTheRGBTable()) {
         utility::LogError("not enough memory!");
     }
 
@@ -142,13 +143,12 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromVoxelGrid(
         AddVoxelFaces(*mesh, vertices, voxel_color);
     }
 
-    //do some cleaning
+    // do some cleaning
     {
         baseVertices->shrinkToFit();
         mesh->shrinkToFit();
         NormsIndexesTableType* normals = mesh->getTriNormsTable();
-        if (normals)
-        {
+        if (normals) {
             normals->shrink_to_fit();
         }
     }
@@ -164,6 +164,10 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromVoxelGrid(
 static std::shared_ptr<ccMesh> CreateTriangleMeshFromOctree(
         const geometry::Octree& octree) {
     auto mesh = cloudViewer::make_shared<ccMesh>();
+    if (!mesh->createInternalCloud()) {
+        utility::LogError("creating internal cloud failed!");
+        return nullptr;
+    }
 
     // We cannot have a real line with a width in pixels, we can only fake a
     // line as rectangles. This value works nicely on the assumption that the
@@ -186,7 +190,7 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromOctree(
         if (leaf_node) {
             AddVoxelFaces(mesh, vertices, leaf_node->color_);
         } else {
-            // We cannot have lines in a TriangleMesh, obviously, so fake them
+            // We cannot have lines in a ccMesh, obviously, so fake them
             // with two crossing planes.
             for (const Eigen::Vector2i& line_vertex_indices :
                  kCuboidLinesVertexIndices) {
@@ -255,15 +259,13 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
             return std::make_unique<LineSetBuffersBuilder>(
                     static_cast<const geometry::LineSet&>(geometry));
         case GT::ORIENTED_BBOX: {
-            auto obb =
-                    static_cast<const ecvOrientedBBox&>(geometry);
+            auto obb = static_cast<const ecvOrientedBBox&>(geometry);
             auto lines = geometry::LineSet::CreateFromOrientedBoundingBox(obb);
             lines->paintUniformColor(obb.color_);
             return std::make_unique<TemporaryLineSetBuilder>(lines);
         }
         case GT::BBOX: {
-            auto aabb = static_cast<const ccBBox&>(
-                    geometry);
+            auto aabb = static_cast<const ccBBox&>(geometry);
             auto lines =
                     geometry::LineSet::CreateFromAxisAlignedBoundingBox(aabb);
             lines->paintUniformColor(aabb.getColor());
@@ -277,6 +279,9 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
         case GT::POINT_OCTREE2: {
             auto octree = static_cast<const geometry::Octree&>(geometry);
             auto mesh = CreateTriangleMeshFromOctree(octree);
+            if (!mesh) {
+                return nullptr;
+            }
             return std::make_unique<TemporaryMeshBuilder>(mesh);
         }
         default:
@@ -287,8 +292,29 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
 }
 
 std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
-        const t::geometry::PointCloud& geometry) {
-    return std::make_unique<TPointCloudBuffersBuilder>(geometry);
+        const t::geometry::Geometry& geometry) {
+    using GT = t::geometry::Geometry::GeometryType;
+
+    switch (geometry.GetGeometryType()) {
+        case GT::PointCloud: {
+            const t::geometry::PointCloud& pointcloud =
+                    static_cast<const t::geometry::PointCloud&>(geometry);
+            if (pointcloud.IsGaussianSplat()) {
+                return std::make_unique<TGaussianSplatBuffersBuilder>(
+                        pointcloud);
+            } else {
+                return std::make_unique<TPointCloudBuffersBuilder>(pointcloud);
+            }
+        }
+        case GT::TriangleMesh:
+            return std::make_unique<TMeshBuffersBuilder>(
+                    static_cast<const t::geometry::TriangleMesh&>(geometry));
+        case GT::LineSet:
+            return std::make_unique<TLineSetBuffersBuilder>(
+                    static_cast<const t::geometry::LineSet&>(geometry));
+        default:
+            break;
+    }
 }
 
 void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,
