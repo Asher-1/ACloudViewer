@@ -11,9 +11,9 @@
     <key>CFBundleGetInfoString</key>
     <string>${MACOSX_BUNDLE_INFO_STRING}</string>
     <key>CFBundleIconFile</key> <!-- macOS 10.12-; uses .icns file -->
-    <string>AppIcon</string>
+    <string>${MACOSX_BUNDLE_ICON_FILE}</string>
     <key>CFBundleIconName</key> <!-- macOS 10.13+; requires Assets.car -->
-    <string>AppIcon</string>
+    <string>${MACOSX_BUNDLE_ICON_FILE}</string>
     <key>CFBundleIdentifier</key>
     <string>${MACOSX_BUNDLE_GUI_IDENTIFIER}</string>
     <key>CFBundleInfoDictionaryVersion</key>
