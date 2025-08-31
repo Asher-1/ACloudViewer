@@ -69,7 +69,7 @@ if __name__ == "__main__":
     cv3d.visualization.draw_geometries([line_set])
 
     print("Let's draw a textured triangle mesh from obj file.")
-    textured_mesh = cv3d.io.read_triangle_mesh(
-        "../../test_data/crate/crate.obj")
+    crate = cv3d.data.CrateModel()
+    textured_mesh = cv3d.io.read_triangle_mesh(crate.path)
     textured_mesh.compute_vertex_normals()
     cv3d.visualization.draw_geometries([textured_mesh])
