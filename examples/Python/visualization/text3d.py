@@ -39,7 +39,7 @@ def low_level():
     w = app.create_window("CloudViewer - 3D Text", 1024, 768)
     widget3d = gui.SceneWidget()
     widget3d.scene = rendering.CloudViewerScene(w.renderer)
-    mat = rendering.Material()
+    mat = rendering.MaterialRecord()
     mat.shader = "defaultUnlit"
     mat.point_size = 5 * w.scaling
     widget3d.scene.add_geometry("Points", points, mat)

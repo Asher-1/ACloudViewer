@@ -118,38 +118,48 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
         const Eigen::Vector3d &max_bound) {
     auto output = cloudViewer::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
-        utility::LogError("[CreateFromTriangleMesh] voxel_size <= 0.");
+        utility::LogError("voxel_size <= 0.");
     }
 
     if (voxel_size * std::numeric_limits<int>::max() <
         (max_bound - min_bound).maxCoeff()) {
-        utility::LogError("[CreateFromTriangleMesh] voxel_size is too small.");
+        utility::LogError("voxel_size is too small.");
     }
     output->voxel_size_ = voxel_size;
     output->origin_ = min_bound;
 
-    Eigen::Vector3d grid_size = max_bound - min_bound;
-    int num_w = int(std::round(grid_size(0) / voxel_size));
-    int num_h = int(std::round(grid_size(1) / voxel_size));
-    int num_d = int(std::round(grid_size(2) / voxel_size));
     const Eigen::Vector3d box_half_size(voxel_size / 2, voxel_size / 2,
                                         voxel_size / 2);
-    for (int widx = 0; widx < num_w; widx++) {
-        for (int hidx = 0; hidx < num_h; hidx++) {
-            for (int didx = 0; didx < num_d; didx++) {
-                const Eigen::Vector3d box_center =
-                        min_bound +
-                        Eigen::Vector3d(widx, hidx, didx) * voxel_size;
-                unsigned int triNum = input.size();
-                for (unsigned int i = 0; i < triNum; ++i) {
-                    Eigen::Vector3d v0, v1, v2;
-                    input.getTriangleVertices(i, v0.data(), v1.data(),
-                                              v2.data());
+    unsigned int triNum = input.size();
+    for (unsigned int i = 0; i < triNum; ++i) {
+        Eigen::Vector3d v0, v1, v2;
+        input.getTriangleVertices(i, v0.data(), v1.data(), v2.data());
+        double minx, miny, minz, maxx, maxy, maxz;
+        int num_w, num_h, num_d, inix, iniy, iniz;
+        minx = std::min(v0[0], std::min(v1[0], v2[0]));
+        miny = std::min(v0[1], std::min(v1[1], v2[1]));
+        minz = std::min(v0[2], std::min(v1[2], v2[2]));
+        maxx = std::max(v0[0], std::max(v1[0], v2[0]));
+        maxy = std::max(v0[1], std::max(v1[1], v2[1]));
+        maxz = std::max(v0[2], std::max(v1[2], v2[2]));
+        inix = static_cast<int>(std::floor((minx - min_bound[0]) / voxel_size));
+        iniy = static_cast<int>(std::floor((miny - min_bound[1]) / voxel_size));
+        iniz = static_cast<int>(std::floor((minz - min_bound[2]) / voxel_size));
+        num_w = static_cast<int>((std::round((maxx - minx) / voxel_size))) + 2;
+        num_h = static_cast<int>((std::round((maxy - miny) / voxel_size))) + 2;
+        num_d = static_cast<int>((std::round((maxz - minz) / voxel_size))) + 2;
+        for (int widx = inix; widx < inix + num_w; widx++) {
+            for (int hidx = iniy; hidx < iniy + num_h; hidx++) {
+                for (int didx = iniz; didx < iniz + num_d; didx++) {
+                    const Eigen::Vector3d box_center =
+                            min_bound + box_half_size +
+                            Eigen::Vector3d(widx, hidx, didx) * voxel_size;
                     if (utility::IntersectionTest::TriangleAABB(
                                 box_center, box_half_size, v0, v1, v2)) {
                         Eigen::Vector3i grid_index(widx, hidx, didx);
                         output->AddVoxel(geometry::Voxel(grid_index));
-                        break;
+                        // Don't `break` here, since a triangle can span
+                        // across multiple voxels.
                     }
                 }
             }

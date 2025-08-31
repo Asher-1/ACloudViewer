@@ -265,7 +265,7 @@ class PipelineView:
         self.window.set_on_layout(self.on_layout)
         self.window.set_on_close(callbacks['on_window_close'])
 
-        self.pcd_material = cv3d.visualization.rendering.Material()
+        self.pcd_material = cv3d.visualization.rendering.MaterialRecord()
         self.pcd_material.shader = "defaultLit"
         # Set n_pixels displayed for each 3D point, accounting for HiDPI scaling
         self.pcd_material.point_size = 4 * self.window.scaling

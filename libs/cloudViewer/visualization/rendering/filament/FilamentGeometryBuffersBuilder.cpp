@@ -164,6 +164,10 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromVoxelGrid(
 static std::shared_ptr<ccMesh> CreateTriangleMeshFromOctree(
         const geometry::Octree& octree) {
     auto mesh = cloudViewer::make_shared<ccMesh>();
+    if (!mesh->createInternalCloud()) {
+        utility::LogError("creating internal cloud failed!");
+        return nullptr;
+    }
 
     // We cannot have a real line with a width in pixels, we can only fake a
     // line as rectangles. This value works nicely on the assumption that the
@@ -186,7 +190,7 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromOctree(
         if (leaf_node) {
             AddVoxelFaces(mesh, vertices, leaf_node->color_);
         } else {
-            // We cannot have lines in a TriangleMesh, obviously, so fake them
+            // We cannot have lines in a ccMesh, obviously, so fake them
             // with two crossing planes.
             for (const Eigen::Vector2i& line_vertex_indices :
                  kCuboidLinesVertexIndices) {
@@ -275,6 +279,9 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
         case GT::POINT_OCTREE2: {
             auto octree = static_cast<const geometry::Octree&>(geometry);
             auto mesh = CreateTriangleMeshFromOctree(octree);
+            if (!mesh) {
+                return nullptr;
+            }
             return std::make_unique<TemporaryMeshBuilder>(mesh);
         }
         default:

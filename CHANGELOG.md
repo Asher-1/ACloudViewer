@@ -11,7 +11,6 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
 
 - New features:
     -   Add ScaleBar support!
-		-   [add some cmake tools](./scripts/cmake/README.md)
 		-   Add Doppler ICP in tensor registration pipeline
 		-   Support in memory loading of XYZ files
 		-   Add Python pathlib support for file IO
@@ -21,6 +20,7 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
 		-   New Doppler ICP registration for FMCW Lidars
 		-   Add O3DVisualizer API to enable collapse control of verts in the side panel
 		-   Add radio button support
+		-   Update to latest GLFW
 
 - Bug fixes:
     -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13
@@ -30,12 +30,14 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
     -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly
     -   Fix tensor based TSDF integration example.
     -   Fix for depth estimation for VoxelBlockGrid
-    -   raycasting scene: Allow setting of number of threads that are used for building a raycasting scene
+    -   Raycasting scene: Allow setting of number of threads that are used for building a raycasting scene
     -   Fix Python bindings for CUDA device synchronization, voxel grid saving
     -   Fix geometry picker Error when LineSet objects are presented
     -   Fix regression in printing cuda tensor from 🐛
     -   Changed TriangleMesh to store materials in a list so they can be accessed by the material index
     -   Fix render to depth image on Apple Retina displays
+    -   Close window on ESC keypress
+    -   Avoid deadlock while PostToMainThread is called inside a Posted
 
 - Enhancements:
     -   Update 3rparty version

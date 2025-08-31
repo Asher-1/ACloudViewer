@@ -46,7 +46,7 @@ class MultiWinApp:
         title = "CloudViewer - Multi-Window Demo (Snapshot #" + str(
             self.n_snapshots) + ")"
         new_vis = cv3d.visualization.O3DVisualizer(title)
-        mat = cv3d.visualization.rendering.Material()
+        mat = cv3d.visualization.rendering.MaterialRecord()
         mat.shader = "defaultUnlit"
         new_vis.add_geometry(CLOUD_NAME + " #" + str(self.n_snapshots),
                              self.cloud, mat)
@@ -75,7 +75,7 @@ class MultiWinApp:
         extent = bounds.get_extent()
 
         def add_first_cloud():
-            mat = cv3d.visualization.rendering.Material()
+            mat = cv3d.visualization.rendering.MaterialRecord()
             mat.shader = "defaultUnlit"
             self.main_vis.add_geometry(CLOUD_NAME, self.cloud, mat)
             self.main_vis.reset_camera_to_default()
@@ -103,7 +103,7 @@ class MultiWinApp:
                 #       using self.scene.update_geometry() will be faster.
                 #       Requires that the point cloud be a t.PointCloud.
                 self.main_vis.remove_geometry(CLOUD_NAME)
-                mat = cv3d.visualization.rendering.Material()
+                mat = cv3d.visualization.rendering.MaterialRecord()
                 mat.shader = "defaultUnlit"
                 self.main_vis.add_geometry(CLOUD_NAME, self.cloud, mat)
 

@@ -10,7 +10,8 @@ import cloudViewer as cv3d
 if __name__ == "__main__":
 
     print("Load a ply point cloud, print it, and render it")
-    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.ply")
+    ply_data = cv3d.data.PLYPointCloud()
+    pcd = cv3d.io.read_point_cloud(ply_data.path)
     cv3d.visualization.draw_geometries([pcd])
 
     print("Let's draw some primitives")

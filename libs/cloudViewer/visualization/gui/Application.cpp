@@ -160,7 +160,7 @@ struct Application::Impl {
         // Aside from general tidiness in shutting down rendering,
         // failure to do this causes the Python module to hang on
         // Windows. (Specifically, if a widget is has been assigned a
-        // Python function as a callback, the Python interpretter will
+        // Python function as a callback, the Python interpreter will
         // not delete the objects, the Window's destructor will not be
         // called, and the Filament threads will not stop, causing the
         // Python process to remain running even after execution of the
@@ -461,18 +461,21 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
 }
 
 void Application::RemoveWindow(Window *window) {
+    if (impl_->should_quit_) {
+        return;
+    }
+
     for (auto it = impl_->windows_.begin(); it != impl_->windows_.end(); ++it) {
         if (it->get() == window) {
-            window->Show(false);
             impl_->windows_to_be_destroyed_.insert(*it);
             impl_->windows_.erase(it);
+            if (impl_->windows_.empty()) {
+                impl_->should_quit_ = true;
+            }
             break;
         }
     }
-
-    if (impl_->windows_.empty()) {
-        impl_->should_quit_ = true;
-    }
+    window->Show(false);
 }
 
 void Application::Quit() {
@@ -526,8 +529,7 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
 
 void Application::Run() {
     EnvUnlocker noop;  // containing env is C++
-    while (RunOneTick(noop))
-        ;
+    while (RunOneTick(noop));
 }
 
 bool Application::RunOneTick(EnvUnlocker &unlocker,
@@ -603,6 +605,9 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
     }
 
     // Run any posted functions
+    // To avoid deadlock while PostToMainThread is called in Posted, the
+    // posted_lock_ should not be locked in its invoking.
+    decltype(impl_->posted_) posted;
     {
         // The only other place posted_lock_ is used is PostToMainThread.
         // If pybind is posting a Python function, it acquires posted_lock_,
@@ -611,34 +616,34 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
         unlocker.unlock();
         std::lock_guard<std::mutex> lock(impl_->posted_lock_);
         unlocker.relock();
+        posted = std::move(impl_->posted_);
+    }
 
-        for (auto &p : impl_->posted_) {
-            // Make sure this window still exists. Unfortunately, p.window
-            // is a pointer but impl_->windows_ is a shared_ptr, so we can't
-            // use find.
-            if (p.window) {
-                bool found = false;
-                for (auto w : impl_->windows_) {
-                    if (w.get() == p.window) {
-                        found = true;
-                    }
-                }
-                if (!found) {
-                    continue;
+    for (auto &p : posted) {
+        // Make sure this window still exists. Unfortunately, p.window
+        // is a pointer but impl_->windows_ is a shared_ptr, so we can't
+        // use find.
+        if (p.window) {
+            bool found = false;
+            for (auto w : impl_->windows_) {
+                if (w.get() == p.window) {
+                    found = true;
                 }
             }
-
-            void *old = nullptr;
-            if (p.window) {
-                old = p.window->MakeDrawContextCurrent();
-            }
-            p.f();
-            if (p.window) {
-                p.window->RestoreDrawContext(old);
-                p.window->PostRedraw();
+            if (!found) {
+                continue;
             }
         }
-        impl_->posted_.clear();
+
+        void *old = nullptr;
+        if (p.window) {
+            old = p.window->MakeDrawContextCurrent();
+        }
+        p.f();
+        if (p.window) {
+            p.window->RestoreDrawContext(old);
+            p.window->PostRedraw();
+        }
     }
 
     // Clear any tasks that have finished

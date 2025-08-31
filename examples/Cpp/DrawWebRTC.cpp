@@ -61,7 +61,10 @@ void EmptyBox() {
             [&](visualization::visualizer::O3DVisualizer &o3dvis) {
                 utility::LogInfo("new_window_action called");
                 auto mesh = cloudViewer::make_shared<ccMesh>();
-                mesh->createInternalCloud();
+                if (!mesh->createInternalCloud()) {
+                    utility::LogError("creating internal cloud failed!");
+                    return;
+                }
                 data::KnotMesh knot_data;
                 io::ReadTriangleMesh(knot_data.GetPath(), *mesh);
                 mesh->computeVertexNormals();
