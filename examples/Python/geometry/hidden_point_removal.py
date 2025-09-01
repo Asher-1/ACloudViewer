@@ -1,25 +1,32 @@
-# cloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 # examples/Python/Basic/hidden_point_removal.py
 
 import numpy as np
 import cloudViewer as cv3d
-import os
-
-import sys
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, "../Misc"))
-import meshes
 
 
 def mesh_generator():
     yield cv3d.geometry.ccMesh.create_sphere()
-    yield meshes.knot()
-    yield meshes.bunny()
-    yield meshes.armadillo()
+    knot = cv3d.data.KnotMesh()
+    mesh_knot = cv3d.io.read_triangle_mesh(knot.path)
+    mesh_knot.compute_vertex_normals()
+    yield mesh_knot
+    
+    bunny = cv3d.data.BunnyMesh()
+    mesh_bunny = cv3d.io.read_triangle_mesh(bunny.path)
+    mesh_bunny.compute_vertex_normals()
+    yield mesh_bunny
+    
+    armadillo = cv3d.data.ArmadilloMesh()
+    mesh_armadillo = cv3d.io.read_triangle_mesh(armadillo.path)
+    mesh_armadillo.compute_vertex_normals()
+    yield mesh_armadillo
 
 
 if __name__ == "__main__":

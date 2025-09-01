@@ -11,13 +11,10 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as anim
 import sys
 
-# only needed for tutorial, monkey patches visualization
-sys.path.append('..')
-import cloudViewer_tutorial as cv3dtut
-
 if __name__ == "__main__":
     # Load mesh and convert to cloudViewer.t.geometry.TriangleMesh .
-    mesh = cv3dtut.get_armadillo_mesh()
+    armadillo_data = cv3d.data.ArmadilloMesh()
+    mesh = cv3d.io.read_triangle_mesh(armadillo_data.path)
     mesh = cv3d.t.geometry.TriangleMesh.from_legacy(mesh)
 
     # Create a scene and add the triangle mesh.

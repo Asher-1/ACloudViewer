@@ -1,18 +1,19 @@
-# CloudViewer: asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
-
-# examples/Python/ReconstructionSystem/debug/visualize_alignment.py
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import numpy as np
 import json
 import argparse
 import sys
-import cloudViewer as o3d
+import cloudViewer as cv3d
 
-sys.path.append("../utility")
-from file import *
-from visualization import *
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+from cloudViewer_example import *
 
 sys.path.append(".")
 from initialize_config import *
@@ -21,11 +22,11 @@ from initialize_config import *
 def list_posegraph_files(folder_posegraph):
     pose_graph_paths = get_file_list(folder_posegraph, ".json")
     for pose_graph_path in pose_graph_paths:
-        pose_graph = o3d.io.read_pose_graph(pose_graph_path)
+        pose_graph = cv3d.io.read_pose_graph(pose_graph_path)
         n_nodes = len(pose_graph.nodes)
         n_edges = len(pose_graph.edges)
         print(
-            "Fragment o3d.registration.PoseGraph %s has %d nodes and %d edges" %
+            "Fragment cv3d.registration.PoseGraph %s has %d nodes and %d edges" %
             (pose_graph_path, n_nodes, n_edges))
 
 
@@ -69,15 +70,15 @@ if __name__ == "__main__":
                 config["template_refined_posegraph_optimized"])
         print("Reading posegraph")
         print(global_pose_graph_name)
-        pose_graph = o3d.io.read_pose_graph(global_pose_graph_name)
+        pose_graph = cv3d.io.read_pose_graph(global_pose_graph_name)
         n_nodes = len(pose_graph.nodes)
         n_edges = len(pose_graph.edges)
-        print("Global o3d.registration.PoseGraph having %d nodes and %d edges" % \
+        print("Global cv3d.registration.PoseGraph having %d nodes and %d edges" % \
                 (n_nodes, n_edges))
 
         # visualize alignment of posegraph edges
         for edge in pose_graph.edges:
-            print("o3d.registration.PoseGraphEdge %d-%d" % \
+            print("cv3d.registration.PoseGraphEdge %d-%d" % \
                     (edge.source_node_id, edge.target_node_id))
             if ((args.adjacent and \
                     edge.target_node_id - edge.source_node_id == 1)) or \
@@ -86,9 +87,9 @@ if __name__ == "__main__":
                     args.target_id == edge.target_node_id)) or \
                     args.all:
                 print("    confidence : %.3f" % edge.confidence)
-                source = o3d.io.read_point_cloud(
+                source = cv3d.io.read_point_cloud(
                     ply_file_names[edge.source_node_id])
-                target = o3d.io.read_point_cloud(
+                target = cv3d.io.read_point_cloud(
                     ply_file_names[edge.target_node_id])
                 source_down = source.voxel_down_sample(config["voxel_size"])
                 target_down = target.voxel_down_sample(config["voxel_size"])

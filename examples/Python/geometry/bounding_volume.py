@@ -1,18 +1,14 @@
-# cloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 # examples/Python/Basic/bounding_volume.py
 
 import numpy as np
 import cloudViewer as cv3d
-import os
-
-import sys
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, "../misc"))
-import meshes
 
 np.random.seed(42)
 
@@ -25,9 +21,11 @@ def mesh_generator():
     yield "rotated box mesh", mesh
     yield "rotated box pcd", mesh.sample_points_uniformly(500)
 
-    mesh = meshes.armadillo()
-    yield "armadillo mesh", mesh
-    yield "armadillo pcd", mesh.sample_points_uniformly(500)
+    armadillo = cv3d.data.ArmadilloMesh()
+    mesh_armadillo = cv3d.io.read_triangle_mesh(armadillo.path)
+    mesh_armadillo.compute_vertex_normals()
+    yield "armadillo mesh", mesh_armadillo
+    yield "armadillo pcd", mesh_armadillo.sample_points_uniformly(500)
 
 
 if __name__ == "__main__":
@@ -41,7 +39,9 @@ if __name__ == "__main__":
         obox.set_color([0, 1, 0])
         cv3d.visualization.draw_geometries([geom, aabox, obox])
 
-    mesh = meshes.armadillo()
+    armadillo = cv3d.data.ArmadilloMesh()
+    mesh = cv3d.io.read_triangle_mesh(armadillo.path)
+    mesh.compute_vertex_normals()
     bbox = cv3d.geometry.ccBBox(min_bound=(-30, 0, -10), max_bound=(10, 20, 10))
     cv3d.visualization.draw_geometries([mesh, bbox])
     cv3d.visualization.draw_geometries([mesh.crop(bbox), bbox])

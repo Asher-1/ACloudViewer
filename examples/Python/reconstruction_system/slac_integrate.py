@@ -1,21 +1,25 @@
-# CloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
-
-# examples/python/reconstruction_system/slac_integrate.py
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import numpy as np
 import cloudViewer as cv3d
-import sys
+import cloudViewer.core as o3c
+import os, sys
 
-sys.path.append("../utility")
-from file import join, get_rgbd_file_lists
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
 
-sys.path.append(".")
+from cloudViewer_example import join, get_rgbd_file_lists
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
 def run(config):
-    print("slac non-rigid optimisation.")
+    print("slac non-rigid optimization.")
     cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
 
     # dataset path and slac subfolder path
@@ -47,30 +51,34 @@ def run(config):
     principal_point = intrinsic.get_principal_point()
 
     intrinsic_t = cv3d.core.Tensor([[focal_length[0], 0, principal_point[0]],
-                                    [0, focal_length[1], principal_point[1]],
-                                    [0, 0, 1]])
+                                   [0, focal_length[1], principal_point[1]],
+                                   [0, 0, 1]])
 
-    device = cv3d.core.Device(str(config["device"]))
-    voxel_grid = cv3d.t.geometry.TSDFVoxelGrid(
-        {
-            "tsdf": cv3d.core.Dtype.Float32,
-            "weight": cv3d.core.Dtype.UInt16,
-            "color": cv3d.core.Dtype.UInt16
-        }, config["voxel_size"], config["sdf_trunc"], 16, config["block_count"],
-        device)
+    device = cv3d.core.Device(
+        'CUDA:0' if cv3d.core.cuda.is_available() else 'CPU:0')
+    voxel_grid = cv3d.t.geometry.VoxelBlockGrid(
+        attr_names=('tsdf', 'weight', 'color'),
+        attr_dtypes=(o3c.float32, o3c.float32, o3c.float32),
+        attr_channels=((1), (1), (3)),
+        voxel_size=config['tsdf_cubic_size'] / 512,
+        block_resolution=16,
+        block_count=config['block_count'],
+        device=device)
 
     # Load control grid.
     ctr_grid_keys = cv3d.core.Tensor.load(slac_folder + "ctr_grid_keys.npy")
     ctr_grid_values = cv3d.core.Tensor.load(slac_folder + "ctr_grid_values.npy")
 
     ctr_grid = cv3d.t.pipelines.slac.control_grid(3.0 / 8,
-                                                  ctr_grid_keys.to(device),
-                                                  ctr_grid_values.to(device),
-                                                  device)
+                                                 ctr_grid_keys.to(device),
+                                                 ctr_grid_values.to(device),
+                                                 device)
 
     fragment_folder = join(path_dataset, config["folder_fragment"])
 
     k = 0
+    depth_scale = float(config['depth_scale'])
+    depth_max = float(config['depth_max'])
     for i in range(len(posegraph.nodes)):
         fragment_pose_graph = cv3d.io.read_pose_graph(
             join(fragment_folder, "fragment_optimized_%03d.json" % i))
@@ -85,24 +93,26 @@ def run(config):
             color = cv3d.t.io.read_image(color_files[k]).to(device)
             rgbd = cv3d.t.geometry.RGBDImage(color, depth)
 
+            print('Deforming and integrating Frame {:3d}'.format(k))
             rgbd_projected = ctr_grid.deform(rgbd, intrinsic_t,
-                                             extrinsic_local_t,
-                                             config["depth_scale"],
-                                             config["max_depth"])
-            voxel_grid.integrate(rgbd_projected.depth, rgbd_projected.color,
-                                 intrinsic_t, extrinsic_t,
-                                 config["depth_scale"], config["max_depth"])
+                                             extrinsic_local_t, depth_scale,
+                                             depth_max)
 
+            frustum_block_coords = voxel_grid.compute_unique_block_coordinates(
+                rgbd_projected.depth, intrinsic_t, extrinsic_t, depth_scale,
+                depth_max)
+
+            voxel_grid.integrate(frustum_block_coords, rgbd_projected.depth,
+                                 rgbd_projected.color, intrinsic_t, extrinsic_t,
+                                 depth_scale, depth_max)
             k = k + 1
-            if (device.get_type() == cv3d.core.Device.CUDA and k % 10 == 0):
-                cv3d.core.cuda.release_cache()
 
     if (config["save_output_as"] == "pointcloud"):
-        pcd = voxel_grid.extract_surface_points().to(cv3d.core.Device("CPU:0"))
+        pcd = voxel_grid.extract_point_cloud().to(cv3d.core.Device("CPU:0"))
         save_pcd_path = join(slac_folder, "output_slac_pointcloud.ply")
         cv3d.t.io.write_point_cloud(save_pcd_path, pcd)
     else:
-        mesh = voxel_grid.extract_surface_mesh().to(cv3d.core.Device("CPU:0"))
+        mesh = voxel_grid.extract_triangle_mesh().to(cv3d.core.Device("CPU:0"))
         mesh_legacy = mesh.to_legacy()
         save_mesh_path = join(slac_folder, "output_slac_mesh.ply")
         cv3d.io.write_triangle_mesh(save_mesh_path, mesh_legacy)

@@ -1,4 +1,10 @@
-#!/usr/bin/env python
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import cloudViewer.visualization.gui as gui
 import os.path
 
@@ -121,51 +127,9 @@ class ExampleWindow:
         switch.set_on_clicked(self._on_switch)
         collapse.add_child(switch)
 
-        self.logo_idx = 0
-        proxy = gui.WidgetProxy()
-
-        def switch_proxy():
-            self.logo_idx += 1
-            if self.logo_idx % 3 == 0:
-                proxy.set_widget(None)
-            elif self.logo_idx % 3 == 1:
-                # Add a simple image
-                logo = gui.ImageWidget(basedir + "/icon-32.png")
-                proxy.set_widget(logo)
-            else:
-                label = gui.Label(
-                    'Open3D: A Modern Library for 3D Data Processing')
-                proxy.set_widget(label)
-            w.set_needs_layout()
-
-        logo_btn = gui.Button('Switch Logo By WidgetProxy')
-        logo_btn.vertical_padding_em = 0
-        logo_btn.background_color = gui.Color(r=0, b=0.5, g=0)
-        logo_btn.set_on_clicked(switch_proxy)
-        collapse.add_child(logo_btn)
-        collapse.add_child(proxy)
-
-        # Widget stack demo
-        self._widget_idx = 0
-        hz = gui.Horiz(spacing=5)
-        push_widget_btn = gui.Button('Push widget')
-        push_widget_btn.vertical_padding_em = 0
-        pop_widget_btn = gui.Button('Pop widget')
-        pop_widget_btn.vertical_padding_em = 0
-        stack = gui.WidgetStack()
-        stack.set_on_top(lambda w: print(f'New widget is: {w.text}'))
-        hz.add_child(gui.Label('WidgetStack '))
-        hz.add_child(push_widget_btn)
-        hz.add_child(pop_widget_btn)
-        hz.add_child(stack)
-        collapse.add_child(hz)
-
-        def push_widget():
-            self._widget_idx += 1
-            stack.push_widget(gui.Label(f'Widget {self._widget_idx}'))
-
-        push_widget_btn.set_on_clicked(push_widget)
-        pop_widget_btn.set_on_clicked(stack.pop_widget)
+        # Add a simple image
+        logo = gui.ImageWidget(basedir + "/icon-32.png")
+        collapse.add_child(logo)
 
         # Add a list of items
         lv = gui.ListView()
@@ -274,22 +238,6 @@ class ExampleWindow:
         tab2.add_child(gui.Label("No plugins detected"))
         tab2.add_stretch()
         tabs.add_tab("Plugins", tab2)
-        tab3 = gui.RadioButton(gui.RadioButton.VERT)
-        tab3.set_items(["Apple", "Orange"])
-
-        def vt_changed(idx):
-            print(f"current cargo: {tab3.selected_value}")
-
-        tab3.set_on_selection_changed(vt_changed)
-        tabs.add_tab("Cargo", tab3)
-        tab4 = gui.RadioButton(gui.RadioButton.HORIZ)
-        tab4.set_items(["Air plane", "Train", "Bus"])
-
-        def hz_changed(idx):
-            print(f"current traffic plan: {tab4.selected_value}")
-
-        tab4.set_on_selection_changed(hz_changed)
-        tabs.add_tab("Traffic", tab4)
         collapse.add_child(tabs)
 
         # Quit button. (Typically this is a menu item)

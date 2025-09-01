@@ -1,0 +1,24 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
+import cloudViewer as cv3d
+
+if __name__ == "__main__":
+    bunny = cv3d.data.BunnyMesh()
+    gt_mesh = cv3d.io.read_triangle_mesh(bunny.path)
+    gt_mesh.compute_vertex_normals()
+
+    pcd = gt_mesh.sample_points_poisson_disk(3000)
+    print("Displaying input pointcloud ...")
+    cv3d.visualization.draw([pcd], point_size=5)
+
+    radii = [0.005, 0.01, 0.02, 0.04]
+    print('Running ball pivoting surface reconstruction ...')
+    rec_mesh = cv3d.geometry.ccMesh.create_from_point_cloud_ball_pivoting(
+        pcd, cv3d.utility.DoubleVector(radii))
+    print("Displaying reconstructed mesh ...")
+    cv3d.visualization.draw([rec_mesh])

@@ -11,9 +11,9 @@
 // clang-format on
 
 #include <FileSystem.h>
+#include <IJsonConvertibleIO.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include <IJsonConvertibleIO.h>
 
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"
@@ -46,6 +46,13 @@ void pybind_visualization_utility(py::module &m) {
                         return s.CropTriangleMesh(input);
                     },
                     "input"_a, "Function to crop crop triangle mesh.")
+            .def(
+                    "crop_in_polygon",
+                    [](const visualization::SelectionPolygonVolume &s,
+                       const ccPointCloud &input) {
+                        return s.CropInPolygon(input);
+                    },
+                    "input"_a, "Function to crop 3d point clouds.")
             .def("__repr__",
                  [](const visualization::SelectionPolygonVolume &s) {
                      return std::string(
@@ -75,13 +82,18 @@ void pybind_visualization_utility(py::module &m) {
     docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
                                     "crop_triangle_mesh",
                                     {{"input", "The input triangle mesh."}});
+    docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
+                                    "crop_in_polygon",
+                                    {{"input", "The input point cloud xyz."}});
 }
 
-// Visualization util functions have similar arguments, sharing arg docstrings
+// Visualization util functions have similar arguments, sharing arg
+// docstrings
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"callback_function",
-                 "Call back function to be triggered at a key press event."},
+                 "Call back function to be triggered at a key press "
+                 "event."},
                 {"filename", "The file path."},
                 {"geometry_list", "List of geometries to be visualized."},
                 {"height", "The height of the visualization window."},
@@ -93,8 +105,16 @@ static const std::unordered_map<std::string, std::string>
                 {"width", "The width of the visualization window."},
                 {"point_show_normal",
                  "Visualize point normals if set to true."},
+                {"mesh_show_wireframe",
+                 "Visualize mesh wireframe if set to true."},
+                {"mesh_show_back_face",
+                 "Visualize also the back face of the mesh triangles."},
                 {"window_name",
-                 "The displayed title of the visualization window."}};
+                 "The displayed title of the visualization window."},
+                {"lookat", "The lookat vector of the camera."},
+                {"up", "The up vector of the camera."},
+                {"front", "The front vector of the camera."},
+                {"zoom", "The zoom of the camera."}};
 
 void pybind_visualization_utility_methods(py::module &m) {
     m.def(
@@ -103,41 +123,28 @@ void pybind_visualization_utility_methods(py::module &m) {
                        &geometry_ptrs,
                const std::string &window_name, int width, int height, int left,
                int top, bool point_show_normal, bool mesh_show_wireframe,
-               bool mesh_show_back_face) {
+               bool mesh_show_back_face,
+               utility::optional<Eigen::Vector3d> lookat,
+               utility::optional<Eigen::Vector3d> up,
+               utility::optional<Eigen::Vector3d> front,
+               utility::optional<double> zoom) {
                 std::string current_dir =
                         utility::filesystem::GetWorkingDirectory();
                 DrawGeometries(geometry_ptrs, window_name, width, height, left,
                                top, point_show_normal, mesh_show_wireframe,
-                               mesh_show_back_face);
+                               mesh_show_back_face,
+                               lookat.has_value() ? &lookat.value() : nullptr,
+                               up.has_value() ? &up.value() : nullptr,
+                               front.has_value() ? &front.value() : nullptr,
+                               zoom.has_value() ? &zoom.value() : nullptr);
                 utility::filesystem::ChangeWorkingDirectory(current_dir);
             },
             "Function to draw a list of geometry::Geometry objects",
-            "geometry_list"_a, "window_name"_a = "CloudViewer", "width"_a = 1920,
+            "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
             "height"_a = 1080, "left"_a = 50, "top"_a = 50,
             "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
-            "mesh_show_back_face"_a = false);
-    m.def(
-            "draw_geometries",
-            [](const std::vector<std::shared_ptr<const ccHObject>>
-                       &geometry_ptrs,
-               const std::string &window_name, int width, int height, int left,
-               int top, bool point_show_normal, bool mesh_show_wireframe,
-               bool mesh_show_back_face, Eigen::Vector3d lookat,
-               Eigen::Vector3d up, Eigen::Vector3d front, double zoom) {
-                std::string current_dir =
-                        utility::filesystem::GetWorkingDirectory();
-                DrawGeometries(geometry_ptrs, window_name, width, height, left,
-                               top, point_show_normal, mesh_show_wireframe,
-                               mesh_show_back_face, &lookat, &up, &front,
-                               &zoom);
-                utility::filesystem::ChangeWorkingDirectory(current_dir);
-            },
-            "Function to draw a list of geometry::Geometry objects",
-            "geometry_list"_a, "window_name"_a = "CloudViewer", "width"_a = 1920,
-            "height"_a = 1080, "left"_a = 50, "top"_a = 50,
-            "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
-            "mesh_show_back_face"_a = false, "lookat"_a, "up"_a, "front"_a,
-            "zoom"_a);
+            "mesh_show_back_face"_a = false, "lookat"_a = py::none(),
+            "up"_a = py::none(), "front"_a = py::none(), "zoom"_a = py::none());
     docstring::FunctionDocInject(m, "draw_geometries",
                                  map_shared_argument_docstrings);
 

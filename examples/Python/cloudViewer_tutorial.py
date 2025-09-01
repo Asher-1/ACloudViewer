@@ -1,27 +1,15 @@
-# Helpers and monkey patches for ipynb tutorials
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
 import numpy as np
 import PIL.Image
 import IPython.display
-import os
-import urllib.request
-import tarfile
-import gzip
-import zipfile
-import shutil
-import sys
 
-# Whenever you import cloudViewer_tutorial, the test data will be downloaded
-# automatically to examples/test_data/cloudViewer_downloads. Therefore, make
-# sure to import cloudViewer_tutorial before running the tutorials.
-# See https://github.com/isl-org/cloudViewer_downloads for details on how to
-# manage the test data files.
-_pwd = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(_pwd, os.pardir, "test_data"))
-from download_utils import download_all_files as _download_all_files
-
-_download_all_files()
 
 interactive = True
 
@@ -81,32 +69,23 @@ cv3d.visualization.draw_geometries = jupyter_draw_geometries
 
 def edges_to_lineset(mesh, edges, color):
     ls = cv3d.geometry.LineSet()
-    ls.points = mesh.get_vertices()
+    ls.points = mesh.vertices
     ls.lines = edges
-    colors = np.empty((np.asarray(edges).shape[0], 3))
-    colors[:] = color
-    ls.colors = cv3d.utility.Vector3dVector(colors)
+    ls.paint_uniform_color(color)
     return ls
 
 
-def _relative_path(path):
-    script_path = os.path.realpath(__file__)
-    script_dir = os.path.dirname(script_path)
-    return os.path.join(script_dir, path)
-
-
-def download_fountain_dataset():
-    fountain_path = _relative_path("../test_data/fountain_small")
-    fountain_zip_path = _relative_path("../test_data/fountain.zip")
-    if not os.path.exists(fountain_path):
-        print("downloading fountain dataset")
-        url = "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.1.0/fountain.zip"
-        urllib.request.urlretrieve(url, fountain_zip_path)
-        print("extract fountain dataset")
-        with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:
-            zip_ref.extractall(os.path.dirname(fountain_path))
-        os.remove(fountain_zip_path)
-    return fountain_path
+def get_plane_mesh(height=0.2, width=1):
+    mesh = cv3d.geometry.ccMesh(
+        vertices=cv3d.utility.Vector3dVector(
+            np.array(
+                [[0, 0, 0], [0, height, 0], [width, height, 0], [width, 0, 0]],
+                dtype=np.float32,
+            )),
+        triangles=cv3d.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0, 3]])),
+    )
+    mesh.compute_vertex_normals()
+    return mesh
 
 
 def get_non_manifold_edge_mesh():
@@ -164,8 +143,7 @@ def get_non_manifold_vertex_mesh():
 
 def get_open_box_mesh():
     mesh = cv3d.geometry.ccMesh.create_box()
-    mesh.set_triangles(
-        cv3d.utility.Vector3iVector(np.asarray(mesh.get_triangles())[:-2]))
+    mesh.set_triangles(cv3d.utility.Vector3iVector(np.asarray(mesh.get_triangles())[:-2]))
     mesh.compute_vertex_normals()
     mesh.rotate(
         mesh.get_rotation_matrix_from_xyz((0.8 * np.pi, 0, 0.66 * np.pi)),
@@ -187,60 +165,3 @@ def get_intersecting_boxes_mesh():
         center=mesh.get_center(),
     )
     return mesh
-
-
-def get_armadillo_mesh():
-    armadillo_path = _relative_path("../test_data/Armadillo.ply")
-    if not os.path.exists(armadillo_path):
-        print("downloading armadillo mesh")
-        url = "http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz"
-        urllib.request.urlretrieve(url, armadillo_path + ".gz")
-        print("extract armadillo mesh")
-        with gzip.open(armadillo_path + ".gz", "rb") as fin:
-            with open(armadillo_path, "wb") as fout:
-                shutil.copyfileobj(fin, fout)
-        os.remove(armadillo_path + ".gz")
-    mesh = cv3d.io.read_triangle_mesh(armadillo_path)
-    mesh.compute_vertex_normals()
-    return mesh
-
-
-def get_bunny_mesh():
-    bunny_path = _relative_path("../test_data/Bunny.ply")
-    if not os.path.exists(bunny_path):
-        print("downloading bunny mesh")
-        url = "http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz"
-        urllib.request.urlretrieve(url, bunny_path + ".tar.gz")
-        print("extract bunny mesh")
-        with tarfile.open(bunny_path + ".tar.gz") as tar:
-            tar.extractall(path=os.path.dirname(bunny_path))
-        shutil.move(
-            os.path.join(
-                os.path.dirname(bunny_path),
-                "bunny",
-                "reconstruction",
-                "bun_zipper.ply",
-            ),
-            bunny_path,
-        )
-        os.remove(bunny_path + ".tar.gz")
-        shutil.rmtree(os.path.join(os.path.dirname(bunny_path), "bunny"))
-    mesh = cv3d.io.read_triangle_mesh(bunny_path)
-    mesh.compute_vertex_normals()
-    return mesh
-
-
-def get_knot_mesh():
-    mesh = cv3d.io.read_triangle_mesh(_relative_path("../test_data/knot.ply"))
-    mesh.compute_vertex_normals()
-    return mesh
-
-
-def get_eagle_pcd():
-    path = _relative_path("../test_data/eagle.ply")
-    if not os.path.exists(path):
-        print("downloading eagle pcl")
-        url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"
-        urllib.request.urlretrieve(url, path)
-    pcd = cv3d.io.read_point_cloud(path)
-    return pcd

@@ -1,6 +1,9 @@
-# CloudViewer: asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 # examples/Python/ReconstructionSystem/sensors/realsense_pcd_visualizer.py
 
@@ -12,6 +15,12 @@ from enum import IntEnum
 
 from datetime import datetime
 import cloudViewer as cv3d
+
+from os.path import abspath
+import sys
+
+sys.path.append(abspath(__file__))
+from realsense_helper import get_profiles
 
 
 class Preset(IntEnum):
@@ -40,8 +49,13 @@ if __name__ == "__main__":
     #  different resolutions of color and depth streams
     config = rs.config()
 
-    config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
+    color_profiles, depth_profiles = get_profiles()
+    print('Using the default profiles: \n  color:{}, depth:{}'.format(
+        color_profiles[0], depth_profiles[0]))
+    w, h, fps, fmt = depth_profiles[0]
+    config.enable_stream(rs.stream.depth, w, h, fmt, fps)
+    w, h, fps, fmt = color_profiles[0]
+    config.enable_stream(rs.stream.color, w, h, fmt, fps)
 
     # Start streaming
     profile = pipeline.start(config)

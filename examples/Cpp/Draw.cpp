@@ -85,15 +85,6 @@ void Actions() {
     data::BunnyMesh bunny_data;
     io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 
-    if (bunny->isEmpty()) {
-        utility::LogError(
-                "Please download the Standford Bunny dataset using:\n"
-                "   cd <cloudViewer_dir>/examples/python\n"
-                "   python -c 'from cloudViewer_tutorial import *; "
-                "get_bunny_mesh()'");
-        return;
-    }
-
     bunny->paintUniformColor({1, 0.75, 0});
     bunny->computeVertexNormals();
     auto cloud = cloudViewer::make_shared<ccPointCloud>();

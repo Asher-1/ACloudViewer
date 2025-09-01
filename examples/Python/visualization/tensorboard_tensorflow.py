@@ -4,6 +4,7 @@
 # Copyright (c) 2018-2023 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
+
 import copy
 from os.path import exists, join, dirname, basename, splitext
 import sys
@@ -13,15 +14,8 @@ from cloudViewer.visualization.tensorboard_plugin import summary
 from cloudViewer.visualization.tensorboard_plugin.util import to_dict_batch
 import tensorflow as tf
 
-import os
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, '../misc'))
-import meshes
-
 BASE_LOGDIR = "demo_logs/tf/"
-monkey_path = meshes.MonkeyPath()
-MODEL_PATH = os.path.join(monkey_path, "monkey.obj")
+MODEL_PATH = cv3d.data.MonkeyModel().path
 
 
 def small_scale(run_name="small_scale"):
