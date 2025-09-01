@@ -1,27 +1,26 @@
-# cloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
-
-# examples/Python/ReconstructionSystem/integrate_scene.py
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import numpy as np
 import math
 import sys
 import cloudViewer as cv3d
 
-sys.path.append("../utility")
-from file import *
-
-sys.path.append(".")
-from make_fragments import read_rgbd_image
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+from cloudViewer_example import *
 
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     poses = []
     [color_files, depth_files] = get_rgbd_file_lists(path_dataset)
     n_files = len(color_files)
-    n_fragments = int(
-        math.ceil(float(n_files) / config['n_frames_per_fragment']))
+    n_fragments = int(math.ceil(float(n_files) / \
+            config['n_frames_per_fragment']))
     volume = cv3d.pipelines.integration.ScalableTSDFVolume(
         voxel_length=config["tsdf_cubic_size"] / 512.0,
         sdf_trunc=0.04,
@@ -36,8 +35,8 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
                  config["template_fragment_posegraph_optimized"] % fragment_id))
 
         for frame_id in range(len(pose_graph_rgbd.nodes)):
-            frame_id_abs = fragment_id * config[
-                'n_frames_per_fragment'] + frame_id
+            frame_id_abs = fragment_id * \
+                    config['n_frames_per_fragment'] + frame_id
             print(
                 "Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)." %
                 (fragment_id, n_fragments - 1, frame_id_abs, frame_id + 1,

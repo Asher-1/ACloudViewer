@@ -8,11 +8,6 @@
 import cloudViewer as cv3d
 import mitsuba as mi
 import os
-import sys
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, '../misc'))
-import meshes
 
 
 def render_mesh(mesh, mesh_center):
@@ -66,18 +61,18 @@ mi.set_variant('llvm_ad_rgb')
 # mi.set_variant('cuda_ad_rgb')
 
 # Load mesh and maps using CloudViewer
-monkey_path = meshes.MonkeyPath()
-mesh = cv3d.t.io.read_triangle_mesh(os.path.join(monkey_path, "monkey.obj"))
+dataset = cv3d.data.MonkeyModel()
+mesh = cv3d.t.io.read_triangle_mesh(dataset.path)
 mesh_center = mesh.get_axis_aligned_bounding_box().get_center()
 mesh.material.set_default_properties()
 mesh.material.material_name = 'defaultLit'
 mesh.material.scalar_properties['metallic'] = 1.0
 mesh.material.texture_maps['albedo'] = cv3d.t.io.read_image(
-    os.path.join(monkey_path, "albedo.png"))
+    dataset.path_map['albedo'])
 mesh.material.texture_maps['roughness'] = cv3d.t.io.read_image(
-    os.path.join(monkey_path, "roughness.png"))
+    dataset.path_map['roughness'])
 mesh.material.texture_maps['metallic'] = cv3d.t.io.read_image(
-    os.path.join(monkey_path, "metallic.png"))
+    dataset.path_map['metallic'])
 
 print('Render mesh with material converted to Mitsuba principled BSDF')
 mi_mesh = mesh.to_mitsuba('monkey')
@@ -86,7 +81,7 @@ mi.Bitmap(img).write('test.exr')
 
 print('Render mesh with normal-mapped prnincipled BSDF')
 mesh.material.texture_maps['normal'] = cv3d.t.io.read_image(
-    os.path.join(monkey_path, "normal.png"))
+    dataset.path_map['normal'])
 mi_mesh = mesh.to_mitsuba('monkey')
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test2.exr')

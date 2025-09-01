@@ -1,6 +1,9 @@
-# CloudViewer: asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 # examples/Python/ReconstructionSystem/sensors/realsense_recorder.py
 
@@ -11,10 +14,15 @@ import numpy as np
 import cv2
 import argparse
 from os import makedirs
-from os.path import exists, join
+from os.path import exists, join, abspath
 import shutil
 import json
 from enum import IntEnum
+
+import sys
+
+sys.path.append(abspath(__file__))
+from realsense_helper import get_profiles
 
 try:
     # Python 2 compatible
@@ -107,12 +115,18 @@ if __name__ == "__main__":
     # Create a config and configure the pipeline to stream
     #  different resolutions of color and depth streams
     config = rs.config()
+    
+    color_profiles, depth_profiles = get_profiles()
 
     if args.record_imgs or args.record_rosbag:
         # note: using 640 x 480 depth resolution produces smooth depth boundaries
         #       using rs.format.bgr8 for color image format for OpenCV based image visualization
-        config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
-        config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+        print('Using the default profiles: \n  color:{}, depth:{}'.format(
+            color_profiles[0], depth_profiles[0]))
+        w, h, fps, fmt = depth_profiles[0]
+        config.enable_stream(rs.stream.depth, w, h, fmt, fps)
+        w, h, fps, fmt = color_profiles[0]
+        config.enable_stream(rs.stream.color, w, h, fmt, fps)
         if args.record_rosbag:
             config.enable_record_to_file(path_bag)
     if args.playback_rosbag:

@@ -25,6 +25,7 @@ env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  BUILD_CUDA_MODULE: OFF
 
 jobs:
   MacOS:
@@ -42,7 +43,6 @@ jobs:
         python_version: ['3.12']
     env:
       BUILD_SHARED_LIBS: OFF
-      BUILD_CUDA_MODULE: OFF
       BUILD_TENSORFLOW_OPS: OFF
       BUILD_PYTORCH_OPS: OFF
       LOW_MEM_USAGE: ON
@@ -90,8 +90,11 @@ jobs:
         run: |
           brew install ccache
 
-          # Fix gfortran not found issue
-          ln -s $(which gfortran-13) /usr/local/bin/gfortran
+          if [[ ${{ runner.arch }} == "ARM64"  ]]; then
+            # Fix gfortran not found issue
+            brew install gcc
+            ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
+          fi
 
           # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
           # / arm64 big sur (11.0). Directly installing the Ruby formula will
@@ -221,7 +224,6 @@ jobs:
 
     env:
       CONDA_DEP_FILE: ".ci/conda_macos.yml"
-      BUILD_CUDA_MODULE: OFF
       BUILD_TORCH_OPS: ON
       # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF
@@ -274,11 +276,12 @@ jobs:
           brew install ccache
 
           # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
-          ln -s $(which gfortran-13) /usr/local/bin/gfortran
+          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
+            ln -s $(which gfortran-13) /usr/local/bin/gfortran
+          fi
 
           # Install libomp 11.1.0. See comment above.
           if [[ ${{ runner.arch}} == "X64"  ]]; then
-            # brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           else # ARM64
@@ -473,7 +476,6 @@ jobs:
             python_version: '3.11'
 
     env:
-      BUILD_CUDA_MODULE: OFF
       BUILD_TORCH_OPS: ON
       # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF

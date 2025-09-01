@@ -101,6 +101,11 @@ std::shared_ptr<ccMesh> SelectionPolygonVolume::CropTriangleMeshInPolygon(
 }
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
+        const ccPointCloud &input) const {
+    return CropInPolygon(input.getPoints());
+}
+
+std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
         const std::vector<Eigen::Vector3d> &input) const {
     return CropInPolygon(CCVector3::fromArrayContainer(input));
 }

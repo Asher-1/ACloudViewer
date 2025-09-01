@@ -8,7 +8,8 @@
 #include <benchmark/benchmark.h>
 
 #include <ecvMesh.h>
-#include "io/TriangleMeshIO.h"
+#include "cloudViewer/data/Dataset.h"
+#include "cloudViewer/io/TriangleMeshIO.h"
 
 namespace cloudViewer {
 namespace benchmarks {
@@ -16,7 +17,8 @@ namespace benchmarks {
 class SamplePointsFixture : public benchmark::Fixture {
 public:
     void SetUp(const benchmark::State& state) {
-        trimesh = cloudViewer::io::CreateMeshFromFile(TEST_DATA_DIR "/knot.ply");
+        data::KnotMesh knot_data;
+        trimesh = io::CreateMeshFromFile(knot_data.GetPath());
     }
 
     void TearDown(const benchmark::State& state) {

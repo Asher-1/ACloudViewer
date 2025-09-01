@@ -1,18 +1,25 @@
-# cloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 # examples/Python/ReconstructionSystem/register_fragments.py
 
-import numpy as np
-import cloudViewer as cv3d
+import multiprocessing
+import os
 import sys
 
-sys.path.append("../Utility")
-from file import join, get_file_list, make_clean_folder
-from visualization import draw_registration_result
+import numpy as np
+import cloudViewer as cv3d
 
-sys.path.append(".")
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from cloudViewer_example import join, get_file_list, make_clean_folder, draw_registration_result
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_scene
 from refine_registration import multiscale_icp
 
@@ -31,6 +38,7 @@ def preprocess_point_cloud(pcd, config):
 
 
 def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
+    cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
     distance_threshold = config["voxel_size"] * 1.4
     if config["global_registration"] == "fgr":
         result = cv3d.pipelines.registration.registration_fgr_based_on_feature_matching(
@@ -38,28 +46,31 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
             cv3d.pipelines.registration.FastGlobalRegistrationOption(
                 maximum_correspondence_distance=distance_threshold))
     if config["global_registration"] == "ransac":
+        # Fallback to preset parameters that works better
         result = cv3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-            source, target, source_fpfh, target_fpfh, True, distance_threshold,
+            source, target, source_fpfh, target_fpfh, False, distance_threshold,
             cv3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False), 3, [
-                    cv3d.pipelines.registration.
-                    CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                    cv3d.pipelines.registration.
-                    CorrespondenceCheckerBasedOnDistance(distance_threshold)
-                ],
-            cv3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.99))
+                False), 4,
+            [
+                cv3d.pipelines.registration.
+                CorrespondenceCheckerBasedOnEdgeLength(0.9),
+                cv3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                    distance_threshold)
+            ],
+            cv3d.pipelines.registration.RANSACConvergenceCriteria(
+                1000000, 0.999))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6, 6)))
     information = cv3d.pipelines.registration.get_information_matrix_from_point_clouds(
         source, target, distance_threshold, result.transformation)
-    if information[5, 5] / min(len(source.get_points()), len(
-            target.get_points())) < 0.3:
+    if information[5, 5] / min(len(source.points), len(target.points)) < 0.3:
         return (False, np.identity(4), np.zeros((6, 6)))
     return (True, result.transformation, information)
 
 
 def compute_initial_registration(s, t, source_down, target_down, source_fpfh,
                                  target_fpfh, path_dataset, config):
+
     if t == s + 1:  # odometry case
         print("Using RGBD odometry")
         pose_graph_frag = cv3d.io.read_pose_graph(
@@ -69,15 +80,15 @@ def compute_initial_registration(s, t, source_down, target_down, source_fpfh,
         transformation_init = np.linalg.inv(pose_graph_frag.nodes[n_nodes -
                                                                   1].pose)
         (transformation, information) = \
-            multiscale_icp(source_down, target_down,
-                           [config["voxel_size"]], [50], config, transformation_init)
+                multiscale_icp(source_down, target_down,
+                [config["voxel_size"]], [50], config, transformation_init)
     else:  # loop closure case
         (success, transformation,
          information) = register_point_cloud_fpfh(source_down, target_down,
                                                   source_fpfh, target_fpfh,
                                                   config)
         if not success:
-            print("No resonable solution. Skip this pair")
+            print("No reasonable solution. Skip this pair")
             return (False, np.identity(4), np.zeros((6, 6)))
     print(transformation)
 
@@ -86,8 +97,8 @@ def compute_initial_registration(s, t, source_down, target_down, source_fpfh,
     return (True, transformation, information)
 
 
-def update_posegrph_for_scene(s, t, transformation, information, odometry,
-                              pose_graph):
+def update_posegraph_for_scene(s, t, transformation, information, odometry,
+                               pose_graph):
     if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
@@ -95,17 +106,17 @@ def update_posegrph_for_scene(s, t, transformation, information, odometry,
             cv3d.pipelines.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
             cv3d.pipelines.registration.PoseGraphEdge(s,
-                                                      t,
-                                                      transformation,
-                                                      information,
-                                                      uncertain=False))
+                                                     t,
+                                                     transformation,
+                                                     information,
+                                                     uncertain=False))
     else:  # loop closure case
         pose_graph.edges.append(
             cv3d.pipelines.registration.PoseGraphEdge(s,
-                                                      t,
-                                                      transformation,
-                                                      information,
-                                                      uncertain=True))
+                                                     t,
+                                                     transformation,
+                                                     information,
+                                                     uncertain=True))
     return (odometry, pose_graph)
 
 
@@ -117,7 +128,7 @@ def register_point_cloud_pair(ply_file_names, s, t, config):
     (source_down, source_fpfh) = preprocess_point_cloud(source, config)
     (target_down, target_fpfh) = preprocess_point_cloud(target, config)
     (success, transformation, information) = \
-        compute_initial_registration(
+            compute_initial_registration(
             s, t, source_down, target_down,
             source_fpfh, target_fpfh, config["path_dataset"], config)
     if t != s + 1 and not success:
@@ -150,16 +161,16 @@ def make_posegraph_for_scene(ply_file_names, config):
         for t in range(s + 1, n_files):
             matching_results[s * n_files + t] = matching_result(s, t)
 
-    if config["python_multi_threading"]:
-        from joblib import Parallel, delayed
-        import multiprocessing
-        import subprocess
-        MAX_THREAD = min(multiprocessing.cpu_count(),
-                         max(len(matching_results), 1))
-        results = Parallel(n_jobs=MAX_THREAD)(delayed(
-            register_point_cloud_pair)(ply_file_names, matching_results[r].s,
-                                       matching_results[r].t, config)
-                                              for r in matching_results)
+    if config["python_multi_threading"] is True:
+        os.environ['OMP_NUM_THREADS'] = '1'
+        max_workers = max(
+            1, min(multiprocessing.cpu_count() - 1, len(matching_results)))
+        mp_context = multiprocessing.get_context('spawn')
+        with mp_context.Pool(processes=max_workers) as pool:
+            args = [(ply_file_names, v.s, v.t, config)
+                    for k, v in matching_results.items()]
+            results = pool.starmap(register_point_cloud_pair, args)
+
         for i, r in enumerate(matching_results):
             matching_results[r].success = results[i][0]
             matching_results[r].transformation = results[i][1]
@@ -167,13 +178,13 @@ def make_posegraph_for_scene(ply_file_names, config):
     else:
         for r in matching_results:
             (matching_results[r].success, matching_results[r].transformation,
-                    matching_results[r].information) = \
-                    register_point_cloud_pair(ply_file_names,
-                    matching_results[r].s, matching_results[r].t, config)
+             matching_results[r].information) = \
+                register_point_cloud_pair(ply_file_names,
+                                          matching_results[r].s, matching_results[r].t, config)
 
     for r in matching_results:
         if matching_results[r].success:
-            (odometry, pose_graph) = update_posegrph_for_scene(
+            (odometry, pose_graph) = update_posegraph_for_scene(
                 matching_results[r].s, matching_results[r].t,
                 matching_results[r].transformation,
                 matching_results[r].information, odometry, pose_graph)

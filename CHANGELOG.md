@@ -38,6 +38,7 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
     -   Fix render to depth image on Apple Retina displays
     -   Close window on ESC keypress
     -   Avoid deadlock while PostToMainThread is called inside a Posted
+    -   Fix bug in emissive color default value and writing triangle UVs to glb
 
 - Enhancements:
     -   Update 3rparty version
@@ -46,6 +47,8 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
     -   select_by_index method to Feature class
     -   Support msgpack versions without cmake
     -   lowercase types when reading PCD files
+    -   Refactor python examples directory
+    -   Add default dataset loading in reconstruction system.
 
 ### supported platform:
 - Windows `x86/64`

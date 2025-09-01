@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
 import cloudViewer.visualization.rendering as rendering

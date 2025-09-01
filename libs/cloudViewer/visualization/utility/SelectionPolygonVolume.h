@@ -7,13 +7,13 @@
 
 #pragma once
 
+#include <CVGeom.h>
+#include <IJsonConvertible.h>
+
 #include <Eigen/Core>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <CVGeom.h>
-#include <IJsonConvertible.h>
 
 class ccMesh;
 class ccPointCloud;
@@ -27,7 +27,6 @@ namespace visualization {
 /// \brief Select a polygon volume for cropping.
 class SelectionPolygonVolume : public cloudViewer::utility::IJsonConvertible {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     ~SelectionPolygonVolume() override {}
@@ -43,8 +42,11 @@ public:
     /// Function to crop crop triangle mesh.
     ///
     /// \param input The input triangle mesh.
-    std::shared_ptr<ccMesh> CropTriangleMesh(
-            const ccMesh &input) const;
+    std::shared_ptr<ccMesh> CropTriangleMesh(const ccMesh &input) const;
+    /// Function to crop point cloud with polygon boundaries
+    ///
+    /// \param input The input point Cloud.
+    std::vector<size_t> CropInPolygon(const ccPointCloud &input) const;
 
 private:
     std::shared_ptr<ccPointCloud> CropPointCloudInPolygon(
