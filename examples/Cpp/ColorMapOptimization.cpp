@@ -11,7 +11,7 @@
 
 using namespace cloudViewer;
 
-std::tuple<geometry::TriangleMesh,
+std::tuple<ccMesh,
            std::vector<geometry::RGBDImage>,
            camera::PinholeCameraTrajectory>
 PrepareDataset() {
@@ -34,7 +34,7 @@ PrepareDataset() {
                                     camera_trajectory);
 
     // Mesh.
-    geometry::TriangleMesh mesh;
+    ccMesh mesh;
     io::ReadTriangleMesh(fountain_rgbd.GetReconstructionPath(), mesh);
 
     return std::make_tuple(mesh, rgbd_images, camera_trajectory);

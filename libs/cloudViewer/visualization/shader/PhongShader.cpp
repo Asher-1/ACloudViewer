@@ -7,7 +7,7 @@
 
 #include "visualization/shader/PhongShader.h"
 
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
@@ -288,7 +288,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
             PrintShaderWarning("Binding failed with empty triangle mesh.");
             return false;
         }
-        if (!mesh.hasTriangleNormals() || !mesh.hasNormals()) {
+        if (!mesh.HasTriangleNormals() || !mesh.hasNormals()) {
             PrintShaderWarning("Binding failed because mesh has no normals.");
             PrintShaderWarning("Call computeVertexNormals() before binding.");
             return false;
@@ -353,13 +353,13 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         draw_arrays_mode_ = GL_TRIANGLES;
         draw_arrays_size_ = GLsizei(points.size());
     } else if (geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        const geometry::ecvHalfEdgeMesh &mesh =
-                (const geometry::ecvHalfEdgeMesh &)geometry;
+        const geometry::HalfEdgeTriangleMesh &mesh =
+                (const geometry::HalfEdgeTriangleMesh &)geometry;
         if (!mesh.hasTriangles()) {
             PrintShaderWarning("Binding failed with empty triangle mesh.");
             return false;
         }
-        if (!mesh.hasTriangleNormals() || !mesh.hasVertexNormals()) {
+        if (!mesh.HasTriangleNormals() || !mesh.hasVertexNormals()) {
             PrintShaderWarning("Binding failed because mesh has no normals.");
             PrintShaderWarning("Call ComputeVertexNormals() before binding.");
             return false;

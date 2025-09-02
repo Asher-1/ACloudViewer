@@ -130,7 +130,7 @@ public:
 													unsigned newNumberOfPoints,
 													GenericProgressCallback* progressCb = nullptr);
 	
-	static ReferenceCloud* uniformDownSample(	
+	static ReferenceCloud* UniformDownSample(	
 		GenericIndexedCloudPersist* cloud, unsigned every_k_points);
 
 	//! Parameters for the scalar-field based modulation of a parameter

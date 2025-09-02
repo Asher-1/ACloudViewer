@@ -280,7 +280,7 @@ void pybind_trianglemesh(py::module& m) {
                     "Sets the associated vertices cloud (warning)", "cloud"_a)
             .def("create_internal_cloud", &ccMesh::createInternalCloud,
                  "Sets the associated vertices cloud (warning)")
-            .def("compute_triangle_normals", &ccMesh::computeTriangleNormals,
+            .def("compute_triangle_normals", &ccMesh::ComputeTriangleNormals,
                  "Function to compute triangle normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
@@ -534,7 +534,7 @@ void pybind_trianglemesh(py::module& m) {
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
                  "direction.")
-            .def("select_by_index", &ccMesh::selectByIndex,
+            .def("select_by_index", &ccMesh::SelectByIndex,
                  "Function to select mesh from input triangle mesh into output "
                  "triangle mesh. ``input``: The input triangle mesh. "
                  "``indices``: "

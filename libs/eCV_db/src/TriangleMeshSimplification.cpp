@@ -287,7 +287,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 	}
 
 	if (hasTriNormals()) {
-		mesh->computeTriangleNormals();
+		mesh->ComputeTriangleNormals();
 	}
 
 	return mesh;
@@ -602,7 +602,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	mesh->resize(next_free);
 
 	if (hasTriNormals()) {
-		mesh->computeTriangleNormals();
+		mesh->ComputeTriangleNormals();
 	}
 
 	return mesh;

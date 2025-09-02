@@ -12,7 +12,7 @@
 #include <Image.h>
 #include <LineSet.h>
 #include <Logging.h>
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <tinyfiledialogs/tinyfiledialogs.h>
@@ -71,8 +71,8 @@ bool VisualizerWithEditing::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        auto ptr = cloudViewer::make_shared<geometry::ecvHalfEdgeMesh>();
-        *ptr = (const geometry::ecvHalfEdgeMesh &)*original_geometry_ptr_;
+        auto ptr = cloudViewer::make_shared<geometry::HalfEdgeTriangleMesh>();
+        *ptr = (const geometry::HalfEdgeTriangleMesh &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 cloudViewer::make_shared<glsl::HalfEdgeMeshRenderer>();
@@ -349,7 +349,7 @@ void VisualizerWithEditing::KeyPressCallback(
                     utility::LogInfo("Voxel downsample with voxel size {:.4f}.",
                                      voxel_size_);
                     ccPointCloud &pcd = (ccPointCloud &)*editing_geometry_ptr_;
-                    pcd = *pcd.voxelDownSample(voxel_size_);
+                    pcd = *pcd.VoxelDownSample(voxel_size_);
                     UpdateGeometry();
                 } else {
                     utility::LogWarning(

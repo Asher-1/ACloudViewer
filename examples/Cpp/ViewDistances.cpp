@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
         fwrite(distances.data(), sizeof(double), distances.size(), f);
         fclose(f);
     } else if (utility::ProgramOptionExists(argc, argv, "--nn_distance")) {
-        distances = pcd->computeNearestNeighborDistance();
+        distances = pcd->ComputeNearestNeighborDistance();
         FILE *f = utility::filesystem::FOpen(binname, "wb");
         fwrite(distances.data(), sizeof(double), distances.size(), f);
         fclose(f);

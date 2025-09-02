@@ -8,7 +8,7 @@
 #include "visualization/shader/SimpleBlackShader.h"
 
 #include <ecvMesh.h>
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvPointCloud.h>
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
@@ -175,8 +175,8 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
         draw_arrays_mode_ = GL_TRIANGLES;
         draw_arrays_size_ = GLsizei(points.size());
     } else if (geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        const geometry::ecvHalfEdgeMesh &mesh =
-                (const geometry::ecvHalfEdgeMesh &)geometry;
+        const geometry::HalfEdgeTriangleMesh &mesh =
+                (const geometry::HalfEdgeTriangleMesh &)geometry;
         if (!mesh.hasTriangles()) {
             PrintShaderWarning(
                     "Binding failed with empty geometry::TriangleMesh.");

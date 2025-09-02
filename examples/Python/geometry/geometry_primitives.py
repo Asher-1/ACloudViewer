@@ -95,4 +95,5 @@ if __name__ == "__main__":
     cv3d.utility.set_verbosity_level(cv3d.utility.Debug)
     for name, primitives in primitives_generator(only_show_union=True):
         print(primitives)
-        cv3d.visualization.draw_geometries(primitives)
+        cv3d.visualization.draw(primitives)
+        # cv3d.visualization.draw_geometries()

@@ -20,7 +20,7 @@ if __name__ == "__main__":
     bbox.set_max_bound([1, 0.6, 1])
     bbox.set_validity(True)
     mesh = mesh.crop(bbox)
-    het_mesh = cv3d.geometry.HalfEdgeMesh.create_from_triangle_mesh(mesh)
+    het_mesh = cv3d.geometry.HalfEdgeTriangleMesh.create_from_triangle_mesh(mesh)
     cv3d.visualization.draw_geometries([het_mesh], mesh_show_back_face=True)
 
     # Colorize boundary vertices to red

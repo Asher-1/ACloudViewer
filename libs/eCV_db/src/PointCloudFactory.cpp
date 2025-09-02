@@ -322,7 +322,7 @@ std::vector<double> ccPointCloud::computePointCloudDistance(
     return distances;
 }
 
-ccPointCloud &ccPointCloud::removeNonFinitePoints(bool remove_nan,
+ccPointCloud &ccPointCloud::RemoveNonFinitePoints(bool remove_nan,
                                                   bool remove_infinite) {
     bool has_normal = hasNormals();
     bool has_color = hasColors();
@@ -369,7 +369,7 @@ ccPointCloud &ccPointCloud::removeNonFinitePoints(bool remove_nan,
                     } else {
                         error = true;
                         utility::LogWarning(
-                                "[removeNonFinitePoints] Not enough memory to "
+                                "[RemoveNonFinitePoints] Not enough memory to "
                                 "copy scalar field!");
                     }
                 }
@@ -527,7 +527,7 @@ private:
 };
 }  // namespace
 
-std::shared_ptr<ccPointCloud> ccPointCloud::voxelDownSample(double voxel_size) {
+std::shared_ptr<ccPointCloud> ccPointCloud::VoxelDownSample(double voxel_size) {
     auto output = cloudViewer::make_shared<ccPointCloud>("pointCloud");
     // visibility
     output->setVisible(isVisible());
@@ -537,7 +537,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::voxelDownSample(double voxel_size) {
     output->importParametersFrom(this);
 
     if (voxel_size <= 0.0) {
-        utility::LogError("[ccPointCloud::voxelDownSample] voxel_size <= 0.");
+        utility::LogError("[ccPointCloud::VoxelDownSample] voxel_size <= 0.");
     }
 
     Eigen::Vector3d voxel_size3 =
@@ -548,7 +548,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::voxelDownSample(double voxel_size) {
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
         utility::LogError(
-                "[ccPointCloud::voxelDownSample] voxel_size is too small.");
+                "[ccPointCloud::VoxelDownSample] voxel_size is too small.");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
                        cloudViewer::utility::hash_eigen<Eigen::Vector3i>>
@@ -571,7 +571,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::voxelDownSample(double voxel_size) {
     if (!output->reserveThePointsTable(
                 static_cast<unsigned int>(voxelindex_to_accpoint.size()))) {
         utility::LogError(
-                "[ccPointCloud::voxelDownSample] Not enough memory to "
+                "[ccPointCloud::VoxelDownSample] Not enough memory to "
                 "duplicate cloud!");
         return nullptr;
     }
@@ -582,7 +582,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::voxelDownSample(double voxel_size) {
             output->showColors(colorsShown());
         } else {
             utility::LogWarning(
-                    "[ccPointCloud::voxelDownSample] Not enough memory to copy "
+                    "[ccPointCloud::VoxelDownSample] Not enough memory to copy "
                     "RGB colors!");
             has_colors = false;
         }
@@ -594,7 +594,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::voxelDownSample(double voxel_size) {
             output->showNormals(normalsShown());
         } else {
             utility::LogWarning(
-                    "[ccPointCloud::voxelDownSample] Not enough memory to copy "
+                    "[ccPointCloud::VoxelDownSample] Not enough memory to copy "
                     "normals!");
             has_normals = false;
         }
@@ -759,11 +759,11 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
     return std::make_tuple(output, cubic_id, original_indices);
 }
 
-std::shared_ptr<ccPointCloud> ccPointCloud::uniformDownSample(
+std::shared_ptr<ccPointCloud> ccPointCloud::UniformDownSample(
         size_t every_k_points) const {
     if (every_k_points == 0) {
         utility::LogWarning(
-                "[ccPointCloud::uniformDownSample] Illegal sample rate.");
+                "[ccPointCloud::UniformDownSample] Illegal sample rate.");
         return nullptr;
     }
 
@@ -772,7 +772,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::uniformDownSample(
         indices.push_back(i);
     }
 
-    return selectByIndex(indices);
+    return SelectByIndex(indices);
 }
 
 std::shared_ptr<ccPointCloud> ccPointCloud::randomDownSample(
@@ -788,11 +788,11 @@ std::shared_ptr<ccPointCloud> ccPointCloud::randomDownSample(
     std::mt19937 prng(rd());
     std::shuffle(indices.begin(), indices.end(), prng);
     indices.resize((int)(sampling_ratio * this->size()));
-    return selectByIndex(indices);
+    return SelectByIndex(indices);
 }
 
 std::tuple<std::shared_ptr<ccPointCloud>, std::vector<size_t>>
-ccPointCloud::removeRadiusOutliers(size_t nb_points,
+ccPointCloud::RemoveRadiusOutliers(size_t nb_points,
                                    double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogWarning(
@@ -822,11 +822,11 @@ ccPointCloud::removeRadiusOutliers(size_t nb_points,
             indices.push_back(i);
         }
     }
-    return std::make_tuple(selectByIndex(indices), indices);
+    return std::make_tuple(SelectByIndex(indices), indices);
 }
 
 std::tuple<std::shared_ptr<ccPointCloud>, std::vector<size_t>>
-ccPointCloud::removeStatisticalOutliers(size_t nb_neighbors,
+ccPointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                         double std_ratio) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         utility::LogWarning(
@@ -889,7 +889,7 @@ ccPointCloud::removeStatisticalOutliers(size_t nb_neighbors,
             indices.push_back(i);
         }
     }
-    return std::make_tuple(selectByIndex(indices), indices);
+    return std::make_tuple(SelectByIndex(indices), indices);
 }
 
 namespace cloudViewer {
@@ -1128,7 +1128,7 @@ void ccPointCloud::estimateCovariances(
     this->covariances_ = EstimatePerPointCovariances(*this, search_param);
 }
 
-bool ccPointCloud::estimateNormals(
+bool ccPointCloud::EstimateNormals(
         const geometry::KDTreeSearchParam
                 &search_param /* = KDTreeSearchParamKNN()*/,
         bool fast_normal_computation /* = true */) {
@@ -1225,7 +1225,7 @@ void ccPointCloud::orientNormalsConsistentTangentPlane(size_t k) {
     if (!hasNormals()) {
         utility::LogError(
                 "[orientNormalsConsistentTangentPlane] No normals in the "
-                "ccPointCloud. Call estimateNormals() first.");
+                "ccPointCloud. Call EstimateNormals() first.");
     }
 
     // Create Riemannian graph (Euclidian MST + kNN)
@@ -1356,7 +1356,7 @@ std::vector<double> ccPointCloud::computeMahalanobisDistance() const {
     return mahalanobis;
 }
 
-std::vector<double> ccPointCloud::computeNearestNeighborDistance() const {
+std::vector<double> ccPointCloud::ComputeNearestNeighborDistance() const {
     std::vector<double> nn_dis(size());
     cloudViewer::geometry::KDTreeFlann kdtree(*this);
 #ifdef _OPENMP
@@ -1381,7 +1381,7 @@ std::vector<double> ccPointCloud::computeNearestNeighborDistance() const {
 }
 
 double ccPointCloud::computeResolution() const {
-    std::vector<double> nn_dis = computeNearestNeighborDistance();
+    std::vector<double> nn_dis = ComputeNearestNeighborDistance();
     return std::accumulate(std::begin(nn_dis), std::end(nn_dis), 0.0) /
            nn_dis.size();
 }

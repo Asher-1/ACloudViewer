@@ -518,7 +518,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSharpen(int number_of_iterations,
     }
 
     if (hasTriNormals()) {
-        mesh->computeTriangleNormals();
+        mesh->ComputeTriangleNormals();
     }
 
     // do some cleaning
@@ -629,7 +629,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothSimple(int number_of_iterations,
     }
 
     if (hasTriNormals()) {
-        mesh->computeTriangleNormals();
+        mesh->ComputeTriangleNormals();
     }
 
     // do some cleaning
@@ -770,7 +770,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothLaplacian(int number_of_iterations,
     }
 
     if (hasTriNormals()) {
-        mesh->computeTriangleNormals();
+        mesh->ComputeTriangleNormals();
     }
 
     // do some cleaning
@@ -865,7 +865,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothTaubin(int number_of_iterations,
     }
 
     if (hasTriNormals()) {
-        mesh->computeTriangleNormals();
+        mesh->ComputeTriangleNormals();
     }
 
     // do some cleaning
@@ -1381,7 +1381,7 @@ ccMesh::computeEdgeWeightsCot(
     return weights;
 }
 
-ccMesh &ccMesh::computeTriangleNormals(bool normalized /* = true*/) {
+ccMesh &ccMesh::ComputeTriangleNormals(bool normalized /* = true*/) {
     computePerTriangleNormals();
     if (normalized) {
         normalizeNormals();
@@ -1391,7 +1391,7 @@ ccMesh &ccMesh::computeTriangleNormals(bool normalized /* = true*/) {
 
 ccMesh &ccMesh::computeVertexNormals(bool normalized /* = true*/) {
     if (!hasTriNormals()) {
-        computeTriangleNormals(false);
+        ComputeTriangleNormals(false);
     }
     computePerVertexNormals();
 

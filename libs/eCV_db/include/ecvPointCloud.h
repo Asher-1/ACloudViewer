@@ -967,7 +967,7 @@ public:  // for python interface
     ///
     /// \param indices Indices of points to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
-    std::shared_ptr<ccPointCloud> selectByIndex(
+    std::shared_ptr<ccPointCloud> SelectByIndex(
             const std::vector<size_t>& indices, bool invert = false) const;
 
     /// \brief Remove all points fromt he point cloud that have a nan entry, or
@@ -977,7 +977,7 @@ public:  // for python interface
     ///
     /// \param remove_nan Remove NaN values from the ccPointCloud.
     /// \param remove_infinite Remove infinite values from the ccPointCloud.
-    ccPointCloud& removeNonFinitePoints(bool remove_nan = true,
+    ccPointCloud& RemoveNonFinitePoints(bool remove_nan = true,
                                         bool remove_infinite = true);
 
     /// \brief Function to downsample input ccPointCloud into output
@@ -988,7 +988,7 @@ public:  // for python interface
     ///
     /// \param voxel_size Defines the resolution of the voxel grid,
     /// smaller value leads to denser output point cloud.
-    std::shared_ptr<ccPointCloud> voxelDownSample(double voxel_size);
+    std::shared_ptr<ccPointCloud> VoxelDownSample(double voxel_size);
 
     /// \brief Function to downsample using
     /// geometry.ccPointCloud.VoxelDownSample
@@ -1015,7 +1015,7 @@ public:  // for python interface
     ///
     /// \param every_k_points Sample rate, the selected point indices are [0, k,
     /// 2k].
-    std::shared_ptr<ccPointCloud> uniformDownSample(
+    std::shared_ptr<ccPointCloud> UniformDownSample(
             size_t every_k_points) const;
 
     /// \brief Function to downsample input pointcloud into output pointcloud
@@ -1050,7 +1050,7 @@ public:  // for python interface
     /// \param nb_points Number of points within the radius.
     /// \param search_radius Radius of the sphere.
     std::tuple<std::shared_ptr<ccPointCloud>, std::vector<size_t>>
-    removeRadiusOutliers(size_t nb_points, double search_radius) const;
+    RemoveRadiusOutliers(size_t nb_points, double search_radius) const;
 
     /// \brief Function to remove points that are further away from their
     /// \p nb_neighbor neighbors in average.
@@ -1058,7 +1058,7 @@ public:  // for python interface
     /// \param nb_neighbors Number of neighbors around the target point.
     /// \param std_ratio Standard deviation ratio.
     std::tuple<std::shared_ptr<ccPointCloud>, std::vector<size_t>>
-    removeStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
+    RemoveStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
 
     /// \brief Function to compute the normals of a point cloud.
     ///
@@ -1069,7 +1069,7 @@ public:  // for python interface
     /// search. \param fast_normal_computation If true, the normal estiamtion
     /// uses a non-iterative method to extract the eigenvector from the
     /// covariance matrix. This is faster, but is not as numerical stable.
-    bool estimateNormals(
+    bool EstimateNormals(
             const cloudViewer::geometry::KDTreeSearchParam& search_param =
                     cloudViewer::geometry::KDTreeSearchParamKNN(),
             bool fast_normal_computation = true);
@@ -1136,7 +1136,7 @@ public:  // for python interface
 
     /// Function to compute the distance from a point to its nearest neighbor in
     /// the input point cloud
-    std::vector<double> computeNearestNeighborDistance() const;
+    std::vector<double> ComputeNearestNeighborDistance() const;
 
     double computeResolution() const;
 

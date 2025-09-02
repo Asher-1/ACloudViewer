@@ -13,7 +13,7 @@
 
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/TensorCheck.h"
-#include "cloudViewer/geometry/TriangleMesh.h"
+#include <ecvMesh.h>
 #include "cloudViewer/t/geometry/BoundingVolume.h"
 #include "cloudViewer/t/geometry/Image.h"
 #include "cloudViewer/t/geometry/DrawableGeometry.h"
@@ -728,13 +728,13 @@ public:
     /// \param device The device where the resulting TriangleMesh resides in
     /// (default CPU:0).
     static geometry::TriangleMesh FromLegacy(
-            const cloudViewer::geometry::TriangleMesh &mesh_legacy,
+            const ccMesh &mesh_legacy,
             core::Dtype float_dtype = core::Float32,
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy CloudViewer TriangleMesh.
-    cloudViewer::geometry::TriangleMesh ToLegacy() const;
+    ccMesh ToLegacy() const;
 
     /// Convert a TriangleMeshModel (e.g. as read from a file with
     /// cloudViewer::io::ReadTriangleMeshModel) to an unordered map of mesh names to

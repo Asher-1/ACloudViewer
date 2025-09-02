@@ -871,7 +871,7 @@ Ctrl-alt-click to polygon select)";
             auto aabb =
                     std::dynamic_pointer_cast<geometry::AxisAlignedBoundingBox>(
                             geom);
-            auto mesh = std::dynamic_pointer_cast<geometry::TriangleMesh>(geom);
+            auto mesh = std::dynamic_pointer_cast<ccMesh>(geom);
             auto voxel_grid =
                     std::dynamic_pointer_cast<geometry::VoxelGrid>(geom);
             auto octree = std::dynamic_pointer_cast<geometry::Octree>(geom);
@@ -904,7 +904,7 @@ Ctrl-alt-click to polygon select)";
                         (aabb->getColor() != Eigen::Vector3d{0.0, 0.0, 0.0});
                 no_shadows = true;
             } else if (mesh) {
-                has_normals = mesh->hasNormals() || mesh->hasTriangleNormals();
+                has_normals = mesh->hasNormals() || mesh->HasTriangleNormals();
                 has_colors = true;  // always want base_color as white
             } else if (t_mesh) {
                 has_normals = t_mesh->HasVertexNormals() ||
@@ -1194,13 +1194,13 @@ Ctrl-alt-click to polygon select)";
         }
     }
 
-    std::shared_ptr<geometry::TriangleMesh> DuplicateGeometryForInspection(
-            std::shared_ptr<geometry::TriangleMesh> mesh) {
+    std::shared_ptr<ccMesh> DuplicateGeometryForInspection(
+            std::shared_ptr<ccMesh> mesh) {
         auto new_mesh = mesh->cloneMesh();
-        if (!new_mesh->hasTriangleNormals()) {
-            new_mesh->computeTriangleNormals();
+        if (!new_mesh->HasTriangleNormals()) {
+            new_mesh->ComputeTriangleNormals();
         }
-        return std::shared_ptr<geometry::TriangleMesh>(new_mesh);
+        return std::shared_ptr<ccMesh>(new_mesh);
     }
 
     void UpdateGeometryForInspectionMode(bool enable) {
@@ -1218,8 +1218,8 @@ Ctrl-alt-click to polygon select)";
                             o.material,
                             o.geometry->isKindOf(CV_TYPES::POINT_CLOUD));
                     // Need to compute triangle normals for triangle meshes
-                    if (auto mesh = std::dynamic_pointer_cast<
-                                geometry::TriangleMesh>(o.geometry)) {
+                    if (auto mesh =
+                                std::dynamic_pointer_cast<ccMesh>(o.geometry)) {
                         o.geometry = DuplicateGeometryForInspection(mesh);
                     }
                     scene_->GetScene()->AddGeometry(o.name, o.geometry.get(),
@@ -1269,9 +1269,7 @@ Ctrl-alt-click to polygon select)";
                 if (o.geometry && o.geometry->isKindOf(CV_TYPES::MESH)) {
                     // Hide original geometry
                     scene_->GetScene()->ShowGeometry(o.name, false);
-                    auto mesh =
-                            std::dynamic_pointer_cast<geometry::TriangleMesh>(
-                                    o.geometry);
+                    auto mesh = std::dynamic_pointer_cast<ccMesh>(o.geometry);
                     auto lines =
                             geometry::LineSet::CreateFromTriangleMesh(*mesh);
                     DrawObject draw_obj;

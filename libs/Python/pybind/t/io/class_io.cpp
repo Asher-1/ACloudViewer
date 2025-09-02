@@ -148,7 +148,7 @@ void pybind_class_io(py::module &m_io) {
     docstring::FunctionDocInject(m_io, "write_point_cloud",
                                  map_shared_argument_docstrings);
 
-    // cloudViewer::geometry::TriangleMesh
+    // ccMesh
     m_io.def(
             "read_triangle_mesh",
             [](const fs::path &filename, bool enable_post_processing,

@@ -286,7 +286,7 @@ void SetGeometryColorAverage(
     }
     if (invisible_vertex_color_knn > 0) {
         std::shared_ptr<ccMesh> valid_mesh =
-                mesh.selectByIndex(valid_vertices);
+                mesh.SelectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())

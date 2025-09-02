@@ -18,8 +18,8 @@ std::tuple<std::shared_ptr<geometry::PointCloud>,
            std::shared_ptr<utility::Feature>>
 PreprocessPointCloud(const char *file_name, const float voxel_size) {
     auto pcd = cloudViewer::io::CreatePointCloudFromFile(file_name);
-    auto pcd_down = pcd->voxelDownSample(voxel_size);
-    pcd_down->estimateNormals(
+    auto pcd_down = pcd->VoxelDownSample(voxel_size);
+    pcd_down->EstimateNormals(
             cloudViewer::geometry::KDTreeSearchParamHybrid(2 * voxel_size, 30));
     auto pcd_fpfh = utility::ComputeFPFHFeature(
             *pcd_down, cloudViewer::geometry::KDTreeSearchParamHybrid(

@@ -7,8 +7,8 @@
 
 #include <benchmark/benchmark.h>
 
-#include "core/CUDAUtils.h"
-#include "core/Tensor.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/Tensor.h"
 
 namespace cloudViewer {
 namespace core {

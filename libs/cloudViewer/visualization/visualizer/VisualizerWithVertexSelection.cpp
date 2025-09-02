@@ -13,7 +13,7 @@
 #include <LineSet.h>
 #include <Logging.h>
 #include <ecvHObjectCaster.h>
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvTetraMesh.h>

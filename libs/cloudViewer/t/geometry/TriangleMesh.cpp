@@ -375,7 +375,7 @@ double TriangleMesh::GetSurfaceArea() const {
 }
 
 geometry::TriangleMesh TriangleMesh::FromLegacy(
-        const cloudViewer::geometry::TriangleMesh &mesh_legacy,
+        const ccMesh &mesh_legacy,
         core::Dtype float_dtype,
         core::Dtype int_dtype,
         const core::Device &device) {
@@ -475,8 +475,8 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
     return mesh;
 }
 
-cloudViewer::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
-    cloudViewer::geometry::TriangleMesh mesh_legacy;
+ccMesh TriangleMesh::ToLegacy() const {
+    ccMesh mesh_legacy;
     if (HasVertexPositions()) {
         const auto verts = core::eigen_converter::TensorToEigenVector3dVector(
                 GetVertexPositions());

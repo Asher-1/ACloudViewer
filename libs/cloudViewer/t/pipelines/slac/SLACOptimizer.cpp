@@ -46,13 +46,13 @@ static std::vector<std::string> PreprocessPointClouds(
 
         // Pre-processing input pointcloud.
         if (params.voxel_size_ > 0) {
-            pcd = pcd->voxelDownSample(params.voxel_size_);
-            pcd->removeStatisticalOutliers(20, 2.0);
-            pcd->estimateNormals();
+            pcd = pcd->VoxelDownSample(params.voxel_size_);
+            pcd->RemoveStatisticalOutliers(20, 2.0);
+            pcd->EstimateNormals();
         } else {
-            pcd->removeStatisticalOutliers(20, 2.0);
+            pcd->RemoveStatisticalOutliers(20, 2.0);
             if (!pcd->hasNormals()) {
-                pcd->estimateNormals();
+                pcd->EstimateNormals();
             }
         }
 

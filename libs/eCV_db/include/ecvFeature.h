@@ -11,6 +11,8 @@
 #include "eCV_db.h"
 
 // LOCAL
+#include <Optional.h>
+
 #include "ecvKDTreeSearchParam.h"
 
 // EIGEN
@@ -20,7 +22,7 @@ class ccPointCloud;
 namespace cloudViewer {
 namespace utility {
 
- typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
+typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 
 /// \class Feature
 ///
@@ -59,10 +61,14 @@ public:
 ///
 /// \param input The Input point cloud.
 /// \param search_param KDTree KNN search parameter.
-std::shared_ptr<Feature> ECV_DB_LIB_API ComputeFPFHFeature(
-        const ccPointCloud &input,
-        const geometry::KDTreeSearchParam &search_param =
-		geometry::KDTreeSearchParamKNN());
+/// \param indices Indices of the points to compute FPFH features on.
+/// If not set, compute features for the whole point cloud.
+std::shared_ptr<Feature> ECV_DB_LIB_API
+ComputeFPFHFeature(const ccPointCloud &input,
+                   const geometry::KDTreeSearchParam &search_param =
+                           geometry::KDTreeSearchParamKNN(),
+                   const utility::optional<std::vector<size_t>> &indices =
+                           utility::nullopt);
 
 /// \brief Function to find correspondences via 1-nearest neighbor feature
 /// matching. Target is used to construct a nearest neighbor search
@@ -80,13 +86,13 @@ std::shared_ptr<Feature> ECV_DB_LIB_API ComputeFPFHFeature(
 /// of the aforementioned correspondence set where source[i] and target[j] are
 /// mutually the nearest neighbor. If the subset size is smaller than
 /// mutual_consistency_ratio * N, return the unfiltered set.
-CorrespondenceSet ECV_DB_LIB_API CorrespondencesFromFeatures(
-    const Feature &source_features,
-    const Feature &target_features,
-    bool mutual_filter = false,
-    float mutual_consistency_ratio = 0.1);
+CorrespondenceSet ECV_DB_LIB_API
+CorrespondencesFromFeatures(const Feature &source_features,
+                            const Feature &target_features,
+                            bool mutual_filter = false,
+                            float mutual_consistency_ratio = 0.1);
 
 }  // namespace utility
 }  // namespace cloudViewer
 
-#endif // ECV_FEATURE_HEADER
+#endif  // ECV_FEATURE_HEADER

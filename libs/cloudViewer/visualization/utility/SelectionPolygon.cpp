@@ -190,24 +190,24 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
 std::shared_ptr<ccPointCloud>
 SelectionPolygon::CropPointCloudInRectangle(const ccPointCloud &input,
                                             const ViewControl &view) {
-    return input.selectByIndex(CropInRectangle(input.getPoints(), view));
+    return input.SelectByIndex(CropInRectangle(input.getPoints(), view));
 }
 
 std::shared_ptr<ccPointCloud> SelectionPolygon::CropPointCloudInPolygon(
         const ccPointCloud &input, const ViewControl &view) {
-    return input.selectByIndex(CropInPolygon(input.getPoints(), view));
+    return input.SelectByIndex(CropInPolygon(input.getPoints(), view));
 }
 
 std::shared_ptr<ccMesh>
 SelectionPolygon::CropTriangleMeshInRectangle(
         const ccMesh &input, const ViewControl &view) {
-    return input.selectByIndex(CropInRectangle(input.getVertices(), view));
+    return input.SelectByIndex(CropInRectangle(input.getVertices(), view));
 }
 
 std::shared_ptr<ccMesh>
 SelectionPolygon::CropTriangleMeshInPolygon(const ccMesh &input,
                                             const ViewControl &view) {
-    return input.selectByIndex(CropInPolygon(input.getVertices(), view));
+    return input.SelectByIndex(CropInPolygon(input.getVertices(), view));
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(

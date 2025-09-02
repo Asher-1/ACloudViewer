@@ -86,7 +86,7 @@ bool ReadTriangleMesh(const std::string &filename,
             file_extension_to_trianglemesh_read_function.find(filename_ext);
     bool success = false;
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
-        cloudViewer::geometry::TriangleMesh legacy_mesh;
+        ccMesh legacy_mesh;
         success = cloudViewer::io::ReadTriangleMesh(filename, legacy_mesh, params);
         if (!success) {
             return false;

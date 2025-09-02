@@ -19,7 +19,7 @@
 
 // LOCAL
 #include "ecvHObjectCaster.h"
-#include "ecvHalfEdgeMesh.h"
+#include "HalfEdgeTriangleMesh.h"
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
 
@@ -58,7 +58,7 @@ bool KDTreeFlann::SetGeometry(const ccHObject &geometry) {
                     (const double *)points.data(), 3, points.size()));
         }
         case CV_TYPES::HALF_EDGE_MESH: {
-            const auto &mesh = dynamic_cast<const ecvHalfEdgeMesh &>(geometry);
+            const auto &mesh = dynamic_cast<const HalfEdgeTriangleMesh &>(geometry);
             return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
                     (const double *)mesh.vertices_.data(), 3,
                     mesh.vertices_.size()));

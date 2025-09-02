@@ -227,7 +227,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
                 LaunchUnaryEWKernel<scalar_t, scalar_t>(
                         indexer, CPULogicalNotElementKernel<scalar_t, scalar_t>,
-                        OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                        CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                    CPULogicalNotElementKernel,
                                                    &ispc_indexer));
             });
@@ -239,7 +239,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
                 LaunchUnaryEWKernel<scalar_t, bool>(
                         indexer, CPULogicalNotElementKernel<scalar_t, bool>,
-                        OPEN3D_TEMPLATE_VECTORIZED(
+                        CLOUDVIEWER_TEMPLATE_VECTORIZED(
                                 scalar_t, CPULogicalNotElementKernel_bool,
                                 &ispc_indexer));
             });
@@ -259,7 +259,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
             if (op_code == UnaryEWOpCode::IsNan) {
                 LaunchUnaryEWKernel<scalar_t, bool>(
                         indexer, CPUIsNanElementKernel<scalar_t>,
-                        OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                        CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                    CPUIsNanElementKernel,
                                                    &ispc_indexer));
             } else if (op_code == UnaryEWOpCode::IsInf) {
@@ -284,70 +284,70 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 case UnaryEWOpCode::Sqrt:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUSqrtElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUSqrtElementKernel,
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Sin:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUSinElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUSinElementKernel,
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Cos:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUCosElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUCosElementKernel,
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Neg:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUNegElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUNegElementKernel,
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Exp:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUExpElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUExpElementKernel,
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Abs:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUAbsElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUAbsElementKernel,
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Floor:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUFloorElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUFloorElementKernel,
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Ceil:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUCeilElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUCeilElementKernel,
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Round:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPURoundElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPURoundElementKernel,
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Trunc:
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUTruncElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
+                            CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUTruncElementKernel,
                                                        &ispc_indexer));
                     break;

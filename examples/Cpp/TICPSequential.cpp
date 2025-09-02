@@ -556,7 +556,7 @@ private:
                 if (registration_method_ == "PointToPlane" &&
                     !pointcloud_local.HasPointNormals()) {
                     auto pointcloud_legacy = pointcloud_local.ToLegacy();
-                    pointcloud_legacy.estimateNormals(
+                    pointcloud_legacy.EstimateNormals(
                             cloudViewer::geometry::KDTreeSearchParamKNN(),
                             false);
                     core::Tensor pointcloud_normals =

@@ -96,7 +96,7 @@ void convert(int argc,
                 indices.push_back(i);
             }
         }
-        auto pcd = pointcloud_ptr->selectByIndex(indices);
+        auto pcd = pointcloud_ptr->SelectByIndex(indices);
         utility::LogDebug(
                 "Based on Mahalanobis distance, {:d} points were filtered.",
                 (int)(pointcloud_ptr->size() - pcd->size()));
@@ -109,7 +109,7 @@ void convert(int argc,
     if (every_k > 1) {
         utility::LogDebug("Downsample point cloud uniformly every {:d} points.",
                           every_k);
-        pointcloud_ptr = pointcloud_ptr->uniformDownSample(every_k);
+        pointcloud_ptr = pointcloud_ptr->UniformDownSample(every_k);
         processed = true;
     }
 
@@ -119,7 +119,7 @@ void convert(int argc,
     if (voxel_size > 0.0) {
         utility::LogDebug("Downsample point cloud with voxel size {:.4f}.",
                           voxel_size);
-        pointcloud_ptr = pointcloud_ptr->voxelDownSample(voxel_size);
+        pointcloud_ptr = pointcloud_ptr->VoxelDownSample(voxel_size);
         processed = true;
     }
 
@@ -129,7 +129,7 @@ void convert(int argc,
     if (radius > 0.0) {
         utility::LogDebug("Estimate normals with search radius {:.4f}.",
                           radius);
-        pointcloud_ptr->estimateNormals(
+        pointcloud_ptr->EstimateNormals(
                 geometry::KDTreeSearchParamRadius(radius));
         processed = true;
     }
@@ -138,7 +138,7 @@ void convert(int argc,
                                            0);
     if (k > 0) {
         utility::LogDebug("Estimate normals with search knn {:d}.", k);
-        pointcloud_ptr->estimateNormals(geometry::KDTreeSearchParamKNN(k));
+        pointcloud_ptr->EstimateNormals(geometry::KDTreeSearchParamKNN(k));
         processed = true;
     }
 

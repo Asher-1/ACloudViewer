@@ -13,10 +13,10 @@ using namespace cloudViewer;
 
 void PrintHelp() {
     cloudViewer::utility::LogInfo("Usage :");
-    cloudViewer::utility::LogInfo("    > ecvHalfEdgeMesh <file>");
+    cloudViewer::utility::LogInfo("    > HalfEdgeTriangleMesh <file>");
 }
 
-void ColorizeBoundaryVertices(geometry::ecvHalfEdgeMesh &halfMesh,
+void ColorizeBoundaryVertices(geometry::HalfEdgeTriangleMesh &halfMesh,
                               const Eigen::Vector3d &color) {
     std::vector<Eigen::Vector3d> vertextColors(halfMesh.vertices_.size(),
                                                {0.75, 0.75, 0.75});
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
             ccBBox(CCVector3(-1.f, -1.f, -1.f), CCVector3(1.f, 0.6f, 1.f));
     auto croppedMesh = mesh->crop(bbox);
     auto halfEdgeMesh =
-            geometry::ecvHalfEdgeMesh::CreateFromTriangleMesh(*croppedMesh);
+            geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(*croppedMesh);
     DrawGeometriesWithBackFace({halfEdgeMesh});
 
     ColorizeBoundaryVertices(*halfEdgeMesh, {1, 0, 0});

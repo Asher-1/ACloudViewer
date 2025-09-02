@@ -88,8 +88,8 @@ TriangleMesh TriangleMesh::CreateSphere(double radius,
                                         core::Dtype float_dtype,
                                         core::Dtype int_dtype,
                                         const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateSphere(radius,
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateSphere(radius,
                                                               resolution);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
@@ -101,8 +101,8 @@ TriangleMesh TriangleMesh::CreateTetrahedron(double radius,
                                              core::Dtype float_dtype,
                                              core::Dtype int_dtype,
                                              const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateTetrahedron(radius);
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateTetrahedron(radius);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
                                                  int_dtype, device);
@@ -114,8 +114,8 @@ TriangleMesh TriangleMesh::CreateOctahedron(double radius,
                                             core::Dtype float_dtype,
                                             core::Dtype int_dtype,
                                             const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateOctahedron(radius);
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateOctahedron(radius);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
                                                  int_dtype, device);
@@ -127,8 +127,8 @@ TriangleMesh TriangleMesh::CreateIcosahedron(double radius,
                                              core::Dtype float_dtype,
                                              core::Dtype int_dtype,
                                              const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateIcosahedron(radius);
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateIcosahedron(radius);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
                                                  int_dtype, device);
@@ -143,8 +143,8 @@ TriangleMesh TriangleMesh::CreateCylinder(double radius,
                                           core::Dtype float_dtype,
                                           core::Dtype int_dtype,
                                           const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateCylinder(
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateCylinder(
                     radius, height, resolution, split);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
@@ -160,8 +160,8 @@ TriangleMesh TriangleMesh::CreateCone(double radius,
                                       core::Dtype float_dtype,
                                       core::Dtype int_dtype,
                                       const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateCone(radius, height,
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateCone(radius, height,
                                                             resolution, split);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
@@ -177,8 +177,8 @@ TriangleMesh TriangleMesh::CreateTorus(double torus_radius,
                                        core::Dtype float_dtype,
                                        core::Dtype int_dtype,
                                        const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateTorus(
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateTorus(
                     torus_radius, tube_radius, radial_resolution,
                     tubular_resolution);
 
@@ -198,8 +198,8 @@ TriangleMesh TriangleMesh::CreateArrow(double cylinder_radius,
                                        core::Dtype float_dtype,
                                        core::Dtype int_dtype,
                                        const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateArrow(
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateArrow(
                     cylinder_radius, cone_radius, cylinder_height, cone_height,
                     resolution, cylinder_split, cone_split);
 
@@ -214,8 +214,8 @@ TriangleMesh TriangleMesh::CreateCoordinateFrame(double size,
                                                  core::Dtype float_dtype,
                                                  core::Dtype int_dtype,
                                                  const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateCoordinateFrame(size,
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateCoordinateFrame(size,
                                                                        origin);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
@@ -234,8 +234,8 @@ TriangleMesh TriangleMesh::CreateMobius(int length_split,
                                         core::Dtype float_dtype,
                                         core::Dtype int_dtype,
                                         const core::Device &device) {
-    std::shared_ptr<cloudViewer::geometry::TriangleMesh> legacy_mesh =
-            cloudViewer::geometry::TriangleMesh::CreateMoebius(
+    std::shared_ptr<ccMesh> legacy_mesh =
+            ccMesh::CreateMoebius(
                     length_split, width_split, twists, radius, flatness, width,
                     scale);
 

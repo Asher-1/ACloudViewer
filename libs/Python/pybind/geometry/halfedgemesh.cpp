@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ecvHalfEdgeMesh.h"
+#include "HalfEdgeTriangleMesh.h"
 
 #include <sstream>
 
@@ -17,16 +17,16 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_half_edge(py::module &m) {
-    py::class_<ecvHalfEdgeMesh::HalfEdge> half_edge(
+    py::class_<HalfEdgeTriangleMesh::HalfEdge> half_edge(
             m, "HalfEdge",
             "HalfEdge class contains vertex, triangle info about a half edge, "
             "as well as relations of next and twin half edge.");
-    py::detail::bind_default_constructor<ecvHalfEdgeMesh::HalfEdge>(
+    py::detail::bind_default_constructor<HalfEdgeTriangleMesh::HalfEdge>(
             half_edge);
-    py::detail::bind_copy_functions<ecvHalfEdgeMesh::HalfEdge>(half_edge);
+    py::detail::bind_copy_functions<HalfEdgeTriangleMesh::HalfEdge>(half_edge);
     half_edge
             .def("__repr__",
-                 [](const ecvHalfEdgeMesh::HalfEdge &he) {
+                 [](const HalfEdgeTriangleMesh::HalfEdge &he) {
                      std::ostringstream repr;
                      repr << "HalfEdge(vertex_indices {"
                           << he.vertex_indices_(0) << ", "
@@ -35,97 +35,97 @@ void pybind_half_edge(py::module &m) {
                           << ", twin " << he.twin_ << ")";
                      return repr.str();
                  })
-            .def("is_boundary", &ecvHalfEdgeMesh::HalfEdge::IsBoundary,
+            .def("is_boundary", &HalfEdgeTriangleMesh::HalfEdge::IsBoundary,
                  "Returns ``True`` iff the half edge is the boundary (has not "
                  "twin, i.e. twin index == -1).")
             .def_readwrite(
-                    "next", &ecvHalfEdgeMesh::HalfEdge::next_,
+                    "next", &HalfEdgeTriangleMesh::HalfEdge::next_,
                     "int: Index of the next HalfEdge in the same triangle.")
-            .def_readwrite("twin", &ecvHalfEdgeMesh::HalfEdge::twin_,
+            .def_readwrite("twin", &HalfEdgeTriangleMesh::HalfEdge::twin_,
                            "int: Index of the twin HalfEdge")
             .def_readwrite(
                     "vertex_indices",
-                    &ecvHalfEdgeMesh::HalfEdge::vertex_indices_,
+                    &HalfEdgeTriangleMesh::HalfEdge::vertex_indices_,
                     "List(int) of length 2: Index of the ordered vertices "
                     "forming this half edge")
             .def_readwrite(
                     "triangle_index",
-                    &ecvHalfEdgeMesh::HalfEdge::triangle_index_,
+                    &HalfEdgeTriangleMesh::HalfEdge::triangle_index_,
                     "int: Index of the triangle containing this half edge");
 }
 
 void pybind_halfedgetrianglemesh(py::module &m) {
     pybind_half_edge(m);
 
-    // cloudViewer.geometry.HalfEdgeMesh
-    py::class_<ecvHalfEdgeMesh, PyGeometry<ecvHalfEdgeMesh>,
-               std::shared_ptr<ecvHalfEdgeMesh>, ecvMeshBase>
+    // cloudViewer.geometry.HalfEdgeTriangleMesh
+    py::class_<HalfEdgeTriangleMesh, PyGeometry<HalfEdgeTriangleMesh>,
+               std::shared_ptr<HalfEdgeTriangleMesh>, ecvMeshBase>
             half_edge_triangle_mesh(
-                    m, "HalfEdgeMesh",
-                    "HalfEdgeMesh inherits TriangleMesh class with the "
+                    m, "HalfEdgeTriangleMesh",
+                    "HalfEdgeTriangleMesh inherits TriangleMesh class with the "
                     "addition of HalfEdge data structure for each half edge in "
                     "the mesh as well as related functions.");
-    py::detail::bind_default_constructor<ecvHalfEdgeMesh>(
+    py::detail::bind_default_constructor<HalfEdgeTriangleMesh>(
             half_edge_triangle_mesh);
-    py::detail::bind_copy_functions<ecvHalfEdgeMesh>(
+    py::detail::bind_copy_functions<HalfEdgeTriangleMesh>(
             half_edge_triangle_mesh);
     half_edge_triangle_mesh
             .def("__repr__",
-                 [](const ecvHalfEdgeMesh &mesh) {
-                     return std::string("HalfEdgeMesh with ") +
+                 [](const HalfEdgeTriangleMesh &mesh) {
+                     return std::string("HalfEdgeTriangleMesh with ") +
                             std::to_string(mesh.vertices_.size()) +
                             " points and " +
                             std::to_string(mesh.half_edges_.size()) +
                             " half edges.";
                  })
-            .def_readwrite("triangles", &ecvHalfEdgeMesh::triangles_,
+            .def_readwrite("triangles", &HalfEdgeTriangleMesh::triangles_,
                            "``int`` array of shape ``(num_triangles, 3)``, use "
                            "``numpy.asarray()`` to access data: List of "
                            "triangles denoted by the index of points forming "
                            "the triangle.")
             .def_readwrite("triangle_normals",
-                           &ecvHalfEdgeMesh::triangle_normals_,
+                           &HalfEdgeTriangleMesh::triangle_normals_,
                            "``float64`` array of shape ``(num_triangles, 3)``, "
                            "use ``numpy.asarray()`` to access data: Triangle "
                            "normals.")
-            .def("has_half_edges", &ecvHalfEdgeMesh::hasHalfEdges,
+            .def("has_half_edges", &HalfEdgeTriangleMesh::hasHalfEdges,
                  "Returns ``True`` if half-edges have already been computed.")
             .def("boundary_half_edges_from_vertex",
-                 &ecvHalfEdgeMesh::boundaryHalfEdgesFromVertex,
+                 &HalfEdgeTriangleMesh::boundaryHalfEdgesFromVertex,
                  "vertex_index"_a,
                  "Query manifold boundary half edges from a starting vertex. "
                  "If query vertex is not on boundary, empty vector will be "
                  "returned.")
             .def("boundary_vertices_from_vertex",
-                 &ecvHalfEdgeMesh::boundaryVerticesFromVertex,
+                 &HalfEdgeTriangleMesh::boundaryVerticesFromVertex,
                  "vertex_index"_a
                  "Query manifold boundary vertices from a starting vertex. If "
                  "query vertex is not on boundary, empty vector will be "
                  "returned.")
-            .def("get_boundaries", &ecvHalfEdgeMesh::getBoundaries,
+            .def("get_boundaries", &HalfEdgeTriangleMesh::getBoundaries,
                  "Returns a vector of boundaries. A boundary is a vector of "
                  "vertices.")
             .def_static("create_from_triangle_mesh",
-                        &ecvHalfEdgeMesh::CreateFromTriangleMesh, "mesh"_a,
-                        "Convert ecvHalfEdgeMesh from TriangleMesh. "
+                        &HalfEdgeTriangleMesh::CreateFromTriangleMesh, "mesh"_a,
+                        "Convert HalfEdgeTriangleMesh from TriangleMesh. "
                         "Throws exception if "
                         "the input mesh is not manifolds")
-            .def_readwrite("half_edges", &ecvHalfEdgeMesh::half_edges_,
+            .def_readwrite("half_edges", &HalfEdgeTriangleMesh::half_edges_,
                            "List of HalfEdge in the mesh")
             .def_readwrite(
                     "ordered_half_edge_from_vertex",
-                    &ecvHalfEdgeMesh::ordered_half_edge_from_vertex_,
+                    &HalfEdgeTriangleMesh::ordered_half_edge_from_vertex_,
                     "Counter-clockwise ordered half-edges started from "
                     "each vertex");
-    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
                                     "boundary_half_edges_from_vertex");
-    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
                                     "boundary_vertices_from_vertex");
-    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
                                     "get_boundaries");
-    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
                                     "has_half_edges");
-    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
                                     "create_from_triangle_mesh",
                                     {{"mesh", "The input TriangleMesh"}});
 }

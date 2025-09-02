@@ -195,9 +195,6 @@ function(cloudViewer_set_global_properties target)
     # Enable strip
     cloudViewer_enable_strip(${target})
 
-    # Download test data files from ext_cloudViewer_downloads repo.
-    add_dependencies(${target} ext_cloudViewer_downloads)
-
     # Harderning flags
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")
     target_link_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>")

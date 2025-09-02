@@ -11,7 +11,7 @@
 #include <ecvMesh.h>
 #include <ecvBBox.h>
 #include <ecvFacet.h>
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvPolyline.h>
 #include <LineSet.h>
 #include <ecvPointCloud.h>
@@ -346,7 +346,7 @@ bool TetraMeshRenderer::UpdateGeometry() {
 bool HalfEdgeMeshRenderer::Render(const RenderOption &option,
                                   const ViewControl &view) {
     if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
-    const auto &mesh = (const geometry::ecvHalfEdgeMesh &)(*geometry_ptr_);
+    const auto &mesh = (const geometry::HalfEdgeTriangleMesh &)(*geometry_ptr_);
     bool success = true;
     if (mesh.hasVertexNormals()) {
         if (option.mesh_color_option_ ==

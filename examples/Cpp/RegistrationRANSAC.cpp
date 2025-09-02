@@ -16,8 +16,8 @@ using namespace cloudViewer;
 std::tuple<std::shared_ptr<ccPointCloud>, std::shared_ptr<utility::Feature>>
 PreprocessPointCloud(const char *file_name) {
     auto pcd = cloudViewer::io::CreatePointCloudFromFile(file_name);
-    auto pcd_down = pcd->voxelDownSample(0.05);
-    pcd_down->estimateNormals(
+    auto pcd_down = pcd->VoxelDownSample(0.05);
+    pcd_down->EstimateNormals(
             cloudViewer::geometry::KDTreeSearchParamHybrid(0.1, 30));
     auto pcd_fpfh = utility::ComputeFPFHFeature(
             *pcd_down,

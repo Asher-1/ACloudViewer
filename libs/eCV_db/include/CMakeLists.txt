@@ -101,7 +101,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/VoxelGrid.h
 		${CMAKE_CURRENT_LIST_DIR}/ISSKeypoint.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvMeshBase.h
-		${CMAKE_CURRENT_LIST_DIR}/ecvHalfEdgeMesh.h
+		${CMAKE_CURRENT_LIST_DIR}/HalfEdgeTriangleMesh.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraIntrinsic.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraParameters.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraTrajectory.h
