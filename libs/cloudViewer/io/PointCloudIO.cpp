@@ -125,7 +125,7 @@ bool ReadPointCloud(const std::string &filename,
     cloudViewer::utility::LogDebug("Read ccPointCloud: {:d} vertices.",
                                    pointcloud.size());
     if (params.remove_nan_points || params.remove_infinite_points) {
-        pointcloud.removeNonFinitePoints(params.remove_nan_points,
+        pointcloud.RemoveNonFinitePoints(params.remove_nan_points,
                                          params.remove_infinite_points);
     }
     return success;
@@ -182,7 +182,7 @@ bool ReadPointCloud(const unsigned char *buffer,
     cloudViewer::utility::LogDebug("Read ccPointCloud: {} vertices.",
                                    pointcloud.size());
     if (params.remove_nan_points || params.remove_infinite_points) {
-        pointcloud.removeNonFinitePoints(params.remove_nan_points,
+        pointcloud.RemoveNonFinitePoints(params.remove_nan_points,
                                          params.remove_infinite_points);
     }
     return success;

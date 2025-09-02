@@ -5463,7 +5463,7 @@ bool ccPointCloud::exportNormalToSF(bool exportDims[3]) {
     return true;
 }
 
-std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
+std::shared_ptr<ccPointCloud> ccPointCloud::SelectByIndex(
         const std::vector<size_t>& indices, bool invert /* = false */) const {
     auto output = cloudViewer::make_shared<ccPointCloud>("pointCloud");
     bool has_normals = hasNormals();
@@ -5492,7 +5492,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
     if (n) {
         if (!output->reserveThePointsTable(out_n)) {
             CVLog::Error(
-                    "[ccPointCloud::selectByIndex] Not enough memory to "
+                    "[ccPointCloud::SelectByIndex] Not enough memory to "
                     "duplicate cloud!");
             return nullptr;
         }
@@ -5503,7 +5503,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
                 output->showColors(colorsShown());
             } else {
                 CVLog::Warning(
-                        "[ccPointCloud::selectByIndex] Not enough memory to "
+                        "[ccPointCloud::SelectByIndex] Not enough memory to "
                         "copy RGB colors!");
                 has_colors = false;
             }
@@ -5515,7 +5515,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
                 output->showNormals(normalsShown());
             } else {
                 CVLog::Warning(
-                        "[ccPointCloud::selectByIndex] Not enough memory to "
+                        "[ccPointCloud::SelectByIndex] Not enough memory to "
                         "copy normals!");
                 has_normals = false;
             }
@@ -5529,14 +5529,14 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
                     output->fwfData() = fwfData();
                 } catch (const std::bad_alloc&) {
                     CVLog::Warning(
-                            "[ccPointCloud::selectByIndex] Not enough memory "
+                            "[ccPointCloud::SelectByIndex] Not enough memory "
                             "to copy waveform signals!");
                     output->clearFWFData();
                     has_fwf = false;
                 }
             } else {
                 CVLog::Warning(
-                        "[ccPointCloud::selectByIndex] Not enough memory to "
+                        "[ccPointCloud::SelectByIndex] Not enough memory to "
                         "copy waveform signals!");
                 has_fwf = false;
             }
@@ -5612,7 +5612,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
                             // creation
                             output->deleteScalarField(sfIdx);
                             CVLog::Warning(
-                                    QString("[ccPointCloud::selectByIndex] Not "
+                                    QString("[ccPointCloud::SelectByIndex] Not "
                                             "enough memory to copy scalar "
                                             "field '%1'!")
                                             .arg(sf->getName()));
@@ -5677,7 +5677,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
             } catch (const std::bad_alloc&) {
                 // not enough memory
                 CVLog::Warning(
-                        QString("[ccPointCloud::selectByIndex] Not enough "
+                        QString("[ccPointCloud::SelectByIndex] Not enough "
                                 "memory to copy the grid structure(s)"));
             }
         }

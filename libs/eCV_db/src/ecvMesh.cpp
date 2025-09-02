@@ -902,7 +902,7 @@ ccMesh& ccMesh::rotate(const Eigen::Matrix3d& R,
     return *this;
 }
 
-std::shared_ptr<ccMesh> ccMesh::selectByIndex(
+std::shared_ptr<ccMesh> ccMesh::SelectByIndex(
         const std::vector<size_t>& indices, bool cleanup) const {
     if (hasTriangleUvs()) {
         cloudViewer::utility::LogWarning(
@@ -1003,7 +1003,7 @@ std::shared_ptr<ccMesh> ccMesh::crop(const ccBBox& bbox) const {
                 "size, or has wrong bounds.");
         return cloudViewer::make_shared<ccMesh>(nullptr);
     }
-    return selectByIndex(bbox.getPointIndicesWithinBoundingBox(getVertices()));
+    return SelectByIndex(bbox.getPointIndicesWithinBoundingBox(getVertices()));
 }
 
 std::shared_ptr<ccMesh> ccMesh::crop(const ecvOrientedBBox& bbox) const {
@@ -1013,7 +1013,7 @@ std::shared_ptr<ccMesh> ccMesh::crop(const ecvOrientedBBox& bbox) const {
                 "size, or has wrong bounds.");
         return cloudViewer::make_shared<ccMesh>(nullptr);
     }
-    return selectByIndex(bbox.getPointIndicesWithinBoundingBox(
+    return SelectByIndex(bbox.getPointIndicesWithinBoundingBox(
             ccHObjectCaster::ToPointCloud(m_associatedCloud)->getPoints()));
 }
 
@@ -1685,8 +1685,8 @@ bool ccMesh::merge(const ccMesh* mesh, bool createSubMesh) {
         }
 
         // triangle normals
-        bool hasTriangleNormals = m_triNormals && m_triNormalIndexes;
-        if (hasTriangleNormals || otherMeshHasTriangleNormals) {
+        bool HasTriangleNormals = m_triNormals && m_triNormalIndexes;
+        if (HasTriangleNormals || otherMeshHasTriangleNormals) {
             // 1st: does the other mesh has triangle normals
             if (otherMeshHasTriangleNormals) {
                 size_t triIndexShift = 0;

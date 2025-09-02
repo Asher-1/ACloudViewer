@@ -7,15 +7,16 @@
 
 #pragma once
 
+#include <Logging.h>
+#include <Parallel.h>
+
 #include <cstdint>
 #include <type_traits>
 
-#include "cloudViewer/core/Device.h"
-#include <Logging.h>
-#include "cloudViewer/utility/Overload.h"
-#include <Parallel.h>
-#include "cloudViewer/utility/Preprocessor.h"
 #include "cloudViewer/Macro.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/utility/Overload.h"
+#include "cloudViewer/utility/Preprocessor.h"
 
 #ifdef __CUDACC__
 #include <cuda.h>
@@ -58,12 +59,13 @@ void ParallelForCUDA_(const Device& device, int64_t n, const func_t& func) {
     }
 
     CUDAScopedDevice scoped_device(device);
-    int64_t items_per_block = CLOUDVIEWER_PARFOR_BLOCK * CLOUDVIEWER_PARFOR_THREAD;
+    int64_t items_per_block =
+            CLOUDVIEWER_PARFOR_BLOCK * CLOUDVIEWER_PARFOR_THREAD;
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
     ElementWiseKernel_<CLOUDVIEWER_PARFOR_BLOCK, CLOUDVIEWER_PARFOR_THREAD>
-            <<<grid_size, CLOUDVIEWER_PARFOR_BLOCK, 0, core::cuda::GetStream()>>>(
-                    n, func);
+            <<<grid_size, CLOUDVIEWER_PARFOR_BLOCK, 0,
+               core::cuda::GetStream()>>>(n, func);
     CLOUDVIEWER_GET_LAST_CUDA_ERROR("ParallelFor failed.");
 }
 
@@ -121,8 +123,8 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 /// \param func The function to be executed in parallel. The function should
 /// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
 /// \param vec_func The vectorized function to be executed in parallel. The
-/// function should be provided using the OPEN3D_VECTORIZED macro, e.g.,
-/// `OPEN3D_VECTORIZED(MyISPCKernel, some_used_variable)`.
+/// function should be provided using the CLOUDVIEWER_VECTORIZED macro, e.g.,
+/// `CLOUDVIEWER_VECTORIZED(MyISPCKernel, some_used_variable)`.
 ///
 /// \note This is optimized for uniform work items, i.e. where each call to \p
 /// func takes the same time.
@@ -144,7 +146,7 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 ///         core::Device("CPU:0"),
 ///         v.size(),
 ///         [&](int64_t idx) { v[idx] = fill_value; },
-///         OPEN3D_VECTORIZED(MyFillKernel, v.data(), fill_value));
+///         CLOUDVIEWER_VECTORIZED(MyFillKernel, v.data(), fill_value));
 ///
 /// /* MyFile.ispc */
 /// #include "cloudViewer/core/ParallelFor.isph"
@@ -155,10 +157,10 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 ///     v[idx] = fill_value;
 /// }
 ///
-/// OPEN3D_EXPORT_VECTORIZED(MyFillKernel,
-///                          MyFillFunction,
-///                          float* uniform,
-///                          uniform float)
+/// CLOUDVIEWER_EXPORT_VECTORIZED(MyFillKernel,
+///                               MyFillFunction,
+///                               float* uniform,
+///                               uniform float)
 /// \endcode
 template <typename vec_func_t, typename func_t>
 void ParallelFor(const Device& device,
@@ -193,13 +195,13 @@ void ParallelFor(const Device& device,
 
 // Internal helper macro.
 #define CLOUDVIEWER_CALL_ISPC_KERNEL_(ISPCKernel, start, end, ...) \
-    using namespace ispc;                                     \
+    using namespace ispc;                                          \
     ISPCKernel(start, end, __VA_ARGS__);
 
 #else
 
 // Internal helper macro.
-#define CLOUDVIEWER_CALL_ISPC_KERNEL_(ISPCKernel, start, end, ...)            \
+#define CLOUDVIEWER_CALL_ISPC_KERNEL_(ISPCKernel, start, end, ...)       \
     utility::LogError(                                                   \
             "ISPC module disabled. Unable to call vectorized kernel {}", \
             CLOUDVIEWER_STRINGIFY(ISPCKernel));
@@ -207,28 +209,28 @@ void ParallelFor(const Device& device,
 #endif
 
 /// Internal helper macro.
-#define CLOUDVIEWER_OVERLOADED_LAMBDA_(T, ISPCKernel, ...)                       \
-    [&](T, int64_t start, int64_t end) {                                    \
-        CLOUDVIEWER_CALL_ISPC_KERNEL_(                                           \
-                CLOUDVIEWER_CONCAT(ISPCKernel, CLOUDVIEWER_CONCAT(_, T)), start, end, \
-                __VA_ARGS__);                                               \
+#define CLOUDVIEWER_OVERLOADED_LAMBDA_(T, ISPCKernel, ...)                \
+    [&](T, int64_t start, int64_t end) {                                  \
+        CLOUDVIEWER_CALL_ISPC_KERNEL_(                                    \
+                CLOUDVIEWER_CONCAT(ISPCKernel, CLOUDVIEWER_CONCAT(_, T)), \
+                start, end, __VA_ARGS__);                                 \
     }
 
-/// OPEN3D_VECTORIZED(ISPCKernel, ...)
+/// CLOUDVIEWER_VECTORIZED(ISPCKernel, ...)
 ///
 /// Defines a lambda function to call the provided kernel.
 ///
-/// Use the OPEN3D_EXPORT_TEMPLATE_VECTORIZED macro to define the
+/// Use the CLOUDVIEWER_EXPORT_TEMPLATE_VECTORIZED macro to define the
 /// kernel in the ISPC source file.
 ///
 /// Note: The arguments to the kernel only have to exist if ISPC support is
 /// enabled via BUILD_ISPC_MODULE=ON.
-#define OPEN3D_VECTORIZED(ISPCKernel, ...)                             \
-    [&](int64_t start, int64_t end) {                                  \
+#define CLOUDVIEWER_VECTORIZED(ISPCKernel, ...)                             \
+    [&](int64_t start, int64_t end) {                                       \
         CLOUDVIEWER_CALL_ISPC_KERNEL_(ISPCKernel, start, end, __VA_ARGS__); \
     }
 
-/// OPEN3D_TEMPLATE_VECTORIZED(T, ISPCKernel, ...)
+/// CLOUDVIEWER_TEMPLATE_VECTORIZED(T, ISPCKernel, ...)
 ///
 /// Defines a lambda function to call the provided template-like kernel.
 /// Supported types:
@@ -236,34 +238,44 @@ void ParallelFor(const Device& device,
 /// - unsigned + signed {8,16,32,64} bit integers,
 /// - float, double
 ///
-/// Use the OPEN3D_EXPORT_TEMPLATE_VECTORIZED macro to define the
+/// Use the CLOUDVIEWER_EXPORT_TEMPLATE_VECTORIZED macro to define the
 /// kernel in the ISPC source file.
 ///
 /// Note: The arguments to the kernel only have to exist if ISPC support is
 /// enabled via BUILD_ISPC_MODULE=ON.
-#define OPEN3D_TEMPLATE_VECTORIZED(T, ISPCKernel, ...)                        \
-    [&](int64_t start, int64_t end) {                                         \
-        static_assert(std::is_arithmetic<T>::value,                           \
-                      "Data type is not an arithmetic type");                 \
-        utility::Overload(                                                    \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(bool, ISPCKernel, __VA_ARGS__),     \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(uint8_t, ISPCKernel, __VA_ARGS__),  \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(int8_t, ISPCKernel, __VA_ARGS__),   \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(uint16_t, ISPCKernel, __VA_ARGS__), \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(int16_t, ISPCKernel, __VA_ARGS__),  \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(uint32_t, ISPCKernel, __VA_ARGS__), \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(int32_t, ISPCKernel, __VA_ARGS__),  \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(uint64_t, ISPCKernel, __VA_ARGS__), \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(int64_t, ISPCKernel, __VA_ARGS__),  \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(float, ISPCKernel, __VA_ARGS__),    \
-                CLOUDVIEWER_OVERLOADED_LAMBDA_(double, ISPCKernel, __VA_ARGS__),   \
-                [&](auto&& generic, int64_t start, int64_t end) {             \
-                    utility::LogError(                                        \
-                            "Unsupported data type {} for calling "           \
-                            "vectorized kernel {}",                           \
-                            typeid(generic).name(),                           \
-                            CLOUDVIEWER_STRINGIFY(ISPCKernel));                    \
-                })(T{}, start, end);                                          \
+#define CLOUDVIEWER_TEMPLATE_VECTORIZED(T, ISPCKernel, ...)                    \
+    [&](int64_t start, int64_t end) {                                          \
+        static_assert(std::is_arithmetic<T>::value,                            \
+                      "Data type is not an arithmetic type");                  \
+        utility::Overload(                                                     \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(bool, ISPCKernel, __VA_ARGS__), \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(uint8_t, ISPCKernel,            \
+                                               __VA_ARGS__),                   \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(int8_t, ISPCKernel,             \
+                                               __VA_ARGS__),                   \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(uint16_t, ISPCKernel,           \
+                                               __VA_ARGS__),                   \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(int16_t, ISPCKernel,            \
+                                               __VA_ARGS__),                   \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(uint32_t, ISPCKernel,           \
+                                               __VA_ARGS__),                   \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(int32_t, ISPCKernel,            \
+                                               __VA_ARGS__),                   \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(uint64_t, ISPCKernel,           \
+                                               __VA_ARGS__),                   \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(int64_t, ISPCKernel,            \
+                                               __VA_ARGS__),                   \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(float, ISPCKernel,              \
+                                               __VA_ARGS__),                   \
+                CLOUDVIEWER_OVERLOADED_LAMBDA_(double, ISPCKernel,             \
+                                               __VA_ARGS__),                   \
+                [&](auto&& generic, int64_t start, int64_t end) {              \
+                    utility::LogError(                                         \
+                            "Unsupported data type {} for calling "            \
+                            "vectorized kernel {}",                            \
+                            typeid(generic).name(),                            \
+                            CLOUDVIEWER_STRINGIFY(ISPCKernel));                \
+                })(T{}, start, end);                                           \
     }
 
 }  // namespace core

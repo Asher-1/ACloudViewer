@@ -87,13 +87,13 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < 3; ++i) {
         float voxel_size = voxel_sizes[i];
 
-        auto source_down = source->voxelDownSample(voxel_size);
-        source_down->estimateNormals(
+        auto source_down = source->VoxelDownSample(voxel_size);
+        source_down->EstimateNormals(
                 cloudViewer::geometry::KDTreeSearchParamHybrid(voxel_size * 2.0,
                                                                30));
 
-        auto target_down = target->voxelDownSample(voxel_size);
-        target_down->estimateNormals(
+        auto target_down = target->VoxelDownSample(voxel_size);
+        target_down->EstimateNormals(
                 cloudViewer::geometry::KDTreeSearchParamHybrid(voxel_size * 2.0,
                                                                30));
 

@@ -14,8 +14,8 @@
 namespace cloudViewer {
 namespace tests {
 
-void ExpectMeshEQ(const cloudViewer::geometry::TriangleMesh& mesh0,
-                  const cloudViewer::geometry::TriangleMesh& mesh1,
+void ExpectMeshEQ(const ccMesh& mesh0,
+                  const ccMesh& mesh1,
                   double threshold = 1e-6) {
     ExpectEQ(mesh0.vertices_, mesh1.vertices_, threshold);
     ExpectEQ(mesh0.vertex_normals_, mesh1.vertex_normals_, threshold);

@@ -2671,7 +2671,7 @@ bool VoxelSampling(const ccHObject::Container& selectedEntities,
         }
 
         ccPointCloud* out = new ccPointCloud();
-        *out = *pc->voxelDownSample(voxelSize);
+        *out = *pc->VoxelDownSample(voxelSize);
         outEntities.push_back(out);
     }
 

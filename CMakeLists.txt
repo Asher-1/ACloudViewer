@@ -604,10 +604,6 @@ if (WIN32)
     endif ()
 endif ()
 
-# Downloads files from https://github.com/Asher-1/cloudViewer_downloads to
-# CloudViewer/examples/test_data.
-include(${PROJECT_SOURCE_DIR}/examples/cloudViewer_downloads.cmake)
-
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 

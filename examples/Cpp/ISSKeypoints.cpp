@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     if (option == "mesh") {
         mesh->paintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
         mesh->computeVertexNormals();
-        mesh->computeTriangleNormals();
+        mesh->ComputeTriangleNormals();
         visualization::DrawGeometries({mesh, iss_keypoints}, "ISS", 1600, 900);
     } else {
         visualization::DrawGeometries({iss_keypoints}, "ISS", 1600, 900);

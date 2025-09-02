@@ -78,7 +78,7 @@ std::shared_ptr<ccPointCloud> SelectionPolygonVolume::CropPointCloud(
 
 std::shared_ptr<ccPointCloud> SelectionPolygonVolume::CropPointCloudInPolygon(
         const ccPointCloud &input) const {
-    return input.selectByIndex(CropInPolygon(input.getPoints()));
+    return input.SelectByIndex(CropInPolygon(input.getPoints()));
 }
 
 std::shared_ptr<ccMesh> SelectionPolygonVolume::CropTriangleMesh(
@@ -97,7 +97,7 @@ std::shared_ptr<ccMesh> SelectionPolygonVolume::CropTriangleMesh(
 
 std::shared_ptr<ccMesh> SelectionPolygonVolume::CropTriangleMeshInPolygon(
         const ccMesh &input) const {
-    return input.selectByIndex(CropInPolygon(input.getVertices()));
+    return input.SelectByIndex(CropInPolygon(input.getVertices()));
 }
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(

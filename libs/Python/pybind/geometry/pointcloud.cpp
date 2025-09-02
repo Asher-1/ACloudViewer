@@ -162,11 +162,11 @@ void pybind_pointcloud(py::module& m) {
             .def("paint_uniform_color", &ccPointCloud::paintUniformColor,
                  "color"_a,
                  "Assigns each point in the PointCloud the same color.")
-            .def("select_by_index", &ccPointCloud::selectByIndex,
+            .def("select_by_index", &ccPointCloud::SelectByIndex,
                  "Function to select points from input pointcloud into output "
                  "pointcloud.",
                  "indices"_a, "invert"_a = false)
-            .def("voxel_down_sample", &ccPointCloud::voxelDownSample,
+            .def("voxel_down_sample", &ccPointCloud::VoxelDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud with "
                  "a voxel. Normals and colors are averaged if they exist.",
@@ -178,7 +178,7 @@ void pybind_pointcloud(py::module& m) {
                  "cloud index before down sampling",
                  "voxel_size"_a, "min_bound"_a, "max_bound"_a,
                  "approximate_class"_a = false)
-            .def("uniform_down_sample", &ccPointCloud::uniformDownSample,
+            .def("uniform_down_sample", &ccPointCloud::UniformDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud "
                  "uniformly. The sample is performed in the order of the "
@@ -204,19 +204,19 @@ void pybind_pointcloud(py::module& m) {
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
             .def("remove_non_finite_points",
-                 &ccPointCloud::removeNonFinitePoints,
+                 &ccPointCloud::RemoveNonFinitePoints,
                  "Function to remove non-finite points from the PointCloud",
                  "remove_nan"_a = true, "remove_infinite"_a = true)
-            .def("remove_radius_outlier", &ccPointCloud::removeRadiusOutliers,
+            .def("remove_radius_outlier", &ccPointCloud::RemoveRadiusOutliers,
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
                  "nb_points"_a, "radius"_a)
             .def("remove_statistical_outlier",
-                 &ccPointCloud::removeStatisticalOutliers,
+                 &ccPointCloud::RemoveStatisticalOutliers,
                  "Function to remove points that are further away from their "
                  "neighbors in average",
                  "nb_neighbors"_a, "std_ratio"_a)
-            .def("estimate_normals", &ccPointCloud::estimateNormals,
+            .def("estimate_normals", &ccPointCloud::EstimateNormals,
                  "Function to compute the normals of a point cloud. Normals "
                  "are oriented with respect to the input point cloud if "
                  "normals exist",
@@ -248,7 +248,7 @@ void pybind_pointcloud(py::module& m) {
                  "cloud. See: "
                  "https://en.wikipedia.org/wiki/Mahalanobis_distance.")
             .def("compute_nearest_neighbor_distance",
-                 &ccPointCloud::computeNearestNeighborDistance,
+                 &ccPointCloud::ComputeNearestNeighborDistance,
                  "Function to compute the distance from a point to its nearest "
                  "neighbor in the point cloud")
             .def("compute_resolution", &ccPointCloud::computeResolution,

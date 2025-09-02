@@ -28,6 +28,7 @@
 
 #include <CloudViewerConfig.h>
 #include <FileSystem.h>
+#include <ecvMesh.h>
 
 #include <random>
 
@@ -35,7 +36,6 @@
 #include "cloudViewer/geometry/Image.h"
 #include "cloudViewer/geometry/LineSet.h"
 #include "cloudViewer/geometry/PointCloud.h"
-#include "cloudViewer/geometry/TriangleMesh.h"
 #include "cloudViewer/io/FileFormatIO.h"
 #include "cloudViewer/io/ImageIO.h"
 #include "cloudViewer/io/ModelIO.h"
@@ -453,11 +453,12 @@ struct GuiVisualizer::Impl {
                     }
                     for (auto &mi : loaded_model_.meshes_) {
                         auto new_mesh = mi.mesh->cloneMesh();
-                        if (!new_mesh->hasTriangleNormals()) {
-                            new_mesh->computeTriangleNormals();
+                        if (!new_mesh->HasTriangleNormals()) {
+                            new_mesh->ComputeTriangleNormals();
                         }
                         basic_model_.meshes_.push_back(
-                                {std::shared_ptr<geometry::TriangleMesh>(new_mesh), mi.mesh_name, mi.material_idx});
+                                {std::shared_ptr<ccMesh>(new_mesh),
+                                 mi.mesh_name, mi.material_idx});
                     }
                     o3dscene->AddModel(INSPECT_MODEL_NAME, basic_model_);
                 }
@@ -653,7 +654,7 @@ private:
                     });
 
             gui::Application::GetInstance().RunInThread([this]() {
-                loaded_pcd_->estimateNormals();
+                loaded_pcd_->EstimateNormals();
                 loaded_pcd_->normalizeNormals();
 
                 gui::Application::GetInstance().PostToMainThread(
@@ -1204,7 +1205,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 utility::LogInfo("Successfully read {}", path.c_str());
                 UpdateProgress(ioProgressAmount);
                 if (!cloud->hasNormals() && !cloud->hasColors()) {
-                    cloud->estimateNormals();
+                    cloud->EstimateNormals();
                 }
                 UpdateProgress(0.666f);
                 cloud->normalizeNormals();

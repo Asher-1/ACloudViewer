@@ -126,7 +126,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
     }
 
     cloudViewer::utility::LogDebug("[ComputeISSKeypoints] Extracted {} keypoints", kp_indices.size());
-    return input.selectByIndex(kp_indices);
+    return input.SelectByIndex(kp_indices);
 }
 
 }  // namespace keypoint

@@ -15,7 +15,7 @@
 #include <ecvBBox.h>
 #include <ecvCone.h>
 #include <ecvHObjectCaster.h>
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
@@ -1187,8 +1187,8 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
         draw_arrays_mode_ = GL_TRIANGLES;
         draw_arrays_size_ = GLsizei(points.size());
     } else if (geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        const geometry::ecvHalfEdgeMesh &mesh =
-                (const geometry::ecvHalfEdgeMesh &)geometry;
+        const geometry::HalfEdgeTriangleMesh &mesh =
+                (const geometry::HalfEdgeTriangleMesh &)geometry;
         if (!mesh.hasTriangles()) {
             PrintShaderWarning("Binding failed with empty triangle mesh.");
             return false;

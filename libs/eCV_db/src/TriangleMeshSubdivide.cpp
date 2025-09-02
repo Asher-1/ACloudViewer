@@ -126,7 +126,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideMidpoint(
 	}
 
 	if (hasTriNormals()) {
-		mesh->computeTriangleNormals();
+		mesh->ComputeTriangleNormals();
 	}
 
 	return mesh;
@@ -455,7 +455,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 	}
 
 	if (hasTriNormals()) {
-		old_mesh->computeTriangleNormals();
+		old_mesh->ComputeTriangleNormals();
 	}
 
 	return old_mesh;

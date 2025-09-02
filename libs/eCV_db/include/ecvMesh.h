@@ -312,7 +312,7 @@ public:
     // inherited from ccGenericMesh
     bool hasTriNormals() const override;
     // for compatibility
-    inline bool hasTriangleNormals() const { return hasTriNormals(); }
+    inline bool HasTriangleNormals() const { return hasTriNormals(); }
     void getTriangleNormalIndexes(unsigned triangleIndex,
                                   int& i1,
                                   int& i2,
@@ -779,7 +779,7 @@ public:  // some cloudViewer interface
 
     /// \brief Function to compute triangle normals, usually called before
     /// rendering.
-    ccMesh& computeTriangleNormals(bool normalized = true);
+    ccMesh& ComputeTriangleNormals(bool normalized = true);
 
     /// \brief Function to compute vertex normals, usually called before
     /// rendering.
@@ -1092,7 +1092,7 @@ public:  // some cloudViewer interface
     /// ccMesh::RemoveDuplicatedTriangles,
     /// ccMesh::RemoveUnreferencedVertices, and
     /// ccMesh::RemoveDegenerateTriangles
-    std::shared_ptr<ccMesh> selectByIndex(const std::vector<size_t>& indices,
+    std::shared_ptr<ccMesh> SelectByIndex(const std::vector<size_t>& indices,
                                           bool cleanup = true) const;
 
     /// Function to crop pointcloud into output pointcloud

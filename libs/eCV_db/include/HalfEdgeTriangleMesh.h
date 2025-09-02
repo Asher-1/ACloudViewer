@@ -16,12 +16,12 @@
 namespace cloudViewer {
 namespace geometry {
 
-/// \class ecvHalfEdgeMesh
+/// \class HalfEdgeTriangleMesh
 ///
-/// \brief ecvHalfEdgeMesh inherits TriangleMesh class with the addition of
+/// \brief HalfEdgeTriangleMesh inherits TriangleMesh class with the addition of
 /// HalfEdge data structure for each half edge in the mesh as well as related
 /// functions.
-class ECV_DB_LIB_API ecvHalfEdgeMesh : public ecvMeshBase {
+class ECV_DB_LIB_API HalfEdgeTriangleMesh : public ecvMeshBase {
 public:
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -63,18 +63,20 @@ public:
 public:
     /// \brief Default Constructor.
     ///
-    /// Creates an empty instance with GeometryType of ecvHalfEdgeMesh.
-    ecvHalfEdgeMesh(const char *name = "ecvHalfEdgeMesh") : ecvMeshBase(name) {}
+    /// Creates an empty instance with GeometryType of HalfEdgeTriangleMesh.
+    HalfEdgeTriangleMesh(const char *name = "HalfEdgeTriangleMesh")
+        : ecvMeshBase(name) {}
 
-    ~ecvHalfEdgeMesh() override {}
+    ~HalfEdgeTriangleMesh() override {}
 
     // inherited methods (ccHObject)
     virtual bool isSerializable() const override { return true; }
-    virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::HALF_EDGE_MESH; }
+    virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::HALF_EDGE_MESH;
+    }
 
 public:
-
-    virtual ecvHalfEdgeMesh &clear() override;
+    virtual HalfEdgeTriangleMesh &clear() override;
 
     inline std::size_t edgeSize() const { return half_edges_.size(); }
 
@@ -84,7 +86,7 @@ public:
     }
 
     /// Returns `true` if the mesh contains triangle normals.
-    bool hasTriangleNormals() const {
+    bool HasTriangleNormals() const {
         return hasTriangles() && triangles_.size() == triangle_normals_.size();
     }
 
@@ -102,16 +104,16 @@ public:
     /// Returns a vector of boundaries. A boundary is a vector of vertices.
     std::vector<std::vector<int>> getBoundaries() const;
 
-    ecvHalfEdgeMesh &operator+=(const ecvHalfEdgeMesh &mesh);
+    HalfEdgeTriangleMesh &operator+=(const HalfEdgeTriangleMesh &mesh);
 
-    ecvHalfEdgeMesh operator+(const ecvHalfEdgeMesh &mesh) const;
+    HalfEdgeTriangleMesh operator+(const HalfEdgeTriangleMesh &mesh) const;
 
-    /// Convert ecvHalfEdgeMesh from TriangleMesh. Throws exception if the
+    /// Convert HalfEdgeTriangleMesh from TriangleMesh. Throws exception if the
     /// input mesh is not manifold.
-    static std::shared_ptr<ecvHalfEdgeMesh> CreateFromTriangleMesh(const ccMesh &mesh);
+    static std::shared_ptr<HalfEdgeTriangleMesh> CreateFromTriangleMesh(
+            const ccMesh &mesh);
 
 protected:
-
     /// Returns the next half edge from starting vertex of the input half edge,
     /// in a counterclock wise manner. Returns -1 if when hitting a boundary.
     /// This is done by traversing to the next, next and twin half edge.
@@ -119,7 +121,6 @@ protected:
     int nextHalfEdgeOnBoundary(int curr_half_edge_index) const;
 
 public:
-
     /// List of triangles in the mesh.
     std::vector<Eigen::Vector3i> triangles_;
     /// List of triangle normals in the mesh.

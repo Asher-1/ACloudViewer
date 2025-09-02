@@ -95,7 +95,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/LineSetFactory.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/Line3D.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvMeshBase.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/ecvHalfEdgeMesh.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/HalfEdgeTriangleMesh.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/Octree.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/PointCloudCluster.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/PointCloudFactory.cpp

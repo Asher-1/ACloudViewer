@@ -254,7 +254,7 @@ ccPointCloud::Crop(const ccBBox &bbox) const
 			"[CropPointCloud::Crop] ccBBox either has zeros "
 			"size, or has wrong bounds.");
 	}
-	return selectByIndex(bbox.getPointIndicesWithinBoundingBox(m_points));
+	return SelectByIndex(bbox.getPointIndicesWithinBoundingBox(m_points));
 }
 
 std::shared_ptr<ccPointCloud>
@@ -266,5 +266,5 @@ ccPointCloud::Crop(const ecvOrientedBBox &bbox) const
 			"size, or has wrong bounds.");
 		return nullptr;
 	}
-	return selectByIndex(bbox.getPointIndicesWithinBoundingBox(m_points));
+	return SelectByIndex(bbox.getPointIndicesWithinBoundingBox(m_points));
 }

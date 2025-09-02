@@ -174,7 +174,7 @@ void VisualizerForAlignment::KeyPressCallback(
                     utility::LogInfo("Voxel downsample with voxel size {:.4f}.",
                                      voxel_size_);
                     *source_copy_ptr_ =
-                            *source_copy_ptr_->voxelDownSample(voxel_size_);
+                            *source_copy_ptr_->VoxelDownSample(voxel_size_);
                     UpdateGeometry();
                 } else {
                     utility::LogWarning(

@@ -5,29 +5,29 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ecvHalfEdgeMesh.h"
+#include "HalfEdgeTriangleMesh.h"
 
 // LOCAL
+#include <Logging.h>
+
+#include "ecvHObjectCaster.h"
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
-#include "ecvHObjectCaster.h"
-
-#include <Logging.h>
 
 // EIGEN
 #include <Eigen/Dense>
 
 // SYSTEM
-#include <unordered_map>
 #include <array>
 #include <numeric>
 #include <tuple>
+#include <unordered_map>
 
 using namespace cloudViewer;
 namespace cloudViewer {
 namespace geometry {
 
-ecvHalfEdgeMesh::HalfEdge::HalfEdge(const Eigen::Vector2i &vertex_indices,
+HalfEdgeTriangleMesh::HalfEdge::HalfEdge(const Eigen::Vector2i &vertex_indices,
                                          int triangle_index,
                                          int next,
                                          int twin)
@@ -36,19 +36,19 @@ ecvHalfEdgeMesh::HalfEdge::HalfEdge(const Eigen::Vector2i &vertex_indices,
       vertex_indices_(vertex_indices),
       triangle_index_(triangle_index) {}
 
-ecvHalfEdgeMesh &ecvHalfEdgeMesh::clear() {
+HalfEdgeTriangleMesh &HalfEdgeTriangleMesh::clear() {
     ecvMeshBase::clear();
     half_edges_.clear();
     ordered_half_edge_from_vertex_.clear();
     return *this;
 }
 
-bool ecvHalfEdgeMesh::hasHalfEdges() const {
+bool HalfEdgeTriangleMesh::hasHalfEdges() const {
     return half_edges_.size() > 0 &&
            vertices_.size() == ordered_half_edge_from_vertex_.size();
 }
 
-int ecvHalfEdgeMesh::nextHalfEdgeFromVertex(int half_edge_index) const {
+int HalfEdgeTriangleMesh::nextHalfEdgeFromVertex(int half_edge_index) const {
     const HalfEdge &curr_he = half_edges_[half_edge_index];
     int next_he_index = curr_he.next_;
     const HalfEdge &next_he = half_edges_[next_he_index];
@@ -58,7 +58,7 @@ int ecvHalfEdgeMesh::nextHalfEdgeFromVertex(int half_edge_index) const {
     return next_next_twin_he_index;
 }
 
-std::vector<int> ecvHalfEdgeMesh::boundaryHalfEdgesFromVertex(
+std::vector<int> HalfEdgeTriangleMesh::boundaryHalfEdgesFromVertex(
         int vertex_index) const {
     int init_he_index = ordered_half_edge_from_vertex_[vertex_index][0];
     const HalfEdge &init_he = half_edges_[init_he_index];
@@ -78,7 +78,7 @@ std::vector<int> ecvHalfEdgeMesh::boundaryHalfEdgesFromVertex(
     return boundary_half_edge_indices;
 }
 
-std::vector<int> ecvHalfEdgeMesh::boundaryVerticesFromVertex(
+std::vector<int> HalfEdgeTriangleMesh::boundaryVerticesFromVertex(
         int vertex_index) const {
     std::vector<int> boundary_half_edges =
             boundaryHalfEdgesFromVertex(vertex_index);
@@ -90,7 +90,7 @@ std::vector<int> ecvHalfEdgeMesh::boundaryVerticesFromVertex(
     return boundary_vertices;
 }
 
-std::vector<std::vector<int>> ecvHalfEdgeMesh::getBoundaries() const {
+std::vector<std::vector<int>> HalfEdgeTriangleMesh::getBoundaries() const {
     std::vector<std::vector<int>> boundaries;
     std::unordered_set<int> visited;
 
@@ -114,7 +114,7 @@ std::vector<std::vector<int>> ecvHalfEdgeMesh::getBoundaries() const {
     return boundaries;
 }
 
-int ecvHalfEdgeMesh::nextHalfEdgeOnBoundary(
+int HalfEdgeTriangleMesh::nextHalfEdgeOnBoundary(
         int curr_half_edge_index) const {
     if (!hasHalfEdges() || curr_half_edge_index >= int(half_edges_.size()) ||
         curr_half_edge_index == -1) {
@@ -144,12 +144,12 @@ int ecvHalfEdgeMesh::nextHalfEdgeOnBoundary(
     return next_half_edge_index;
 }
 
-std::shared_ptr<ecvHalfEdgeMesh>
-ecvHalfEdgeMesh::CreateFromTriangleMesh(const ccMesh &mesh) {
+std::shared_ptr<HalfEdgeTriangleMesh>
+HalfEdgeTriangleMesh::CreateFromTriangleMesh(const ccMesh &mesh) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
     auto mesh_cpy = cloudViewer::make_shared<ccMesh>(baseVertices);
-    auto het_mesh = cloudViewer::make_shared<ecvHalfEdgeMesh>();
+    auto het_mesh = cloudViewer::make_shared<HalfEdgeTriangleMesh>();
 
     // Copy
     *mesh_cpy = mesh;
@@ -162,11 +162,12 @@ ecvHalfEdgeMesh::CreateFromTriangleMesh(const ccMesh &mesh) {
 
     // Collect half edges
     // Check: for valid manifolds, there mustn't be duplicated half-edges
-    std::unordered_map<Eigen::Vector2i, size_t, utility::hash_eigen<Eigen::Vector2i>>
+    std::unordered_map<Eigen::Vector2i, size_t,
+                       utility::hash_eigen<Eigen::Vector2i>>
             vertex_indices_to_half_edge_index;
 
-    for (size_t triangle_index = 0;
-         triangle_index < mesh_cpy->size(); triangle_index++) {
+    for (size_t triangle_index = 0; triangle_index < mesh_cpy->size();
+         triangle_index++) {
         const Eigen::Vector3i &triangle = mesh_cpy->getTriangle(triangle_index);
         size_t num_half_edges = het_mesh->half_edges_.size();
 
@@ -277,16 +278,16 @@ ecvHalfEdgeMesh::CreateFromTriangleMesh(const ccMesh &mesh) {
     return het_mesh;
 }
 
-ecvHalfEdgeMesh &ecvHalfEdgeMesh::operator+=(
-        const ecvHalfEdgeMesh &mesh) {
+HalfEdgeTriangleMesh &HalfEdgeTriangleMesh::operator+=(
+        const HalfEdgeTriangleMesh &mesh) {
     ecvMeshBase::operator+=(mesh);
     // TODO
     return *this;
 }
 
-ecvHalfEdgeMesh ecvHalfEdgeMesh::operator+(
-        const ecvHalfEdgeMesh &mesh) const {
-    return (ecvHalfEdgeMesh(*this) += mesh);
+HalfEdgeTriangleMesh HalfEdgeTriangleMesh::operator+(
+        const HalfEdgeTriangleMesh &mesh) const {
+    return (HalfEdgeTriangleMesh(*this) += mesh);
 }
 
 }  // namespace geometry

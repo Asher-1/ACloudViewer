@@ -194,7 +194,7 @@ ReferenceCloud* CloudSamplingTools::subsampleCloudWithOctreeAtLevel(GenericIndex
 	return cloud;
 }
 
-ReferenceCloud* CloudSamplingTools::uniformDownSample(
+ReferenceCloud* CloudSamplingTools::UniformDownSample(
 	GenericIndexedCloudPersist* inputCloud, unsigned every_k_points)
 {
 	assert(inputCloud);
