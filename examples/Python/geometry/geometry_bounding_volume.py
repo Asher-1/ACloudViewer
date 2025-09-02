@@ -5,12 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/Python/Basic/bounding_volume.py
-
-import numpy as np
 import cloudViewer as cv3d
-
-np.random.seed(42)
 
 
 def mesh_generator():

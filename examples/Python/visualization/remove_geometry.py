@@ -18,7 +18,8 @@ def visualize_non_blocking(vis, pcds):
     vis.update_renderer()
 
 
-pcd_orig = cv3d.io.read_point_cloud("../../test_data/fragment.pcd")
+pcd_data = cv3d.data.PCDPointCloud()
+pcd_orig = cv3d.io.read_point_cloud(pcd_data.path)
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 pcd_orig.transform(flip_transform)
 n_pcd = 5

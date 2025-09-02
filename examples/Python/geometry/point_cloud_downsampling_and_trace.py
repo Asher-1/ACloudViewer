@@ -12,7 +12,8 @@ import cloudViewer as cv3d
 
 if __name__ == "__main__":
 
-    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.ply")
+    ply_data = cv3d.data.PLYPointCloud()
+    pcd = cv3d.io.read_point_cloud(ply_data.path)
     min_cube_size = 0.05
     print("\nOriginal, # of points %d" % (np.asarray(pcd.points()).shape[0]))
     pcd_down = pcd.voxel_down_sample(min_cube_size)

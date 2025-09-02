@@ -5,8 +5,6 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/Python/Basic/convex_hull.py
-
 import cloudViewer as cv3d
 
 
