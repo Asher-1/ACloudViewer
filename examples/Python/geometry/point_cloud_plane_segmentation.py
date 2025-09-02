@@ -5,27 +5,20 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/Python/Basic/pointcloud_plane_segmentation.py
-
-import numpy as np
 import cloudViewer as cv3d
 
 if __name__ == "__main__":
-    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.pcd")
-
-    print(
-        "Find the plane model and the inliers of the largest planar segment in the point cloud."
-    )
+    sample_pcd_data = cv3d.data.PCDPointCloud()
+    pcd = cv3d.io.read_point_cloud(sample_pcd_data.path)
+    # Flip it, otherwise the pointcloud will be upside down.
+    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     plane_model, inliers = pcd.segment_plane(distance_threshold=0.01,
                                              ransac_n=3,
-                                             num_iterations=250)
-
+                                             num_iterations=1000)
     [a, b, c, d] = plane_model
-    print(f"Plane model: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
-
+    print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
+    print("Displaying pointcloud with planar points in red ...")
     inlier_cloud = pcd.select_by_index(inliers)
     inlier_cloud.paint_uniform_color([1.0, 0, 0])
-
     outlier_cloud = pcd.select_by_index(inliers, invert=True)
-
-    cv3d.visualization.draw_geometries([inlier_cloud, outlier_cloud])
+    cv3d.visualization.draw([inlier_cloud, outlier_cloud])

@@ -5,8 +5,6 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/Python/Basic/ransac.py
-
 import time
 import numpy as np
 import cloudViewer as cv3d
@@ -23,6 +21,11 @@ def pointcloud_generator():
     mesh = cv3d.geometry.ccMesh.create_arrow()
     arrow = mesh.sample_points_uniformly(int(1e4))
     yield "arrow", arrow, 0.001, 12.0
+    
+    
+    ply_data = cv3d.data.PLYPointCloud()
+    pcd = cv3d.io.read_point_cloud(ply_data.path)
+    yield "fragment", pcd, 0.01, 6.0
 
     d = 4
     mesh = cv3d.geometry.ccMesh.create_sphere().translate((-d, 0, 0))
@@ -34,13 +37,8 @@ def pointcloud_generator():
     unit_points = mesh.sample_points_uniformly(int(1e5))
     yield "shapes", unit_points, 0.001, 8.0
 
-    yield "fragment", cv3d.io.read_point_cloud(
-        "../../test_data/fragment.ply"), 0.01, 6.0
-
 
 if __name__ == "__main__":
-    # only support on windows platform!!!
-
     np.random.seed(42)
     cv3d.utility.set_verbosity_level(cv3d.utility.Debug)
     random_color = True
@@ -85,19 +83,19 @@ if __name__ == "__main__":
                 print(prim.get_name())
                 if prim.is_kind_of(cv3d.geometry.ccObject.CYLINDER):
                     cylinder = cv3d.geometry.ToCylinder(prim)
-                    print(cylinder.get_bottom_radius())
+                    # print(cylinder.get_bottom_radius())
                 elif prim.is_kind_of(cv3d.geometry.ccObject.PLANE):
                     plane = cv3d.geometry.ToPlane(prim)
-                    print(plane.get_width())
+                    # print(plane.get_width())
                 elif prim.is_kind_of(cv3d.geometry.ccObject.SPHERE):
                     sphere = cv3d.geometry.ToSphere(prim)
-                    print(sphere.get_radius())
+                    # print(sphere.get_radius())
                 elif prim.is_kind_of(cv3d.geometry.ccObject.CONE):
                     cone = cv3d.geometry.ToCone(prim)
-                    print(cone.get_bottom_radius())
+                    # print(cone.get_bottom_radius())
                 elif prim.is_kind_of(cv3d.geometry.ccObject.TORUS):
                     torus = cv3d.geometry.ToTorus(prim)
-                    print(torus.get_inside_radius())
+                    # print(torus.get_inside_radius())
                 cloud = pcl.select_by_index(res.indices)
                 if random_color:
                     color = np.random.uniform(0, 1, size=(3,))
@@ -106,7 +104,6 @@ if __name__ == "__main__":
                 out_points += cloud
                 out_mesh += prim
 
-            cv3d.visualization.draw_geometries([out_points])
             cv3d.visualization.draw_geometries([out_points, out_mesh],
                                                mesh_show_back_face=True)
         else:

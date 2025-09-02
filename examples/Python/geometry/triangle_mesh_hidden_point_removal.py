@@ -33,8 +33,8 @@ if __name__ == "__main__":
     for mesh in mesh_generator():
         print("Convert mesh to a point cloud and estimate dimensions")
         pcl = cv3d.geometry.ccPointCloud()
-        pcl.set_points(mesh.get_vertices())
-        pcl.set_colors(mesh.get_vertex_colors())
+        pcl.set_points(mesh.vertices())
+        pcl.set_colors(mesh.vertex_colors())
         diameter = np.linalg.norm(
             np.asarray(pcl.get_max_bound()) - np.asarray(pcl.get_min_bound()))
 
@@ -58,10 +58,10 @@ if __name__ == "__main__":
     print("Create a point cloud representing a sphere")
     mesh = cv3d.geometry.ccMesh.create_sphere()
     pcl = cv3d.geometry.ccPointCloud()
-    pcl.set_points(mesh.get_vertices())
+    pcl.set_points(mesh.vertices())
 
     print("Assign colors based on their index (green to red)")
-    l = len(pcl.get_points())
+    l = len(pcl.points())
     colors = np.array(
         [np.arange(0, l, 1) / l,
          np.arange(l, 0, -1) / l,
