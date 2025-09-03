@@ -89,8 +89,8 @@ bool ViewControl::ConvertToViewParameters(ViewParameters &status) const {
     status.lookat_ = lookat_;
     status.up_ = up_;
     status.front_ = front_;
-    status.boundingbox_min_ = bounding_box_.getMinBound();
-    status.boundingbox_max_ = bounding_box_.getMaxBound();
+    status.boundingbox_min_ = bounding_box_.GetMinBound();
+    status.boundingbox_max_ = bounding_box_.GetMaxBound();
     return true;
 }
 

@@ -673,11 +673,11 @@ ccPointCloud* ccPolyline::samplePoints(bool densityBased,
     return cloud;
 }
 
-Eigen::Vector3d ccPolyline::getMinBound() const {
+Eigen::Vector3d ccPolyline::GetMinBound() const {
     return CCVector3d::fromArray(m_bbox.minCorner());
 }
 
-Eigen::Vector3d ccPolyline::getMaxBound() const {
+Eigen::Vector3d ccPolyline::GetMaxBound() const {
     return CCVector3d::fromArray(m_bbox.maxCorner());
 }
 

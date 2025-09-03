@@ -43,12 +43,12 @@ void ecvOrientedBBox::draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) {
     ecvDisplayTools::DrawOrientedBBox(context, this);
 }
 
-Eigen::Vector3d ecvOrientedBBox::getMinBound() const {
+Eigen::Vector3d ecvOrientedBBox::GetMinBound() const {
     auto points = getBoxPoints();
     return ComputeMinBound(points);
 }
 
-Eigen::Vector3d ecvOrientedBBox::getMaxBound() const {
+Eigen::Vector3d ecvOrientedBBox::GetMaxBound() const {
     auto points = getBoxPoints();
     return ComputeMaxBound(points);
 }

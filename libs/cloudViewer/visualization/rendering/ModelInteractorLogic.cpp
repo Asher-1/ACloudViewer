@@ -118,8 +118,8 @@ void ModelInteractorLogic::Pan(int dx, int dy) {
 void ModelInteractorLogic::UpdateBoundingBox(const Camera::Transform& t) {
     using Transform4 = Eigen::Transform<double, 3, Eigen::Affine>;
     Transform4 change = t.cast<double>();
-    Eigen::Vector3d new_min = change * model_bounds_.getMinBound();
-    Eigen::Vector3d new_max = change * model_bounds_.getMaxBound();
+    Eigen::Vector3d new_min = change * model_bounds_.GetMinBound();
+    Eigen::Vector3d new_max = change * model_bounds_.GetMaxBound();
     // Call super's not our SetBoundingBox(): we also update the
     // center of rotation, because normally this call is not done during
     // mouse movement, but rather, once to initalize the interactor.

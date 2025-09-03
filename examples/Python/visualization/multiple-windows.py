@@ -7,11 +7,8 @@
 
 import numpy as np
 import cloudViewer as cv3d
-import os
 import threading
 import time
-
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 CLOUD_NAME = "points"
 
@@ -34,7 +31,7 @@ class MultiWinApp:
         app.initialize()
 
         self.main_vis = cv3d.visualization.O3DVisualizer(
-            "CloudViewer - Multi-Window Demo")
+            "Open3D - Multi-Window Demo")
         self.main_vis.add_action("Take snapshot in new window",
                                  self.on_snapshot)
         self.main_vis.set_on_close(self.on_main_window_closing)
@@ -50,7 +47,7 @@ class MultiWinApp:
         self.n_snapshots += 1
         self.snapshot_pos = (self.snapshot_pos[0] + 50,
                              self.snapshot_pos[1] + 50)
-        title = "CloudViewer - Multi-Window Demo (Snapshot #" + str(
+        title = "Open3D - Multi-Window Demo (Snapshot #" + str(
             self.n_snapshots) + ")"
         new_vis = cv3d.visualization.O3DVisualizer(title)
         mat = cv3d.visualization.rendering.MaterialRecord()
@@ -64,9 +61,9 @@ class MultiWinApp:
                              bounds.get_center() + [0, 0, -3], [0, -1, 0])
         cv3d.visualization.gui.Application.instance.add_window(new_vis)
         new_vis.os_frame = cv3d.visualization.gui.Rect(self.snapshot_pos[0],
-                                                       self.snapshot_pos[1],
-                                                       new_vis.os_frame.width,
-                                                       new_vis.os_frame.height)
+                                                      self.snapshot_pos[1],
+                                                      new_vis.os_frame.width,
+                                                      new_vis.os_frame.height)
 
     def on_main_window_closing(self):
         self.is_done = True
@@ -75,9 +72,8 @@ class MultiWinApp:
     def update_thread(self):
         # This is NOT the UI thread, need to call post_to_main_thread() to update
         # the scene or any part of the UI.
-
-        self.cloud = cv3d.io.read_point_cloud(
-            SCRIPT_DIR + "/../../test_data/ICP/cloud_bin_0.pcd")
+        pcd_data = cv3d.data.DemoICPPointClouds()
+        self.cloud = cv3d.io.read_point_cloud(pcd_data.paths[0])
         bounds = self.cloud.get_axis_aligned_bounding_box()
         extent = bounds.get_extent()
 
@@ -97,12 +93,12 @@ class MultiWinApp:
             time.sleep(0.1)
 
             # Perturb the cloud with a random walk to simulate an actual read
-            pts = np.asarray(self.cloud.get_points())
+            pts = np.asarray(self.cloud.points)
             magnitude = 0.005 * extent
             displacement = magnitude * (np.random.random_sample(pts.shape) -
                                         0.5)
             new_pts = pts + displacement
-            self.cloud.set_points(cv3d.utility.Vector3dVector(new_pts))
+            self.cloud.points = cv3d.utility.Vector3dVector(new_pts)
 
             def update_cloud():
                 # Note: if the number of points is less than or equal to the

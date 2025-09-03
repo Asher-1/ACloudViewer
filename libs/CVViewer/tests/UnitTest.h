@@ -7,12 +7,6 @@
 
 #pragma once
 
-// TEST_DATA_DIR defined in CMakeLists.txt
-// Put it here to avoid editor warnings
-#ifndef TEST_DATA_DIR
-#define TEST_DATA_DIR
-#endif
-
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
@@ -21,6 +15,7 @@
 #include <vector>
 
 #include "cloudViewer/Macro.h"
+#include "cloudViewer/data/Dataset.h"
 #include "tests/test_utility/Compare.h"
 #include "tests/test_utility/Print.h"
 #include "tests/test_utility/Rand.h"
@@ -38,6 +33,19 @@ const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
 
 // Mechanism for reporting unit tests for which there is no implementation yet.
 void NotImplemented();
+
+#define AllCloseOrShow(Arr1, Arr2, rtol, atol)                               \
+    EXPECT_TRUE(Arr1.AllClose(Arr2, rtol, atol)) << fmt::format(             \
+            "Tensors are not close wrt (relative, absolute) tolerance ({}, " \
+            "{}). Max error: {}\n{}\n{}",                                    \
+            rtol, atol,                                                      \
+            (Arr1 - Arr2)                                                    \
+                    .Abs()                                                   \
+                    .Flatten()                                               \
+                    .Max({0})                                                \
+                    .To(core::Float32)                                       \
+                    .Item<float>(),                                          \
+            Arr1.ToString(), Arr2.ToString());
 
 }  // namespace tests
 }  // namespace cloudViewer

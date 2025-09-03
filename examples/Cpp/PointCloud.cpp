@@ -17,8 +17,8 @@ void PrintPointCloud(const ccPointCloud &pointcloud) {
     bool pointcloud_has_normal = pointcloud.hasNormals();
     utility::LogInfo("Pointcloud has %d points.", (int)pointcloud.size());
 
-    Eigen::Vector3d min_bound = pointcloud.getMinBound();
-    Eigen::Vector3d max_bound = pointcloud.getMaxBound();
+    Eigen::Vector3d min_bound = pointcloud.GetMinBound();
+    Eigen::Vector3d max_bound = pointcloud.GetMaxBound();
     utility::LogInfo(
             "Bounding box is: ({:.4f}, {:.4f}, {:.4f}) - ({:.4f}, {:.4f}, "
             "{:.4f})",

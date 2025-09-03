@@ -51,13 +51,13 @@ public:
         PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
     }
 
-    Eigen::Vector3d getMinBound() const override {
+    Eigen::Vector3d GetMinBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, GeometryBase, );
     }
     Eigen::Vector2d getMin2DBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, GeometryBase, );
     }
-    Eigen::Vector3d getMaxBound() const override {
+    Eigen::Vector3d GetMaxBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, GeometryBase, );
     }
     Eigen::Vector2d getMax2DBound() const override {

@@ -270,7 +270,7 @@ void Visualizer::BuildUtilities() {
     const auto boundingbox = GetViewControl().GetBoundingBox();
     double extent = std::max(0.01, boundingbox.getMaxExtent() * 0.2);
     coordinate_frame_mesh_ptr_ =
-            ccMesh::CreateCoordinateFrame(extent, boundingbox.getMinBound());
+            ccMesh::CreateCoordinateFrame(extent, boundingbox.GetMinBound());
     coordinate_frame_mesh_renderer_ptr_ =
             cloudViewer::make_shared<glsl::CoordinateFrameRenderer>();
     if (!coordinate_frame_mesh_renderer_ptr_->AddGeometry(

@@ -788,9 +788,9 @@ void pybind_geometry_classes(py::module& m) {
                  "Returns whether the instance is a serializable.")
             .def("is_empty", &ccHObject::isEmpty,
                  "Returns ``True`` if the geometry is empty.")
-            .def("get_min_bound", &ccHObject::getMinBound,
+            .def("get_min_bound", &ccHObject::GetMinBound,
                  "Returns min bounds for geometry coordinates.")
-            .def("get_max_bound", &ccHObject::getMaxBound,
+            .def("get_max_bound", &ccHObject::GetMaxBound,
                  "Returns max bounds for geometry coordinates.")
             .def("get_min_2Dbound", &ccHObject::getMin2DBound,
                  "Returns min 2d bounds for geometry coordinates.")

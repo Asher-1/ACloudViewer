@@ -11,7 +11,6 @@ import cloudViewer as cv3d
 
 if __name__ == "__main__":
     # Initialize a HalfEdgeTriangleMesh from TriangleMesh
-    # mesh = cv3d.io.read_triangle_mesh("../../test_data/sphere.ply")
     mesh = cv3d.geometry.ccMesh.create_sphere()
     bbox = cv3d.geometry.ccBBox()
     bbox.set_min_bound([-1, -1, -1])

@@ -1,14 +1,9 @@
-import os
-import sys
-import urllib.request
-import zipfile
-import numpy as np
-import pytest
-
-# Avoid pathlib to be compatible with Python 3.5+.
-__pwd = os.path.dirname(os.path.realpath(__file__))
-test_data_dir = os.path.join(__pwd, os.pardir, os.pardir, "examples",
-                             "test_data")
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 
 def torch_available():

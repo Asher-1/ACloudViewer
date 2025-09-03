@@ -53,8 +53,8 @@ float Camera::CalcFarPlane(
     // The far plane needs to be the max absolute distance, not just the
     // max extent, so that axes are visible if requested.
     // See also RotationInteractorLogic::UpdateCameraFarPlane().
-    auto far1 = scene_bounds.getMinBound().norm();
-    auto far2 = scene_bounds.getMaxBound().norm();
+    auto far1 = scene_bounds.GetMinBound().norm();
+    auto far2 = scene_bounds.GetMaxBound().norm();
     auto far3 = camera.GetModelMatrix().translation().cast<double>().norm();
     auto model_size = 2.0 * scene_bounds.getExtent().norm();
     auto far_v = std::max(MIN_FAR_PLANE,

@@ -50,11 +50,11 @@ void LineSet::drawMeOnly(CC_DRAW_CONTEXT &context)
 }
 
 
-Eigen::Vector3d LineSet::getMinBound() const {
+Eigen::Vector3d LineSet::GetMinBound() const {
     return ComputeMinBound(points_);
 }
 
-Eigen::Vector3d LineSet::getMaxBound() const {
+Eigen::Vector3d LineSet::GetMaxBound() const {
     return ComputeMaxBound(points_);
 }
 

@@ -187,7 +187,7 @@ class ReconstructionWindow:
         w.add_child(self.widget3d)
         w.add_child(self.fps_panel)
 
-        self.widget3d.scene = rendering.Open3DScene(self.window.renderer)
+        self.widget3d.scene = rendering.CloudViewerScene(self.window.renderer)
         self.widget3d.scene.set_background([1, 1, 1, 1])
 
         w.set_on_layout(self._on_layout)

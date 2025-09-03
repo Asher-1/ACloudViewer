@@ -80,10 +80,10 @@ public:
 public:  // inherited methods (ccHObject)
     inline virtual bool isEmpty() const override { return volume() <= 0; }
 
-    virtual inline Eigen::Vector3d getMinBound() const override {
+    virtual inline Eigen::Vector3d GetMinBound() const override {
         return CCVector3d::fromArray(m_bbMin);
     }
-    virtual inline Eigen::Vector3d getMaxBound() const override {
+    virtual inline Eigen::Vector3d GetMaxBound() const override {
         return CCVector3d::fromArray(m_bbMax);
     }
     virtual inline Eigen::Vector3d getGeometryCenter() const override {

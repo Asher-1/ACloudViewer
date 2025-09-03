@@ -78,8 +78,8 @@ public:
     void draw (CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col);
 
 	inline virtual bool isEmpty() const override { return volume() <= 0; }
-	virtual Eigen::Vector3d getMinBound() const override;
-	virtual Eigen::Vector3d getMaxBound() const override;
+	virtual Eigen::Vector3d GetMinBound() const override;
+	virtual Eigen::Vector3d GetMaxBound() const override;
 	virtual Eigen::Vector3d getGeometryCenter() const override;
 
 	virtual ccBBox getAxisAlignedBoundingBox() const override;

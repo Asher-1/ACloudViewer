@@ -24,17 +24,17 @@ bool PointCloudPicker::isEmpty() const {
     return (!pointcloud_ptr_ || picked_indices_.empty());
 }
 
-Eigen::Vector3d PointCloudPicker::getMinBound() const {
+Eigen::Vector3d PointCloudPicker::GetMinBound() const {
     if (pointcloud_ptr_) {
-        return ((const ccPointCloud&)(*pointcloud_ptr_)).getMinBound();
+        return ((const ccPointCloud&)(*pointcloud_ptr_)).GetMinBound();
     } else {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
 }
 
-Eigen::Vector3d PointCloudPicker::getMaxBound() const {
+Eigen::Vector3d PointCloudPicker::GetMaxBound() const {
     if (pointcloud_ptr_) {
-        return ((const ccPointCloud&)(*pointcloud_ptr_)).getMaxBound();
+        return ((const ccPointCloud&)(*pointcloud_ptr_)).GetMaxBound();
     } else {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }

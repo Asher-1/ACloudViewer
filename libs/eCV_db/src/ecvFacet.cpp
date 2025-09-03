@@ -660,17 +660,17 @@ bool ccFacet::isEmpty() const {
             !m_contourPolyline || m_contourPolyline->size() == 0);
 }
 
-Eigen::Vector3d ccFacet::getMinBound() const {
+Eigen::Vector3d ccFacet::GetMinBound() const {
     if (getPolygon()) {
-        return getPolygon()->getMinBound();
+        return getPolygon()->GetMinBound();
     } else {
         return Eigen::Vector3d();
     }
 }
 
-Eigen::Vector3d ccFacet::getMaxBound() const {
+Eigen::Vector3d ccFacet::GetMaxBound() const {
     if (getPolygon()) {
-        return getPolygon()->getMaxBound();
+        return getPolygon()->GetMaxBound();
     } else {
         return Eigen::Vector3d();
     }

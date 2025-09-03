@@ -490,7 +490,7 @@ Octree& Octree::Clear() {
     return *this;
 }
 
-Eigen::Vector3d Octree::getMinBound() const {
+Eigen::Vector3d Octree::GetMinBound() const {
     if (isEmpty()) {
         return Eigen::Vector3d::Zero();
     } else {
@@ -498,7 +498,7 @@ Eigen::Vector3d Octree::getMinBound() const {
     }
 }
 
-Eigen::Vector3d Octree::getMaxBound() const {
+Eigen::Vector3d Octree::GetMaxBound() const {
     if (isEmpty()) {
         return Eigen::Vector3d::Zero();
     } else {
@@ -512,8 +512,8 @@ Eigen::Vector3d Octree::getGeometryCenter() const {
 
 ccBBox Octree::getAxisAlignedBoundingBox() const {
     ccBBox box;
-    box.minCorner() = getMinBound();
-    box.maxCorner() = getMaxBound();
+    box.minCorner() = GetMinBound();
+    box.maxCorner() = GetMaxBound();
 	box.setValidity(!box.isEmpty());
     return box;
 }
@@ -550,8 +550,8 @@ void Octree::ConvertFromPointCloud(const ccPointCloud& point_cloud,
 
     // Set bounds
     Clear();
-    Eigen::Array3d min_bound = point_cloud.getMinBound();
-    Eigen::Array3d max_bound = point_cloud.getMaxBound();
+    Eigen::Array3d min_bound = point_cloud.GetMinBound();
+    Eigen::Array3d max_bound = point_cloud.GetMaxBound();
     Eigen::Array3d center = (min_bound + max_bound) / 2;
     Eigen::Array3d half_sizes = center - min_bound;
     double max_half_size = half_sizes.maxCoeff();
@@ -789,7 +789,7 @@ bool Octree::ConvertFromJsonValue(const Json::Value& value) {
 
 void Octree::CreateFromVoxelGrid(const geometry::VoxelGrid& voxel_grid) {
     origin_ = voxel_grid.origin_;
-    size_ = (voxel_grid.getMaxBound() - origin_).maxCoeff();
+    size_ = (voxel_grid.GetMaxBound() - origin_).maxCoeff();
     double half_voxel_size = voxel_grid.voxel_size_ / 2.;
     for (const auto& voxel_iter : voxel_grid.voxels_) {
         const geometry::Voxel& voxel = voxel_iter.second;

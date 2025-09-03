@@ -95,8 +95,8 @@ void BoxWithObjects() {
             Eigen::Vector3d{-pc_rad, -3, -pc_rad},
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
     auto bbox = sphere_unlit->getAxisAlignedBoundingBox();
-    auto sphere_bbox = cloudViewer::make_shared<ccBBox>(bbox.getMinBound(),
-                                                        bbox.getMaxBound());
+    auto sphere_bbox = cloudViewer::make_shared<ccBBox>(bbox.GetMinBound(),
+                                                        bbox.GetMaxBound());
     sphere_bbox->setColor({1.0, 0.5, 0.0});
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             sphere_lit->getAxisAlignedBoundingBox());
