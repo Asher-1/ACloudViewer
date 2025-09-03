@@ -124,8 +124,8 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 
 	Eigen::Vector3d voxel_size3 =
 		Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
-	Eigen::Vector3d voxel_min_bound = getMinBound() - voxel_size3 * 0.5;
-	Eigen::Vector3d voxel_max_bound = getMaxBound() + voxel_size3 * 0.5;
+	Eigen::Vector3d voxel_min_bound = GetMinBound() - voxel_size3 * 0.5;
+	Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
 	if (voxel_size * std::numeric_limits<int>::max() <
 		(voxel_max_bound - voxel_min_bound).maxCoeff()) {
 		utility::LogError("[VoxelGridFromPointCloud] voxel_size is too small.");

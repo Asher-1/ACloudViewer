@@ -31,7 +31,9 @@ if __name__ == "__main__":
     cv3d.visualization.draw_geometries([new_mesh])
 
     # triangulation between with two polylines
-    entity = cv3d.io.read_entity("../../test_data/polylines/polylines.bin")
+    cv3d.data.set_cloudViewer_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+    polylines_data = cv3d.data.PolylinesModel()
+    entity = cv3d.io.read_entity(polylines_data.path)
     polylines = entity.filter_children(recursive=False,
                                        filter=cv3d.geometry.ccHObject.POLY_LINE)
     print(polylines)

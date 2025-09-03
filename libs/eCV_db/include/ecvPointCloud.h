@@ -928,11 +928,11 @@ public:  // other methods
 public:  // for python interface
     inline virtual bool isEmpty() const override { return !hasPoints(); }
 
-    inline virtual Eigen::Vector3d getMinBound() const override {
+    inline virtual Eigen::Vector3d GetMinBound() const override {
         return ComputeMinBound(CCVector3::fromArrayContainer(m_points));
     }
 
-    inline virtual Eigen::Vector3d getMaxBound() const override {
+    inline virtual Eigen::Vector3d GetMaxBound() const override {
         return ComputeMaxBound(CCVector3::fromArrayContainer(m_points));
     }
     inline virtual Eigen::Vector3d getGeometryCenter() const override {

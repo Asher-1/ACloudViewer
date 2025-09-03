@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
             auto boundingbox = mesh->getAxisAlignedBoundingBox();
             auto mesh_frame = ccMesh::CreateCoordinateFrame(
                     boundingbox.getMaxExtent() * 0.2,
-                    boundingbox.getMinBound());
+                    boundingbox.GetMinBound());
             visualization::DrawGeometries({mesh, mesh_frame});
         }
     } else if (option == "merge") {

@@ -5,10 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/VoxelGridIO.h"
+#include "cloudViewer/io/VoxelGridIO.h"
 
-#include "geometry/VoxelGrid.h"
-#include "visualization/utility/DrawGeometry.h"
+#include <FileSystem.h>
+
+#include "cloudViewer/geometry/VoxelGrid.h"
+#include "cloudViewer/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {
@@ -16,7 +18,7 @@ namespace tests {
 
 TEST(VoxelGridIO, PLYWriteRead) {
     // Create voxel_grid (two voxels)
-    auto src_voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
+    auto src_voxel_grid = std::make_shared<geometry::VoxelGrid>();
     src_voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
     src_voxel_grid->voxel_size_ = 5;
     src_voxel_grid->AddVoxel(geometry::Voxel(Eigen::Vector3i(1, 2, 3),
@@ -25,13 +27,13 @@ TEST(VoxelGridIO, PLYWriteRead) {
                                              Eigen::Vector3d(0.4, 0.5, 0.6)));
 
     // Write to file
-    std::string file_name = std::string(TEST_DATA_DIR) + "/temp_voxel_grid.ply";
+    std::string file_name = utility::filesystem::GetTempDirectoryPath() +
+                            "/temp_voxel_grid.ply";
     EXPECT_TRUE(io::WriteVoxelGrid(file_name, *src_voxel_grid));
 
     // Read from file
-    auto dst_voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
+    auto dst_voxel_grid = std::make_shared<geometry::VoxelGrid>();
     EXPECT_TRUE(io::ReadVoxelGrid(file_name, *dst_voxel_grid));
-    EXPECT_EQ(std::remove(file_name.c_str()), 0);
 
     // Check values, account for unit8 conversion lost
     EXPECT_EQ(src_voxel_grid->origin_, dst_voxel_grid->origin_);

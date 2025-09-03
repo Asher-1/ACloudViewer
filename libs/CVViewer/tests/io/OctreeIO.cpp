@@ -5,34 +5,33 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/OctreeIO.h"
+#include "cloudViewer/io/OctreeIO.h"
 
+#include <FileSystem.h>
+#include <IJsonConvertible.h>
+#include <ecvPointCloud.h>
 #include <json/json.h>
 
 #include <cstdio>
 
-#include "geometry/Octree.h"
-#include <ecvPointCloud.h>
-#include "io/PointCloudIO.h"
-#include <IJsonConvertible.h>
+#include "cloudViewer/data/Dataset.h"
+#include "cloudViewer/geometry/Octree.h"
+#include "cloudViewer/io/PointCloudIO.h"
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {
 namespace tests {
 
-void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
-                             bool delete_temp = true) {
+void WriteReadAndAssertEqual(const geometry::Octree& src_octree) {
     // Write to file
-    std::string file_name = std::string(TEST_DATA_DIR) + "/temp_octree.json";
+    std::string file_name =
+            utility::filesystem::GetTempDirectoryPath() + "/temp_octree.json";
     EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
 
     // Read from file
     geometry::Octree dst_octree;
     EXPECT_TRUE(io::ReadOctree(file_name, dst_octree));
     EXPECT_TRUE(src_octree == dst_octree);
-    if (delete_temp) {
-        EXPECT_EQ(std::remove(file_name.c_str()), 0);
-    }
 }
 
 TEST(OctreeIO, EmptyTree) {
@@ -56,7 +55,8 @@ TEST(OctreeIO, ZeroDepth) {
 TEST(OctreeIO, JsonFileIOFragment) {
     // Create octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 6;
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd, 0.01);

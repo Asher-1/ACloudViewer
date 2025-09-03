@@ -7,22 +7,27 @@
 
 import cloudViewer as cv3d
 import numpy as np
-import copy
 
-if __name__ == "__main__":
-    cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
-    source_raw = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
-    target_raw = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_1.pcd")
+def prepare_data():
+    pcd_data = cv3d.data.DemoICPPointClouds()
+    source_raw = cv3d.io.read_point_cloud(pcd_data.paths[0])
+    target_raw = cv3d.io.read_point_cloud(pcd_data.paths[1])
     source = source_raw.voxel_down_sample(voxel_size=0.02)
     target = target_raw.voxel_down_sample(voxel_size=0.02)
+
     trans = [[0.862, 0.011, -0.507, 0.0], [-0.139, 0.967, -0.215, 0.7],
              [0.487, 0.255, 0.835, -1.4], [0.0, 0.0, 0.0, 1.0]]
     source.transform(trans)
-
     flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
     source.transform(flip_transform)
     target.transform(flip_transform)
+    return source, target
 
+
+def demo_non_blocking_visualization():
+    cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
+
+    source, target = prepare_data()
     vis = cv3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(source)
@@ -43,3 +48,9 @@ if __name__ == "__main__":
         if save_image:
             vis.capture_screen_image("temp_%04d.jpg" % i)
     vis.destroy_window()
+
+    cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Info)
+
+
+if __name__ == '__main__':
+    demo_non_blocking_visualization()

@@ -34,8 +34,8 @@ ccBBox ecvMeshBase::getOwnBB(bool withGLFeatures) {
 }
 
 void ecvMeshBase::getBoundingBox(CCVector3 &bbMin, CCVector3 &bbMax) {
-    bbMin = getMinBound();
-    bbMax = getMaxBound();
+    bbMin = GetMinBound();
+    bbMax = GetMaxBound();
 }
 
 ecvMeshBase &ecvMeshBase::clear() {
@@ -48,11 +48,11 @@ ecvMeshBase &ecvMeshBase::clear() {
 bool ecvMeshBase::isEmpty() const { return !hasVertices(); }
 
 
-Eigen::Vector3d ecvMeshBase::getMinBound() const {
+Eigen::Vector3d ecvMeshBase::GetMinBound() const {
     return ComputeMinBound(vertices_);
 }
 
-Eigen::Vector3d ecvMeshBase::getMaxBound() const {
+Eigen::Vector3d ecvMeshBase::GetMaxBound() const {
     return ComputeMaxBound(vertices_);
 }
 

@@ -824,7 +824,7 @@ bool ccMesh::mergeDuplicatedVertices(unsigned char octreeLevel /*=10*/,
     return false;
 }
 
-Eigen::Vector3d ccMesh::getMinBound() const {
+Eigen::Vector3d ccMesh::GetMinBound() const {
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(getAssociatedCloud());
     if (!cloud) {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
@@ -832,7 +832,7 @@ Eigen::Vector3d ccMesh::getMinBound() const {
     return ComputeMinBound(cloud->getEigenPoints());
 }
 
-Eigen::Vector3d ccMesh::getMaxBound() const {
+Eigen::Vector3d ccMesh::GetMaxBound() const {
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(getAssociatedCloud());
     if (!cloud) {
         return Eigen::Vector3d(0.0, 0.0, 0.0);

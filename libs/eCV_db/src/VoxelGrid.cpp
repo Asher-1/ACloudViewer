@@ -42,7 +42,7 @@ VoxelGrid &VoxelGrid::Clear() {
     return *this;
 }
 
-Eigen::Vector3d VoxelGrid::getMinBound() const {
+Eigen::Vector3d VoxelGrid::GetMinBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
@@ -55,7 +55,7 @@ Eigen::Vector3d VoxelGrid::getMinBound() const {
     }
 }
 
-Eigen::Vector3d VoxelGrid::getMaxBound() const {
+Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
@@ -87,8 +87,8 @@ Eigen::Vector3d VoxelGrid::getGeometryCenter() const {
 
 ccBBox VoxelGrid::getAxisAlignedBoundingBox() const {
     ccBBox box;
-    box.minCorner() = getMinBound();
-    box.maxCorner() = getMaxBound();
+    box.minCorner() = GetMinBound();
+    box.maxCorner() = GetMaxBound();
     box.setValidity(!box.isEmpty());
     return box;
 }

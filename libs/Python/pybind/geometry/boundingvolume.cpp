@@ -261,8 +261,8 @@ void pybind_boundingvolume(py::module &m) {
             .def("__repr__",
                  [](const ccBBox &box) {
                      std::stringstream s;
-                     auto mn = box.getMinBound();
-                     auto mx = box.getMaxBound();
+                     auto mn = box.GetMinBound();
+                     auto mx = box.GetMaxBound();
                      s << "ccBBox: min: (" << mn.x() << ", " << mn.y() << ", "
                        << mn.z() << "), max: (" << mx.x() << ", " << mx.y()
                        << ", " << mx.z() << ")";

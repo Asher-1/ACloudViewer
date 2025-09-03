@@ -27,7 +27,7 @@ const ccBBox& MatrixInteractorLogic::GetBoundingBox() const {
 }
 
 void MatrixInteractorLogic::SetBoundingBox(const ccBBox& bounds) {
-    model_size_ = (bounds.getMaxBound() - bounds.getMinBound()).norm();
+    model_size_ = (bounds.GetMaxBound() - bounds.GetMinBound()).norm();
     model_bounds_ = bounds;
 }
 

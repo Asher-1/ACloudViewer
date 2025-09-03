@@ -1022,9 +1022,9 @@ bool ccMesh::isSelfIntersecting() const {
 }
 
 bool ccMesh::isBoundingBoxIntersecting(const ccMesh &other) const {
-    return utility::IntersectionTest::AABBAABB(getMinBound(), getMaxBound(),
-                                               other.getMinBound(),
-                                               other.getMaxBound());
+    return utility::IntersectionTest::AABBAABB(GetMinBound(), GetMaxBound(),
+                                               other.GetMinBound(),
+                                               other.GetMaxBound());
 }
 
 bool ccMesh::isIntersecting(const ccMesh &other) const {

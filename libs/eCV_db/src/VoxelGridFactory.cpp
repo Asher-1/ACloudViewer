@@ -105,8 +105,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
         double voxel_size,
         VoxelGrid::VoxelPoolingMode pooling_mode) {
     Eigen::Vector3d voxel_size3(voxel_size, voxel_size, voxel_size);
-    Eigen::Vector3d min_bound = input.getMinBound() - voxel_size3 * 0.5;
-    Eigen::Vector3d max_bound = input.getMaxBound() + voxel_size3 * 0.5;
+    Eigen::Vector3d min_bound = input.GetMinBound() - voxel_size3 * 0.5;
+    Eigen::Vector3d max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     return CreateFromPointCloudWithinBounds(input, voxel_size, min_bound,
                                             max_bound, pooling_mode);
 }
@@ -172,8 +172,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMesh(
         const ccMesh &input, double voxel_size) {
     Eigen::Vector3d voxel_size3(voxel_size, voxel_size, voxel_size);
-    Eigen::Vector3d min_bound = input.getMinBound() - voxel_size3 * 0.5;
-    Eigen::Vector3d max_bound = input.getMaxBound() + voxel_size3 * 0.5;
+    Eigen::Vector3d min_bound = input.GetMinBound() - voxel_size3 * 0.5;
+    Eigen::Vector3d max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     return CreateFromTriangleMeshWithinBounds(input, voxel_size, min_bound,
                                               max_bound);
 }

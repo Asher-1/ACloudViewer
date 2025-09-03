@@ -9,10 +9,6 @@ import numpy as np
 import cloudViewer as cv3d
 import cloudViewer.visualization.gui as gui
 import cloudViewer.visualization.rendering as rendering
-import os
-
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-
 
 # This example displays a point cloud and if you Ctrl-click on a point
 # (Cmd-click on macOS) it will show the coordinates of the point.
@@ -27,8 +23,7 @@ class ExampleApp:
         # a label in the lower left on top of the SceneWidget to display the
         # coordinate.
         app = gui.Application.instance
-        self.window = app.create_window("CloudViewer - GetCoord Example", 1024,
-                                        768)
+        self.window = app.create_window("CloudViewer - GetCoord Example", 1024, 768)
         # Since we want the label on top of the scene, we cannot use a layout,
         # so we need to manually layout the window's children.
         self.window.set_on_layout(self._on_layout)
@@ -85,7 +80,7 @@ class ExampleApp:
                     text = ""
                 else:
                     world = self.widget3d.scene.camera.unproject(
-                        event.x, event.y, depth, self.widget3d.frame.width,
+                        x, y, depth, self.widget3d.frame.width,
                         self.widget3d.frame.height)
                     text = "({:.3f}, {:.3f}, {:.3f})".format(
                         world[0], world[1], world[2])
@@ -115,8 +110,8 @@ def main():
     # This example will also work with a triangle mesh, or any 3D object.
     # If you use a triangle mesh you will probably want to set the material
     # shader to "defaultLit" instead of "defaultUnlit".
-    cloud = cv3d.io.read_point_cloud(SCRIPT_DIR +
-                                     "/../../test_data/ICP/cloud_bin_0.pcd")
+    pcd_data = cv3d.data.DemoICPPointClouds()
+    cloud = cv3d.io.read_point_cloud(pcd_data.paths[0])
     ex = ExampleApp(cloud)
 
     app.run()

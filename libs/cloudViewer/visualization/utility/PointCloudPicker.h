@@ -35,8 +35,8 @@ public:
 public:
     PointCloudPicker& Clear();
     bool isEmpty() const;
-	virtual Eigen::Vector3d getMinBound() const override;
-	virtual Eigen::Vector3d getMaxBound() const override;
+	virtual Eigen::Vector3d GetMinBound() const override;
+	virtual Eigen::Vector3d GetMaxBound() const override;
 	virtual Eigen::Vector3d getGeometryCenter() const override;
 	virtual ccBBox getAxisAlignedBoundingBox() const override;
 	virtual ecvOrientedBBox getOrientedBoundingBox() const override;

@@ -11,9 +11,10 @@ import cloudViewer as cv3d
 import cloudViewer.visualization as vis
 import os
 import random
-import sys
+import warnings
 
-CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 
 def normalize(v):
@@ -54,12 +55,14 @@ def multi_objects():
     sphere_colored_lit.compute_vertex_normals()
     sphere_colored_lit.paint_uniform_color((0.0, 1.0, 0.0))
     sphere_colored_lit.translate((6, 1, 0))
-    big_bbox = cv3d.geometry.ccBBox((-pc_rad, -3, -pc_rad),
-                                    (6.0 + r, 1.0 + r, pc_rad))
+    big_bbox = cv3d.geometry.AxisAlignedBoundingBox((-pc_rad, -3, -pc_rad),
+                                                   (6.0 + r, 1.0 + r, pc_rad))
+    big_bbox.color = (0.0, 0.0, 0.0)
     sphere_bbox = sphere_unlit.get_axis_aligned_bounding_box()
-    sphere_bbox.set_color([1.0, 0.5, 0.0])
+    sphere_bbox.color = (1.0, 0.5, 0.0)
     lines = cv3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
         sphere_lit.get_axis_aligned_bounding_box())
+    lines.paint_uniform_color((0.0, 1.0, 0.0))
     lines_colored = cv3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
         sphere_colored_lit.get_axis_aligned_bounding_box())
     lines_colored.paint_uniform_color((0.0, 0.0, 1.0))
@@ -74,17 +77,21 @@ def actions():
     SOURCE_NAME = "Source"
     RESULT_NAME = "Result (Poisson reconstruction)"
     TRUTH_NAME = "Ground truth"
+
     bunny = cv3d.data.BunnyMesh()
-    bunny = cv3d.io.read_triangle_mesh(bunny.path)
-    bunny.paint_uniform_color((1, 0.75, 0))
-    bunny.compute_vertex_normals()
+    bunny_mesh = cv3d.io.read_triangle_mesh(bunny.path)
+    bunny_mesh.compute_vertex_normals()
+
+    bunny_mesh.paint_uniform_color((1, 0.75, 0))
+    bunny_mesh.compute_vertex_normals()
     cloud = cv3d.geometry.ccPointCloud()
-    cloud.set_points(bunny.get_vertices())
-    cloud.set_normals(bunny.get_vertex_normals())
+    cloud.set_points(bunny_mesh.vertices())
+    cloud.set_normals(bunny_mesh.vertex_normals())
 
     def make_mesh(o3dvis):
-        # TODO: call o3dvis.get_geometry instead of using bunny
-        mesh, _ = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(cloud)
+        # TODO: call o3dvis.get_geometry instead of using bunny_mesh
+        mesh, _ = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(
+            cloud)
         mesh.paint_uniform_color((1, 1, 1))
         mesh.compute_vertex_normals()
         o3dvis.add_geometry({"name": RESULT_NAME, "geometry": mesh})
@@ -100,7 +107,7 @@ def actions():
         "geometry": cloud
     }, {
         "name": TRUTH_NAME,
-        "geometry": bunny,
+        "geometry": bunny_mesh,
         "is_visible": False
     }],
              actions=[("Create Mesh", make_mesh),
@@ -136,30 +143,46 @@ def selections():
     source_name = "Source (yellow)"
     target_name = "Target (blue)"
 
-    def do_icp_one_set(o3dvis):
+    def _prep_correspondences(o3dvis, two_set=False):
         # sets: [name: [{ "index": int, "order": int, "point": (x, y, z)}, ...],
         #        ...]
         sets = o3dvis.get_selection_sets()
-        source_picked = sorted(list(sets[0][source_name]),
-                               key=lambda x: x.order)
-        target_picked = sorted(list(sets[0][target_name]),
-                               key=lambda x: x.order)
-        source_indices = [idx.index for idx in source_picked]
-        target_indices = [idx.index for idx in target_picked]
+        if not sets:
+            warnings.warn(
+                "Empty selection sets. Select point correspondences for initial rough transform.",
+                RuntimeWarning)
+            return [], []
+        if source_name not in sets[0]:
+            warnings.warn(
+                "First selection set should contain Source (yellow) points.",
+                RuntimeWarning)
+            return [], []
 
-        t = get_icp_transform(source, target, source_indices, target_indices)
-        source.transform(t)
-
-        # Update the source geometry
-        o3dvis.remove_geometry(source_name)
-        o3dvis.add_geometry({"name": source_name, "geometry": source})
-
-    def do_icp_two_sets(o3dvis):
-        sets = o3dvis.get_selection_sets()
         source_set = sets[0][source_name]
-        target_set = sets[1][target_name]
+        if two_set:
+            if not len(sets) == 2:
+                warnings.warn(
+                    "Two set registration requires exactly two selection sets of corresponding points.",
+                    RuntimeWarning)
+                return [], []
+            target_set = sets[1][target_name]
+        else:
+            if target_name not in sets[0]:
+                warnings.warn(
+                    "Selection set should contain Target (blue) points.",
+                    RuntimeWarning)
+                return [], []
+            target_set = sets[0][target_name]
         source_picked = sorted(list(source_set), key=lambda x: x.order)
         target_picked = sorted(list(target_set), key=lambda x: x.order)
+        if len(source_picked) != len(target_picked):
+            warnings.warn(
+                f"Registration requires equal number of corresponding points (current selection: {len(source_picked)} source, {len(target_picked)} target).",
+                RuntimeWarning)
+            return [], []
+        return source_picked, target_picked
+
+    def _do_icp(o3dvis, source_picked, target_picked):
         source_indices = [idx.index for idx in source_picked]
         target_indices = [idx.index for idx in target_picked]
 
@@ -169,6 +192,12 @@ def selections():
         # Update the source geometry
         o3dvis.remove_geometry(source_name)
         o3dvis.add_geometry({"name": source_name, "geometry": source})
+
+    def do_icp_one_set(o3dvis):
+        _do_icp(o3dvis, *_prep_correspondences(o3dvis))
+
+    def do_icp_two_sets(o3dvis):
+        _do_icp(o3dvis, *_prep_correspondences(o3dvis, two_set=True))
 
     vis.draw([{
         "name": source_name,
@@ -271,7 +300,7 @@ def remove():
         sphere.compute_vertex_normals()
         sphere.translate(center)
 
-        mat = vis.rendering.MaterialRecord()
+        mat = vis.rendering.Material()
         mat.shader = "defaultLit"
         mat.base_color = color
 
@@ -313,6 +342,8 @@ def main():
     multi_objects()
     actions()
     selections()
+    groups()
+    time_animation()
 
 
 if __name__ == "__main__":

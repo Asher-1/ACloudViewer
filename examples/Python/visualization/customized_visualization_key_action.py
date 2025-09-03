@@ -43,7 +43,7 @@ def custom_key_action_without_kb_repeat_delay(pcd):
 
 def custom_mouse_action(pcd):
 
-    vis = o3d.visualization.VisualizerWithKeyCallback()
+    vis = cv3d.visualization.VisualizerWithKeyCallback()
     buttons = ['left', 'right', 'middle']
     actions = ['up', 'down']
     mods_name = ['shift', 'ctrl', 'alt', 'cmd']

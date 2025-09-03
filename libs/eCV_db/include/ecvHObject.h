@@ -151,10 +151,10 @@ public:  // construction
 
     virtual bool isEmpty() const { return true; }
     /// Returns min bounds for geometry coordinates.
-    virtual Eigen::Vector3d getMinBound() const { return Eigen::Vector3d(); }
+    virtual Eigen::Vector3d GetMinBound() const { return Eigen::Vector3d(); }
     virtual Eigen::Vector2d getMin2DBound() const { return Eigen::Vector2d(); }
     /// Returns max bounds for geometry coordinates.
-    virtual Eigen::Vector3d getMaxBound() const { return Eigen::Vector3d(); }
+    virtual Eigen::Vector3d GetMaxBound() const { return Eigen::Vector3d(); }
     virtual Eigen::Vector2d getMax2DBound() const { return Eigen::Vector2d(); }
     /// Returns the center of the geometry coordinates.
     virtual Eigen::Vector3d getGeometryCenter() const {

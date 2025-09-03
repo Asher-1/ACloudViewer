@@ -1778,11 +1778,11 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         }
     }
 
-    Eigen::Vector3d min_bound = mesh.getMinBound();
+    Eigen::Vector3d min_bound = mesh.GetMinBound();
     positions_accessor.minValues.push_back(min_bound[0]);
     positions_accessor.minValues.push_back(min_bound[1]);
     positions_accessor.minValues.push_back(min_bound[2]);
-    Eigen::Vector3d max_bound = mesh.getMaxBound();
+    Eigen::Vector3d max_bound = mesh.GetMaxBound();
     positions_accessor.maxValues.push_back(max_bound[0]);
     positions_accessor.maxValues.push_back(max_bound[1]);
     positions_accessor.maxValues.push_back(max_bound[2]);

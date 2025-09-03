@@ -5,16 +5,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <cstring>
 #include <string>
 
 #ifdef BUILD_CUDA_MODULE
-#include "core/CUDAState.cuh"
+#include "cloudViewer/core/CUDAUtils.h"
 #endif
 
-#include "utility/Console.h"
+#include "CloudViewer.h"
 #include "tests/UnitTest.h"
 
 #ifdef BUILD_CUDA_MODULE
@@ -32,15 +33,18 @@ bool ShallDisableP2P(int argc, char** argv) {
 #endif
 
 int main(int argc, char** argv) {
+    using namespace cloudViewer;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::CompilerInfo::GetInstance().Print();
+    utility::CPUInfo::GetInstance().Print();
+
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<cloudViewer::core::CUDAState> cuda_state =
-                cloudViewer::core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        cloudViewer::utility::LogInfo("P2P device transfer has been disabled.");
+        core::CUDAState::GetInstance().ForceDisableP2PForTesting();
+        utility::LogInfo("P2P device transfer has been disabled.");
     }
 #endif
     testing::InitGoogleTest(&argc, argv);
-    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
     return RUN_ALL_TESTS();
 }

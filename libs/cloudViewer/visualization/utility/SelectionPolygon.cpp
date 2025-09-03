@@ -181,9 +181,9 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
         volume->bounding_polygon_.push_back(point3d);
     }
     const auto &boundingbox = view.GetBoundingBox();
-    double axis_len = boundingbox.getMaxBound()(idx) - boundingbox.getMinBound()(idx);
-    volume->axis_min_ = boundingbox.getMinBound()(idx) - axis_len;
-    volume->axis_max_ = boundingbox.getMaxBound()(idx) + axis_len;
+    double axis_len = boundingbox.GetMaxBound()(idx) - boundingbox.GetMinBound()(idx);
+    volume->axis_min_ = boundingbox.GetMinBound()(idx) - axis_len;
+    volume->axis_max_ = boundingbox.GetMaxBound()(idx) + axis_len;
     return volume;
 }
 
