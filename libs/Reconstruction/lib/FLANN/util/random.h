@@ -111,7 +111,6 @@ public:
      */
     void init(int n)
     {
-        static RandomGenerator generator;
         // create and initialize an array of size n
         vals_.resize(n);
         size_ = n;
@@ -121,7 +120,6 @@ public:
         std::random_device rd;   // non-deterministic generator
         std::mt19937 gen(rd());  // to seed mersenne twister.
         std::shuffle(vals_.begin(), vals_.end(), rd);
-//        std::shuffle(vals_.begin(), vals_.end(), generator);
 
         counter_ = 0;
     }

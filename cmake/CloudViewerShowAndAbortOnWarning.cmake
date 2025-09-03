@@ -24,14 +24,29 @@ function(cloudViewer_show_and_abort_on_warning target)
             /wd4717        # 'function' : recursive on all control paths, function will cause runtime stack overflow
             /wd4522        # 'class' : multiple assignment operators specified
             /wd4996        # Your code uses a function, class member, variable, or typedef that's marked deprecated.
+            /wd4995        # name was marked as #pragma deprecated
             /wd4286        # symbol 'symbol' defined in 'filename_1.obj' is imported by 'filename_2.obj'
             /wd4101        # The local variable is never used
             /wd4005        # Macro redefinition
             /wd4703        # potentially uninitialized local pointer variable used
             )
+    # Warnings to disable for both C and C++
     set(DISABLE_GNU_CLANG_INTEL_WARNINGS
             -Wno-unused-parameter # (many places in CloudViewer code)
             )
+    
+    # Additional warnings to disable only for C++ (not supported for C)
+    set(DISABLE_GNU_CLANG_INTEL_CXX_WARNINGS ${DISABLE_GNU_CLANG_INTEL_WARNINGS})
+    
+    # Add deprecated-copy warnings suppression only for newer compilers that support it
+    # GCC 9+ and Clang 10+ support these options, and they only work for C++ compilation
+    if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "9.0") OR
+       (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "10.0"))
+        list(APPEND DISABLE_GNU_CLANG_INTEL_CXX_WARNINGS
+            -Wno-deprecated-copy      # suppress deprecated copy constructor/assignment warnings (GCC 9+, Clang 10+)
+            -Wno-deprecated-copy-dtor # suppress deprecated copy with destructor warnings (GCC 9+, Clang 10+)
+        )
+    endif()
 
     if (BUILD_CUDA_MODULE)
         # General NVCC flags
@@ -71,7 +86,7 @@ function(cloudViewer_show_and_abort_on_warning target)
             # reorder breaks builds on Windows, so only enable for other platforms
             string(APPEND CUDA_FLAGS " --Werror reorder")
 
-            set(CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS ${DISABLE_GNU_CLANG_INTEL_WARNINGS})
+            set(CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS ${DISABLE_GNU_CLANG_INTEL_CXX_WARNINGS})
             string(REPLACE ";" "," CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS "${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
             string(APPEND CUDA_FLAGS " -Xcompiler -Wall,-Wextra,${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
         endif ()
@@ -83,7 +98,7 @@ function(cloudViewer_show_and_abort_on_warning target)
             $<$<COMPILE_LANG_AND_ID:C,MSVC>:/W4 /WX- ${DISABLE_MSVC_WARNINGS}>
             $<$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang,Intel>:-Wall -Wextra ${DISABLE_GNU_CLANG_INTEL_WARNINGS}>
             $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/W4 /WX- ${DISABLE_MSVC_WARNINGS}>
-            $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,Intel>:-Wall -Wextra ${DISABLE_GNU_CLANG_INTEL_WARNINGS}>
+            $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,Intel>:-Wall -Wextra ${DISABLE_GNU_CLANG_INTEL_CXX_WARNINGS}>
             $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
             )
 endfunction()

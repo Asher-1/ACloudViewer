@@ -10,6 +10,7 @@ dependencies:
   - pkg-config
   - boost=1.84.*
   - qt=5.15.* # reconstruction
-  - ffmpeg=6.1.*
   - xerces-c=3.2.* # reconstruction
+  - cgal=5.* # facets
+  - ffmpeg=6.1.*
   - typing_extensions # fix pytorch import missing issues

@@ -5,8 +5,6 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/Python/Basic/polyline.py
-
 import numpy as np
 import cloudViewer as cv3d
 
@@ -47,7 +45,7 @@ def generate_pivots():
 
 
 def generate_spring():
-    z = np.arange(-50, 50, 0.01)  # z坐标范围-50~50
+    z = np.arange(-50, 50, 0.01)  # z -50~50
     x = 50 * np.cos(z)
     y = 50 * np.sin(z)
     x = x.reshape((-1, 1))
@@ -71,13 +69,15 @@ def generate_funnel(start, end, steps=0.1):
 def wrap_polyline(points, color):
     cloud = cv3d.geometry.ccPointCloud(cv3d.utility.Vector3dVector(points))
     polyline = cv3d.geometry.ccPolyline(cloud=cloud)
-    # polyline.add(cloud)
     polyline.set_color(color)
     return polyline
 
 
 def generate_from_file():
-    entity = cv3d.io.read_entity("../../test_data/polylines/polylines.bin")
+    print("Load a polylines data, print it, and render it")
+    cv3d.data.set_cloudViewer_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+    polylines_data = cv3d.data.PolylinesModel()
+    entity = cv3d.io.read_entity(polylines_data.path)
     polylines = entity.filter_children(recursive=False,
                                        filter=cv3d.geometry.ccHObject.POLY_LINE)
     print(polylines)

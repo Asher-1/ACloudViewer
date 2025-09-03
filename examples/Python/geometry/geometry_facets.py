@@ -5,9 +5,6 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/Python/Basic/polyline.py
-
-import numpy as np
 import cloudViewer as cv3d
 
 
@@ -16,6 +13,7 @@ def generate_from_point_cloud():
     ply_data = cv3d.data.PLYPointCloud()
     pc = cv3d.io.read_point_cloud(ply_data.path)
     facet = cv3d.geometry.ccFacet.Create(cloud=pc, max_edge_length=0)
+    print(facet)
     facet.get_polygon().set_temp_color([0, 0, 0.5])
     facet.get_polygon().set_opacity(0.5)
     facet.get_polygon().clear_triangle_normals()
@@ -27,8 +25,10 @@ def generate_from_point_cloud():
 
 
 def generate_from_file():
-    print("Load a ply point cloud, print it, and render it")
-    entity = cv3d.io.read_entity("../../test_data/facets/facets.bin")
+    print("Load a facets data, print it, and render it")
+    cv3d.data.set_cloudViewer_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+    facets_data = cv3d.data.FacetsModel()
+    entity = cv3d.io.read_entity(facets_data.path)
     facets = entity.filter_children(recursive=False,
                                     filter=cv3d.geometry.ccHObject.FACET)
     print(facets)
@@ -44,8 +44,8 @@ def generate_from_file():
 
 
 def facets_generator():
-    yield "facet1", generate_from_point_cloud()
-    yield "facet2", generate_from_file()
+    yield "facet1", generate_from_file()
+    yield "facet2", generate_from_point_cloud()
 
 
 if __name__ == "__main__":
@@ -54,4 +54,4 @@ if __name__ == "__main__":
         print("{}: RMS {}, Area {}, normal {}".format(name, facets[0].get_rms(),
                                                       facets[0].get_area(),
                                                       facets[0].get_normal()))
-        cv3d.visualization.draw_geometries(facets)
+        cv3d.visualization.draw_geometries(facets, mesh_show_back_face=True)

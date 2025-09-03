@@ -27,8 +27,17 @@ public:
 };
 
 void pybind_data_classes(py::module& m) {
-    // cloudViewer.data.cloudViewer_downloads_prefix as static attr of
-    // cloudViewer.data.
+    // Dynamic getter/setter functions that always reflect current C++ state
+    m.def(
+            "get_cloudViewer_downloads_prefix",
+            []() { return CloudViewerDownloadsPrefix(); },
+            "Get the current URL prefix for CloudViewer downloads");
+    m.def(
+            "set_cloudViewer_downloads_prefix",
+            [](const std::string& prefix) {
+                CloudViewerDownloadsPrefix() = prefix;
+            },
+            "Set the URL prefix for CloudViewer downloads", "prefix"_a);
     m.attr("cloudViewer_downloads_prefix") =
             py::cast(CloudViewerDownloadsPrefix());
 
@@ -100,10 +109,11 @@ void pybind_demo_icp_pointclouds(py::module& m) {
     // cloudViewer.data.DemoICPPointClouds
     py::class_<DemoICPPointClouds, PyDownloadDataset<DemoICPPointClouds>,
                std::shared_ptr<DemoICPPointClouds>, DownloadDataset>
-            demo_icp_pointclouds(m, "DemoICPPointClouds",
-                                 "Data class for `DemoICPPointClouds` contains "
-                                 "3 point clouds of binary PCD format. This "
-                                 "dataset is used in CloudViewer for ICP demo.");
+            demo_icp_pointclouds(
+                    m, "DemoICPPointClouds",
+                    "Data class for `DemoICPPointClouds` contains "
+                    "3 point clouds of binary PCD format. This "
+                    "dataset is used in CloudViewer for ICP demo.");
     demo_icp_pointclouds.def(py::init<const std::string&>(), "data_root"_a = "")
             .def_property_readonly(
                     "paths",
@@ -153,7 +163,8 @@ void pybind_demo_crop_pointcloud(py::module& m) {
                     m, "DemoCropPointCloud",
                     "Data class for `DemoCropPointCloud` contains a point "
                     "cloud, and `cropped.json` (a saved selected polygon "
-                    "volume file). This dataset is used in CloudViewer for point "
+                    "volume file). This dataset is used in CloudViewer for "
+                    "point "
                     "cloud crop demo.");
     demo_crop_pointcloud.def(py::init<const std::string&>(), "data_root"_a = "")
             .def_property_readonly("point_cloud_path",
@@ -211,7 +222,8 @@ void pybind_demo_feature_matching_point_clouds(py::module& m) {
                     m, "DemoFeatureMatchingPointClouds",
                     "Data class for `DemoFeatureMatchingPointClouds` contains "
                     "2 pointcloud fragments and their respective FPFH features "
-                    "and L32D features. This dataset is used in CloudViewer for "
+                    "and L32D features. This dataset is used in CloudViewer "
+                    "for "
                     "point cloud feature matching demo.");
     demo_feature_matching
             .def(py::init<const std::string&>(), "data_root"_a = "")
@@ -249,7 +261,8 @@ void pybind_demo_pose_graph_optimization(py::module& m) {
                     m, "DemoPoseGraphOptimization",
                     "Data class for `DemoPoseGraphOptimization` contains an "
                     "example fragment pose graph, and global pose graph. This "
-                    "dataset is used in CloudViewer for pose graph optimization "
+                    "dataset is used in CloudViewer for pose graph "
+                    "optimization "
                     "demo.");
     demo_pose_graph_optimization
             .def(py::init<const std::string&>(), "data_root"_a = "")
@@ -277,7 +290,8 @@ void pybind_demo_custom_visualization(py::module& m) {
                     "Data class for `DemoCustomVisualization` contains an "
                     "example point-cloud, camera trajectory (json file), "
                     "rendering options (json file). This data is used in "
-                    "CloudViewer for custom visualization with camera trajectory "
+                    "CloudViewer for custom visualization with camera "
+                    "trajectory "
                     "demo.");
     demo_custom_visualization
             .def(py::init<const std::string&>(), "data_root"_a = "")
@@ -523,6 +537,32 @@ void pybind_eagle(py::module& m) {
             .def_property_readonly("path", &EaglePointCloud::GetPath,
                                    "Path to the `EaglePointCloud.ply` file.");
     docstring::ClassMethodDocInject(m, "EaglePointCloud", "path");
+}
+
+void pybind_facets_model(py::module& m) {
+    // cloudViewer.data.FacetsModel
+    py::class_<FacetsModel, PyDownloadDataset<FacetsModel>,
+               std::shared_ptr<FacetsModel>, DownloadDataset>
+            facets_model(m, "FacetsModel",
+                         "Data class for `FacetsModel` contains the "
+                         "`facets.bin` from the `CloudViewer` project.");
+    facets_model.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &FacetsModel::GetPath,
+                                   "Path to the `facets.bin` file.");
+    docstring::ClassMethodDocInject(m, "FacetsModel", "path");
+}
+
+void pybind_polylines_model(py::module& m) {
+    // cloudViewer.data.PolylinesModel
+    py::class_<PolylinesModel, PyDownloadDataset<PolylinesModel>,
+               std::shared_ptr<PolylinesModel>, DownloadDataset>
+            polylines_model(m, "PolylinesModel",
+                            "Data class for `PolylinesModel` contains the "
+                            "`polylines.bin` from the `CloudViewer` project.");
+    polylines_model.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &PolylinesModel::GetPath,
+                                   "Path to the `polylines.bin` file.");
+    docstring::ClassMethodDocInject(m, "PolylinesModel", "path");
 }
 
 void pybind_armadillo(py::module& m) {
@@ -1220,6 +1260,9 @@ sequence, and ground-truth camera trajectory. ::
 void pybind_data(py::module& m) {
     py::module m_submodule = m.def_submodule("data", "Data handling module.");
     pybind_data_classes(m_submodule);
+    // Model data.
+    pybind_facets_model(m_submodule);
+    pybind_polylines_model(m_submodule);
     // Demo data.
     pybind_demo_icp_pointclouds(m_submodule);
     pybind_demo_colored_icp_pointclouds(m_submodule);

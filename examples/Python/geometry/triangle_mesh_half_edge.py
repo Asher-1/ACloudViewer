@@ -5,8 +5,6 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/python/geometry/half_edge_mesh.py
-
 import numpy as np
 import cloudViewer as cv3d
 

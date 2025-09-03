@@ -30,9 +30,10 @@ std::string LocateDataRoot() {
     return data_root;
 }
 
-std::string CloudViewerDownloadsPrefix() {
-    return "https://github.com/isl-org/open3d_downloads/releases/download/";
-}
+static std::string cloudViewerDownloadsPrefix =
+        "https://github.com/isl-org/open3d_downloads/releases/download/";
+
+std::string& CloudViewerDownloadsPrefix() { return cloudViewerDownloadsPrefix; }
 
 Dataset::Dataset(const std::string& prefix, const std::string& data_root)
     : prefix_(prefix) {
