@@ -456,7 +456,7 @@ ScalarType UnpackASCIIPCDScalar(const char *data_ptr,
                                 const char type,
                                 const int size) {
     if (size == 1) {
-        std::uint8_t data;
+        std::uint8_t data = 0;
         char *end;
         if (type == 'I') {
             std::int32_t value = std::strtol(data_ptr, &end, 0);

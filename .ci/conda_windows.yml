@@ -10,7 +10,8 @@ dependencies:
   - flann=1.9.*
   - qhull=2020.2
   - xerces-c=3.2.* # reconstruction
-  - qt=5.15.*
+  - qt=5.15.* # reconstruction
+  - cgal=5.* # facets
   - ffmpeg=6.1.*
   - nodejs  # jupyter
   - rust   # fix missing cargo when pip install pywinpty

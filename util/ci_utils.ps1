@@ -251,9 +251,9 @@ function Build-GuiApp {
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE",
         "-DBUILD_COMMON_CUDA_ARCHS=ON",
         "-DGLIBCXX_USE_CXX11_ABI=ON",
-        "-DCVCORELIB_USE_CGAL=ON",
         "-DCVCORELIB_SHARED=ON",
-        "-DCVCORELIB_USE_QT_CONCURRENT=ON",
+        "-DCVCORELIB_USE_CGAL=ON", # for delaunay triangulation such as facet
+        "-DCVCORELIB_USE_QT_CONCURRENT=ON", # for parallel processing
         "-DOPTION_USE_GDAL=$WITH_GDAL",
         "-DOPTION_USE_DXF_LIB=ON",
         "-DPLUGIN_IO_QDRACO=ON",
@@ -420,6 +420,9 @@ function Build-PipPackage {
         "-DWITH_SIMD=ON",
         "-DWITH_OPENMP=ON",
         "-DWITH_IPP=ON",
+        "-DCVCORELIB_SHARED=ON",
+        "-DCVCORELIB_USE_CGAL=ON", # for delaunay triangulation such as facet
+        "-DCVCORELIB_USE_QT_CONCURRENT=ON", # for parallel processing
         "-DUSE_PCL_BACKEND=OFF",
         "-DBUILD_RECONSTRUCTION=ON",
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS",

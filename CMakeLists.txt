@@ -532,6 +532,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # This must be defined here since CUDA calls find_package(Threads) internally.
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 
+# Suppress specific Qt QString::SkipEmptyParts deprecation warnings
+add_compile_definitions(QT_NO_DEPRECATED_WARNINGS)
+
 # Overwrites property for Thread::Threads in find_package(Threads)
 # For CUDA, "-pthread" is replaced with "-Xcompiler -pthread" (CMake's default)
 # For ISPC, "-pthread" is disabled
@@ -563,6 +566,7 @@ if (BUILD_CUDA_MODULE)
     # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
     # add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_ALLOW_UNSUPPORTED_LIBCPP>)
     add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
+
     include(CloudViewerMakeCudaArchitectures)
     cloudViewer_make_cuda_architectures(CUDA_ARCHS)
     set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})

@@ -200,6 +200,9 @@ build_mac_wheel() {
         "-DWITH_IPP=OFF" # not supported on macos
         "-DWITH_SIMD=ON"
         "-DUSE_SIMD=ON"
+        "-DCVCORELIB_SHARED=ON"
+        "-DCVCORELIB_USE_CGAL=ON" # for delaunay triangulation such as facet
+        "-DCVCORELIB_USE_QT_CONCURRENT=ON" # for parallel processing
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=ON"
@@ -445,6 +448,9 @@ build_pip_package() {
         "-DWITH_SIMD=ON"
         "-DWITH_OPENMP=ON"
         "-DWITH_IPP=ON"
+        "-DCVCORELIB_SHARED=ON"
+        "-DCVCORELIB_USE_CGAL=ON" # for delaunay triangulation such as facet
+        "-DCVCORELIB_USE_QT_CONCURRENT=ON" # for parallel processing
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"

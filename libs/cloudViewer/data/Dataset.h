@@ -7,12 +7,12 @@
 
 #pragma once
 
+#include <Eigen.h>
+
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
-#include <Eigen.h>
 
 namespace cloudViewer {
 namespace data {
@@ -26,15 +26,15 @@ std::string LocateDataRoot();
 /// Returns the URL prefix for the open3d_downloads's releases.
 /// See https://github.com/isl-org/open3d_downloads/releases/ for more info.
 /// This is hard-coded to have "/" at the end.
-std::string CloudViewerDownloadsPrefix();
+std::string& CloudViewerDownloadsPrefix();
 
 /// \class Dataset
 /// \brief Base CloudViewer dataset class.
 ///
 /// The Dataset classes in CloudViewer are designed for convenient access to
 /// "built-in" example and test data. You'll need internet access to use the
-/// dataset classes. The downloaded data will be stored in the CloudViewer's data
-/// root directory.
+/// dataset classes. The downloaded data will be stored in the CloudViewer's
+/// data root directory.
 ///
 /// - A dataset class locates the data root directory in the following order:
 ///   (a) User-specified by `data_root` when instantiating a dataset object.
@@ -50,9 +50,9 @@ std::string CloudViewerDownloadsPrefix();
 ///   the provided MD5, it will be re-downloaded.
 /// - After the data is downloaded and extracted, the dataset object will NOT
 ///   load the data for you. Instead, you will get the paths to the data files
-///   and use CloudViewer's I/O functions to load the data. This design exposes where
-///   the data is stored and how the data is loaded, allowing users to modify
-///   the code and load their own data in a similar way. Please check the
+///   and use CloudViewer's I/O functions to load the data. This design exposes
+///   where the data is stored and how the data is loaded, allowing users to
+///   modify the code and load their own data in a similar way. Please check the
 ///   documentation of the specific dataset to know more about the specific
 ///   functionalities provided for it.
 class Dataset {
@@ -162,6 +162,36 @@ protected:
     /// Check if all files are downloaded and MD5 checksums are valid.
     bool HasDownloaded(const DataDescriptor& data_descriptor) const;
     std::vector<DataDescriptor> data_descriptors_;
+};
+
+/// \class FacetsModel
+/// \brief Data class for `FacetsModel` contains the `facets.bin` from
+/// the `CloudViewer` project.
+class FacetsModel : public DownloadDataset {
+public:
+    FacetsModel(const std::string& data_root = "");
+
+    /// \brief Path to the `facets.bin` file.
+    std::string GetPath() const { return path_; }
+
+private:
+    /// Path to the `facets.bin` file.
+    std::string path_;
+};
+
+/// \class PolylinesModel
+/// \brief Data class for `PolylinesModel` contains the `polylines.bin` from
+/// the `CloudViewer` project.
+class PolylinesModel : public DownloadDataset {
+public:
+    PolylinesModel(const std::string& data_root = "");
+
+    /// \brief Path to the `polylines.bin` file.
+    std::string GetPath() const { return path_; }
+
+private:
+    /// Path to the `polylines.bin` file.
+    std::string path_;
 };
 
 /// \class ArmadilloMesh
@@ -326,8 +356,8 @@ private:
 /// \class DemoCustomVisualization
 /// \brief Data class for `DemoCustomVisualization` contains an example
 /// point-cloud, camera trajectory (json file), rendering options (json file).
-/// This data is used in CloudViewer for custom visualization with camera trajectory
-/// demo.
+/// This data is used in CloudViewer for custom visualization with camera
+/// trajectory demo.
 class DemoCustomVisualization : public DownloadDataset {
 public:
     DemoCustomVisualization(const std::string& data_root = "");
