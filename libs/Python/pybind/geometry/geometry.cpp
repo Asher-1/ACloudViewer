@@ -786,47 +786,47 @@ void pybind_geometry_classes(py::module& m) {
                  "Sets the line width.", "width"_a)
             .def("is_serializable", &ccHObject::isSerializable,
                  "Returns whether the instance is a serializable.")
-            .def("is_empty", &ccHObject::isEmpty,
+            .def("is_empty", &ccHObject::IsEmpty,
                  "Returns ``True`` if the geometry is empty.")
             .def("get_min_bound", &ccHObject::GetMinBound,
                  "Returns min bounds for geometry coordinates.")
             .def("get_max_bound", &ccHObject::GetMaxBound,
                  "Returns max bounds for geometry coordinates.")
-            .def("get_min_2Dbound", &ccHObject::getMin2DBound,
+            .def("get_min_2Dbound", &ccHObject::GetMin2DBound,
                  "Returns min 2d bounds for geometry coordinates.")
-            .def("get_max_2Dbound", &ccHObject::getMax2DBound,
+            .def("get_max_2Dbound", &ccHObject::GetMax2DBound,
                  "Returns max 2d bounds for geometry coordinates.")
-            .def("get_center", &ccHObject::getGeometryCenter,
+            .def("get_center", &ccHObject::GetCenter,
                  "Returns the center of the geometry coordinates.")
             .def("get_own_bounding_box", &ccHObject::getOwnBB,
                  "Returns an axis-aligned bounding box of the geometry.",
                  "withGLFeatures"_a = false)
             .def("get_axis_aligned_bounding_box",
-                 &ccHObject::getAxisAlignedBoundingBox,
+                 &ccHObject::GetAxisAlignedBoundingBox,
                  "Returns an axis-aligned bounding box of the geometry.")
             .def("get_oriented_bounding_box",
-                 &ccHObject::getOrientedBoundingBox,
+                 &ccHObject::GetOrientedBoundingBox,
                  "Returns an oriented bounding box of the geometry.")
-            .def("transform", &ccHObject::transform,
+            .def("transform", &ccHObject::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
-            .def("translate", &ccHObject::translate,
+            .def("translate", &ccHObject::Translate,
                  "Apply translation to the geometry coordinates.",
                  "translation"_a, "relative"_a = true)
-            .def("scale", py::overload_cast<double>(&ccHObject::scale),
-                 "Apply scaling to the geometry coordinates.", "s"_a)
+            .def("scale", py::overload_cast<double>(&ccHObject::Scale),
+                 "Apply scaling to the geometry coordinates.", "scale"_a)
             .def("scale",
                  py::overload_cast<double, const Eigen::Vector3d&>(
-                         &ccHObject::scale),
-                 "Apply scaling to the geometry coordinates.", "s"_a,
+                         &ccHObject::Scale),
+                 "Apply scaling to the geometry coordinates.", "scale"_a,
                  "center"_a)
             .def("rotate",
-                 py::overload_cast<const Eigen::Matrix3d&>(&ccHObject::rotate),
+                 py::overload_cast<const Eigen::Matrix3d&>(&ccHObject::Rotate),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a)
             .def("rotate",
                  py::overload_cast<const Eigen::Matrix3d&,
-                                   const Eigen::Vector3d&>(&ccHObject::rotate),
+                                   const Eigen::Vector3d&>(&ccHObject::Rotate),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a, "center"_a)
             .def(

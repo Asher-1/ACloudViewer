@@ -25,36 +25,36 @@
 
 using namespace cloudViewer;
 
-ecvOrientedBBox ccBBox::getOrientedBoundingBox() const {
+ecvOrientedBBox ccBBox::GetOrientedBoundingBox() const {
     return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(*this);
 }
 
-ccBBox& ccBBox::transform(const Eigen::Matrix4d& transformation) {
+ccBBox& ccBBox::Transform(const Eigen::Matrix4d& transformation) {
     utility::LogError(
             "A general transform of a ccBBox would not be axis "
             "aligned anymore, convert it to a OrientedBoundingBox first");
     return *this;
 }
 
-ccBBox& ccBBox::translate(const Eigen::Vector3d& translation, bool relative) {
+ccBBox& ccBBox::Translate(const Eigen::Vector3d& translation, bool relative) {
     if (relative) {
         m_bbMin += translation;
         m_bbMax += translation;
     } else {
-        const Eigen::Vector3d half_extent = getHalfExtent();
+        const Eigen::Vector3d half_extent = GetHalfExtent();
         m_bbMin = CCVector3::fromArray(translation - half_extent);
         m_bbMax = CCVector3::fromArray(translation + half_extent);
     }
     return *this;
 }
 
-ccBBox& ccBBox::scale(const double s, const Eigen::Vector3d& center) {
+ccBBox& ccBBox::Scale(const double s, const Eigen::Vector3d& center) {
     m_bbMin = static_cast<PointCoordinateType>(s) * (m_bbMin - center) + center;
     m_bbMax = static_cast<PointCoordinateType>(s) * (m_bbMax - center) + center;
     return *this;
 }
 
-ccBBox& ccBBox::rotate(const Eigen::Matrix3d& R,
+ccBBox& ccBBox::Rotate(const Eigen::Matrix3d& R,
                        const Eigen::Vector3d& center) {
     utility::LogError(
             "A rotation of a ccBBox would not be axis aligned "
@@ -63,11 +63,11 @@ ccBBox& ccBBox::rotate(const Eigen::Matrix3d& R,
 }
 
 const ccBBox& ccBBox::operator+=(const ccBBox& other) {
-    if (isEmpty()) {
+    if (IsEmpty()) {
         this->m_bbMin = other.minCorner();
         this->m_bbMax = other.maxCorner();
         this->setValidity(true);
-    } else if (!other.isEmpty()) {
+    } else if (!other.IsEmpty()) {
         this->add(other.minCorner());
         this->add(other.maxCorner());
         this->setValidity(true);
@@ -95,7 +95,7 @@ ccBBox ccBBox::CreateFromPoints(const std::vector<CCVector3>& points) {
             box.add(pt);
         }
     }
-    box.setValidity(box.getMaxExtent() > 0);
+    box.setValidity(box.GetMaxExtent() > 0);
     return box;
 }
 
@@ -117,13 +117,13 @@ ccBBox ccBBox::CreateFromPoints(const std::vector<Eigen::Vector3d>& points) {
                 });
     }
 
-    box.setValidity(!box.isEmpty());
+    box.setValidity(!box.IsEmpty());
     return box;
 }
 
-std::vector<Eigen::Vector3d> ccBBox::getBoxPoints() const {
+std::vector<Eigen::Vector3d> ccBBox::GetBoxPoints() const {
     std::vector<Eigen::Vector3d> points(8);
-    Eigen::Vector3d extent = getExtent();
+    Eigen::Vector3d extent = GetExtent();
     Eigen::Vector3d min_bound = CCVector3d::fromArray(m_bbMin);
     Eigen::Vector3d max_bound = CCVector3d::fromArray(m_bbMax);
     points[0] = min_bound;
@@ -137,7 +137,7 @@ std::vector<Eigen::Vector3d> ccBBox::getBoxPoints() const {
     return points;
 }
 
-std::string ccBBox::getPrintInfo() const {
+std::string ccBBox::GetPrintInfo() const {
     return fmt::format("[({:.4f}, {:.4f}, {:.4f}) - ({:.4f}, {:.4f}, {:.4f})]",
                        m_bbMin(0), m_bbMin(1), m_bbMin(2), m_bbMax(0),
                        m_bbMax(1), m_bbMax(2));

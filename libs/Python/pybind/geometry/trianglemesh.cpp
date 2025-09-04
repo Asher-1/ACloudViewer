@@ -245,23 +245,23 @@ void pybind_trianglemesh(py::module& m) {
                     },
                     "Transforms the mesh per-triangle normals.",
                     "transformation"_a)
-            .def("get_triangle_area", &ccMesh::getTriangleArea,
+            .def("get_triangle_area", &ccMesh::GetTriangleArea,
                  "Function that computes the area of a mesh triangle "
                  "identified by the triangle index.",
                  "triangle_index"_a)
-            .def("is_bbox_intersecting", &ccMesh::isBoundingBoxIntersecting,
+            .def("is_bbox_intersecting", &ccMesh::IsBoundingBoxIntersecting,
                  "Function that tests if the bounding boxes of the triangle "
                  "meshes are intersecting.",
                  "other"_a)
-            .def("get_edge_to_triangles_map", &ccMesh::getEdgeToTrianglesMap,
+            .def("get_edge_to_triangles_map", &ccMesh::GetEdgeToTrianglesMap,
                  "Function that returns a map from edges (vertex0, vertex1) to "
                  "the"
                  " triangle indices the given edge belongs to.")
-            .def("get_edge_to_vertices_map", &ccMesh::getEdgeToVerticesMap,
+            .def("get_edge_to_vertices_map", &ccMesh::GetEdgeToVerticesMap,
                  "Function that returns a map from edges (vertex0, vertex1) to "
                  "the"
                  " vertex (vertex2) indices the given edge belongs to.")
-            .def("get_triangle_plane", &ccMesh::getTrianglePlane,
+            .def("get_triangle_plane", &ccMesh::GetTrianglePlane,
                  "Function that computes the plane equation of a mesh triangle "
                  "identified by the triangle index."
                  "triangle_index"_a)
@@ -284,38 +284,38 @@ void pybind_trianglemesh(py::module& m) {
                  "Function to compute triangle normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
-            .def("compute_vertex_normals", &ccMesh::computeVertexNormals,
+            .def("compute_vertex_normals", &ccMesh::ComputeVertexNormals,
                  "Function to compute vertex normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
-            .def("compute_adjacency_list", &ccMesh::computeAdjacencyList,
+            .def("compute_adjacency_list", &ccMesh::ComputeAdjacencyList,
                  "Function to compute adjacency list, call before adjacency "
                  "list is needed")
             .def("remove_duplicated_vertices",
-                 &ccMesh::removeDuplicatedVertices,
+                 &ccMesh::RemoveDuplicatedVertices,
                  "Function that removes duplicated verties, i.e., vertices "
                  "that have identical coordinates.")
             .def("remove_duplicated_triangles",
-                 &ccMesh::removeDuplicatedTriangles,
+                 &ccMesh::RemoveDuplicatedTriangles,
                  "Function that removes duplicated triangles, i.e., removes "
                  "triangles that reference the same three vertices, "
                  "independent of their order.")
             .def("remove_unreferenced_vertices",
-                 &ccMesh::removeUnreferencedVertices,
+                 &ccMesh::RemoveUnreferencedVertices,
                  "This function removes vertices from the triangle mesh that "
                  "are not referenced in any triangle of the mesh.")
             .def("remove_degenerate_triangles",
-                 &ccMesh::removeDegenerateTriangles,
+                 &ccMesh::RemoveDegenerateTriangles,
                  "Function that removes degenerate triangles, i.e., triangles "
                  "that references a single vertex multiple times in a single "
                  "triangle. They are usually the product of removing "
                  "duplicated vertices.")
-            .def("remove_non_manifold_edges", &ccMesh::removeNonManifoldEdges,
+            .def("remove_non_manifold_edges", &ccMesh::RemoveNonManifoldEdges,
                  "Function that removes all non-manifold edges, by "
                  "successively deleting  triangles with the smallest surface "
                  "area adjacent to the non-manifold edge until the number of "
                  "adjacent triangles to the edge is `<= 2`.")
-            .def("merge_close_vertices", &ccMesh::mergeCloseVertices,
+            .def("merge_close_vertices", &ccMesh::MergeCloseVertices,
                  "Function that will merge close by vertices to a single one. "
                  "The vertex position, "
                  "normal and color will be the average of the vertices. The "
@@ -324,7 +324,7 @@ void pybind_trianglemesh(py::module& m) {
                  "function might help to "
                  "close triangle soups.",
                  "eps"_a)
-            .def("filter_sharpen", &ccMesh::filterSharpen,
+            .def("filter_sharpen", &ccMesh::FilterSharpen,
                  "Function to sharpen triangle mesh. The output value "
                  "(:math:`v_o`) is the input value (:math:`v_i`) plus strength "
                  "times the input value minus he sum of he adjacent values. "
@@ -332,7 +332,7 @@ void pybind_trianglemesh(py::module& m) {
                  "v_n)`",
                  "number_of_iterations"_a = 1, "strength"_a = 1,
                  "filter_scope"_a = ccMesh::FilterScope::All)
-            .def("filter_smooth_simple", &ccMesh::filterSmoothSimple,
+            .def("filter_smooth_simple", &ccMesh::FilterSmoothSimple,
                  "Function to smooth triangle mesh with simple neighbor "
                  "average. :math:`v_o = \\frac{v_i + \\sum_{n \\in N} "
                  "v_n)}{|N| + 1}`, with :math:`v_i` being the input value, "
@@ -340,7 +340,7 @@ void pybind_trianglemesh(py::module& m) {
                  "adjacent neighbours.",
                  "number_of_iterations"_a = 1,
                  "filter_scope"_a = ccMesh::FilterScope::All)
-            .def("filter_smooth_laplacian", &ccMesh::filterSmoothLaplacian,
+            .def("filter_smooth_laplacian", &ccMesh::FilterSmoothLaplacian,
                  "Function to smooth triangle mesh using Laplacian. :math:`v_o "
                  "= v_i \\cdot \\lambda (sum_{n \\in N} w_n v_n - v_i)`, with "
                  ":math:`v_i` being the input value, :math:`v_o` the output "
@@ -350,7 +350,7 @@ void pybind_trianglemesh(py::module& m) {
                  "lambda is the smoothing parameter.",
                  "number_of_iterations"_a = 1, "lambda"_a = 0.5,
                  "filter_scope"_a = ccMesh::FilterScope::All)
-            .def("filter_smooth_taubin", &ccMesh::filterSmoothTaubin,
+            .def("filter_smooth_taubin", &ccMesh::FilterSmoothTaubin,
                  "Function to smooth triangle mesh using method of Taubin, "
                  "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
                  "Applies in each iteration two times filter_smooth_laplacian, "
@@ -359,7 +359,7 @@ void pybind_trianglemesh(py::module& m) {
                  "shrinkage of the triangle mesh.",
                  "number_of_iterations"_a = 1, "lambda"_a = 0.5, "mu"_a = -0.53,
                  "filter_scope"_a = ccMesh::FilterScope::All)
-            .def("has_vertices", &ccMesh::hasVertices,
+            .def("has_vertices", &ccMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &ccMesh::hasTriangles,
                  "Returns ``True`` if the mesh contains triangles.")
@@ -497,40 +497,40 @@ void pybind_trianglemesh(py::module& m) {
                  "Returns ``True`` if the mesh contains material ids.")
             .def("has_textures", &ccMesh::hasEigenTextures,
                  "Returns ``True`` if the mesh contains a texture image.")
-            .def("normalize_normals", &ccMesh::normalizeNormals,
+            .def("normalize_normals", &ccMesh::NormalizeNormals,
                  "Normalize both triangle normals and vertex normals to length "
                  "1.")
-            .def("paint_uniform_color", &ccMesh::paintUniformColor,
+            .def("paint_uniform_color", &ccMesh::PaintUniformColor,
                  "Assigns each vertex in the TriangleMesh the same color.")
             .def("euler_poincare_characteristic",
-                 &ccMesh::eulerPoincareCharacteristic,
+                 &ccMesh::EulerPoincareCharacteristic,
                  "Function that computes the Euler-Poincaré characteristic, "
                  "i.e., V + F - E, where V is the number of vertices, F is the "
                  "number of triangles, and E is the number of edges.")
-            .def("get_non_manifold_edges", &ccMesh::getNonManifoldEdges,
+            .def("get_non_manifold_edges", &ccMesh::GetNonManifoldEdges,
                  "Get list of non-manifold edges.",
                  "allow_boundary_edges"_a = true)
-            .def("is_edge_manifold", &ccMesh::isEdgeManifold,
+            .def("is_edge_manifold", &ccMesh::IsEdgeManifold,
                  "Tests if the triangle mesh is edge manifold.",
                  "allow_boundary_edges"_a = true)
-            .def("get_non_manifold_vertices", &ccMesh::getNonManifoldVertices,
+            .def("get_non_manifold_vertices", &ccMesh::GetNonManifoldVertices,
                  "Returns a list of indices to non-manifold vertices.")
-            .def("is_vertex_manifold", &ccMesh::isVertexManifold,
+            .def("is_vertex_manifold", &ccMesh::IsVertexManifold,
                  "Tests if all vertices of the triangle mesh are manifold.")
-            .def("is_self_intersecting", &ccMesh::isSelfIntersecting,
+            .def("is_self_intersecting", &ccMesh::IsSelfIntersecting,
                  "Tests if the triangle mesh is self-intersecting.")
             .def("get_self_intersecting_triangles",
-                 &ccMesh::getSelfIntersectingTriangles,
+                 &ccMesh::GetSelfIntersectingTriangles,
                  "Returns a list of indices to triangles that intersect the "
                  "mesh.")
-            .def("is_intersecting", &ccMesh::isIntersecting,
+            .def("is_intersecting", &ccMesh::IsIntersecting,
                  "Tests if the triangle mesh is intersecting the other "
                  "triangle mesh.")
-            .def("is_orientable", &ccMesh::isOrientable,
+            .def("is_orientable", &ccMesh::IsOrientable,
                  "Tests if the triangle mesh is orientable.")
-            .def("is_watertight", &ccMesh::isWatertight,
+            .def("is_watertight", &ccMesh::IsWatertight,
                  "Tests if the triangle mesh is watertight.")
-            .def("orient_triangles", &ccMesh::orientTriangles,
+            .def("orient_triangles", &ccMesh::OrientTriangles,
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
                  "direction.")
@@ -542,33 +542,33 @@ void pybind_trianglemesh(py::module& m) {
                  "indices"_a, "cleanup"_a = true)
             .def("crop",
                  (std::shared_ptr<ccMesh> (ccMesh::*)(const ccBBox&) const) &
-                         ccMesh::crop,
+                         ccMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("crop",
                  (std::shared_ptr<ccMesh> (ccMesh::*)(const ecvOrientedBBox&)
                           const) &
-                         ccMesh::crop,
+                         ccMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("get_surface_area",
-                 py::overload_cast<>(&ccMesh::getSurfaceArea, py::const_),
+                 py::overload_cast<>(&ccMesh::GetSurfaceArea, py::const_),
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
             .def("get_surface_area",
                  py::overload_cast<std::vector<double>&>(
-                         &ccMesh::getSurfaceArea, py::const_),
+                         &ccMesh::GetSurfaceArea, py::const_),
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.",
                  "triangle_areas"_a)
-            .def("get_volume", (double (ccMesh::*)() const) & ccMesh::getVolume,
+            .def("get_volume", (double (ccMesh::*)() const) & ccMesh::GetVolume,
                  "Function that computes the volume of the mesh, under the "
                  "condition that it is watertight and orientable.")
-            .def("sample_points_uniformly", &ccMesh::samplePointsUniformly,
+            .def("sample_points_uniformly", &ccMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
                  "number_of_points"_a = 100, "use_triangle_normal"_a = false,
                  "seed"_a = -1)
-            .def("sample_points_poisson_disk", &ccMesh::samplePointsPoissonDisk,
+            .def("sample_points_poisson_disk", &ccMesh::SamplePointsPoissonDisk,
                  "Function to sample points from the mesh, where each point "
                  "has "
                  "approximately the same distance to the neighbouring points "
@@ -577,59 +577,59 @@ void pybind_trianglemesh(py::module& m) {
                  "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
                  "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
                  "use_triangle_normal"_a = false, "seed"_a = -1)
-            .def("subdivide_midpoint", &ccMesh::subdivideMidpoint,
+            .def("subdivide_midpoint", &ccMesh::SubdivideMidpoint,
                  "Function subdivide mesh using midpoint algorithm.",
                  "number_of_iterations"_a = 1)
-            .def("subdivide_loop", &ccMesh::subdivideLoop,
+            .def("subdivide_loop", &ccMesh::SubdivideLoop,
                  "Function subdivide mesh using Loop's algorithm. Loop, "
                  "\"Smooth "
                  "subdivision surfaces based on triangles\", 1987.",
                  "number_of_iterations"_a = 1)
             .def("simplify_vertex_clustering",
-                 &ccMesh::simplifyVertexClustering,
+                 &ccMesh::SimplifyVertexClustering,
                  "Function to simplify mesh using vertex clustering.",
                  "voxel_size"_a,
                  "contraction"_a = ccMesh::SimplificationContraction::Average)
             .def("simplify_quadric_decimation",
-                 &ccMesh::simplifyQuadricDecimation,
+                 &ccMesh::SimplifyQuadricDecimation,
                  "Function to simplify mesh using Quadric Error Metric "
                  "Decimation by "
                  "Garland and Heckbert",
                  "target_number_of_triangles"_a,
                  "maximum_error"_a = std::numeric_limits<double>::infinity(),
                  "boundary_weight"_a = 1.0)
-            .def("compute_convex_hull", &ccMesh::computeConvexHull,
+            .def("compute_convex_hull", &ccMesh::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
             .def("cluster_connected_triangles",
-                 &ccMesh::clusterConnectedTriangles,
+                 &ccMesh::ClusterConnectedTriangles,
                  "Function that clusters connected triangles, i.e., triangles "
                  "that are connected via edges are assigned the same cluster "
                  "index.  This function retuns an array that contains the "
                  "cluster index per triangle, a second array contains the "
                  "number of triangles per cluster, and a third vector contains "
                  "the surface area per cluster.")
-            .def("remove_triangles_by_index", &ccMesh::removeTrianglesByIndex,
+            .def("remove_triangles_by_index", &ccMesh::RemoveTrianglesByIndex,
                  "This function removes the triangles with index in "
                  "triangle_indices.  Call remove_unreferenced_vertices to "
                  "clean up vertices afterwards.",
                  "triangle_indices"_a)
-            .def("remove_triangles_by_mask", &ccMesh::removeTrianglesByMask,
+            .def("remove_triangles_by_mask", &ccMesh::RemoveTrianglesByMask,
                  "This function removes the triangles where triangle_mask is "
                  "set to true.  Call remove_unreferenced_vertices to clean up "
                  "vertices afterwards.",
                  "triangle_mask"_a)
-            .def("remove_vertices_by_index", &ccMesh::removeVerticesByIndex,
+            .def("remove_vertices_by_index", &ccMesh::RemoveVerticesByIndex,
                  "This function removes the vertices with index in "
                  "vertex_indices. Note that also all triangles associated with "
                  "the vertices are removed.",
                  "vertex_indices"_a)
-            .def("remove_vertices_by_mask", &ccMesh::removeVerticesByMask,
+            .def("remove_vertices_by_mask", &ccMesh::RemoveVerticesByMask,
                  "This function removes the vertices that are masked in "
                  "vertex_mask. Note that also all triangles associated with "
                  "the vertices are removed.",
                  "vertex_mask"_a)
             .def("deform_as_rigid_as_possible",
-                 &ccMesh::deformAsRigidAsPossible,
+                 &ccMesh::DeformAsRigidAsPossible,
                  "This function deforms the mesh using the method by Sorkine "
                  "and Alexa, "
                  "'As-Rigid-As-Possible Surface Modeling', 2007",

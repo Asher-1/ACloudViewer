@@ -59,13 +59,13 @@ int main(int argc, char *argv[]) {
 
     auto new_cloud_ptr = std::make_shared<ccPointCloud>();
     *new_cloud_ptr = *cloud_ptr;
-    auto bounding_box = new_cloud_ptr->getAxisAlignedBoundingBox();
+    auto bounding_box = new_cloud_ptr->GetAxisAlignedBoundingBox();
     Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
-    trans_to_origin.block<3, 1>(0, 3) = bounding_box.getGeometryCenter() * -1.0;
+    trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
     transformation.block<3, 3>(0, 0) = static_cast<Eigen::Matrix3d>(
             Eigen::AngleAxisd(M_PI / 6.0, Eigen::Vector3d::UnitX()));
-    new_cloud_ptr->transform(trans_to_origin.inverse() * transformation *
+    new_cloud_ptr->Transform(trans_to_origin.inverse() * transformation *
                              trans_to_origin);
     correspondences.clear();
     for (size_t i = 0; i < new_cloud_ptr->size(); i++) {
@@ -78,9 +78,9 @@ int main(int argc, char *argv[]) {
                     *cloud_ptr, *new_cloud_ptr, correspondences);
     new_lineset_ptr->colors_.resize(new_lineset_ptr->lines_.size());
     for (size_t i = 0; i < new_lineset_ptr->lines_.size(); i++) {
-        auto point_pair = new_lineset_ptr->getLineCoordinate(i);
+        auto point_pair = new_lineset_ptr->GetLineCoordinate(i);
         if ((point_pair.first - point_pair.second).norm() <
-            0.05 * bounding_box.getMaxExtent()) {
+            0.05 * bounding_box.GetMaxExtent()) {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(1.0, 0.0, 0.0);
         } else {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 0.0);

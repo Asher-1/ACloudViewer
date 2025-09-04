@@ -194,7 +194,7 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
         }
         if (!mesh.HasTriangleNormals() || !mesh.hasNormals()) {
             PrintShaderWarning("Binding failed because mesh has no normals.");
-            PrintShaderWarning("Call computeVertexNormals() before binding.");
+            PrintShaderWarning("Call ComputeVertexNormals() before binding.");
             return false;
         }
         points.resize(static_cast<std::size_t>(mesh.size()) * 3);
@@ -226,7 +226,7 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
             PrintShaderWarning("Binding failed with empty triangle mesh.");
             return false;
         }
-        if (!mesh.HasTriangleNormals() || !mesh.hasVertexNormals()) {
+        if (!mesh.HasTriangleNormals() || !mesh.HasVertexNormals()) {
             PrintShaderWarning("Binding failed because mesh has no normals.");
             PrintShaderWarning("Call ComputeVertexNormals() before binding.");
             return false;

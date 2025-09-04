@@ -40,15 +40,15 @@ Eigen::Vector3d PointCloudPicker::GetMaxBound() const {
     }
 }
 
-Eigen::Vector3d PointCloudPicker::getGeometryCenter() const {
+Eigen::Vector3d PointCloudPicker::GetCenter() const {
     if (pointcloud_ptr_) {
-        return ((const ccPointCloud&)(*pointcloud_ptr_)).getGeometryCenter();
+        return ((const ccPointCloud&)(*pointcloud_ptr_)).GetCenter();
     } else {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
 }
 
-ccBBox PointCloudPicker::getAxisAlignedBoundingBox()
+ccBBox PointCloudPicker::GetAxisAlignedBoundingBox()
         const {
     if (pointcloud_ptr_) {
         return ccBBox::CreateFromPoints(
@@ -58,7 +58,7 @@ ccBBox PointCloudPicker::getAxisAlignedBoundingBox()
     }
 }
 
-ecvOrientedBBox PointCloudPicker::getOrientedBoundingBox() const {
+ecvOrientedBBox PointCloudPicker::GetOrientedBoundingBox() const {
     if (pointcloud_ptr_) {
         return ecvOrientedBBox::CreateFromPoints(
                 ((const ccPointCloud&)(*pointcloud_ptr_)).getPoints());
@@ -67,25 +67,25 @@ ecvOrientedBBox PointCloudPicker::getOrientedBoundingBox() const {
     }
 }
 
-PointCloudPicker& PointCloudPicker::transform(
+PointCloudPicker& PointCloudPicker::Transform(
         const Eigen::Matrix4d& /*transformation*/) {
     // Do nothing
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::translate(
+PointCloudPicker& PointCloudPicker::Translate(
         const Eigen::Vector3d& translation, bool relative) {
     // Do nothing
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::scale(const double s, 
+PointCloudPicker& PointCloudPicker::Scale(const double s, 
 										  const Eigen::Vector3d &center) {
     // Do nothing
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::rotate(const Eigen::Matrix3d& R,
+PointCloudPicker& PointCloudPicker::Rotate(const Eigen::Matrix3d& R,
 										   const Eigen::Vector3d &center) {
     // Do nothing
     return *this;

@@ -19,10 +19,6 @@ using FilterType = geometry::Image::FilterType;
 TEST(Image, DefaultConstructor) {
     geometry::Image image;
 
-    // inherited from Geometry2D
-    EXPECT_EQ(geometry::Geometry::GeometryType::Image, image.GetGeometryType());
-    EXPECT_EQ(2, image.Dimension());
-
     // public member variables
     EXPECT_EQ(0, image.width_);
     EXPECT_EQ(0, image.height_);

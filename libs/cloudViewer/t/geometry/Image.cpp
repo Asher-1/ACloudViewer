@@ -348,7 +348,7 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
     }
 
     // 16 signed is also supported by the engines, but is non-standard thus
-    // not supported by open3d. To filter 16 bit unsigned depth images, we
+    // not supported by cloudViewer. To filter 16 bit unsigned depth images, we
     // recommend first converting to Float32.
     static const dtype_channels_pairs npp_supported{
             {core::UInt8, 1},
@@ -509,7 +509,7 @@ Image Image::FromLegacy(const cloudViewer::geometry::Image &image_legacy,
             {4, core::Float32},
     };
 
-    if (image_legacy.isEmpty()) {
+    if (image_legacy.IsEmpty()) {
         return Image(0, 0, 1, core::Float32, device);
     }
 

@@ -263,7 +263,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 }
 
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {
-    const auto geometry_aabb = geometry_.getAxisAlignedBoundingBox();
+    const auto geometry_aabb = geometry_.GetAxisAlignedBoundingBox();
 
     const filament::math::float3 min(geometry_aabb.minCorner().x,
                                      geometry_aabb.minCorner().y,

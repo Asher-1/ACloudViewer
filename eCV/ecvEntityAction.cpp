@@ -2491,7 +2491,7 @@ bool DBScanCluster(const ccHObject::Container& selectedEntities,
     if (selectedEntities.empty()) return false;
 
     ccPointCloud* pc_test = ccHObjectCaster::ToPointCloud(selectedEntities[0]);
-    double eps = pc_test->computeResolution() * 10;
+    double eps = pc_test->ComputeResolution() * 10;
     int minPoints = 100;
     ecvAskDoubleIntegerValuesDlg dlg("density parameter eps", "minimum points",
                                      DBL_MIN, 1.0e9, 1, 1000000, eps, minPoints,
@@ -2518,7 +2518,7 @@ bool DBScanCluster(const ccHObject::Container& selectedEntities,
             continue;
         }
         entities.push_back(pc);
-        clusters.emplace_back(pc->clusterDBSCAN(eps, minPoints));
+        clusters.emplace_back(pc->ClusterDBSCAN(eps, minPoints));
         vector<int>::iterator itMax =
                 std::max_element(clusters[clusters.size() - 1].begin(),
                                  clusters[clusters.size() - 1].end());
@@ -2571,7 +2571,7 @@ bool RansacSegmentation(const ccHObject::Container& selectedEntities,
         std::vector<size_t> inliers;
         Eigen::Vector4d planeModel;
         std::tie(planeModel, inliers) =
-                pc->segmentPlane(distanceThreshold, ransacN, iterations);
+                pc->SegmentPlane(distanceThreshold, ransacN, iterations);
 
         CVLog::Print(QString("[%1] Plane model: %2x + %3y + %4z + %5 = 0")
                              .arg(ent->getName())
@@ -2622,7 +2622,7 @@ bool ConvexHull(const ccHObject::Container& selectedEntities,
 
         std::shared_ptr<ccMesh> mesh;
         std::vector<size_t> pt_map;
-        std::tie(mesh, pt_map) = pc->computeConvexHull();
+        std::tie(mesh, pt_map) = pc->ComputeConvexHull();
         if (!mesh) {
             CVLog::Warning(
                     QString("[ccEntityAction::ConvexHull] "
@@ -2654,7 +2654,7 @@ bool VoxelSampling(const ccHObject::Container& selectedEntities,
 
     outEntities.clear();
     ccPointCloud* pc_test = ccHObjectCaster::ToPointCloud(selectedEntities[0]);
-    double voxelSize = pc_test->computeResolution();
+    double voxelSize = pc_test->ComputeResolution();
 
     bool ok = false;
     voxelSize = QInputDialog::getDouble(parent, "voxel down sampling",

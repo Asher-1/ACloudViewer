@@ -252,7 +252,7 @@ TEST(HalfEdgeTriangleMesh, Constructor_TwoTriangles) {
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
     assert_same_vertices_and_triangles(mesh, *het_mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
 }
 
 TEST(HalfEdgeTriangleMesh, Constructor_Hexagon) {
@@ -260,7 +260,7 @@ TEST(HalfEdgeTriangleMesh, Constructor_Hexagon) {
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
     assert_same_vertices_and_triangles(mesh, *het_mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
 }
 
 TEST(HalfEdgeTriangleMesh, Constructor_PartialHexagon) {
@@ -268,7 +268,7 @@ TEST(HalfEdgeTriangleMesh, Constructor_PartialHexagon) {
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
     assert_same_vertices_and_triangles(mesh, *het_mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
 }
 
 TEST(HalfEdgeTriangleMesh, Constructor_Sphere) {
@@ -277,14 +277,14 @@ TEST(HalfEdgeTriangleMesh, Constructor_Sphere) {
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(*mesh);
     assert_same_vertices_and_triangles(*mesh, *het_mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
 }
 
 TEST(HalfEdgeTriangleMesh, OrderedHalfEdgesFromVertex_TwoTriangles) {
     auto mesh = get_mesh_two_triangles();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     assert_ordreded_neighbor(het_mesh, 0, {2});
@@ -297,7 +297,7 @@ TEST(HalfEdgeTriangleMesh, OrderedHalfEdgesFromVertex_Hexagon) {
     auto mesh = get_mesh_hexagon();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     assert_ordreded_neighbor(het_mesh, 0, {2, 3});
@@ -314,7 +314,7 @@ TEST(HalfEdgeTriangleMesh, OrderedHalfEdgesFromVertex_PartialHexagon) {
     auto mesh = get_mesh_partial_hexagon();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     assert_ordreded_neighbor(het_mesh, 0, {2, 3});
@@ -330,7 +330,7 @@ TEST(HalfEdgeTriangleMesh, BoundaryHalfEdgesFromVertex_TwoTriangles) {
     auto mesh = get_mesh_two_triangles();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     assert_ordreded_edges(het_mesh, het_mesh->BoundaryHalfEdgesFromVertex(0),
@@ -347,7 +347,7 @@ TEST(HalfEdgeTriangleMesh, BoundaryHalfEdgesFromVertex_Hexagon) {
     auto mesh = get_mesh_hexagon();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     assert_ordreded_edges(het_mesh, het_mesh->BoundaryHalfEdgesFromVertex(0),
@@ -370,7 +370,7 @@ TEST(HalfEdgeTriangleMesh, BoundaryHalfEdgesFromVertex_PartialHexagon) {
     auto mesh = get_mesh_partial_hexagon();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     assert_ordreded_edges(
@@ -400,7 +400,7 @@ TEST(HalfEdgeTriangleMesh, BoundaryVerticesFromVertex_TwoTriangles) {
     auto mesh = get_mesh_two_triangles();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(0), {0, 2, 3, 1});
@@ -413,7 +413,7 @@ TEST(HalfEdgeTriangleMesh, BoundaryVerticesFromVertex_Hexagon) {
     auto mesh = get_mesh_hexagon();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(0), {0, 2, 5, 6, 4, 1});
@@ -430,7 +430,7 @@ TEST(HalfEdgeTriangleMesh, BoundaryVerticesFromVertex_PartialHexagon) {
     auto mesh = get_mesh_partial_hexagon();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(0), {0, 2, 5, 6, 3, 4, 1});
@@ -446,7 +446,7 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_TwoTriangles) {
     auto mesh = get_mesh_two_triangles();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     EXPECT_EQ(het_mesh->GetBoundaries().size(), 1u);
@@ -459,7 +459,7 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_Hexagon) {
     auto mesh = get_mesh_hexagon();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     EXPECT_EQ(het_mesh->GetBoundaries().size(), 1u);
@@ -471,7 +471,7 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_PartialHexagon) {
     auto mesh = get_mesh_partial_hexagon();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     EXPECT_EQ(het_mesh->GetBoundaries().size(), 1u);
@@ -483,7 +483,7 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_FourTrianglesDisconnect) {
     auto mesh = get_mesh_four_triangles_disconnect();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    EXPECT_FALSE(het_mesh->isEmpty());
+    EXPECT_FALSE(het_mesh->IsEmpty());
     assert_same_vertices_and_triangles(mesh, *het_mesh);
 
     EXPECT_EQ(het_mesh->GetBoundaries().size(), 2u);

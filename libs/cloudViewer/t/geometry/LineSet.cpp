@@ -145,21 +145,21 @@ geometry::LineSet LineSet::FromLegacy(
     }
 
     LineSet lineset(device);
-    if (lineset_legacy.hasPoints()) {
+    if (lineset_legacy.HasPoints()) {
         lineset.SetPointPositions(
                 core::eigen_converter::EigenVector3dVectorToTensor(
                         lineset_legacy.points_, float_dtype, device));
     } else {
         utility::LogWarning("Creating from empty legacy LineSet.");
     }
-    if (lineset_legacy.hasLines()) {
+    if (lineset_legacy.HasLines()) {
         lineset.SetLineIndices(
                 core::eigen_converter::EigenVector2iVectorToTensor(
                         lineset_legacy.lines_, int_dtype, device));
     } else {
         utility::LogWarning("Creating from legacy LineSet with no lines.");
     }
-    if (lineset_legacy.hasColors()) {
+    if (lineset_legacy.HasColors()) {
         lineset.SetLineColors(
                 core::eigen_converter::EigenVector3dVectorToTensor(
                         lineset_legacy.colors_, float_dtype, device));

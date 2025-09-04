@@ -32,7 +32,7 @@ void VisualizeRegistration(const ccPointCloud &source,
     std::shared_ptr<ccPointCloud> target_ptr(new ccPointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;
-    source_transformed_ptr->transform(Transformation);
+    source_transformed_ptr->Transform(Transformation);
     visualization::DrawGeometries({source_transformed_ptr, target_ptr},
                                   "Registration result");
 }

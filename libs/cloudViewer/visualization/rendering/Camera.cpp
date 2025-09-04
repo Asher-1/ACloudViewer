@@ -56,7 +56,7 @@ float Camera::CalcFarPlane(
     auto far1 = scene_bounds.GetMinBound().norm();
     auto far2 = scene_bounds.GetMaxBound().norm();
     auto far3 = camera.GetModelMatrix().translation().cast<double>().norm();
-    auto model_size = 2.0 * scene_bounds.getExtent().norm();
+    auto model_size = 2.0 * scene_bounds.GetExtent().norm();
     auto far_v = std::max(MIN_FAR_PLANE,
                         std::max(std::max(far1, far2), far3) + model_size);
     return far_v;

@@ -47,7 +47,7 @@
 
 using namespace cloudViewer;
 
-std::vector<int> ccPointCloud::clusterDBSCAN(double eps,
+std::vector<int> ccPointCloud::ClusterDBSCAN(double eps,
                                              size_t min_points,
                                              bool print_progress) const {
     geometry::KDTreeFlann kdtree(*this);
@@ -173,7 +173,7 @@ bool geometry::RansacResult::setDrawingPrecision(unsigned steps) {
     return prim->setDrawingPrecision(steps);
 }
 
-geometry::RansacResults ccPointCloud::executeRANSAC(
+geometry::RansacResults ccPointCloud::ExecuteRANSAC(
         const geometry::RansacParams& params,
         bool print_progress /* = false*/) {
     geometry::RansacResults group;
@@ -181,7 +181,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
     {
         if (params.primEnabled.size() == 0) {
             utility::LogError(
-                    "[ccPointCloud::executeRANSAC] No primitive type "
+                    "[ccPointCloud::ExecuteRANSAC] No primitive type "
                     "selected!");
             return group;
         }
@@ -199,7 +199,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
             cloud.reserve(count);
         } catch (...) {
             utility::LogError(
-                    "[ccPointCloud::executeRANSAC] Could not create temporary "
+                    "[ccPointCloud::ExecuteRANSAC] Could not create temporary "
                     "cloud, Not enough memory!");
             return group;
         }
@@ -264,7 +264,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
             this->setRedrawFlagRecursive(true);
         } else {
             utility::LogError(
-                    "[ccPointCloud::executeRANSAC] Not enough memory to "
+                    "[ccPointCloud::ExecuteRANSAC] Not enough memory to "
                     "compute normals!");
             return group;
         }
@@ -365,7 +365,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 
     if (remaining == count && shapes.size() == 0) {
         utility::LogWarning(
-                "[ccPointCloud::executeRANSAC] Segmentation failed...");
+                "[ccPointCloud::ExecuteRANSAC] Segmentation failed...");
         return group;
     }
 
@@ -384,13 +384,13 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
             // too many points?!
             if (shapePointsCount > count) {
                 utility::LogError(
-                        "[ccPointCloud::executeRANSAC] Inconsistent result!");
+                        "[ccPointCloud::ExecuteRANSAC] Inconsistent result!");
                 break;
             }
 
             if (shapePointsCount < params.supportPoints) {
                 utility::LogWarning(
-                        "[ccPointCloud::executeRANSAC] Skipping shape, {:d} "
+                        "[ccPointCloud::ExecuteRANSAC] Skipping shape, {:d} "
                         "did not meet minimum point requirement",
                         shapePointsCount);
                 count -= shapePointsCount;
@@ -600,7 +600,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
                             static_cast<const TorusPrimitiveShape*>(shape);
                     if (torus->Internal().IsAppleShaped()) {
                         utility::LogWarning(
-                                "[ccPointCloud::executeRANSAC] Apple-shaped "
+                                "[ccPointCloud::ExecuteRANSAC] Apple-shaped "
                                 "torus are not handled by CloudViewer!");
                     } else {
                         Vec3f CC = torus->Internal().Center();
@@ -667,23 +667,23 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 
         if (print_progress) {
             utility::LogDebug(
-                    "[ccPointCloud::executeRANSAC] Detect Plane Shape number: "
+                    "[ccPointCloud::ExecuteRANSAC] Detect Plane Shape number: "
                     "{:d}",
                     planeCount - 1);
             utility::LogDebug(
-                    "[ccPointCloud::executeRANSAC] Detect Sphere Shape number: "
+                    "[ccPointCloud::ExecuteRANSAC] Detect Sphere Shape number: "
                     "{:d}",
                     sphereCount - 1);
             utility::LogDebug(
-                    "[ccPointCloud::executeRANSAC] Detect Cylinder Shape "
+                    "[ccPointCloud::ExecuteRANSAC] Detect Cylinder Shape "
                     "number: {:d}",
                     cylinderCount - 1);
             utility::LogDebug(
-                    "[ccPointCloud::executeRANSAC] Detect Cone Shape number: "
+                    "[ccPointCloud::ExecuteRANSAC] Detect Cone Shape number: "
                     "{:d}",
                     coneCount - 1);
             utility::LogDebug(
-                    "[ccPointCloud::executeRANSAC] Detect Torus Shape number: "
+                    "[ccPointCloud::ExecuteRANSAC] Detect Torus Shape number: "
                     "{:d}",
                     torusCount - 1);
         }
@@ -691,7 +691,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 
     if (print_progress) {
         utility::LogDebug(
-                "[ccPointCloud::executeRANSAC] Total Shape Detection "
+                "[ccPointCloud::ExecuteRANSAC] Total Shape Detection "
                 "Instances: {:d}",
                 group.size());
     }

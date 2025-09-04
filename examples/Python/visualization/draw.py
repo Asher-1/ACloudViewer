@@ -55,7 +55,7 @@ def multi_objects():
     sphere_colored_lit.compute_vertex_normals()
     sphere_colored_lit.paint_uniform_color((0.0, 1.0, 0.0))
     sphere_colored_lit.translate((6, 1, 0))
-    big_bbox = cv3d.geometry.AxisAlignedBoundingBox((-pc_rad, -3, -pc_rad),
+    big_bbox = cv3d.geometry.ccBBox((-pc_rad, -3, -pc_rad),
                                                    (6.0 + r, 1.0 + r, pc_rad))
     big_bbox.color = (0.0, 0.0, 0.0)
     sphere_bbox = sphere_unlit.get_axis_aligned_bounding_box()

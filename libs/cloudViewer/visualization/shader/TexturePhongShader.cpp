@@ -178,8 +178,8 @@ void TexturePhongShader::SetLighting(const ViewControl &view,
     light_color_data_.setOnes();
     for (int i = 0; i < 4; i++) {
         light_position_world_data_.block<3, 1>(0, i) =
-                box.getGeometryCenter().cast<GLfloat>() +
-                (float)box.getMaxExtent() *
+                box.GetCenter().cast<GLfloat>() +
+                (float)box.GetMaxExtent() *
                         ((float)option.light_position_relative_[i](0) *
                                  view.GetRight() +
                          (float)option.light_position_relative_[i](1) *
@@ -254,7 +254,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
     if (mesh.hasTriNormals() == false ||
         mesh.getAssociatedCloud()->hasNormals() == false) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
-        PrintShaderWarning("Call computeVertexNormals() before binding.");
+        PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;
     }
     std::vector<std::vector<Eigen::Vector3f>> tmp_points;

@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 
     if (!mesh_filename.empty()) {
         auto mesh_ptr = io::CreateMeshFromFile(mesh_filename);
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         if (!visualizer.AddGeometry(mesh_ptr)) {
             utility::LogWarning("Failed adding triangle mesh.");
             return 1;

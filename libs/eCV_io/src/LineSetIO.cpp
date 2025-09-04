@@ -247,11 +247,11 @@ bool WriteLineSetToPLY(const std::string &filename,
 	bool write_ascii /* = false*/,
 	bool compressed /* = false*/,
 	bool print_progress) {
-	if (lineset.isEmpty()) {
+	if (lineset.IsEmpty()) {
 		utility::LogWarning("Write PLY failed: line set has 0 points.");
 		return false;
 	}
-	if (!lineset.hasLines()) {
+	if (!lineset.HasLines()) {
 		utility::LogWarning("Write PLY failed: line set has 0 lines.");
 		return false;
 	}
@@ -273,7 +273,7 @@ bool WriteLineSetToPLY(const std::string &filename,
 	ply_add_element(ply_file, "edge", static_cast<long>(lineset.lines_.size()));
 	ply_add_property(ply_file, "vertex1", PLY_INT, PLY_INT, PLY_INT);
 	ply_add_property(ply_file, "vertex2", PLY_INT, PLY_INT, PLY_INT);
-	if (lineset.hasColors()) {
+	if (lineset.HasColors()) {
 		ply_add_property(ply_file, "red", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
 		ply_add_property(ply_file, "green", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
 		ply_add_property(ply_file, "blue", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
@@ -300,7 +300,7 @@ bool WriteLineSetToPLY(const std::string &filename,
 		const Eigen::Vector2i &line = lineset.lines_[i];
 		ply_write(ply_file, line(0));
 		ply_write(ply_file, line(1));
-		if (lineset.hasColors()) {
+		if (lineset.HasColors()) {
 			const Eigen::Vector3d &color = lineset.colors_[i];
 			if (!printed_color_warning &&
 				(color(0) < 0 || color(0) > 1 || color(1) < 0 || color(1) > 1 ||

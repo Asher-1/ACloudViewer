@@ -137,7 +137,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         transformation_ =
                                 result.transformation_ * transformation_;
                         PrintTransformation();
-                        source_copy_ptr_->transform(result.transformation_);
+                        source_copy_ptr_->Transform(result.transformation_);
                         UpdateGeometry();
                     }
                 } else {
@@ -257,7 +257,7 @@ bool VisualizerForAlignment::LoadSessionFromFile(const std::string &filename) {
     with_scaling_ = alignment_session_.with_scaling_;
     transformation_ = alignment_session_.transformation_;
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
-    source_copy_ptr_->transform(transformation_);
+    source_copy_ptr_->Transform(transformation_);
     source_visualizer_.UpdateRender();
     target_visualizer_.UpdateRender();
     ResetViewPoint(true);
@@ -289,7 +289,7 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
                                       *alignment_session_.target_ptr_, corres);
     PrintTransformation();
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
-    source_copy_ptr_->transform(transformation_);
+    source_copy_ptr_->Transform(transformation_);
     utility::LogInfo("Error is {:.4f} before alignment.",
                      p2p.ComputeRMSE(*source_copy_ptr_,
                                      *alignment_session_.target_ptr_, corres));
@@ -331,7 +331,7 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
 
     io::WritePointCloud(source_filename, *source_copy_ptr_);
     auto source_dis =
-            source_copy_ptr_->computePointCloudDistance(*target_copy_ptr_);
+            source_copy_ptr_->ComputePointCloudDistance(*target_copy_ptr_);
     f = utility::filesystem::FOpen(source_binname, "wb");
     if (!f) {
         utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",
@@ -342,7 +342,7 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
     fclose(f);
     io::WritePointCloud(target_filename, *target_copy_ptr_);
     auto target_dis =
-            target_copy_ptr_->computePointCloudDistance(*source_copy_ptr_);
+            target_copy_ptr_->ComputePointCloudDistance(*source_copy_ptr_);
     f = utility::filesystem::FOpen(target_binname, "wb");
     if (!f) {
         utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",

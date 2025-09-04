@@ -30,7 +30,7 @@ namespace cloudViewer {
 namespace geometry {
 
 ccBBox ecvMeshBase::getOwnBB(bool withGLFeatures) {
-    return getAxisAlignedBoundingBox();
+    return GetAxisAlignedBoundingBox();
 }
 
 void ecvMeshBase::getBoundingBox(CCVector3 &bbMin, CCVector3 &bbMax) {
@@ -45,7 +45,7 @@ ecvMeshBase &ecvMeshBase::clear() {
     return *this;
 }
 
-bool ecvMeshBase::isEmpty() const { return !hasVertices(); }
+bool ecvMeshBase::IsEmpty() const { return !HasVertices(); }
 
 
 Eigen::Vector3d ecvMeshBase::GetMinBound() const {
@@ -56,36 +56,36 @@ Eigen::Vector3d ecvMeshBase::GetMaxBound() const {
     return ComputeMaxBound(vertices_);
 }
 
-Eigen::Vector3d ecvMeshBase::getGeometryCenter() const {
+Eigen::Vector3d ecvMeshBase::GetCenter() const {
     return ComputeCenter(vertices_);
 }
 
-ccBBox ecvMeshBase::getAxisAlignedBoundingBox() const {
+ccBBox ecvMeshBase::GetAxisAlignedBoundingBox() const {
     return ccBBox::CreateFromPoints(vertices_);
 }
 
-ecvOrientedBBox ecvMeshBase::getOrientedBoundingBox() const {
+ecvOrientedBBox ecvMeshBase::GetOrientedBoundingBox() const {
     return ecvOrientedBBox::CreateFromPoints(vertices_);
 }
 
-ecvMeshBase &ecvMeshBase::transform(const Eigen::Matrix4d &transformation) {
+ecvMeshBase &ecvMeshBase::Transform(const Eigen::Matrix4d &transformation) {
     TransformPoints(transformation, vertices_);
     TransformNormals(transformation, vertex_normals_);
     return *this;
 }
 
-ecvMeshBase &ecvMeshBase::translate(const Eigen::Vector3d &translation,
+ecvMeshBase &ecvMeshBase::Translate(const Eigen::Vector3d &translation,
                                 bool relative) {
     TranslatePoints(translation, vertices_, relative);
     return *this;
 }
 
-ecvMeshBase &ecvMeshBase::scale(const double s, const Eigen::Vector3d &center) {
+ecvMeshBase &ecvMeshBase::Scale(const double s, const Eigen::Vector3d &center) {
     ScalePoints(s, vertices_, center);
     return *this;
 }
 
-ecvMeshBase &ecvMeshBase::rotate(const Eigen::Matrix3d &R,
+ecvMeshBase &ecvMeshBase::Rotate(const Eigen::Matrix3d &R,
                              const Eigen::Vector3d &center) {
     RotatePoints(R, vertices_, center);
     RotateNormals(R, vertex_normals_);
@@ -93,18 +93,18 @@ ecvMeshBase &ecvMeshBase::rotate(const Eigen::Matrix3d &R,
 }
 
 ecvMeshBase &ecvMeshBase::operator+=(const ecvMeshBase &mesh) {
-    if (mesh.isEmpty()) return (*this);
+    if (mesh.IsEmpty()) return (*this);
     size_t old_vert_num = vertices_.size();
     size_t add_vert_num = mesh.vertices_.size();
     size_t new_vert_num = old_vert_num + add_vert_num;
-    if ((!hasVertices() || hasVertexNormals()) && mesh.hasVertexNormals()) {
+    if ((!HasVertices() || HasVertexNormals()) && mesh.HasVertexNormals()) {
         vertex_normals_.resize(new_vert_num);
         for (size_t i = 0; i < add_vert_num; i++)
             vertex_normals_[old_vert_num + i] = mesh.vertex_normals_[i];
     } else {
         vertex_normals_.clear();
     }
-    if ((!hasVertices() || hasVertexColors()) && mesh.hasVertexColors()) {
+    if ((!HasVertices() || HasVertexColors()) && mesh.HasVertexColors()) {
         vertex_colors_.resize(new_vert_num);
         for (size_t i = 0; i < add_vert_num; i++)
             vertex_colors_[old_vert_num + i] = mesh.vertex_colors_[i];
@@ -122,7 +122,7 @@ ecvMeshBase ecvMeshBase::operator+(const ecvMeshBase &mesh) const {
 }
 
 std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
-ecvMeshBase::computeConvexHull() const {
+ecvMeshBase::ComputeConvexHull() const {
     return Qhull::ComputeConvexHull(vertices_);
 }
 

@@ -287,7 +287,7 @@ class ReconstructionWindow:
         self.raycast_color_image.update_image(color_ref.to_legacy())
         self.window.set_needs_layout()
 
-        bbox = cv3d.geometry.AxisAlignedBoundingBox([-5, -5, -5], [5, 5, 5])
+        bbox = cv3d.geometry.ccBBox([-5, -5, -5], [5, 5, 5])
         self.widget3d.setup_camera(60, bbox, [0, 0, 0])
         self.widget3d.look_at([0, 0, 0], [0, -1, -3], [0, -1, 0])
 

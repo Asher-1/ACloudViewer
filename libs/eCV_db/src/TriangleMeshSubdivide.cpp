@@ -38,7 +38,7 @@
 #include <unordered_set>
 
 using namespace cloudViewer;
-std::shared_ptr<ccMesh> ccMesh::subdivideMidpoint(
+std::shared_ptr<ccMesh> ccMesh::SubdivideMidpoint(
 	int number_of_iterations) const {
 	if (hasTriangleUvs()) {
 		utility::LogWarning(
@@ -50,7 +50,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideMidpoint(
 	if (!cloud)
 	{
 		utility::LogError(
-			"[ccMesh::simplifyVertexClustering] mesh"
+			"[ccMesh::SimplifyVertexClustering] mesh"
 			"should set associated cloud before using!");
 	}
 
@@ -132,7 +132,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideMidpoint(
 	return mesh;
 }
 
-std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
+std::shared_ptr<ccMesh> ccMesh::SubdivideLoop(
 	int number_of_iterations) const {
 	if (hasTriangleUvs()) {
 		utility::LogWarning(
@@ -151,7 +151,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 	if (!cloud)
 	{
 		utility::LogError(
-			"[ccMesh::simplifyVertexClustering] mesh"
+			"[ccMesh::SimplifyVertexClustering] mesh"
 			"should set associated cloud before using!");
 	}
 
@@ -198,7 +198,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 		if (!newVertice)
 		{
 			utility::LogError(
-				"[ccMesh::simplifyVertexClustering] mesh"
+				"[ccMesh::SimplifyVertexClustering] mesh"
 				"should set associated cloud before using!");
 		}
 		ccPointCloud* oldVertice =
@@ -206,7 +206,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 		if (!oldVertice)
 		{
 			utility::LogError(
-				"[ccMesh::simplifyVertexClustering] mesh"
+				"[ccMesh::SimplifyVertexClustering] mesh"
 				"should set associated cloud before using!");
 		}
 
@@ -260,7 +260,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 		if (!newVertice)
 		{
 			utility::LogError(
-				"[ccMesh::simplifyVertexClustering] mesh"
+				"[ccMesh::SimplifyVertexClustering] mesh"
 				"should set associated cloud before using!");
 		}
 		const ccPointCloud* oldVertice =
@@ -268,7 +268,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 		if (!oldVertice)
 		{
 			utility::LogError(
-				"[ccMesh::simplifyVertexClustering] mesh"
+				"[ccMesh::SimplifyVertexClustering] mesh"
 				"should set associated cloud before using!");
 		}
 

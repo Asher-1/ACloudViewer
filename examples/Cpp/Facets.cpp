@@ -39,7 +39,7 @@ void testFromPointClouds(const std::string& filename) {
     if (facet) {
         facet->getPolygon()->setOpacity(0.5f);
         facet->getPolygon()->clearTriNormals();
-        facet->getPolygon()->computeVertexNormals();
+        facet->getPolygon()->ComputeVertexNormals();
         facet->getPolygon()->setTempColor(ecvColor::darkGrey);
         facet->getContour()->setColor(ecvColor::green);
         facet->showNormalVector(true);
@@ -79,7 +79,7 @@ void testFromFile(const std::string& filename) {
         if (facet) {
             facet->getPolygon()->setOpacity(0.5f);
             facet->getPolygon()->clearTriNormals();
-            facet->getPolygon()->computeVertexNormals();
+            facet->getPolygon()->ComputeVertexNormals();
             facet->getPolygon()->setTempColor(ecvColor::blue);
             facet->getContour()->setColor(ecvColor::green);
             facet->getContour()->setWidth(10);
@@ -118,8 +118,8 @@ void testFromFile(const std::string& filename) {
 
         facet1->getPolygon()->clearTriNormals();
         facet2->getPolygon()->clearTriNormals();
-        facet1->getPolygon()->computeVertexNormals();
-        facet2->getPolygon()->computeVertexNormals();
+        facet1->getPolygon()->ComputeVertexNormals();
+        facet2->getPolygon()->ComputeVertexNormals();
         facet1->showNormalVector(true);
         facet2->showNormalVector(true);
         facet1->getContour()->showColors(true);

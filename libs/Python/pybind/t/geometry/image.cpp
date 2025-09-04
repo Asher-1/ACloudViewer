@@ -173,7 +173,7 @@ void pybind_image(py::module &m) {
                  "kept.",
                  "sampling_rate"_a = 0.5,
                  py::arg_v("interp_type", Image::InterpType::Nearest,
-                           "open3d.t.geometry.InterpType.Nearest"))
+                           "cloudViewer.t.geometry.InterpType.Nearest"))
             .def("pyrdown", &Image::PyrDown,
                  "Return a new downsampled image with pyramid downsampling "
                  "formed by a chained Gaussian filter (kernel_size = 5, sigma"

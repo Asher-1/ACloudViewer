@@ -117,10 +117,10 @@ void LegacyTransform(benchmark::State& state, const int no_use) {
     transformation.block<3, 1>(0, 3) = Eigen::Vector3d(1, 2, 3);
 
     // Warm Up.
-    ccPointCloud pcd_transformed = pcd.transform(transformation);
+    ccPointCloud pcd_transformed = pcd.Transform(transformation);
 
     for (auto _ : state) {
-        pcd_transformed = pcd.transform(transformation);
+        pcd_transformed = pcd.Transform(transformation);
     }
 }
 
@@ -348,10 +348,10 @@ void LegacyCropByAxisAlignedBox(benchmark::State& state, const int no_use) {
                                                       Eigen::Vector3d(1, 1, 1));
 
     // Warm up.
-    pcd.crop(box);
+    pcd.Crop(box);
 
     for (auto _ : state) {
-        pcd.crop(box);
+        pcd.Crop(box);
     }
 }
 
@@ -364,10 +364,10 @@ void LegacyCropByOrientedBox(benchmark::State& state, const int no_use) {
                                                    Eigen::Vector3d(1, 1, 1));
 
     // Warm up.
-    pcd.crop(box);
+    pcd.Crop(box);
 
     for (auto _ : state) {
-        pcd.crop(box);
+        pcd.Crop(box);
     }
 }
 

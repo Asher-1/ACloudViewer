@@ -926,7 +926,7 @@ public:  // other methods
     bool exportNormalToSF(bool exportDims[3]);
 
 public:  // for python interface
-    inline virtual bool isEmpty() const override { return !hasPoints(); }
+    inline virtual bool IsEmpty() const override { return !hasPoints(); }
 
     inline virtual Eigen::Vector3d GetMinBound() const override {
         return ComputeMinBound(CCVector3::fromArrayContainer(m_points));
@@ -935,30 +935,30 @@ public:  // for python interface
     inline virtual Eigen::Vector3d GetMaxBound() const override {
         return ComputeMaxBound(CCVector3::fromArrayContainer(m_points));
     }
-    inline virtual Eigen::Vector3d getGeometryCenter() const override {
+    inline virtual Eigen::Vector3d GetCenter() const override {
         return ComputeCenter(CCVector3::fromArrayContainer(m_points));
     }
 
-    virtual ccBBox getAxisAlignedBoundingBox() const override;
-    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual ccPointCloud& transform(const Eigen::Matrix4d& trans) override;
-    virtual ccPointCloud& translate(const Eigen::Vector3d& translation,
+    virtual ccBBox GetAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    virtual ccPointCloud& Transform(const Eigen::Matrix4d& trans) override;
+    virtual ccPointCloud& Translate(const Eigen::Vector3d& translation,
                                     bool relative = true) override;
-    inline ccPointCloud& translate(const CCVector3& T) {
-        return translate(CCVector3d::fromArray(T), true);
+    inline ccPointCloud& Translate(const CCVector3& T) {
+        return Translate(CCVector3d::fromArray(T), true);
     }
-    virtual ccPointCloud& scale(const double s,
+    virtual ccPointCloud& Scale(const double s,
                                 const Eigen::Vector3d& center) override;
-    virtual ccPointCloud& rotate(const Eigen::Matrix3d& R,
+    virtual ccPointCloud& Rotate(const Eigen::Matrix3d& R,
                                  const Eigen::Vector3d& center) override;
 
     /// Returns 'true' if the point cloud contains per-point covariance matrix.
-    bool hasCovariances() const {
+    bool HasCovariances() const {
         return !m_points.empty() && covariances_.size() == m_points.size();
     }
 
     /// Normalize point normals to length 1.`
-    ccPointCloud& normalizeNormals();
+    ccPointCloud& NormalizeNormals();
 
     /// \brief Function to select points from \p input ccPointCloud into
     /// \p output ccPointCloud.
@@ -1002,7 +1002,7 @@ public:  // for python interface
     std::tuple<std::shared_ptr<ccPointCloud>,
                Eigen::MatrixXi,
                std::vector<std::vector<int>>>
-    voxelDownSampleAndTrace(double voxel_size,
+    VoxelDownSampleAndTrace(double voxel_size,
                             const Eigen::Vector3d& min_bound,
                             const Eigen::Vector3d& max_bound,
                             bool approximate_class = false) const;
@@ -1026,7 +1026,7 @@ public:  // for python interface
     ///
     /// \param sampling_ratio Sampling ratio, the ratio of sample to total
     /// number of points in the pointcloud.
-    std::shared_ptr<ccPointCloud> randomDownSample(double sampling_ratio) const;
+    std::shared_ptr<ccPointCloud> RandomDownSample(double sampling_ratio) const;
 
     /// \brief Function to crop ccPointCloud into output ccPointCloud
     ///
@@ -1078,7 +1078,7 @@ public:  // for python interface
     ///
     /// \param orientation_reference Normals are oriented with respect to
     /// orientation_reference.
-    bool orientNormalsToAlignWithDirection(
+    bool OrientNormalsToAlignWithDirection(
             const Eigen::Vector3d& orientation_reference =
                     Eigen::Vector3d(0.0, 0.0, 1.0));
 
@@ -1086,7 +1086,7 @@ public:  // for python interface
     ///
     /// \param camera_location Normals are oriented with towards the
     /// camera_location.
-    bool orientNormalsTowardsCameraLocation(
+    bool OrientNormalsTowardsCameraLocation(
             const Eigen::Vector3d& camera_location = Eigen::Vector3d::Zero());
 
     /// \brief Function to consistently orient estimated normals based on
@@ -1095,7 +1095,7 @@ public:  // for python interface
     ///
     /// \param k k nearest neighbour for graph reconstruction for normal
     /// propagation.
-    void orientNormalsConsistentTangentPlane(size_t k);
+    void OrientNormalsConsistentTangentPlane(size_t k);
 
     /// \brief Function to compute the point to point distances between point
     /// clouds.
@@ -1104,7 +1104,7 @@ public:  // for python interface
     /// \p target point cloud.
     ///
     /// \param target The target point cloud.
-    std::vector<double> computePointCloudDistance(const ccPointCloud& target);
+    std::vector<double> ComputePointCloudDistance(const ccPointCloud& target);
 
     /// \brief Static function to compute the covariance matrix for each point
     /// of a point cloud. Doesn't change the input PointCloud, just outputs the
@@ -1124,7 +1124,7 @@ public:  // for python interface
     ///
     /// \param search_param The KDTree search parameters for neighborhood
     /// search.
-    void estimateCovariances(
+    void EstimateCovariances(
             const cloudViewer::geometry::KDTreeSearchParam& search_param =
                     cloudViewer::geometry::KDTreeSearchParamKNN());
 
@@ -1132,16 +1132,16 @@ public:  // for python interface
     /// in an input point cloud.
     ///
     /// See: https://en.wikipedia.org/wiki/Mahalanobis_distance
-    std::vector<double> computeMahalanobisDistance() const;
+    std::vector<double> ComputeMahalanobisDistance() const;
 
     /// Function to compute the distance from a point to its nearest neighbor in
     /// the input point cloud
     std::vector<double> ComputeNearestNeighborDistance() const;
 
-    double computeResolution() const;
+    double ComputeResolution() const;
 
     /// Function that computes the convex hull of the point cloud using qhull
-    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> computeConvexHull()
+    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> ComputeConvexHull()
             const;
 
     /// \brief This is an implementation of the Hidden Point Removal operator
@@ -1153,7 +1153,7 @@ public:  // for python interface
     ///
     /// \param camera_location All points not visible from that location will be
     /// removed. \param radius The radius of the sperical projection.
-    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> hiddenPointRemoval(
+    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> HiddenPointRemoval(
             const Eigen::Vector3d& camera_location, const double radius) const;
 
     /// \brief Cluster ccPointCloud using the DBSCAN algorithm
@@ -1167,7 +1167,7 @@ public:  // for python interface
     /// \param min_points Minimum number of points to form a cluster.
     /// \param print_progress If `true` the progress is visualized in the
     /// console.
-    std::vector<int> clusterDBSCAN(double eps,
+    std::vector<int> ClusterDBSCAN(double eps,
                                    size_t min_points,
                                    bool print_progress = false) const;
 
@@ -1184,7 +1184,7 @@ public:  // for python interface
     /// \param params Shape detection parameters.
     /// \param print_progress If `true` the progress is visualized in the
     /// console.
-    cloudViewer::geometry::RansacResults executeRANSAC(
+    cloudViewer::geometry::RansacResults ExecuteRANSAC(
             const cloudViewer::geometry::RansacParams& params =
                     cloudViewer::geometry::RansacParams(),
             bool print_progress = false);
@@ -1199,7 +1199,7 @@ public:  // for python interface
     /// \param num_iterations Number of iterations.
     /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
     /// the plane inliers.
-    std::tuple<Eigen::Vector4d, std::vector<size_t>> segmentPlane(
+    std::tuple<Eigen::Vector4d, std::vector<size_t>> SegmentPlane(
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
             const int num_iterations = 100) const;
@@ -1260,13 +1260,13 @@ public:  // for python interface
     /// cloud coordinate (with respect to the center of the voxel grid).
     ///
     /// \param voxel_grid The input VoxelGrid.
-    std::shared_ptr<ccPointCloud> createFromVoxelGrid(
+    std::shared_ptr<ccPointCloud> CreateFromVoxelGrid(
             const cloudViewer::geometry::VoxelGrid& voxel_grid);
 
     /// \brief Assigns each vertex in the ccMesh the same color
     ///
     /// \param color RGB colors of vertices.
-    ccPointCloud& paintUniformColor(const Eigen::Vector3d& color);
+    ccPointCloud& PaintUniformColor(const Eigen::Vector3d& color);
 
 public:
     /// Covariance Matrix for each point

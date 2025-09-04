@@ -305,7 +305,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     // Basic sanity checks
-    if (geometry.isEmpty()) {
+    if (geometry.IsEmpty()) {
         utility::LogDebug(
                 "Geometry for object {} is empty. Not adding geometry to scene",
                 object_name);

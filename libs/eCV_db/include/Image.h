@@ -84,9 +84,9 @@ protected:
 
 public:
     Image &Clear();
-    inline virtual bool isEmpty() const override { return !HasData(); }
-    virtual Eigen::Vector2d getMin2DBound() const override;
-    virtual Eigen::Vector2d getMax2DBound() const override;
+    inline virtual bool IsEmpty() const override { return !HasData(); }
+    virtual Eigen::Vector2d GetMin2DBound() const override;
+    virtual Eigen::Vector2d GetMax2DBound() const override;
 
     /// \brief Test if coordinate `(u, v)` is located in the inner_marge of the
     /// image.

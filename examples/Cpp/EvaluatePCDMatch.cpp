@@ -126,9 +126,9 @@ int main(int argc, char *argv[]) {
     double positive_rmse = 0;
     for (size_t k = 0; k < pair_ids.size(); k++) {
         ccPointCloud source = pcds[pair_ids[k].second];
-        source.transform(transformations[k]);
+        source.Transform(transformations[k]);
         ccPointCloud gtsource = pcds[pair_ids[k].second];
-        gtsource.transform(gt_trans[k]);
+        gtsource.Transform(gt_trans[k]);
         std::vector<int> indices(1);
         std::vector<double> distance2(1);
         int correspondence_num = 0;

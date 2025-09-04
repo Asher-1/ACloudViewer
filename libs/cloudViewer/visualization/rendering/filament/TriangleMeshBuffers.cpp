@@ -449,7 +449,7 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
 }
 
 filament::Box TriangleMeshBuffersBuilder::ComputeAABB() {
-    auto geometry_aabb = geometry_.getAxisAlignedBoundingBox();
+    auto geometry_aabb = geometry_.GetAxisAlignedBoundingBox();
 
     const filament::math::float3 min(geometry_aabb.minCorner().x,
                                      geometry_aabb.minCorner().y,

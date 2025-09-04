@@ -901,7 +901,7 @@ Ctrl-alt-click to polygon select)";
                 no_shadows = true;
             } else if (aabb) {
                 has_colors =
-                        (aabb->getColor() != Eigen::Vector3d{0.0, 0.0, 0.0});
+                        (aabb->GetColor() != Eigen::Vector3d{0.0, 0.0, 0.0});
                 no_shadows = true;
             } else if (mesh) {
                 has_normals = mesh->hasNormals() || mesh->HasTriangleNormals();
@@ -1544,7 +1544,7 @@ Ctrl-alt-click to polygon select)";
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
 
-        auto bbox_extend = scene_->GetScene()->GetBoundingBox().getExtent();
+        auto bbox_extend = scene_->GetScene()->GetBoundingBox().GetExtent();
         auto psize = double(std::max(5, px)) * 0.000666 *
                      std::max(bbox_extend.x(),
                               std::max(bbox_extend.y(), bbox_extend.z()));

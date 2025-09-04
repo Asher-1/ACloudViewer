@@ -1068,7 +1068,7 @@ public:
     /// lower-triangular matrix with diagonal elements as 1.0 and U is the
     /// upper-triangular matrix, and returns tuple `output` tensor of shape
     /// {n,n} and `ipiv` tensor of shape {n}, where {n,n} is the shape of input
-    /// tensor. [ipiv, output = open3d.core.lu_ipiv(a)].
+    /// tensor. [ipiv, output = cloudViewer.core.lu_ipiv(a)].
     ///
     /// \return Tuple {ipiv, output}. Where ipiv is a 1D integer pivort indices
     /// tensor. It contains the pivot indices, indicating row i of the matrix

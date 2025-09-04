@@ -32,7 +32,7 @@ VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid,
       voxels_(src_voxel_grid.voxels_) {}
 
 ccBBox VoxelGrid::getOwnBB(bool withGLFeatures) {
-    return getAxisAlignedBoundingBox();
+    return GetAxisAlignedBoundingBox();
 }
 
 VoxelGrid &VoxelGrid::Clear() {
@@ -69,7 +69,7 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     }
 }
 
-Eigen::Vector3d VoxelGrid::getGeometryCenter() const {
+Eigen::Vector3d VoxelGrid::GetCenter() const {
     Eigen::Vector3d center(0, 0, 0);
     if (!HasVoxels()) {
         return center;
@@ -85,36 +85,36 @@ Eigen::Vector3d VoxelGrid::getGeometryCenter() const {
     return center;
 }
 
-ccBBox VoxelGrid::getAxisAlignedBoundingBox() const {
+ccBBox VoxelGrid::GetAxisAlignedBoundingBox() const {
     ccBBox box;
     box.minCorner() = GetMinBound();
     box.maxCorner() = GetMaxBound();
-    box.setValidity(!box.isEmpty());
+    	box.setValidity(!box.IsEmpty());
     return box;
 }
 
-ecvOrientedBBox VoxelGrid::getOrientedBoundingBox() const {
+ecvOrientedBBox VoxelGrid::GetOrientedBoundingBox() const {
     return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(
-            getAxisAlignedBoundingBox());
+            GetAxisAlignedBoundingBox());
 }
 
-VoxelGrid &VoxelGrid::transform(const Eigen::Matrix4d &transformation) {
+VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
     utility::LogError("VoxelGrid::Transform is not supported");
     return *this;
 }
 
-VoxelGrid &VoxelGrid::translate(const Eigen::Vector3d &translation,
+VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation,
                                 bool relative) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-VoxelGrid &VoxelGrid::scale(const double s, const Eigen::Vector3d &center) {
+VoxelGrid &VoxelGrid::Scale(const double s, const Eigen::Vector3d &center) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-VoxelGrid &VoxelGrid::rotate(const Eigen::Matrix3d &R,
+VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3d &R,
                              const Eigen::Vector3d &center) {
     utility::LogError("Not implemented");
     return *this;

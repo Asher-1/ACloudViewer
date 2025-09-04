@@ -49,7 +49,7 @@ void VisualizeRegistration(const geometry::PointCloud &source,
     std::shared_ptr<geometry::PointCloud> target_ptr(new geometry::PointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;
-    source_transformed_ptr->transform(Transformation);
+    source_transformed_ptr->Transform(Transformation);
     visualization::DrawGeometries({source_transformed_ptr, target_ptr},
                                   "Registration result");
 }

@@ -487,18 +487,18 @@ void pybind_meshbase(py::module& m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_vertices", &ecvMeshBase::hasVertices,
+            .def("has_vertices", &ecvMeshBase::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
-            .def("has_vertex_normals", &ecvMeshBase::hasVertexNormals,
+            .def("has_vertex_normals", &ecvMeshBase::HasVertexNormals,
                  "Returns ``True`` if the mesh contains vertex normals.")
-            .def("has_vertex_colors", &ecvMeshBase::hasVertexColors,
+            .def("has_vertex_colors", &ecvMeshBase::HasVertexColors,
                  "Returns ``True`` if the mesh contains vertex colors.")
-            .def("normalize_normals", &ecvMeshBase::normalizeNormals,
+            .def("normalize_normals", &ecvMeshBase::NormalizeNormals,
                  "Normalize vertex normals to length 1.")
-            .def("paint_uniform_color", &ecvMeshBase::paintUniformColor,
+            .def("paint_uniform_color", &ecvMeshBase::PaintUniformColor,
                  "Assigns each vertex in the ecvMeshBase the same color.",
                  "color"_a)
-            .def("compute_convex_hull", &ecvMeshBase::computeConvexHull,
+            .def("compute_convex_hull", &ecvMeshBase::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
             .def_readwrite("vertices", &ecvMeshBase::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "

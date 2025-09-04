@@ -65,7 +65,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         double gamma_21 /* = 0.975 */,
         double gamma_32 /* = 0.975 */,
         int min_neighbors /*= 5 */) {
-    if (input.isEmpty()) {
+    if (input.IsEmpty()) {
         cloudViewer::utility::LogWarning("[ComputeISSKeypoints] Input ccPointCloud is empty!");
         return cloudViewer::make_shared<ccPointCloud>();
     }

@@ -79,7 +79,7 @@ void pybind_slac(py::module &m) {
                         "SLACOptimizerParams(max_iterations={:d}, "
                         "voxel_size={:e}, distance_threshold={:e}, "
                         "fitness_threshold={:e}, regularizer_weight={:e}, "
-                        "device=open3d.core.Device(\"{}\"), "
+                        "device=cloudViewer.core.Device(\"{}\"), "
                         "slac_folder=\"{}\")",
                         params.max_iterations_, params.voxel_size_,
                         params.distance_threshold_, params.fitness_threshold_,

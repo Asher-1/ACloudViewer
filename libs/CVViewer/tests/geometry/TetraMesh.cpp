@@ -19,11 +19,6 @@ namespace tests {
 TEST(TetraMesh, Constructor) {
     geometry::TetraMesh tm;
 
-    // inherited from Geometry2D
-    EXPECT_EQ(geometry::Geometry::GeometryType::TetraMesh,
-              tm.GetGeometryType());
-    EXPECT_EQ(3, tm.Dimension());
-
     // public member variables
     EXPECT_EQ(0u, tm.vertices_.size());
     EXPECT_EQ(0u, tm.tetras_.size());

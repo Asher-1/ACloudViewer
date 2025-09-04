@@ -292,16 +292,16 @@ public:
 
 public:
     Octree& Clear();
-	inline virtual bool isEmpty() const override { return root_node_ == nullptr; }
+	inline virtual bool IsEmpty() const override { return root_node_ == nullptr; }
 	virtual Eigen::Vector3d GetMinBound() const override;
 	virtual Eigen::Vector3d GetMaxBound() const override;
-	virtual Eigen::Vector3d getGeometryCenter() const override;
-	virtual ccBBox getAxisAlignedBoundingBox() const override;
-	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual Octree& transform(const Eigen::Matrix4d& transformation) override;
-    virtual Octree& translate(const Eigen::Vector3d& translation, bool relative = true) override;
-    virtual Octree& scale(const double s, const Eigen::Vector3d& center) override;
-    virtual Octree& rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) override;
+	virtual Eigen::Vector3d GetCenter() const override;
+	virtual ccBBox GetAxisAlignedBoundingBox() const override;
+	virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    virtual Octree& Transform(const Eigen::Matrix4d& transformation) override;
+    virtual Octree& Translate(const Eigen::Vector3d& translation, bool relative = true) override;
+    virtual Octree& Scale(const double s, const Eigen::Vector3d& center) override;
+    virtual Octree& Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) override;
     bool ConvertToJsonValue(Json::Value& value) const;
     bool ConvertFromJsonValue(const Json::Value& value);
 

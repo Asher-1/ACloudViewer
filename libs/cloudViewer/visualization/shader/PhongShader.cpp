@@ -136,8 +136,8 @@ void PhongShader::SetLighting(const ViewControl &view,
     light_color_data_.setOnes();
     for (int i = 0; i < 4; i++) {
         light_position_world_data_.block<3, 1>(0, i) =
-                box.getGeometryCenter().cast<GLfloat>() +
-                (float)box.getMaxExtent() *
+                box.GetCenter().cast<GLfloat>() +
+                (float)box.GetMaxExtent() *
                         ((float)option.light_position_relative_[i](0) *
                                  view.GetRight() +
                          (float)option.light_position_relative_[i](1) *
@@ -290,7 +290,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         }
         if (!mesh.HasTriangleNormals() || !mesh.hasNormals()) {
             PrintShaderWarning("Binding failed because mesh has no normals.");
-            PrintShaderWarning("Call computeVertexNormals() before binding.");
+            PrintShaderWarning("Call ComputeVertexNormals() before binding.");
             return false;
         }
         const ColorMap &global_color_map = *GetGlobalColorMap();
@@ -359,7 +359,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
             PrintShaderWarning("Binding failed with empty triangle mesh.");
             return false;
         }
-        if (!mesh.HasTriangleNormals() || !mesh.hasVertexNormals()) {
+        if (!mesh.HasTriangleNormals() || !mesh.HasVertexNormals()) {
             PrintShaderWarning("Binding failed because mesh has no normals.");
             PrintShaderWarning("Call ComputeVertexNormals() before binding.");
             return false;
@@ -395,7 +395,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
                                         vertex(2)));
                         break;
                     case RenderOption::MeshColorOption::Color:
-                        if (mesh.hasVertexColors()) {
+                        if (mesh.HasVertexColors()) {
                             color = mesh.vertex_colors_[vi];
                         } else {
                             color = option.default_mesh_color_;

@@ -782,18 +782,18 @@ bool SimpleShaderForLineSet::PrepareBinding(
         return false;
     }
     const geometry::LineSet &lineset = (const geometry::LineSet &)geometry;
-    if (!lineset.hasLines()) {
+    if (!lineset.HasLines()) {
         PrintShaderWarning("Binding failed with empty geometry::LineSet.");
         return false;
     }
     points.resize(lineset.lines_.size() * 2);
     colors.resize(lineset.lines_.size() * 2);
     for (size_t i = 0; i < lineset.lines_.size(); i++) {
-        const auto point_pair = lineset.getLineCoordinate(i);
+        const auto point_pair = lineset.GetLineCoordinate(i);
         points[i * 2] = point_pair.first.cast<float>();
         points[i * 2 + 1] = point_pair.second.cast<float>();
         Eigen::Vector3d color;
-        if (lineset.hasColors()) {
+        if (lineset.HasColors()) {
             color = lineset.colors_[i];
         } else {
             color = Eigen::Vector3d::Zero();
@@ -971,7 +971,7 @@ bool SimpleShaderForTetraMesh::PrepareBinding(
     }
     const geometry::TetraMesh &tetramesh =
             (const geometry::TetraMesh &)geometry;
-    if (!tetramesh.hasTetras()) {
+    if (!tetramesh.HasTetras()) {
         PrintShaderWarning("Binding failed with empty geometry::TetraMesh.");
         return false;
     }
@@ -1033,11 +1033,11 @@ bool SimpleShaderForOrientedBoundingBox::PrepareBinding(
     points.resize(lineset->lines_.size() * 2);
     colors.resize(lineset->lines_.size() * 2);
     for (size_t i = 0; i < lineset->lines_.size(); i++) {
-        const auto point_pair = lineset->getLineCoordinate(i);
+        const auto point_pair = lineset->GetLineCoordinate(i);
         points[i * 2] = point_pair.first.cast<float>();
         points[i * 2 + 1] = point_pair.second.cast<float>();
         Eigen::Vector3d color;
-        if (lineset->hasColors()) {
+        if (lineset->HasColors()) {
             color = lineset->colors_[i];
         } else {
             color = Eigen::Vector3d::Zero();
@@ -1078,11 +1078,11 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
     points.resize(lineset->lines_.size() * 2);
     colors.resize(lineset->lines_.size() * 2);
     for (size_t i = 0; i < lineset->lines_.size(); i++) {
-        const auto point_pair = lineset->getLineCoordinate(i);
+        const auto point_pair = lineset->GetLineCoordinate(i);
         points[i * 2] = point_pair.first.cast<float>();
         points[i * 2 + 1] = point_pair.second.cast<float>();
         Eigen::Vector3d color;
-        if (lineset->hasColors()) {
+        if (lineset->HasColors()) {
             color = lineset->colors_[i];
         } else {
             color = Eigen::Vector3d::Zero();
@@ -1223,7 +1223,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
                                         vertex(2)));
                         break;
                     case RenderOption::MeshColorOption::Color:
-                        if (mesh.hasVertexColors()) {
+                        if (mesh.HasVertexColors()) {
                             color = mesh.vertex_colors_[vi];
                         } else {
                             color = option.default_mesh_color_;
@@ -1447,7 +1447,7 @@ bool SimpleShaderForOctreeFace::PrepareBinding(
         return false;
     }
     const geometry::Octree &octree = (const geometry::Octree &)geometry;
-    if (octree.isEmpty()) {
+    if (octree.IsEmpty()) {
         PrintShaderWarning("Binding failed with empty octree.");
         return false;
     }
@@ -1544,7 +1544,7 @@ bool SimpleShaderForOctreeLine::PrepareBinding(
         return false;
     }
     const geometry::Octree &octree = (const geometry::Octree &)geometry;
-    if (octree.isEmpty()) {
+    if (octree.IsEmpty()) {
         PrintShaderWarning("Binding failed with empty octree.");
         return false;
     }

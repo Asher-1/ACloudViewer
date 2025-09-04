@@ -38,8 +38,8 @@ int main(int argc, const char *argv[]) {
     MaterialRecord mat;
     mat.shader = "defaultLit";
     auto torus = ccMesh::CreateTorus();
-    torus->computeVertexNormals();
-    torus->paintUniformColor({1.0f, 1.0f, 0.0f});
+    torus->ComputeVertexNormals();
+    torus->PaintUniformColor({1.0f, 1.0f, 0.0f});
     scene->AddGeometry("torus", torus.get(), mat);
     scene->ShowAxes(true);
 

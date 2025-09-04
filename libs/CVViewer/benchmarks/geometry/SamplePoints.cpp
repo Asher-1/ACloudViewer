@@ -29,7 +29,7 @@ public:
 
 BENCHMARK_DEFINE_F(SamplePointsFixture, Poisson)(benchmark::State& state) {
     for (auto _ : state) {
-        trimesh->samplePointsPoissonDisk(state.range(0));
+        trimesh->SamplePointsPoissonDisk(state.range(0));
     }
 }
 
@@ -37,7 +37,7 @@ BENCHMARK_REGISTER_F(SamplePointsFixture, Poisson)->Args({123})->Args({1000});
 
 BENCHMARK_DEFINE_F(SamplePointsFixture, Uniform)(benchmark::State& state) {
     for (auto _ : state) {
-        trimesh->samplePointsUniformly(state.range(0));
+        trimesh->SamplePointsUniformly(state.range(0));
     }
 }
 

@@ -150,7 +150,7 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     // attribute. If/when we have a shader specifically for line sets we can use
     // it to avoid the warning.
     auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphere_tris);
-    sphere->paintUniformColor(kSkyColor);
+    sphere->PaintUniformColor(kSkyColor);
     auto t0 = Camera::Transform::Identity();
     MaterialRecord mat;
     mat.shader = "defaultUnlit";
@@ -161,8 +161,8 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
 
     auto sun_radius = 0.05 * size;
     auto sun = ccMesh::CreateSphere(sun_radius, 20);
-    sun->paintUniformColor(kSunColor);
-    sun->computeVertexNormals();
+    sun->PaintUniformColor(kSunColor);
+    sun->ComputeVertexNormals();
     sun->triangle_uvs_.resize(sun->size() * 3, {0.f, 0.f});
     auto t1 = Camera::Transform::Identity();
     t1.translate(-sphere_size * dir);
@@ -175,8 +175,8 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     const double arrow_length = 0.333 * size;
     auto sun_dir = CreateArrow(dir.cast<double>(), arrow_radius, arrow_length,
                                0.1 * arrow_length, 20);
-    sun_dir->paintUniformColor(kSunColor);
-    sun_dir->computeVertexNormals();
+    sun_dir->PaintUniformColor(kSunColor);
+    sun_dir->ComputeVertexNormals();
     sun_dir->triangle_uvs_.resize(sun_dir->size() * 3, {0.f, 0.f});
     auto t2 = Camera::Transform::Identity();
     t2.translate(-sphere_size * dir);
@@ -189,7 +189,7 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
 }
 
 void LightDirectionInteractorLogic::UpdateMouseDragUI() {
-    Eigen::Vector3f model_center = model_bounds_.getGeometryCenter().cast<float>();
+    Eigen::Vector3f model_center = model_bounds_.GetCenter().cast<float>();
     for (auto& o : ui_objs_) {
         Camera::Transform t = GetMatrix() * o.transform;
         t.pretranslate(model_center);

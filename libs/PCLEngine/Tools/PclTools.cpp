@@ -273,7 +273,7 @@ vtkSmartPointer<vtkPoints> PclTools::GetVtkPointsFromLineSet(
             static_cast<vtkIdType>(2 * lineset.lines_.size()));
     for (std::size_t i = 0; i < lineset.lines_.size(); ++i) {
         std::pair<Eigen::Vector3d, Eigen::Vector3d> segment =
-                lineset.getLineCoordinate(i);
+                lineset.GetLineCoordinate(i);
         linePoints->SetPoint(static_cast<vtkIdType>(2 * i),
                              segment.first.data());
         linePoints->SetPoint(static_cast<vtkIdType>(2 * i + 1),
@@ -407,7 +407,7 @@ vtkSmartPointer<vtkPolyData> PclTools::CreateCoordinateFromLineSet(
     vtkSmartPointer<vtkPoints> lineR = vtkSmartPointer<vtkPoints>::New();
     lineR->SetNumberOfPoints(2);
     std::pair<Eigen::Vector3d, Eigen::Vector3d> segmentR =
-            lineset.getLineCoordinate(0);
+            lineset.GetLineCoordinate(0);
     lineR->SetPoint(static_cast<vtkIdType>(0), segmentR.first.data());
     lineR->SetPoint(static_cast<vtkIdType>(1), segmentR.second.data());
     vtkSmartPointer<vtkPolyData> rLinesData = CreateLine(lineR);
@@ -417,7 +417,7 @@ vtkSmartPointer<vtkPolyData> PclTools::CreateCoordinateFromLineSet(
     vtkSmartPointer<vtkPoints> lineUp = vtkSmartPointer<vtkPoints>::New();
     lineUp->SetNumberOfPoints(2);
     std::pair<Eigen::Vector3d, Eigen::Vector3d> segmentUp =
-            lineset.getLineCoordinate(1);
+            lineset.GetLineCoordinate(1);
     lineUp->SetPoint(static_cast<vtkIdType>(0), segmentUp.first.data());
     lineUp->SetPoint(static_cast<vtkIdType>(1), segmentUp.second.data());
     vtkSmartPointer<vtkPolyData> uLinesData = CreateLine(lineUp);
@@ -427,7 +427,7 @@ vtkSmartPointer<vtkPolyData> PclTools::CreateCoordinateFromLineSet(
     vtkSmartPointer<vtkPoints> lineV = vtkSmartPointer<vtkPoints>::New();
     lineV->SetNumberOfPoints(2);
     std::pair<Eigen::Vector3d, Eigen::Vector3d> segmentV =
-            lineset.getLineCoordinate(2);
+            lineset.GetLineCoordinate(2);
     lineV->SetPoint(static_cast<vtkIdType>(0), segmentV.first.data());
     lineV->SetPoint(static_cast<vtkIdType>(1), segmentV.second.data());
     vtkSmartPointer<vtkPolyData> vLinesData = CreateLine(lineV);

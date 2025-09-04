@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
     data::BunnyMesh bunny_mesh;
     auto mesh_ptr = io::CreateMeshFromFile(bunny_mesh.GetPath());
-    mesh_ptr->computeVertexNormals();
+    mesh_ptr->ComputeVertexNormals();
     utility::LogInfo("Press S to capture a depth image.");
     VisualizerWithDepthCapture visualizer;
     visualizer.CreateVisualizerWindow("Depth Capture", 640, 480, 200, 200);

@@ -147,17 +147,17 @@ int main(int argc, char *argv[]) {
     cloudViewer::visualization::Visualizer visualizer;
     std::shared_ptr<ccPointCloud> pointcloud_ptr(new ccPointCloud);
     *pointcloud_ptr = pointcloud;
-    pointcloud_ptr->normalizeNormals();
-    auto bounding_box = pointcloud_ptr->getAxisAlignedBoundingBox();
+    pointcloud_ptr->NormalizeNormals();
+    auto bounding_box = pointcloud_ptr->GetAxisAlignedBoundingBox();
 
     std::shared_ptr<ccPointCloud> pointcloud_transformed_ptr(new ccPointCloud);
     *pointcloud_transformed_ptr = *pointcloud_ptr;
     Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
-    trans_to_origin.block<3, 1>(0, 3) = bounding_box.getGeometryCenter() * -1.0;
+    trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
     transformation.block<3, 3>(0, 0) = static_cast<Eigen::Matrix3d>(
             Eigen::AngleAxisd(M_PI / 4.0, Eigen::Vector3d::UnitX()));
-    pointcloud_transformed_ptr->transform(trans_to_origin.inverse() *
+    pointcloud_transformed_ptr->Transform(trans_to_origin.inverse() *
                                           transformation * trans_to_origin);
 
     visualizer.CreateVisualizerWindow("CloudViewer", 1600, 900);

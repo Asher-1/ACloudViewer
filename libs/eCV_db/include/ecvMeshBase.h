@@ -64,40 +64,40 @@ public:
 
 public:
     virtual ecvMeshBase &clear();
-    virtual bool isEmpty() const override;
+    virtual bool IsEmpty() const override;
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
-    virtual Eigen::Vector3d getGeometryCenter() const override;
-    virtual ccBBox getAxisAlignedBoundingBox() const override;
-    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual ecvMeshBase &transform(const Eigen::Matrix4d &transformation) override;
-    virtual ecvMeshBase &translate(const Eigen::Vector3d &translation,
+    virtual Eigen::Vector3d GetCenter() const override;
+    virtual ccBBox GetAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    virtual ecvMeshBase &Transform(const Eigen::Matrix4d &transformation) override;
+    virtual ecvMeshBase &Translate(const Eigen::Vector3d &translation,
                                 bool relative = true) override;
-    virtual ecvMeshBase &scale(const double s,
+    virtual ecvMeshBase &Scale(const double s,
                             const Eigen::Vector3d &center) override;
-    virtual ecvMeshBase &rotate(const Eigen::Matrix3d &R,
+    virtual ecvMeshBase &Rotate(const Eigen::Matrix3d &R,
                              const Eigen::Vector3d &center) override;
 
     ecvMeshBase &operator+=(const ecvMeshBase &mesh);
     ecvMeshBase operator+(const ecvMeshBase &mesh) const;
 
     /// Returns `True` if the mesh contains vertices.
-    bool hasVertices() const { return vertices_.size() > 0; }
+    bool HasVertices() const { return vertices_.size() > 0; }
 
     /// Returns `True` if the mesh contains vertex normals.
-    bool hasVertexNormals() const {
+    bool HasVertexNormals() const {
         return vertices_.size() > 0 &&
                vertex_normals_.size() == vertices_.size();
     }
 
     /// Returns `True` if the mesh contains vertex colors.
-    bool hasVertexColors() const {
+    bool HasVertexColors() const {
         return vertices_.size() > 0 &&
                vertex_colors_.size() == vertices_.size();
     }
 
     /// Normalize vertex normals to length 1.
-    ecvMeshBase &normalizeNormals() {
+    ecvMeshBase &NormalizeNormals() {
         for (size_t i = 0; i < vertex_normals_.size(); i++) {
             vertex_normals_[i].normalize();
             if (std::isnan(vertex_normals_[i](0))) {
@@ -110,13 +110,13 @@ public:
     /// \brief Assigns each vertex in the TriangleMesh the same color
     ///
     /// \param color RGB colors of vertices.
-    ecvMeshBase &paintUniformColor(const Eigen::Vector3d &color) {
+    ecvMeshBase &PaintUniformColor(const Eigen::Vector3d &color) {
         ResizeAndPaintUniformColor(vertex_colors_, vertices_.size(), color);
         return *this;
     }
 
     /// Function that computes the convex hull of the triangle mesh using qhull
-    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> computeConvexHull() const;
+    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> ComputeConvexHull() const;
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base

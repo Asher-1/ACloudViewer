@@ -36,16 +36,16 @@ Image &Image::Clear() {
     return *this;
 }
 
-Eigen::Vector2d Image::getMin2DBound() const {
+Eigen::Vector2d Image::GetMin2DBound() const {
     return Eigen::Vector2d(0.0, 0.0);
 }
 
-Eigen::Vector2d Image::getMax2DBound() const {
+Eigen::Vector2d Image::GetMax2DBound() const {
     return Eigen::Vector2d(width_, height_);
 }
 
 ccBBox Image::getOwnBB(bool withGLFeatures) {
-    return getAxisAlignedBoundingBox();
+    return GetAxisAlignedBoundingBox();
 }
 
 bool Image::TestImageBoundary(double u,

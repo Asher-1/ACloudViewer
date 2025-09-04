@@ -119,7 +119,7 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(
         return false;
     }
     const SelectionPolygon &polygon = (const SelectionPolygon &)geometry;
-    if (polygon.isEmpty()) {
+    if (polygon.IsEmpty()) {
         PrintShaderWarning("Binding failed with empty SelectionPolygon.");
     }
     size_t segment_num = polygon.polygon_.size() - 1;

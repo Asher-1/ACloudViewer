@@ -92,7 +92,7 @@ public:
 	double c_;
 };
 
-std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
+std::shared_ptr<ccMesh> ccMesh::SimplifyVertexClustering(
 	double voxel_size,
 	SimplificationContraction
 	contraction /* = SimplificationContraction::Average */) const {
@@ -106,7 +106,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 	if (!cloud)
 	{
 		utility::LogError(
-			"[ccMesh::simplifyVertexClustering] mesh"
+			"[ccMesh::SimplifyVertexClustering] mesh"
 			"should set associated cloud before using!");
 	}
 
@@ -223,8 +223,8 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 			Quadric q;
 			for (int vidx : voxel.second) {
 				for (int tidx : vert_to_triangles[vidx]) {
-					Eigen::Vector4d p = getTrianglePlane(tidx);
-					double area = getTriangleArea(tidx);
+					Eigen::Vector4d p = GetTrianglePlane(tidx);
+					double area = GetTriangleArea(tidx);
 					q += Quadric(p, area);
 				}
 			}
@@ -293,7 +293,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 	return mesh;
 }
 
-std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
+std::shared_ptr<ccMesh> ccMesh::SimplifyQuadricDecimation(
         int target_number_of_triangles,
         double maximum_error/* = std::numeric_limits<double>::infinity()*/,
         double boundary_weight/* = 1.0*/) const {
@@ -308,7 +308,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	if (!cloud)
 	{
 		utility::LogError(
-			"[ccMesh::simplifyVertexClustering] mesh"
+			"[ccMesh::SimplifyVertexClustering] mesh"
 			"should set associated cloud before using!");
 	}
 
@@ -335,8 +335,8 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 		vert_to_triangles[tri->i2].emplace(static_cast<int>(tidx));
 		vert_to_triangles[tri->i3].emplace(static_cast<int>(tidx));
 
-		triangle_planes[tidx] = getTrianglePlane(tidx);
-		triangle_areas[tidx] = getTriangleArea(tidx);
+		triangle_planes[tidx] = GetTrianglePlane(tidx);
+		triangle_areas[tidx] = GetTriangleArea(tidx);
 	}
 
 	// Compute the error metric per vertex
@@ -348,7 +348,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	}
 
 	// For boundary edges add perpendicular plane quadric
-	auto edge_triangle_count = getEdgeToTrianglesMap();
+	auto edge_triangle_count = GetEdgeToTrianglesMap();
 	auto AddPerpPlaneQuadric = [&](int vidx0, int vidx1, int vidx2,
 		double area) {
 		int min = std::min(vidx0, vidx1);

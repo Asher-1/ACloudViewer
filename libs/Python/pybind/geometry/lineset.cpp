@@ -37,16 +37,16 @@ void pybind_lineset(py::module &m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_points", &LineSet::hasPoints,
+            .def("has_points", &LineSet::HasPoints,
                  "Returns ``True`` if the object contains points.")
-            .def("has_lines", &LineSet::hasLines,
+            .def("has_lines", &LineSet::HasLines,
                  "Returns ``True`` if the object contains lines.")
             .def("has_colors", &LineSet::hasColors,
                  "Returns ``True`` if the object's lines contain "
                  "colors.")
-            .def("get_line_coordinate", &LineSet::getLineCoordinate,
+            .def("get_line_coordinate", &LineSet::GetLineCoordinate,
                  "line_index"_a)
-            .def("paint_uniform_color", &LineSet::paintUniformColor,
+            .def("paint_uniform_color", &LineSet::PaintUniformColor,
                  "Assigns each line in the line set the same color.", "color"_a)
             .def_static("create_from_point_cloud_correspondences",
                         &LineSet::CreateFromPointCloudCorrespondences,

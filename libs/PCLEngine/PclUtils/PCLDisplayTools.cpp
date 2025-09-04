@@ -296,7 +296,7 @@ void PCLDisplayTools::drawLines(const CC_DRAW_CONTEXT& context,
     }
 
     if (m_visualizer3D->contains(viewID)) {
-        if (lineset->isColorOverridden() || !lineset->hasColors()) {
+        if (lineset->isColorOverridden() || !lineset->HasColors()) {
             ecvColor::Rgbf polygonColor =
                     ecvTools::TransFormRGB(context.defaultPolylineColor);
             m_visualizer3D->setShapeUniqueColor(polygonColor.r, polygonColor.g,

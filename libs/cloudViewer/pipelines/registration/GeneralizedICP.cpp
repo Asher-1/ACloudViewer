@@ -49,7 +49,7 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
 std::shared_ptr<ccPointCloud> InitializePointCloudForGeneralizedICP(
         const ccPointCloud &pcd, double epsilon) {
     auto output = std::make_shared<ccPointCloud>(pcd);
-    if (output->hasCovariances()) {
+    if (output->HasCovariances()) {
         utility::LogDebug("GeneralizedICP: Using pre-computed covariances.");
         return output;
     }
@@ -98,8 +98,8 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
         const ccPointCloud &source,
         const ccPointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || !target.hasCovariances() ||
-        !source.hasCovariances()) {
+    if (corres.empty() || !target.HasCovariances() ||
+        !source.HasCovariances()) {
         return Eigen::Matrix4d::Identity();
     }
 

@@ -655,7 +655,7 @@ private:
 
             gui::Application::GetInstance().RunInThread([this]() {
                 loaded_pcd_->EstimateNormals();
-                loaded_pcd_->normalizeNormals();
+                loaded_pcd_->NormalizeNormals();
 
                 gui::Application::GetInstance().PostToMainThread(
                         visualizer_, [this]() {
@@ -1073,7 +1073,7 @@ void GuiVisualizer::SetGeometry(
 
     auto &bounds = scene3d->GetBoundingBox();
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
-                                   bounds.getGeometryCenter().cast<float>());
+                                   bounds.GetCenter().cast<float>());
 
     // Setup for raw mode if enabled...
     if (impl_->basic_mode_enabled_) {
@@ -1208,7 +1208,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                     cloud->EstimateNormals();
                 }
                 UpdateProgress(0.666f);
-                cloud->normalizeNormals();
+                cloud->NormalizeNormals();
                 UpdateProgress(0.75f);
                 geometry = cloud;
                 impl_->loaded_pcd_ = cloud;

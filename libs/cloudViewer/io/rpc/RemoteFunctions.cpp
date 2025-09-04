@@ -124,7 +124,7 @@ bool SetTriangleMesh(const ccMesh& mesh,
     if (mesh.hasTextures()) {
         int tex_id = 0;
         for (const auto& image : mesh.textures_) {
-            if (!image.isEmpty()) {
+            if (!image.IsEmpty()) {
                 std::vector<int64_t> shape(
                         {image.height_, image.width_, image.num_of_channels_});
                 if (image.bytes_per_channel_ == sizeof(uint8_t)) {

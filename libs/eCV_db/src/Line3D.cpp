@@ -29,7 +29,7 @@ Line3D::Line3D(const Eigen::Vector3d& origin,
 }
 
 void Line3D::Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t) {
-    this->transform(t);
+    this->Transform(t);
 }
 
 std::pair<double, double> Line3D::SlabAABBBase(
@@ -117,7 +117,7 @@ utility::optional<double> Line3D::ExactAABB(
     }
 
     // Find the ones which are contained
-    auto contained_indices = b_tol.getPointIndicesWithinBoundingBox(points);
+    auto contained_indices = b_tol.GetPointIndicesWithinBoundingBox(points);
     if (contained_indices.empty()) return {};
 
     // Return the lowest parameter
@@ -323,7 +323,7 @@ Segment3D::Segment3D(const std::pair<Eigen::Vector3d, Eigen::Vector3d>& pair)
     : Segment3D(std::get<0>(pair), std::get<1>(pair)) {}
 
 void Segment3D::Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t) {
-    this->transform(t);
+    this->Transform(t);
     end_point_ = t * end_point_;
 }
 

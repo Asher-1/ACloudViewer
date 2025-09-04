@@ -77,22 +77,22 @@ public:
 	**/
     void draw (CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col);
 
-	inline virtual bool isEmpty() const override { return volume() <= 0; }
+	inline virtual bool IsEmpty() const override { return volume() <= 0; }
 	virtual Eigen::Vector3d GetMinBound() const override;
 	virtual Eigen::Vector3d GetMaxBound() const override;
-	virtual Eigen::Vector3d getGeometryCenter() const override;
+	virtual Eigen::Vector3d GetCenter() const override;
 
-	virtual ccBBox getAxisAlignedBoundingBox() const override;
-	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
+	virtual ccBBox GetAxisAlignedBoundingBox() const override;
+	virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
 
-	virtual ecvOrientedBBox& transform(
+	virtual ecvOrientedBBox& Transform(
 		const Eigen::Matrix4d& transformation) override;
-	virtual ecvOrientedBBox& translate(
+	virtual ecvOrientedBBox& Translate(
 		const Eigen::Vector3d& translation,
 		bool relative = true) override;
-	virtual ecvOrientedBBox& scale(
+	virtual ecvOrientedBBox& Scale(
 		const double scale, const Eigen::Vector3d& center) override;
-	virtual ecvOrientedBBox& rotate(
+	virtual ecvOrientedBBox& Rotate(
 		const Eigen::Matrix3d& R,
 		const Eigen::Vector3d& center) override;
 

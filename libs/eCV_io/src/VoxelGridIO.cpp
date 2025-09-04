@@ -256,7 +256,7 @@ bool WriteVoxelGridToPLY(const std::string &filename,
 	bool write_ascii /* = false*/,
 	bool compressed /* = false*/,
 	bool print_progress) {
-	if (voxelgrid.isEmpty()) {
+	if (voxelgrid.IsEmpty()) {
 		utility::LogWarning("Write PLY failed: voxelgrid has 0 voxels.");
 		return false;
 	}

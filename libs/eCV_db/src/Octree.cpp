@@ -479,7 +479,7 @@ bool Octree::operator==(const Octree& that) const {
 
 ccBBox Octree::getOwnBB(bool withGLFeatures)
 {
-	return getAxisAlignedBoundingBox();
+	return GetAxisAlignedBoundingBox();
 }
 
 Octree& Octree::Clear() {
@@ -491,7 +491,7 @@ Octree& Octree::Clear() {
 }
 
 Eigen::Vector3d Octree::GetMinBound() const {
-    if (isEmpty()) {
+    if (IsEmpty()) {
         return Eigen::Vector3d::Zero();
     } else {
         return origin_;
@@ -499,45 +499,45 @@ Eigen::Vector3d Octree::GetMinBound() const {
 }
 
 Eigen::Vector3d Octree::GetMaxBound() const {
-    if (isEmpty()) {
+    if (IsEmpty()) {
         return Eigen::Vector3d::Zero();
     } else {
         return origin_ + Eigen::Vector3d(size_, size_, size_);
     }
 }
 
-Eigen::Vector3d Octree::getGeometryCenter() const {
+Eigen::Vector3d Octree::GetCenter() const {
     return origin_ + Eigen::Vector3d(size_, size_, size_) / 2;
 }
 
-ccBBox Octree::getAxisAlignedBoundingBox() const {
+ccBBox Octree::GetAxisAlignedBoundingBox() const {
     ccBBox box;
     box.minCorner() = GetMinBound();
     box.maxCorner() = GetMaxBound();
-	box.setValidity(!box.isEmpty());
+	box.setValidity(!box.IsEmpty());
     return box;
 }
 
-ecvOrientedBBox Octree::getOrientedBoundingBox() const {
-    return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(getAxisAlignedBoundingBox());
+ecvOrientedBBox Octree::GetOrientedBoundingBox() const {
+    return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(GetAxisAlignedBoundingBox());
 }
 
-Octree& Octree::transform(const Eigen::Matrix4d& transformation) {
+Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-Octree& Octree::translate(const Eigen::Vector3d& translation, bool relative) {
+Octree& Octree::Translate(const Eigen::Vector3d& translation, bool relative) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-Octree& Octree::scale(const double s, const Eigen::Vector3d& center) {
+Octree& Octree::Scale(const double s, const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-Octree& Octree::rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
+Octree& Octree::Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }

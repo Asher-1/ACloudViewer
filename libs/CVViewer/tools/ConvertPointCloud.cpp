@@ -89,7 +89,7 @@ void convert(int argc,
     double mahalanobis_threshold = utility::GetProgramOptionAsDouble(
             argc, argv, "--filter_mahalanobis", 0.0);
     if (mahalanobis_threshold > 0.0) {
-        auto mahalanobis = pointcloud_ptr->computeMahalanobisDistance();
+        auto mahalanobis = pointcloud_ptr->ComputeMahalanobisDistance();
         std::vector<size_t> indices;
         for (size_t i = 0; i < pointcloud_ptr->size(); i++) {
             if (mahalanobis[i] < mahalanobis_threshold) {
@@ -149,7 +149,7 @@ void convert(int argc,
         utility::LogDebug("Orient normals to [%.2f, %.2f, %.2f].", direction(0),
                           direction(1), direction(2));
         Eigen::Vector3d dir(direction);
-        pointcloud_ptr->orientNormalsToAlignWithDirection(dir);
+        pointcloud_ptr->OrientNormalsToAlignWithDirection(dir);
         processed = true;
     }
     Eigen::VectorXd camera_loc = utility::GetProgramOptionAsEigenVectorXd(
@@ -158,7 +158,7 @@ void convert(int argc,
         utility::LogDebug("Orient normals towards [%.2f, %.2f, %.2f].",
                           camera_loc(0), camera_loc(1), camera_loc(2));
         Eigen::Vector3d loc(camera_loc);
-        pointcloud_ptr->orientNormalsTowardsCameraLocation(loc);
+        pointcloud_ptr->OrientNormalsTowardsCameraLocation(loc);
         processed = true;
     }
 

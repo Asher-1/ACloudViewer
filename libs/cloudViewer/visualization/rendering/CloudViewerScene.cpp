@@ -35,34 +35,34 @@ std::shared_ptr<ccMesh> CreateAxisGeometry(double axis_length) {
     const double cone_height = 0.025 * axis_length;
 
     auto mesh_frame = ccMesh::CreateSphere(sphere_radius);
-    mesh_frame->computeVertexNormals();
-    mesh_frame->paintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
+    mesh_frame->ComputeVertexNormals();
+    mesh_frame->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
 
     std::shared_ptr<ccMesh> mesh_arrow;
     Eigen::Matrix4d transformation;
 
     mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius, cyl_height,
                                      cone_height);
-    mesh_arrow->computeVertexNormals();
-    mesh_arrow->paintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
+    mesh_arrow->ComputeVertexNormals();
+    mesh_arrow->PaintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
     transformation << 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1;
-    mesh_arrow->transform(transformation);
+    mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
     mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius, cyl_height,
                                      cone_height);
-    mesh_arrow->computeVertexNormals();
-    mesh_arrow->paintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
+    mesh_arrow->ComputeVertexNormals();
+    mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
     transformation << 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1;
-    mesh_arrow->transform(transformation);
+    mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
     mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius, cyl_height,
                                      cone_height);
-    mesh_arrow->computeVertexNormals();
-    mesh_arrow->paintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
+    mesh_arrow->ComputeVertexNormals();
+    mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
     transformation << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
-    mesh_arrow->transform(transformation);
+    mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
     // Add UVs because material shader for axes expects them
@@ -78,7 +78,7 @@ void RecreateAxis(Scene* scene, const ccBBox& bounds, bool enabled) {
     // distance from the origin. The latter is necessary so that the axis is
     // big enough to be visible even if the object is far from the origin.
     // See caterpillar.ply from Tanks & Temples.
-    auto axis_length = bounds.getMaxExtent();
+    auto axis_length = bounds.GetMaxExtent();
     if (axis_length < 0.001) {  // avoid div by zero errors in CreateAxes()
         axis_length = 1.0;
     }
@@ -328,12 +328,12 @@ bool CloudViewerScene::GeometryIsVisible(const std::string& name) {
 }
 
 void CloudViewerScene::SetGeometryTransform(const std::string& name,
-                                            const Eigen::Matrix4d& transform) {
+                                            const Eigen::Matrix4d& Transform) {
     auto scene = renderer_.GetScene(scene_);
     auto g = geometries_.find(name);
     if (g != geometries_.end()) {
         const Eigen::Transform<float, 3, Eigen::Affine> t(
-                transform.cast<float>());
+                Transform.cast<float>());
         scene->SetGeometryTransform(name, t);
         if (!g->second.fast_name.empty()) {
             scene->SetGeometryTransform(g->second.fast_name, t);

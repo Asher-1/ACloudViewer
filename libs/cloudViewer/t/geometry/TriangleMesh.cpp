@@ -389,7 +389,7 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
     }
 
     TriangleMesh mesh(device);
-    if (mesh_legacy.hasVertices()) {
+    if (mesh_legacy.HasVertices()) {
         mesh.SetVertexPositions(
                 core::eigen_converter::EigenVector3dVectorToTensor(
                         mesh_legacy.getEigenVertices(), float_dtype, device));

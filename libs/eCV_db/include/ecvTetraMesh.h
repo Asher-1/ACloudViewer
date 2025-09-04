@@ -76,31 +76,31 @@ public:
     virtual TetraMesh &clear() override;
 
 public:
-    inline std::size_t tetraSize() const { return tetras_.size(); }
+    inline std::size_t TetraSize() const { return tetras_.size(); }
 
     TetraMesh &operator+=(const TetraMesh &mesh);
     TetraMesh operator+(const TetraMesh &mesh) const;
 
     /// \brief Function that removes duplicated verties, i.e., vertices that
     /// have identical coordinates.
-    TetraMesh &removeDuplicatedVertices();
+    TetraMesh &RemoveDuplicatedVertices();
 
     /// \brief Function that removes duplicated tetrahedra, i.e., removes
     /// tetrahedra that reference the same four vertices, independent of their
     /// order.
-    TetraMesh &removeDuplicatedTetras();
+    TetraMesh &RemoveDuplicatedTetras();
 
     /// \brief This function removes vertices from the tetra mesh that are not
     /// referenced in any tetrahedron of the mesh.
-    TetraMesh &removeUnreferencedVertices();
+    TetraMesh &RemoveUnreferencedVertices();
 
     /// \brief Function that removes degenerate tetrahedra, i.e., tetrahedra
     /// that reference a single vertex multiple times in a single tetrahedron.
     /// They are usually the product of removing duplicated vertices.
-    TetraMesh &removeDegenerateTetras();
+    TetraMesh &RemoveDegenerateTetras();
 
     /// Returns `true` if the mesh contains tetras.
-	bool hasTetras() const
+	bool HasTetras() const
 	{
 		return vertices_.size() > 0 && tetras_.size() > 0;
 	}
@@ -111,7 +111,7 @@ public:
     ///
     /// \param level specifies the level.
     /// \param values specifies values per-vertex.
-    std::shared_ptr<ccMesh> extractTriangleMesh(
+    std::shared_ptr<ccMesh> ExtractTriangleMesh(
             const std::vector<double> &values, double level);
 
     /// \brief Function that creates a tetrahedral mesh (TetraMeshFactory.cpp).

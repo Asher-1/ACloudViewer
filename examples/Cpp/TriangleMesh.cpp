@@ -50,39 +50,39 @@ int main(int argc, char *argv[]) {
     std::string option(argv[1]);
     if (option == "plane") {
         auto mesh = ccMesh::CreatePlane();
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("plane.ply", *mesh, true, true);
     } else if (option == "sphere") {
         auto mesh = ccMesh::CreateSphere(0.05);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("sphere.ply", *mesh, true, true);
     } else if (option == "cylinder") {
         auto mesh = ccMesh::CreateCylinder(0.5, 2.0);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("cylinder.ply", *mesh, true, true);
     } else if (option == "box") {
         auto mesh = ccMesh::CreateBox();
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("box.ply", *mesh, true, true);
     } else if (option == "torus") {
         auto mesh = ccMesh::CreateTorus();
-        mesh->scale(5.0, mesh->getGeometryCenter());
+        mesh->Scale(5.0, mesh->GetCenter());
         *mesh += *ccMesh::CreateTorus();
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("torus.ply", *mesh, true, true);
     } else if (option == "cone") {
         auto mesh = ccMesh::CreateCone(0.5, 2.0, 20, 3);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("cone.ply", *mesh, true, true);
     } else if (option == "arrow") {
         auto mesh = ccMesh::CreateArrow();
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("arrow.ply", *mesh, true, true);
         io::WriteTriangleMesh("arrow.ply", *mesh, true, true);
@@ -93,10 +93,10 @@ int main(int argc, char *argv[]) {
             io::WriteTriangleMesh("frame.ply", *mesh, true, true);
         } else {
             auto mesh = io::CreateMeshFromFile(argv[2]);
-            mesh->computeVertexNormals();
-            auto boundingbox = mesh->getAxisAlignedBoundingBox();
+            mesh->ComputeVertexNormals();
+            auto boundingbox = mesh->GetAxisAlignedBoundingBox();
             auto mesh_frame = ccMesh::CreateCoordinateFrame(
-                    boundingbox.getMaxExtent() * 0.2,
+                    boundingbox.GetMaxExtent() * 0.2,
                     boundingbox.GetMinBound());
             visualization::DrawGeometries({mesh, mesh_frame});
         }
@@ -116,10 +116,10 @@ int main(int argc, char *argv[]) {
                 "After merge, Mesh1 has {:d} vertices, {:d} triangles.",
                 mesh1->getVerticeSize(), mesh1->size());
         mesh1->shrinkToFit();
-        mesh1->removeDuplicatedVertices();
-        mesh1->removeDuplicatedTriangles();
-        mesh1->removeDegenerateTriangles();
-        mesh1->removeUnreferencedVertices();
+        mesh1->RemoveDuplicatedVertices();
+        mesh1->RemoveDuplicatedTriangles();
+        mesh1->RemoveDegenerateTriangles();
+        mesh1->RemoveUnreferencedVertices();
         utility::LogInfo(
                 "After purge vertices, Mesh1 has {:d} vertices, {:d} "
                 "triangles.",
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         io::WriteTriangleMesh(argv[3], *mesh, true, true);
 
     } else if (option == "scale") {
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
         double scale = std::stod(argv[4]);
         Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
         trans(0, 0) = trans(1, 1) = trans(2, 2) = scale;
-        mesh->transform(trans);
+        mesh->Transform(trans);
         io::WriteTriangleMesh(argv[3], *mesh);
     } else if (option == "unify") {
         if (argc < 5) {
@@ -153,17 +153,17 @@ int main(int argc, char *argv[]) {
         }
         // unify into (0, 0, 0) - (scale, scale, scale) box
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        auto bbox = mesh->getAxisAlignedBoundingBox();
+        auto bbox = mesh->GetAxisAlignedBoundingBox();
         double scale1 = std::stod(argv[4]);
         double scale2 = std::stod(argv[5]);
         Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
-        trans(0, 0) = trans(1, 1) = trans(2, 2) = scale1 / bbox.getMaxExtent();
-        mesh->transform(trans);
+        trans(0, 0) = trans(1, 1) = trans(2, 2) = scale1 / bbox.GetMaxExtent();
+        mesh->Transform(trans);
         trans.setIdentity();
         trans.block<3, 1>(0, 3) =
                 Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0, scale2 / 2.0) -
-                bbox.getGeometryCenter() * scale1 / bbox.getMaxExtent();
-        mesh->transform(trans);
+                bbox.GetCenter() * scale1 / bbox.GetMaxExtent();
+        mesh->Transform(trans);
         io::WriteTriangleMesh(argv[3], *mesh);
     } else if (option == "distance") {
         if (argc < 4) {
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         camera::PinholeCameraTrajectory trajectory;
         io::ReadIJsonConvertible(argv[3], trajectory);
         if (!utility::filesystem::DirectoryExists("image")) {
@@ -231,8 +231,8 @@ int main(int argc, char *argv[]) {
         Eigen::Matrix4d trans;
         trans.setIdentity();
         trans.block<3, 1>(0, 3) = mesh->getVertice(static_cast<size_t>(idx));
-        mesh_sphere->transform(trans);
-        mesh_sphere->computeVertexNormals();
+        mesh_sphere->Transform(trans);
+        mesh_sphere->ComputeVertexNormals();
         ptrs.push_back(mesh_sphere);
         visualization::DrawGeometries(ptrs);
 
@@ -266,10 +266,10 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
-        auto mesh_sub = mesh->subdivideMidpoint(2);
-        auto mesh_quadric = mesh_sub->simplifyQuadricDecimation(
+        auto mesh_sub = mesh->SubdivideMidpoint(2);
+        auto mesh_quadric = mesh_sub->SimplifyQuadricDecimation(
                 static_cast<int>(mesh_sub->size() / 2));
         visualization::DrawGeometries({mesh_quadric});
         if (argc >= 4) {
@@ -281,9 +281,9 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
-        auto mesh_sub = mesh->subdivideLoop(3);
+        auto mesh_sub = mesh->SubdivideLoop(3);
         visualization::DrawGeometries({mesh_sub});
         if (argc >= 4) {
             io::WriteTriangleMesh(argv[3], *mesh_sub, true, true);
@@ -294,9 +294,9 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
-        auto mesh_sub = mesh->subdivideMidpoint(2);
+        auto mesh_sub = mesh->SubdivideMidpoint(2);
         visualization::DrawGeometries({mesh_sub});
         if (argc >= 4) {
             io::WriteTriangleMesh(argv[3], *mesh_sub, true, true);
@@ -307,9 +307,9 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
-        auto mesh_smooth_laplacian = mesh->filterSmoothLaplacian(100, 0.5);
+        auto mesh_smooth_laplacian = mesh->FilterSmoothLaplacian(100, 0.5);
         visualization::DrawGeometries({mesh_smooth_laplacian});
         if (argc >= 4) {
             io::WriteTriangleMesh(argv[3], *mesh_smooth_laplacian, true, true);
@@ -320,9 +320,9 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
-        auto mesh_sharpen = mesh->filterSharpen(1, 1);
+        auto mesh_sharpen = mesh->FilterSharpen(1, 1);
         visualization::DrawGeometries({mesh_sharpen});
         if (argc >= 4) {
             io::WriteTriangleMesh(argv[3], *mesh_sharpen, true, true);
@@ -333,9 +333,9 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
-        auto pcd = mesh->samplePointsPoissonDisk(2000);
+        auto pcd = mesh->SamplePointsPoissonDisk(2000);
         visualization::DrawGeometries({pcd});
         std::vector<double> radii = {0.005, 0.01, 0.02, 0.04};
         auto out_mesh = ccMesh::CreateFromPointCloudBallPivoting(*pcd, radii);

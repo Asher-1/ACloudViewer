@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #ifndef ECV_HIERARCHY_OBJECT_HEADER
 #define ECV_HIERARCHY_OBJECT_HEADER
@@ -149,25 +149,24 @@ public:  // construction
     static void RotateCovariances(const Eigen::Matrix3d& R,
                                   std::vector<Eigen::Matrix3d>& covariances);
 
-    virtual bool isEmpty() const { return true; }
+    // for virtual functions with cloudViewer interface
+    virtual bool IsEmpty() const { return true; }
     /// Returns min bounds for geometry coordinates.
     virtual Eigen::Vector3d GetMinBound() const { return Eigen::Vector3d(); }
-    virtual Eigen::Vector2d getMin2DBound() const { return Eigen::Vector2d(); }
+    virtual Eigen::Vector2d GetMin2DBound() const { return Eigen::Vector2d(); }
     /// Returns max bounds for geometry coordinates.
     virtual Eigen::Vector3d GetMaxBound() const { return Eigen::Vector3d(); }
-    virtual Eigen::Vector2d getMax2DBound() const { return Eigen::Vector2d(); }
+    virtual Eigen::Vector2d GetMax2DBound() const { return Eigen::Vector2d(); }
     /// Returns the center of the geometry coordinates.
-    virtual Eigen::Vector3d getGeometryCenter() const {
-        return Eigen::Vector3d();
-    }
+    virtual Eigen::Vector3d GetCenter() const { return Eigen::Vector3d(); }
 
     /// Returns an axis-aligned bounding box of the geometry.
-    virtual ccBBox getAxisAlignedBoundingBox() const;
+    virtual ccBBox GetAxisAlignedBoundingBox() const;
     /// Returns an oriented bounding box of the geometry.
-    virtual ecvOrientedBBox getOrientedBoundingBox() const;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const;
 
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
-    virtual ccHObject& transform(const Eigen::Matrix4d& transformation) {
+    virtual ccHObject& Transform(const Eigen::Matrix4d& transformation) {
         return *this;
     }
     /// \brief Apply translation to the geometry coordinates.
@@ -175,7 +174,7 @@ public:  // construction
     /// \param translation A 3D vector to transform the geometry.
     /// \param relative If `true`, the \p translation is directly applied to the
     /// geometry. Otherwise, the geometry center is moved to the \p translation.
-    virtual ccHObject& translate(const Eigen::Vector3d& translation,
+    virtual ccHObject& Translate(const Eigen::Vector3d& translation,
                                  bool relative = true) {
         return *this;
     }
@@ -186,24 +185,22 @@ public:  // construction
     /// \param scale The scale parameter that is multiplied to the
     /// points/vertices of the geometry.
     /// \param center Scale center that is used to resize the geometry.
-    virtual ccHObject& scale(const double s, const Eigen::Vector3d& center) {
+    virtual ccHObject& Scale(const double s, const Eigen::Vector3d& center) {
         return *this;
     }
-    virtual ccHObject& scale(const double s) {
-        return scale(s, getGeometryCenter());
-    }
+    virtual ccHObject& Scale(const double s) { return Scale(s, GetCenter()); }
     /// \brief Apply rotation to the geometry coordinates and normals.
     /// Given a rotation matrix \f$R\f$, and center \f$c\f$, a given point
     /// \f$p\f$ is transformed according to \f$R (p - c) + c\f$.
     ///
     /// \param R A 3x3 rotation matrix
     /// \param center Rotation center that is used for the rotation.
-    virtual ccHObject& rotate(const Eigen::Matrix3d& R,
+    virtual ccHObject& Rotate(const Eigen::Matrix3d& R,
                               const Eigen::Vector3d& center) {
         return *this;
     }
-    virtual ccHObject& rotate(const Eigen::Matrix3d& R) {
-        return rotate(R, getGeometryCenter());
+    virtual ccHObject& Rotate(const Eigen::Matrix3d& R) {
+        return Rotate(R, GetCenter());
     }
 
     /// Get Rotation Matrix from XYZ RotationType.

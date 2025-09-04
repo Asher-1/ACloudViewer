@@ -47,32 +47,32 @@ class PyGeometry : public PyObjectBase<GeometryBase> {
 public:
     using PyObjectBase<GeometryBase>::PyObjectBase;
 
-    bool isEmpty() const override {
+    bool IsEmpty() const override {
         PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
     }
 
     Eigen::Vector3d GetMinBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, GeometryBase, );
     }
-    Eigen::Vector2d getMin2DBound() const override {
+    Eigen::Vector2d GetMin2DBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, GeometryBase, );
     }
     Eigen::Vector3d GetMaxBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, GeometryBase, );
     }
-    Eigen::Vector2d getMax2DBound() const override {
+    Eigen::Vector2d GetMax2DBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, GeometryBase, );
     }
-    Eigen::Vector3d getGeometryCenter() const override {
+    Eigen::Vector3d GetCenter() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, GeometryBase, );
     }
-    ccBBox getAxisAlignedBoundingBox() const override {
+    ccBBox GetAxisAlignedBoundingBox() const override {
         PYBIND11_OVERLOAD_PURE(ccBBox, GeometryBase, );
     }
-    ecvOrientedBBox getOrientedBoundingBox() const override {
+    ecvOrientedBBox GetOrientedBoundingBox() const override {
         PYBIND11_OVERLOAD_PURE(ecvOrientedBBox, GeometryBase, );
     }
-    GeometryBase& transform(const Eigen::Matrix4d& transformation) override {
+    GeometryBase& Transform(const Eigen::Matrix4d& transformation) override {
         PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, transformation);
     }
 };

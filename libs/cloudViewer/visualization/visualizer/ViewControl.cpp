@@ -50,12 +50,12 @@ void ViewControl::SetViewMatrices(
         z_near_ =
                 constant_z_near_ > 0
                         ? constant_z_near_
-                        : std::max(0.01 * bounding_box_.getMaxExtent(),
+                        : std::max(0.01 * bounding_box_.GetMaxExtent(),
                                    distance_ -
-                                           3.0 * bounding_box_.getMaxExtent());
+                                           3.0 * bounding_box_.GetMaxExtent());
         z_far_ = constant_z_far_ > 0
                          ? constant_z_far_
-                         : distance_ + 3.0 * bounding_box_.getMaxExtent();
+                         : distance_ + 3.0 * bounding_box_.GetMaxExtent();
         projection_matrix_ =
                 gl_util::Perspective(field_of_view_, aspect_, z_near_, z_far_);
     } else {
@@ -63,10 +63,10 @@ void ViewControl::SetViewMatrices(
         // We use some black magic to support distance_ in orthogonal view
         z_near_ = constant_z_near_ > 0
                           ? constant_z_near_
-                          : distance_ - 3.0 * bounding_box_.getMaxExtent();
+                          : distance_ - 3.0 * bounding_box_.GetMaxExtent();
         z_far_ = constant_z_far_ > 0
                          ? constant_z_far_
-                         : distance_ + 3.0 * bounding_box_.getMaxExtent();
+                         : distance_ + 3.0 * bounding_box_.GetMaxExtent();
         projection_matrix_ =
                 gl_util::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
                                -view_ratio_, view_ratio_, z_near_, z_far_);
@@ -102,7 +102,7 @@ bool ViewControl::ConvertFromViewParameters(const ViewParameters &status) {
     front_ = status.front_;
     bounding_box_.minCorner() = status.boundingbox_min_;
     bounding_box_.maxCorner() = status.boundingbox_max_;
-    bounding_box_.setValidity(!bounding_box_.isEmpty());
+    bounding_box_.setValidity(!bounding_box_.IsEmpty());
     SetProjectionParameters();
     return true;
 }
@@ -212,16 +212,16 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
     eye_ = extrinsic.block<3, 3>(0, 0).inverse() *
            (extrinsic.block<3, 1>(0, 3) * -1.0);
 
-    auto bb_center = bounding_box_.getGeometryCenter();
+    auto bb_center = bounding_box_.GetCenter();
     double ideal_distance = std::abs((eye_ - bb_center).dot(front_));
     double ideal_zoom = ideal_distance *
                         std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) /
-                        bounding_box_.getMaxExtent();
+                        bounding_box_.GetMaxExtent();
     zoom_ = ideal_zoom;
     if (!allow_arbitrary) {
         zoom_ = std::max(std::min(ideal_zoom, ZOOM_MAX), ZOOM_MIN);
     }
-    view_ratio_ = zoom_ * bounding_box_.getMaxExtent();
+    view_ratio_ = zoom_ * bounding_box_.GetMaxExtent();
     distance_ = view_ratio_ / std::tan(field_of_view_ * 0.5 / 180.0 * M_PI);
     lookat_ = eye_ - front_ * distance_;
     return true;
@@ -238,7 +238,7 @@ ViewControl::ProjectionType ViewControl::GetProjectionType() const {
 void ViewControl::Reset() {
     field_of_view_ = FIELD_OF_VIEW_DEFAULT;
     zoom_ = ZOOM_DEFAULT;
-    lookat_ = bounding_box_.getGeometryCenter();
+    lookat_ = bounding_box_.GetCenter();
     up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
     front_ = Eigen::Vector3d(0.0, 0.0, 1.0);
     SetProjectionParameters();
@@ -248,11 +248,11 @@ void ViewControl::SetProjectionParameters() {
     front_ = front_.normalized();
     right_ = up_.cross(front_).normalized();
     if (GetProjectionType() == ProjectionType::Perspective) {
-        view_ratio_ = zoom_ * bounding_box_.getMaxExtent();
+        view_ratio_ = zoom_ * bounding_box_.GetMaxExtent();
         distance_ = view_ratio_ / std::tan(field_of_view_ * 0.5 / 180.0 * M_PI);
         eye_ = lookat_ + front_ * distance_;
     } else {
-        view_ratio_ = zoom_ * bounding_box_.getMaxExtent();
+        view_ratio_ = zoom_ * bounding_box_.GetMaxExtent();
         distance_ =
                 view_ratio_ / std::tan(FIELD_OF_VIEW_STEP * 0.5 / 180.0 * M_PI);
         eye_ = lookat_ + front_ * distance_;

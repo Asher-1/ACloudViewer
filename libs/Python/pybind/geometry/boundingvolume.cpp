@@ -41,36 +41,36 @@ void pybind_boundingvolume(py::module &m) {
                  })
             .def("volume", &cloudViewer::OrientedBoundingBox::volume,
                  "Returns the volume of the bounding box.")
-            .def("get_extent", &cloudViewer::OrientedBoundingBox::getExtent,
+            .def("get_extent", &cloudViewer::OrientedBoundingBox::GetExtent,
                  "Get the extent/length of the bounding box in x, y, and z "
                  "dimension "
                  "in its frame of reference")
             .def("get_half_extent",
-                 &cloudViewer::OrientedBoundingBox::getHalfExtent,
+                 &cloudViewer::OrientedBoundingBox::GetHalfExtent,
                  "Returns the half extent of the bounding box in its frame of "
                  "reference.")
             .def("get_max_extent",
-                 &cloudViewer::OrientedBoundingBox::getMaxExtent,
+                 &cloudViewer::OrientedBoundingBox::GetMaxExtent,
                  "Returns the max extent of the bounding box in its frame of "
                  "reference")
-            .def("set_color", &cloudViewer::OrientedBoundingBox::setColor,
+            .def("set_color", &cloudViewer::OrientedBoundingBox::SetColor,
                  "``float64`` array of shape ``(3, )``", "color"_a)
-            .def("get_color", &cloudViewer::OrientedBoundingBox::getColor,
+            .def("get_color", &cloudViewer::OrientedBoundingBox::GetColor,
                  "``float64`` array of shape ``(3, )``")
-            .def("color", &cloudViewer::OrientedBoundingBox::getColor,
+            .def("color", &cloudViewer::OrientedBoundingBox::GetColor,
                  "``float64`` array of shape ``(3, )``")
             .def("get_box_points",
-                 &cloudViewer::OrientedBoundingBox::getBoxPoints,
+                 &cloudViewer::OrientedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
             .def("box_points",
-                 &cloudViewer::OrientedBoundingBox::getBoxPoints,
+                 &cloudViewer::OrientedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
             .def("clear", &cloudViewer::OrientedBoundingBox::Clear,
                  "Clear all elements in the geometry..")
             .def("get_point_indices_within_bounding_box",
                  py::overload_cast<const std::vector<Eigen::Vector3d> &>(
                          &cloudViewer::OrientedBoundingBox::
-                                 getPointIndicesWithinBoundingBox,
+                                 GetPointIndicesWithinBoundingBox,
                          py::const_),
                  "Return indices to points that are within the bounding box.",
                  "points"_a)
@@ -177,9 +177,9 @@ void pybind_boundingvolume(py::module &m) {
                  })
             .def("clear", &cloudViewer::BoundingBox::clear,
                  "Resets the bounding box.")
-            .def("set_color", &cloudViewer::BoundingBox::setColor,
+            .def("set_color", &cloudViewer::BoundingBox::SetColor,
                  "``float64`` array of shape ``(3, )``", "color"_a)
-            .def("get_color", &cloudViewer::BoundingBox::getColor,
+            .def("get_color", &cloudViewer::BoundingBox::GetColor,
                  "``float64`` array of shape ``(3, )``")
             .def("is_valid", &cloudViewer::BoundingBox::isValid,
                  "Returns whether bounding box is valid or not")
@@ -215,7 +215,7 @@ void pybind_boundingvolume(py::module &m) {
             .def("get_point_indices_within_boundingbox",
                  py::overload_cast<const std::vector<Eigen::Vector3d> &>(
                          &cloudViewer::BoundingBox::
-                                 getPointIndicesWithinBoundingBox,
+                                 GetPointIndicesWithinBoundingBox,
                          py::const_),
                  "Returns point indices Within bounding box.", "points"_a);
 
@@ -274,21 +274,21 @@ void pybind_boundingvolume(py::module &m) {
             .def(py::self *= double())
             .def(py::self *= float())
             .def(py::self *= Eigen::Matrix3d())
-            .def("get_box_points", &ccBBox::getBoxPoints,
+            .def("get_box_points", &ccBBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
-            .def("get_extent", &ccBBox::getExtent,
+            .def("get_extent", &ccBBox::GetExtent,
                  "Get the extent/length of the bounding box in x, y, and z "
                  "dimension.")
-            .def("get_half_extent", &ccBBox::getHalfExtent,
+            .def("get_half_extent", &ccBBox::GetHalfExtent,
                  "Returns the half extent of the bounding box.")
-            .def("get_max_extent", &ccBBox::getMaxExtent,
+            .def("get_max_extent", &ccBBox::GetMaxExtent,
                  "Returns the maximum extent, i.e. the maximum of X, Y and Z "
                  "axis")
-            .def("set_min_bound", &ccBBox::setMinBounds,
+            .def("set_min_bound", &ccBBox::SetMinBounds,
                  "``float64`` array of shape ``(3, )``", "minBound"_a)
-            .def("set_max_bound", &ccBBox::setMaxBounds,
+            .def("set_max_bound", &ccBBox::SetMaxBounds,
                  "``float64`` array of shape ``(3, )``", "maxBound"_a)
-            .def("get_print_info", &ccBBox::getPrintInfo,
+            .def("get_print_info", &ccBBox::GetPrintInfo,
                  "Returns the 3D dimensions of the bounding box in string "
                  "format.")
             .def_static(

@@ -1539,7 +1539,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 bool WritePointCloudToPLY(const std::string &filename,
                           const ccPointCloud &pointcloud,
                           const WritePointCloudOption &params) {
-    if (pointcloud.isEmpty()) {
+    if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write PLY failed: point cloud has 0 points.");
         return false;
     }

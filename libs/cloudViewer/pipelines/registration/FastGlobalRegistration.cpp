@@ -254,7 +254,7 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
         std::tie(success, result) = utility::SolveLinearSystemPSD(-JTJ, JTr);
         Eigen::Matrix4d delta = utility::TransformVector6dToMatrix4d(result);
         trans = delta * trans;
-        point_cloud_copy_j.transform(delta);
+        point_cloud_copy_j.Transform(delta);
 
         // graduated non-convexity.
         if (option.decrease_mu_) {

@@ -60,38 +60,38 @@ protected:
 
 public:
     LineSet &clear();
-    inline virtual bool isEmpty() const override { return !hasPoints(); }
+    inline virtual bool IsEmpty() const override { return !HasPoints(); }
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
-    virtual Eigen::Vector3d getGeometryCenter() const override;
-    virtual ccBBox getAxisAlignedBoundingBox() const override;
-    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual LineSet &transform(const Eigen::Matrix4d &transformation) override;
-    virtual LineSet &translate(const Eigen::Vector3d &translation,
+    virtual Eigen::Vector3d GetCenter() const override;
+    virtual ccBBox GetAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    virtual LineSet &Transform(const Eigen::Matrix4d &transformation) override;
+    virtual LineSet &Translate(const Eigen::Vector3d &translation,
                                bool relative = true) override;
-    virtual LineSet &scale(const double s,
+    virtual LineSet &Scale(const double s,
                            const Eigen::Vector3d &center) override;
-    virtual LineSet &rotate(const Eigen::Matrix3d &R,
+    virtual LineSet &Rotate(const Eigen::Matrix3d &R,
                             const Eigen::Vector3d &center) override;
 
     LineSet &operator+=(const LineSet &lineset);
     LineSet operator+(const LineSet &lineset) const;
 
     /// Returns `true` if the object contains points.
-    bool hasPoints() const { return points_.size() > 0; }
+    bool HasPoints() const { return points_.size() > 0; }
 
     /// Returns `true` if the object contains lines.
-    bool hasLines() const { return hasPoints() && lines_.size() > 0; }
+    bool HasLines() const { return HasPoints() && lines_.size() > 0; }
 
     /// Returns `true` if the objects lines contains colors.
-    bool hasColors() const override {
-        return hasLines() && colors_.size() == lines_.size();
+    bool HasColors() const {
+        return HasLines() && colors_.size() == lines_.size();
     }
 
     /// \brief Returns the coordinates of the line at the given index.
     ///
     /// \param line_index Index of the line.
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> getLineCoordinate(
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
             size_t line_index) const {
         return std::make_pair(points_[lines_[line_index][0]],
                               points_[lines_[line_index][1]]);
@@ -100,7 +100,7 @@ public:
     /// \brief Assigns each line in the LineSet the same color.
     ///
     /// \param color Specifies the color to be applied.
-    LineSet &paintUniformColor(const Eigen::Vector3d &color) {
+    LineSet &PaintUniformColor(const Eigen::Vector3d &color) {
         ResizeAndPaintUniformColor(colors_, lines_.size(), color);
         return *this;
     }
