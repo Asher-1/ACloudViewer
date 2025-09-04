@@ -248,13 +248,13 @@ template <typename T> class BoundingBoxTpl {
             point(2) >= m_bbMin.z && point(2) <= m_bbMax.z);
   }
 
-  std::vector<std::size_t> getPointIndicesWithinBoundingBox(
+  std::vector<std::size_t> GetPointIndicesWithinBoundingBox(
       const std::vector<Eigen::Vector3d>& points) const {
-    return getPointIndicesWithinBoundingBox(
+    return GetPointIndicesWithinBoundingBox(
         CCVector3::fromArrayContainer(points));
   }
 
-  std::vector<std::size_t> getPointIndicesWithinBoundingBox(
+  std::vector<std::size_t> GetPointIndicesWithinBoundingBox(
       const std::vector<Vector3Tpl<T>>& points) const {
     std::vector<size_t> indices;
     for (std::size_t idx = 0; idx < points.size(); idx++) {
@@ -271,9 +271,9 @@ template <typename T> class BoundingBoxTpl {
   inline double volume() const { return getDiagVec().prod(); }
 
   /// Sets the bounding box color.
-  inline void setColor(const Eigen::Vector3d& color) { color_ = color; }
+  inline void SetColor(const Eigen::Vector3d& color) { color_ = color; }
   /// Gets the bounding box color.
-  inline Eigen::Vector3d getColor() const {
+  inline Eigen::Vector3d GetColor() const {
     return CCVector3d::fromArray(color_);
   }
 

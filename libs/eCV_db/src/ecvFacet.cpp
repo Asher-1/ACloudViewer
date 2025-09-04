@@ -83,7 +83,7 @@ ccFacet* ccFacet::clone() const {
 }
 
 bool ccFacet::clone(ccFacet* facet) const {
-    if (!facet || this->isEmpty()) {
+    if (!facet || this->IsEmpty()) {
         return false;
     }
 
@@ -434,8 +434,8 @@ void ccFacet::setColor(const ecvColor::Rgb& rgb) {
 }
 
 std::shared_ptr<ccMesh> ccFacet::getNormalVectorMesh(bool update) {
-    // const auto boundingbox = getAxisAlignedBoundingBox();
-    // double scale = std::max(0.01, boundingbox.getMaxExtent() * 0.2);
+    // const auto boundingbox = GetAxisAlignedBoundingBox();
+    // double scale = std::max(0.01, boundingbox.GetMaxExtent() * 0.2);
     if (normalVectorIsShown() && update || !m_arrow) {
         PointCoordinateType scale = 1.0;
         // the surface might be 0 if Delaunay 2.5D triangulation is not
@@ -447,7 +447,7 @@ std::shared_ptr<ccMesh> ccFacet::getNormalVectorMesh(bool update) {
         }
         m_arrow = ccMesh::CreateArrow(0.02 * scale, 0.05 * scale, 0.9 * scale,
                                       0.1 * scale);
-        // m_arrow->computeVertexNormals();
+        // m_arrow->ComputeVertexNormals();
         m_arrow->setTempColor(m_contourPolyline->getColor());
         m_arrow->showColors(true);
 
@@ -455,11 +455,11 @@ std::shared_ptr<ccMesh> ccFacet::getNormalVectorMesh(bool update) {
         ccGLMatrix mat = ccGLMatrix::FromToRotation(CCVector3(0, 0, PC_ONE),
                                                     getNormal());
         transformation = ccGLMatrixd::ToEigenMatrix4(mat);
-        m_arrow->transform(transformation);
+        m_arrow->Transform(transformation);
 
         transformation = Eigen::Matrix4d::Identity();
         transformation.block<3, 1>(0, 3) = CCVector3d::fromArray(getCenter());
-        m_arrow->transform(transformation);
+        m_arrow->Transform(transformation);
     }
 
     return m_arrow;
@@ -655,7 +655,7 @@ void ccFacet::invertNormal() {
     }
 }
 
-bool ccFacet::isEmpty() const {
+bool ccFacet::IsEmpty() const {
     return (!m_polygonMesh || m_polygonMesh->size() == 0 ||
             !m_contourPolyline || m_contourPolyline->size() == 0);
 }
@@ -676,64 +676,64 @@ Eigen::Vector3d ccFacet::GetMaxBound() const {
     }
 }
 
-Eigen::Vector3d ccFacet::getGeometryCenter() const {
+Eigen::Vector3d ccFacet::GetCenter() const {
     if (getPolygon()) {
-        return getPolygon()->getGeometryCenter();
+        return getPolygon()->GetCenter();
     } else {
         return Eigen::Vector3d();
     }
 }
 
-ccBBox ccFacet::getAxisAlignedBoundingBox() const {
+ccBBox ccFacet::GetAxisAlignedBoundingBox() const {
     if (getPolygon()) {
-        return getPolygon()->getAxisAlignedBoundingBox();
+        return getPolygon()->GetAxisAlignedBoundingBox();
     } else {
         return ccBBox();
     }
 }
 
-ecvOrientedBBox ccFacet::getOrientedBoundingBox() const {
+ecvOrientedBBox ccFacet::GetOrientedBoundingBox() const {
     if (getPolygon()) {
-        return getPolygon()->getOrientedBoundingBox();
+        return getPolygon()->GetOrientedBoundingBox();
     } else {
         return ecvOrientedBBox();
     }
 }
 
-ccFacet& ccFacet::transform(const Eigen::Matrix4d& transformation) {
+ccFacet& ccFacet::Transform(const Eigen::Matrix4d& transformation) {
     if (!getPolygon()) {
         return *this;
     }
 
-    getPolygon()->transform(transformation);
+    getPolygon()->Transform(transformation);
     return *this;
 }
 
-ccFacet& ccFacet::translate(const Eigen::Vector3d& translation, bool relative) {
+ccFacet& ccFacet::Translate(const Eigen::Vector3d& translation, bool relative) {
     if (!getPolygon()) {
         return *this;
     }
 
-    getPolygon()->translate(translation, relative);
+    getPolygon()->Translate(translation, relative);
     return *this;
 }
 
-ccFacet& ccFacet::scale(const double s, const Eigen::Vector3d& center) {
+ccFacet& ccFacet::Scale(const double s, const Eigen::Vector3d& center) {
     if (!getPolygon()) {
         return *this;
     }
 
-    getPolygon()->scale(s, center);
+    getPolygon()->Scale(s, center);
     return *this;
 }
 
-ccFacet& ccFacet::rotate(const Eigen::Matrix3d& R,
+ccFacet& ccFacet::Rotate(const Eigen::Matrix3d& R,
                          const Eigen::Vector3d& center) {
     if (!getPolygon()) {
         return *this;
     }
 
-    getPolygon()->rotate(R, center);
+    getPolygon()->Rotate(R, center);
     return *this;
 }
 
@@ -743,7 +743,7 @@ ccFacet& ccFacet::operator+=(const ccFacet& facet) {
 }
 
 ccFacet& ccFacet::operator=(const ccFacet& facet) {
-    if (facet.isEmpty()) return (*this);
+    if (facet.IsEmpty()) return (*this);
     if (this == &facet) {
         return (*this);
     }

@@ -27,11 +27,6 @@ void ExpectMeshEQ(const ccMesh& mesh0,
 TEST(TriangleMesh, Constructor) {
     geometry::TriangleMesh tm;
 
-    // inherited from Geometry2D
-    EXPECT_EQ(geometry::Geometry::GeometryType::TriangleMesh,
-              tm.GetGeometryType());
-    EXPECT_EQ(3, tm.Dimension());
-
     // public member variables
     EXPECT_EQ(0u, tm.vertices_.size());
     EXPECT_EQ(0u, tm.vertex_normals_.size());

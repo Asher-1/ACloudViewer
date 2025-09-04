@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     double max_distance = utility::GetProgramOptionAsDouble(
             argc, argv, "--max_distance", 0.0);
     auto pcd = io::CreatePointCloudFromFile(argv[1]);
-    if (pcd->isEmpty()) {
+    if (pcd->IsEmpty()) {
         utility::LogWarning("Empty point cloud.");
         return 1;
     }
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
             utility::filesystem::GetFileNameWithoutExtension(argv[1]) + ".bin";
     std::vector<double> distances(pcd->size());
     if (utility::ProgramOptionExists(argc, argv, "--mahalanobis_distance")) {
-        distances = pcd->computeMahalanobisDistance();
+        distances = pcd->ComputeMahalanobisDistance();
         FILE *f = utility::filesystem::FOpen(binname, "wb");
         fwrite(distances.data(), sizeof(double), distances.size(), f);
         fclose(f);

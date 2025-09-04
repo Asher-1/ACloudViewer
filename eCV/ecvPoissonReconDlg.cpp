@@ -168,7 +168,7 @@ bool doReconstruct()
 		s_density = std::get<1>(result);
 	}
 
-	return !s_mesh->isEmpty();
+	return !s_mesh->IsEmpty();
 }
 
 ecvPoissonReconDlg::ecvPoissonReconDlg(QWidget* parent)

@@ -16,10 +16,6 @@ namespace tests {
 TEST(LineSet, Constructor) {
     geometry::LineSet ls;
 
-    // inherited from Geometry2D
-    EXPECT_EQ(geometry::Geometry::GeometryType::LineSet, ls.GetGeometryType());
-    EXPECT_EQ(3, ls.Dimension());
-
     // public member variables
     EXPECT_EQ(0u, ls.points_.size());
     EXPECT_EQ(0u, ls.lines_.size());

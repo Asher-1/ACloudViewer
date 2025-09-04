@@ -66,6 +66,8 @@ def jupyter_draw_geometries(
 
 cv3d.visualization.draw_geometries = jupyter_draw_geometries
 
+# cv3d.visualization.draw = jupyter_draw_geometries
+
 
 def edges_to_lineset(mesh, edges, color):
     ls = cv3d.geometry.LineSet()
@@ -73,19 +75,6 @@ def edges_to_lineset(mesh, edges, color):
     ls.lines = edges
     ls.paint_uniform_color(color)
     return ls
-
-
-def get_plane_mesh(height=0.2, width=1):
-    mesh = cv3d.geometry.ccMesh(
-        vertices=cv3d.utility.Vector3dVector(
-            np.array(
-                [[0, 0, 0], [0, height, 0], [width, height, 0], [width, 0, 0]],
-                dtype=np.float32,
-            )),
-        triangles=cv3d.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0, 3]])),
-    )
-    mesh.compute_vertex_normals()
-    return mesh
 
 
 def get_non_manifold_edge_mesh():

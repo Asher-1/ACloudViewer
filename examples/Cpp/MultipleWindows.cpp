@@ -64,11 +64,11 @@ private:
             new_vis->AddGeometry(
                     CLOUD_NAME + " #" + std::to_string(n_snapshots_), cloud_,
                     &mat);
-            bounds = cloud_->getAxisAlignedBoundingBox();
+            bounds = cloud_->GetAxisAlignedBoundingBox();
         }
 
         new_vis->ResetCameraToDefault();
-        auto center = bounds.getGeometryCenter().cast<float>();
+        auto center = bounds.GetCenter().cast<float>();
         new_vis->SetupCamera(60, center, center + CENTER_OFFSET,
                              {0.0f, -1.0f, 0.0f});
         gui::Application::GetInstance().AddWindow(new_vis);
@@ -96,8 +96,8 @@ private:
             std::lock_guard<std::mutex> lock(cloud_lock_);
             cloud_ = cloudViewer::make_shared<ccPointCloud>();
             io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *cloud_);
-            bounds = cloud_->getAxisAlignedBoundingBox();
-            extent = bounds.getExtent();
+            bounds = cloud_->GetAxisAlignedBoundingBox();
+            extent = bounds.GetExtent();
         }
 
         auto mat = rendering::MaterialRecord();
@@ -109,7 +109,7 @@ private:
                     main_vis_->AddGeometry(CLOUD_NAME, cloud_, &mat);
                     main_vis_->ResetCameraToDefault();
                     Eigen::Vector3f center =
-                            bounds.getGeometryCenter().cast<float>();
+                            bounds.GetCenter().cast<float>();
                     main_vis_->SetupCamera(60, center, center + CENTER_OFFSET,
                                            {0.0f, -1.0f, 0.0f});
                 });

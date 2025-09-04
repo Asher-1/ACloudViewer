@@ -148,7 +148,7 @@ public:
             geometry.isKindOf(CV_TYPES::BBOX) ||
             geometry.isKindOf(CV_TYPES::ORIENTED_BBOX)) {
             bounding_box_ += (const_cast<ccHObject &>(geometry))
-                                     .getAxisAlignedBoundingBox();
+                                     .GetAxisAlignedBoundingBox();
         }
         SetProjectionParameters();
     }

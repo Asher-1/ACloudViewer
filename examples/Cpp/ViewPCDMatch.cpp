@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
                 io::CreatePointCloudFromFile(sample_data.GetPaths()[j]);
         pcd_source->resizeTheRGBTable();
         pcd_source->setRGBColor(ecvColor::Rgb::FromEigen(color_palette[1]));
-        pcd_source->transform(transformations[k]);
+        pcd_source->Transform(transformations[k]);
         visualization::DrawGeometriesWithCustomAnimation(
                 {pcd_target, pcd_source}, "ViewPCDMatch", 1600, 900);
     }

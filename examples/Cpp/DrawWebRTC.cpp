@@ -67,7 +67,7 @@ void EmptyBox() {
                 }
                 data::KnotMesh knot_data;
                 io::ReadTriangleMesh(knot_data.GetPath(), *mesh);
-                mesh->computeVertexNormals();
+                mesh->ComputeVertexNormals();
                 AddDrawWindow({mesh}, "CloudViewer pcd", 640, 480);
             };
 
@@ -80,29 +80,29 @@ void BoxWithObjects() {
     const double pc_rad = 1.0;
     const double r = 0.4;
     auto sphere_unlit = ccMesh::CreateSphere(r);
-    sphere_unlit->translate({0.0, 1.0, 0.0});
+    sphere_unlit->Translate({0.0, 1.0, 0.0});
     auto sphere_colored_unlit = ccMesh::CreateSphere(r);
-    sphere_colored_unlit->paintUniformColor({1.0, 0.0, 0.0});
-    sphere_colored_unlit->translate({2.0, 1.0, 0.0});
+    sphere_colored_unlit->PaintUniformColor({1.0, 0.0, 0.0});
+    sphere_colored_unlit->Translate({2.0, 1.0, 0.0});
     auto sphere_lit = ccMesh::CreateSphere(r);
-    sphere_lit->computeVertexNormals();
-    sphere_lit->translate({4, 1, 0});
+    sphere_lit->ComputeVertexNormals();
+    sphere_lit->Translate({4, 1, 0});
     auto sphere_colored_lit = ccMesh::CreateSphere(r);
-    sphere_colored_lit->computeVertexNormals();
-    sphere_colored_lit->paintUniformColor({0.0, 1.0, 0.0});
-    sphere_colored_lit->translate({6, 1, 0});
+    sphere_colored_lit->ComputeVertexNormals();
+    sphere_colored_lit->PaintUniformColor({0.0, 1.0, 0.0});
+    sphere_colored_lit->Translate({6, 1, 0});
     auto big_bbox = cloudViewer::make_shared<ccBBox>(
             Eigen::Vector3d{-pc_rad, -3, -pc_rad},
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
-    auto bbox = sphere_unlit->getAxisAlignedBoundingBox();
+    auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
     auto sphere_bbox = cloudViewer::make_shared<ccBBox>(bbox.GetMinBound(),
                                                         bbox.GetMaxBound());
-    sphere_bbox->setColor({1.0, 0.5, 0.0});
+    sphere_bbox->SetColor({1.0, 0.5, 0.0});
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-            sphere_lit->getAxisAlignedBoundingBox());
+            sphere_lit->GetAxisAlignedBoundingBox());
     auto lines_colored = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-            sphere_colored_lit->getAxisAlignedBoundingBox());
-    lines_colored->paintUniformColor({0.0, 0.0, 1.0});
+            sphere_colored_lit->GetAxisAlignedBoundingBox());
+    lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
 
     AddDrawWindow(
             {sphere_unlit, sphere_colored_unlit, sphere_lit, sphere_colored_lit,

@@ -116,7 +116,7 @@ RegistrationResult EvaluateRegistration(const ccPointCloud &source,
     kdtree.SetGeometry(target);
     ccPointCloud pcd = source;
     if (!transformation.isIdentity()) {
-        pcd.transform(transformation);
+        pcd.Transform(transformation);
     }
 
     return GetRegistrationResultAndCorrespondences(
@@ -151,7 +151,7 @@ RegistrationResult RegistrationICP(
     kdtree.SetGeometry(target);
     ccPointCloud pcd = source;
     if (!init.isIdentity()) {
-        pcd.transform(init);
+        pcd.Transform(init);
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
@@ -162,7 +162,7 @@ RegistrationResult RegistrationICP(
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
         transformation = update * transformation;
-        pcd.transform(update);
+        pcd.Transform(update);
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
                 pcd, target, kdtree, max_correspondence_distance,
@@ -234,7 +234,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 if (!check) continue;
 
                 ccPointCloud pcd = source;
-                pcd.transform(transformation);
+                pcd.Transform(transformation);
                 auto result = EvaluateRANSACBasedOnCorrespondence(
                         pcd, target, corres, max_correspondence_distance,
                         transformation);
@@ -362,7 +362,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         const Eigen::Matrix4d &transformation) {
     ccPointCloud pcd = source;
     if (transformation.isIdentity() == false) {
-        pcd.transform(transformation);
+        pcd.Transform(transformation);
     }
     RegistrationResult result;
     geometry::KDTreeFlann target_kdtree(target);

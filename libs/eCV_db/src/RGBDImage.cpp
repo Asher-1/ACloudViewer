@@ -19,14 +19,14 @@ RGBDImage &RGBDImage::Clear() {
 
 ccBBox RGBDImage::getOwnBB(bool withGLFeatures)
 {
-	return getAxisAlignedBoundingBox();
+	return GetAxisAlignedBoundingBox();
 }
 
-Eigen::Vector2d RGBDImage::getMin2DBound() const {
+Eigen::Vector2d RGBDImage::GetMin2DBound() const {
     return Eigen::Vector2d(0.0, 0.0);
 }
 
-Eigen::Vector2d RGBDImage::getMax2DBound() const {
+Eigen::Vector2d RGBDImage::GetMax2DBound() const {
     return Eigen::Vector2d(color_.width_ + depth_.width_, color_.height_);
 }
 

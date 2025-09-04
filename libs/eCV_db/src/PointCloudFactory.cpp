@@ -265,7 +265,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::CreateFromRGBDImage(
     return cloudViewer::make_shared<ccPointCloud>();
 }
 
-std::shared_ptr<ccPointCloud> ccPointCloud::createFromVoxelGrid(
+std::shared_ptr<ccPointCloud> ccPointCloud::CreateFromVoxelGrid(
         const cloudViewer::geometry::VoxelGrid &voxel_grid) {
     auto output = cloudViewer::make_shared<ccPointCloud>();
     output->resize(static_cast<unsigned int>(voxel_grid.voxels_.size()));
@@ -287,7 +287,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::createFromVoxelGrid(
     return output;
 }
 
-ccPointCloud &ccPointCloud::normalizeNormals() {
+ccPointCloud &ccPointCloud::NormalizeNormals() {
     if (hasNormals()) {
         for (size_t i = 0; i < m_normals->size(); ++i) {
             ccNormalVectors::GetNormalPtr(m_normals->getValue(i)).normalize();
@@ -296,7 +296,7 @@ ccPointCloud &ccPointCloud::normalizeNormals() {
     return *this;
 }
 
-std::vector<double> ccPointCloud::computePointCloudDistance(
+std::vector<double> ccPointCloud::ComputePointCloudDistance(
         const ccPointCloud &target) {
     std::vector<double> distances(size());
     cloudViewer::geometry::KDTreeFlann kdtree;
@@ -312,7 +312,7 @@ std::vector<double> ccPointCloud::computePointCloudDistance(
                                      *getPoint(static_cast<unsigned int>(i))),
                              1, indices, dists) == 0) {
             utility::LogDebug(
-                    "[ccPointCloud::computePointCloudDistance] Found a point "
+                    "[ccPointCloud::ComputePointCloudDistance] Found a point "
                     "without neighbors.");
             distances[i] = 0.0;
         } else {
@@ -326,7 +326,7 @@ ccPointCloud &ccPointCloud::RemoveNonFinitePoints(bool remove_nan,
                                                   bool remove_infinite) {
     bool has_normal = hasNormals();
     bool has_color = hasColors();
-    bool has_covariance = hasCovariances();
+    bool has_covariance = HasCovariances();
     bool has_fwf = hasFWF();
     // scalar fields
     unsigned sfCount = getNumberOfScalarFields();
@@ -433,7 +433,7 @@ public:
         if (cloud.hasColors()) {
             color_ += cloud.getEigenColor(index);
         }
-        if (cloud.hasCovariances()) {
+        if (cloud.HasCovariances()) {
             covariance_ += cloud.covariances_[index];
         }
         num_of_points_++;
@@ -495,7 +495,7 @@ public:
             }
         }
 
-        if (cloud.hasCovariances()) {
+        if (cloud.HasCovariances()) {
             covariance_ += cloud.covariances_[index];
         }
 
@@ -566,7 +566,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::VoxelDownSample(double voxel_size) {
 
     bool has_normals = hasNormals();
     bool has_colors = hasColors();
-    bool has_covariances = hasCovariances();
+    bool has_covariances = HasCovariances();
 
     if (!output->reserveThePointsTable(
                 static_cast<unsigned int>(voxelindex_to_accpoint.size()))) {
@@ -631,12 +631,12 @@ std::shared_ptr<ccPointCloud> ccPointCloud::VoxelDownSample(double voxel_size) {
 std::tuple<std::shared_ptr<ccPointCloud>,
            Eigen::MatrixXi,
            std::vector<std::vector<int>>>
-ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
+ccPointCloud::VoxelDownSampleAndTrace(double voxel_size,
                                       const Eigen::Vector3d &min_bound,
                                       const Eigen::Vector3d &max_bound,
                                       bool approximate_class) const {
     if (voxel_size <= 0.0) {
-        utility::LogError("[voxelDownSampleAndTrace] voxel_size <= 0.");
+        utility::LogError("[VoxelDownSampleAndTrace] voxel_size <= 0.");
     }
 
     // Note: this is different from VoxelDownSample.
@@ -645,7 +645,7 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
     auto voxel_max_bound = max_bound;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::LogError("[voxelDownSampleAndTrace] voxel_size is too small.");
+        utility::LogError("[VoxelDownSampleAndTrace] voxel_size is too small.");
     }
 
     Eigen::MatrixXi cubic_id;
@@ -680,7 +680,7 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
 
     bool has_normals = hasNormals();
     bool has_colors = hasColors();
-    bool has_covariances = hasCovariances();
+    bool has_covariances = HasCovariances();
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
@@ -690,7 +690,7 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
     if (!output->reserveThePointsTable(
                 static_cast<unsigned int>(voxelindex_to_accpoint.size()))) {
         utility::LogError(
-                "[ccPointCloud::voxelDownSampleAndTrace] Not enough memory to "
+                "[ccPointCloud::VoxelDownSampleAndTrace] Not enough memory to "
                 "duplicate cloud!");
     }
 
@@ -700,7 +700,7 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
             output->showColors(colorsShown());
         } else {
             utility::LogWarning(
-                    "[ccPointCloud::voxelDownSampleAndTrace] Not enough memory "
+                    "[ccPointCloud::VoxelDownSampleAndTrace] Not enough memory "
                     "to copy RGB colors!");
             has_colors = false;
         }
@@ -712,7 +712,7 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
             output->showNormals(normalsShown());
         } else {
             utility::LogWarning(
-                    "[ccPointCloud::voxelDownSampleAndTrace] Not enough memory "
+                    "[ccPointCloud::VoxelDownSampleAndTrace] Not enough memory "
                     "to copy normals!");
             has_normals = false;
         }
@@ -775,7 +775,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::UniformDownSample(
     return SelectByIndex(indices);
 }
 
-std::shared_ptr<ccPointCloud> ccPointCloud::randomDownSample(
+std::shared_ptr<ccPointCloud> ccPointCloud::RandomDownSample(
         double sampling_ratio) const {
     if (sampling_ratio < 0 || sampling_ratio > 1) {
         utility::LogError(
@@ -1112,7 +1112,7 @@ std::vector<Eigen::Matrix3d> ccPointCloud::EstimatePerPointCovariances(
         std::vector<double> distance2;
         if (kdtree.Search(points[i], search_param, indices, distance2) >= 3) {
             auto covariance = utility::ComputeCovariance(points, indices);
-            if (input.hasCovariances() && covariance.isIdentity(1e-4)) {
+            if (input.HasCovariances() && covariance.isIdentity(1e-4)) {
                 covariances[i] = input.covariances_[i];
             } else {
                 covariances[i] = covariance;
@@ -1123,7 +1123,7 @@ std::vector<Eigen::Matrix3d> ccPointCloud::EstimatePerPointCovariances(
     }
     return covariances;
 }
-void ccPointCloud::estimateCovariances(
+void ccPointCloud::EstimateCovariances(
         const geometry::KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
     this->covariances_ = EstimatePerPointCovariances(*this, search_param);
 }
@@ -1138,7 +1138,7 @@ bool ccPointCloud::EstimateNormals(
     }
 
     std::vector<Eigen::Matrix3d> covariances;
-    if (!hasCovariances()) {
+    if (!HasCovariances()) {
         covariances = EstimatePerPointCovariances(*this, search_param);
     } else {
         covariances = covariances_;
@@ -1168,7 +1168,7 @@ bool ccPointCloud::EstimateNormals(
     return true;
 }
 
-bool ccPointCloud::orientNormalsToAlignWithDirection(
+bool ccPointCloud::OrientNormalsToAlignWithDirection(
         const Eigen::Vector3d &orientation_reference
         /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
     if (!hasNormals()) {
@@ -1192,7 +1192,7 @@ bool ccPointCloud::orientNormalsToAlignWithDirection(
     return true;
 }
 
-bool ccPointCloud::orientNormalsTowardsCameraLocation(
+bool ccPointCloud::OrientNormalsTowardsCameraLocation(
         const Eigen::Vector3d &camera_location /* = Eigen::Vector3d::Zero()*/) {
     if (hasNormals() == false) {
         cloudViewer::utility::LogWarning(
@@ -1221,10 +1221,10 @@ bool ccPointCloud::orientNormalsTowardsCameraLocation(
     return true;
 }
 
-void ccPointCloud::orientNormalsConsistentTangentPlane(size_t k) {
+void ccPointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
     if (!hasNormals()) {
         utility::LogError(
-                "[orientNormalsConsistentTangentPlane] No normals in the "
+                "[OrientNormalsConsistentTangentPlane] No normals in the "
                 "ccPointCloud. Call EstimateNormals() first.");
     }
 
@@ -1336,7 +1336,7 @@ void ccPointCloud::orientNormalsConsistentTangentPlane(size_t k) {
     }
 }
 
-std::vector<double> ccPointCloud::computeMahalanobisDistance() const {
+std::vector<double> ccPointCloud::ComputeMahalanobisDistance() const {
     std::vector<double> mahalanobis(size());
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;
@@ -1380,23 +1380,23 @@ std::vector<double> ccPointCloud::ComputeNearestNeighborDistance() const {
     return nn_dis;
 }
 
-double ccPointCloud::computeResolution() const {
+double ccPointCloud::ComputeResolution() const {
     std::vector<double> nn_dis = ComputeNearestNeighborDistance();
     return std::accumulate(std::begin(nn_dis), std::end(nn_dis), 0.0) /
            nn_dis.size();
 }
 
 std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
-ccPointCloud::computeConvexHull() const {
+ccPointCloud::ComputeConvexHull() const {
     return cloudViewer::geometry::Qhull::ComputeConvexHull(m_points);
 }
 
 std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
-ccPointCloud::hiddenPointRemoval(const Eigen::Vector3d &camera_location,
+ccPointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
                                  const double radius) const {
     if (radius <= 0) {
         utility::LogError(
-                "[ccPointCloud::hiddenPointRemoval] radius must be larger than "
+                "[ccPointCloud::HiddenPointRemoval] radius must be larger than "
                 "zero.");
         return std::make_tuple(cloudViewer::make_shared<ccMesh>(nullptr),
                                std::vector<size_t>());
@@ -1459,7 +1459,7 @@ ccPointCloud::hiddenPointRemoval(const Eigen::Vector3d &camera_location,
     return std::make_tuple(visible_mesh, pt_map);
 }
 
-ccPointCloud &ccPointCloud::paintUniformColor(const Eigen::Vector3d &color) {
+ccPointCloud &ccPointCloud::PaintUniformColor(const Eigen::Vector3d &color) {
     setRGBColor(ecvColor::Rgb::FromEigen(color));
     return (*this);
 }

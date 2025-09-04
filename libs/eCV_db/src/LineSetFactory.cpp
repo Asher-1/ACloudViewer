@@ -75,7 +75,7 @@ std::shared_ptr<LineSet>
 LineSet::CreateFromOrientedBoundingBox(const ecvOrientedBBox &box) 
 {
     auto line_set = cloudViewer::make_shared<LineSet>();
-    line_set->points_ = box.getBoxPoints();
+    line_set->points_ = box.GetBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
     line_set->lines_.push_back(Eigen::Vector2i(1, 7));
     line_set->lines_.push_back(Eigen::Vector2i(7, 2));
@@ -88,7 +88,7 @@ LineSet::CreateFromOrientedBoundingBox(const ecvOrientedBBox &box)
     line_set->lines_.push_back(Eigen::Vector2i(1, 6));
     line_set->lines_.push_back(Eigen::Vector2i(7, 4));
     line_set->lines_.push_back(Eigen::Vector2i(2, 5));
-    line_set->paintUniformColor(box.getColor());
+    line_set->PaintUniformColor(box.GetColor());
     return line_set;
 }
 
@@ -96,7 +96,7 @@ std::shared_ptr<LineSet>
 LineSet::CreateFromAxisAlignedBoundingBox(const ccBBox &box) 
 {
     auto line_set = cloudViewer::make_shared<LineSet>();
-    line_set->points_ = box.getBoxPoints();
+    line_set->points_ = box.GetBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
     line_set->lines_.push_back(Eigen::Vector2i(1, 7));
     line_set->lines_.push_back(Eigen::Vector2i(7, 2));
@@ -109,7 +109,7 @@ LineSet::CreateFromAxisAlignedBoundingBox(const ccBBox &box)
     line_set->lines_.push_back(Eigen::Vector2i(1, 6));
     line_set->lines_.push_back(Eigen::Vector2i(7, 4));
     line_set->lines_.push_back(Eigen::Vector2i(2, 5));
-    line_set->paintUniformColor(box.getColor());
+    line_set->PaintUniformColor(box.GetColor());
     return line_set;
 }
 
@@ -182,7 +182,7 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
     lines->lines_.push_back({2, 3});
     lines->lines_.push_back({3, 4});
     lines->lines_.push_back({4, 1});
-    lines->paintUniformColor({0.0f, 0.0f, 1.0f});
+    lines->PaintUniformColor({0.0f, 0.0f, 1.0f});
 
     return lines;
 }

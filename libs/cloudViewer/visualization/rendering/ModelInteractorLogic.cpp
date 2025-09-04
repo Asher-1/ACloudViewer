@@ -29,7 +29,7 @@ void ModelInteractorLogic::SetBoundingBox(
     // Initialize parent's matrix_ (in case we do a mouse wheel, which
     // doesn't involve a mouse down) and the center of rotation.
     SetMouseDownInfo(Camera::Transform::Identity(),
-                     bounds.getGeometryCenter().cast<float>());
+                     bounds.GetCenter().cast<float>());
 }
 
 void ModelInteractorLogic::SetModel(

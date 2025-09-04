@@ -51,8 +51,8 @@ public:
 public:
     SelectionPolygon &Clear();
     bool isEmpty() const;
-    virtual Eigen::Vector2d getMin2DBound() const override;
-    virtual Eigen::Vector2d getMax2DBound() const override;
+    virtual Eigen::Vector2d GetMin2DBound() const override;
+    virtual Eigen::Vector2d GetMax2DBound() const override;
     void FillPolygon(int width, int height);
     std::shared_ptr<ccPointCloud> CropPointCloud(
             const ccPointCloud &input, const ViewControl &view);

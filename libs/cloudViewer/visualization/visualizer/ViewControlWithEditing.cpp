@@ -17,7 +17,7 @@ void ViewControlWithEditing::Reset() {
     } else {
         field_of_view_ = FIELD_OF_VIEW_MIN;
         zoom_ = ZOOM_DEFAULT;
-        lookat_ = bounding_box_.getGeometryCenter();
+        lookat_ = bounding_box_.GetCenter();
         switch (editing_mode_) {
             case EditingMode::OrthoPositiveX:
                 up_ = Eigen::Vector3d(0.0, 0.0, 1.0);

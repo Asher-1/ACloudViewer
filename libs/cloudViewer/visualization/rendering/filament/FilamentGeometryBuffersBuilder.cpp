@@ -261,14 +261,14 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
         case GT::ORIENTED_BBOX: {
             auto obb = static_cast<const ecvOrientedBBox&>(geometry);
             auto lines = geometry::LineSet::CreateFromOrientedBoundingBox(obb);
-            lines->paintUniformColor(obb.color_);
+            lines->PaintUniformColor(obb.color_);
             return std::make_unique<TemporaryLineSetBuilder>(lines);
         }
         case GT::BBOX: {
             auto aabb = static_cast<const ccBBox&>(geometry);
             auto lines =
                     geometry::LineSet::CreateFromAxisAlignedBoundingBox(aabb);
-            lines->paintUniformColor(aabb.getColor());
+            lines->PaintUniformColor(aabb.GetColor());
             return std::make_unique<TemporaryLineSetBuilder>(lines);
         }
         case GT::VOXEL_GRID: {

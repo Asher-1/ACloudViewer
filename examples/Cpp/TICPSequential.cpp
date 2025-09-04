@@ -172,7 +172,7 @@ private:
                 pcd_and_bbox_.bbox_ =
                         this->widget3d_->GetScene()->GetBoundingBox();
                 Eigen::Vector3f center =
-                        pcd_and_bbox_.bbox_.getGeometryCenter().cast<float>();
+                        pcd_and_bbox_.bbox_.GetCenter().cast<float>();
                 this->widget3d_->SetupCamera(verticalFoV, pcd_and_bbox_.bbox_,
                                              center);
             });
@@ -263,7 +263,7 @@ private:
 
                     // Translate bounding box to current scan frame to model
                     // transform.
-                    pcd_and_bbox_.bbox_ = pcd_and_bbox_.bbox_.translate(
+                    pcd_and_bbox_.bbox_ = pcd_and_bbox_.bbox_.Translate(
                             core::eigen_converter::TensorToEigenMatrixXd(
                                     cumulative_transform.Clone()
                                             .Slice(0, 0, 3)
@@ -317,7 +317,7 @@ private:
 
                             // Setup camera.
                             Eigen::Vector3f center =
-                                    pcd_and_bbox_.bbox_.getGeometryCenter()
+                                    pcd_and_bbox_.bbox_.GetCenter()
                                             .cast<float>();
                             this->widget3d_->SetupCamera(
                                     verticalFoV, pcd_and_bbox_.bbox_, center);

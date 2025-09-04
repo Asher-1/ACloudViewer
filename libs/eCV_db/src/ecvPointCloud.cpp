@@ -1064,7 +1064,7 @@ const ccPointCloud& ccPointCloud::append(ccPointCloud* addedCloud,
     }
 
     // Covariances
-    if ((!hasPoints() || hasCovariances()) && addedCloud->hasCovariances()) {
+    if ((!hasPoints() || HasCovariances()) && addedCloud->HasCovariances()) {
         covariances_.resize(this->size());
         for (size_t i = 0; i < addedPoints; i++)
             covariances_[pointCountBefore + i] = addedCloud->covariances_[i];
@@ -1501,7 +1501,7 @@ bool ccPointCloud::resize(unsigned newNumberOfPoints) {
         return false;
     }
 
-    if (hasCovariances()) {
+    if (HasCovariances()) {
         covariances_.resize(m_points.size());
     }
 
@@ -1509,7 +1509,7 @@ bool ccPointCloud::resize(unsigned newNumberOfPoints) {
     return m_points.size() == newNumberOfPoints &&
            (!hasColors() || m_rgbColors->currentSize() == newNumberOfPoints) &&
            (!hasNormals() || m_normals->currentSize() == newNumberOfPoints) &&
-           (!hasCovariances() || covariances_.size() == newNumberOfPoints) &&
+           (!HasCovariances() || covariances_.size() == newNumberOfPoints) &&
            (!hasFWF() || m_fwfWaveforms.size() == newNumberOfPoints);
 }
 
@@ -2195,13 +2195,13 @@ void ccPointCloud::applyRigidTransformation(const ccGLMatrix& trans) {
     refreshBB();  // calls notifyGeometryUpdate + releaseVBOs
 }
 
-ccPointCloud& ccPointCloud::transform(const Eigen::Matrix4d& trans) {
+ccPointCloud& ccPointCloud::Transform(const Eigen::Matrix4d& trans) {
     applyRigidTransformation(ccGLMatrix::FromEigenMatrix(trans));
     TransformCovariances(trans, covariances_);
     return *this;
 }
 
-ccPointCloud& ccPointCloud::translate(const Eigen::Vector3d& translation,
+ccPointCloud& ccPointCloud::Translate(const Eigen::Vector3d& translation,
                                       bool relative) {
     CCVector3 T = translation;
     if (cloudViewer::LessThanEpsilon(fabs(T.x) + fabs(T.y) + fabs(T.z)))
@@ -2244,7 +2244,7 @@ ccPointCloud& ccPointCloud::translate(const Eigen::Vector3d& translation,
     return *this;
 }
 
-ccPointCloud& ccPointCloud::scale(const double s,
+ccPointCloud& ccPointCloud::Scale(const double s,
                                   const Eigen::Vector3d& center) {
     scale(static_cast<PointCoordinateType>(s),
           static_cast<PointCoordinateType>(s),
@@ -2253,7 +2253,7 @@ ccPointCloud& ccPointCloud::scale(const double s,
     return *this;
 }
 
-ccPointCloud& ccPointCloud::rotate(const Eigen::Matrix3d& R,
+ccPointCloud& ccPointCloud::Rotate(const Eigen::Matrix3d& R,
                                    const Eigen::Vector3d& center) {
     ccGLMatrix trans;
     trans.setRotation(R.data());
@@ -4398,7 +4398,7 @@ cloudViewer::ReferenceCloud* ccPointCloud::crop(const ccBBox& box,
 }
 
 cloudViewer::ReferenceCloud* ccPointCloud::crop(const ecvOrientedBBox& bbox) {
-    if (bbox.isEmpty()) {
+    if (bbox.IsEmpty()) {
         CVLog::Warning("[ccPointCloud::crop] Invalid bounding-box");
         return nullptr;
     }
@@ -4417,7 +4417,7 @@ cloudViewer::ReferenceCloud* ccPointCloud::crop(const ecvOrientedBBox& bbox) {
     }
 
     std::vector<size_t> indices =
-            bbox.getPointIndicesWithinBoundingBox(m_points);
+            bbox.GetPointIndicesWithinBoundingBox(m_points);
 
     for (size_t index : indices) {
         ref->addPointIndex(static_cast<unsigned int>(index));
@@ -4433,11 +4433,11 @@ cloudViewer::ReferenceCloud* ccPointCloud::crop(const ecvOrientedBBox& bbox) {
     return ref;
 }
 
-ccBBox ccPointCloud::getAxisAlignedBoundingBox() const {
+ccBBox ccPointCloud::GetAxisAlignedBoundingBox() const {
     return ccBBox::CreateFromPoints(m_points);
 }
 
-ecvOrientedBBox ccPointCloud::getOrientedBoundingBox() const {
+ecvOrientedBBox ccPointCloud::GetOrientedBoundingBox() const {
     return ecvOrientedBBox::CreateFromPoints(m_points);
 }
 
@@ -5468,7 +5468,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::SelectByIndex(
     auto output = cloudViewer::make_shared<ccPointCloud>("pointCloud");
     bool has_normals = hasNormals();
     bool has_colors = hasColors();
-    bool has_covariance = hasCovariances();
+    bool has_covariance = HasCovariances();
     bool has_fwf = hasFWF();
 
     unsigned int n = size();

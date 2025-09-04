@@ -145,7 +145,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
             const auto &boundingbox = view_control_ptr_->GetBoundingBox();
             *coordinate_frame_mesh_ptr_ =
                     *ccMesh::CreateCoordinateFrame(
-                            boundingbox.getMaxExtent() * 0.2,
+                            boundingbox.GetMaxExtent() * 0.2,
                             boundingbox.GetMinBound());
             coordinate_frame_mesh_renderer_ptr_->UpdateGeometry();
         }

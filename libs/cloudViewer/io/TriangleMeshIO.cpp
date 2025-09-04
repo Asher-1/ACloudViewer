@@ -237,7 +237,7 @@ bool ReadTriangleMesh(const std::string& filename,
     bool success = map_itr->second(filename, mesh, params);
     utility::LogDebug("Read ccMesh: {:d} triangles and {:d} vertices.",
                       mesh.size(), mesh.getVerticeSize());
-    if (mesh.hasVertices() && !mesh.hasTriangles()) {
+    if (mesh.HasVertices() && !mesh.hasTriangles()) {
         utility::LogWarning(
                 "ccMesh appears to be a geometry::ccPointCloud "
                 "(only contains vertices, but no triangles).");
@@ -1624,7 +1624,7 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                 std::vector<double> matrix = gltf_node.matrix;
                 Eigen::Matrix4d transform =
                         Eigen::Map<Eigen::Matrix4d>(&matrix[0], 4, 4);
-                mesh_temp.transform(transform);
+                mesh_temp.Transform(transform);
             } else {
                 // The specification states that first the scale is
                 // applied to the vertices, then the rotation, and then the
@@ -1634,7 +1634,7 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                     transform(0, 0) = gltf_node.scale[0];
                     transform(1, 1) = gltf_node.scale[1];
                     transform(2, 2) = gltf_node.scale[2];
-                    mesh_temp.transform(transform);
+                    mesh_temp.Transform(transform);
                 }
                 if (gltf_node.rotation.size() > 0) {
                     Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
@@ -1647,10 +1647,10 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                                gltf_node.rotation[1],
                                                gltf_node.rotation[2])
                                     .toRotationMatrix();
-                    mesh_temp.transform(transform);
+                    mesh_temp.Transform(transform);
                 }
                 if (gltf_node.translation.size() > 0) {
-                    mesh_temp.translate(Eigen::Vector3d(
+                    mesh_temp.Translate(Eigen::Vector3d(
                             gltf_node.translation[0], gltf_node.translation[1],
                             gltf_node.translation[2]));
                 }

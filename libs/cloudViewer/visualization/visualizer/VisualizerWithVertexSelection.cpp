@@ -158,7 +158,7 @@ bool VisualizerWithVertexSelection::AddGeometry(
     }
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
-            view_control_ptr_->GetBoundingBox().getPrintInfo().c_str());
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
 
@@ -242,7 +242,7 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
             break;
     }
 
-    ui_points_geometry_ptr_->paintUniformColor(CHOOSE_POINTS_COLOR);
+    ui_points_geometry_ptr_->PaintUniformColor(CHOOSE_POINTS_COLOR);
     ui_points_renderer_ptr_->UpdateGeometry();
 
     geometry_renderer_ptr_->UpdateGeometry();
@@ -515,7 +515,7 @@ void VisualizerWithVertexSelection::KeyPressCallback(
         case GLFW_KEY_R:
             if (mods & GLFW_MOD_CONTROL) {
                 ui_selected_points_geometry_ptr_->clear();
-                ui_selected_points_geometry_ptr_->paintUniformColor(
+                ui_selected_points_geometry_ptr_->PaintUniformColor(
                         SELECTED_POINTS_COLOR);
                 ui_selected_points_renderer_ptr_->UpdateGeometry();
                 is_redraw_required_ = true;
@@ -745,7 +745,7 @@ void VisualizerWithVertexSelection::AddPickedPoints(
         }
     }
 
-    ui_selected_points_geometry_ptr_->paintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
     if (on_selection_changed_) {
@@ -763,7 +763,7 @@ void VisualizerWithVertexSelection::RemovePickedPoints(
     for (auto &kv : selected_points_) {
         ui_selected_points_geometry_ptr_->addPoint(kv.second);
     }
-    ui_selected_points_geometry_ptr_->paintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
     if (on_selection_changed_) {
@@ -780,7 +780,7 @@ void VisualizerWithVertexSelection::DragSelectedPoints(
         selected_points_[index] = new_coord;
         ui_selected_points_geometry_ptr_->addEigenPoint(new_coord);
     }
-    ui_selected_points_geometry_ptr_->paintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
     if (type == DRAG_MOVING && on_selection_moving_) {

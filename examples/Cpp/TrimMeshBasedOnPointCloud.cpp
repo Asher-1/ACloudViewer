@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     }
     auto mesh = io::CreateMeshFromFile(in_mesh_file);
     auto pcd = io::CreatePointCloudFromFile(pcd_file);
-    if (mesh->isEmpty() || pcd->isEmpty()) {
+    if (mesh->IsEmpty() || pcd->IsEmpty()) {
         utility::LogWarning("Empty geometry.");
         return 1;
     }

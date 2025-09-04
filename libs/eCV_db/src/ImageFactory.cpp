@@ -47,7 +47,7 @@ std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
 std::shared_ptr<Image> Image::CreateFloatImage(
         Image::ColorToIntensityConversionType type /* = WEIGHTED*/) const {
     auto fimage = cloudViewer::make_shared<Image>();
-    if (isEmpty()) {
+    if (IsEmpty()) {
         return fimage;
     }
     fimage->Prepare(width_, height_, 1, 4);

@@ -54,12 +54,12 @@ public:
 
 public:
     RGBDImage &Clear();
-    inline virtual bool isEmpty() const override {
+    inline virtual bool IsEmpty() const override {
         return !color_.HasData() || !depth_.HasData();
     }
 
-    virtual Eigen::Vector2d getMin2DBound() const override;
-    virtual Eigen::Vector2d getMax2DBound() const override;
+    virtual Eigen::Vector2d GetMin2DBound() const override;
+    virtual Eigen::Vector2d GetMax2DBound() const override;
 
     /// \brief Factory function to create an RGBD Image from color and depth
     /// Images.

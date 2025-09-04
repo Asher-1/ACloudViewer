@@ -12,10 +12,12 @@ if __name__ == "__main__":
 
     # Note: must be consistent with make_docs.py
     example_dirs = [
-        "jupyter/geometry",
-        "jupyter/core",
-        "jupyter/pipelines",
-        "jupyter/visualization",
+        "core",
+        "geometry",
+        "pipelines",
+        "t_geometry",
+        "t_pipelines",
+        "visualization",
     ]
     nb_paths = []
     for example_dir in example_dirs:

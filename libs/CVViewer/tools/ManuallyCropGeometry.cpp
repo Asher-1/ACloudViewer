@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     vis.CreateVisualizerWindow("Crop Point Cloud", 1920, 1080, 100, 100);
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd_ptr = io::CreatePointCloudFromFile(argv[2]);
-        if (pcd_ptr == nullptr || !pcd_ptr->isEmpty()) {
+        if (pcd_ptr == nullptr || !pcd_ptr->IsEmpty()) {
             utility::LogWarning("Failed to read the point cloud.");
             return 1;
         }
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
         }
     } else if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh_ptr = io::CreateMeshFromFile(argv[2]);
-        if (mesh_ptr == nullptr || mesh_ptr->isEmpty()) {
+        if (mesh_ptr == nullptr || mesh_ptr->IsEmpty()) {
             utility::LogWarning("Failed to read the mesh.");
             return 1;
         }

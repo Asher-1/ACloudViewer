@@ -528,7 +528,7 @@ protected:
                             Eigen::Vector3d(-5, -5, -5),
                             Eigen::Vector3d(5, 5, 5));
                     Eigen::Vector3f center =
-                            bbox.getGeometryCenter().cast<float>();
+                            bbox.GetCenter().cast<float>();
                     this->widget3d_->SetupCamera(60, bbox, center);
                     this->widget3d_->LookAt(center,
                                             center - Eigen::Vector3f{0, 1, 3},
@@ -650,7 +650,7 @@ protected:
             frustum = geometry::LineSet::CreateCameraVisualization(
                     color->width_, color->height_, K_eigen, T_eigen.inverse(),
                     0.2);
-            frustum->paintUniformColor(kTangoOrange);
+            frustum->PaintUniformColor(kTangoOrange);
 
             // TODO: update support for timages-image conversion
             color = std::make_shared<geometry::Image>(

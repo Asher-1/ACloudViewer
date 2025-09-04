@@ -268,7 +268,7 @@ void Visualizer::BuildUtilities() {
 
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
-    double extent = std::max(0.01, boundingbox.getMaxExtent() * 0.2);
+    double extent = std::max(0.01, boundingbox.GetMaxExtent() * 0.2);
     coordinate_frame_mesh_ptr_ =
             ccMesh::CreateCoordinateFrame(extent, boundingbox.GetMinBound());
     coordinate_frame_mesh_renderer_ptr_ =
@@ -423,7 +423,7 @@ bool Visualizer::AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
     }
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
-            view_control_ptr_->GetBoundingBox().getPrintInfo().c_str());
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry(geometry_ptr);
 }
 
@@ -446,7 +446,7 @@ bool Visualizer::RemoveGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
     }
     utility::LogDebug(
             "Remove geometry and update bounding box to {}",
-            view_control_ptr_->GetBoundingBox().getPrintInfo().c_str());
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry(geometry_ptr);
 }
 

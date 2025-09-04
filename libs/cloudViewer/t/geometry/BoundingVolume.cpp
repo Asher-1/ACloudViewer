@@ -267,7 +267,7 @@ cloudViewer::geometry::AxisAlignedBoundingBox AxisAlignedBoundingBox::ToLegacy()
         maxc.y = static_cast<PointCoordinateType>(e(1));
         maxc.z = static_cast<PointCoordinateType>(e(2));
     }
-    legacy_box.setColor(core::eigen_converter::TensorToEigenVector3dVector(
+    legacy_box.SetColor(core::eigen_converter::TensorToEigenVector3dVector(
                                  GetColor().Reshape({1, 3}))[0]);
     return legacy_box;
 }
@@ -299,7 +299,7 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::FromLegacy(
                     .Flatten()
                     .To(device, dtype));
 
-    t_box.SetColor(core::eigen_converter::EigenMatrixToTensor(box.getColor())
+    t_box.SetColor(core::eigen_converter::EigenMatrixToTensor(box.GetColor())
                            .Flatten()
                            .To(device, dtype));
     return t_box;
@@ -537,7 +537,7 @@ cloudViewer::geometry::OrientedBoundingBox OrientedBoundingBox::ToLegacy() const
             core::eigen_converter::TensorToEigenMatrixXd(GetRotation()),
             core::eigen_converter::TensorToEigenVector3dVector(
                     GetExtent().Reshape({1, 3}))[0]);
-    legacy_box.setColor(core::eigen_converter::TensorToEigenVector3dVector(
+    legacy_box.SetColor(core::eigen_converter::TensorToEigenVector3dVector(
             GetColor().Reshape({1, 3}))[0]);
     return legacy_box;
 }
@@ -567,16 +567,16 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
     }
 
     OrientedBoundingBox t_box(
-            core::eigen_converter::EigenMatrixToTensor(box.getPosition())
+            core::eigen_converter::EigenMatrixToTensor(box.GetPosition())
                     .Flatten()
                     .To(device, dtype),
-            core::eigen_converter::EigenMatrixToTensor(box.getRotation())
+            core::eigen_converter::EigenMatrixToTensor(box.GetRotation())
                     .To(device, dtype),
-            core::eigen_converter::EigenMatrixToTensor(box.getExtent())
+            core::eigen_converter::EigenMatrixToTensor(box.GetExtent())
                     .Flatten()
                     .To(device, dtype));
 
-    t_box.SetColor(core::eigen_converter::EigenMatrixToTensor(box.getColor())
+    t_box.SetColor(core::eigen_converter::EigenMatrixToTensor(box.GetColor())
                            .Flatten()
                            .To(device, dtype));
     return t_box;

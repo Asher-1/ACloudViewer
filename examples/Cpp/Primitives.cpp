@@ -55,43 +55,43 @@ auto getUnions() {
     std::shared_ptr<ccGenericPrimitive> mesh = nullptr;
     mesh = cloudViewer::make_shared<ccPlane>(2.0f, 4.0f);
     mesh->setColor(ecvColor::Rgb(125, 255, 0));
-    mesh->translate(Eigen::Vector3d(-d, 0.0, 0.0));
+    mesh->Translate(Eigen::Vector3d(-d, 0.0, 0.0));
 
     auto box = cloudViewer::make_shared<ccBox>(CCVector3(2.0f, 2.0f, 2.0f));
     box->setColor(ecvColor::Rgb(0, 0, 255));
-    mesh->merge(&box->translate(Eigen::Vector3d(0.0, 0.0, 0.0)), false);
+    mesh->merge(&box->Translate(Eigen::Vector3d(0.0, 0.0, 0.0)), false);
 
     auto sphere = cloudViewer::make_shared<ccSphere>(2.0f);
     sphere->setDrawingPrecision(96);
     sphere->setColor(ecvColor::Rgb(255, 0, 0));
-    mesh->merge(&sphere->translate(Eigen::Vector3d(0.0, -d, 0.0)), false);
+    mesh->merge(&sphere->Translate(Eigen::Vector3d(0.0, -d, 0.0)), false);
 
     auto torus = cloudViewer::make_shared<ccTorus>(1.0f, 1.5f);
     torus->setDrawingPrecision(96);
     torus->setColor(ecvColor::Rgb(125, 0, 255));
-    mesh->merge(&torus->translate(Eigen::Vector3d(-d, -d, 0.0)), false);
+    mesh->merge(&torus->Translate(Eigen::Vector3d(-d, -d, 0.0)), false);
 
     auto truncatedCone = cloudViewer::make_shared<ccCone>(2.0f, 1.0f, 4.0f);
     truncatedCone->setDrawingPrecision(128);
     truncatedCone->setColor(ecvColor::Rgb(255, 0, 255));
-    mesh->merge(&truncatedCone->translate(Eigen::Vector3d(d, -d, 0.0)), false);
+    mesh->merge(&truncatedCone->Translate(Eigen::Vector3d(d, -d, 0.0)), false);
 
     auto cone = cloudViewer::make_shared<ccCone>(2.0f, 0.0f, 4.0f);
     cone->setDrawingPrecision(128);
     cone->setColor(ecvColor::Rgb(255, 0, 255));
-    mesh->merge(&cone->translate(Eigen::Vector3d(-d, d, 0.0)), false);
+    mesh->merge(&cone->Translate(Eigen::Vector3d(-d, d, 0.0)), false);
 
     auto cylinder = cloudViewer::make_shared<ccCylinder>(2.0f, 4.0f);
     cylinder->setDrawingPrecision(128);
     cylinder->setColor(ecvColor::Rgb(0, 255, 0));
-    mesh->merge(&cylinder->translate(Eigen::Vector3d(d, d, 0.0)), false);
+    mesh->merge(&cylinder->Translate(Eigen::Vector3d(d, d, 0.0)), false);
 
     PointCoordinateType equation[6] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     auto quadric = cloudViewer::make_shared<ccQuadric>(
             CCVector2(-1.0f, -1.0f), CCVector2(1.0f, 1.0f), equation);
     quadric->setDrawingPrecision(96);
     quadric->setColor(ecvColor::Rgb(0, 255, 125));
-    mesh->merge(&quadric->translate(Eigen::Vector3d(d, 0.0, 0.0)), false);
+    mesh->merge(&quadric->Translate(Eigen::Vector3d(d, 0.0, 0.0)), false);
 
     return mesh;
 }
@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
 
     if (mesh) {
         mesh->clearTriNormals();
-        mesh->computeVertexNormals();
+        mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         if (argc > 2) {
             io::WriteTriangleMesh(argv[2], *mesh, true, true);

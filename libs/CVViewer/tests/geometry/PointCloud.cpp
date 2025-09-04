@@ -29,8 +29,6 @@ namespace tests {
 
 TEST(PointCloud, ConstructorDefault) {
     ccPointCloud pcd;
-    EXPECT_EQ(pcd.Dimension(), 3);
-
     EXPECT_EQ(pcd.size(), 0);
     EXPECT_FALSE(pcd.hasNormals());
     EXPECT_FALSE(pcd.hasColors());
@@ -62,14 +60,14 @@ TEST(PointCloud, Clear_IsEmpty) {
     pcd.setEigenColors(colors);
     pcd.covariances_ = covariances;
 
-    EXPECT_FALSE(pcd.isEmpty());
+    EXPECT_FALSE(pcd.IsEmpty());
     EXPECT_EQ(pcd.size(), 2);
     EXPECT_EQ(pcd.normals()->size(), 2);
     EXPECT_EQ(pcd.colors()->size(), 2);
     EXPECT_EQ(pcd.covariances_.size(), 2);
 
     pcd.Clear();
-    EXPECT_TRUE(pcd.isEmpty());
+    EXPECT_TRUE(pcd.IsEmpty());
     EXPECT_EQ(pcd.size(), 0);
     EXPECT_FALSE(pcd.hasNormals());
     EXPECT_FALSE(pcd.hasColors());
@@ -92,12 +90,12 @@ TEST(PointCloud, GetMaxBound) {
     ExpectEQ(pc_empty.GetMaxBound(), Eigen::Vector3d(0, 0, 0));
 }
 
-TEST(PointCloud, getCenter) {
+TEST(PointCloud, GetCenter) {
     ccPointCloud pcd({{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11}});
-    ExpectEQ(pcd.getCenter(), Eigen::Vector3d(4.5, 5.5, 6.5));
+    ExpectEQ(pcd.GetCenter(), Eigen::Vector3d(4.5, 5.5, 6.5));
 
     ccPointCloud pc_empty;
-    ExpectEQ(pc_empty.getCenter(), Eigen::Vector3d(0, 0, 0));
+    ExpectEQ(pc_empty.GetCenter(), Eigen::Vector3d(0, 0, 0));
 }
 
 TEST(PointCloud, GetAxisAlignedBoundingBox) {
@@ -344,7 +342,7 @@ TEST(PointCloud, Translate) {
     pcd.points_ = points;
     pcd.Translate(translation, /*relative=*/false);
     ExpectEQ(pcd.points_, points_translated_non_relative);
-    ExpectEQ(pcd.getCenter(), translation);
+    ExpectEQ(pcd.GetCenter(), translation);
 }
 
 TEST(PointCloud, Scale) {
@@ -377,7 +375,7 @@ TEST(PointCloud, Rotate) {
     pcd.points_ = points;
     pcd.normals_ = normals;
     pcd.covariances_ = covariances;
-    Eigen::Vector3d center = pcd.getCenter();
+    Eigen::Vector3d center = pcd.GetCenter();
     pcd.Rotate(R, center);
 
     std::vector<Eigen::Vector3d> points_rotated = {
@@ -396,7 +394,7 @@ TEST(PointCloud, Rotate) {
     ExpectEQ(pcd.normals_, normals_transformed, 1e-4);
     ExpectEQ(pcd.covariances_, covariances_rotated, 1e-4);
     // Rotate relative to the original center
-    ExpectEQ(pcd.getCenter(), center);
+    ExpectEQ(pcd.GetCenter(), center);
 }
 
 TEST(PointCloud, OperatorPlusEqual) {

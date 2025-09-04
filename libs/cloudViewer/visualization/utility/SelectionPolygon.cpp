@@ -33,7 +33,7 @@ bool SelectionPolygon::isEmpty() const {
     return polygon_.size() <= 1;
 }
 
-Eigen::Vector2d SelectionPolygon::getMin2DBound() const {
+Eigen::Vector2d SelectionPolygon::GetMin2DBound() const {
     if (polygon_.empty()) {
         return Eigen::Vector2d(0.0, 0.0);
     }
@@ -50,7 +50,7 @@ Eigen::Vector2d SelectionPolygon::getMin2DBound() const {
     return Eigen::Vector2d((*itr_x)(0), (*itr_y)(1));
 }
 
-Eigen::Vector2d SelectionPolygon::getMax2DBound() const {
+Eigen::Vector2d SelectionPolygon::GetMax2DBound() const {
     if (polygon_.empty()) {
         return Eigen::Vector2d(0.0, 0.0);
     }
@@ -216,8 +216,8 @@ std::vector<size_t> SelectionPolygon::CropInRectangle(
     Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
     double half_width = (double)view.GetWindowWidth() * 0.5;
     double half_height = (double)view.GetWindowHeight() * 0.5;
-    auto min_bound = getMin2DBound();
-    auto max_bound = getMax2DBound();
+    auto min_bound = GetMin2DBound();
+    auto max_bound = GetMax2DBound();
     utility::ConsoleProgressBar progress_bar((int64_t)input.size(),
                                              "Cropping geometry: ");
     for (size_t i = 0; i < input.size(); i++) {

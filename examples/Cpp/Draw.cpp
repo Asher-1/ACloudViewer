@@ -46,29 +46,29 @@ void MultiObjects() {
     auto pc_color = MakePointCloud(100, {3.0, -2.0, 0.0}, pc_rad, true);
     const double r = 0.4;
     auto sphere_unlit = ccMesh::CreateSphere(r);
-    sphere_unlit->translate({0.0, 1.0, 0.0});
+    sphere_unlit->Translate({0.0, 1.0, 0.0});
     auto sphere_colored_unlit = ccMesh::CreateSphere(r);
-    sphere_colored_unlit->paintUniformColor({1.0, 0.0, 0.0});
-    sphere_colored_unlit->translate({2.0, 1.0, 0.0});
+    sphere_colored_unlit->PaintUniformColor({1.0, 0.0, 0.0});
+    sphere_colored_unlit->Translate({2.0, 1.0, 0.0});
     auto sphere_lit = ccMesh::CreateSphere(r);
-    sphere_lit->computeVertexNormals();
-    sphere_lit->translate({4, 1, 0});
+    sphere_lit->ComputeVertexNormals();
+    sphere_lit->Translate({4, 1, 0});
     auto sphere_colored_lit = ccMesh::CreateSphere(r);
-    sphere_colored_lit->computeVertexNormals();
-    sphere_colored_lit->paintUniformColor({0.0, 1.0, 0.0});
-    sphere_colored_lit->translate({6, 1, 0});
+    sphere_colored_lit->ComputeVertexNormals();
+    sphere_colored_lit->PaintUniformColor({0.0, 1.0, 0.0});
+    sphere_colored_lit->Translate({6, 1, 0});
     auto big_bbox = cloudViewer::make_shared<ccBBox>(
             Eigen::Vector3d{-pc_rad, -3, -pc_rad},
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
-    auto bbox = sphere_unlit->getAxisAlignedBoundingBox();
+    auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
     auto sphere_bbox = cloudViewer::make_shared<ccBBox>(bbox.GetMinBound(),
                                                         bbox.GetMaxBound());
-    sphere_bbox->setColor({1.0, 0.5, 0.0});
+    sphere_bbox->SetColor({1.0, 0.5, 0.0});
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-            sphere_lit->getAxisAlignedBoundingBox());
+            sphere_lit->GetAxisAlignedBoundingBox());
     auto lines_colored = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-            sphere_colored_lit->getAxisAlignedBoundingBox());
-    lines_colored->paintUniformColor({0.0, 0.0, 1.0});
+            sphere_colored_lit->GetAxisAlignedBoundingBox());
+    lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
 
     visualization::Draw({pc_nocolor, pc_color, sphere_unlit,
                          sphere_colored_unlit, sphere_lit, sphere_colored_lit,
@@ -85,13 +85,13 @@ void Actions() {
     data::BunnyMesh bunny_data;
     io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 
-    bunny->paintUniformColor({1, 0.75, 0});
-    bunny->computeVertexNormals();
+    bunny->PaintUniformColor({1, 0.75, 0});
+    bunny->ComputeVertexNormals();
     auto cloud = cloudViewer::make_shared<ccPointCloud>();
 
     cloud->addPoints(bunny->getVerticesPtr());
     cloud->addEigenNorms(bunny->getVertexNormals());
-    cloud->paintUniformColor({0, 0.2, 1.0});
+    cloud->PaintUniformColor({0, 0.2, 1.0});
 
     auto make_mesh = [SOURCE_NAME, RESULT_NAME](
                              visualization::visualizer::O3DVisualizer &o3dvis) {
@@ -99,8 +99,8 @@ void Actions() {
                 std::dynamic_pointer_cast<ccPointCloud>(
                         o3dvis.GetGeometry(SOURCE_NAME).geometry);
         auto mesh = std::get<0>(ccMesh::CreateFromPointCloudPoisson(*source));
-        mesh->paintUniformColor({1, 1, 1});
-        mesh->computeVertexNormals();
+        mesh->PaintUniformColor({1, 1, 1});
+        mesh->ComputeVertexNormals();
         o3dvis.AddGeometry(RESULT_NAME, mesh);
         o3dvis.ShowGeometry(SOURCE_NAME, false);
     };
@@ -160,20 +160,20 @@ void Selections() {
     data::DemoICPPointClouds demo_icp_pointclouds;
     auto source = cloudViewer::make_shared<ccPointCloud>();
     io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *source);
-    if (source->isEmpty()) {
+    if (source->IsEmpty()) {
         utility::LogError("Could not open {}",
                           demo_icp_pointclouds.GetPaths(0));
         return;
     }
     auto target = cloudViewer::make_shared<ccPointCloud>();
     io::ReadPointCloud(demo_icp_pointclouds.GetPaths(1), *target);
-    if (target->isEmpty()) {
+    if (target->IsEmpty()) {
         utility::LogError("Could not open {}",
                           demo_icp_pointclouds.GetPaths(1));
         return;
     }
-    source->paintUniformColor({1.000, 0.706, 0.000});
-    target->paintUniformColor({0.000, 0.651, 0.929});
+    source->PaintUniformColor({1.000, 0.706, 0.000});
+    target->PaintUniformColor({0.000, 0.651, 0.929});
 
     const char *source_name = "Source (yellow)";
     const char *target_name = "Target (blue)";
@@ -203,7 +203,7 @@ void Selections() {
 
                 auto t = GetICPTransform(*source, *target, source_picked,
                                          target_picked);
-                source->transform(t);
+                source->Transform(t);
 
                 // Update the source geometry
                 o3dvis.RemoveGeometry(source_name);
@@ -235,7 +235,7 @@ void Selections() {
 
                 auto t = GetICPTransform(*source, *target, source_picked,
                                          target_picked);
-                source->transform(t);
+                source->Transform(t);
 
                 // Update the source geometry
                 o3dvis.RemoveGeometry(source_name);

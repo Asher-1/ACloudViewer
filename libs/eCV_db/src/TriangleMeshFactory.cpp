@@ -27,7 +27,7 @@
 
 using namespace cloudViewer;
 
-ccMesh &ccMesh::removeDuplicatedVertices() {
+ccMesh &ccMesh::RemoveDuplicatedVertices() {
     typedef std::tuple<double, double, double> Coordinate3;
     std::unordered_map<Coordinate3, size_t,
                        utility::hash_tuple::hash<Coordinate3>>
@@ -59,7 +59,7 @@ ccMesh &ccMesh::removeDuplicatedVertices() {
             cloud->resize(static_cast<unsigned>(k));
         } else {
             utility::LogDebug(
-                    "[removeUnreferencedVertices] ccMesh has not associated "
+                    "[RemoveUnreferencedVertices] ccMesh has not associated "
                     "cloud.");
         }
     }
@@ -71,20 +71,20 @@ ccMesh &ccMesh::removeDuplicatedVertices() {
             triangle.i3 = static_cast<unsigned>(index_old_to_new[triangle.i3]);
         }
         if (hasAdjacencyList()) {
-            computeAdjacencyList();
+            ComputeAdjacencyList();
         }
     }
     utility::LogDebug(
-            "[removeDuplicatedVertices] {:d} vertices have been removed.",
+            "[RemoveDuplicatedVertices] {:d} vertices have been removed.",
             (int)(old_vertex_num - k));
 
     return *this;
 }
 
-ccMesh &ccMesh::removeDuplicatedTriangles() {
+ccMesh &ccMesh::RemoveDuplicatedTriangles() {
     if (hasTriangleUvs()) {
         utility::LogWarning(
-                "[removeDuplicatedTriangles] This mesh contains triangle uvs "
+                "[RemoveDuplicatedTriangles] This mesh contains triangle uvs "
                 "that are not handled in this function");
     }
     typedef std::tuple<int, int, int> Index3;
@@ -127,16 +127,16 @@ ccMesh &ccMesh::removeDuplicatedTriangles() {
     resize(k);
     if (has_tri_normal) m_triNormals->resize(k);
     if (k < old_triangle_num && hasAdjacencyList()) {
-        computeAdjacencyList();
+        ComputeAdjacencyList();
     }
     utility::LogDebug(
-            "[removeDuplicatedTriangles] {:d} triangles have been removed.",
+            "[RemoveDuplicatedTriangles] {:d} triangles have been removed.",
             (int)(old_triangle_num - k));
 
     return *this;
 }
 
-ccMesh &ccMesh::removeUnreferencedVertices() {
+ccMesh &ccMesh::RemoveUnreferencedVertices() {
     std::vector<bool> vertex_has_reference(getVerticeSize(), false);
     for (const auto &triangle : *getTrianglesPtr()) {
         vertex_has_reference[triangle.i1] = true;
@@ -168,7 +168,7 @@ ccMesh &ccMesh::removeUnreferencedVertices() {
             cloud->resize(static_cast<unsigned>(k));
         } else {
             utility::LogDebug(
-                    "[removeUnreferencedVertices] ccMesh has not associated "
+                    "[RemoveUnreferencedVertices] ccMesh has not associated "
                     "cloud.");
         }
     }
@@ -180,20 +180,20 @@ ccMesh &ccMesh::removeUnreferencedVertices() {
             triangle.i3 = static_cast<unsigned>(index_old_to_new[triangle.i3]);
         }
         if (hasAdjacencyList()) {
-            computeAdjacencyList();
+            ComputeAdjacencyList();
         }
     }
     utility::LogDebug(
-            "[removeUnreferencedVertices] {:d} vertices have been removed.",
+            "[RemoveUnreferencedVertices] {:d} vertices have been removed.",
             (int)(old_vertex_num - k));
 
     return *this;
 }
 
-ccMesh &ccMesh::removeDegenerateTriangles() {
+ccMesh &ccMesh::RemoveDegenerateTriangles() {
     if (hasTriangleUvs()) {
         utility::LogWarning(
-                "[removeDegenerateTriangles] This mesh contains triangle uvs "
+                "[RemoveDegenerateTriangles] This mesh contains triangle uvs "
                 "that are not handled in this function");
     }
     bool has_tri_normal = hasTriNormals();
@@ -213,7 +213,7 @@ ccMesh &ccMesh::removeDegenerateTriangles() {
     resize(k);
     if (has_tri_normal) m_triNormals->resize(k);
     if (k < old_triangle_num && hasAdjacencyList()) {
-        computeAdjacencyList();
+        ComputeAdjacencyList();
     }
     utility::LogDebug(
             "[RemoveDegenerateTriangles] {:d} triangles have been "
@@ -222,19 +222,19 @@ ccMesh &ccMesh::removeDegenerateTriangles() {
     return *this;
 }
 
-ccMesh &ccMesh::removeNonManifoldEdges() {
+ccMesh &ccMesh::RemoveNonManifoldEdges() {
     if (hasTriangleUvs()) {
         utility::LogWarning(
                 "[RemoveNonManifoldEdges] This mesh contains triangle uvs that "
                 "are not handled in this function");
     }
     std::vector<double> triangle_areas;
-    getSurfaceArea(triangle_areas);
+    GetSurfaceArea(triangle_areas);
 
     bool mesh_is_edge_manifold = false;
     while (!mesh_is_edge_manifold) {
         mesh_is_edge_manifold = true;
-        auto edges_to_triangles = getEdgeToTrianglesMap();
+        auto edges_to_triangles = GetEdgeToTrianglesMap();
 
         for (auto &kv : edges_to_triangles) {
             size_t n_edge_triangle_refs = kv.second.size();
@@ -306,7 +306,7 @@ ccMesh &ccMesh::removeNonManifoldEdges() {
     return *this;
 }
 
-ccMesh &ccMesh::mergeCloseVertices(double eps) {
+ccMesh &ccMesh::MergeCloseVertices(double eps) {
     cloudViewer::geometry::KDTreeFlann kdtree(*this);
     // precompute all neighbours
     utility::LogDebug("Precompute Neighbours");
@@ -395,22 +395,22 @@ ccMesh &ccMesh::mergeCloseVertices(double eps) {
     return *this;
 }
 
-ccMesh &ccMesh::paintUniformColor(const Eigen::Vector3d &color) {
+ccMesh &ccMesh::PaintUniformColor(const Eigen::Vector3d &color) {
     if (getAssociatedCloud() &&
         getAssociatedCloud()->isKindOf(CV_TYPES::POINT_CLOUD)) {
         ccPointCloud *cloud =
                 ccHObjectCaster::ToPointCloud(getAssociatedCloud());
-        cloud->paintUniformColor(color);
+        cloud->PaintUniformColor(color);
     }
     return *this;
 }
 
 std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
-ccMesh::computeConvexHull() const {
+ccMesh::ComputeConvexHull() const {
     return cloudViewer::geometry::Qhull::ComputeConvexHull(getVertices());
 }
 
-std::shared_ptr<ccMesh> ccMesh::filterSharpen(int number_of_iterations,
+std::shared_ptr<ccMesh> ccMesh::FilterSharpen(int number_of_iterations,
                                               double strength,
                                               FilterScope scope) const {
     ccPointCloud *cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
@@ -456,7 +456,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSharpen(int number_of_iterations,
     mesh->setTriangles(getTriangles());
     mesh->adjacency_list_ = adjacency_list_;
     if (!mesh->hasAdjacencyList()) {
-        mesh->computeAdjacencyList();
+        mesh->ComputeAdjacencyList();
     }
 
     for (int iter = 0; iter < number_of_iterations; ++iter) {
@@ -533,7 +533,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSharpen(int number_of_iterations,
     return mesh;
 }
 
-std::shared_ptr<ccMesh> ccMesh::filterSmoothSimple(int number_of_iterations,
+std::shared_ptr<ccMesh> ccMesh::FilterSmoothSimple(int number_of_iterations,
                                                    FilterScope scope) const {
     ccPointCloud *cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
     assert(cloud);
@@ -577,7 +577,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothSimple(int number_of_iterations,
     mesh->setTriangles(getTriangles());
     mesh->adjacency_list_ = adjacency_list_;
     if (!mesh->hasAdjacencyList()) {
-        mesh->computeAdjacencyList();
+        mesh->ComputeAdjacencyList();
     }
 
     for (int iter = 0; iter < number_of_iterations; ++iter) {
@@ -644,7 +644,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothSimple(int number_of_iterations,
     return mesh;
 }
 
-void ccMesh::filterSmoothLaplacianHelper(
+void ccMesh::FilterSmoothLaplacianHelper(
         std::shared_ptr<ccMesh> &mesh,
         const std::vector<CCVector3> &prev_vertices,
         const std::vector<CCVector3> &prev_vertex_normals,
@@ -705,7 +705,7 @@ void ccMesh::filterSmoothLaplacianHelper(
     }
 }
 
-std::shared_ptr<ccMesh> ccMesh::filterSmoothLaplacian(int number_of_iterations,
+std::shared_ptr<ccMesh> ccMesh::FilterSmoothLaplacian(int number_of_iterations,
                                                       double lambda,
                                                       FilterScope scope) const {
     ccPointCloud *cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
@@ -750,11 +750,11 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothLaplacian(int number_of_iterations,
     mesh->setTriangles(getTriangles());
     mesh->adjacency_list_ = adjacency_list_;
     if (!mesh->hasAdjacencyList()) {
-        mesh->computeAdjacencyList();
+        mesh->ComputeAdjacencyList();
     }
 
     for (int iter = 0; iter < number_of_iterations; ++iter) {
-        filterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
+        FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
                                     prev_vertex_colors, mesh->adjacency_list_,
                                     lambda, filter_vertex, filter_normal,
                                     filter_color);
@@ -785,7 +785,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothLaplacian(int number_of_iterations,
     return mesh;
 }
 
-std::shared_ptr<ccMesh> ccMesh::filterSmoothTaubin(int number_of_iterations,
+std::shared_ptr<ccMesh> ccMesh::FilterSmoothTaubin(int number_of_iterations,
                                                    double lambda,
                                                    double mu,
                                                    FilterScope scope) const {
@@ -831,11 +831,11 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothTaubin(int number_of_iterations,
     mesh->setTriangles(getTriangles());
     mesh->adjacency_list_ = adjacency_list_;
     if (!mesh->hasAdjacencyList()) {
-        mesh->computeAdjacencyList();
+        mesh->ComputeAdjacencyList();
     }
 
     for (int iter = 0; iter < number_of_iterations; ++iter) {
-        filterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
+        FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
                                     prev_vertex_colors, mesh->adjacency_list_,
                                     lambda, filter_vertex, filter_normal,
                                     filter_color);
@@ -848,7 +848,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothTaubin(int number_of_iterations,
             std::swap(*baseVertices->rgbColors(), prev_vertex_colors);
         }
 
-        filterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
+        FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
                                     prev_vertex_colors, mesh->adjacency_list_,
                                     mu, filter_vertex, filter_normal,
                                     filter_color);
@@ -880,7 +880,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothTaubin(int number_of_iterations,
     return mesh;
 }
 
-int ccMesh::eulerPoincareCharacteristic() const {
+int ccMesh::EulerPoincareCharacteristic() const {
     std::unordered_set<Eigen::Vector2i, utility::hash_eigen<Eigen::Vector2i>>
             edges;
 
@@ -896,9 +896,9 @@ int ccMesh::eulerPoincareCharacteristic() const {
     return V + F - E;
 }
 
-std::vector<Eigen::Vector2i> ccMesh::getNonManifoldEdges(
+std::vector<Eigen::Vector2i> ccMesh::GetNonManifoldEdges(
         bool allow_boundary_edges /* = true */) const {
-    auto edges = getEdgeToTrianglesMap();
+    auto edges = GetEdgeToTrianglesMap();
     std::vector<Eigen::Vector2i> non_manifold_edges;
     for (auto &kv : edges) {
         if ((allow_boundary_edges &&
@@ -910,8 +910,8 @@ std::vector<Eigen::Vector2i> ccMesh::getNonManifoldEdges(
     return non_manifold_edges;
 }
 
-bool ccMesh::isEdgeManifold(bool allow_boundary_edges /* = true */) const {
-    auto edges = getEdgeToTrianglesMap();
+bool ccMesh::IsEdgeManifold(bool allow_boundary_edges /* = true */) const {
+    auto edges = GetEdgeToTrianglesMap();
     for (auto &kv : edges) {
         if ((allow_boundary_edges &&
              (kv.second.size() < 1 || kv.second.size() > 2)) ||
@@ -922,7 +922,7 @@ bool ccMesh::isEdgeManifold(bool allow_boundary_edges /* = true */) const {
     return true;
 }
 
-std::vector<int> ccMesh::getNonManifoldVertices() const {
+std::vector<int> ccMesh::GetNonManifoldVertices() const {
     std::vector<std::unordered_set<int>> vert_to_triangles(getVerticeSize());
     for (size_t tidx = 0; tidx < size(); ++tidx) {
         const auto &tria = getTriangle(tidx);
@@ -978,11 +978,11 @@ std::vector<int> ccMesh::getNonManifoldVertices() const {
     return non_manifold_verts;
 }
 
-bool ccMesh::isVertexManifold() const {
-    return getNonManifoldVertices().empty();
+bool ccMesh::IsVertexManifold() const {
+    return GetNonManifoldVertices().empty();
 }
 
-std::vector<Eigen::Vector2i> ccMesh::getSelfIntersectingTriangles() const {
+std::vector<Eigen::Vector2i> ccMesh::GetSelfIntersectingTriangles() const {
     std::vector<Eigen::Vector2i> self_intersecting_triangles;
     for (size_t tidx0 = 0; tidx0 < size() - 1; ++tidx0) {
         const Eigen::Vector3i &tria_p = getTriangle(tidx0);
@@ -1017,18 +1017,18 @@ std::vector<Eigen::Vector2i> ccMesh::getSelfIntersectingTriangles() const {
     return self_intersecting_triangles;
 }
 
-bool ccMesh::isSelfIntersecting() const {
-    return !getSelfIntersectingTriangles().empty();
+bool ccMesh::IsSelfIntersecting() const {
+    return !GetSelfIntersectingTriangles().empty();
 }
 
-bool ccMesh::isBoundingBoxIntersecting(const ccMesh &other) const {
+bool ccMesh::IsBoundingBoxIntersecting(const ccMesh &other) const {
     return utility::IntersectionTest::AABBAABB(GetMinBound(), GetMaxBound(),
                                                other.GetMinBound(),
                                                other.GetMaxBound());
 }
 
-bool ccMesh::isIntersecting(const ccMesh &other) const {
-    if (!isBoundingBoxIntersecting(other)) {
+bool ccMesh::IsIntersecting(const ccMesh &other) const {
+    if (!IsBoundingBoxIntersecting(other)) {
         return false;
     }
     for (size_t tidx0 = 0; tidx0 < size(); ++tidx0) {
@@ -1158,16 +1158,16 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
     return true;
 }
 
-bool ccMesh::isOrientable() const {
+bool ccMesh::IsOrientable() const {
     auto NoOp = [](int, int, int) {};
     return OrientTriangleHelper(getTriangles(), NoOp);
 }
 
-bool ccMesh::isWatertight() const {
-    return isEdgeManifold(false) && isVertexManifold() && !isSelfIntersecting();
+bool ccMesh::IsWatertight() const {
+    return IsEdgeManifold(false) && IsVertexManifold() && !IsSelfIntersecting();
 }
 
-bool ccMesh::orientTriangles() {
+bool ccMesh::OrientTriangles() {
     auto SwapTriangleOrder = [&](int tidx, int idx0, int idx1) {
         std::swap(getTriangleVertIndexes(static_cast<unsigned>(tidx))->i[idx0],
                   getTriangleVertIndexes(static_cast<unsigned>(tidx))->i[idx1]);
@@ -1176,13 +1176,13 @@ bool ccMesh::orientTriangles() {
 }
 
 std::tuple<std::vector<int>, std::vector<size_t>, std::vector<double>>
-ccMesh::clusterConnectedTriangles() const {
+ccMesh::ClusterConnectedTriangles() const {
     std::vector<int> triangle_clusters(this->size(), -1);
     std::vector<size_t> num_triangles;
     std::vector<double> areas;
 
     utility::LogDebug("[ClusterConnectedTriangles] Compute triangle adjacency");
-    auto edges_to_triangles = getEdgeToTrianglesMap();
+    auto edges_to_triangles = GetEdgeToTrianglesMap();
     std::vector<std::unordered_set<int>> adjacency_list(this->size());
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) \
@@ -1223,7 +1223,7 @@ ccMesh::clusterConnectedTriangles() const {
             triangle_queue.pop();
 
             cluster_n_triangles++;
-            cluster_area += getTriangleArea(cluster_tidx);
+            cluster_area += GetTriangleArea(cluster_tidx);
 
             for (auto tnb : adjacency_list[cluster_tidx]) {
                 if (triangle_clusters[tnb] == -1) {
@@ -1244,7 +1244,7 @@ ccMesh::clusterConnectedTriangles() const {
     return std::make_tuple(triangle_clusters, num_triangles, areas);
 }
 
-void ccMesh::removeTrianglesByIndex(
+void ccMesh::RemoveTrianglesByIndex(
         const std::vector<size_t> &triangle_indices) {
     std::vector<bool> triangle_mask(size(), false);
     for (auto tidx : triangle_indices) {
@@ -1258,10 +1258,10 @@ void ccMesh::removeTrianglesByIndex(
         }
     }
 
-    removeTrianglesByMask(triangle_mask);
+    RemoveTrianglesByMask(triangle_mask);
 }
 
-void ccMesh::removeTrianglesByMask(const std::vector<bool> &triangle_mask) {
+void ccMesh::RemoveTrianglesByMask(const std::vector<bool> &triangle_mask) {
     if (triangle_mask.size() != this->size()) {
         utility::LogError("triangle_mask has a different size than triangles_");
     }
@@ -1284,7 +1284,7 @@ void ccMesh::removeTrianglesByMask(const std::vector<bool> &triangle_mask) {
     }
 }
 
-void ccMesh::removeVerticesByIndex(const std::vector<size_t> &vertex_indices) {
+void ccMesh::RemoveVerticesByIndex(const std::vector<size_t> &vertex_indices) {
     std::vector<bool> vertex_mask(getVerticeSize(), false);
     for (auto vidx : vertex_indices) {
         if (vidx >= 0 && vidx < getVerticeSize()) {
@@ -1297,10 +1297,10 @@ void ccMesh::removeVerticesByIndex(const std::vector<size_t> &vertex_indices) {
         }
     }
 
-    removeVerticesByMask(vertex_mask);
+    RemoveVerticesByMask(vertex_mask);
 }
 
-void ccMesh::removeVerticesByMask(const std::vector<bool> &vertex_mask) {
+void ccMesh::RemoveVerticesByMask(const std::vector<bool> &vertex_mask) {
     ccPointCloud *cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
     assert(cloud);
 
@@ -1341,13 +1341,13 @@ void ccMesh::removeVerticesByMask(const std::vector<bool> &vertex_mask) {
             tria->i[2] = vertex_map[tria->i[2]];
         }
     }
-    removeTrianglesByMask(triangle_mask);
+    RemoveTrianglesByMask(triangle_mask);
 }
 
 std::unordered_map<Eigen::Vector2i,
                    double,
                    utility::hash_eigen<Eigen::Vector2i>>
-ccMesh::computeEdgeWeightsCot(
+ccMesh::ComputeEdgeWeightsCot(
         const std::unordered_map<Eigen::Vector2i,
                                  std::vector<int>,
                                  utility::hash_eigen<Eigen::Vector2i>>
@@ -1384,27 +1384,27 @@ ccMesh::computeEdgeWeightsCot(
 ccMesh &ccMesh::ComputeTriangleNormals(bool normalized /* = true*/) {
     computePerTriangleNormals();
     if (normalized) {
-        normalizeNormals();
+        NormalizeNormals();
     }
     return *this;
 }
 
-ccMesh &ccMesh::computeVertexNormals(bool normalized /* = true*/) {
+ccMesh &ccMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     if (!hasTriNormals()) {
         ComputeTriangleNormals(false);
     }
     computePerVertexNormals();
 
     if (normalized) {
-        normalizeNormals();
+        NormalizeNormals();
     }
     return *this;
 }
 
-ccMesh &ccMesh::normalizeNormals() {
+ccMesh &ccMesh::NormalizeNormals() {
     ccPointCloud *cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
     if (cloud && cloud->hasNormals()) {
-        cloud->normalizeNormals();
+        cloud->NormalizeNormals();
     }
 
     if (hasTriNormals()) {
@@ -1417,7 +1417,7 @@ ccMesh &ccMesh::normalizeNormals() {
     return *this;
 }
 
-ccMesh &ccMesh::computeAdjacencyList() {
+ccMesh &ccMesh::ComputeAdjacencyList() {
     adjacency_list_.clear();
     adjacency_list_.resize(getVerticeSize());
     for (size_t i = 0; i < size(); ++i) {
@@ -1432,7 +1432,7 @@ ccMesh &ccMesh::computeAdjacencyList() {
     return *this;
 }
 
-std::shared_ptr<ccPointCloud> ccMesh::samplePointsPoissonDisk(
+std::shared_ptr<ccPointCloud> ccMesh::SamplePointsPoissonDisk(
         size_t number_of_points,
         double init_factor /* = 5 */,
         const std::shared_ptr<ccPointCloud> pcl_init /* = nullptr */,
@@ -1458,12 +1458,12 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsPoissonDisk(
 
     // Compute area of each triangle and sum surface area
     std::vector<double> triangle_areas;
-    double surface_area = getSurfaceArea(triangle_areas);
+    double surface_area = GetSurfaceArea(triangle_areas);
 
     // Compute init points using uniform sampling
     std::shared_ptr<ccPointCloud> pcl;
     if (pcl_init == nullptr) {
-        pcl = samplePointsUniformlyImpl(size_t(init_factor * number_of_points),
+        pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
                                         triangle_areas, surface_area,
                                         use_triangle_normal, seed);
     } else {
@@ -1590,7 +1590,7 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsPoissonDisk(
 std::unordered_map<Eigen::Vector2i,
                    std::vector<int>,
                    utility::hash_eigen<Eigen::Vector2i>>
-ccMesh::getEdgeToTrianglesMap() const {
+ccMesh::GetEdgeToTrianglesMap() const {
     std::unordered_map<Eigen::Vector2i, std::vector<int>,
                        utility::hash_eigen<Eigen::Vector2i>>
             trias_per_edge;
@@ -1611,7 +1611,7 @@ ccMesh::getEdgeToTrianglesMap() const {
 std::unordered_map<Eigen::Vector2i,
                    std::vector<int>,
                    utility::hash_eigen<Eigen::Vector2i>>
-ccMesh::getEdgeToVerticesMap() const {
+ccMesh::GetEdgeToVerticesMap() const {
     std::unordered_map<Eigen::Vector2i, std::vector<int>,
                        utility::hash_eigen<Eigen::Vector2i>>
             trias_per_edge;
@@ -1638,34 +1638,34 @@ double ccMesh::ComputeTriangleArea(const Eigen::Vector3d &p0,
     return area;
 }
 
-double ccMesh::getTriangleArea(size_t triangle_idx) const {
+double ccMesh::GetTriangleArea(size_t triangle_idx) const {
     Eigen::Vector3d vertex0, vertex1, vertex2;
     getTriangleVertices(static_cast<unsigned int>(triangle_idx), vertex0.data(),
                         vertex1.data(), vertex2.data());
     return ComputeTriangleArea(vertex0, vertex1, vertex2);
 }
 
-double ccMesh::getSurfaceArea() const {
+double ccMesh::GetSurfaceArea() const {
     double surface_area = 0;
     for (size_t tidx = 0; tidx < size(); ++tidx) {
-        double triangle_area = getTriangleArea(tidx);
+        double triangle_area = GetTriangleArea(tidx);
         surface_area += triangle_area;
     }
     return surface_area;
 }
 
-double ccMesh::getSurfaceArea(std::vector<double> &triangle_areas) const {
+double ccMesh::GetSurfaceArea(std::vector<double> &triangle_areas) const {
     double surface_area = 0;
     triangle_areas.resize(size());
     for (size_t tidx = 0; tidx < size(); ++tidx) {
-        double triangle_area = getTriangleArea(tidx);
+        double triangle_area = GetTriangleArea(tidx);
         triangle_areas[tidx] = triangle_area;
         surface_area += triangle_area;
     }
     return surface_area;
 }
 
-double ccMesh::getVolume() const {
+double ccMesh::GetVolume() const {
     // Computes the signed volume of the tetrahedron defined by
     // the three triangle vertices and the origin. The sign is determined by
     // checking if the origin is at the same side as the normal with respect to
@@ -1678,12 +1678,12 @@ double ccMesh::getVolume() const {
         return vertex0.dot(vertex1.cross(vertex2)) / 6.0;
     };
 
-    if (!isWatertight()) {
+    if (!IsWatertight()) {
         utility::LogError(
                 "The mesh is not watertight, and the volume cannot be "
                 "computed.");
     }
-    if (!isOrientable()) {
+    if (!IsOrientable()) {
         utility::LogError(
                 "The mesh is not orientable, and the volume cannot be "
                 "computed.");
@@ -1714,14 +1714,14 @@ Eigen::Vector4d ccMesh::ComputeTrianglePlane(const Eigen::Vector3d &p0,
     return Eigen::Vector4d(abc(0), abc(1), abc(2), d);
 }
 
-Eigen::Vector4d ccMesh::getTrianglePlane(size_t triangle_idx) const {
+Eigen::Vector4d ccMesh::GetTrianglePlane(size_t triangle_idx) const {
     Eigen::Vector3d vertex0, vertex1, vertex2;
     getTriangleVertices(static_cast<unsigned int>(triangle_idx), vertex0.data(),
                         vertex1.data(), vertex2.data());
     return ComputeTrianglePlane(vertex0, vertex1, vertex2);
 }
 
-std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformlyImpl(
+std::shared_ptr<ccPointCloud> ccMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         std::vector<double> &triangle_areas,
         double surface_area,
@@ -1832,7 +1832,7 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformlyImpl(
     return pcd;
 }
 
-std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformly(
+std::shared_ptr<ccPointCloud> ccMesh::SamplePointsUniformly(
         size_t number_of_points,
         bool use_triangle_normal /* = false */,
         int seed /* = -1 */) {
@@ -1846,9 +1846,9 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformly(
 
     // Compute area of each triangle and sum surface area
     std::vector<double> triangle_areas;
-    double surface_area = getSurfaceArea(triangle_areas);
+    double surface_area = GetSurfaceArea(triangle_areas);
 
-    return samplePointsUniformlyImpl(number_of_points, triangle_areas,
+    return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
                                      surface_area, use_triangle_normal, seed);
 }
 
@@ -2799,11 +2799,11 @@ std::shared_ptr<ccMesh> ccMesh::CreateArrow(double cylinder_radius /* = 1.0*/,
     auto mesh_cylinder = CreateCylinder(cylinder_radius, cylinder_height,
                                         resolution, cylinder_split);
     transformation(2, 3) = cylinder_height * 0.5;
-    mesh_cylinder->transform(transformation);
+    mesh_cylinder->Transform(transformation);
     auto mesh_cone =
             CreateCone(cone_radius, cone_height, resolution, cone_split);
     transformation(2, 3) = cylinder_height;
-    mesh_cone->transform(transformation);
+    mesh_cone->Transform(transformation);
     auto mesh_arrow = mesh_cylinder;
     *mesh_arrow += *mesh_cone;
     return mesh_arrow;
@@ -2816,37 +2816,37 @@ std::shared_ptr<ccMesh> ccMesh::CreateCoordinateFrame(
         utility::LogError("[CreateCoordinateFrame] size <= 0");
     }
     auto mesh_frame = CreateSphere(0.06 * size);
-    mesh_frame->computeVertexNormals();
-    mesh_frame->paintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
+    mesh_frame->ComputeVertexNormals();
+    mesh_frame->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
 
     std::shared_ptr<ccMesh> mesh_arrow;
     Eigen::Matrix4d transformation;
 
     mesh_arrow = CreateArrow(0.035 * size, 0.06 * size, 0.8 * size, 0.2 * size);
-    mesh_arrow->computeVertexNormals();
-    mesh_arrow->paintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
+    mesh_arrow->ComputeVertexNormals();
+    mesh_arrow->PaintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
     mesh_arrow->showColors(true);
     transformation << 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1;
-    mesh_arrow->transform(transformation);
+    mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
     mesh_arrow = CreateArrow(0.035 * size, 0.06 * size, 0.8 * size, 0.2 * size);
-    mesh_arrow->computeVertexNormals();
-    mesh_arrow->paintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
+    mesh_arrow->ComputeVertexNormals();
+    mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
     transformation << 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1;
-    mesh_arrow->transform(transformation);
+    mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
     mesh_arrow = CreateArrow(0.035 * size, 0.06 * size, 0.8 * size, 0.2 * size);
-    mesh_arrow->computeVertexNormals();
-    mesh_arrow->paintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
+    mesh_arrow->ComputeVertexNormals();
+    mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
     transformation << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
-    mesh_arrow->transform(transformation);
+    mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
     transformation = Eigen::Matrix4d::Identity();
     transformation.block<3, 1>(0, 3) = origin;
-    mesh_frame->transform(transformation);
+    mesh_frame->Transform(transformation);
 
     return mesh_frame;
 }

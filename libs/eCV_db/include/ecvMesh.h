@@ -1,19 +1,19 @@
-﻿//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+﻿// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #ifndef ECV_MESH_HEADER
 #define ECV_MESH_HEADER
@@ -207,7 +207,7 @@ public:
     void addVertexColors(const std::vector<Eigen::Vector3d>& colors);
     void setVertexColors(const std::vector<Eigen::Vector3d>& colors);
 
-    inline bool hasVertices() const { return getVerticeSize() != 0; }
+    inline bool HasVertices() const { return getVerticeSize() != 0; }
 
     std::vector<CCVector3>& getVerticesPtr();
     const std::vector<CCVector3>& getVertices() const;
@@ -728,34 +728,34 @@ public:  // some cloudViewer interface
         bool is_all_texture_valid = std::accumulate(
                 textures_.begin(), textures_.end(), true,
                 [](bool a, const cloudViewer::geometry::Image& b) {
-                    return a && !b.isEmpty();
+                    return a && !b.IsEmpty();
                 });
         return !textures_.empty() && is_all_texture_valid;
     }
 
-    inline virtual bool isEmpty() const override {
-        return !hasVertices() || !hasTriangles();
+    inline virtual bool IsEmpty() const override {
+        return !HasVertices() || !hasTriangles();
     }
 
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
-    virtual Eigen::Vector3d getGeometryCenter() const override;
-    virtual ccBBox getAxisAlignedBoundingBox() const override;
-    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual ccMesh& transform(const Eigen::Matrix4d& transformation) override;
-    virtual ccMesh& translate(const Eigen::Vector3d& translation,
+    virtual Eigen::Vector3d GetCenter() const override;
+    virtual ccBBox GetAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    virtual ccMesh& Transform(const Eigen::Matrix4d& transformation) override;
+    virtual ccMesh& Translate(const Eigen::Vector3d& translation,
                               bool relative = true) override;
-    virtual ccMesh& scale(const double s,
+    virtual ccMesh& Scale(const double s,
                           const Eigen::Vector3d& center) override;
-    virtual ccMesh& rotate(const Eigen::Matrix3d& R,
+    virtual ccMesh& Rotate(const Eigen::Matrix3d& R,
                            const Eigen::Vector3d& center) override;
 
     /// \brief Assigns each vertex in the ccMesh the same color
     ///
     /// \param color RGB colors of vertices.
-    ccMesh& paintUniformColor(const Eigen::Vector3d& color);
+    ccMesh& PaintUniformColor(const Eigen::Vector3d& color);
 
-    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> computeConvexHull()
+    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> ComputeConvexHull()
             const;
 
     /// \brief Function that computes for each edge in the triangle mesh and
@@ -769,7 +769,7 @@ public:  // some cloudViewer interface
     std::unordered_map<Eigen::Vector2i,
                        double,
                        cloudViewer::utility::hash_eigen<Eigen::Vector2i>>
-    computeEdgeWeightsCot(
+    ComputeEdgeWeightsCot(
             const std::unordered_map<
                     Eigen::Vector2i,
                     std::vector<int>,
@@ -783,39 +783,39 @@ public:  // some cloudViewer interface
 
     /// \brief Function to compute vertex normals, usually called before
     /// rendering.
-    ccMesh& computeVertexNormals(bool normalized = true);
+    ccMesh& ComputeVertexNormals(bool normalized = true);
 
     /// Normalize both triangle normals and vertex normals to length 1.
     /// Normalize point normals to length 1.
-    ccMesh& normalizeNormals();
+    ccMesh& NormalizeNormals();
 
     /// \brief Function to compute adjacency list, call before adjacency list is
-    ccMesh& computeAdjacencyList();
+    ccMesh& ComputeAdjacencyList();
 
     /// \brief Function that removes duplicated verties, i.e., vertices that
     /// have identical coordinates.
-    ccMesh& removeDuplicatedVertices();
+    ccMesh& RemoveDuplicatedVertices();
 
     /// \brief Function that removes duplicated triangles, i.e., removes
     /// triangles that reference the same three vertices, independent of their
     /// order.
-    ccMesh& removeDuplicatedTriangles();
+    ccMesh& RemoveDuplicatedTriangles();
 
     /// \brief This function removes vertices from the triangle mesh that are
     /// not referenced in any triangle of the mesh.
-    ccMesh& removeUnreferencedVertices();
+    ccMesh& RemoveUnreferencedVertices();
 
     /// \brief Function that removes degenerate triangles, i.e., triangles that
     /// reference a single vertex multiple times in a single triangle.
     ///
     /// They are usually the product of removing duplicated vertices.
-    ccMesh& removeDegenerateTriangles();
+    ccMesh& RemoveDegenerateTriangles();
 
     /// \brief Function that removes all non-manifold edges, by successively
     /// deleting triangles with the smallest surface area adjacent to the
     /// non-manifold edge until the number of adjacent triangles to the edge is
     /// `<= 2`.
-    ccMesh& removeNonManifoldEdges();
+    ccMesh& RemoveNonManifoldEdges();
 
     /// \brief Function that will merge close by vertices to a single one.
     /// The vertex position, normal and color will be the average of the
@@ -823,7 +823,7 @@ public:  // some cloudViewer interface
     ///
     /// \param eps defines the maximum distance of close by vertices.
     /// This function might help to close triangle soups.
-    ccMesh& mergeCloseVertices(double eps);
+    ccMesh& MergeCloseVertices(double eps);
 
     /// \brief Function to sharpen triangle mesh.
     ///
@@ -834,7 +834,7 @@ public:  // some cloudViewer interface
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
     /// \param strength - The strength of the filter.
-    std::shared_ptr<ccMesh> filterSharpen(
+    std::shared_ptr<ccMesh> FilterSharpen(
             int number_of_iterations,
             double strength,
             FilterScope scope = FilterScope::All) const;
@@ -847,7 +847,7 @@ public:  // some cloudViewer interface
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
-    std::shared_ptr<ccMesh> filterSmoothSimple(
+    std::shared_ptr<ccMesh> FilterSmoothSimple(
             int number_of_iterations,
             FilterScope scope = FilterScope::All) const;
 
@@ -861,7 +861,7 @@ public:  // some cloudViewer interface
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
     /// \param lambda is the smoothing parameter.
-    std::shared_ptr<ccMesh> filterSmoothLaplacian(
+    std::shared_ptr<ccMesh> FilterSmoothLaplacian(
             int number_of_iterations,
             double lambda,
             FilterScope scope = FilterScope::All) const;
@@ -876,7 +876,7 @@ public:  // some cloudViewer interface
     /// of this operation.
     /// \param lambda is the filter parameter
     /// \param mu is the filter parameter
-    std::shared_ptr<ccMesh> filterSmoothTaubin(
+    std::shared_ptr<ccMesh> FilterSmoothTaubin(
             int number_of_iterations,
             double lambda = 0.5,
             double mu = -0.53,
@@ -885,78 +885,78 @@ public:  // some cloudViewer interface
     /// Function that computes the Euler-Poincaré characteristic, i.e.,
     /// V + F - E, where V is the number of vertices, F is the number
     /// of triangles, and E is the number of edges.
-    int eulerPoincareCharacteristic() const;
+    int EulerPoincareCharacteristic() const;
 
     /// Function that returns the non-manifold edges of the triangle mesh.
     /// If \param allow_boundary_edges is set to false, than also boundary
     /// edges are returned
-    std::vector<Eigen::Vector2i> getNonManifoldEdges(
+    std::vector<Eigen::Vector2i> GetNonManifoldEdges(
             bool allow_boundary_edges = true) const;
 
     /// Function that checks if the given triangle mesh is edge-manifold.
     /// A mesh is edge­-manifold if each edge is bounding either one or two
     /// triangles. If allow_boundary_edges is set to false, then this function
     /// returns false if there exists boundary edges.
-    bool isEdgeManifold(bool allow_boundary_edges = true) const;
+    bool IsEdgeManifold(bool allow_boundary_edges = true) const;
 
     /// Function that returns a list of non-manifold vertex indices.
     /// A vertex is manifold if its star is edge‐manifold and edge‐connected.
     /// (Two or more faces connected only by a vertex and not by an edge.)
-    std::vector<int> getNonManifoldVertices() const;
+    std::vector<int> GetNonManifoldVertices() const;
 
     /// Function that checks if all vertices in the triangle mesh are manifold.
     /// A vertex is manifold if its star is edge‐manifold and edge‐connected.
     /// (Two or more faces connected only by a vertex and not by an edge.)
-    bool isVertexManifold() const;
+    bool IsVertexManifold() const;
 
     /// Function that returns a list of triangles that are intersecting the
     /// mesh.
-    std::vector<Eigen::Vector2i> getSelfIntersectingTriangles() const;
+    std::vector<Eigen::Vector2i> GetSelfIntersectingTriangles() const;
 
     /// Function that tests if the triangle mesh is self-intersecting.
     /// Tests each triangle pair for intersection.
-    bool isSelfIntersecting() const;
+    bool IsSelfIntersecting() const;
 
     /// Function that tests if the bounding boxes of the triangle meshes are
     /// intersecting.
-    bool isBoundingBoxIntersecting(const ccMesh& other) const;
+    bool IsBoundingBoxIntersecting(const ccMesh& other) const;
 
     /// Function that tests if the triangle mesh intersects another triangle
     /// mesh. Tests each triangle against each other triangle.
-    bool isIntersecting(const ccMesh& other) const;
+    bool IsIntersecting(const ccMesh& other) const;
 
     /// Function that tests if the given triangle mesh is orientable, i.e.
     /// the triangles can oriented in such a way that all normals point
     /// towards the outside.
-    bool isOrientable() const;
+    bool IsOrientable() const;
 
     /// Function that tests if the given triangle mesh is watertight by
     /// checking if it is vertex manifold and edge-manifold with no boundary
     /// edges, but not self-intersecting.
-    bool isWatertight() const;
+    bool IsWatertight() const;
 
     /// If the mesh is orientable then this function rearranges the
     /// triangles such that all normals point towards the
     /// outside/inside.
-    bool orientTriangles();
+    bool OrientTriangles();
 
     /// Function that returns a map from edges (vertex0, vertex1) to the
     /// triangle indices the given edge belongs to.
     std::unordered_map<Eigen::Vector2i,
                        std::vector<int>,
                        cloudViewer::utility::hash_eigen<Eigen::Vector2i>>
-    getEdgeToTrianglesMap() const;
+    GetEdgeToTrianglesMap() const;
 
     /// Function that returns a map from edges (vertex0, vertex1) to the
     /// vertex (vertex2) indices the given edge belongs to.
     std::unordered_map<Eigen::Vector2i,
                        std::vector<int>,
                        cloudViewer::utility::hash_eigen<Eigen::Vector2i>>
-    getEdgeToVerticesMap() const;
+    GetEdgeToVerticesMap() const;
 
     /// Function that computes the area of a mesh triangle identified by the
     /// triangle index
-    double getTriangleArea(size_t triangle_idx) const;
+    double GetTriangleArea(size_t triangle_idx) const;
 
     /// Function that computes the area of a mesh triangle
     static double ComputeTriangleArea(const Eigen::Vector3d& p0,
@@ -980,16 +980,16 @@ public:  // some cloudViewer interface
 
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
-    double getSurfaceArea() const;
+    double GetSurfaceArea() const;
 
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
-    double getSurfaceArea(std::vector<double>& triangle_areas) const;
+    double GetSurfaceArea(std::vector<double>& triangle_areas) const;
 
     /// Function that computes the volume of the mesh, under the condition
     /// that it is watertight and orientable. See Zhang and Chen, "Efficient
     /// feature extraction for 2D/3D objects in mesh representation", 2001.
-    double getVolume() const;
+    double GetVolume() const;
 
     /// Function that computes the plane equation from the three points.
     /// If the three points are co-linear, then this function returns the
@@ -1000,7 +1000,7 @@ public:  // some cloudViewer interface
 
     /// Function that computes the plane equation of a mesh triangle identified
     /// by the triangle index.
-    Eigen::Vector4d getTrianglePlane(size_t triangle_idx) const;
+    Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
 
     /// Helper function to get an edge with ordered vertex indices.
     static inline Eigen::Vector2i GetOrderedEdge(int vidx0, int vidx1) {
@@ -1009,7 +1009,7 @@ public:  // some cloudViewer interface
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh.
-    std::shared_ptr<ccPointCloud> samplePointsUniformlyImpl(
+    std::shared_ptr<ccPointCloud> SamplePointsUniformlyImpl(
             size_t number_of_points,
             std::vector<double>& triangle_areas,
             double surface_area,
@@ -1023,7 +1023,7 @@ public:  // some cloudViewer interface
     /// if necessary. \param seed Sets the seed value used in the random
     /// generator, set to -1 to use a random seed value with each function
     /// call.
-    std::shared_ptr<ccPointCloud> samplePointsUniformly(
+    std::shared_ptr<ccPointCloud> SamplePointsUniformly(
             size_t number_of_points,
             bool use_triangle_normal = false,
             int seed = -1);
@@ -1039,7 +1039,7 @@ public:  // some cloudViewer interface
     /// triangle normals will be computed and added to the mesh if
     /// necessary. \p seed Sets the seed value used in the random generator,
     /// set to -1 to use a random seed value with each function call.
-    std::shared_ptr<ccPointCloud> samplePointsPoissonDisk(
+    std::shared_ptr<ccPointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
             const std::shared_ptr<ccPointCloud> pcl_init = nullptr,
@@ -1051,14 +1051,14 @@ public:  // some cloudViewer interface
     /// new vertices lie on the midpoint of the triangle edges.
     /// \param number_of_iterations defines a single iteration splits each
     /// triangle into four triangles that cover the same surface.
-    std::shared_ptr<ccMesh> subdivideMidpoint(int number_of_iterations) const;
+    std::shared_ptr<ccMesh> SubdivideMidpoint(int number_of_iterations) const;
 
     /// Function to subdivide triangle mesh using Loop's scheme.
     /// Cf. Charles T. Loop, "Smooth subdivision surfaces based on triangles",
     /// 1987. Each triangle is subdivided into four triangles per iteration.
     /// \param number_of_iterations defines a single iteration splits each
     /// triangle into four triangles that cover the same surface.
-    std::shared_ptr<ccMesh> subdivideLoop(int number_of_iterations) const;
+    std::shared_ptr<ccMesh> SubdivideLoop(int number_of_iterations) const;
 
     /// Function to simplify mesh using Vertex Clustering.
     /// The result can be a non-manifold mesh.
@@ -1066,7 +1066,7 @@ public:  // some cloudViewer interface
     /// \param contraction - Method to aggregate vertex information. Average
     /// computes a simple average, Quadric minimizes the distance to the
     /// adjacent planes.
-    std::shared_ptr<ccMesh> simplifyVertexClustering(
+    std::shared_ptr<ccMesh> SimplifyVertexClustering(
             double voxel_size,
             SimplificationContraction contraction =
                     SimplificationContraction::Average) const;
@@ -1078,7 +1078,7 @@ public:  // some cloudViewer interface
     /// number will be reached. \param maximum_error defines the maximum
     /// error where a vertex is allowed to be merged \param boundary_weight
     /// a weight applied to edge vertices used to preserve boundaries
-    std::shared_ptr<ccMesh> simplifyQuadricDecimation(
+    std::shared_ptr<ccMesh> SimplifyQuadricDecimation(
             int target_number_of_triangles,
             double maximum_error = std::numeric_limits<double>::infinity(),
             double boundary_weight = 1.0) const;
@@ -1099,13 +1099,13 @@ public:  // some cloudViewer interface
     /// All points with coordinates outside the bounding box \param bbox are
     /// clipped.
     /// \param bbox defines the input Axis Aligned Bounding Box.
-    std::shared_ptr<ccMesh> crop(const ccBBox& bbox) const;
+    std::shared_ptr<ccMesh> Crop(const ccBBox& bbox) const;
 
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
     /// clipped.
     /// \param bbox defines the input Oriented Bounding Box.
-    std::shared_ptr<ccMesh> crop(const ecvOrientedBBox& bbox) const;
+    std::shared_ptr<ccMesh> Crop(const ecvOrientedBBox& bbox) const;
 
     /// \brief Function that clusters connected triangles, i.e., triangles that
     /// are connected via edges are assigned the same cluster index.
@@ -1114,7 +1114,7 @@ public:  // some cloudViewer interface
     /// triangle, a second vector contains the number of triangles per
     /// cluster, and a third vector contains the surface area per cluster.
     std::tuple<std::vector<int>, std::vector<size_t>, std::vector<double>>
-    clusterConnectedTriangles() const;
+    ClusterConnectedTriangles() const;
 
     /// \brief This function removes the triangles with index in
     /// \p triangle_indices. Call \ref RemoveUnreferencedVertices to clean up
@@ -1122,7 +1122,7 @@ public:  // some cloudViewer interface
     ///
     /// \param triangle_indices Indices of the triangles that should be
     /// removed.
-    void removeTrianglesByIndex(const std::vector<size_t>& triangle_indices);
+    void RemoveTrianglesByIndex(const std::vector<size_t>& triangle_indices);
 
     /// \brief This function removes the triangles that are masked in
     /// \p triangle_mask. Call \ref RemoveUnreferencedVertices to clean up
@@ -1130,7 +1130,7 @@ public:  // some cloudViewer interface
     ///
     /// \param triangle_mask Mask of triangles that should be removed.
     /// Should have same size as \ref triangles_.
-    void removeTrianglesByMask(const std::vector<bool>& triangle_mask);
+    void RemoveTrianglesByMask(const std::vector<bool>& triangle_mask);
 
     /// \brief This function removes the vertices with index in
     /// \p vertex_indices. Note that also all triangles associated with the
@@ -1138,7 +1138,7 @@ public:  // some cloudViewer interface
     ///
     /// \param triangle_indices Indices of the triangles that should be
     /// removed.
-    void removeVerticesByIndex(const std::vector<size_t>& vertex_indices);
+    void RemoveVerticesByIndex(const std::vector<size_t>& vertex_indices);
 
     /// \brief This function removes the vertices that are masked in
     /// \p vertex_mask. Note that also all triangles associated with the
@@ -1146,7 +1146,7 @@ public:  // some cloudViewer interface
     ///
     /// \param vertex_mask Mask of vertices that should be removed.
     /// Should have same size as \ref vertices_.
-    void removeVerticesByMask(const std::vector<bool>& vertex_mask);
+    void RemoveVerticesByMask(const std::vector<bool>& vertex_mask);
 
     /// \brief This function deforms the mesh using the method by
     /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
@@ -1161,7 +1161,7 @@ public:  // some cloudViewer interface
     /// \param energy energy model that should be optimized
     /// \param smoothed_alpha alpha parameter of the smoothed ARAP model
     /// \return The deformed ccMesh
-    std::shared_ptr<ccMesh> deformAsRigidAsPossible(
+    std::shared_ptr<ccMesh> DeformAsRigidAsPossible(
             const std::vector<int>& constraint_vertex_indices,
             const std::vector<Eigen::Vector3d>& constraint_vertex_positions,
             size_t max_iter,
@@ -1413,7 +1413,7 @@ public:  // some cloudViewer interface
                                                  double scale = 1);
 
 protected:
-    void filterSmoothLaplacianHelper(
+    void FilterSmoothLaplacianHelper(
             std::shared_ptr<ccMesh>& mesh,
             const std::vector<CCVector3>& prev_vertices,
             const std::vector<CCVector3>& prev_vertex_normals,

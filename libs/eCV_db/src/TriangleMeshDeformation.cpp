@@ -37,7 +37,7 @@
 
 using namespace cloudViewer;
 
-std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
+std::shared_ptr<ccMesh> ccMesh::DeformAsRigidAsPossible(
         const std::vector<int>& constraint_vertex_indices,
         const std::vector<Eigen::Vector3d>& constraint_vertex_positions,
         size_t max_iter,
@@ -54,10 +54,10 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
     prime->addTriangles(this->getTriangles());
 
     utility::LogDebug("[DeformAsRigidAsPossible] setting up S'");
-    prime->computeAdjacencyList();
-    auto edges_to_vertices = prime->getEdgeToVerticesMap();
+    prime->ComputeAdjacencyList();
+    auto edges_to_vertices = prime->GetEdgeToVerticesMap();
     auto edge_weights =
-            prime->computeEdgeWeightsCot(edges_to_vertices, /*min_weight=*/0);
+            prime->ComputeEdgeWeightsCot(edges_to_vertices, /*min_weight=*/0);
     utility::LogDebug("[DeformAsRigidAsPossible] done setting up S'");
 
     std::unordered_map<int, Eigen::Vector3d> constraints;
@@ -74,7 +74,7 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
     std::vector<Eigen::Matrix3d> Rs(getVerticeSize());
     std::vector<Eigen::Matrix3d> Rs_old;
     if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
-        surface_area = prime->getSurfaceArea();
+        surface_area = prime->GetSurfaceArea();
         Rs_old.resize(getVerticeSize());
     }
 

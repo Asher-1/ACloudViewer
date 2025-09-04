@@ -138,7 +138,7 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructThinLines() {
     const size_t indices_bytes_count = lines_count * 2 * sizeof(IndexType);
     auto* indices = static_cast<IndexType*>(malloc(indices_bytes_count));
 
-    const bool has_colors = geometry_.hasColors();
+    const bool has_colors = geometry_.HasColors();
     Eigen::Vector3d kWhite(1.0, 1.0, 1.0);
     size_t vertex_idx = 0;
     for (size_t i = 0; i < lines_count; ++i) {
@@ -243,7 +243,7 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
     const size_t indices_bytes_count = lines_count * 6 * sizeof(IndexType);
     auto* indices = static_cast<IndexType*>(malloc(indices_bytes_count));
 
-    const bool has_colors = geometry_.hasColors();
+    const bool has_colors = geometry_.HasColors();
     Eigen::Vector3d kWhite(1.0, 1.0, 1.0);
     size_t vertex_idx = 0;
     size_t index_idx = 0;
@@ -348,7 +348,7 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
 }
 
 Box LineSetBuffersBuilder::ComputeAABB() {
-    const auto geometry_aabb = geometry_.getAxisAlignedBoundingBox();
+    const auto geometry_aabb = geometry_.GetAxisAlignedBoundingBox();
 
     const filament::math::float3 min(geometry_aabb.minCorner().x,
                                      geometry_aabb.minCorner().y,

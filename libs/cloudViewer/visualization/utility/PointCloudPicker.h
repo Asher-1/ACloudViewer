@@ -37,14 +37,14 @@ public:
     bool isEmpty() const;
 	virtual Eigen::Vector3d GetMinBound() const override;
 	virtual Eigen::Vector3d GetMaxBound() const override;
-	virtual Eigen::Vector3d getGeometryCenter() const override;
-	virtual ccBBox getAxisAlignedBoundingBox() const override;
-	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual PointCloudPicker& transform(const Eigen::Matrix4d& transformation) override;
-    virtual PointCloudPicker& translate(const Eigen::Vector3d& translation, 
+	virtual Eigen::Vector3d GetCenter() const override;
+	virtual ccBBox GetAxisAlignedBoundingBox() const override;
+	virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    virtual PointCloudPicker& Transform(const Eigen::Matrix4d& transformation) override;
+    virtual PointCloudPicker& Translate(const Eigen::Vector3d& translation,
 		bool relative = true) override;
-    virtual PointCloudPicker& scale(const double s, const Eigen::Vector3d &center) override;
-    virtual PointCloudPicker& rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d &center) override;
+    virtual PointCloudPicker& Scale(const double s, const Eigen::Vector3d &center) override;
+    virtual PointCloudPicker& Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d &center) override;
     bool SetPointCloud(std::shared_ptr<const ccHObject> ptr);
 
 public:

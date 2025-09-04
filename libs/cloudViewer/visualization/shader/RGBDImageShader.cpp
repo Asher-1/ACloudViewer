@@ -243,7 +243,7 @@ bool RGBDImageShaderForImage::PrepareBinding(const ccHObject &geometry,
         return false;
     }
     const geometry::RGBDImage rgbd = (const geometry::RGBDImage &)geometry;
-    if (rgbd.isEmpty()) {
+    if (rgbd.IsEmpty()) {
         PrintShaderWarning("Binding failed with empty image.");
         return false;
     }

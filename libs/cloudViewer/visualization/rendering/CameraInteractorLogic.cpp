@@ -20,7 +20,7 @@ void CameraInteractorLogic::SetBoundingBox(
     // Initialize parent's matrix_ (in case we do a mouse wheel, which
     // doesn't involve a mouse down) and the center of rotation.
     SetMouseDownInfo(camera_->GetModelMatrix(),
-                     bounds.getGeometryCenter().cast<float>());
+                     bounds.GetCenter().cast<float>());
 }
 
 void CameraInteractorLogic::Rotate(int dx, int dy) {

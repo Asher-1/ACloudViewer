@@ -155,10 +155,10 @@ HalfEdgeTriangleMesh::CreateFromTriangleMesh(const ccMesh &mesh) {
     *mesh_cpy = mesh;
 
     // Purge to remove duplications
-    mesh_cpy->removeDuplicatedVertices();
-    mesh_cpy->removeDuplicatedTriangles();
-    mesh_cpy->removeUnreferencedVertices();
-    mesh_cpy->removeDegenerateTriangles();
+    mesh_cpy->RemoveDuplicatedVertices();
+    mesh_cpy->RemoveDuplicatedTriangles();
+    mesh_cpy->RemoveUnreferencedVertices();
+    mesh_cpy->RemoveDegenerateTriangles();
 
     // Collect half edges
     // Check: for valid manifolds, there mustn't be duplicated half-edges
@@ -268,7 +268,7 @@ HalfEdgeTriangleMesh::CreateFromTriangleMesh(const ccMesh &mesh) {
         }
     }
 
-    mesh_cpy->computeVertexNormals();
+    mesh_cpy->ComputeVertexNormals();
     het_mesh->vertices_ = mesh_cpy->getEigenVertices();
     het_mesh->vertex_normals_ = mesh_cpy->getVertexNormals();
     het_mesh->vertex_colors_ = mesh_cpy->getVertexColors();

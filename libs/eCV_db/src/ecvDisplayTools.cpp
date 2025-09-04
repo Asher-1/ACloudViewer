@@ -1069,7 +1069,7 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
                         ccCameraSensor* cameraSensor =
                                 static_cast<ccCameraSensor*>(ent);
                         if (!cameraSensor &&
-                            cameraSensor->getNearPlane().isEmpty()) {
+                            cameraSensor->getNearPlane().IsEmpty()) {
                             // skip meshes that are displayed in wireframe mode
                             continue;
                         }

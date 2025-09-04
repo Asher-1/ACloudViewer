@@ -188,8 +188,8 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
         if (normals) {
             normals->shrink_to_fit();
         }
-        mesh->removeDuplicatedTriangles();
-        mesh->removeUnreferencedVertices();
+        mesh->RemoveDuplicatedTriangles();
+        mesh->RemoveUnreferencedVertices();
     }
 
     cloudViewer::utility::LogDebug(

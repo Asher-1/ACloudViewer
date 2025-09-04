@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
                     &im_rgbd, [](legacyRGBDImage *) {});
             // Improve depth visualization by scaling
             /* im_rgbd.depth_.LinearTransform(0.25); */
-            if (ptr_im_rgbd->isEmpty()) continue;
+            if (ptr_im_rgbd->IsEmpty()) continue;
 
             if (!is_geometry_added) {
                 vis.AddGeometry(ptr_im_rgbd);

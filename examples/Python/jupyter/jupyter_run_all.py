@@ -14,13 +14,15 @@ if __name__ == "__main__":
     # Jupyter notebooks
     os.environ["CI"] = "true"
 
-    file_dir = Path(__file__).absolute().parent / "jupyter"
+    file_dir = Path(__file__).absolute().parent
 
     # Note: must be consistent with make_docs.py
     example_dirs = [
-        "geometry",
         "core",
+        "geometry",
         "pipelines",
+        "t_geometry",
+        "t_pipelines",
         "visualization",
     ]
     nb_paths = []

@@ -259,7 +259,7 @@ void ccCoordinateSystem::drawMeOnly(CC_DRAW_CONTEXT& context) {
             {
                 Eigen::Matrix4d transformation =
                         ccGLMatrixd::ToEigenMatrix4(m_transformation);
-                m_axis.transform(transformation);
+                m_axis.Transform(transformation);
             }
 
             tempContext.viewID = m_axis.getViewId();

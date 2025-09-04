@@ -598,8 +598,8 @@ ccPointCloud* getMortarMaps(ccPointCloud* f_cloudStones, ccPointCloud* f_cloudMo
 	CCVector3 maxBox0;
 	maxBox0 = CCVector3(0, 0, 0);
 	f_cloudMortar->getBoundingBox(minBox0, maxBox0);
-	f_cloudMortar->translate(-minBox0);
-	f_cloudStones->translate(-minBox0);
+	f_cloudMortar->Translate(-minBox0);
+	f_cloudStones->Translate(-minBox0);
 
 	CCVector3 minBox;
 	minBox = CCVector3(0, 0, 0);
@@ -824,9 +824,9 @@ ccPointCloud* getMortarMaps(ccPointCloud* f_cloudStones, ccPointCloud* f_cloudMo
 
 	f_skelMortar->setCurrentDisplayedScalarField(sfIdxW);
 
-	f_cloudMortar->translate(minBox0);
-	f_cloudStones->translate(minBox0);
-	f_skelMortar->translate(minBox0);
+	f_cloudMortar->Translate(minBox0);
+	f_cloudStones->Translate(minBox0);
+	f_skelMortar->Translate(minBox0);
 	widthSF->computeMinAndMax();
 	f_skelMortar->setPointSize(10);
 	f_skelMortar->showSF(true);
@@ -1528,8 +1528,8 @@ void ccManualSeg::doAction()
 		// moving the clouds to center in case they were not 
 		if (idxStone == -1)
 		{
-			new_CloudStone->translate(-minBox0);
-			new_CloudMortar->translate(-minBox0);
+			new_CloudStone->Translate(-minBox0);
+			new_CloudMortar->Translate(-minBox0);
 		}
 
 		// Creating new vectors 
@@ -1612,9 +1612,9 @@ void ccManualSeg::doAction()
 		auto_seg_log << stamp << " Mortar maps OK" << endl;
 
 		// Move all the clouds back
-		new_CloudStone->translate(minBox0);
-		new_CloudMortar->translate(minBox0);
-		mortarMaps->translate(minBox0);
+		new_CloudStone->Translate(minBox0);
+		new_CloudMortar->Translate(minBox0);
+		mortarMaps->Translate(minBox0);
 
 
 		//generating contour polylines

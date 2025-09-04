@@ -1494,7 +1494,7 @@ void ccAutoSeg::doAction()
 	cloud0->getBoundingBox(minBox, maxBox);
 
 	//Move point cloud to origin
-	cloud0->translate(-minBox);
+	cloud0->Translate(-minBox);
 
 	double axX = maxBox.x - minBox.x;
 	double axY = maxBox.z - minBox.z; 
@@ -1617,7 +1617,7 @@ void ccAutoSeg::doAction()
 			cloud->getBoundingBox(minBox_0, maxBox_0);
 
 			//Move point cloud to origin
-			cloud->translate(-minBox_0);
+			cloud->Translate(-minBox_0);
 
 			//Create and populate maps
 
@@ -1714,7 +1714,7 @@ void ccAutoSeg::doAction()
 			image.convertTo(imagePlot, CV_8U);
 
 			cloud->scale(0.01, 0.001, 0.01); //Scale back
-			cloud->translate(minBox_0); //Translate back
+			cloud->Translate(minBox_0); //Translate back
 
 			stamp = dateStamp();
 			auto_seg_log << stamp << " Depth and colour maps created" << endl;
@@ -2217,25 +2217,25 @@ void ccAutoSeg::doAction()
 	}
 
 	// Move all the clouds back
-	cloud0->translate(minBox);
+	cloud0->Translate(minBox);
 	cloud0->applyRigidTransformation(R3.inverse());
 	cloud0->applyRigidTransformation(R2.inverse());
 
 	if (allMortar.size() > 0) {
-		f_cloudMortar->translate(minBox);
+		f_cloudMortar->Translate(minBox);
 		f_cloudMortar->applyRigidTransformation(R3.inverse());
 		f_cloudMortar->applyRigidTransformation(R2.inverse());
 	}
 
 	if (allStones.size() > 0) {
-		f_cloudStones->translate(minBox);
+		f_cloudStones->Translate(minBox);
 		f_cloudStones->applyRigidTransformation(R3.inverse());
 		f_cloudStones->applyRigidTransformation(R2.inverse());
 	}
 
 
 	if (checkMortar == true) {
-		mortarMaps->translate(minBox);
+		mortarMaps->Translate(minBox);
 		mortarMaps->applyRigidTransformation(R3.inverse());
 		mortarMaps->applyRigidTransformation(R2.inverse());
 	}

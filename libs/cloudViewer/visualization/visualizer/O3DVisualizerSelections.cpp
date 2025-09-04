@@ -131,7 +131,7 @@ void O3DVisualizerSelections::UpdateSelectionGeometry() {
         spheres.createInternalCloud();
         for (auto &p : points) {
             auto ps = ccMesh::CreateSphere(point_size_, 10);
-            ps->translate(p);
+            ps->Translate(p);
             spheres += *ps;
         }
         scene->AddGeometry(selection.name, &spheres, MakeMaterial());

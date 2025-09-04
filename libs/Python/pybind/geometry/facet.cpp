@@ -126,7 +126,7 @@ void pybind_facet(py::module &m) {
 	.def("clone", [](const ccFacet& facet) {
 			return std::shared_ptr<ccFacet>(facet.clone());
 		}, "Clones this facet.")
-	.def("paint_uniform_color", &ccFacet::paintUniformColor,
+	.def("paint_uniform_color", &ccFacet::PaintUniformColor,
 		" Assigns facet the same color.", "color"_a)
 	.def_static("Create", [](std::shared_ptr<ccPointCloud> cloud, 
 				PointCoordinateType max_edge_length, bool transfer_ownership,

@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
         if (utility::filesystem::FileExists(sample_icp_data.GetPaths()[i])) {
             auto pcd =
                     io::CreatePointCloudFromFile(sample_icp_data.GetPaths()[i]);
-            pcd->transform(trajectory.parameters_[i].extrinsic_);
+            pcd->Transform(trajectory.parameters_[i].extrinsic_);
             if ((int)i < NUM_OF_COLOR_PALETTE) {
                 pcd->setRGBColor(ecvColor::Rgb::FromEigen(color_palette[i]));
             } else {

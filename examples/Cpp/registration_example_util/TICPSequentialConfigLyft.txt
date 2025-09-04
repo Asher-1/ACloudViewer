@@ -5,7 +5,7 @@
 # 2. Change the `dataset_path` accordingly.
 # 4. Go to build/bin/examples
 # 5. Run the following command:
-# ./TICPSequential CPU:0 ../../../examples/cpp/registration_example_util/TICPSequentialConfigLyft.txt
+# ./TICPSequential CPU:0 ../../../examples/Cpp/registration_example_util/TICPSequentialConfigLyft.txt
 # Change CPU:0 to CUDA:0 for running it on primary GPU.
 
 # option to turn ON / OFF visualization:
@@ -17,7 +17,7 @@ visualization_max = 10.0
 verbosity = Info
 
 # Path of the downloaded dataset containing frames in .pcd or .ply format.
-dataset_path = ../../../examples/test_data/open3d_downloads/datasets/lyft_samples/output/
+dataset_path = ../../../examples/test_data/cloudViewer_downloads/datasets/lyft_samples/output/
 
 # Range of frames is start_index to end_index.
 start_index = 0

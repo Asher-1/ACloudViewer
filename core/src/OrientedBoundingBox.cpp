@@ -41,7 +41,7 @@ double OrientedBoundingBox::volume() const {
 	return extent_(0) * extent_(1) * extent_(2);
 }
 
-std::vector<Eigen::Vector3d> OrientedBoundingBox::getBoxPoints() const {
+std::vector<Eigen::Vector3d> OrientedBoundingBox::GetBoxPoints() const {
 	Eigen::Vector3d x_axis = R_ * Eigen::Vector3d(extent_(0) / 2, 0, 0);
 	Eigen::Vector3d y_axis = R_ * Eigen::Vector3d(0, extent_(1) / 2, 0);
 	Eigen::Vector3d z_axis = R_ * Eigen::Vector3d(0, 0, extent_(2) / 2);
@@ -57,19 +57,19 @@ std::vector<Eigen::Vector3d> OrientedBoundingBox::getBoxPoints() const {
 	return points;
 }
 
-std::vector<size_t> OrientedBoundingBox::getPointIndicesWithinBoundingBox(
+std::vector<size_t> OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
 	const std::vector<Eigen::Vector3d>& points) const {
-	return getPointIndicesWithinBoundingBox(CCVector3::fromArrayContainer(points));
+	return GetPointIndicesWithinBoundingBox(CCVector3::fromArrayContainer(points));
 }
 
-std::vector<size_t> OrientedBoundingBox::getPointIndicesWithinBoundingBox(
+std::vector<size_t> OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
 	const std::vector<CCVector3>& points) const {
 
 	std::vector<size_t> indices;
 	Eigen::Vector3d dx = R_ * Eigen::Vector3d(1, 0, 0);
 	Eigen::Vector3d dy = R_ * Eigen::Vector3d(0, 1, 0);
 	Eigen::Vector3d dz = R_ * Eigen::Vector3d(0, 0, 1);
-	Eigen::Vector3d halfExtent = getHalfExtent();
+	Eigen::Vector3d halfExtent = GetHalfExtent();
 	for (size_t idx = 0; idx < points.size(); idx++) {
 		Eigen::Vector3d d = CCVector3d::fromArray(points[idx]) - center_;
 		if (std::abs(d.dot(dx)) <= halfExtent(0) &&

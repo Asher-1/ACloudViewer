@@ -163,7 +163,7 @@ Eigen::Vector4d GetPlaneFromPoints(const std::vector<Eigen::Vector3d> &points,
 
 using namespace cloudViewer::geometry;
 std::tuple<Eigen::Vector4d, std::vector<size_t>>
-ccPointCloud::segmentPlane(
+ccPointCloud::SegmentPlane(
 	const double distance_threshold /* = 0.01 */,
 	const int ransac_n /* = 3 */,
 	const int num_iterations /* = 100 */) const {
@@ -254,17 +254,17 @@ ccPointCloud::Crop(const ccBBox &bbox) const
 			"[CropPointCloud::Crop] ccBBox either has zeros "
 			"size, or has wrong bounds.");
 	}
-	return SelectByIndex(bbox.getPointIndicesWithinBoundingBox(m_points));
+	return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(m_points));
 }
 
 std::shared_ptr<ccPointCloud>
 ccPointCloud::Crop(const ecvOrientedBBox &bbox) const
 {
-	if (bbox.isEmpty()) {
+	if (bbox.IsEmpty()) {
 		CVLog::Warning(
 			"[CropPointCloud::Crop] ecvOrientedBBox either has zeros "
 			"size, or has wrong bounds.");
 		return nullptr;
 	}
-	return SelectByIndex(bbox.getPointIndicesWithinBoundingBox(m_points));
+	return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(m_points));
 }

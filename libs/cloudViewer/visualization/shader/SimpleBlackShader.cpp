@@ -115,7 +115,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
     }
     points.resize(pointcloud.size() * 2);
     double line_length =
-            option.point_size_ * 0.01 * view.GetBoundingBox().getMaxExtent();
+            option.point_size_ * 0.01 * view.GetBoundingBox().GetMaxExtent();
     for (size_t i = 0; i < pointcloud.size(); i++) {
         const auto &point = pointcloud.getEigenPoint(i);
         const auto &normal = pointcloud.getEigenNormal(i);

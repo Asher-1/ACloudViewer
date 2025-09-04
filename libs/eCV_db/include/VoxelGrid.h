@@ -83,19 +83,19 @@ public:
     virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
     VoxelGrid &Clear();
-    inline virtual bool isEmpty() const override { return !HasVoxels(); }
+    inline virtual bool IsEmpty() const override { return !HasVoxels(); }
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
-    virtual Eigen::Vector3d getGeometryCenter() const override;
-    virtual ccBBox getAxisAlignedBoundingBox() const override;
-    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual VoxelGrid &transform(
+    virtual Eigen::Vector3d GetCenter() const override;
+    virtual ccBBox GetAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    virtual VoxelGrid &Transform(
             const Eigen::Matrix4d &transformation) override;
-    virtual VoxelGrid &translate(const Eigen::Vector3d &translation,
+    virtual VoxelGrid &Translate(const Eigen::Vector3d &translation,
                                  bool relative = true) override;
-    virtual VoxelGrid &scale(const double s,
+    virtual VoxelGrid &Scale(const double s,
                              const Eigen::Vector3d &center) override;
-    virtual VoxelGrid &rotate(const Eigen::Matrix3d &R,
+    virtual VoxelGrid &Rotate(const Eigen::Matrix3d &R,
                               const Eigen::Vector3d &center) override;
 
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);

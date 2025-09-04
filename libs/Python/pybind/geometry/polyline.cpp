@@ -90,7 +90,7 @@ void pybind_polyline(py::module &m) {
 		"Computes the polyline length.")
 	.def("segment_count", &ccPolyline::segmentCount,
 		" Returns the number of segments.")
-	.def("paint_uniform_color", &ccPolyline::paintUniformColor,
+	.def("paint_uniform_color", &ccPolyline::PaintUniformColor,
 		" Assigns each line in the polyline the same color.", "color"_a)
 	.def("set_color", [](ccPolyline& polyline, const Eigen::Vector3d& color) {
 		polyline.setColor(ecvColor::Rgb::FromEigen(color));

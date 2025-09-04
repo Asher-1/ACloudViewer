@@ -70,11 +70,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Visualize the results
-    cloud->paintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
-    iss_keypoints->paintUniformColor(Eigen::Vector3d(1.0, 0.75, 0.0));
+    cloud->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
+    iss_keypoints->PaintUniformColor(Eigen::Vector3d(1.0, 0.75, 0.0));
     if (option == "mesh") {
-        mesh->paintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
-        mesh->computeVertexNormals();
+        mesh->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
+        mesh->ComputeVertexNormals();
         mesh->ComputeTriangleNormals();
         visualization::DrawGeometries({mesh, iss_keypoints}, "ISS", 1600, 900);
     } else {

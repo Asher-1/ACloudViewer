@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
     } else if (option == "editmesh") {
         auto mesh_ptr = std::make_shared<ccMesh>();
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometriesWithVertexSelection(
                 {mesh_ptr}, "Edit Mesh", 1600, 900);
     } else if (option == "spin") {
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometriesWithAnimationCallback(
                 {mesh_ptr},
                 [&](visualization::Visualizer *vis) {
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometriesWithKeyCallbacks(
                 {mesh_ptr},
                 {{GLFW_KEY_SPACE,
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        cloud_ptr->normalizeNormals();
+        cloud_ptr->NormalizeNormals();
         visualization::DrawGeometries({cloud_ptr}, "PointCloud", 1600, 900);
     } else if (option == "rainbow") {
         auto cloud_ptr = std::make_shared<ccPointCloud>();
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        cloud_ptr->normalizeNormals();
+        cloud_ptr->NormalizeNormals();
         cloud_ptr->resizeTheRGBTable();
         double color_index = 0.0;
         double color_index_step = 0.05;
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         if (argc == 3) {
             visualization::DrawGeometriesWithCustomAnimation(
                     {mesh_ptr}, "Animation", 1920, 1080);

@@ -100,7 +100,7 @@ bool VisualizerWithEditing::AddGeometry(
     }
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
-            view_control_ptr_->GetBoundingBox().getPrintInfo().c_str());
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
 
@@ -268,7 +268,7 @@ void VisualizerWithEditing::KeyPressCallback(
                 selection_mode_ == SelectionMode::Polygon) {
                 selection_mode_ = SelectionMode::None;
                 selection_polygon_ptr_->polygon_.pop_back();
-                if (selection_polygon_ptr_->isEmpty()) {
+                if (selection_polygon_ptr_->IsEmpty()) {
                     selection_polygon_ptr_->Clear();
                 } else {
                     selection_polygon_ptr_->FillPolygon(

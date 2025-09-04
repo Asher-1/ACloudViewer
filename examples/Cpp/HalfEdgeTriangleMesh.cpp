@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     auto mesh = io::CreateMeshFromFile(argv[1]);
     ccBBox bbox =
             ccBBox(CCVector3(-1.f, -1.f, -1.f), CCVector3(1.f, 0.6f, 1.f));
-    auto croppedMesh = mesh->crop(bbox);
+    auto croppedMesh = mesh->Crop(bbox);
     auto halfEdgeMesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(*croppedMesh);
     DrawGeometriesWithBackFace({halfEdgeMesh});
