@@ -192,7 +192,7 @@ using namespace cloudViewer;
 std::shared_ptr<ccMesh> CreateMeshFromFile(const std::string& filename,
                                            bool print_progress) {
     auto mesh = cloudViewer::make_shared<ccMesh>();
-    if (!mesh->createInternalCloud()) {
+    if (!mesh->CreateInternalCloud()) {
         utility::LogError("creating internal cloud failed!");
         return nullptr;
     }
@@ -232,6 +232,13 @@ bool ReadTriangleMesh(const std::string& filename,
             pbar.setCurrentCount(size_t(percent));
             return true;
         };
+    }
+
+    if (!mesh.getAssociatedCloud()) {
+        if (!mesh.CreateInternalCloud()) {
+            utility::LogError("creating internal cloud failed!");
+            return false;
+        }
     }
 
     bool success = map_itr->second(filename, mesh, params);
@@ -479,7 +486,7 @@ bool WriteTriangleMeshToPLY(const std::string& filename,
         return false;
     }
 
-    write_vertex_normals = write_vertex_normals && mesh.hasNormals();
+    write_vertex_normals = write_vertex_normals && mesh.HasVertexNormals();
     write_vertex_colors = write_vertex_colors && mesh.hasColors();
 
     ply_add_comment(ply_file, "Created by cloudViewer");
@@ -530,12 +537,10 @@ bool WriteTriangleMeshToPLY(const std::string& filename,
                         "Write Ply clamped color value to valid range");
                 printed_color_warning = true;
             }
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
+            auto rgb = utility::ColorToUint8(color);
+            ply_write(ply_file, rgb(0));
+            ply_write(ply_file, rgb(1));
+            ply_write(ply_file, rgb(2));
         }
         ++progress_bar;
     }

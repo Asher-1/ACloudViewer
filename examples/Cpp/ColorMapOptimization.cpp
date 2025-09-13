@@ -49,7 +49,6 @@ int main(int argc, char* argv[]) {
 
     // Read dataset.
     ccMesh mesh;
-    mesh.createInternalCloud();
     std::vector<geometry::RGBDImage> rgbd_images;
     camera::PinholeCameraTrajectory camera_trajectory;
     std::tie(mesh, rgbd_images, camera_trajectory) = PrepareDataset();
@@ -67,6 +66,7 @@ int main(int argc, char* argv[]) {
             mesh, rgbd_images, camera_trajectory, rigid_opt_option);
     io::WriteTriangleMesh("color_map_rigid_opt.ply", mesh);
 
+    utility::LogDebug("Run non-rigid optimization for 300 iterations.");
     // Run non-rigid optimization for 300 iterations.
     pipelines::color_map::NonRigidOptimizerOption non_rigid_option;
     non_rigid_option.maximum_iteration_ = 300;

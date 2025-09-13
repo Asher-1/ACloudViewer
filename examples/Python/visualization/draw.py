@@ -35,6 +35,7 @@ def make_point_cloud(npts, center, radius, colorize):
 def single_object():
     # No colors, no normals, should appear unlit black
     cube = cv3d.geometry.ccMesh.create_box(1, 2, 4)
+    cube.compute_vertex_normals()
     vis.draw(cube)
 
 
@@ -45,21 +46,23 @@ def multi_objects():
     r = 0.4
     sphere_unlit = cv3d.geometry.ccMesh.create_sphere(r)
     sphere_unlit.translate((0, 1, 0))
+    sphere_unlit.compute_vertex_normals()
     sphere_colored_unlit = cv3d.geometry.ccMesh.create_sphere(r)
     sphere_colored_unlit.paint_uniform_color((1.0, 0.0, 0.0))
     sphere_colored_unlit.translate((2, 1, 0))
+    sphere_colored_unlit.compute_vertex_normals()
     sphere_lit = cv3d.geometry.ccMesh.create_sphere(r)
-    sphere_lit.compute_vertex_normals()
     sphere_lit.translate((4, 1, 0))
+    sphere_lit.compute_vertex_normals()
     sphere_colored_lit = cv3d.geometry.ccMesh.create_sphere(r)
-    sphere_colored_lit.compute_vertex_normals()
     sphere_colored_lit.paint_uniform_color((0.0, 1.0, 0.0))
     sphere_colored_lit.translate((6, 1, 0))
+    sphere_colored_lit.compute_vertex_normals()
     big_bbox = cv3d.geometry.ccBBox((-pc_rad, -3, -pc_rad),
                                                    (6.0 + r, 1.0 + r, pc_rad))
-    big_bbox.color = (0.0, 0.0, 0.0)
+    big_bbox.set_color((0.0, 0.0, 0.0))
     sphere_bbox = sphere_unlit.get_axis_aligned_bounding_box()
-    sphere_bbox.color = (1.0, 0.5, 0.0)
+    sphere_bbox.set_color((1.0, 0.5, 0.0))
     lines = cv3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
         sphere_lit.get_axis_aligned_bounding_box())
     lines.paint_uniform_color((0.0, 1.0, 0.0))
@@ -259,8 +262,9 @@ def groups():
                 1.0 - abs(half - z) / half)
             h = random.uniform(min_height, max(max_h, min_height + 1.0))
             box = cv3d.geometry.ccMesh.create_box(0.9, h, 0.9)
-            box.compute_triangle_normals()
             box.translate((x + 0.05, 0.0, z + 0.05))
+            box.compute_vertex_normals()
+            # box.compute_triangle_normals()
             if h > 0.333 * max_height:
                 mat = skyscraper_mat
             elif h > 0.1 * max_height:

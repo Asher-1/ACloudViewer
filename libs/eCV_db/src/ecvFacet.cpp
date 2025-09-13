@@ -157,7 +157,7 @@ bool ccFacet::clone(ccFacet* facet) const {
     if (m_arrow) {
         if (!facet->m_arrow) {
             facet->m_arrow = std::shared_ptr<ccMesh>();
-            facet->m_arrow->createInternalCloud();
+            facet->m_arrow->CreateInternalCloud();
         }
         *facet->m_arrow = *m_arrow;
     }

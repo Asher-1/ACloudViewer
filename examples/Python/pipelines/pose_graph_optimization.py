@@ -6,7 +6,6 @@
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
-import numpy as np
 import os
 
 if __name__ == "__main__":

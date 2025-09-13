@@ -17,7 +17,7 @@ namespace visualization {
 namespace gui {
 
 void pybind_gui_events(py::module& m) {
-    py::native_enum<MouseButton> buttons(m, "MouseButton", "enum.Enum",
+    py::native_enum<MouseButton> buttons(m, "MouseButton", "enum.IntFlag",
                                          "Mouse button identifiers.");
     buttons.value("NONE", MouseButton::NONE)
             .value("LEFT", MouseButton::LEFT)
@@ -27,7 +27,7 @@ void pybind_gui_events(py::module& m) {
             .value("BUTTON5", MouseButton::BUTTON5)
             .finalize();
 
-    py::native_enum<KeyModifier> key_mod(m, "KeyModifier", "enum.Enum",
+    py::native_enum<KeyModifier> key_mod(m, "KeyModifier", "enum.IntFlag",
                                          "Key modifier identifiers.");
     key_mod.value("NONE", KeyModifier::NONE)
             .value("SHIFT", KeyModifier::SHIFT)
@@ -155,7 +155,7 @@ void pybind_gui_events(py::module& m) {
                     },
                     "Is mouse wheel event from a trackpad");
 
-    py::native_enum<KeyName> key_name(m, "KeyName", "enum.Enum",
+    py::native_enum<KeyName> key_name(m, "KeyName", "enum.IntEnum",
                                       "Names of keys. Used by KeyEvent.key.");
     key_name.value("NONE", KeyName::KEY_NONE)
             .value("BACKSPACE", KeyName::KEY_BACKSPACE)

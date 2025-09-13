@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2023 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 from . import gui
 from . import O3DVisualizer
 
@@ -118,8 +125,8 @@ def draw(geometry=None,
             bunny_mesh.paint_uniform_color((1, 0.75, 0))
             bunny_mesh.compute_vertex_normals()
             cloud = cv3d.geometry.ccPointCloud()
-            cloud.points = bunny_mesh.vertices
-            cloud.normals = bunny_mesh.vertex_normals
+            cloud.set_points(bunny_mesh.vertices())
+            cloud.set_normals(bunny_mesh.vertex_normals())
 
             def make_mesh(o3dvis):
                 mesh, _ = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(

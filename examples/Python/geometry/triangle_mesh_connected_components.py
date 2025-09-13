@@ -40,28 +40,20 @@ if __name__ == "__main__":
         )
         mesh += cube
     mesh.compute_vertex_normals()
+    print("Displaying input mesh ...")
+    cv3d.visualization.draw([mesh])
 
     print("Cluster connected triangles")
-    tic = time.time()
-    triangle_clusters, cluster_n_triangles, cluster_area = (
-        mesh.cluster_connected_triangles())
-    print("  took {}[s]".format(time.time() - tic))
+    with cv3d.utility.VerbosityContextManager(
+            cv3d.utility.VerbosityLevel.Debug) as cm:
+        triangle_clusters, cluster_n_triangles, cluster_area = (
+            mesh.cluster_connected_triangles())
     triangle_clusters = np.asarray(triangle_clusters)
     cluster_n_triangles = np.asarray(cluster_n_triangles)
     cluster_area = np.asarray(cluster_area)
 
-    print("Show input mesh")
-    cv3d.visualization.draw_geometries([mesh])
-
-    print("Show mesh with small clusters removed")
+    print("Displaying mesh with small clusters removed ...")
     mesh_0 = copy.deepcopy(mesh)
     triangles_to_remove = cluster_n_triangles[triangle_clusters] < 100
     mesh_0.remove_triangles_by_mask(triangles_to_remove)
-    cv3d.visualization.draw_geometries([mesh_0])
-
-    print("Show largest cluster")
-    mesh_1 = copy.deepcopy(mesh)
-    largest_cluster_idx = cluster_n_triangles.argmax()
-    triangles_to_remove = triangle_clusters != largest_cluster_idx
-    mesh_1.remove_triangles_by_mask(triangles_to_remove)
-    cv3d.visualization.draw_geometries([mesh_1])
+    cv3d.visualization.draw([mesh_0])

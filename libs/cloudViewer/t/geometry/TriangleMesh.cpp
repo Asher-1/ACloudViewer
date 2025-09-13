@@ -477,18 +477,19 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
 
 ccMesh TriangleMesh::ToLegacy() const {
     ccMesh mesh_legacy;
+    mesh_legacy.CreateInternalCloud();
     if (HasVertexPositions()) {
         const auto verts = core::eigen_converter::TensorToEigenVector3dVector(
                 GetVertexPositions());
-        mesh_legacy.setEigenVertices(verts);
+        mesh_legacy.addEigenVertices(verts);
     }
     if (HasVertexColors()) {
-        mesh_legacy.setVertexColors(
+        mesh_legacy.addVertexColors(
                 core::eigen_converter::TensorToEigenVector3dVector(
                         GetVertexColors()));
     }
     if (HasVertexNormals()) {
-        mesh_legacy.setVertexNormals(
+        mesh_legacy.addVertexNormals(
                 core::eigen_converter::TensorToEigenVector3dVector(
                         GetVertexNormals()));
     }

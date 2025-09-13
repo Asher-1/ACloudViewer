@@ -184,7 +184,6 @@ public:
     std::shared_ptr<DeviceHashBackend> GetDeviceHashBackend() const {
         return device_hashmap_;
     }
-    // Back-compat alias expected by callers migrated from older API
 
 protected:
     void Init(int64_t init_capacity,

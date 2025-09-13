@@ -6,6 +6,7 @@
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
+import numpy as np
 
 if __name__ == "__main__":
     bunny = cv3d.data.BunnyMesh()
@@ -24,12 +25,9 @@ if __name__ == "__main__":
     print("Displaying reconstructed mesh ...")
     cv3d.visualization.draw_geometries([mesh], mesh_show_back_face=True)
     
-    sample_pcd_data = cv3d.data.PCDPointCloud()
-    pcd = cv3d.io.read_point_cloud(sample_pcd_data.path)
-    cv3d.visualization.draw_geometries([pcd])
-    print("compute tetra mesh only once")
     tetra_mesh, pt_map = cv3d.geometry.TetraMesh.create_from_point_cloud(pcd)
     print("done with tetra mesh")
+    cv3d.visualization.draw_geometries([tetra_mesh])
     for alpha in np.logspace(np.log10(0.5), np.log10(0.01), num=4):
         print("alpha={}".format(alpha))
         mesh = cv3d.geometry.ccMesh.create_from_point_cloud_alpha_shape(

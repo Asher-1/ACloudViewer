@@ -22,7 +22,6 @@ data::KnotMesh knot_data;
 void IOReadLegacyTriangleMesh(benchmark::State& state,
                               const std::string& input_file_path) {
     ccMesh mesh;
-    mesh.createInternalCloud();
     cloudViewer::io::ReadTriangleMesh(input_file_path, mesh);
 
     for (auto _ : state) {

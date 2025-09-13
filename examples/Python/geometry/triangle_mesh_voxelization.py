@@ -23,7 +23,7 @@ def preprocess(model):
     center = min_bound + (max_bound - min_bound) / 2.0
     scale = np.linalg.norm(max_bound - min_bound) / 2.0
     vertices = np.asarray(model.get_vertices())
-    vertices -= np.matlib.repmat(center, len(model.get_vertices()), 1)
+    vertices -= center
     model.set_vertices(cv3d.utility.Vector3dVector(vertices / scale))
 
     ## Paint uniform color for pleasing visualization
@@ -72,21 +72,10 @@ if __name__ == "__main__":
         cv3d.visualization.draw_geometries([voxel])
         print("")
 
-        print("Save and load voxel grid")
-        print(voxel)
-        start = time.time()
-        cv3d.io.write_voxel_grid("save.ply", voxel)
-        voxel_load = cv3d.io.read_voxel_grid("save.ply")
-        print("took %.2f milliseconds" % ((time.time() - start) * 1000.0))
-        print(voxel_load)
-        print(voxel_load.voxel_size)
-        print(voxel_load.origin)
-        print("")
-
         print("Element-wise check if points belong to voxel grid")
         queries = np.asarray(pcd.get_points())
         start = time.time()
-        output = voxel_load.check_if_included(
+        output = voxel.check_if_included(
             cv3d.utility.Vector3dVector(queries))
         print("took %.2f milliseconds" % ((time.time() - start) * 1000.0))
         print(output[:10])
@@ -98,7 +87,7 @@ if __name__ == "__main__":
         queries_noise = queries + np.random.normal(0, 0.1,
                                                    (len(pcd.get_points()), 3))
         start = time.time()
-        output_noise = voxel_load.check_if_included(
+        output_noise = voxel.check_if_included(
             cv3d.utility.Vector3dVector(queries_noise))
         print(output_noise[:10])
         print("took %.2f milliseconds" % ((time.time() - start) * 1000.0))
@@ -106,7 +95,7 @@ if __name__ == "__main__":
 
         print("Transform voxelgrid to octree")
         start = time.time()
-        octree = voxel_load.to_octree(max_depth=8)
+        octree = voxel.to_octree(max_depth=8)
         print(octree)
         print("took %.2f milliseconds" % ((time.time() - start) * 1000.0))
         cv3d.visualization.draw_geometries([octree])

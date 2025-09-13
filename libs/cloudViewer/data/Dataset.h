@@ -26,7 +26,10 @@ std::string LocateDataRoot();
 /// Returns the URL prefix for the open3d_downloads's releases.
 /// See https://github.com/isl-org/open3d_downloads/releases/ for more info.
 /// This is hard-coded to have "/" at the end.
-std::string& CloudViewerDownloadsPrefix();
+std::string CloudViewerDownloadsPrefix();
+
+void SetCustomDownloadsPrefix(const std::string& prefix);
+std::string GetCustomDownloadsPrefix();
 
 /// \class Dataset
 /// \brief Base CloudViewer dataset class.
@@ -162,36 +165,6 @@ protected:
     /// Check if all files are downloaded and MD5 checksums are valid.
     bool HasDownloaded(const DataDescriptor& data_descriptor) const;
     std::vector<DataDescriptor> data_descriptors_;
-};
-
-/// \class FacetsModel
-/// \brief Data class for `FacetsModel` contains the `facets.bin` from
-/// the `CloudViewer` project.
-class FacetsModel : public DownloadDataset {
-public:
-    FacetsModel(const std::string& data_root = "");
-
-    /// \brief Path to the `facets.bin` file.
-    std::string GetPath() const { return path_; }
-
-private:
-    /// Path to the `facets.bin` file.
-    std::string path_;
-};
-
-/// \class PolylinesModel
-/// \brief Data class for `PolylinesModel` contains the `polylines.bin` from
-/// the `CloudViewer` project.
-class PolylinesModel : public DownloadDataset {
-public:
-    PolylinesModel(const std::string& data_root = "");
-
-    /// \brief Path to the `polylines.bin` file.
-    std::string GetPath() const { return path_; }
-
-private:
-    /// Path to the `polylines.bin` file.
-    std::string path_;
 };
 
 /// \class ArmadilloMesh
@@ -1293,6 +1266,51 @@ public:
 private:
     /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
+};
+
+/// \class FacetsModel
+/// \brief Data class for `FacetsModel` contains the `facets.bin` from
+/// the `CloudViewer` project.
+class FacetsModel : public DownloadDataset {
+public:
+    FacetsModel(const std::string& data_root = "");
+
+    /// \brief Path to the `facets.bin` file.
+    std::string GetPath() const { return path_; }
+
+private:
+    /// Path to the `facets.bin` file.
+    std::string path_;
+};
+
+/// \class PolylinesModel
+/// \brief Data class for `PolylinesModel` contains the `polylines.bin` from
+/// the `CloudViewer` project.
+class PolylinesModel : public DownloadDataset {
+public:
+    PolylinesModel(const std::string& data_root = "");
+
+    /// \brief Path to the `polylines.bin` file.
+    std::string GetPath() const { return path_; }
+
+private:
+    /// Path to the `polylines.bin` file.
+    std::string path_;
+};
+
+/// \class BalusterVase
+/// \brief Data class for `BalusterVase` contains the `F1980_baluster_vase.glb` from
+/// the `CloudViewer` project.
+class BalusterVase : public DownloadDataset {
+public:
+    BalusterVase(const std::string& data_root = "");
+
+    /// \brief Path to the `F1980_baluster_vase.glb` file.
+    std::string GetPath() const { return path_; }
+
+private:
+    /// Path to the `F1980_baluster_vase.glb` file.
+    std::string path_;
 };
 
 }  // namespace data

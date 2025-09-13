@@ -77,7 +77,7 @@ public:
     void setAssociatedCloud(ccGenericPointCloud* cloud);
 
     // Creates associated vertices cloud internally.
-    bool createInternalCloud();
+    bool CreateInternalCloud();
 
     //! Clones this entity
     /** All the main features of the entity are cloned, except from the octree
@@ -228,6 +228,7 @@ public:
     // inherited methods (ccDrawableObject)
     bool hasColors() const override;
     bool hasNormals() const override;
+    bool HasVertexNormals() const;
     bool hasScalarFields() const override;
     bool hasDisplayedScalarField() const override;
     bool normalsShown() const override;

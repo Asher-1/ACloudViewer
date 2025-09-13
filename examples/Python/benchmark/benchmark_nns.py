@@ -16,7 +16,7 @@ from collections import OrderedDict
 import numpy as np
 import cloudViewer as cv3d
 from scipy.spatial import cKDTree
-import nvidia_smi
+import nvidia_smi # pip install nvidia-ml-py3
 import matplotlib.pyplot as plt
 
 from benchmark_utils import measure_memory, print_system_info, print_table_memory
@@ -29,7 +29,7 @@ class NNS:
         assert index_type in ["int", "long"]
         self.device = device
         self.search_type = search_type
-        self.index_type = cv3d.core.Int32 if index_type == "int" else cv3d.core.Int64
+        self.index_type = cv3d.core.int32 if index_type == "int" else cv3d.core.int64
 
     def setup(self, points, queries, radius):
         points_dev = points.to(self.device)
@@ -96,7 +96,7 @@ def prepare_benchmark_data():
 
         print(f"loading the random dataset, random_1e{log10_n}.npy...")
         points = queries = cv3d.core.Tensor(np.load(npy_file),
-                                            dtype=cv3d.core.Float32)
+                                            dtype=cv3d.core.float32)
         queries = queries[::10]
         filename = os.path.basename(npy_file)
         datasets[filename] = {'points': points, 'queries': queries}
@@ -111,14 +111,14 @@ if __name__ == "__main__":
                         default="knn",
                         choices=["knn", "radius", "hybrid", "all"])
     parser.add_argument("--overwrite", action="store_true")
-    parser.add_argument("--gpu_idx", type=int, default=3)
+    parser.add_argument("--gpu_idx", type=int, default=0)
     args = parser.parse_args()
 
     # devices
     nvidia_smi.nvmlInit()
     handle = nvidia_smi.nvmlDeviceGetHandleByIndex(args.gpu_idx)
     o3d_cpu_dev = cv3d.core.Device()
-    o3d_cuda_dev = cv3d.core.Device(cv3d.core.Device.CUDA, 0)
+    o3d_cuda_dev = cv3d.core.Device(cv3d.core.Device.DeviceType.CUDA, 0)
 
     # collects runtimes for all examples
     results = OrderedDict()

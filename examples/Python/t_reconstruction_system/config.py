@@ -33,7 +33,7 @@ class ConfigParser(configargparse.ArgParser):
         self.add(
             '--engine', type=str,
             choices=['tensor', 'legacy'],
-            help='Open3D engine to reconstruct.')
+            help='CloudViewer engine to reconstruct.')
         self.add(
             '--multiprocessing', action='store_true',
             help='Use multiprocessing in operations. Only available for the legacy engine.')
@@ -156,7 +156,7 @@ class ConfigParser(configargparse.ArgParser):
             if (config.device.lower().startswith('cuda') and
                 (not cv3d.core.cuda.is_available())):
                 print(
-                    'Open3d not built with cuda support or no cuda device available. ',
+                    'CloudViewer not built with cuda support or no cuda device available. ',
                     'Fallback to CPU.')
                 config.device = 'CPU:0'
 

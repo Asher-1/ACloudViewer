@@ -765,7 +765,7 @@ void pybind_gui_classes(py::module &m_gui) {
                                                       "Base widget class");
 
     py::native_enum<EventCallbackResult> widget_event_callback_result(
-            widget, "EventCallbackResult", "enum.Enum",
+            widget, "EventCallbackResult", "enum.IntEnum",
             "Returned by event handlers.");
     widget_event_callback_result
             .value("IGNORED", EventCallbackResult::IGNORED,
@@ -781,7 +781,8 @@ void pybind_gui_classes(py::module &m_gui) {
                    "handling stops, widget will not handle the "
                    "event. This is useful when you are replacing "
                    "functionality")
-            .export_values();
+            .export_values()
+            .finalize();
 
     py::class_<Widget::Constraints> constraints(
             widget, "Constraints",
@@ -1214,6 +1215,11 @@ void pybind_gui_classes(py::module &m_gui) {
                  })
             .def("set_items", &ListView::SetItems,
                  "Sets the list to display the list of items provided")
+            .def("set_max_visible_items", &ListView::SetMaxVisibleItems,
+                 "Limit the max visible items shown to user. "
+                 "Set to negative number will make list extends vertically "
+                 "as much as possible, otherwise the list will at least show "
+                 "3 items and at most show num items.")
             .def_property("selected_index", &ListView::GetSelectedIndex,
                           &ListView::SetSelectedIndex,
                           "The index of the currently selected item")

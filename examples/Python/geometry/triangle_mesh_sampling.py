@@ -31,7 +31,7 @@ def mesh_generator():
 
 if __name__ == "__main__":
     plane = cv3d.geometry.ccMesh.create_plane()
-    cv3d.visualization.draw_geometries([plane])
+    cv3d.visualization.draw_geometries([plane], mesh_show_back_face=True)
 
     print('Uniform sampling can yield clusters of points on the surface')
     pcd = plane.sample_points_uniformly(number_of_points=500)

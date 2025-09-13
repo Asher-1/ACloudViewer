@@ -284,7 +284,7 @@ class CloudViewerPluginDataReader:
                                                 threading.Lock())
                 if not self._file_handles[filename][0].seekable():
                     raise RuntimeError(filename + " does not support seeking."
-                                       " This storage is not supported.")
+                                                  " This storage is not supported.")
             # lock to seek + read
             file_handle = self._file_handles[filename]
             file_handle[1].acquire()
@@ -632,7 +632,7 @@ class RenderUpdate:
                            if hasattr(geometry, 'point') else geometry.vertex)
         have_colors = ("colors" in geometry.line if hasattr(
             geometry, 'line') else ("colors" in geometry.triangle if hasattr(
-                geometry, 'triangle') else "colors" in geometry_vertex))
+            geometry, 'triangle') else "colors" in geometry_vertex))
 
         if inference_data_proto is not None:
             inference_result = inference_data_proto.inference_result
@@ -663,8 +663,8 @@ class RenderUpdate:
                     self._shader.startswith("unlitGradient") and
                     geometry_vertex[self._property].shape[1] > self._index):
                 geometry_vertex["__visualization_scalar"] = geometry_vertex[
-                    self._property][:, self._index].to(
-                        cv3d.core.float32).contiguous()
+                                                                self._property][:, self._index].to(
+                    cv3d.core.float32).contiguous()
                 geometry_update_flag |= rendering.Scene.UPDATE_UV0_FLAG
             # 3-vector as RGB
             elif (self._property in custom_props and
@@ -798,9 +798,9 @@ def to_dict_batch(cv3d_geometry_list):
     line_indices = []
     if isinstance(cv3d_geometry_list[0], cv3d.geometry.ccPointCloud):
         for geometry in cv3d_geometry_list:
-            vertex_positions.append(np.asarray(geometry.points))
-            vertex_colors.append(np.asarray(geometry.colors))
-            vertex_normals.append(np.asarray(geometry.normals))
+            vertex_positions.append(np.asarray(geometry.points()))
+            vertex_colors.append(np.asarray(geometry.colors()))
+            vertex_normals.append(np.asarray(geometry.normals()))
 
         geo_dict = {
             'vertex_positions': np.stack(vertex_positions, axis=0),
@@ -810,10 +810,10 @@ def to_dict_batch(cv3d_geometry_list):
 
     elif isinstance(cv3d_geometry_list[0], cv3d.geometry.ccMesh):
         for geometry in cv3d_geometry_list:
-            vertex_positions.append(np.asarray(geometry.vertices))
-            vertex_colors.append(np.asarray(geometry.vertex_colors))
-            vertex_normals.append(np.asarray(geometry.vertex_normals))
-            triangle_indices.append(np.asarray(geometry.triangles))
+            vertex_positions.append(np.asarray(geometry.vertices()))
+            vertex_colors.append(np.asarray(geometry.vertex_colors()))
+            vertex_normals.append(np.asarray(geometry.vertex_normals()))
+            triangle_indices.append(np.asarray(geometry.triangles()))
             if geometry.has_triangle_uvs():
                 triangle_uvs.append(
                     np.asarray(geometry.triangle_uvs).reshape((-1, 3, 2)))

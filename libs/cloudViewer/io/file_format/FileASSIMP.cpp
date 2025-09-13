@@ -34,10 +34,16 @@
 namespace cloudViewer {
 namespace io {
 
-const unsigned int kPostProcessFlags =
-        aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials |
-        aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_SortByPType |
-        aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices;
+// Ref:
+// https://github.com/assimp/assimp/blob/master/include/assimp/postprocess.h
+const unsigned int kPostProcessFlags_compulsory =
+        aiProcess_JoinIdenticalVertices | aiProcess_SortByPType |
+        aiProcess_PreTransformVertices;
+
+const unsigned int kPostProcessFlags_fast =
+        kPostProcessFlags_compulsory | aiProcess_GenNormals |
+        aiProcess_Triangulate | aiProcess_GenUVCoords |
+        aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes;
 
 struct TextureImages {
     std::shared_ptr<geometry::Image> albedo;
@@ -53,39 +59,77 @@ struct TextureImages {
 };
 
 void LoadTextures(const std::string& filename,
-                  aiMaterial* mat,
+                  const aiScene* scene,
+                  const aiMaterial* mat,
                   TextureImages& maps) {
     // Retrieve textures
     std::string base_path =
             utility::filesystem::GetFileParentDirectory(filename);
 
-    auto texture_loader = [&base_path, &mat](
+    auto texture_loader = [&base_path, &scene, &mat, &filename](
                                   aiTextureType type,
                                   std::shared_ptr<geometry::Image>& img) {
         if (mat->GetTextureCount(type) > 0) {
             aiString path;
             mat->GetTexture(type, 0, &path);
-            std::string strpath(path.C_Str());
-            // normalize path separators
-            auto p_win = strpath.find("\\");
-            while (p_win != std::string::npos) {
-                strpath[p_win] = '/';
-                p_win = strpath.find("\\", p_win + 1);
+
+            // If the texture is an embedded texture, use `GetEmbeddedTexture`.
+            if (auto texture = scene->GetEmbeddedTexture(path.C_Str())) {
+                if (texture->CheckFormat("png")) {
+                    auto image = io::CreateImageFromMemory(
+                            "png",
+                            reinterpret_cast<const unsigned char*>(
+                                    texture->pcData),
+                            texture->mWidth);
+                    if (image->HasData()) {
+                        img = image;
+                    }
+                } else if (texture->CheckFormat("jpg")) {
+                    auto image = io::CreateImageFromMemory(
+                            "jpg",
+                            reinterpret_cast<const unsigned char*>(
+                                    texture->pcData),
+                            texture->mWidth);
+                    if (image->HasData()) {
+                        img = image;
+                    }
+                } else {
+                    utility::LogWarning(
+                            "Unsupported texture format for texture {} for "
+                            "file {}: Only jpg and "
+                            "png textures are supported.",
+                            path.C_Str(), filename);
+                }
             }
-            // if absolute path convert to relative to base path
-            if (strpath.length() > 1 &&
-                (strpath[0] == '/' || strpath[1] == ':')) {
-                strpath = utility::filesystem::GetFileNameWithoutDirectory(
-                        strpath);
-            }
-            auto image = io::CreateImageFromFile(base_path + strpath);
-            if (image->HasData()) {
-                img = image;
+            // Else, build the path to it.
+            else {
+                std::string strpath(path.C_Str());
+                // Normalize path separators.
+                auto p_win = strpath.find("\\");
+                while (p_win != std::string::npos) {
+                    strpath[p_win] = '/';
+                    p_win = strpath.find("\\", p_win + 1);
+                }
+                // If absolute path convert to relative to base path.
+                if (strpath.length() > 1 &&
+                    (strpath[0] == '/' || strpath[1] == ':')) {
+                    strpath = utility::filesystem::GetFileNameWithoutDirectory(
+                            strpath);
+                }
+                auto image = io::CreateImageFromFile(base_path + strpath);
+                if (image->HasData()) {
+                    img = image;
+                }
             }
         }
     };
 
-    texture_loader(aiTextureType_DIFFUSE, maps.albedo);
+    // Prefer BASE_COLOR texture as assimp now uses it for PBR workflows
+    if (mat->GetTextureCount(aiTextureType_BASE_COLOR) > 0) {
+        texture_loader(aiTextureType_BASE_COLOR, maps.albedo);
+    } else {
+        texture_loader(aiTextureType_DIFFUSE, maps.albedo);
+    }
     texture_loader(aiTextureType_NORMALS, maps.normal);
     // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if
     // format has AO support. Prefer that texture if it is preset. Otherwise,
@@ -122,15 +166,16 @@ bool ReadTriangleMeshUsingASSIMP(
         const ReadTriangleMeshOptions& params /*={}*/) {
     Assimp::Importer importer;
 
-    unsigned int post_process_flags = 0;
+    unsigned int post_process_flags = kPostProcessFlags_compulsory;
 
     if (params.enable_post_processing) {
-        post_process_flags = kPostProcessFlags;
+        post_process_flags = kPostProcessFlags_fast;
     }
 
     const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
     if (!scene) {
-        utility::LogWarning("Unable to load file {} with ASSIMP", filename);
+        utility::LogWarning("Unable to load file {} with ASSIMP: {}", filename,
+                            importer.GetErrorString());
         return false;
     }
 
@@ -139,7 +184,7 @@ bool ReadTriangleMeshUsingASSIMP(
         const auto* assimp_mesh = scene->mMeshes[0];
 
         if (!mesh.getAssociatedCloud()) {
-            mesh.createInternalCloud();
+            mesh.CreateInternalCloud();
         }
 
         if (!mesh.reserveAssociatedCloud(assimp_mesh->mNumVertices,
@@ -148,7 +193,7 @@ bool ReadTriangleMeshUsingASSIMP(
             return false;
         }
     } else {
-        utility::LogWarning("Must call createInternalCloud first!");
+        utility::LogWarning("Must call CreateInternalCloud first!");
         return false;
     }
 
@@ -231,10 +276,8 @@ bool ReadTriangleMeshUsingASSIMP(
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
         mesh_material.baseColor =
                 MaterialParameter::CreateRGB(color.r, color.g, color.b);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
-                 mesh_material.baseMetallic);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
-                 mesh_material.baseRoughness);
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, mesh_material.baseMetallic);
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, mesh_material.baseRoughness);
         // NOTE: We prefer sheen to reflectivity so the following code works
         // since if sheen is not present it won't modify baseReflectance
         mat->Get(AI_MATKEY_REFLECTIVITY, mesh_material.baseReflectance);
@@ -247,7 +290,7 @@ bool ReadTriangleMeshUsingASSIMP(
 
         // Retrieve textures
         TextureImages maps;
-        LoadTextures(filename, mat, maps);
+        LoadTextures(filename, scene, mat, maps);
         mesh_material.albedo = maps.albedo;
         mesh_material.normalMap = maps.normal;
         mesh_material.ambientOcclusion = maps.ao;
@@ -299,9 +342,11 @@ bool ReadModelUsingAssimp(const std::string& filename,
     // is silent on this salient point).
     importer.SetProgressHandler(
             new AssimpProgress(params, readfile_total / progress_total));
-    const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
+    const auto* scene =
+            importer.ReadFile(filename.c_str(), kPostProcessFlags_fast);
     if (!scene) {
-        utility::LogWarning("Unable to load file {} with ASSIMP", filename);
+        utility::LogWarning("Unable to load file {} with ASSIMP: {}", filename,
+                            importer.GetErrorString());
         return false;
     }
 
@@ -312,7 +357,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
         const auto* assimp_mesh = scene->mMeshes[midx];
         // Only process triangle meshes
-        if (assimp_mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
+        if (!(assimp_mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE)) {
             utility::LogInfo(
                     "Skipping non-triangle primitive geometry of type: "
                     "{}",
@@ -422,17 +467,19 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
         cv3d_mat.base_color = Eigen::Vector4f(color.r, color.g, color.b, 1.f);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
-                 cv3d_mat.base_metallic);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
-                 cv3d_mat.base_roughness);
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, cv3d_mat.base_metallic);
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, cv3d_mat.base_roughness);
         mat->Get(AI_MATKEY_REFLECTIVITY, cv3d_mat.base_reflectance);
         mat->Get(AI_MATKEY_SHEEN, cv3d_mat.base_reflectance);
 
         mat->Get(AI_MATKEY_CLEARCOAT_THICKNESS, cv3d_mat.base_clearcoat);
-        mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS,
+        mat->Get(AI_MATKEY_CLEARCOAT_FACTOR, cv3d_mat.base_clearcoat);
+        mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS_FACTOR,
                  cv3d_mat.base_clearcoat_roughness);
         mat->Get(AI_MATKEY_ANISOTROPY, cv3d_mat.base_anisotropy);
+        mat->Get(AI_MATKEY_COLOR_EMISSIVE, color);
+        cv3d_mat.emissive_color =
+                Eigen::Vector4f(color.r, color.g, color.b, 1.f);
         aiString alpha_mode;
         mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode);
         std::string alpha_mode_str(alpha_mode.C_Str());
@@ -442,7 +489,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         // Retrieve textures
         TextureImages maps;
-        LoadTextures(filename, mat, maps);
+        LoadTextures(filename, scene, mat, maps);
         cv3d_mat.albedo_img = maps.albedo;
         cv3d_mat.normal_img = maps.normal;
         cv3d_mat.ao_img = maps.ao;

@@ -83,6 +83,6 @@ if __name__ == "__main__":
         handles = cv3d.geometry.ccPointCloud()
         handles.set_points(constraint_pos)
         handles.paint_uniform_color((0, 1, 0))
-        cv3d.visualization.draw_geometries([mesh, mesh_prime, handles])
+        cv3d.visualization.draw_geometries([mesh, mesh_prime, handles], mesh_show_back_face=True)
 
     cv3d.utility.set_verbosity_level(cv3d.utility.Info)

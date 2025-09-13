@@ -36,7 +36,7 @@ std::shared_ptr<ccPointCloud> MakePointCloud(int npts,
 void SingleObject() {
     // No colors, no normals, should appear unlit black
     auto cube = ccMesh::CreateBox(1, 2, 4);
-    cube->clearTriNormals();
+    cube->ComputeVertexNormals();
     visualization::Draw({cube});
 }
 
@@ -46,10 +46,12 @@ void MultiObjects() {
     auto pc_color = MakePointCloud(100, {3.0, -2.0, 0.0}, pc_rad, true);
     const double r = 0.4;
     auto sphere_unlit = ccMesh::CreateSphere(r);
+    sphere_unlit->ComputeVertexNormals();
     sphere_unlit->Translate({0.0, 1.0, 0.0});
     auto sphere_colored_unlit = ccMesh::CreateSphere(r);
     sphere_colored_unlit->PaintUniformColor({1.0, 0.0, 0.0});
     sphere_colored_unlit->Translate({2.0, 1.0, 0.0});
+    sphere_colored_unlit->ComputeVertexNormals();
     auto sphere_lit = ccMesh::CreateSphere(r);
     sphere_lit->ComputeVertexNormals();
     sphere_lit->Translate({4, 1, 0});
@@ -57,15 +59,17 @@ void MultiObjects() {
     sphere_colored_lit->ComputeVertexNormals();
     sphere_colored_lit->PaintUniformColor({0.0, 1.0, 0.0});
     sphere_colored_lit->Translate({6, 1, 0});
-    auto big_bbox = cloudViewer::make_shared<ccBBox>(
-            Eigen::Vector3d{-pc_rad, -3, -pc_rad},
-            Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
+    auto big_bbox =
+            std::make_shared<ccBBox>(Eigen::Vector3d{-pc_rad, -3, -pc_rad},
+                                     Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
+    big_bbox->SetColor({0.0, 0.0, 0.0});
     auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
-    auto sphere_bbox = cloudViewer::make_shared<ccBBox>(bbox.GetMinBound(),
-                                                        bbox.GetMaxBound());
+    auto sphere_bbox =
+            std::make_shared<ccBBox>(bbox.GetMinBound(), bbox.GetMaxBound());
     sphere_bbox->SetColor({1.0, 0.5, 0.0});
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             sphere_lit->GetAxisAlignedBoundingBox());
+    lines->PaintUniformColor({0.0, 1.0, 0.0});
     auto lines_colored = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             sphere_colored_lit->GetAxisAlignedBoundingBox());
     lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
@@ -81,7 +85,6 @@ void Actions() {
     const char *TRUTH_NAME = "Ground truth";
 
     auto bunny = cloudViewer::make_shared<ccMesh>();
-    bunny->createInternalCloud();
     data::BunnyMesh bunny_data;
     io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 

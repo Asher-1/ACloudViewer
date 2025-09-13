@@ -3,7 +3,8 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// ----------------------------------------------------------------------------/ \file WebRTCWindowSystem.h
+// ----------------------------------------------------------------------------/ 
+/// \file WebRTCWindowSystem.h
 ///
 /// The main header file for WebRTC visualizer.
 

@@ -16,7 +16,7 @@ If you use CloudViewer in an academic project, please cite our paper:
         author    = {Asher},
         title     = {{CloudViewer}: {A} Modern Library for {3D} Data Processing},
         journal   = {arXiv:?},
-        year      = {2020},
+        year      = {2018},
     }
 
 Core features
@@ -42,8 +42,6 @@ The package has been tested on:
 * macOS High Sierra and above
 
 With Python versions:
-* 3.6 (depretecated)
-* 3.7 (depretecated)
 * 3.8
 * 3.9
 * 3.10

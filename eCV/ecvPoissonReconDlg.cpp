@@ -160,7 +160,7 @@ bool doReconstruct()
 			s_params.boundary);
 
 	s_mesh = new ccMesh();
-	s_mesh->createInternalCloud();
+	s_mesh->CreateInternalCloud();
 	*s_mesh = *std::get<0>(result);
 	
 	if (s_params.density)

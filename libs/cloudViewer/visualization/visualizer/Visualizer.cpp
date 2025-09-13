@@ -126,11 +126,15 @@ bool Visualizer::CreateVisualizerWindow(
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-#ifndef HEADLESS_RENDERING
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_VISIBLE, visible ? 1 : 0);
+    int visible_hint = visible ? 1 : 0;
+    if (glfw_context_->InitStatus() == GLFW_PLATFORM_NULL) {
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
+        visible_hint = 0;  // NULL platform does not support visible window
+    } else {
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    }
+    glfwWindowHint(GLFW_VISIBLE, visible_hint);
 
     window_ = glfwCreateWindow(width, height, window_name_.c_str(), nullptr,
                                nullptr);
@@ -289,9 +293,9 @@ void Visualizer::Run() {
             if (animation_callback_func_in_loop_(this)) {
                 UpdateGeometry();
             }
-            // Set render flag as dirty anyways, because when we use callback
-            // functions, we assume something has been changed in the callback
-            // and the redraw event should be triggered.
+            // Set render flag as dirty anyways, because when we use
+            // callback functions, we assume something has been changed in
+            // the callback and the redraw event should be triggered.
             UpdateRender();
         }
     }

@@ -29,14 +29,12 @@ public:
 void pybind_data_classes(py::module& m) {
     // Dynamic getter/setter functions that always reflect current C++ state
     m.def(
-            "get_cloudViewer_downloads_prefix",
-            []() { return CloudViewerDownloadsPrefix(); },
+            "get_custom_downloads_prefix",
+            []() { return GetCustomDownloadsPrefix(); },
             "Get the current URL prefix for CloudViewer downloads");
     m.def(
-            "set_cloudViewer_downloads_prefix",
-            [](const std::string& prefix) {
-                CloudViewerDownloadsPrefix() = prefix;
-            },
+            "set_custom_downloads_prefix",
+            [](const std::string& prefix) { SetCustomDownloadsPrefix(prefix); },
             "Set the URL prefix for CloudViewer downloads", "prefix"_a);
     m.attr("cloudViewer_downloads_prefix") =
             py::cast(CloudViewerDownloadsPrefix());
@@ -537,32 +535,6 @@ void pybind_eagle(py::module& m) {
             .def_property_readonly("path", &EaglePointCloud::GetPath,
                                    "Path to the `EaglePointCloud.ply` file.");
     docstring::ClassMethodDocInject(m, "EaglePointCloud", "path");
-}
-
-void pybind_facets_model(py::module& m) {
-    // cloudViewer.data.FacetsModel
-    py::class_<FacetsModel, PyDownloadDataset<FacetsModel>,
-               std::shared_ptr<FacetsModel>, DownloadDataset>
-            facets_model(m, "FacetsModel",
-                         "Data class for `FacetsModel` contains the "
-                         "`facets.bin` from the `CloudViewer` project.");
-    facets_model.def(py::init<const std::string&>(), "data_root"_a = "")
-            .def_property_readonly("path", &FacetsModel::GetPath,
-                                   "Path to the `facets.bin` file.");
-    docstring::ClassMethodDocInject(m, "FacetsModel", "path");
-}
-
-void pybind_polylines_model(py::module& m) {
-    // cloudViewer.data.PolylinesModel
-    py::class_<PolylinesModel, PyDownloadDataset<PolylinesModel>,
-               std::shared_ptr<PolylinesModel>, DownloadDataset>
-            polylines_model(m, "PolylinesModel",
-                            "Data class for `PolylinesModel` contains the "
-                            "`polylines.bin` from the `CloudViewer` project.");
-    polylines_model.def(py::init<const std::string&>(), "data_root"_a = "")
-            .def_property_readonly("path", &PolylinesModel::GetPath,
-                                   "Path to the `polylines.bin` file.");
-    docstring::ClassMethodDocInject(m, "PolylinesModel", "path");
 }
 
 void pybind_armadillo(py::module& m) {
@@ -1257,12 +1229,50 @@ sequence, and ground-truth camera trajectory. ::
                                   "Path to the noise model file.");
 }
 
+void pybind_facets_model(py::module& m) {
+    // cloudViewer.data.FacetsModel
+    py::class_<FacetsModel, PyDownloadDataset<FacetsModel>,
+               std::shared_ptr<FacetsModel>, DownloadDataset>
+            facets_model(m, "FacetsModel",
+                         "Data class for `FacetsModel` contains the "
+                         "`facets.bin` from the `CloudViewer` project.");
+    facets_model.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &FacetsModel::GetPath,
+                                   "Path to the `facets.bin` file.");
+    docstring::ClassMethodDocInject(m, "FacetsModel", "path");
+}
+
+void pybind_polylines_model(py::module& m) {
+    // cloudViewer.data.PolylinesModel
+    py::class_<PolylinesModel, PyDownloadDataset<PolylinesModel>,
+               std::shared_ptr<PolylinesModel>, DownloadDataset>
+            polylines_model(m, "PolylinesModel",
+                            "Data class for `PolylinesModel` contains the "
+                            "`polylines.bin` from the `CloudViewer` project.");
+    polylines_model.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &PolylinesModel::GetPath,
+                                   "Path to the `polylines.bin` file.");
+    docstring::ClassMethodDocInject(m, "PolylinesModel", "path");
+}
+
+void pybind_baluster_vase(py::module& m) {
+    // cloudViewer.data.BalusterVase
+    py::class_<BalusterVase, PyDownloadDataset<BalusterVase>,
+               std::shared_ptr<BalusterVase>, DownloadDataset>
+            baluster_vase(m, "BalusterVase",
+                          "Data class for `BalusterVase` contains the "
+                          "`F1980_baluster_vase.glb` from the `CloudViewer` "
+                          "project.");
+    baluster_vase.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path", &BalusterVase::GetPath,
+                    "Path to the `F1980_baluster_vase.glb` file.");
+    docstring::ClassMethodDocInject(m, "BalusterVase", "path");
+}
+
 void pybind_data(py::module& m) {
     py::module m_submodule = m.def_submodule("data", "Data handling module.");
     pybind_data_classes(m_submodule);
-    // Model data.
-    pybind_facets_model(m_submodule);
-    pybind_polylines_model(m_submodule);
     // Demo data.
     pybind_demo_icp_pointclouds(m_submodule);
     pybind_demo_colored_icp_pointclouds(m_submodule);
@@ -1315,6 +1325,11 @@ void pybind_data(py::module& m) {
     pybind_redwood_indoor_living_room2(m_submodule);
     pybind_redwood_indoor_office1(m_submodule);
     pybind_redwood_indoor_office2(m_submodule);
+    // Model data.
+    pybind_facets_model(m_submodule);
+    pybind_polylines_model(m_submodule);
+    // Texture mesh data.
+    pybind_baluster_vase(m_submodule);
 }
 
 }  // namespace data

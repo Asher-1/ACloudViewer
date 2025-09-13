@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #ifndef ECV_POINT_CLOUD_HEADER
 #define ECV_POINT_CLOUD_HEADER
@@ -1027,6 +1027,17 @@ public:  // for python interface
     /// \param sampling_ratio Sampling ratio, the ratio of sample to total
     /// number of points in the pointcloud.
     std::shared_ptr<ccPointCloud> RandomDownSample(double sampling_ratio) const;
+
+    /// \brief Function to downsample input pointcloud into output pointcloud
+    /// with a set of points has farthest distance.
+    ///
+    /// The sample is performed by selecting the farthest point from previous
+    /// selected points iteratively, starting from `start_index`.
+    ///
+    /// \param num_samples Number of points to be sampled.
+    /// \param start_index Index to start downsampling from.
+    std::shared_ptr<ccPointCloud> FarthestPointDownSample(
+            const size_t num_samples, const size_t start_index = 0) const;
 
     /// \brief Function to crop ccPointCloud into output ccPointCloud
     ///

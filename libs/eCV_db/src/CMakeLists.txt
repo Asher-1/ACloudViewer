@@ -89,7 +89,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/TriangleMeshSubdivide.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/VoxelGrid.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/VoxelGridFactory.cpp
-		${CMAKE_CURRENT_LIST_DIR}/Image.cpp
+			${CMAKE_CURRENT_LIST_DIR}/Image.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ImageFactory.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/LineSet.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/LineSetFactory.cpp

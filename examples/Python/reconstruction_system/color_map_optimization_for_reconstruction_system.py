@@ -102,33 +102,33 @@ def main(config, keys):
             color,
             depth,
             depth_scale=config["depth_scale"],
-            depth_trunc=config["max_depth"],
+            depth_trunc=config["depth_max"],
             convert_rgb_to_intensity=False)
         rgbd_images.append(rgbd_image)
 
     # Before full optimization, let's just visualize texture map
     # with given geometry, RGBD images, and camera poses.
-    mesh_optimized = cv3d.pipelines.color_map.run_rigid_optimizer(
+    mesh, camera = cv3d.pipelines.color_map.run_rigid_optimizer(
         mesh, rgbd_images, camera,
         cv3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=0))
-    cv3d.visualization.draw_geometries([mesh_optimized])
+    cv3d.visualization.draw_geometries([mesh])
     cv3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
-                     "color_map_before_optimization.ply"), mesh_optimized)
+                     "color_map_before_optimization.ply"), mesh)
 
     # Optimize texture and save the mesh as texture_mapped.ply
     # This is implementation of following paper
     # Q.-Y. Zhou and V. Koltun,
     # Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     # SIGGRAPH 2014
-    mesh_optimized = cv3d.pipelines.color_map.run_non_rigid_optimizer(
+    mesh, camera = cv3d.pipelines.color_map.run_non_rigid_optimizer(
         mesh, rgbd_images, camera,
         cv3d.pipelines.color_map.NonRigidOptimizerOption(
-            maximum_iteration=300, maximum_allowable_depth=config["max_depth"]))
-    cv3d.visualization.draw_geometries([mesh_optimized])
+            maximum_iteration=300, maximum_allowable_depth=config["depth_max"]))
+    cv3d.visualization.draw_geometries([mesh])
     cv3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
-                     "color_map_after_optimization.ply"), mesh_optimized)
+                     "color_map_after_optimization.ply"), mesh)
 
 
 if __name__ == "__main__":

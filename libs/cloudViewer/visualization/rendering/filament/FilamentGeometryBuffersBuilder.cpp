@@ -164,7 +164,7 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromVoxelGrid(
 static std::shared_ptr<ccMesh> CreateTriangleMeshFromOctree(
         const geometry::Octree& octree) {
     auto mesh = cloudViewer::make_shared<ccMesh>();
-    if (!mesh->createInternalCloud()) {
+    if (!mesh->CreateInternalCloud()) {
         utility::LogError("creating internal cloud failed!");
         return nullptr;
     }

@@ -278,7 +278,7 @@ void pybind_trianglemesh(py::module& m) {
                         }
                     },
                     "Sets the associated vertices cloud (warning)", "cloud"_a)
-            .def("create_internal_cloud", &ccMesh::createInternalCloud,
+            .def("create_internal_cloud", &ccMesh::CreateInternalCloud,
                  "Sets the associated vertices cloud (warning)")
             .def("compute_triangle_normals", &ccMesh::ComputeTriangleNormals,
                  "Function to compute triangle normals, usually called before "

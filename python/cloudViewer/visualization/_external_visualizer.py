@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import cloudViewer as cv3d
 
 __all__ = ['ExternalVisualizer', 'EV']
@@ -30,24 +37,30 @@ class ExternalVisualizer:
 
         Example:
             To quickly send a single object just write::
+
                 ev.set(point_cloud)
 
             To place the object at a specific location in the scene tree do::
+
                 ev.set(point_cloud, path='group/mypoints', time=42, layer='')
+
             Note that depending on the visualizer some arguments like time or
             layer may not be supported and will be ignored.
 
             To set multiple objects use a list to pass multiple objects::
+
                 ev.set([point_cloud, mesh, camera])
+
             Each entry in the list can be a tuple specifying all or some of the
             location parameters::
+
                 ev.set(objs=[(point_cloud,'group/mypoints', 1, 'layer1'),
                              (mesh, 'group/mymesh'),
                              camera
                             ]
 
         Args:
-            obj: A geometry or camera object or a list of objects. See the 
+            obj: A geometry or camera object or a list of objects. See the
             example seection for usage instructions.
 
             path: A path describing a location in the scene tree.
@@ -61,7 +74,7 @@ class ExternalVisualizer:
         """
         if connection is None:
             connection = cv3d.io.rpc.Connection(address=self.address,
-                                                timeout=self.timeout)
+                                               timeout=self.timeout)
         result = []
         if isinstance(obj, (tuple, list)):
             # item can be just an object or a tuple with path, time, layer, e.g.,
@@ -83,7 +96,8 @@ class ExternalVisualizer:
                                                  layer=layer,
                                                  connection=connection)
             result.append(status)
-        elif isinstance(obj, cv3d.geometry.ccMesh):
+        elif isinstance(
+                obj, (cv3d.t.geometry.TriangleMesh, cv3d.geometry.ccMesh)):
             status = cv3d.io.rpc.set_triangle_mesh(obj,
                                                    path=path,
                                                    time=time,
@@ -113,7 +127,7 @@ class ExternalVisualizer:
             time: The time value
         """
         connection = cv3d.io.rpc.Connection(address=self.address,
-                                            timeout=self.timeout)
+                                           timeout=self.timeout)
         return cv3d.io.rpc.set_time(time, connection)
 
     def set_active_camera(self, path):
@@ -126,7 +140,7 @@ class ExternalVisualizer:
             path: A path describing a location in the scene tree.
         """
         connection = cv3d.io.rpc.Connection(address=self.address,
-                                            timeout=self.timeout)
+                                           timeout=self.timeout)
         return cv3d.io.rpc.set_active_camera(path, connection)
 
     def draw(self, geometry=None, *args, **kwargs):
@@ -134,15 +148,16 @@ class ExternalVisualizer:
 
         This function is compatible with the standalone 'draw' function and can
         be used to redirect calls to the external visualizer. Note that only
-        the geometry argument is supported, all other arguments will be 
+        the geometry argument is supported, all other arguments will be
         ignored.
 
         Example:
             Here we use draw with the default external visualizer::
+
                 import cloudViewer as cv3d
 
-                torus = cv3d.geometry.ccMesh.create_torus()
-                sphere = cv3d.geometry.ccMesh.create_sphere()
+                torus = cv3d.geometry.TriangleMesh.create_torus()
+                sphere = cv3d.geometry.TriangleMesh.create_sphere()
 
                 draw = cv3d.visualization.EV.draw
                 draw([ {'geometry': sphere, 'name': 'sphere'},

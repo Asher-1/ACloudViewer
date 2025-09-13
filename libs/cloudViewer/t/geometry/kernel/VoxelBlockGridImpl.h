@@ -558,7 +558,7 @@ void RayCastCPU
     using Hash = utility::MiniVecHash<index_t, 3>;
     using Eq = utility::MiniVecEq<index_t, 3>;
 
-    auto device_hashmap = hashmap;
+    auto device_hashmap = hashmap->GetDeviceHashBackend();
 #if defined(__CUDACC__)
     auto cuda_hashmap =
             std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash, Eq>>(

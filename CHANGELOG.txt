@@ -21,6 +21,7 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
 		-   Add O3DVisualizer API to enable collapse control of verts in the side panel
 		-   Add radio button support
 		-   Update to latest GLFW
+		-   Update jupyter web_visualizer for ipywidgets
 
 - Bug fixes:
     -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13
@@ -39,6 +40,7 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
 		-   Close window on ESC keypress
 		-   Avoid deadlock while PostToMainThread is called inside a Posted
 		-   Fix bug in emissive color default value and writing triangle UVs to glb
+		-   Fix the textures loading in .glb file
 
 - Enhancements:
     -   Update 3rparty version
@@ -49,6 +51,7 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
     -   lowercase types when reading PCD files
 		-   Refactor python examples directory
 		-   Add default dataset loading in reconstruction system.
+		-   Robust image I/O
 
 ### supported platform:
 - Windows `x86/64`

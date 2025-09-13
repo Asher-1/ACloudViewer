@@ -448,7 +448,7 @@ if (BUILD_RECONSTRUCTION)
 endif()
 
 # set additional info
-set(PROJECT_EMAIL "dahailu@foxmail.com")
+set(PROJECT_EMAIL "ludahai19@gmail.com")
 set(PROJECT_HOME "https://asher-1.github.io")
 set(PROJECT_DOCS "https://asher-1.github.io/docs")
 set(PROJECT_CODE "https://github.com/Asher-1/ACloudViewer")

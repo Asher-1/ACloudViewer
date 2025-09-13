@@ -86,7 +86,7 @@ static const std::unordered_map<std::string, std::string>
 };
 
 void pybind_class_io(py::module &m_io) {
-    py::native_enum<FileGeometry>(m_io, "FileGeometry", "enum.Enum",
+    py::native_enum<FileGeometry>(m_io, "FileGeometry", "enum.IntFlag",
                                   "Geometry types.")
             .value("CONTENTS_UKNWOWN", FileGeometry::CONTENTS_UNKNOWN)
             .value("CONTAINS_POINTS", FileGeometry::CONTAINS_POINTS)
@@ -274,7 +274,6 @@ void pybind_class_io(py::module &m_io) {
                bool print_progress) {
                 py::gil_scoped_release release;
                 ccMesh mesh;
-                mesh.createInternalCloud();
                 ReadTriangleMeshOptions opt;
                 opt.enable_post_processing = enable_post_processing;
                 opt.print_progress = print_progress;

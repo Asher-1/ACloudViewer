@@ -89,16 +89,14 @@ def large_scale(n_steps=16,
         resolution = base_resolution * (step + 1)
         cylinder_list = []
         mobius_list = []
-        cylinder = cv3d.geometry.ccMesh.create_cylinder(radius=1.0,
-                                                        height=2.0,
-                                                        resolution=resolution,
-                                                        split=4)
+        cylinder = cv3d.geometry.ccMesh.create_cylinder(
+            radius=1.0, height=2.0, resolution=resolution, split=4)
         cylinder.compute_vertex_normals()
         mobius = cv3d.geometry.ccMesh.create_mobius(
             length_split=int(3.5 * resolution),
             width_split=int(0.75 * resolution),
             twists=1,
-            raidus=1,
+            radius=1,
             flatness=1,
             width=1,
             scale=1)
@@ -132,12 +130,12 @@ def with_material(model_path=MODEL_PATH):
         "triangle_indices": model.triangle.indices,
         "material_name": "defaultLit"
     }
-    names_to_cv3dprop = {"ao": "ambient_occlusion"}
+    names_to_o3dprop = {"ao": "ambient_occlusion"}
 
     for texture in ("albedo", "normal", "ao", "metallic", "roughness"):
         texture_file = join(model_dir, texture + ".png")
         if exists(texture_file):
-            texture = names_to_cv3dprop.get(texture, texture)
+            texture = names_to_o3dprop.get(texture, texture)
             summary_3d.update({
                 ("material_texture_map_" + texture):
                     cv3d.t.io.read_image(texture_file)
