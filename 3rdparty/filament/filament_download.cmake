@@ -78,9 +78,7 @@ else()
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS ${lib_byproducts}
-CMAKE_ARGS
-    
--DCMAKE_POLICY_VERSION_MINIMUM=3.5)
+    )
     ExternalProject_Get_Property(ext_filament SOURCE_DIR)
     set(FILAMENT_ROOT ${SOURCE_DIR})
 endif()

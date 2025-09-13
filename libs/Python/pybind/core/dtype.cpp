@@ -73,7 +73,7 @@ void pybind_core_dtype(py::module &m) {
     dtype.def("__str__", &Dtype::ToString);
 
     // Dtype shortcuts.
-    // E.g. cloudViewer.core.Float32
+    // E.g. cloudViewer.core.float32
     m.attr("undefined") = &core::Undefined;
     m.attr("float32") = core::Float32;
     m.attr("float64") = core::Float64;

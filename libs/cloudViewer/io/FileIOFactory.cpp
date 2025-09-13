@@ -1598,12 +1598,10 @@ bool WritePointCloudToPLY(const std::string &filename,
                         "Write Ply clamped color value to valid range");
                 printed_color_warning = true;
             }
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
+            auto rgb = utility::ColorToUint8(color);
+            ply_write(ply_file, rgb(0));
+            ply_write(ply_file, rgb(1));
+            ply_write(ply_file, rgb(2));
         }
         if (i % 1000 == 0) {
             reporter.Update(i);

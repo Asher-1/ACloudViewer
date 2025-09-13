@@ -10,6 +10,7 @@ import cloudViewer as cv3d
 import cloudViewer.visualization.gui as gui
 import cloudViewer.visualization.rendering as rendering
 
+
 # This example displays a point cloud and if you Ctrl-click on a point
 # (Cmd-click on macOS) it will show the coordinates of the point.
 # This example illustrates:

@@ -75,7 +75,6 @@ def transform():
 
 
 if __name__ == "__main__":
-
     translate()
     rotate()
     scale()

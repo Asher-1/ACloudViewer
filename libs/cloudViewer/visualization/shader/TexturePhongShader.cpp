@@ -18,7 +18,6 @@ namespace cloudViewer {
 namespace visualization {
 
 namespace glsl {
-using namespace cloudViewer;
 
 bool TexturePhongShader::Compile() {
     if (!CompileShaders(TexturePhongVertexShader, NULL,
@@ -251,8 +250,8 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    if (mesh.hasTriNormals() == false ||
-        mesh.getAssociatedCloud()->hasNormals() == false) {
+    if (!mesh.hasTriNormals() ||
+        !mesh.getAssociatedCloud()->hasNormals()) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
         PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;

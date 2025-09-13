@@ -791,6 +791,44 @@ std::shared_ptr<ccPointCloud> ccPointCloud::RandomDownSample(
     return SelectByIndex(indices);
 }
 
+std::shared_ptr<ccPointCloud> ccPointCloud::FarthestPointDownSample(
+        const size_t num_samples, const size_t start_index) const {
+    if (num_samples == 0) {
+        return std::make_shared<ccPointCloud>();
+    } else if (num_samples == this->size()) {
+        return std::make_shared<ccPointCloud>(*this);
+    } else if (num_samples > this->size()) {
+        utility::LogError(
+                "Illegal number of samples: {}, must <= point size: {}",
+                num_samples, this->size());
+    } else if (start_index >= this->size()) {
+        utility::LogError("Illegal start index: {}, must < point size: {}",
+                          start_index, this->size());
+    }
+    // We can also keep track of the non-selected indices with unordered_set,
+    // but since typically num_samples << num_points, it may not be worth it.
+    std::vector<size_t> selected_indices;
+    selected_indices.reserve(num_samples);
+    const size_t num_points = this->size();
+    std::vector<double> distances(num_points,
+                                  std::numeric_limits<double>::infinity());
+    size_t farthest_index = start_index;
+    for (size_t i = 0; i < num_samples; i++) {
+        selected_indices.push_back(farthest_index);
+        const Eigen::Vector3d &selected = getEigenPoint(farthest_index);
+        double max_dist = 0;
+        for (size_t j = 0; j < num_points; j++) {
+            double dist = (getEigenPoint(j) - selected).squaredNorm();
+            distances[j] = std::min(distances[j], dist);
+            if (distances[j] > max_dist) {
+                max_dist = distances[j];
+                farthest_index = j;
+            }
+        }
+    }
+    return SelectByIndex(selected_indices);
+}
+
 std::tuple<std::shared_ptr<ccPointCloud>, std::vector<size_t>>
 ccPointCloud::RemoveRadiusOutliers(size_t nb_points,
                                    double search_radius) const {
@@ -1124,7 +1162,8 @@ std::vector<Eigen::Matrix3d> ccPointCloud::EstimatePerPointCovariances(
     return covariances;
 }
 void ccPointCloud::EstimateCovariances(
-        const geometry::KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+        const geometry::KDTreeSearchParam
+                &search_param /* = KDTreeSearchParamKNN()*/) {
     this->covariances_ = EstimatePerPointCovariances(*this, search_param);
 }
 

@@ -3,7 +3,8 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// ---------------------------------------------------------------------------- ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // Contains source code from
 // https://github.com/mpromonet/webrtc-streamer
 //
@@ -43,11 +44,10 @@ namespace webrtc_server {
 /// https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Connectivity#signaling
 /// for more information. In PeerConnectionManager, a WebRTC client (e.g.
 /// JavaScript video player) calls the following HTTP APIs:
-/// - /api/getMediaList: Returns a list of active CloudViewer visualizer
-/// windows.
+/// - /api/getMediaList: Returns a list of active CloudViewer visualizer windows.
 /// - /api/getIceServers: Returns a list of ICE (STUN/TURN) servers. The ICE
 ///   server is used to forward requests through the remote peer's NAT layer. We
-///   use publicly availble STUN servers. In certain network configurations
+///   use publicly available STUN servers. In certain network configurations
 ///   (e.g. if the peers are behind certain type of firewalls), STUN server may
 ///   fail to resolve and in this case, we'll need to implement and host a
 ///   separate TURN server.
@@ -67,8 +67,7 @@ namespace webrtc_server {
 ///
 /// [Stage 3: Hangup]
 /// The client calls /api/hangup to close the WebRTC connection. This does not
-/// close the CloudViewer Window as a Window can be connected to 0 or more
-/// peers.
+/// close the CloudViewer Window as a Window can be connected to 0 or more peers.
 ///
 /// TODO (yixing): Use PImpl.
 class PeerConnectionManager {
@@ -205,7 +204,7 @@ class PeerConnectionManager {
             const std::string state =
                     webrtc::DataChannelInterface::DataStateString(
                             data_channel_->state());
-            utility::LogInfo(
+            utility::LogDebug(
                     "DataChannelObserver::OnStateChange label: {}, state: {}, "
                     "peerid: {}",
                     label, state, peerid_);
@@ -217,7 +216,21 @@ class PeerConnectionManager {
             // to the client such that the video is not empty. Afterwards,
             // video frames will only be sent when the GUI redraws.
             if (label == "ClientDataChannel" && state == "open") {
+                {
+                    std::lock_guard<std::mutex> mutex_lock(
+                            peer_connection_manager_
+                                    ->peerid_data_channel_mutex_);
+                    peer_connection_manager_->peerid_data_channel_ready_.insert(
+                            peerid_);
+                }
                 peer_connection_manager_->SendInitFramesToPeer(peerid_);
+            }
+            if (label == "ClientDataChannel" &&
+                (state == "closed" || state == "closing")) {
+                std::lock_guard<std::mutex> mutex_lock(
+                        peer_connection_manager_->peerid_data_channel_mutex_);
+                peer_connection_manager_->peerid_data_channel_ready_.erase(
+                        peerid_);
             }
         }
         virtual void OnMessage(const webrtc::DataBuffer& buffer) {
@@ -300,8 +313,7 @@ class PeerConnectionManager {
         virtual void OnAddStream(
                 rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
             utility::LogDebug("[{}] GetVideoTracks().size(): {}.",
-                              CLOUDVIEWER_FUNCTION,
-                              stream->GetVideoTracks().size());
+                              CLOUDVIEWER_FUNCTION, stream->GetVideoTracks().size());
             webrtc::VideoTrackVector videoTracks = stream->GetVideoTracks();
             if (videoTracks.size() > 0) {
                 video_sink_.reset(new VideoSink(videoTracks.at(0)));
@@ -320,6 +332,9 @@ class PeerConnectionManager {
                                                       channel, peerid_);
         }
         virtual void OnRenegotiationNeeded() {
+            std::lock_guard<std::mutex> mutex_lock(
+                    peer_connection_manager_->peerid_data_channel_mutex_);
+            peer_connection_manager_->peerid_data_channel_ready_.erase(peerid_);
             utility::LogDebug(
                     "PeerConnectionObserver::OnRenegotiationNeeded peerid: {}",
                     peerid_);
@@ -414,6 +429,9 @@ protected:
     std::unordered_map<std::string, PeerConnectionObserver*>
             peerid_to_connection_;
     std::mutex peerid_to_connection_mutex_;
+    // Set of peerids with data channel ready for communication
+    std::unordered_set<std::string> peerid_data_channel_ready_;
+    std::mutex peerid_data_channel_mutex_;
 
     // Each Window has exactly one TrackSource.
     std::unordered_map<std::string,

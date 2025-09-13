@@ -7,7 +7,6 @@
 
 import cloudViewer as cv3d
 import mitsuba as mi
-import os
 
 
 def render_mesh(mesh, mesh_center):

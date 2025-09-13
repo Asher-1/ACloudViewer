@@ -3,6 +3,10 @@
 
 import cloudViewer.core as cv3c
 import numpy as np
+import os
+import pickle
+import tempfile
+
 
 # # Tensor
 #
@@ -76,9 +80,9 @@ a_cpu = a_gpu.cpu()
 print(a_cpu)
 
 # Device -> another Device.
-a_gpu_0 = cv3c.Tensor([0, 1, 2], device=cv3c.Device("CUDA:0"))
-a_gpu_1 = a_gpu_0.cuda(1)
-print(a_gpu_1)
+# a_gpu_0 = cv3c.Tensor([0, 1, 2], device=cv3c.Device("CUDA:0"))
+# a_gpu_1 = a_gpu_0.cuda(1)
+# print(a_gpu_1)
 
 # ## Data Types
 #
@@ -494,59 +498,32 @@ t = cv3c.Tensor(vals)
 b = cv3c.TensorList(t)
 print("b = {}".format(b))
 
-# Empty TensorList.
-a = cv3c.TensorList(shape=[2, 3, 4])
-print("a = {}".format(a))
-print("a.size = {}".format(a.size))
-a.resize(3)
-print("a = {}".format(a))
-print("a.size = {}".format(a.size))
+## Pickle support 
+# Since CloudViewer v0.9.3, tensor can be serialized and deserialized using pickle. This is useful for saving and loading tensors to/from disk.
 
-a.push_back(t)
+a = cv3c.Tensor([1, 2, 3, 4])
+print(f'After serialization: {a}\n')
+with tempfile.TemporaryDirectory() as path:
+    file_name = os.path.join(path, 'tensor')
+    pickle.dump(a, open(file_name, 'wb'))
+    b = pickle.load(open(file_name, 'rb'))
+    print(f'After deserialization: {b}\n')
 
-print("a = {}".format(a))
-print("a.size = {}".format(a.size))
+# Pickle tensor on GPU.
+a = cv3c.Tensor([1, 2, 3, 4], device=cv3c.Device('cuda:0'))
+print(f'After serialization: {a}\n')
+with tempfile.TemporaryDirectory() as path:
+    file_name = os.path.join(path, 'tensor')
+    pickle.dump(a, open(file_name, 'wb'))
+    b = pickle.load(open(file_name, 'rb'))
+    print(f'After deserialization: {b}\n')
 
-print("a.is_resizable = {}".format(a.is_resizable))
-
-# ### from_tensor
-# We can create tensorlist from a single tensor where we breaking first dimension into multiple tensors.
-# The first dimension of the tensor will be used as the `size` dimension of the tensorlist.
-# Remaining dimensions will be used as the element shape of the tensor list. For example,
-# if the input tensor has shape `(2, 3, 4)`, the resulting tensorlist will have size 2 and element shape `(3, 4)`.
-# Here the memory will be copied by default.
-# If `inplace == true`, the tensorlist will share the same memory with the input tensor.
-# The input tensor must be contiguous. The resulting tensorlist will not be resizable,
-# and hence we cannot do certain operations like resize, push_back, extend, concatenate, and clear.
-#
-# ### from_tensors
-# Tensorlist can also be created from a list of tensors. The tensors must have the same shape, dtype and device.
-# Here the values will be copied.
-
-vals = np.array(range(24), dtype=np.float32).reshape((2, 3, 4))
-
-# TensorList from tensor.
-c = cv3c.TensorList.from_tensor(cv3c.Tensor(vals))
-print("from tensor = {}\n".format(c))
-
-# TensorList from multiple tensors.
-b = cv3c.TensorList([cv3c.Tensor(vals[0]), cv3c.Tensor(vals[1])])
-print("tensors = {}\n".format(b))
-b = cv3c.TensorList.from_tensors([cv3c.Tensor(vals[0]), cv3c.Tensor(vals[1])])
-print("from tensors = {}\n".format(b))
-
-d = cv3c.TensorList(b)
-print("from tensorlist = {}\n".format(d))
-
-# Below operations are only valid for resizable tensorlist.
-# Concatenate TensorLists.
-print("b + c = {}".format(b + c))
-print("concat(b, c) = {}\n".format(cv3c.TensorList.concat(b, c)))
-
-# Append a Tensor to TensorList.
-d.push_back(cv3c.Tensor(vals[0]))
-print("d = {}\n".format(d))
-
-# Append a TensorList to another TensorList.
-d.extend(c)
-print("extended d = {}".format(d))
+# Pickle non-contiguous tensor.
+a = cv3c.Tensor.ones((100))
+a = a[::2]
+print(f'Contiguous: {a.is_contiguous()}\n')
+with tempfile.TemporaryDirectory() as path:
+    file_name = os.path.join(path, 'tensor')
+    pickle.dump(a, open(file_name, 'wb'))
+    b = pickle.load(open(file_name, 'rb'))
+    print(f'Contiguous: {b.is_contiguous()}\n')

@@ -5,8 +5,6 @@ target_sources(data PRIVATE
 )
 
 target_sources(data PRIVATE
-    dataset/FacetsModel.cpp
-    dataset/PolylinesModel.cpp
     dataset/ArmadilloMesh.cpp
     dataset/AvocadoModel.cpp
     dataset/BedroomRGBDImages.cpp
@@ -49,6 +47,9 @@ target_sources(data PRIVATE
     dataset/TilesTexture.cpp
     dataset/WoodFloorTexture.cpp
     dataset/WoodTexture.cpp
+    dataset/FacetsModel.cpp
+    dataset/PolylinesModel.cpp
+    dataset/BalusterVase.cpp
 )
 
 cloudViewer_show_and_abort_on_warning(data)

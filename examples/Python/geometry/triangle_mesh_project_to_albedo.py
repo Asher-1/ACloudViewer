@@ -9,6 +9,7 @@ render images of a 3D mesh or model from different viewpoints.
 albedo_from_dataset mode then uses the calibrated images to re-create the albedo
 texture for the mesh.
 """
+import os
 import argparse
 from pathlib import Path
 import subprocess as sp
@@ -17,24 +18,6 @@ import numpy as np
 import cloudViewer as cv3d
 from cloudViewer.visualization import gui, rendering, O3DVisualizer
 from cloudViewer.core import Tensor
-
-
-def download_smithsonian_baluster_vase():
-    """Download the Smithsonian Baluster Vase 3D model."""
-    vase_url = 'https://3d-api.si.edu/content/document/3d_package:d8c62634-4ebc-11ea-b77f-2e728ce88125/resources/F1980.190%E2%80%93194_baluster_vase-150k-4096.glb'
-    import urllib.request
-
-    def show_progress(block_num, block_size, total_size):
-        total_size = total_size >> 20 if total_size > 0 else "??"  # Convert to MB if known
-        print(
-            "Downloading F1980_baluster_vase.glb... "
-            f"{(block_num * block_size) >>20}MB / {total_size}MB",
-            end="\r")
-
-    urllib.request.urlretrieve(vase_url,
-                               filename="F1980_baluster_vase.glb",
-                               reporthook=show_progress)
-    print("\nDownload complete.")
 
 
 def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
@@ -75,18 +58,15 @@ def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
             Rt[:3, 3] = t
             if n < n_0:
                 theta = n * (2 * np.pi) / n_0
-                Rt[:3, :
-                   3] = cv3d.geometry.Geometry3D.get_rotation_matrix_from_zyx(
-                       [np.pi, theta, 0])
+                Rt[:3, :3] = cv3d.geometry.ccHObject.get_rotation_matrix_from_zyx(
+                    [np.pi, theta, 0])
             elif n < n_images - 1:
                 theta = (n - n_0) * (2 * np.pi) / n_1
-                Rt[:3, :
-                   3] = cv3d.geometry.Geometry3D.get_rotation_matrix_from_xyz(
-                       [np.pi / 4, theta, np.pi])
+                Rt[:3, :3] = cv3d.geometry.ccHObject.get_rotation_matrix_from_xyz(
+                    [np.pi / 4, theta, np.pi])
             else:  # one image from the top
-                Rt[:3, :
-                   3] = cv3d.geometry.Geometry3D.get_rotation_matrix_from_zyx(
-                       [np.pi, 0, -np.pi / 2])
+                Rt[:3, :3] = cv3d.geometry.ccHObject.get_rotation_matrix_from_zyx(
+                    [np.pi, 0, -np.pi / 2])
             Rts.append(Rt)
             cv3dvis.setup_camera(K, Rt, width, height)
             # Vary IBL intensity as a poxy for exposure value. IBL ranges from
@@ -109,10 +89,10 @@ def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
         if movie:
             print("\nCreating movie...", end='', flush=True)
             sp.run([
-                "ffmpeg", "-framerate", f"{n_images/6}", "-pattern_type",
+                "ffmpeg", "-framerate", f"{n_images / 6}", "-pattern_type",
                 "glob", "-i", "render-*.jpg", "-y", meshfile.stem + ".mp4"
             ],
-                   check=True)
+                check=True)
         cv3dvis.close()
         print("\nDone.")
 
@@ -123,14 +103,13 @@ def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
         'name': meshfile.name,
         'material': unlit
     }],
-                            show_ui=False,
-                            width=int(width / SCALING),
-                            height=int(height / SCALING),
-                            actions=[("Save Images", rotate_camera_and_shoot)])
+        show_ui=False,
+        width=int(width / SCALING),
+        height=int(height / SCALING),
+        actions=[("Save Images", rotate_camera_and_shoot)])
 
 
 def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
-
     model = cv3d.io.read_triangle_model(meshfile)
     tmeshes = cv3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
     tmeshes = list(tmeshes.values())
@@ -146,16 +125,16 @@ def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
                                                      True)
     albedo = albedo.linear_transform(scale=albedo_contrast)  # brighten albedo
     tmeshes[0].material.texture_maps["albedo"] = albedo
-    print(f"project_images_to_albedo ran in {time.time()-start:.2f}s")
+    print(f"project_images_to_albedo ran in {time.time() - start:.2f}s")
     cv3d.t.io.write_image("albedo.png", albedo)
     cv3d.t.io.write_triangle_mesh(meshfile.stem + "_albedo.glb", tmeshes[0])
     cam_vis = list({
-        "name":
-            f"camera-{i:02}",
-        "geometry":
-            cv3d.geometry.LineSet.create_camera_visualization(
-                images[0].columns, images[0].rows, K.numpy(), Rt.numpy(), 0.1)
-    } for i, (K, Rt) in enumerate(zip(Ks, Rts)))
+                       "name":
+                           f"camera-{i:02}",
+                       "geometry":
+                           cv3d.geometry.LineSet.create_camera_visualization(
+                               images[0].columns, images[0].rows, K.numpy(), Rt.numpy(), 0.1)
+                   } for i, (K, Rt) in enumerate(zip(Ks, Rts)))
     cv3d.visualization.draw(cam_vis + [{
         "name": meshfile.name,
         "geometry": tmeshes[0]
@@ -170,7 +149,7 @@ if __name__ == "__main__":
                         choices=('create_dataset', 'albedo_from_images'))
     parser.add_argument("--meshfile",
                         type=Path,
-                        default=".",
+                        default=Path("."),
                         help="Path to mesh file.")
     parser.add_argument("--n-images",
                         type=int,
@@ -189,8 +168,8 @@ if __name__ == "__main__":
 
     if args.action == "create_dataset":
         if args.download_sample_model:
-            download_smithsonian_baluster_vase()
-            args.meshfile = "F1980_baluster_vase.glb"
+            cv3d.data.set_custom_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+            args.meshfile = Path(cv3d.data.BalusterVase().path)
         if args.meshfile == Path("."):
             parser.error("Please provide a path to a mesh file, or use "
                          "--download_sample_model.")
@@ -201,4 +180,6 @@ if __name__ == "__main__":
                        movie=args.movie,
                        vary_exposure=True)
     else:
+        cv3d.data.set_custom_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+        args.meshfile = Path(cv3d.data.BalusterVase().path)
         albedo_from_images(args.meshfile, "cameras.npz")

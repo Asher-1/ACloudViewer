@@ -128,7 +128,7 @@ void O3DVisualizerSelections::UpdateSelectionGeometry() {
 
     if (!points.empty()) {
         ccMesh spheres;
-        spheres.createInternalCloud();
+        spheres.CreateInternalCloud();
         for (auto &p : points) {
             auto ps = ccMesh::CreateSphere(point_size_, 10);
             ps->Translate(p);

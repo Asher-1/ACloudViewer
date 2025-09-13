@@ -223,13 +223,13 @@ def _draw_webrtc(parser, args):
 
 
 def main():
-    print(f"***************************************************\n"
+    print(f"*********************************************************\n"
           f"* CloudViewer: A Modern Library for 3D Data Processing  *\n"
           f"*                                                       *\n"
           f"* Version {cv3d.__version__: <22}                       *\n"
-          f"* Docs    https://www.cloudViewer.org/docs                   *\n"
+          f"* Docs    https://www.cloudViewer.org/docs              *\n"
           f"* Code    https://github.com/Asher-1/ACloudViewer       *\n"
-          f"***************************************************")
+          f"*********************************************************")
 
     main_parser = _CloudViewerArgumentParser(
         description="CloudViewer commad-line tools",
@@ -336,7 +336,7 @@ def main():
         "environment variables. Example usage:\n"
         "  cloudViewer draw_web path/to/model_file            # Visualize at http://localhost:8888\n"
         "  cloudViewer draw_web --bind_all path/to/model_file # Serve to the entire local network\n"
-        "                                                # at http://hostname.domainname:8888\n"
+        "                                                     # at http://hostname.domainname:8888\n"
     )
     parser_draw_web = subparsers.add_parser(
         "draw_web",

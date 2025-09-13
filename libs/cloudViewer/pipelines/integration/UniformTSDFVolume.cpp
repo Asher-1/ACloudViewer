@@ -299,6 +299,8 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_;
 
+    std::vector<std::pair<Eigen::Vector3i, geometry::Voxel>> valid_voxels;
+
 #ifdef _WIN32
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
@@ -308,6 +310,9 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
+            std::vector<std::pair<Eigen::Vector3i, geometry::Voxel>>
+                    local_voxels;
+
             for (int z = 0; z < resolution_; z++) {
                 const int ind = IndexOf(x, y, z);
                 const float w = voxels_[ind].weight_;
@@ -316,11 +321,23 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
                     double c = (f + 1.0) * 0.5;
                     Eigen::Vector3d color = Eigen::Vector3d(c, c, c);
                     Eigen::Vector3i index = Eigen::Vector3i(x, y, z);
-                    voxel_grid->voxels_[index] = geometry::Voxel(index, color);
+                    local_voxels.emplace_back(index,
+                                              geometry::Voxel(index, color));
                 }
+            }
+
+#pragma omp critical
+            {
+                valid_voxels.insert(valid_voxels.end(), local_voxels.begin(),
+                                    local_voxels.end());
             }
         }
     }
+
+    for (const auto &voxel_pair : valid_voxels) {
+        voxel_grid->voxels_[voxel_pair.first] = voxel_pair.second;
+    }
+    
     return voxel_grid;
 }
 

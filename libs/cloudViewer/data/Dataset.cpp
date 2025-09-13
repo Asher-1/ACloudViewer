@@ -30,10 +30,25 @@ std::string LocateDataRoot() {
     return data_root;
 }
 
-static std::string cloudViewerDownloadsPrefix =
+static std::string InternalDownloadsPrefix =
         "https://github.com/isl-org/open3d_downloads/releases/download/";
 
-std::string& CloudViewerDownloadsPrefix() { return cloudViewerDownloadsPrefix; }
+void SetCustomDownloadsPrefix(const std::string& prefix) {
+    if (prefix.empty()) {
+        utility::LogError("prefix cannot be empty.");
+    }
+    if (prefix.back() != '/') {
+        InternalDownloadsPrefix = prefix + "/";
+    } else {
+        InternalDownloadsPrefix = prefix;
+    }
+}
+
+std::string GetCustomDownloadsPrefix() { return InternalDownloadsPrefix; }
+
+std::string CloudViewerDownloadsPrefix() {
+    return "https://github.com/isl-org/open3d_downloads/releases/download/";
+}
 
 Dataset::Dataset(const std::string& prefix, const std::string& data_root)
     : prefix_(prefix) {

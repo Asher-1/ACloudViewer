@@ -32,7 +32,6 @@ if __name__ == "__main__":
     density_mesh.create_internal_cloud()
     density_mesh.set_vertices(mesh.get_vertices())
     density_mesh.set_triangles(mesh.get_triangles())
-    density_mesh.set_triangle_normals(mesh.get_triangle_normals())
     density_mesh.set_vertex_colors(cv3d.utility.Vector3dVector(density_colors))
     cv3d.visualization.draw_geometries([density_mesh])
 

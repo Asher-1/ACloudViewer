@@ -14,7 +14,7 @@ namespace cloudViewer {
 namespace utility {
 
 void pybind_logging(py::module& m) {
-    py::native_enum<VerbosityLevel>(m, "VerbosityLevel", "enum.Enum",
+    py::native_enum<VerbosityLevel>(m, "VerbosityLevel", "enum.IntEnum",
                                     "Enum class for VerbosityLevel.")
             .value("Error", VerbosityLevel::Error)
             .value("Warning", VerbosityLevel::Warning)

@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #include "ecvMesh.h"
 
@@ -186,7 +186,7 @@ void ccMesh::setAssociatedCloud(ccGenericPointCloud* cloud) {
     m_bBox.setValidity(false);
 }
 
-bool ccMesh::createInternalCloud() {
+bool ccMesh::CreateInternalCloud() {
     if (getAssociatedCloud()) {
         if (getChildrenNumber() == 0) {
             addChild(getAssociatedCloud());
@@ -233,8 +233,11 @@ bool ccMesh::hasColors() const {
 }
 
 bool ccMesh::hasNormals() const {
-    return ((m_associatedCloud ? m_associatedCloud->hasNormals() : false) ||
-            hasTriNormals());
+    return (HasVertexNormals() || hasTriNormals());
+}
+
+bool ccMesh::HasVertexNormals() const {
+    return m_associatedCloud ? m_associatedCloud->hasNormals() : false;
 }
 
 bool ccMesh::hasDisplayedScalarField() const {
@@ -2329,7 +2332,7 @@ bool ccMesh::resize(size_t n) {
 bool ccMesh::resizeAssociatedCloud(std::size_t n) {
     if (!m_associatedCloud) {
         cloudViewer::utility::LogWarning(
-                "Must call createInternalCloud first!");
+                "Must call CreateInternalCloud first!");
         return false;
     }
     ccPointCloud* baseVertices =
@@ -2357,7 +2360,7 @@ bool ccMesh::reserveAssociatedCloud(std::size_t n,
                                     bool init_normal) {
     if (!m_associatedCloud) {
         cloudViewer::utility::LogWarning(
-                "Must call createInternalCloud first!");
+                "Must call CreateInternalCloud first!");
         return false;
     }
     ccPointCloud* baseVertices =
@@ -2604,10 +2607,11 @@ ccMesh* ccMesh::createNewMeshFromSelection(
         assert(rc.size() !=
                0);  // otherwise 'newVertices->size() == 0' (see above)
         assert(rc.size() !=
-               m_associatedCloud->size());  // in this case
-                                            // createNewCloudFromVisibilitySelection
-                                            // would have return
-                                            // 'm_associatedCloud' itself
+               m_associatedCloud
+                       ->size());  // in this case
+                                   // createNewCloudFromVisibilitySelection
+                                   // would have return
+                                   // 'm_associatedCloud' itself
 
         cloudViewer::GenericIndexedMesh* selection =
                 cloudViewer::ManualSegmentationTools::segmentMesh(
@@ -2736,7 +2740,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(
 
                         // for each triangle of this mesh, try to determine if
                         // its normals are already in use (otherwise add them to
-                        //the new container and increase its index)
+                        // the new container and increase its index)
                         for (unsigned j = 0; j < 3; ++j) {
                             if (triNormIndexes.u[j] >= 0 &&
                                 newNormIndexes[triNormIndexes.u[j]] < 0) {
@@ -2803,7 +2807,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(
                         // for each triangle of this mesh, try to determine if
                         // its textures coordinates are already in use
                         //(otherwise add them to the new container and increase
-                        //its index)
+                        // its index)
                         for (unsigned j = 0; j < 3; ++j) {
                             if (triTexIndexes.u[j] >= 0 &&
                                 newTexIndexes[triTexIndexes.u[j]] < 0) {
@@ -2861,7 +2865,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(
 
                         // for each triangle of this mesh, try to determine if
                         // its material is already in use (otherwise add it to
-                        //the new container and increase its index)
+                        // the new container and increase its index)
                         if (triMatIndex >= 0 &&
                             newMatIndexes[triMatIndex] < 0) {
                             // import old material to new subset (create new
@@ -3023,7 +3027,8 @@ ccMesh* ccMesh::createNewMeshFromSelection(
             if (triangleIndexMap[i] < 0)  // triangle is not used in the new
                                           // mesh, it will be kept in this one
             {
-                const cloudViewer::VerticesIndexes& tsi = m_triVertIndexes->at(i);
+                const cloudViewer::VerticesIndexes& tsi =
+                        m_triVertIndexes->at(i);
                 for (unsigned j = 0; j < 3; ++j) {
                     visArray[tsi.i[j]] = POINT_HIDDEN;
                 }

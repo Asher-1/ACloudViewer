@@ -62,10 +62,6 @@ class TensorList(cv3d.pybind.core.TensorList):
             device = Device("CPU:0")
         super(TensorList, self).__init__(shape, dtype, device)
 
-    @staticmethod
-    def from_tensors(tensors):
-        return TensorList(tensors)
-
     def _reduction_shape_to_size_vector(self, shape):
         if shape is None:
             return SizeVector(list(range(self.ndim)))

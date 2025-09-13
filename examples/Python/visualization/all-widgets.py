@@ -82,7 +82,7 @@ class ExampleWindow:
         # add to the top-level (vertical) layout
         layout.add_child(fileedit_layout)
 
-        # Create a collapsable vertical widget, which takes up enough vertical
+        # Create a collapsible vertical widget, which takes up enough vertical
         # space for all its children when open, but only enough for text when
         # closed. This is useful for property pages, so the user can hide sets
         # of properties they rarely use. All layouts take a spacing parameter,
@@ -127,15 +127,57 @@ class ExampleWindow:
         switch.set_on_clicked(self._on_switch)
         collapse.add_child(switch)
 
-        # Add a simple image
-        logo = gui.ImageWidget(basedir + "/icon-32.png")
-        collapse.add_child(logo)
+        self.logo_idx = 0
+        proxy = gui.WidgetProxy()
+
+        def switch_proxy():
+            self.logo_idx += 1
+            if self.logo_idx % 3 == 0:
+                proxy.set_widget(None)
+            elif self.logo_idx % 3 == 1:
+                # Add a simple image
+                logo = gui.ImageWidget(basedir + "/icon-32.png")
+                proxy.set_widget(logo)
+            else:
+                label = gui.Label(
+                    'CloudViewer: A Modern Library for 3D Data Processing')
+                proxy.set_widget(label)
+            w.set_needs_layout()
+
+        logo_btn = gui.Button('Switch Logo By WidgetProxy')
+        logo_btn.vertical_padding_em = 0
+        logo_btn.background_color = gui.Color(r=0, b=0.5, g=0)
+        logo_btn.set_on_clicked(switch_proxy)
+        collapse.add_child(logo_btn)
+        collapse.add_child(proxy)
+
+        # Widget stack demo
+        self._widget_idx = 0
+        hz = gui.Horiz(spacing=5)
+        push_widget_btn = gui.Button('Push widget')
+        push_widget_btn.vertical_padding_em = 0
+        pop_widget_btn = gui.Button('Pop widget')
+        pop_widget_btn.vertical_padding_em = 0
+        stack = gui.WidgetStack()
+        stack.set_on_top(lambda w: print(f'New widget is: {w.text}'))
+        hz.add_child(gui.Label('WidgetStack '))
+        hz.add_child(push_widget_btn)
+        hz.add_child(pop_widget_btn)
+        hz.add_child(stack)
+        collapse.add_child(hz)
+
+        def push_widget():
+            self._widget_idx += 1
+            stack.push_widget(gui.Label(f'Widget {self._widget_idx}'))
+
+        push_widget_btn.set_on_clicked(push_widget)
+        pop_widget_btn.set_on_clicked(stack.pop_widget)
 
         # Add a list of items
         lv = gui.ListView()
-        lv.set_items(["Ground", "Trees", "Buildings"
-                      "Cars", "People"])
+        lv.set_items(["Ground", "Trees", "Buildings", "Cars", "People", "Cats"])
         lv.selected_index = lv.selected_index + 2  # initially is -1, so now 1
+        lv.set_max_visible_items(4)
         lv.set_on_selection_changed(self._on_list)
         collapse.add_child(lv)
 
@@ -238,6 +280,22 @@ class ExampleWindow:
         tab2.add_child(gui.Label("No plugins detected"))
         tab2.add_stretch()
         tabs.add_tab("Plugins", tab2)
+        tab3 = gui.RadioButton(gui.RadioButton.VERT)
+        tab3.set_items(["Apple", "Orange"])
+
+        def vt_changed(idx):
+            print(f"current cargo: {tab3.selected_value}")
+
+        tab3.set_on_selection_changed(vt_changed)
+        tabs.add_tab("Cargo", tab3)
+        tab4 = gui.RadioButton(gui.RadioButton.HORIZ)
+        tab4.set_items(["Air plane", "Train", "Bus"])
+
+        def hz_changed(idx):
+            print(f"current traffic plan: {tab4.selected_value}")
+
+        tab4.set_on_selection_changed(hz_changed)
+        tabs.add_tab("Traffic", tab4)
         collapse.add_child(tabs)
 
         # Quit button. (Typically this is a menu item)
@@ -399,7 +457,7 @@ class MessageBox:
 
 
 def main():
-    # We need to initalize the application, which finds the necessary shaders for
+    # We need to initialize the application, which finds the necessary shaders for
     # rendering and prepares the cross-platform window abstraction.
     gui.Application.instance.initialize()
 

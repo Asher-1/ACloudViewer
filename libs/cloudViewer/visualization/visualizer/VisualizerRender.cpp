@@ -8,16 +8,14 @@
 // clang-format off
 #include "visualization/visualizer/Visualizer.h" // must include first
 // clang-format on
-#include "camera/PinholeCameraTrajectory.h"
-
+#include <IJsonConvertibleIO.h>
+#include <ImageIO.h>
 #include <Logging.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
-#include <ImageIO.h>
+#include "camera/PinholeCameraTrajectory.h"
 #include "io/PointCloudIO.h"
-#include <IJsonConvertibleIO.h>
-
 #include "visualization/utility/GLHelper.h"
 #include "visualization/visualizer/ViewParameters.h"
 #include "visualization/visualizer/ViewTrajectory.h"
@@ -57,8 +55,8 @@ bool Visualizer::InitOpenGL() {
 
     render_fbo_ = 0;
 
-	glGenVertexArrays(1, &vao_id_);
-	glBindVertexArray(vao_id_);
+    glGenVertexArrays(1, &vao_id_);
+    glBindVertexArray(vao_id_);
 
     // depth test
     glEnable(GL_DEPTH_TEST);
@@ -111,7 +109,6 @@ void Visualizer::Render(bool render_screen) {
                                   GL_RENDERBUFFER, render_depth_stencil_rbo_);
     }
 
-
     glEnable(GL_MULTISAMPLE);
     glDisable(GL_BLEND);
     auto &background_color = render_option_ptr_->background_color_;
@@ -143,10 +140,9 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
         }
         if (coordinate_frame_mesh_ptr_ && coordinate_frame_mesh_renderer_ptr_) {
             const auto &boundingbox = view_control_ptr_->GetBoundingBox();
-            *coordinate_frame_mesh_ptr_ =
-                    *ccMesh::CreateCoordinateFrame(
-                            boundingbox.GetMaxExtent() * 0.2,
-                            boundingbox.GetMinBound());
+            *coordinate_frame_mesh_ptr_ = *ccMesh::CreateCoordinateFrame(
+                    boundingbox.GetMaxExtent() * 0.2,
+                    boundingbox.GetMinBound());
             coordinate_frame_mesh_renderer_ptr_->UpdateGeometry();
         }
     }
@@ -192,8 +188,10 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
     screen_image.Prepare(view_control_ptr_->GetWindowWidth(),
                          view_control_ptr_->GetWindowHeight(), 3, 4);
     if (do_render) {
-        Render();
+        Render(true);
         is_redraw_required_ = false;
+    } else {
+        glfwMakeContextCurrent(window_);
     }
     glFinish();
     glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(),
@@ -209,7 +207,7 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
     for (int i = 0; i < screen_image.height_; i++) {
         memcpy(image_ptr->data_.data() + bytes_per_line * i,
                screen_image.data_.data() +
-               bytes_per_line * (screen_image.height_ - i - 1),
+                       bytes_per_line * (screen_image.height_ - i - 1),
                bytes_per_line);
     }
     return image_ptr;

@@ -4,6 +4,7 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
+//
 // This is a private header. It shall be hidden from CloudViewer's public API. Do not
 // put this in CloudViewer.h.in.
 

@@ -2632,7 +2632,7 @@ bool ConvexHull(const ccHObject::Container& selectedEntities,
         }
 
         ccMesh* outMesh = new ccMesh();
-        outMesh->createInternalCloud();
+        outMesh->CreateInternalCloud();
         *outMesh = *mesh;
         if (pc->getParent()) {
             pc->getParent()->addChild(outMesh);

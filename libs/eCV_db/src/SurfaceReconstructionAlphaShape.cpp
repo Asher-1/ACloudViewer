@@ -98,32 +98,32 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
     for (size_t tidx = 0; tidx < tetra_mesh->tetras_.size(); ++tidx) {
         const auto& tetra = tetra_mesh->tetras_[tidx];
         // clang-format off
-		Eigen::Matrix4d tmp;
-		tmp << verts[tetra(0)](0), verts[tetra(0)](1), verts[tetra(0)](2), 1,
-			verts[tetra(1)](0), verts[tetra(1)](1), verts[tetra(1)](2), 1,
-			verts[tetra(2)](0), verts[tetra(2)](1), verts[tetra(2)](2), 1,
-			verts[tetra(3)](0), verts[tetra(3)](1), verts[tetra(3)](2), 1;
-		double a = tmp.determinant();
-		tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](1), verts[tetra(0)](2),
-			vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](1), verts[tetra(1)](2),
-			vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](1), verts[tetra(2)](2),
-			vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](1), verts[tetra(3)](2);
-		double c = tmp.determinant();
-		tmp << vsqn[tetra(0)], verts[tetra(0)](1), verts[tetra(0)](2), 1,
-			vsqn[tetra(1)], verts[tetra(1)](1), verts[tetra(1)](2), 1,
-			vsqn[tetra(2)], verts[tetra(2)](1), verts[tetra(2)](2), 1,
-			vsqn[tetra(3)], verts[tetra(3)](1), verts[tetra(3)](2), 1;
-		double dx = tmp.determinant();
-		tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](2), 1,
-			vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](2), 1,
-			vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](2), 1,
-			vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](2), 1;
-		double dy = tmp.determinant();
-		tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](1), 1,
-			vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](1), 1,
-			vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](1), 1,
-			vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](1), 1;
-		double dz = tmp.determinant();
+        Eigen::Matrix4d tmp;
+        tmp << verts[tetra(0)](0), verts[tetra(0)](1), verts[tetra(0)](2), 1,
+                verts[tetra(1)](0), verts[tetra(1)](1), verts[tetra(1)](2), 1,
+                verts[tetra(2)](0), verts[tetra(2)](1), verts[tetra(2)](2), 1,
+                verts[tetra(3)](0), verts[tetra(3)](1), verts[tetra(3)](2), 1;
+        double a = tmp.determinant();
+        tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](1), verts[tetra(0)](2),
+                vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](1), verts[tetra(1)](2),
+                vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](1), verts[tetra(2)](2),
+                vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](1), verts[tetra(3)](2);
+        double c = tmp.determinant();
+        tmp << vsqn[tetra(0)], verts[tetra(0)](1), verts[tetra(0)](2), 1,
+                vsqn[tetra(1)], verts[tetra(1)](1), verts[tetra(1)](2), 1,
+                vsqn[tetra(2)], verts[tetra(2)](1), verts[tetra(2)](2), 1,
+                vsqn[tetra(3)], verts[tetra(3)](1), verts[tetra(3)](2), 1;
+        double dx = tmp.determinant();
+        tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](2), 1,
+                vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](2), 1,
+                vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](2), 1,
+                vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](2), 1;
+        double dy = tmp.determinant();
+        tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](1), 1,
+                vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](1), 1,
+                vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](1), 1,
+                vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](1), 1;
+        double dz = tmp.determinant();
         // clang-format on
         if (a == 0) {
             cloudViewer::utility::LogError(

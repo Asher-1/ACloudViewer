@@ -7,15 +7,15 @@
 
 #include "pipelines/color_map/ColorMapUtils.h"
 
-#include <Parallel.h>
-
-#include <camera/PinholeCameraTrajectory.h>
 #include <Image.h>
-#include <ecvKDTreeFlann.h>
+#include <Parallel.h>
 #include <RGBDImage.h>
+#include <camera/PinholeCameraTrajectory.h>
+#include <ecvHObjectCaster.h>
+#include <ecvKDTreeFlann.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include <ecvHObjectCaster.h>
+
 #include "pipelines/color_map/ImageWarpingField.h"
 
 namespace cloudViewer {
@@ -44,19 +44,21 @@ static std::tuple<bool, T> QueryImageIntensity(
         const camera::PinholeCameraParameters& camera_parameter,
         utility::optional<int> channel,
         int image_boundary_margin) {
-    float u, v, depth;
+    // We use double here for u, v such that it is consistent with 0.12 release
+    // numerically, since double->float->int can be different from double->int.
+    double u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera_parameter);
     // TODO: check why we use the u, ve before warpping for TestImageBoundary.
     if (img.TestImageBoundary(u, v, image_boundary_margin)) {
         if (optional_warping_field.has_value()) {
             Eigen::Vector2d uv_shift =
                     optional_warping_field.value().GetImageWarpingField(u, v);
-            u = static_cast<float>(uv_shift(0));
-            v = static_cast<float>(uv_shift(1));
+            u = uv_shift(0);
+            v = uv_shift(1);
         }
         if (img.TestImageBoundary(u, v, image_boundary_margin)) {
-            int u_round = int(u);
-            int v_round = int(v);
+            int u_round = int(round(u));
+            int v_round = int(round(v));
             if (channel.has_value()) {
                 return std::make_tuple(
                         true,
@@ -132,15 +134,17 @@ CreateVertexAndImageVisibility(
     std::vector<std::vector<int>> visibility_vertex_to_image;
     visibility_vertex_to_image.resize(n_vertex);
 
+    std::vector<Eigen::Vector3d> cached_vertices = mesh.getEigenVertices();
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
     for (int camera_id = 0; camera_id < int(n_camera); camera_id++) {
         for (int vertex_id = 0; vertex_id < int(n_vertex); vertex_id++) {
-            Eigen::Vector3d X = mesh.getVertice(vertex_id);
+            const Eigen::Vector3d& X = cached_vertices[vertex_id];
             float u, v, d;
             std::tie(u, v, d) = Project3DPointAndGetUVDepth(
                     X, camera_trajectory.parameters_[camera_id]);
-            int u_d = int(round(u)), v_d = int(round(v));
+            int u_d = int(round(u));
+            int v_d = int(round(v));
             // Skip if vertex in image boundary.
             if (d < 0.0 ||
                 !images_depth[camera_id].TestImageBoundary(u_d, v_d)) {
@@ -234,17 +238,18 @@ void SetGeometryColorAverage(
         int image_boundary_margin,
         int invisible_vertex_color_knn) {
     size_t n_vertex = mesh.getVerticeSize();
-    ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
+    ccPointCloud* cloud =
+            ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
     cloud->unallocateColors();
-    if(!cloud->resizeTheRGBTable()) {
+    if (!cloud->resizeTheRGBTable()) {
         utility::LogError("[SetGeometryColorAverage] not enough memory!");
     }
     std::vector<size_t> valid_vertices;
     std::vector<size_t> invalid_vertices;
+    std::vector<Eigen::Vector3d> temp_colors(n_vertex, Eigen::Vector3d::Zero());
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)n_vertex; i++) {
-        cloud->setPointColor(i, Eigen::Vector3d::Zero());
         double sum = 0.0;
         for (size_t iter = 0; iter < visibility_vertex_to_image[i].size();
              iter++) {
@@ -270,23 +275,23 @@ void SetGeometryColorAverage(
             float g = (float)g_temp / 255.0f;
             float b = (float)b_temp / 255.0f;
             if (valid) {
-                cloud->setEigenColor(i, cloud->getEigenColor(i) + Eigen::Vector3d(r, g, b));
+                temp_colors[i] += Eigen::Vector3d(r, g, b);
                 sum += 1.0;
             }
         }
 #pragma omp critical(SetGeometryColorAverage)
         {
             if (sum > 0.0) {
-                cloud->setEigenColor(i, cloud->getEigenColor(i) / sum);
+                cloud->setEigenColor(i, temp_colors[i] / sum);
                 valid_vertices.push_back(i);
             } else {
+                cloud->setEigenColor(i, temp_colors[i]);
                 invalid_vertices.push_back(i);
             }
         }
     }
     if (invisible_vertex_color_knn > 0) {
-        std::shared_ptr<ccMesh> valid_mesh =
-                mesh.SelectByIndex(valid_vertices);
+        std::shared_ptr<ccMesh> valid_mesh = mesh.SelectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())

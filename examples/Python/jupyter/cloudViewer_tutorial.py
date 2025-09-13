@@ -71,7 +71,7 @@ cv3d.visualization.draw_geometries = jupyter_draw_geometries
 
 def edges_to_lineset(mesh, edges, color):
     ls = cv3d.geometry.LineSet()
-    ls.points = mesh.vertices
+    ls.points = mesh.vertices()
     ls.lines = edges
     ls.paint_uniform_color(color)
     return ls

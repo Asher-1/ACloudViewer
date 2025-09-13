@@ -58,21 +58,27 @@ cmake -DDEVELOPER_BUILD=OFF \
       -DBUILD_FILAMENT_FROM_SOURCE=OFF \
       -DBUILD_JUPYTER_EXTENSION=ON \
       -DBUILD_RECONSTRUCTION=ON \
-      -DBUILD_CUDA_MODULE=ON \
       -DBUILD_COMMON_CUDA_ARCHS=ON \
       -DBUILD_PYTORCH_OPS=ON \
       -DBUILD_TENSORFLOW_OPS=OFF \
       -DBUNDLE_CLOUDVIEWER_ML=ON \
       -DGLIBCXX_USE_CXX11_ABI=OFF \
+      -DBUILD_WITH_CONDA=ON \
+      -DCONDA_PREFIX=$CONDA_PREFIX \
       -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
       -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
       -DCLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML \
       ..
 
 make "-j$(nproc)" python-package
+
+# build with cuda
+cmake -DBUILD_CUDA_MODULE=ON ..
+
 make "-j$(nproc)" pip-package
 make "-j$(nproc)" install-pip-package
 python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
+
 ```
 
 ```
@@ -88,14 +94,14 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DBUILD_JUPYTER_EXTENSION=OFF \
         -DBUILD_LIBREALSENSE=OFF \
         -DBUILD_AZURE_KINECT=OFF \
-        -DBUILD_BENCHMARKS=OFF \
+        -DBUILD_BENCHMARKS=ON \
         -DWITH_OPENMP=ON \
         -DWITH_IPP=ON \
         -DWITH_SIMD=ON \
         -DUSE_SIMD=ON \
         -DPACKAGE=ON \
         -DUSE_PCL_BACKEND=ON \
-        -DBUILD_WEBRTC=OFF \
+        -DBUILD_WEBRTC=ON \
         -DBUILD_OPENCV=ON \
         -DBUILD_RECONSTRUCTION=ON \
         -DBUILD_CUDA_MODULE=ON \
@@ -235,7 +241,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DBUILD_JUPYTER_EXTENSION=OFF \
         -DBUILD_LIBREALSENSE=OFF \
         -DBUILD_AZURE_KINECT=OFF \
-        -DBUILD_BENCHMARKS=OFF \
+        -DBUILD_BENCHMARKS=ON \
         -DWITH_OPENMP=ON \
         -DWITH_IPP=OFF \
         -DWITH_SIMD=ON \

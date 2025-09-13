@@ -17,7 +17,7 @@ namespace data {
 
 PolylinesModel::PolylinesModel(const std::string& data_root)
     : DownloadDataset("PolylinesModel",
-                      {CloudViewerDownloadsPrefix() + "bin-data/polylines.bin",
+                      {GetCustomDownloadsPrefix() + "bin-data/polylines.bin",
                        "9fa4241bfbb11567ffba839afccfee5c"},
                       data_root) {
     path_ = GetExtractDir() + "/" + "polylines.bin";

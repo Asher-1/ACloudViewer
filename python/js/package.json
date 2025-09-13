@@ -1,8 +1,8 @@
 {
   "name": "cloudViewer",
   "version": "@PROJECT_VERSION_THREE_NUMBER@",
-  "description": "CloudViewer: A Modern Library for 3D Data Processing",
-  "author": "CloudViewer.org",
+  "description": "@PROJECT_DESCRIPTION@",
+  "author": "@PROJECT_EMAIL@",
   "main": "lib/index.js",
   "repository": {
     "type": "git",
