@@ -122,7 +122,7 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         flex \
         fontconfig \
         # libgdal-dev \
-        # libcgal-dev \
+        libcgal-dev \
         # for QT
         libxcb-xkb1 \
         libxcb-shape0 \
