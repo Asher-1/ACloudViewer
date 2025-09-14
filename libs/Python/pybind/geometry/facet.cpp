@@ -88,6 +88,7 @@ void pybind_facet(py::module &m) {
 				return std::ref(*facet.getPolygon());
 			} else {
 				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have polygons!");
+				return std::ref(*cloudViewer::make_shared<ccMesh>());
 			}
 		}, "Returns polygon mesh (if any)")
 	.def("set_polygon", [](ccFacet& facet, ccMesh& mesh) {
@@ -98,6 +99,7 @@ void pybind_facet(py::module &m) {
 				return std::ref(*facet.getContour());
 			} else {
 				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have contours!");
+				return std::ref(*cloudViewer::make_shared<ccPolyline>(nullptr));
 			}
 		}, "Returns contour polyline (if any)")
 	.def("set_contour", [](ccFacet& facet, ccPolyline& poly) {
@@ -108,6 +110,7 @@ void pybind_facet(py::module &m) {
 				return std::ref(*facet.getContourVertices());
 			} else {
 				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have origin points!");
+				return std::ref(*cloudViewer::make_shared<ccPointCloud>());
 			}
 		}, "Returns contour vertices (if any)")
 	.def("set_contour_vertices", [](ccFacet& facet, ccPointCloud& vertices) {
@@ -118,6 +121,7 @@ void pybind_facet(py::module &m) {
 				return std::ref(*facet.getOriginPoints());
 			} else {
 				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have origin points!");
+				return std::ref(*cloudViewer::make_shared<ccPointCloud>());
 			}
 		}, "Returns origin points (if any)")
 	.def("set_origin_points", [](ccFacet& facet, ccPointCloud& cloud) {
