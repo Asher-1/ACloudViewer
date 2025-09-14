@@ -86,6 +86,7 @@ Visualizer::Visualizer() {}
 
 Visualizer::~Visualizer() {
     DestroyVisualizerWindow();
+
 #if defined(__APPLE__) && defined(BUILD_GUI)
     bluegl::unbind();
 #endif
