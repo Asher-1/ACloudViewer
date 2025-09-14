@@ -79,17 +79,91 @@ jobs:
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
           fi
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+          build-mount-path: '/var/lib/docker'
+          build-mount-path-ownership: 'root:root'
+      
+      - name: Additional space optimization
+        run: |
+          echo "=== Initial disk space ==="
+          df -h
+
+          echo "=== Initial disk space /var/lib/docker ==="
+          df -h /var/lib/docker
+          
+          # Clean up additional space
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /opt/az
+          sudo rm -rf /usr/local/.ghcup
+
+          # Configure Docker to use efficient storage
+          echo "=== Stopping Docker service ==="
+          sudo systemctl stop docker.socket || true
+          sudo systemctl stop docker.service || true
+          sudo systemctl stop containerd || true
+          
+          # Wait for Docker to fully stop
+          sleep 5
+          
+          # Clean up any existing Docker data to avoid conflicts
+          sudo rm -rf /var/lib/docker/* || true
+          
+          # Create Docker daemon config for space optimization
+          sudo mkdir -p /etc/docker
+          sudo tee /etc/docker/daemon.json > /dev/null <<EOF
+          {
+            "storage-driver": "overlay2",
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            },
+            "max-concurrent-downloads": 3,
+            "max-concurrent-uploads": 3
+          }
+          EOF
+          
+          echo "=== Starting Docker service ==="
+          sudo systemctl start containerd || true
+          sudo systemctl start docker.service
+          sudo systemctl start docker.socket || true
+          
+          # Wait for Docker to be ready
+          echo "=== Waiting for Docker to be ready ==="
+          timeout 60 bash -c 'until docker info >/dev/null 2>&1; do echo "Waiting for Docker..."; sleep 2; done' || {
+            echo "Docker failed to start, checking logs:"
+            sudo journalctl -u docker.service --no-pager -l | tail -20
+            sudo systemctl status docker.service
+            exit 1
+          }
+          
+          # Clean Docker system
+          docker system prune -a -f --volumes || true
+          
+          echo "=== After cleanup disk space ==="
+          df -h
+          
+          echo "=== Docker info ==="
+          docker info
       - name: Checkout source code
         uses: actions/checkout@v4
-      - name: Maximize build space
-        run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
       # Be verbose and explicit here such that a developer can directly copy the
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
           echo "DEVELOPER_BUILD is $DEVELOPER_BUILD"
+          
+          # Clean up before build to ensure maximum space
+          docker system prune -f --volumes || true
           if [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py38_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
@@ -115,6 +189,15 @@ jobs:
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudViewer_cpu*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
           echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME" >> $GITHUB_ENV
+          
+          echo "=== Post-build cleanup and disk space ==="
+          # Clean up Docker build cache and unused images
+          docker builder prune -f || true
+          docker image prune -f || true
+          
+          # Show final disk usage
+          df -h
+          docker system df
 
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
@@ -194,7 +277,6 @@ jobs:
       - name: Set up Python version
         run: |
           sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
-
       - name: Set up Python environment
         uses: conda-incubator/setup-miniconda@v3
         with:

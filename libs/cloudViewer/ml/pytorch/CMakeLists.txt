@@ -146,16 +146,18 @@ target_include_directories(cloudViewer_torch_ops SYSTEM PRIVATE
 
 target_link_libraries(cloudViewer_torch_ops PRIVATE
         torch_cpu
+        CloudViewer::CloudViewer
         3rdparty_eigen3
         3rdparty_fmt
         3rdparty_nanoflann
-        3rdparty_parallelstl
         3rdparty_tbb
         )
 
-target_link_libraries(cloudViewer_torch_ops PRIVATE
-        CloudViewer::CloudViewer
+if (TARGET 3rdparty_parallelstl)
+        target_link_libraries(cloudViewer_torch_ops PRIVATE
+                3rdparty_parallelstl
         )
+endif()
 
 if (BUILD_CUDA_MODULE)
     target_link_libraries(cloudViewer_torch_ops PRIVATE

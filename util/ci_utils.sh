@@ -582,13 +582,111 @@ run_python_tests() {
 }
 
 maximize_ubuntu_github_actions_build_space() {
+    # Enhanced version with better Docker space management
     # https://github.com/easimon/maximize-build-space/blob/main/action.yml
+    echo "=== Initial disk space ==="
     df -h .                                  # => 26GB
+    
+    # Remove large pre-installed packages
     $SUDO rm -rf /usr/share/dotnet           # ~17GB
     $SUDO rm -rf /usr/local/lib/android      # ~11GB
     $SUDO rm -rf /opt/ghc                    # ~2.7GB
     $SUDO rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
     $SUDO docker image prune --all --force   # ~4.5GB
     $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
-    df -h . # => 53GB
+    
+    # Additional cleanup for more space
+    # $SUDO rm -rf /usr/local/share/boost      # ~1GB
+    # $SUDO rm -rf /usr/share/swift            # ~1GB
+    # $SUDO rm -rf /opt/az                     # ~1GB
+    # $SUDO rm -rf /usr/local/.ghcup           # ~2GB
+    # $SUDO rm -rf /opt/microsoft              # ~1GB
+    
+    echo "=== Final disk space ==="
+    df -h .                                  # => ~60GB
+    
+    echo "=== Docker system info ==="
+    docker system df || true
+}
+
+monitor_disk_space() {
+    local step_name="${1:-Unknown step}"
+    echo "=== Disk space monitoring: $step_name ==="
+    echo "Filesystem usage:"
+    df -h
+    echo ""
+    echo "Docker system usage:"
+    docker system df 2>/dev/null || echo "Docker not available"
+    echo ""
+    echo "Available space in /var/lib/docker:"
+    df -h /var/lib/docker 2>/dev/null || df -h /
+    echo ""
+}
+
+docker_cleanup_aggressive() {
+    echo "=== Aggressive Docker cleanup ==="
+    # Stop all containers
+    docker stop $(docker ps -aq) 2>/dev/null || true
+    
+    # Remove all containers
+    docker rm $(docker ps -aq) 2>/dev/null || true
+    
+    # Remove all images
+    docker rmi $(docker images -q) 2>/dev/null || true
+    
+    # Remove all volumes
+    docker volume rm $(docker volume ls -q) 2>/dev/null || true
+    
+    # Remove all networks (except default ones)
+    docker network rm $(docker network ls -q) 2>/dev/null || true
+    
+    # Prune everything
+    docker system prune --all --force --volumes 2>/dev/null || true
+    
+    # Clean build cache
+    docker builder prune --all --force 2>/dev/null || true
+    
+    echo "Docker cleanup completed"
+    docker system df 2>/dev/null || true
+}
+
+restart_docker_service() {
+    echo "=== Restarting Docker service safely ==="
+    
+    # Stop all Docker services in correct order
+    echo "Stopping Docker services..."
+    $SUDO systemctl stop docker.socket || true
+    $SUDO systemctl stop docker.service || true
+    $SUDO systemctl stop containerd || true
+    
+    # Wait for services to fully stop
+    sleep 5
+    
+    # Kill any remaining Docker processes
+    $SUDO pkill -f dockerd || true
+    $SUDO pkill -f containerd || true
+    
+    # Clean up any stale mount points
+    echo "Cleaning up stale mount points..."
+    $SUDO umount /var/lib/docker/overlay2/*/merged 2>/dev/null || true
+    
+    # Start services in correct order
+    echo "Starting Docker services..."
+    $SUDO systemctl start containerd || true
+    sleep 2
+    $SUDO systemctl start docker.service
+    sleep 2
+    $SUDO systemctl start docker.socket || true
+    
+    # Wait for Docker to be ready
+    echo "Waiting for Docker to be ready..."
+    timeout 60 bash -c 'until docker info >/dev/null 2>&1; do echo "Waiting for Docker..."; sleep 2; done' || {
+        echo "Docker failed to start, checking logs:"
+        $SUDO journalctl -u docker.service --no-pager -l | tail -20
+        $SUDO systemctl status docker.service
+        return 1
+    }
+    
+    echo "Docker service restarted successfully"
+    docker info
 }
