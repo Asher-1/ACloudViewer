@@ -7,17 +7,18 @@
 
 #pragma once
 
+#include <ecvMesh.h>
+
 #include <list>
 #include <type_traits>
 #include <unordered_map>
 
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/TensorCheck.h"
-#include <ecvMesh.h>
 #include "cloudViewer/t/geometry/BoundingVolume.h"
-#include "cloudViewer/t/geometry/Image.h"
 #include "cloudViewer/t/geometry/DrawableGeometry.h"
 #include "cloudViewer/t/geometry/Geometry.h"
+#include "cloudViewer/t/geometry/Image.h"
 #include "cloudViewer/t/geometry/TensorMap.h"
 #include "cloudViewer/visualization/rendering/Model.h"
 
@@ -737,9 +738,9 @@ public:
     ccMesh ToLegacy() const;
 
     /// Convert a TriangleMeshModel (e.g. as read from a file with
-    /// cloudViewer::io::ReadTriangleMeshModel) to an unordered map of mesh names to
-    /// TriangleMeshes. Only one material is supported per mesh. Materials
-    /// common to multiple meshes will be dupicated. Textures (as
+    /// cloudViewer::io::ReadTriangleMeshModel) to an unordered map of mesh
+    /// names to TriangleMeshes. Only one material is supported per mesh.
+    /// Materials common to multiple meshes will be dupicated. Textures (as
     /// t::geometry::Image) will use shared storage.
     /// \param model TriangleMeshModel to convert.
     /// \param float_dtype Float32 or Float64, used to store floating point
@@ -753,7 +754,8 @@ public:
     /// materials.
     static std::unordered_map<std::string, geometry::TriangleMesh>
     FromTriangleMeshModel(
-            const cloudViewer::visualization::rendering::TriangleMeshModel &model,
+            const cloudViewer::visualization::rendering::TriangleMeshModel
+                    &model,
             core::Dtype float_dtype = core::Float32,
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
