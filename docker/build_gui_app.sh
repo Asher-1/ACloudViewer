@@ -15,7 +15,9 @@ export BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 export BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
 export PYTHON_VERSION=$1
+export ONLY_BUILD_CUDA=$2
 export NPROC=$(nproc)
+export POST_FIX="python${PYTHON_VERSION}"
 export ENV_NAME="cloudViewer"
 echo "ENV_NAME: " ${ENV_NAME}
 
@@ -72,19 +74,27 @@ set -x # Echo commands on
 source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
-echo "Start to build GUI package with only CPU..."
-echo
-export BUILD_CUDA_MODULE=OFF
-build_gui_app with_pcl_nurbs package_installer plugin_treeiso
-echo
-
-# Building with cuda if cuda available
-if [ "${BUILD_CUDA_MODULE_FLAG}" = "ON" ]; then
+if [ "${ONLY_BUILD_CUDA}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
     build_gui_app with_pcl_nurbs package_installer plugin_treeiso
     echo
+else
+    echo "Start to build GUI package with only CPU..."
+    echo
+    export BUILD_CUDA_MODULE=OFF
+    build_gui_app with_pcl_nurbs package_installer plugin_treeiso
+    echo
+
+    # Building with cuda if cuda available
+    if [ "${BUILD_CUDA_MODULE_FLAG}" = "ON" ]; then
+        echo "Start to build GUI package with CUDA..."
+        echo
+        export BUILD_CUDA_MODULE=ON
+        build_gui_app with_pcl_nurbs package_installer plugin_treeiso
+        echo
+    fi
 fi
 
 echo "Finish building ACloudViewer GUI to $ACloudViewer_INSTALL"

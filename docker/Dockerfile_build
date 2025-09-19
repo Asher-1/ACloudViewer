@@ -55,16 +55,16 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
 # Build ACloudViewer app installer
-RUN if [ "${BUILD_GUI}" = "ON" ]; then                           \
-        echo "Start Build ACloudViewer apps installer..." &&     \
-        rm -rf ${ACloudViewer_BUILD}/* &&                        \
-        ./docker/build_gui_app.sh ${PYTHON_VERSION};             \
+RUN if [ "${BUILD_GUI}" = "ON" ]; then                                      \
+        echo "Start Build ACloudViewer apps installer..." &&                \
+        rm -rf ${ACloudViewer_BUILD}/* &&                                   \
+        ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE};   \
     fi
 
-RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                              \
-        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&    \
-        rm -rf ${ACloudViewer_BUILD}/* &&                             \
-        ./docker/build_cloudviewer_whl.sh ${PYTHON_VERSION};          \
+RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                                    \
+        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&          \
+        rm -rf ${ACloudViewer_BUILD}/* &&                                   \
+        ./docker/build_cloudviewer_whl.sh ${PYTHON_VERSION};                \
     fi
 
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer

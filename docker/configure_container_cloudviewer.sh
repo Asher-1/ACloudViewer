@@ -71,7 +71,7 @@ export CONDA_EXE="/root/miniconda3/bin/conda"
 export LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 
 # build ACloudViewer app installer
-rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh 3.8
+rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh 3.8 ON
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.8
 
 test cloudViewer
