@@ -55,6 +55,9 @@ conda activate $ENV_NAME \
  && pip config set install.trusted-host pypi.tuna.tsinghua.edu.cn \
  && pip config list
 
+ # for python plugin
+python -m pip install -r ${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt
+
 # [mv relocation issues] fix the issues about the conflicts with libattr between conda and system
 if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then
     echo "fix issues with system about: $CONDA_PREFIX/lib/libattr.so.1"
