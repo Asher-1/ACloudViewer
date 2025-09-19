@@ -35,7 +35,7 @@
 
 #include <algorithm>
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 
 namespace cloudViewer {
 namespace core {

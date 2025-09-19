@@ -10,7 +10,7 @@
 #include <math.h>
 
 #include "Macro.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 
 namespace cloudViewer {
 namespace ml {

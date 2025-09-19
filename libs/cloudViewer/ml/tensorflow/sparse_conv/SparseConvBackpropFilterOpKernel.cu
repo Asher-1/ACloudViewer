@@ -7,7 +7,7 @@
 
 #define EIGEN_USE_GPU
 #include "SparseConvBackpropFilterOpKernel.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "ml/impl/sparse_conv/SparseConvBackpropFilter.cuh"
 
 using namespace cloudViewer;

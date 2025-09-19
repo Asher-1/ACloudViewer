@@ -7,7 +7,7 @@
 
 #define EIGEN_USE_GPU
 #include "VoxelizeOpKernel.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "ml/impl/misc/Voxelize.cuh"
 
 using namespace cloudViewer::ml;

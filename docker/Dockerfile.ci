@@ -176,6 +176,13 @@ ENV QT_BASE_DIR=${QT_BASE_DIR} \
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+# Dependencies: cmake
+ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
+ && cmake --version
+
  # Miniconda or Intel conda
 # The **/cloudViewer/bin paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
@@ -249,7 +256,7 @@ RUN tar -xvf laszip-src-3.4.3.tar.gz && \
 
 # Install xerces-c
 WORKDIR /opt
-RUN https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/opt/xerces-c-3.2.3.zip"
+RUN wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/opt/xerces-c-3.2.3.zip"
 RUN unzip xerces-c-3.2.3.zip \
     && cd ./xerces-c-3.2.3 \
     && chmod +x configure \
@@ -262,7 +269,7 @@ RUN unzip xerces-c-3.2.3.zip \
 
 # Install vtk
 WORKDIR /opt
-RUN https://vtk.org/files/release/9.3/VTK-${VTK_VERSION}.tar.gz -O "/opt/VTK-${VTK_VERSION}.tar.gz"
+RUN wget https://vtk.org/files/release/9.3/VTK-${VTK_VERSION}.tar.gz -O "/opt/VTK-${VTK_VERSION}.tar.gz"
 RUN tar -zxvf VTK-${VTK_VERSION}.tar.gz && \
     cd VTK-${VTK_VERSION} && \
     mkdir -p build && cd build && \
@@ -310,4 +317,4 @@ RUN echo "Start Build ACloudViewer apps installer..."                           
     && rm -rf ${ACloudViewer_BUILD}/*
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
-RUN echo "Docker build done."
+RUN echo "Docker ci build done."

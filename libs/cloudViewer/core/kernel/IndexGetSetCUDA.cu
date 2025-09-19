@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "core/AdvancedIndexing.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "core/Dispatch.h"
 #include "core/Indexer.h"
 #include "core/ParallelFor.h"

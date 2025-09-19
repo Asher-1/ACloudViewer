@@ -7,7 +7,7 @@
 
 #define EIGEN_USE_GPU
 #include "ContinuousConvBackpropFilterOpKernel.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "ml/impl/continuous_conv/ContinuousConvBackpropFilter.cuh"
 
 using namespace cloudViewer;

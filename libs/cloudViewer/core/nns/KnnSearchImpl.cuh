@@ -8,7 +8,7 @@
 #pragma once
 
 #include "cub/cub.cuh"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "core/nns/NeighborSearchCommon.h"
 #include <Helper.h>
 #include "utility/MiniVec.h"

@@ -71,11 +71,23 @@ jobs:
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
           fi
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 10240
+          swap-size-mb: 4096
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+          build-mount-path: '/var/lib/docker'
+          build-mount-path-ownership: 'root:root'
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: 'false'
-      - name: Maximize build space
+      - name: Additional space optimization
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space

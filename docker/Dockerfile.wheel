@@ -161,6 +161,13 @@ ENV QT_BASE_DIR=${QT_BASE_DIR} \
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+# Dependencies: cmake
+ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
+ && cmake --version
+
  # Miniconda or Intel conda
 # The **/cloudViewer/bin paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
@@ -226,7 +233,6 @@ RUN echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." \
     && rm -rf ${ACloudViewer_BUILD}/* \
     && ./docker/build_cloudviewer_whl.sh ${PYTHON_VERSION} \
     && rm -rf ${ACloudViewer_BUILD}/*
-    
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
-RUN echo "Docker build done."
+RUN echo "Docker wheel build done."

@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <Optional.h>
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "pybind/core/core.h"
 
 namespace cloudViewer {
