@@ -592,21 +592,75 @@ maximize_ubuntu_github_actions_build_space() {
     $SUDO rm -rf /usr/local/lib/android      # ~11GB
     $SUDO rm -rf /opt/ghc                    # ~2.7GB
     $SUDO rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
-    $SUDO docker image prune --all --force   # ~4.5GB
     $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
     
     # Additional cleanup for more space
-    # $SUDO rm -rf /usr/local/share/boost      # ~1GB
-    # $SUDO rm -rf /usr/share/swift            # ~1GB
-    # $SUDO rm -rf /opt/az                     # ~1GB
-    # $SUDO rm -rf /usr/local/.ghcup           # ~2GB
-    # $SUDO rm -rf /opt/microsoft              # ~1GB
+    $SUDO rm -rf /usr/local/share/boost      # ~1GB
+    $SUDO rm -rf /usr/share/swift            # ~1GB
+    $SUDO rm -rf /opt/az                     # ~1GB
+    $SUDO rm -rf /usr/local/.ghcup           # ~2GB
+    $SUDO rm -rf /opt/microsoft              # ~1GB
+
+    # Configure Docker to use efficient storage
+    echo "=== Stopping Docker service ==="
+    $SUDO systemctl stop docker.socket || true
+    $SUDO systemctl stop docker.service || true
+    $SUDO systemctl stop containerd || true
+    
+    # Wait for Docker to fully stop
+    sleep 5
+    
+    # Create Docker daemon config for space optimization
+    $SUDO mkdir -p /etc/docker
+    $SUDO tee /etc/docker/daemon.json > /dev/null <<EOF
+{
+  "storage-driver": "overlay2",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "max-concurrent-downloads": 3,
+  "max-concurrent-uploads": 3
+}
+EOF
+    
+    echo "=== Starting Docker service ==="
+    $SUDO systemctl start containerd || true
+    $SUDO systemctl start docker.service
+    $SUDO systemctl start docker.socket || true
+    
+    # Wait for Docker to be ready
+    echo "=== Waiting for Docker to be ready ==="
+    timeout 60 bash -c 'until docker info >/dev/null 2>&1; do echo "Waiting for Docker..."; sleep 2; done' || {
+        echo "Docker failed to start, checking logs:"
+        $SUDO journalctl -u docker.service --no-pager -l | tail -20
+        $SUDO systemctl status docker.service
+        exit 1
+    }
+    
+    # Clean Docker system
+    $SUDO docker system prune -a -f --volumes || true
+    
+    echo "=== Docker info ==="
+    $SUDO docker info
     
     echo "=== Final disk space ==="
-    df -h .                                  # => ~60GB
-    
-    echo "=== Docker system info ==="
-    docker system df || true
+    df -h .                                  
+    df -h /var/lib/docker                       # => /var/lib/docker -> ~101GB
+}
+
+
+maximize_ubuntu_github_actions_build_space_simple() {
+    # https://github.com/easimon/maximize-build-space/blob/main/action.yml
+    df -h .                                  # => 26GB
+    $SUDO rm -rf /usr/share/dotnet           # ~17GB
+    $SUDO rm -rf /usr/local/lib/android      # ~11GB
+    $SUDO rm -rf /opt/ghc                    # ~2.7GB
+    $SUDO rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
+    $SUDO docker image prune --all --force   # ~4.5GB
+    $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
+    df -h . # => 53GB
 }
 
 monitor_disk_space() {

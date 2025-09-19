@@ -2,7 +2,7 @@
 
 #define EIGEN_USE_GPU
 #include "FixedRadiusSearchOpKernel.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "core/nns/FixedRadiusSearchImpl.cuh"
 
 using namespace cloudViewer;

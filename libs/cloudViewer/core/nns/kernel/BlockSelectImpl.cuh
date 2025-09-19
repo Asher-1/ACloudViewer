@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "core/nns/kernel/BlockSelect.cuh"
 #include "core/nns/kernel/Limits.cuh"
 

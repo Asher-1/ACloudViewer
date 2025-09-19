@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "core/Blob.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "core/Device.h"
 #include "core/Dispatch.h"
 #include "core/Dtype.h"

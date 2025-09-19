@@ -15,7 +15,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include <Logging.h>
 
 #endif  // #ifdef BUILD_CUDA_MODULE

@@ -7,7 +7,7 @@
 
 #define EIGEN_USE_GPU
 #include "ContinuousConvTransposeOpKernel.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "ml/impl/continuous_conv/ContinuousConvTranspose.cuh"
 
 using namespace cloudViewer;

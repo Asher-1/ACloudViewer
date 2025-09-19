@@ -7,7 +7,7 @@
 
 #define EIGEN_USE_GPU
 #include "SparseConvTransposeOpKernel.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "ml/impl/sparse_conv/SparseConvTranspose.cuh"
 
 using namespace cloudViewer;

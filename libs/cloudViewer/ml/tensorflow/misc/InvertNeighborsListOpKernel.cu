@@ -7,7 +7,7 @@
 
 #define EIGEN_USE_GPU
 #include "InvertNeighborsListOpKernel.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "ml/impl/misc/InvertNeighborsList.cuh"
 
 using namespace cloudViewer;

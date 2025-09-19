@@ -9,7 +9,7 @@
 
 #include <cub/cub.cuh>
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "core/Dispatch.h"
 #include "core/ParallelFor.h"
 #include "core/Tensor.h"

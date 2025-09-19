@@ -28,7 +28,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "ml/contrib/RoiPoolKernel.h"
 
 namespace cloudViewer {
