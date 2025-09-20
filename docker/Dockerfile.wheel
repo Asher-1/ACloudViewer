@@ -228,6 +228,7 @@ RUN mkdir -p ${ACloudViewer_INSTALL}
 # no need to test wheel and will test it in ci later!
 ENV IGNORE_TEST=ON
 
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 # Build cloudViewer wheel
 RUN echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." \
     && rm -rf ${ACloudViewer_BUILD}/* \

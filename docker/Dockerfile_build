@@ -58,7 +58,7 @@ RUN mkdir -p ${ACloudViewer_INSTALL}
 RUN if [ "${BUILD_GUI}" = "ON" ]; then                                      \
         echo "Start Build ACloudViewer apps installer..." &&                \
         rm -rf ${ACloudViewer_BUILD}/* &&                                   \
-        ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE};   \
+        ./docker/build_gui_app.sh ${PYTHON_VERSION} "OFF";                  \
     fi
 
 RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                                    \

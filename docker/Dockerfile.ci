@@ -310,6 +310,7 @@ RUN rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 # Build ACloudViewer app installer
 RUN echo "Start Build ACloudViewer apps installer..."                           \
     && rm -rf ${ACloudViewer_BUILD}/*                                           \
