@@ -13,8 +13,9 @@ endif ()
 
 ExternalProject_Add(ext_eigen
         PREFIX eigen
-        URL https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2
-        URL_HASH SHA256=92641cb17a92bcf311c7fc095a555ca0e32990503573dda80eb1764dc37dcac9
+        # Commit point: https://gitlab.com/libeigen/eigen/-/merge_requests/716
+        URL https://gitlab.com/libeigen/eigen/-/archive/da7909592376c893dabbc4b6453a8ffe46b1eb8e/eigen-da7909592376c893dabbc4b6453a8ffe46b1eb8e.tar.gz
+        URL_HASH SHA256=37f71e1d7c408e2cc29ef90dcda265e2de0ad5ed6249d7552f6c33897eafd674
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/eigen"
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         BUILD_IN_SOURCE 0

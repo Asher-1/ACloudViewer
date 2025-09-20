@@ -244,6 +244,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
+          ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       - name: Setup cache

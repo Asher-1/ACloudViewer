@@ -163,7 +163,7 @@ public:
     static Logger &GetInstance();
 
     /// Overwrite the default print function, this is useful when you want to
-    /// redirect prints rather than printing to stdout. For example, in CloudViewer's
+    /// redirect prints rather than printing to stdout. For example, in Open3D's
     /// python binding, the default print function is replaced with py::print().
     ///
     /// \param print_fcn The function for printing. It should take a string
