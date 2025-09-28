@@ -25,7 +25,7 @@ ENV REFRESHED_AT=2024-12-04\
     CLOUDVIEWER_DEV=/opt/ACloudViewer \
     DEBIAN_FRONTEND=noninteractive
 
-# cloudViewer Jupyter dependencies
+# Set apt source to speedup
 RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
 && apt-get clean && apt-get update --fix-missing -y
 
@@ -46,7 +46,8 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         apt-file \
         net-tools \
         mesa-utils \
-        # for others
+        # reference cloudViewer
+        libzstd-dev \
         zlib1g \
         zlib1g-dev \
         libssl-dev \
@@ -55,6 +56,13 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         libsqlite3-dev \
         libncursesw5-dev \
         libcurl4-openssl-dev \
+        xz-utils \
+        tk-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libffi-dev \ 
+        liblzma-dev \
+        ca-certificates \
         # for opencv
         libavcodec-dev \
         libavformat-dev \
@@ -149,29 +157,35 @@ COPY ./util/install_deps_ubuntu.sh /opt
 RUN /opt/install_deps_ubuntu.sh assume-yes
 
 # ACloudViewer Jupyter dependencies
-RUN mkdir -p /etc/apt/keyrings \
- && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
- | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
- && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
- | tee /etc/apt/sources.list.d/nodesource.list \
- && apt-get update \
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
  && apt-get install -y nodejs \
- && node --version \
- && npm install -g yarn \
+ && rm -rf /var/lib/apt/lists/* \
+ && node --version
+RUN npm install -g yarn \
  && yarn --version
+# RUN mkdir -p /etc/apt/keyrings \
+#  && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+#  | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+#  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
+#  | tee /etc/apt/sources.list.d/nodesource.list \
+#  && apt-get update \
+#  && apt-get install -y nodejs \
+#  && node --version \
+#  && npm install -g yarn \
+#  && yarn --version
 
 # Update eigen to 3.4+
 WORKDIR /opt
 RUN mv -f /usr/include/eigen3 /usr/include/eigen337.bak
-RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2 -O "/opt/eigen-3.4-rc1.tar.bz2"
-RUN tar -xvf eigen-3.4-rc1.tar.bz2 && \
-    cd eigen-3.4-rc1 && \
+RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz -O "/opt/eigen-3.4.0.tar.gz"
+RUN tar -xvf eigen-3.4.0.tar.gz && \
+    cd eigen-3.4.0 && \
     mkdir -p build && cd build && \
     cmake .. && \
     make install "-j$(nproc)" \
     && ldconfig \
-    && rm -rf /opt/eigen-3.4-rc1 \
-    && rm -rf /opt/eigen-3.4-rc1.tar.bz2
+    && rm -rf /opt/eigen-3.4.0 \
+    && rm -rf /opt/eigen-3.4.0.tar.gz
 
 # Install metslib for pcl
 WORKDIR /opt

@@ -18,6 +18,9 @@ docker run -dit --name=test_cloudviewer_dep \
   --env ALL_PROXY=socks5://127.0.0.1:7890 \
 	--env HTTP_PROXY=http://127.0.0.1:7890 \
 	--env HTTPS_PROXY=http://127.0.0.1:7890 \
+  --env PIP_DEFAULT_TIMEOUT=1000 \
+  --env PIP_RETRIES=5 \
+  --env PIP_TIMEOUT=1000 \
   -e GDK_SCALE \
   -e GDK_DPI_SCALE \
   -p 10022:22 \
@@ -42,6 +45,9 @@ docker run -dit --name=test_cloudviewer \
   --env ALL_PROXY=socks5://127.0.0.1:7890 \
 	--env HTTP_PROXY=http://127.0.0.1:7890 \
 	--env HTTPS_PROXY=http://127.0.0.1:7890 \
+  --env PIP_DEFAULT_TIMEOUT=1000 \
+  --env PIP_RETRIES=5 \
+  --env PIP_TIMEOUT=1000 \
   --ipc=host \
   --gpus=all \
   -e GDK_SCALE \

@@ -13,9 +13,9 @@ endif ()
 
 ExternalProject_Add(ext_eigen
         PREFIX eigen
-        # Commit point: https://gitlab.com/libeigen/eigen/-/merge_requests/716
-        URL https://gitlab.com/libeigen/eigen/-/archive/da7909592376c893dabbc4b6453a8ffe46b1eb8e/eigen-da7909592376c893dabbc4b6453a8ffe46b1eb8e.tar.gz
-        URL_HASH SHA256=37f71e1d7c408e2cc29ef90dcda265e2de0ad5ed6249d7552f6c33897eafd674
+        # fix error: a space is required between consecutive right angle brackets (use '> >') on macos
+        URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+        URL_HASH MD5=4c527a9171d71a72a9d4186e65bea559
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/eigen"
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         BUILD_IN_SOURCE 0
@@ -24,7 +24,6 @@ ExternalProject_Add(ext_eigen
         CMAKE_ARGS
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             ${EIGEN_ALIGN_FLAGS}
-            # -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
