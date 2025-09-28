@@ -83,7 +83,8 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         apt-file \
         net-tools \
         mesa-utils \
-        # for others
+        # reference cloudViewer
+        libzstd-dev \
         zlib1g \
         zlib1g-dev \
         libssl-dev \
@@ -92,6 +93,13 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libsqlite3-dev \
         libncursesw5-dev \
         libcurl4-openssl-dev \
+        xz-utils \
+        tk-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libffi-dev \ 
+        liblzma-dev \
+        ca-certificates \
         # for opencv
         libavcodec-dev \
         libavformat-dev \
@@ -224,15 +232,15 @@ RUN ./util/install_deps_ubuntu.sh assume-yes
 # Update eigen to 3.4+
 WORKDIR /opt
 RUN mv -f /usr/include/eigen3 /usr/include/eigen337.bak
-RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2 -O "/opt/eigen-3.4-rc1.tar.bz2"
-RUN tar -xvf eigen-3.4-rc1.tar.bz2 && \
-    cd eigen-3.4-rc1 && \
+RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz -O "/opt/eigen-3.4.0.tar.gz"
+RUN tar -xvf eigen-3.4.0.tar.gz && \
+    cd eigen-3.4.0 && \
     mkdir -p build && cd build && \
     cmake .. && \
     make install "-j$(nproc)" \
     && ldconfig \
-    && rm -rf /opt/eigen-3.4-rc1 \
-    && rm -rf /opt/eigen-3.4-rc1.tar.bz2
+    && rm -rf /opt/eigen-3.4.0 \
+    && rm -rf /opt/eigen-3.4.0.tar.gz
     
 # Install metslib for pcl
 WORKDIR /opt

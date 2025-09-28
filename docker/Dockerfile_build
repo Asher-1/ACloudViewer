@@ -32,6 +32,9 @@ ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 # The soft link from the python patch level version to the python mino version
 # ensures python wheel commands (i.e. cloudViewer) are in PATH, since we don't know
 # which patch level pyenv will install (latest).
+ENV PIP_DEFAULT_TIMEOUT=1000
+ENV PIP_RETRIES=5
+ENV PIP_TIMEOUT=1000
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
 RUN curl https://pyenv.run | bash \
@@ -41,6 +44,9 @@ RUN curl https://pyenv.run | bash \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 RUN python --version && pip --version \
+    && pip config set global.timeout 1000 \
+    && pip config set global.retries 5 \
+    && pip config set install.trusted-host "pypi.org files.pythonhosted.org pypi.python.org download.pytorch.org"
 
 # Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-c"]
