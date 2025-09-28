@@ -1229,6 +1229,9 @@ if(NOT USE_SYSTEM_CURL)
         endif()
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
+    if (UNIX AND NOT APPLE) # fix undefined symbols for architecture x86_64: _ZSTD_createCStream, _ZSTD_createDStream
+        target_link_libraries(3rdparty_curl INTERFACE zstd)
+    endif()
 endif()
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_curl 3rdparty_openssl)
 
@@ -2483,6 +2486,7 @@ endif()
 # why compiling from source on windows
 # main reason: use prebuild pcl and vtk with conda 
 # which indeed not compiled vtk with qt support on windows
+# Note: import_3rdparty_library(3rdparty_pcl) is not supported on linux and macos platform
 if (WIN32)
     find_package(Boost REQUIRED COMPONENTS
                  filesystem
@@ -2504,6 +2508,7 @@ if (WIN32)
     if(UNIX AND NOT APPLE)
         target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
     endif()
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
 
     if (USE_PCL_BACKEND)
         include(${CloudViewer_3RDPARTY_DIR}/pcl/pcl_build.cmake)
@@ -2530,7 +2535,6 @@ if (WIN32)
         endif()
         # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
     endif()
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
 else()
     # PCL
     if(USE_PCL_BACKEND AND USE_SYSTEM_PCL)

@@ -9,8 +9,6 @@ ARG QT_BASE_DIR
 # For bash-specific commands
 SHELL ["/bin/bash", "-c"]
 
-# FROM nvidia/opengl:1.2-glvnd-devel-ubuntu${UBUNTU_VERSION}
-# FROM gezp/ubuntu-nomachine:${UBUNTU_VERSION}-cu${CUDA_VERSION}
 LABEL maintainer="ACloudViewer Team ludahai19@163.com"
 
 # Env vars for the nvidia-container-runtime.
@@ -119,6 +117,13 @@ RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/opt/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
 # Install Miniconda3
+# ENV PATH="/root/miniconda3/bin:${PATH}"
+# ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
+# ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/cloudViewer/bin:${PATH}"
+# RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+#  && bash Miniconda3-latest-Linux-x86_64.sh -b \
+#  && rm Miniconda3-latest-Linux-x86_64.sh \
+#  && conda --version
 WORKDIR /opt
 ENV PATH="/root/miniconda3/bin:$PATH"
 COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt

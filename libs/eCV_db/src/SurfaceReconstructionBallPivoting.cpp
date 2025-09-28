@@ -342,23 +342,23 @@ public:
         }
         utility::LogDebug("[FindCandidateVertex] edge=({}, {}), opp={}",
                           src->idx_, tgt->idx_, opp->idx_);
-        utility::LogDebug("[FindCandidateVertex] src={} => ({}, {}, {})", src->idx_,
-                          src->point_(0), src->point_(1), src->point_(2));
-        utility::LogDebug("[FindCandidateVertex] tgt={} => ({}, {}, {})", tgt->idx_,
-                          tgt->point_(0), tgt->point_(1), tgt->point_(2));
-        utility::LogDebug("[FindCandidateVertex] opp={} => ({}, {}, {})", opp->idx_,
-                          opp->point_(0), opp->point_(1), opp->point_(2));
+        utility::LogDebug("[FindCandidateVertex] src={} => {}", src->idx_,
+                          src->point_.transpose());
+        utility::LogDebug("[FindCandidateVertex] tgt={} => {}", tgt->idx_,
+                          tgt->point_.transpose());
+        utility::LogDebug("[FindCandidateVertex] src={} => {}", opp->idx_,
+                          opp->point_.transpose());
 
         Eigen::Vector3d mp = 0.5 * (src->point_ + tgt->point_);
-        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), mp=({}, {}, {})",
+        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), mp={}",
                           edge->source_->idx_, edge->target_->idx_,
-                          mp(0), mp(1), mp(2));
+                          mp.transpose());
 
         BallPivotingTrianglePtr triangle = edge->triangle0_;
         const Eigen::Vector3d& center = triangle->ball_center_;
-        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), center=({}, {}, {})",
+        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), center={}",
                           edge->source_->idx_, edge->target_->idx_,
-                          center(0), center(1), center(2));
+                          center.transpose());
 
         Eigen::Vector3d v = tgt->point_ - src->point_;
         v /= v.norm();
@@ -385,8 +385,8 @@ public:
                         candidate->idx_);
                 continue;
             }
-            utility::LogDebug("[FindCandidateVertex] candidate={:d} => ({}, {}, {})",
-                              candidate->idx_, candidate->point_(0), candidate->point_(1), candidate->point_(2));
+            utility::LogDebug("[FindCandidateVertex] candidate={:d} => {}",
+                              candidate->idx_, candidate->point_.transpose());
 
             bool coplanar =
                     cloudViewer::utility::IntersectionTest::PointsCoplanar(
@@ -417,14 +417,15 @@ public:
                         candidate->idx_);
                 continue;
             }
-            utility::LogDebug("[FindCandidateVertex] candidate {:d} center=({}, {}, {})",
-                              candidate->idx_, new_center(0), new_center(1), new_center(2));
+            utility::LogDebug("[FindCandidateVertex] candidate {:d} center={}",
+                              candidate->idx_, new_center.transpose());
 
             Eigen::Vector3d b = new_center - mp;
             b /= b.norm();
             utility::LogDebug(
-                    "[FindCandidateVertex] candidate {:d} v=({}, {}, {}), a=({}, {}, {}), b=({}, {}, {})",
-                    candidate->idx_, v(0), v(1), v(2), a(0), a(1), a(2), b(0), b(1), b(2));
+                    "[FindCandidateVertex] candidate {:d} v={}, a={}, b={}",
+                    candidate->idx_, v.transpose(), a.transpose(),
+                    b.transpose());
 
             double cosinus = a.dot(b);
             cosinus = std::min(cosinus, 1.0);
