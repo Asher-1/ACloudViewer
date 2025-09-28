@@ -175,6 +175,7 @@ build_mac_wheel() {
         echo "BUILD_WITH_CONDA is on"
     else
         BUILD_WITH_CONDA=OFF
+        CONDA_LIB_DIR=""
         echo "BUILD_WITH_CONDA is off"
     fi
     if [[ "build_realsense" =~ ^($options)$ ]]; then
@@ -277,6 +278,7 @@ build_gui_app() {
         echo "BUILD_WITH_CONDA is on"
     else
         BUILD_WITH_CONDA=OFF
+        CONDA_LIB_DIR=""
         echo "BUILD_WITH_CONDA is off"
     fi
     set -u

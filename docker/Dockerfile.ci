@@ -174,6 +174,22 @@ ENV QT_BASE_DIR=${QT_BASE_DIR} \
     LD_LIBRARY_PATH=${QT_BASE_DIR}/lib:$LD_LIBRARY_PATH \
     PKG_CONFIG_PATH=${QT_BASE_DIR}/lib/pkgconfig:$PKG_CONFIG_PATH
 
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. cloudViewer) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version \
+
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Dependencies: cmake
@@ -182,17 +198,6 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
-
- # Miniconda or Intel conda
-# The **/cloudViewer/bin paths are used during docker run, in this way docker run
-# does not need to activate the environment again.
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/cloudViewer/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
- && bash Miniconda3-latest-Linux-x86_64.sh -b \
- && rm Miniconda3-latest-Linux-x86_64.sh \
- && conda --version
 
 # deploy package installer
 WORKDIR /root
@@ -206,20 +211,6 @@ ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
 
-ENV PATH="/root/miniconda3/bin:$PATH" \
-    CONDA_EXE="/root/miniconda3/bin/conda"
-
-RUN if [ -n "$CONDA_EXE" ]; then \
-        CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE")); \
-    elif [ -n "$CONDA_PREFIX" ]; then \
-        CONDA_ROOT=$(dirname "$CONDA_PREFIX"); \
-    else \
-        echo "Failed to find Miniconda3 install path..."; \
-        exit 1; \
-    fi && \
-    echo "CONDA_ROOT is set to: $CONDA_ROOT" && \
-    source "$CONDA_ROOT/etc/profile.d/conda.sh" 
-
 # ACloudViewer repo
 # Always keep /root/ACloudViewer as the WORKDIR
 COPY . ${ACloudViewer_DEV}/ACloudViewer
@@ -229,6 +220,20 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 RUN ./util/install_deps_ubuntu.sh assume-yes
 
 # ACloudViewer PCL+VTK dependencies
+
+# Update eigen to 3.4+
+WORKDIR /opt
+RUN mv -f /usr/include/eigen3 /usr/include/eigen337.bak
+RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2 -O "/opt/eigen-3.4-rc1.tar.bz2"
+RUN tar -xvf eigen-3.4-rc1.tar.bz2 && \
+    cd eigen-3.4-rc1 && \
+    mkdir -p build && cd build && \
+    cmake .. && \
+    make install "-j$(nproc)" \
+    && ldconfig \
+    && rm -rf /opt/eigen-3.4-rc1 \
+    && rm -rf /opt/eigen-3.4-rc1.tar.bz2
+    
 # Install metslib for pcl
 WORKDIR /opt
 RUN wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz -O "/opt/metslib-0.5.3.tgz"

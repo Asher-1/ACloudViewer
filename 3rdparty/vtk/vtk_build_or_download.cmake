@@ -100,7 +100,7 @@ set(VTK_LIBRARIES
 if(BUILD_VTK_FROM_SOURCE)
 
     foreach(item IN LISTS VTK_LIBRARIES)
-        list(APPEND VTK_BUILD_BYPRODUCTS <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${item}${CMAKE_STATIC_LIBRARY_SUFFIX})
+        list(APPEND VTK_BUILD_BYPRODUCTS <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${item}${CMAKE_SHARED_LIBRARY_SUFFIX})
     endforeach()
 
     if (BUILD_WITH_CONDA)
@@ -109,6 +109,8 @@ if(BUILD_VTK_FROM_SOURCE)
         else ()
             SET(CONDA_LIB_DIR ${CONDA_PREFIX}/lib)
         endif()
+    else()
+        set(CONDA_LIB_DIR "")
     endif()
 
     ExternalProject_Add(ext_vtk
@@ -121,7 +123,7 @@ if(BUILD_VTK_FROM_SOURCE)
         CMAKE_ARGS
             ${ExternalProject_CMAKE_ARGS_hidden}
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-            -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+            -DBUILD_SHARED_LIBS=ON
             -DCMAKE_PREFIX_PATH=${CONDA_LIB_DIR}
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DVTK_BUILD_TESTING=OFF
@@ -143,6 +145,8 @@ if(BUILD_VTK_FROM_SOURCE)
     ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
     set(VTK_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
     set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-${VTK_VERSION}/")
+    set(VTK_DIR "${SOURCE_DIR}/lib/cmake/vtk-${VTK_VERSION}")
+    set(VTK_CMAKE_FLAGS -DVTK_DIR=${VTK_DIR})
 
 else() #### download prebuilt vtk
 
@@ -161,9 +165,9 @@ else() #### download prebuilt vtk
         set(VTK_SHA256 3f549a082be9a361bf056db5840148501cae543bcf1f9ae3fb123cfd28a8e73c)
     elseif(UNIX)
         set(VTK_URL
-            https://github.com/Asher-1/cloudViewer_downloads/releases/download/vtk/vtk_${VTK_VERSION}_linux_x86_64.tar.gz
+            https://github.com/Asher-1/cloudViewer_downloads/releases/download/vtk/vtk_${VTK_VERSION}_linux_x86_64_static.tar.gz
         )
-        set(VTK_SHA256 61cc6a25e9300aa1f3e7ea7aad45615dff63b0faa4bc751cc9dcbd2c5061a526)
+        set(VTK_SHA256 589e7a7d1a2f6978b7a7e6e11703288cdfee38fa74043d4998cad6cd3d761a8a)
     elseif(WIN32)
         if (STATIC_WINDOWS_RUNTIME)
             set(VTK_URL
@@ -196,7 +200,7 @@ else() #### download prebuilt vtk
     ExternalProject_Get_Property(ext_vtk SOURCE_DIR)
     set(VTK_LIB_DIR "${SOURCE_DIR}/${CloudViewer_INSTALL_LIB_DIR}")
     set(VTK_INCLUDE_DIRS "${SOURCE_DIR}/include/vtk-${VTK_VERSION}/")
-    set(VTK_DIR ${SOURCE_DIR}/lib/cmake/vtk-${VTK_MAJOR_VERSION})
+    set(VTK_DIR ${SOURCE_DIR}/lib/cmake/vtk-${VTK_VERSION})
     set(VTK_CMAKE_FLAGS -DVTK_DIR=${SOURCE_DIR}/lib/cmake/vtk-${VTK_VERSION})
     set(VTK_BINARY_DIR "${SOURCE_DIR}/bin")
     # if (WIN32)

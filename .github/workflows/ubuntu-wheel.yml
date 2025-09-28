@@ -215,14 +215,12 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
       - name: Test Python package
-        shell: bash -l {0}
         run: |
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           test_wheel cloudViewer-[0-9]*-"$pi_tag"-*.whl
       - name: Test Python package (CPU)
-        shell: bash -l {0}
         env:
           BUILD_CUDA_MODULE: OFF
         run: |

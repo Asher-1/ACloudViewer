@@ -14,8 +14,6 @@ ENV UBUNTU_VERSION=${UBUNTU_VERSION}
 # For bash-specific commands
 SHELL ["/bin/bash", "-c"]
 
-# FROM nvidia/opengl:1.2-glvnd-devel-ubuntu${UBUNTU_VERSION}
-# FROM gezp/ubuntu-nomachine:${UBUNTU_VERSION}-cu${CUDA_VERSION}
 LABEL maintainer="ACloudViewer Team ludahai19@163.com"
 
 # Env vars for the nvidia-container-runtime.
@@ -26,23 +24,6 @@ ENV SUDO=command
 ENV REFRESHED_AT=2024-12-04\
     CLOUDVIEWER_DEV=/opt/ACloudViewer \
     DEBIAN_FRONTEND=noninteractive
-
-# ENV REFRESHED_AT=2024-12-04\
-#     CLOUDVIEWER_DEV=/opt/ACloudViewer \
-#     QT_ROOT=/opt/Qt5.14.2/ \
-#     QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
-#     QT_CI_LOGIN=alicevisionjunk@gmail.com \
-#     QT_CI_PASSWORD=azerty1. \
-#     DEBIAN_FRONTEND=noninteractive
-# Install Qt (to build plugins)
-# WORKDIR /opt
-# COPY docker_files/qt-opensource-linux-x64-5.14.2.run /opt
-# COPY ./docker/qt-installer-noninteractive.qs /opt
-# RUN chmod +x qt-opensource-linux-x64-5.14.2.run && \
-#     ./qt-opensource-linux-x64-5.14.2.run --verbose --platform minimal --script "/opt/qt-installer-noninteractive.qs" && \
-#     rm qt-opensource-linux-x64-5.14.2.run
-# ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
-# ENV PATH="/opt/Qt5.14.2/5.14.2/gcc_64/bin:$PATH"
 
 # cloudViewer Jupyter dependencies
 RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
@@ -179,6 +160,19 @@ RUN mkdir -p /etc/apt/keyrings \
  && npm install -g yarn \
  && yarn --version
 
+# Update eigen to 3.4+
+WORKDIR /opt
+RUN mv -f /usr/include/eigen3 /usr/include/eigen337.bak
+RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2 -O "/opt/eigen-3.4-rc1.tar.bz2"
+RUN tar -xvf eigen-3.4-rc1.tar.bz2 && \
+    cd eigen-3.4-rc1 && \
+    mkdir -p build && cd build && \
+    cmake .. && \
+    make install "-j$(nproc)" \
+    && ldconfig \
+    && rm -rf /opt/eigen-3.4-rc1 \
+    && rm -rf /opt/eigen-3.4-rc1.tar.bz2
+
 # Install metslib for pcl
 WORKDIR /opt
 COPY docker_files/metslib-0.5.3.tgz /opt
@@ -216,16 +210,6 @@ RUN unzip xerces-c-3.2.3.zip \
     && make clean \
     && rm -rf /opt/xerces-c-3.2.3 \
     && rm -rf /opt/xerces-c-3.2.3.zip
-
-# Install Miniconda3
-WORKDIR /opt
-ENV PATH="/root/miniconda3/bin:$PATH"
-COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
-RUN bash Miniconda3-latest-Linux-x86_64.sh -b \
- && rm Miniconda3-latest-Linux-x86_64.sh \
- && conda --version \
- && which python \
- && python --version
 
 # Install vtk
 WORKDIR /opt

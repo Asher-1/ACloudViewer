@@ -26,6 +26,22 @@ ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. cloudViewer) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version \
+
 # Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-c"]
 
@@ -33,21 +49,8 @@ ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
 
-ENV PATH="/root/miniconda3/bin:$PATH" \
-    CONDA_EXE="/root/miniconda3/bin/conda"
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
 RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
-
-RUN if [ -n "$CONDA_EXE" ]; then \
-        CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE")); \
-    elif [ -n "$CONDA_PREFIX" ]; then \
-        CONDA_ROOT=$(dirname "$CONDA_PREFIX"); \
-    else \
-        echo "Failed to find Miniconda3 install path..."; \
-        exit 1; \
-    fi && \
-    echo "CONDA_ROOT is set to: $CONDA_ROOT" && \
-    source "$CONDA_ROOT/etc/profile.d/conda.sh" 
 
 COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
