@@ -45,6 +45,7 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
     -   Fix missing loading liblapack.so* issues
     -   Fix Ubuntu ci building issues with missing GLIB_XXX version issues with no conda env
     -   Fix missing emissive_color SUPPORTED_PROPERTIES for demo_sence for tensorboard usage
+    -   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates.
 
 - Enhancements:
     -   Update 3rparty version
