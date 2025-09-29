@@ -262,7 +262,7 @@ def draw_plotly(geometry_list,
     fig = get_plotly_fig(geometry_list, width, height, mesh_show_wireframe,
                          point_sample_factor, front, lookat, up, zoom)
     fig.show()
-    return fig
+    # return fig
 
 
 def draw_plotly_server(geometry_list,
