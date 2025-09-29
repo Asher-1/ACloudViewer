@@ -69,7 +69,7 @@ if __name__ == "__main__":
     mesh = cv3d.io.read_triangle_mesh(knot_mesh.path)
     check_properties('KnotMesh', mesh)
     check_properties('Mobius',
-                     cv3d.geometry.ccMesh.create_moebius(twists=1))
+                     cv3d.geometry.ccMesh.create_mobius(twists=1))
     check_properties("non-manifold edge", cv3dex.get_non_manifold_edge_mesh())
     check_properties("non-manifold vertex",
                      cv3dex.get_non_manifold_vertex_mesh())

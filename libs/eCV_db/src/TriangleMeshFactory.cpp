@@ -2851,7 +2851,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateCoordinateFrame(
     return mesh_frame;
 }
 
-std::shared_ptr<ccMesh> ccMesh::CreateMoebius(int length_split /* = 70 */,
+std::shared_ptr<ccMesh> ccMesh::CreateMobius(int length_split /* = 70 */,
                                               int width_split /* = 15 */,
                                               int twists /* = 1 */,
                                               double radius /* = 1 */,
@@ -2863,25 +2863,25 @@ std::shared_ptr<ccMesh> ccMesh::CreateMoebius(int length_split /* = 70 */,
     auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
 
     if (length_split <= 0) {
-        utility::LogError("[CreateMoebius] length_split <= 0");
+        utility::LogError("[CreateMobius] length_split <= 0");
     }
     if (width_split <= 0) {
-        utility::LogError("[CreateMoebius] width_split <= 0");
+        utility::LogError("[CreateMobius] width_split <= 0");
     }
     if (twists < 0) {
-        utility::LogError("[CreateMoebius] twists < 0");
+        utility::LogError("[CreateMobius] twists < 0");
     }
     if (radius <= 0) {
-        utility::LogError("[CreateMoebius] radius <= 0");
+        utility::LogError("[CreateMobius] radius <= 0");
     }
     if (flatness == 0) {
-        utility::LogError("[CreateMoebius] flatness == 0");
+        utility::LogError("[CreateMobius] flatness == 0");
     }
     if (width <= 0) {
-        utility::LogError("[CreateMoebius] width <= 0");
+        utility::LogError("[CreateMobius] width <= 0");
     }
     if (scale <= 0) {
-        utility::LogError("[CreateMoebius] scale <= 0");
+        utility::LogError("[CreateMobius] scale <= 0");
     }
 
     if (!baseVertices->resize(length_split * width_split)) {

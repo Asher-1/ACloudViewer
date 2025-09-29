@@ -541,12 +541,12 @@ void pybind_trianglemesh(py::module& m) {
                  "Indices of vertices to be selected.",
                  "indices"_a, "cleanup"_a = true)
             .def("crop",
-                 (std::shared_ptr<ccMesh> (ccMesh::*)(const ccBBox&) const) &
+                 (std::shared_ptr<ccMesh>(ccMesh::*)(const ccBBox&) const) &
                          ccMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("crop",
-                 (std::shared_ptr<ccMesh> (ccMesh::*)(const ecvOrientedBBox&)
+                 (std::shared_ptr<ccMesh>(ccMesh::*)(const ecvOrientedBBox&)
                           const) &
                          ccMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
@@ -561,7 +561,7 @@ void pybind_trianglemesh(py::module& m) {
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.",
                  "triangle_areas"_a)
-            .def("get_volume", (double (ccMesh::*)() const) & ccMesh::GetVolume,
+            .def("get_volume", (double(ccMesh::*)() const) & ccMesh::GetVolume,
                  "Function that computes the volume of the mesh, under the "
                  "condition that it is watertight and orientable.")
             .def("sample_points_uniformly", &ccMesh::SamplePointsUniformly,
@@ -786,10 +786,10 @@ void pybind_trianglemesh(py::module& m) {
                     "axis will be "
                     "rendered as red, green, and blue arrows respectively.",
                     "size"_a = 1.0, "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
-            .def_static("create_moebius", &ccMesh::CreateMoebius,
-                        "Factory function to create a Moebius strip.",
+            .def_static("create_mobius", &ccMesh::CreateMobius,
+                        "Factory function to create a Mobius strip.",
                         "length_split"_a = 70, "width_split"_a = 15,
-                        "twists"_a = 1, "raidus"_a = 1, "flatness"_a = 1,
+                        "twists"_a = 1, "radius"_a = 1, "flatness"_a = 1,
                         "width"_a = 1, "scale"_a = 1)
             .def_readwrite(
                     "adjacency_list", &ccMesh::adjacency_list_,
@@ -1225,16 +1225,15 @@ void pybind_trianglemesh(py::module& m) {
             {{"size", "The size of the coordinate frame."},
              {"origin", "The origin of the cooridnate frame."}});
     docstring::ClassMethodDocInject(
-            m, "ccMesh", "create_moebius",
-            {{"length_split",
-              "The number of segments along the Moebius strip."},
+            m, "ccMesh", "create_mobius",
+            {{"length_split", "The number of segments along the Mobius strip."},
              {"width_split",
-              "The number of segments along the width of the Moebius strip."},
-             {"twists", "Number of twists of the Moebius strip."},
-             {"radius", "The radius of the Moebius strip."},
-             {"flatness", "Controls the flatness/height of the Moebius strip."},
-             {"width", "Width of the Moebius strip."},
-             {"scale", "Scale the complete Moebius strip."}});
+              "The number of segments along the width of the Mobius strip."},
+             {"twists", "Number of twists of the Mobius strip."},
+             {"radius", "The radius of the Mobius strip."},
+             {"flatness", "Controls the flatness/height of the Mobius strip."},
+             {"width", "Width of the Mobius strip."},
+             {"scale", "Scale the complete Mobius strip."}});
 }
 
 void pybind_trianglemesh_methods(py::module& m) {}

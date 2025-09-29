@@ -41,6 +41,10 @@ We welcome you to the 3.9.3 beta release of ACloudViewer. This release is full o
     -   Avoid deadlock while PostToMainThread is called inside a Posted
     -   Fix bug in emissive color default value and writing triangle UVs to glb
     -   Fix the textures loading in .glb file
+    -   Fix triangle mesh docs and spelling with create_mobius
+    -   Fix missing loading liblapack.so* issues
+    -   Fix Ubuntu ci building issues with missing GLIB_XXX version issues with no conda env
+    -   Fix missing emissive_color SUPPORTED_PROPERTIES for demo_sence for tensorboard usage
 
 - Enhancements:
     -   Update 3rparty version

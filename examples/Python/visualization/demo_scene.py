@@ -27,8 +27,8 @@ def create_scene():
     a_cube = cv3d.t.geometry.TriangleMesh.from_legacy(a_cube)
 
     a_sphere = cv3d.geometry.ccMesh.create_sphere(2.5,
-                                                       resolution=40,
-                                                       create_uv_map=True)
+                                                  resolution=40,
+                                                  create_uv_map=True)
     a_sphere.compute_vertex_normals()
     rotate_90 = cv3d.geometry.get_rotation_matrix_from_xyz((-np.pi / 2, 0, 0))
     a_sphere.rotate(rotate_90)
@@ -43,7 +43,7 @@ def create_scene():
     a_cylinder = cv3d.t.geometry.TriangleMesh.from_legacy(a_cylinder)
 
     a_ico = cv3d.geometry.ccMesh.create_icosahedron(1.25,
-                                                         create_uv_map=True)
+                                                    create_uv_map=True)
     a_ico.compute_triangle_normals()
     a_ico.translate((-10, 2, 0))
     a_ico = cv3d.t.geometry.TriangleMesh.from_legacy(a_ico)
