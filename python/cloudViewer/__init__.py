@@ -120,9 +120,11 @@ if os.path.exists(MAIN_LIB_PATH):
             try_load_cdll('libfreeimage*')
             try_load_cdll('libgflags*')
             try_load_cdll('libglog*')
+            try_load_cdll('libglog*')
+            try_load_cdll('libblas*')
+            try_load_cdll('liblapack*')
             try_load_cdll('libceres*')
-        # no need?
-        # for libssl dep
+        # for libcurl and libssl dep
         try_load_cdll('libcrypto*')
         load_cdll(str(next(MAIN_LIB_PATH.glob('lib*'))))
 

@@ -24,8 +24,8 @@ def pointcloud_generator():
     mesh += cv3d.geometry.ccMesh.create_octahedron().translate((0, 0, 0))
     mesh += cv3d.geometry.ccMesh.create_icosahedron().translate((d, 0, 0))
     mesh += cv3d.geometry.ccMesh.create_torus().translate((-d, -d, 0))
-    mesh += cv3d.geometry.ccMesh.create_moebius(twists=1).translate((0, -d, 0))
-    mesh += cv3d.geometry.ccMesh.create_moebius(twists=2).translate((d, -d, 0))
+    mesh += cv3d.geometry.ccMesh.create_mobius(twists=1).translate((0, -d, 0))
+    mesh += cv3d.geometry.ccMesh.create_mobius(twists=2).translate((d, -d, 0))
     yield "shapes", mesh.sample_points_uniformly(int(1e5)), 0.5
 
     ply_data = cv3d.data.PLYPointCloud()

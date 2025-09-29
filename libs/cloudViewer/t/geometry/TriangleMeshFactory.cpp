@@ -235,7 +235,7 @@ TriangleMesh TriangleMesh::CreateMobius(int length_split,
                                         core::Dtype int_dtype,
                                         const core::Device &device) {
     std::shared_ptr<ccMesh> legacy_mesh =
-            ccMesh::CreateMoebius(
+            ccMesh::CreateMobius(
                     length_split, width_split, twists, radius, flatness, width,
                     scale);
 

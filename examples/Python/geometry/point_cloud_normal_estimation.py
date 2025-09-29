@@ -26,7 +26,7 @@ def pointcloud_generator():
     pcl.set_points(cv3d.utility.Vector3dVector(pts))
     yield 'uniform', pcl
 
-    yield 'moebius', cv3d.geometry.ccMesh.create_moebius(
+    yield 'moebius', cv3d.geometry.ccMesh.create_mobius(
     ).sample_points_uniformly(int(1e5))
 
     bunny = cv3d.data.BunnyMesh()
