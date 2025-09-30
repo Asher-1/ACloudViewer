@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -137,11 +118,20 @@ public:
     const Eigen::Vector3f& GetCurrentMaterialColor() const;
     void SetCurrentMaterialColor(const Eigen::Vector3f& color);
     void ResetColors();
-    void SetCustomDefaultColor(const Eigen::Vector3f& color);
+    void SetCustomDefaultColor(const Eigen::Vector3f color);
     void UnsetCustomDefaultColor();
 
     int GetPointSize() const;
     void SetPointSize(int size);
+
+    bool GetBasicMode() const;
+    void SetBasicMode(bool enable);
+
+    bool GetWireframeMode() const;
+    void SetWireframeMode(bool enable);
+
+    bool GetUserWantsEstimateNormals();
+    void EstimateNormalsClicked();
 
     bool GetDisplayingPointClouds() const;
     /// If true, enables point size
@@ -159,7 +149,7 @@ private:
     bool show_skybox_ = false;
     bool show_axes_ = false;
     bool show_ground_ = false;
-    bool sun_follows_cam_ = false;
+    bool sun_follows_cam_ = true;
     LightingProfile lighting_;
     MaterialType current_type_ = LIT;
     Materials current_materials_;
@@ -168,6 +158,9 @@ private:
     bool user_has_changed_lighting_profile_ = false;
     bool user_has_customized_lighting_ = false;
     bool displaying_point_clouds_ = false;
+    bool user_wants_estimate_normals_ = false;
+    bool basic_mode_enabled_ = false;
+    bool wireframe_mode_enabled_ = false;
 
     std::function<void(bool)> on_changed_;
 

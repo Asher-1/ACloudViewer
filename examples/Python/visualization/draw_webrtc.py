@@ -1,5 +1,13 @@
-import os
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import cloudViewer as cv3d
+
+import os
 
 os.environ["WEBRTC_IP"] = "127.0.0.1"
 os.environ["WEBRTC_PORT"] = "8882"

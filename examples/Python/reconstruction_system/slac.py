@@ -1,20 +1,24 @@
-# CloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
-
-# examples/python/reconstruction_system/slac.py
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import numpy as np
 import cloudViewer as cv3d
-import sys
-sys.path.append("../utility")
-from file import join, get_file_list, write_poses_to_log
+import os, sys
 
-sys.path.append(".")
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from cloudViewer_example import join, get_file_list, write_poses_to_log
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
 def run(config):
-    print("slac non-rigid optimisation.")
+    print("slac non-rigid optimization.")
     cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
 
     path_dataset = config['path_dataset']
@@ -38,7 +42,7 @@ def run(config):
         fitness_threshold=config["fitness_threshold"],
         regularizer_weight=config["regularizer_weight"],
         device=cv3d.core.Device(str(config["device"])),
-        slac_folder=path_dataset + config["folder_slac"])
+        slac_folder=join(path_dataset, config["folder_slac"]))
 
     # SLAC debug option.
     debug_option = cv3d.t.pipelines.slac.slac_debug_option(False, 0)
@@ -55,13 +59,14 @@ def run(config):
             ply_file_names, pose_graph_fragment, slac_params, debug_option)
 
         hashmap = ctrl_grid.get_hashmap()
-        active_addrs = hashmap.get_active_addrs().to(cv3d.core.Dtype.Int64)
+        active_buf_indices = hashmap.active_buf_indices().to(
+            cv3d.core.Dtype.Int64)
 
-        key_tensor = hashmap.get_key_tensor()[active_addrs]
+        key_tensor = hashmap.key_tensor()[active_buf_indices]
         key_tensor.save(
             join(slac_params.get_subfolder_name(), "ctr_grid_keys.npy"))
 
-        value_tensor = hashmap.get_value_tensor()[active_addrs]
+        value_tensor = hashmap.value_tensor()[active_buf_indices]
         value_tensor.save(
             join(slac_params.get_subfolder_name(), "ctr_grid_values.npy"))
 

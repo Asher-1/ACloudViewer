@@ -1,32 +1,11 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "CloudViewer.h"
-
-#include <ecvHObjectCaster.h>
 
 void PrintHelp() {
     using namespace cloudViewer;
@@ -51,11 +30,11 @@ int main(int argc, char* argv[]) {
     using namespace cloudViewer;
 
     if (argc < 4 ||
-        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ) {
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
-    
+
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     auto in_mesh_file =
@@ -75,7 +54,7 @@ int main(int argc, char* argv[]) {
     }
     auto mesh = io::CreateMeshFromFile(in_mesh_file);
     auto pcd = io::CreatePointCloudFromFile(pcd_file);
-    if (mesh->isEmpty() || pcd->isEmpty()) {
+    if (mesh->IsEmpty() || pcd->IsEmpty()) {
         utility::LogWarning("Empty geometry.");
         return 1;
     }
@@ -86,7 +65,8 @@ int main(int argc, char* argv[]) {
     utility::ConsoleProgressBar progress_bar(mesh->getVerticeSize(),
                                              "Prune vetices: ");
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int i = 0; i < (int)mesh->getVerticeSize(); i++) {
         std::vector<int> indices(1);
@@ -114,7 +94,8 @@ int main(int argc, char* argv[]) {
     bool has_tri_normal = mesh->hasTriNormals();
     size_t old_triangle_num = mesh->size();
     size_t kt = 0;
-    for (unsigned int i = 0; i < (unsigned int)old_vertex_num; i++) {  // old index
+    for (unsigned int i = 0; i < (unsigned int)old_vertex_num;
+         i++) {  // old index
         if (!remove_vertex_mask[i]) {
             cloud->setPoint(k, *cloud->getPoint(i));
             if (has_vert_normal)
@@ -156,7 +137,6 @@ int main(int argc, char* argv[]) {
             old_vertex_num - k, old_triangle_num - kt);
     io::WriteTriangleMesh(out_mesh_file, *mesh);
 
-    visualization::DrawGeometries({mesh}, "Trimed-Mesh", 1600,
-                                               900);
+    visualization::DrawGeometries({mesh}, "Trimed-Mesh", 1600, 900);
     return 0;
 }

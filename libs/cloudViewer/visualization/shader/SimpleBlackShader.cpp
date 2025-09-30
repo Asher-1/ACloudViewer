@@ -1,33 +1,14 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/shader/SimpleBlackShader.h"
 
 #include <ecvMesh.h>
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvPointCloud.h>
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
@@ -134,7 +115,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
     }
     points.resize(pointcloud.size() * 2);
     double line_length =
-            option.point_size_ * 0.01 * view.GetBoundingBox().getMaxExtent();
+            option.point_size_ * 0.01 * view.GetBoundingBox().GetMaxExtent();
     for (size_t i = 0; i < pointcloud.size(); i++) {
         const auto &point = pointcloud.getEigenPoint(i);
         const auto &normal = pointcloud.getEigenNormal(i);
@@ -194,8 +175,8 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
         draw_arrays_mode_ = GL_TRIANGLES;
         draw_arrays_size_ = GLsizei(points.size());
     } else if (geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        const geometry::ecvHalfEdgeMesh &mesh =
-                (const geometry::ecvHalfEdgeMesh &)geometry;
+        const geometry::HalfEdgeTriangleMesh &mesh =
+                (const geometry::HalfEdgeTriangleMesh &)geometry;
         if (!mesh.hasTriangles()) {
             PrintShaderWarning(
                     "Binding failed with empty geometry::TriangleMesh.");

@@ -196,19 +196,19 @@ public:
                               PointCoordinateType radius,
                               unsigned resolution = 48);
 
-    inline virtual bool isEmpty() const override { return !hasPoints(); }
-    virtual Eigen::Vector3d getMinBound() const override;
-    virtual Eigen::Vector3d getMaxBound() const override;
-    virtual Eigen::Vector3d getGeometryCenter() const override;
-    virtual ccBBox getAxisAlignedBoundingBox() const override;
-    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual ccPolyline& transform(
+    inline virtual bool IsEmpty() const override { return !hasPoints(); }
+    virtual Eigen::Vector3d GetMinBound() const override;
+    virtual Eigen::Vector3d GetMaxBound() const override;
+    virtual Eigen::Vector3d GetCenter() const override;
+    virtual ccBBox GetAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    virtual ccPolyline& Transform(
             const Eigen::Matrix4d& transformation) override;
-    virtual ccPolyline& translate(const Eigen::Vector3d& translation,
+    virtual ccPolyline& Translate(const Eigen::Vector3d& translation,
                                   bool relative = true) override;
-    virtual ccPolyline& scale(const double s,
+    virtual ccPolyline& Scale(const double s,
                               const Eigen::Vector3d& center) override;
-    virtual ccPolyline& rotate(const Eigen::Matrix3d& R,
+    virtual ccPolyline& Rotate(const Eigen::Matrix3d& R,
                                const Eigen::Vector3d& center) override;
 
     ccPolyline& operator+=(const ccPolyline& polyline);
@@ -218,7 +218,7 @@ public:
     /// \brief Assigns each line in the LineSet the same color.
     ///
     /// \param color Specifies the color to be applied.
-    ccPolyline& paintUniformColor(const Eigen::Vector3d& color) {
+    ccPolyline& PaintUniformColor(const Eigen::Vector3d& color) {
         setColor(ecvColor::Rgb::FromEigen(color));
         return *this;
     }

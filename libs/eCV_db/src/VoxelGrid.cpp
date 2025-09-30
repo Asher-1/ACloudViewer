@@ -1,57 +1,38 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "VoxelGrid.h"
 
+#include <Helper.h>
+#include <Logging.h>
+
 #include <numeric>
 #include <unordered_map>
 
-#include <Logging.h>
-#include <Helper.h>
-
-#include "ecvBBox.h"
-#include "ecvOrientedBBox.h"
 #include "Image.h"
 #include "Octree.h"
 #include "camera/PinholeCameraParameters.h"
+#include "ecvBBox.h"
+#include "ecvOrientedBBox.h"
 
 namespace cloudViewer {
 namespace geometry {
 
-	using namespace cloudViewer;
+using namespace cloudViewer;
 
-VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid, const char* name/* = "VoxelGrid"*/)
+VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid,
+                     const char *name /* = "VoxelGrid"*/)
     : ccHObject(name),
       voxel_size_(src_voxel_grid.voxel_size_),
       origin_(src_voxel_grid.origin_),
       voxels_(src_voxel_grid.voxels_) {}
 
-ccBBox VoxelGrid::getOwnBB(bool withGLFeatures)
-{
-	return getAxisAlignedBoundingBox();
+ccBBox VoxelGrid::getOwnBB(bool withGLFeatures) {
+    return GetAxisAlignedBoundingBox();
 }
 
 VoxelGrid &VoxelGrid::Clear() {
@@ -61,7 +42,7 @@ VoxelGrid &VoxelGrid::Clear() {
     return *this;
 }
 
-Eigen::Vector3d VoxelGrid::getMinBound() const {
+Eigen::Vector3d VoxelGrid::GetMinBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
@@ -74,7 +55,7 @@ Eigen::Vector3d VoxelGrid::getMinBound() const {
     }
 }
 
-Eigen::Vector3d VoxelGrid::getMaxBound() const {
+Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
@@ -88,7 +69,7 @@ Eigen::Vector3d VoxelGrid::getMaxBound() const {
     }
 }
 
-Eigen::Vector3d VoxelGrid::getGeometryCenter() const {
+Eigen::Vector3d VoxelGrid::GetCenter() const {
     Eigen::Vector3d center(0, 0, 0);
     if (!HasVoxels()) {
         return center;
@@ -104,35 +85,37 @@ Eigen::Vector3d VoxelGrid::getGeometryCenter() const {
     return center;
 }
 
-ccBBox VoxelGrid::getAxisAlignedBoundingBox() const {
+ccBBox VoxelGrid::GetAxisAlignedBoundingBox() const {
     ccBBox box;
-    box.minCorner() = getMinBound();
-    box.maxCorner() = getMaxBound();
-	box.setValidity(!box.isEmpty());
+    box.minCorner() = GetMinBound();
+    box.maxCorner() = GetMaxBound();
+    	box.setValidity(!box.IsEmpty());
     return box;
 }
 
-ecvOrientedBBox VoxelGrid::getOrientedBoundingBox() const {
-    return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(getAxisAlignedBoundingBox());
+ecvOrientedBBox VoxelGrid::GetOrientedBoundingBox() const {
+    return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
 }
 
-VoxelGrid &VoxelGrid::transform(const Eigen::Matrix4d &transformation) {
+VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
     utility::LogError("VoxelGrid::Transform is not supported");
     return *this;
 }
 
-VoxelGrid &VoxelGrid::translate(const Eigen::Vector3d &translation,
+VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation,
                                 bool relative) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-VoxelGrid &VoxelGrid::scale(const double s, const Eigen::Vector3d &center) {
+VoxelGrid &VoxelGrid::Scale(const double s, const Eigen::Vector3d &center) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-VoxelGrid &VoxelGrid::rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) {
+VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3d &R,
+                             const Eigen::Vector3d &center) {
     utility::LogError("Not implemented");
     return *this;
 }
@@ -217,6 +200,8 @@ void VoxelGrid::AddVoxel(const Voxel &voxel) {
     voxels_[voxel.grid_index_] = voxel;
 }
 
+void VoxelGrid::RemoveVoxel(const Eigen::Vector3i &idx) { voxels_.erase(idx); }
+
 std::vector<bool> VoxelGrid::CheckIfIncluded(
         const std::vector<Eigen::Vector3d> &queries) {
     std::vector<bool> output;
@@ -276,15 +261,15 @@ std::shared_ptr<geometry::Octree> VoxelGrid::ToOctree(
     return octree;
 }
 
-VoxelGrid& VoxelGrid::CarveDepthMap(
-    const Image& depth_map,
-    const camera::PinholeCameraParameters& camera_parameter,
-    bool keep_voxels_outside_image) {
+VoxelGrid &VoxelGrid::CarveDepthMap(
+        const Image &depth_map,
+        const camera::PinholeCameraParameters &camera_parameter,
+        bool keep_voxels_outside_image) {
     if (depth_map.height_ != camera_parameter.intrinsic_.height_ ||
         depth_map.width_ != camera_parameter.intrinsic_.width_) {
         utility::LogError(
-            "[VoxelGrid] provided depth_map dimensions are not compatible "
-            "with the provided camera_parameters");
+                "[VoxelGrid] provided depth_map dimensions are not compatible "
+                "with the provided camera_parameters");
     }
 
     auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);
@@ -295,9 +280,9 @@ VoxelGrid& VoxelGrid::CarveDepthMap(
     // depth is behind the depth of the depth map at the projected pixel.
     for (auto it = voxels_.begin(); it != voxels_.end();) {
         bool carve = true;
-        const geometry::Voxel& voxel = it->second;
+        const geometry::Voxel &voxel = it->second;
         auto pts = GetVoxelBoundingPoints(voxel.grid_index_);
-        for (auto& x : pts) {
+        for (auto &x : pts) {
             auto x_trans = rot * x + trans;
             auto uvz = intrinsic * x_trans;
             double z = uvz(2);
@@ -320,15 +305,15 @@ VoxelGrid& VoxelGrid::CarveDepthMap(
     return *this;
 }
 
-VoxelGrid& VoxelGrid::CarveSilhouette(
-    const Image& silhouette_mask,
-    const camera::PinholeCameraParameters& camera_parameter,
-    bool keep_voxels_outside_image) {
+VoxelGrid &VoxelGrid::CarveSilhouette(
+        const Image &silhouette_mask,
+        const camera::PinholeCameraParameters &camera_parameter,
+        bool keep_voxels_outside_image) {
     if (silhouette_mask.height_ != camera_parameter.intrinsic_.height_ ||
         silhouette_mask.width_ != camera_parameter.intrinsic_.width_) {
         utility::LogError(
-            "[VoxelGrid] provided silhouette_mask dimensions are not "
-            "compatible with the provided camera_parameters");
+                "[VoxelGrid] provided silhouette_mask dimensions are not "
+                "compatible with the provided camera_parameters");
     }
 
     auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);
@@ -339,9 +324,9 @@ VoxelGrid& VoxelGrid::CarveSilhouette(
     // is set (>0).
     for (auto it = voxels_.begin(); it != voxels_.end();) {
         bool carve = true;
-        const geometry::Voxel& voxel = it->second;
+        const geometry::Voxel &voxel = it->second;
         auto pts = GetVoxelBoundingPoints(voxel.grid_index_);
-        for (auto& x : pts) {
+        for (auto &x : pts) {
             auto x_trans = rot * x + trans;
             auto uvz = intrinsic * x_trans;
             double z = uvz(2);
@@ -365,14 +350,13 @@ VoxelGrid& VoxelGrid::CarveSilhouette(
 }
 
 std::vector<Voxel> VoxelGrid::GetVoxels() const {
-	std::vector<Voxel> result;
-	result.reserve(voxels_.size());
-	for (const auto &keyval : voxels_) {
-		result.push_back(keyval.second);
-	}
-	return result;
+    std::vector<Voxel> result;
+    result.reserve(voxels_.size());
+    for (const auto &keyval : voxels_) {
+        result.push_back(keyval.second);
+    }
+    return result;
 }
-
 
 }  // namespace geometry
 }  // namespace cloudViewer

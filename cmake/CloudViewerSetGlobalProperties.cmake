@@ -77,9 +77,16 @@ function(cloudViewer_set_global_properties target)
     endif()
 
     target_include_directories(${target} PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/core/include>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/eCV_io/include>
         $<INSTALL_INTERFACE:${CloudViewer_INSTALL_INCLUDE_DIR}>
     )
+
+    # fix issues: fatal error: msgpack.hpp
+    if (TARGET 3rdparty_msgpack)
+        target_include_directories(${target} PUBLIC ${MSGPACK_INCLUDE_DIRS})
+    endif()
 
     # Required for static linking zeromq
     target_compile_definitions(${target} PRIVATE ZMQ_STATIC)
@@ -89,6 +96,13 @@ function(cloudViewer_set_global_properties target)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
         if (BUILD_CACHED_CUDA_MANAGER)
             target_compile_definitions(${target} PRIVATE BUILD_CACHED_CUDA_MANAGER)
+        endif()
+        # Ensure CUDA headers like <cuda.h> are available to all targets that
+        # include headers such as `cloudViewer/core/CUDAUtils.h` when CUDA is enabled.
+        # This mirrors CloudViewer's approach and fixes compile errors in examples/tools/apps
+        # that directly include CloudViewer headers under BUILD_CUDA_MODULE.
+        if (DEFINED CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES)
+            target_include_directories(${target} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
         endif()
     endif()
     if (BUILD_GUI)
@@ -109,8 +123,8 @@ function(cloudViewer_set_global_properties target)
     if (USE_BLAS)
         target_compile_definitions(${target} PRIVATE USE_BLAS)
     endif()
-    if (WITH_IPPICV)
-        target_compile_definitions(${target} PRIVATE WITH_IPPICV)
+    if (WITH_IPP)
+        target_compile_definitions(${target} PRIVATE WITH_IPP)
     endif()
     if (GLIBCXX_USE_CXX11_ABI)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
@@ -180,9 +194,6 @@ function(cloudViewer_set_global_properties target)
 
     # Enable strip
     cloudViewer_enable_strip(${target})
-
-    # Download test data files from ext_cloudViewer_downloads repo.
-    add_dependencies(${target} ext_cloudViewer_downloads)
 
     # Harderning flags
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")

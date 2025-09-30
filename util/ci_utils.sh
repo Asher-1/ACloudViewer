@@ -175,6 +175,7 @@ build_mac_wheel() {
         echo "BUILD_WITH_CONDA is on"
     else
         BUILD_WITH_CONDA=OFF
+        CONDA_LIB_DIR=""
         echo "BUILD_WITH_CONDA is off"
     fi
     if [[ "build_realsense" =~ ^($options)$ ]]; then
@@ -194,12 +195,15 @@ build_mac_wheel() {
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_BENCHMARKS=OFF"
-        "-DBUILD_AZURE_KINECT=ON"
+        "-DBUILD_AZURE_KINECT=OFF" # not supported on macos
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE" # some issues with network locally
         "-DWITH_OPENMP=ON"
-        "-DWITH_IPPICV=ON"
+        "-DWITH_IPP=OFF" # not supported on macos
         "-DWITH_SIMD=ON"
         "-DUSE_SIMD=ON"
+        "-DCVCORELIB_SHARED=ON"
+        "-DCVCORELIB_USE_CGAL=ON" # for delaunay triangulation such as facet
+        "-DCVCORELIB_USE_QT_CONCURRENT=ON" # for parallel processing
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=ON"
@@ -274,6 +278,7 @@ build_gui_app() {
         echo "BUILD_WITH_CONDA is on"
     else
         BUILD_WITH_CONDA=OFF
+        CONDA_LIB_DIR=""
         echo "BUILD_WITH_CONDA is off"
     fi
     set -u
@@ -294,9 +299,10 @@ build_gui_app() {
                 "-DBUILD_BENCHMARKS=OFF"
                 "-DBUILD_WEBRTC=OFF"
                 "-DWITH_OPENMP=ON"
-                "-DWITH_IPPICV=ON"
+                "-DWITH_IPP=ON"
                 "-DWITH_SIMD=ON"
                 "-DWITH_PCL_NURBS=$WITH_PCL_NURBS"
+                "-DUSE_PCL_BACKEND=ON"
                 "-DUSE_SIMD=ON"
                 "-DPACKAGE=$PACKAGE"
                 "-DBUILD_OPENCV=ON"
@@ -351,7 +357,7 @@ build_gui_app() {
                 "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
                 "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
                 "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
-                )
+    )
     
     set -x # Echo commands on
     echo
@@ -443,7 +449,10 @@ build_pip_package() {
         "-DUSE_SIMD=ON"
         "-DWITH_SIMD=ON"
         "-DWITH_OPENMP=ON"
-        "-DWITH_IPPICV=ON"
+        "-DWITH_IPP=ON"
+        "-DCVCORELIB_SHARED=ON"
+        "-DCVCORELIB_USE_CGAL=ON" # for delaunay triangulation such as facet
+        "-DCVCORELIB_USE_QT_CONCURRENT=ON" # for parallel processing
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
@@ -575,6 +584,76 @@ run_python_tests() {
 }
 
 maximize_ubuntu_github_actions_build_space() {
+    # Enhanced version with better Docker space management
+    # https://github.com/easimon/maximize-build-space/blob/main/action.yml
+    echo "=== Initial disk space ==="
+    df -h .                                  # => 26GB
+    
+    # Remove large pre-installed packages
+    $SUDO rm -rf /usr/share/dotnet           # ~17GB
+    $SUDO rm -rf /usr/local/lib/android      # ~11GB
+    $SUDO rm -rf /opt/ghc                    # ~2.7GB
+    $SUDO rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
+    $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
+    
+    # Additional cleanup for more space
+    $SUDO rm -rf /usr/local/share/boost      # ~1GB
+    $SUDO rm -rf /usr/share/swift            # ~1GB
+    $SUDO rm -rf /opt/az                     # ~1GB
+    $SUDO rm -rf /usr/local/.ghcup           # ~2GB
+    $SUDO rm -rf /opt/microsoft              # ~1GB
+
+    # Configure Docker to use efficient storage
+    echo "=== Stopping Docker service ==="
+    $SUDO systemctl stop docker.socket || true
+    $SUDO systemctl stop docker.service || true
+    $SUDO systemctl stop containerd || true
+    
+    # Wait for Docker to fully stop
+    sleep 5
+    
+    # Create Docker daemon config for space optimization
+    $SUDO mkdir -p /etc/docker
+    $SUDO tee /etc/docker/daemon.json > /dev/null <<EOF
+{
+  "storage-driver": "overlay2",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "max-concurrent-downloads": 3,
+  "max-concurrent-uploads": 3
+}
+EOF
+    
+    echo "=== Starting Docker service ==="
+    $SUDO systemctl start containerd || true
+    $SUDO systemctl start docker.service
+    $SUDO systemctl start docker.socket || true
+    
+    # Wait for Docker to be ready
+    echo "=== Waiting for Docker to be ready ==="
+    timeout 60 bash -c 'until docker info >/dev/null 2>&1; do echo "Waiting for Docker..."; sleep 2; done' || {
+        echo "Docker failed to start, checking logs:"
+        $SUDO journalctl -u docker.service --no-pager -l | tail -20
+        $SUDO systemctl status docker.service
+        exit 1
+    }
+    
+    # Clean Docker system
+    $SUDO docker system prune -a -f --volumes || true
+    
+    echo "=== Docker info ==="
+    $SUDO docker info
+    
+    echo "=== Final disk space ==="
+    df -h .                                  
+    df -h /var/lib/docker                       # => /var/lib/docker -> ~101GB
+}
+
+
+maximize_ubuntu_github_actions_build_space_simple() {
     # https://github.com/easimon/maximize-build-space/blob/main/action.yml
     df -h .                                  # => 26GB
     $SUDO rm -rf /usr/share/dotnet           # ~17GB
@@ -584,4 +663,86 @@ maximize_ubuntu_github_actions_build_space() {
     $SUDO docker image prune --all --force   # ~4.5GB
     $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
     df -h . # => 53GB
+}
+
+monitor_disk_space() {
+    local step_name="${1:-Unknown step}"
+    echo "=== Disk space monitoring: $step_name ==="
+    echo "Filesystem usage:"
+    df -h
+    echo ""
+    echo "Docker system usage:"
+    docker system df 2>/dev/null || echo "Docker not available"
+    echo ""
+    echo "Available space in /var/lib/docker:"
+    df -h /var/lib/docker 2>/dev/null || df -h /
+    echo ""
+}
+
+docker_cleanup_aggressive() {
+    echo "=== Aggressive Docker cleanup ==="
+    # Stop all containers
+    docker stop $(docker ps -aq) 2>/dev/null || true
+    
+    # Remove all containers
+    docker rm $(docker ps -aq) 2>/dev/null || true
+    
+    # Remove all images
+    docker rmi $(docker images -q) 2>/dev/null || true
+    
+    # Remove all volumes
+    docker volume rm $(docker volume ls -q) 2>/dev/null || true
+    
+    # Remove all networks (except default ones)
+    docker network rm $(docker network ls -q) 2>/dev/null || true
+    
+    # Prune everything
+    docker system prune --all --force --volumes 2>/dev/null || true
+    
+    # Clean build cache
+    docker builder prune --all --force 2>/dev/null || true
+    
+    echo "Docker cleanup completed"
+    docker system df 2>/dev/null || true
+}
+
+restart_docker_service() {
+    echo "=== Restarting Docker service safely ==="
+    
+    # Stop all Docker services in correct order
+    echo "Stopping Docker services..."
+    $SUDO systemctl stop docker.socket || true
+    $SUDO systemctl stop docker.service || true
+    $SUDO systemctl stop containerd || true
+    
+    # Wait for services to fully stop
+    sleep 5
+    
+    # Kill any remaining Docker processes
+    $SUDO pkill -f dockerd || true
+    $SUDO pkill -f containerd || true
+    
+    # Clean up any stale mount points
+    echo "Cleaning up stale mount points..."
+    $SUDO umount /var/lib/docker/overlay2/*/merged 2>/dev/null || true
+    
+    # Start services in correct order
+    echo "Starting Docker services..."
+    $SUDO systemctl start containerd || true
+    sleep 2
+    $SUDO systemctl start docker.service
+    sleep 2
+    $SUDO systemctl start docker.socket || true
+    
+    # Wait for Docker to be ready
+    echo "Waiting for Docker to be ready..."
+    timeout 60 bash -c 'until docker info >/dev/null 2>&1; do echo "Waiting for Docker..."; sleep 2; done' || {
+        echo "Docker failed to start, checking logs:"
+        $SUDO journalctl -u docker.service --no-pager -l | tail -20
+        $SUDO systemctl status docker.service
+        return 1
+    }
+    
+    echo "Docker service restarted successfully"
+    docker info
 }

@@ -1,38 +1,20 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
-
-#include "visualization/utility/GLHelper.h"
-#include "visualization/visualizer/ViewParameters.h"
-
+// clang-format off
+#include "visualization/utility/GLHelper.h" // must include first
+// clang-format on
 #include <ecvBBox.h>
 #include <ecvHObject.h>
 #include <ecvOrientedBBox.h>
+
 #include "camera/PinholeCameraParameters.h"
+#include "visualization/visualizer/ViewParameters.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -74,10 +56,10 @@ public:
     bool ConvertToViewParameters(ViewParameters &status) const;
     bool ConvertFromViewParameters(const ViewParameters &status);
 
-	void SetZoom(const double zoom);
-	void SetUp(const Eigen::Vector3d &up);
-	void SetFront(const Eigen::Vector3d &front);
-	void SetLookat(const Eigen::Vector3d &lookat);
+    void SetZoom(const double zoom);
+    void SetUp(const Eigen::Vector3d &up);
+    void SetFront(const Eigen::Vector3d &front);
+    void SetLookat(const Eigen::Vector3d &lookat);
 
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view).
@@ -148,26 +130,25 @@ public:
     /// corner of the window client area.
     virtual void Roll(double x);
 
-    const ccBBox &GetBoundingBox() const {
-        return bounding_box_;
-    }
+    const ccBBox &GetBoundingBox() const { return bounding_box_; }
 
     void ResetBoundingBox() { bounding_box_.clear(); }
 
     void FitInGeometry(const ccHObject &geometry) {
         if (geometry.isKindOf(CV_TYPES::POINT_CLOUD) ||
-			geometry.isKindOf(CV_TYPES::MESH) ||
+            geometry.isKindOf(CV_TYPES::MESH) ||
             geometry.isKindOf(CV_TYPES::MESH_BASE) ||
-			geometry.isKindOf(CV_TYPES::LINESET) ||
-			geometry.isKindOf(CV_TYPES::POLY_LINE) ||
-			geometry.isKindOf(CV_TYPES::FACET) ||
-			geometry.isKindOf(CV_TYPES::POINT_OCTREE2) ||
-			geometry.isKindOf(CV_TYPES::VOXEL_GRID) ||
-			geometry.isKindOf(CV_TYPES::RGBD_IMAGE) ||
-			geometry.isKindOf(CV_TYPES::IMAGE2) || 
-			geometry.isKindOf(CV_TYPES::BBOX) ||
-			geometry.isKindOf(CV_TYPES::ORIENTED_BBOX)) {
-            bounding_box_ += (const_cast<ccHObject &>(geometry)).getAxisAlignedBoundingBox();
+            geometry.isKindOf(CV_TYPES::LINESET) ||
+            geometry.isKindOf(CV_TYPES::POLY_LINE) ||
+            geometry.isKindOf(CV_TYPES::FACET) ||
+            geometry.isKindOf(CV_TYPES::POINT_OCTREE2) ||
+            geometry.isKindOf(CV_TYPES::VOXEL_GRID) ||
+            geometry.isKindOf(CV_TYPES::RGBD_IMAGE) ||
+            geometry.isKindOf(CV_TYPES::IMAGE2) ||
+            geometry.isKindOf(CV_TYPES::BBOX) ||
+            geometry.isKindOf(CV_TYPES::ORIENTED_BBOX)) {
+            bounding_box_ += (const_cast<ccHObject &>(geometry))
+                                     .GetAxisAlignedBoundingBox();
         }
         SetProjectionParameters();
     }

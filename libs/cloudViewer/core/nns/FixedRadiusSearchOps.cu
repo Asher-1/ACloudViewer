@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "core/Tensor.h"
 #include "core/nns/FixedRadiusIndex.h"
 #include "core/nns/FixedRadiusSearchImpl.cuh"

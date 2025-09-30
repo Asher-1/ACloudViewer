@@ -1,32 +1,14 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "pybind/pipelines/integration/integration.h"
 
 #include <VoxelGrid.h>
+
 #include "pipelines/integration/ScalableTSDFVolume.h"
 #include "pipelines/integration/TSDFVolume.h"
 #include "pipelines/integration/UniformTSDFVolume.h"
@@ -48,29 +30,22 @@ public:
                                extrinsic);
     }
     std::shared_ptr<ccPointCloud> ExtractPointCloud() override {
-        PYBIND11_OVERLOAD_PURE(std::shared_ptr<ccPointCloud>,
-                               TSDFVolumeBase, );
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<ccPointCloud>, TSDFVolumeBase, );
     }
     std::shared_ptr<ccMesh> ExtractTriangleMesh() override {
-        PYBIND11_OVERLOAD_PURE(std::shared_ptr<ccMesh>,
-                               TSDFVolumeBase, );
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<ccMesh>, TSDFVolumeBase, );
     }
 };
 
 void pybind_integration_classes(py::module &m) {
     // cloudViewer.integration.TSDFVolumeColorType
-    py::enum_<TSDFVolumeColorType> tsdf_volume_color_type(
-            m, "TSDFVolumeColorType", py::arithmetic());
-    tsdf_volume_color_type.value("NoColor", TSDFVolumeColorType::NoColor)
+    py::native_enum<TSDFVolumeColorType>(m, "TSDFVolumeColorType", "enum.Enum",
+                                         "Enum class for TSDFVolumeColorType.")
+            .value("NoColor", TSDFVolumeColorType::NoColor)
             .value("RGB8", TSDFVolumeColorType::RGB8)
             .value("Gray32", TSDFVolumeColorType::Gray32)
-            .export_values();
-    // Trick to write docs without listing the members in the enum class again.
-    tsdf_volume_color_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for TSDFVolumeColorType.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
 
     // cloudViewer.integration.TSDFVolume
     py::class_<TSDFVolume, PyTSDFVolume<TSDFVolume>> tsdfvolume(
@@ -111,7 +86,8 @@ In SIGGRAPH, 1996)");
              {"extrinsic", "Extrinsic parameters."}});
     docstring::ClassMethodDocInject(m, "TSDFVolume", "reset");
 
-    // cloudViewer.integration.UniformTSDFVolume: cloudViewer.integration.TSDFVolume
+    // cloudViewer.integration.UniformTSDFVolume:
+    // cloudViewer.integration.TSDFVolume
     py::class_<UniformTSDFVolume, PyTSDFVolume<UniformTSDFVolume>, TSDFVolume>
             uniform_tsdfvolume(
                     m, "UniformTSDFVolume",
@@ -164,7 +140,8 @@ In SIGGRAPH, 1996)");
     docstring::ClassMethodDocInject(m, "UniformTSDFVolume",
                                     "extract_voxel_point_cloud");
 
-    // cloudViewer.integration.ScalableTSDFVolume: cloudViewer.integration.TSDFVolume
+    // cloudViewer.integration.ScalableTSDFVolume:
+    // cloudViewer.integration.TSDFVolume
     py::class_<ScalableTSDFVolume, PyTSDFVolume<ScalableTSDFVolume>, TSDFVolume>
             scalable_tsdfvolume(m, "ScalableTSDFVolume", R"(The
 ScalableTSDFVolume implements a more memory efficient data structure for

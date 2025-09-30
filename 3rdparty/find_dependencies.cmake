@@ -262,9 +262,11 @@ function(pkg_config_3rdparty_library name)
         add_library(${name} INTERFACE)
         target_include_directories(${name} SYSTEM INTERFACE ${pc_${name}_INCLUDE_DIRS})
         target_link_libraries(${name} INTERFACE ${pc_${name}_LINK_LIBRARIES})
+        message(STATUS "Linking ${name} against: ${pc_${name}_LINK_LIBRARIES}")
         foreach(flag IN LISTS pc_${name}_CFLAGS_OTHER)
             if(flag MATCHES "-D(.*)")
                 target_compile_definitions(${name} INTERFACE ${CMAKE_MATCH_1})
+                message(STATUS "Adding compile definition ${CMAKE_MATCH_1}")
             endif()
         endforeach()
         if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
@@ -276,6 +278,101 @@ function(pkg_config_3rdparty_library name)
         message(STATUS "Unable to find installed third-party library ${name}")
         set(${name}_FOUND FALSE PARENT_SCOPE)
     endif()
+endfunction()
+
+# ==============================================================
+# manual_pkg_config_target
+# Manually parse .pc file and create CMake INTERFACE target
+# Parameter:
+#   TARGET_NAME - the target name
+#   PC_FILE     - .pc file full path
+# ==============================================================
+function(manual_pkg_config_target TARGET_NAME PC_FILE)
+    if(NOT EXISTS "${PC_FILE}")
+        message(WARNING "pkg-config file not found: ${PC_FILE}")
+        set(${TARGET_NAME}_FOUND FALSE PARENT_SCOPE)
+    endif()
+
+    # Initialize variables for parsed data
+    set(PC_LIB_DIR "")
+    set(PC_INCLUDE_DIRS "")
+    set(PC_VERSION "")
+    set(PC_NAME "")
+    set(PC_LIB_NAME "")
+    set(VAR_MAP "")
+
+    file(STRINGS "${PC_FILE}" PC_LINES)
+    foreach(LINE IN LISTS PC_LINES)
+        if(LINE MATCHES "^([a-zA-Z_]+)=([^ \n]+)$")
+            list(APPEND VAR_MAP "${CMAKE_MATCH_1}=${CMAKE_MATCH_2}")
+        endif()
+    endforeach()
+
+    set(CHANGED TRUE)
+    while(CHANGED)
+        set(CHANGED FALSE)
+        foreach(PAIR IN LISTS VAR_MAP)
+            string(REPLACE "=" ";" PAIR_LIST "${PAIR}")
+            list(GET PAIR_LIST 0 KEY)
+            list(GET PAIR_LIST 1 VALUE)
+            
+            if(VALUE MATCHES "\\\${([^}]+)}")
+                set(MATCH_VAR "${CMAKE_MATCH_1}")
+                foreach(INNER_PAIR IN LISTS VAR_MAP)
+                    if(INNER_PAIR MATCHES "^${MATCH_VAR}=(.*)$")
+                        string(REPLACE "\${${MATCH_VAR}}" "${CMAKE_MATCH_1}" VALUE "${VALUE}")
+                        set(CHANGED TRUE)
+                    endif()
+                endforeach()
+                list(REMOVE_ITEM VAR_MAP "${PAIR}")
+                list(APPEND VAR_MAP "${KEY}=${VALUE}")
+            endif()
+        endforeach()
+    endwhile()
+
+    foreach(LINE IN LISTS PC_LINES)
+        foreach(PAIR IN LISTS VAR_MAP)
+            string(REPLACE "=" ";" PAIR_LIST "${PAIR}")
+            list(GET PAIR_LIST 0 KEY)
+            list(GET PAIR_LIST 1 VALUE)
+            string(REPLACE "\${${KEY}}" "${VALUE}" LINE "${LINE}")
+        endforeach()
+
+        if(LINE MATCHES "^libdir=(.*)$")
+            set(PC_LIB_DIR "${CMAKE_MATCH_1}")
+        elseif(LINE MATCHES "^includedir=(.*)$")
+            set(PC_INCLUDE_DIRS "${CMAKE_MATCH_1}")
+        elseif(LINE MATCHES "^Name: (.*)$")
+            set(PC_NAME "${CMAKE_MATCH_1}")
+            string(REGEX REPLACE "^lib" "" PC_LIB_NAME "${CMAKE_MATCH_1}")
+        elseif(LINE MATCHES "^Version: (.*)$")
+            set(PC_VERSION "${CMAKE_MATCH_1}")
+        endif()
+    endforeach()
+
+    message(STATUS "Using installed third-party library ${TARGET_NAME} ${PC_VERSION}: ${PC_INCLUDE_DIRS}")
+    add_library(${TARGET_NAME} INTERFACE)
+    
+    set(TARGET_PC_LIBRARIES "${PC_LIB_DIR}/${PC_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    target_link_libraries(${TARGET_NAME} INTERFACE ${TARGET_PC_LIBRARIES})
+    target_include_directories(${TARGET_NAME} SYSTEM INTERFACE ${PC_INCLUDE_DIRS})
+    if(PC_VERSION)
+        set_property(TARGET ${TARGET_NAME} PROPERTY VERSION "${PC_VERSION}")
+    endif()
+    
+    message(STATUS "Manually configured ${TARGET_NAME} from ${PC_FILE}")
+    message(STATUS "Libraries: ${TARGET_PC_LIBRARIES}")
+    message(STATUS "Include directories: ${PC_INCLUDE_DIRS}")
+    if(PC_VERSION)
+        message(STATUS "Found ${PC_LIB_NAME} Version: ${PC_VERSION}")
+    endif()
+
+    if(NOT BUILD_SHARED_LIBS)
+        install(TARGETS ${TARGET_NAME} EXPORT ${PROJECT_NAME}Targets)
+    endif()
+
+    set(${TARGET_NAME}_FOUND TRUE PARENT_SCOPE)
+    add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
 endfunction()
 
 # find_package_3rdparty_library(name ...)
@@ -562,7 +659,7 @@ function(import_shared_3rdparty_library name ext_target)
                     COMMAND ${CMAKE_COMMAND} -E
                     copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
                 )
-                message(STATUS "install_name_tool -id "@rpath/${library_filename}" ${arg_LIB_DIR}/${library_filename}")
+                message(STATUS "install_name_tool -id @rpath/${library_filename} ${arg_LIB_DIR}/${library_filename}")
             else()
                 # deploy for debugging
                 add_custom_command(TARGET ${ext_target}
@@ -752,11 +849,25 @@ endif ()
 
 # cutlass
 if (BUILD_CUDA_MODULE)
-    include(${CloudViewer_3RDPARTY_DIR}/cutlass/cutlass.cmake)
-    import_3rdparty_library(3rdparty_cutlass
+    if(USE_SYSTEM_CUTLASS)
+        find_path(3rdparty_cutlass_INCLUDE_DIR NAMES cutlass/cutlass.h)
+        if(3rdparty_cutlass_INCLUDE_DIR)
+            add_library(3rdparty_cutlass INTERFACE)
+            target_include_directories(3rdparty_cutlass INTERFACE ${3rdparty_cutlass_INCLUDE_DIR})
+            if(NOT BUILD_SHARED_LIBS)
+                install(TARGETS 3rdparty_cutlass EXPORT ${PROJECT_NAME}Targets)
+            endif()
+        else()
+            set(USE_SYSTEM_CUTLASS OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_CUTLASS)
+        include(${CloudViewer_3RDPARTY_DIR}/cutlass/cutlass.cmake)
+        import_3rdparty_library(3rdparty_cutlass
             INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
-            DEPENDS ext_cutlass
-            )
+            DEPENDS      ext_cutlass
+        )
+    endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_cutlass)
 endif ()
 
@@ -831,12 +942,12 @@ if (USE_SYSTEM_GLEW)
 endif ()
 if (NOT USE_SYSTEM_GLEW)
     build_3rdparty_library(3rdparty_glew DIRECTORY glew
-            HEADER
-            SOURCES
+        HEADER
+        SOURCES
             src/glew.c
-            INCLUDE_DIRS
+        INCLUDE_DIRS
             include/
-            )
+    )
     if (ENABLE_HEADLESS_RENDERING)
         target_compile_definitions(3rdparty_glew PUBLIC GLEW_OSMESA)
     endif ()
@@ -849,33 +960,36 @@ else()
 endif()
 
 # GLFW
-if (USE_SYSTEM_GLFW)
+if(USE_SYSTEM_GLFW)
     find_package_3rdparty_library(3rdparty_glfw
-            HEADER
-            PACKAGE glfw3
-            TARGETS glfw
-            )
-    if (NOT 3rdparty_glfw_FOUND)
+        HEADER
+        PACKAGE glfw3
+        VERSION 3.4
+        REQUIRED
+        TARGETS glfw
+    )
+    if(NOT 3rdparty_glfw_FOUND)
         pkg_config_3rdparty_library(3rdparty_glfw
             HEADER
             SEARCH_ARGS glfw3
         )
-        if (NOT 3rdparty_glfw_FOUND)
+        if(NOT 3rdparty_glfw_FOUND)
             set(USE_SYSTEM_GLFW OFF)
-        endif ()
-    endif ()
-endif ()
-if (NOT USE_SYSTEM_GLFW)
-    message(STATUS "Building library 3rdparty_glfw from source")
-    add_subdirectory(${CloudViewer_3RDPARTY_DIR}/GLFW)
+        endif()
+    endif()
+endif()
+if(NOT USE_SYSTEM_GLFW)
+    include(${CloudViewer_3RDPARTY_DIR}/glfw/glfw.cmake)
     import_3rdparty_library(3rdparty_glfw
-            HEADER
-            INCLUDE_DIRS ${CloudViewer_3RDPARTY_DIR}/GLFW/include/
-            LIBRARIES glfw3
-            DEPENDS glfw
-            )
+        HEADER
+        INCLUDE_DIRS ${GLFW_INCLUDE_DIRS}
+        LIB_DIR      ${GLFW_LIB_DIR}
+        LIBRARIES    ${GLFW_LIBRARIES}
+        DEPENDS      ext_glfw
+    )
+
     target_link_libraries(3rdparty_glfw INTERFACE 3rdparty_threads)
-    if (UNIX AND NOT APPLE)
+    if(UNIX AND NOT APPLE)
         find_library(RT_LIBRARY rt)
         if(RT_LIBRARY)
             target_link_libraries(3rdparty_glfw INTERFACE ${RT_LIBRARY})
@@ -887,20 +1001,26 @@ if (NOT USE_SYSTEM_GLFW)
         if(CMAKE_DL_LIBS)
             target_link_libraries(3rdparty_glfw INTERFACE ${CMAKE_DL_LIBS})
         endif()
-    endif ()
-    if (APPLE)
+    endif()
+    if(APPLE)
         find_library(COCOA_FRAMEWORK Cocoa)
         find_library(IOKIT_FRAMEWORK IOKit)
         find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
         find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
-        target_link_libraries(3rdparty_glfw INTERFACE ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK} ${CORE_FOUNDATION_FRAMEWORK} ${CORE_VIDEO_FRAMEWORK})
-    endif ()
-    if (WIN32)
+        target_link_libraries(3rdparty_glfw INTERFACE
+            ${COCOA_FRAMEWORK}
+            ${IOKIT_FRAMEWORK}
+            ${CORE_FOUNDATION_FRAMEWORK}
+            ${CORE_VIDEO_FRAMEWORK}
+        )
+    endif()
+    if(WIN32)
         target_link_libraries(3rdparty_glfw INTERFACE gdi32)
-    endif ()
+    endif()
     list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM 3rdparty_glfw)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_glfw)
 else()
-    list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM 3rdparty_glfw)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_glfw)
 endif()
 if(TARGET 3rdparty_x11)
     target_link_libraries(3rdparty_glfw INTERFACE 3rdparty_x11)
@@ -942,9 +1062,9 @@ if (NOT USE_SYSTEM_JPEG)
     include(${CloudViewer_3RDPARTY_DIR}/libjpeg-turbo/libjpeg-turbo.cmake)
     import_3rdparty_library(3rdparty_jpeg
             INCLUDE_DIRS ${JPEG_TURBO_INCLUDE_DIRS}
-            LIB_DIR ${JPEG_TURBO_LIB_DIR}
-            LIBRARIES ${JPEG_TURBO_LIBRARIES}
-            DEPENDS ext_turbojpeg
+            LIB_DIR      ${JPEG_TURBO_LIB_DIR}
+            LIBRARIES    ${JPEG_TURBO_LIBRARIES}
+            DEPENDS      ext_turbojpeg
             )
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_jpeg)
 else()
@@ -984,10 +1104,10 @@ if (USE_SYSTEM_LIBLZF)
 endif ()
 if (NOT USE_SYSTEM_LIBLZF)
     build_3rdparty_library(3rdparty_liblzf DIRECTORY liblzf
-            SOURCES
+        SOURCES
             liblzf/lzf_c.c
             liblzf/lzf_d.c
-            )
+    )
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_liblzf)
 else()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_liblzf)
@@ -996,7 +1116,7 @@ endif()
 # tritriintersect
 build_3rdparty_library(3rdparty_tritriintersect DIRECTORY tomasakeninemoeller
         INCLUDE_DIRS include/
-        )
+)
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_tritriintersect)
 
 # librealsense SDK
@@ -1035,6 +1155,85 @@ if (BUILD_LIBREALSENSE)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_librealsense)
     endif()
 endif ()
+
+# Curl
+# - Curl should be linked before PNG, otherwise it will have undefined symbols.
+# - openssl.cmake needs to be included before curl.cmake, for the
+#   BORINGSSL_ROOT_DIR variable.
+if(USE_SYSTEM_CURL)
+    if (APPLE AND BUILD_WITH_CONDA)
+        set(CURL_PC_FILE "${CONDA_PREFIX}/lib/pkgconfig/libcurl.pc")
+        manual_pkg_config_target(3rdparty_curl "${CURL_PC_FILE}")
+    else()
+        pkg_config_3rdparty_library(3rdparty_curl
+            SEARCH_ARGS libcurl
+        )
+    endif()
+    if(NOT 3rdparty_curl_FOUND)
+        message(WARNING "Cannot found libcurl and set USE_SYSTEM_CURL=OFF and USE_SYSTEM_OPENSSL=OFF.")
+        set(USE_SYSTEM_CURL     OFF)
+        set(USE_SYSTEM_OPENSSL  OFF)
+    endif()
+endif()
+
+if(USE_SYSTEM_OPENSSL)
+    find_package_3rdparty_library(3rdparty_openssl
+        PACKAGE OpenSSL
+        REQUIRED
+        TARGETS OpenSSL::Crypto
+    )
+    if(NOT 3rdparty_openssl_FOUND)
+        message(WARNING "Cannot found OpenSSL and set USE_SYSTEM_OPENSSL=OFF.")
+        set(USE_SYSTEM_OPENSSL OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_OPENSSL)
+    # BoringSSL
+    include(${CloudViewer_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+    import_3rdparty_library(3rdparty_openssl
+        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        LIB_DIR      ${BORINGSSL_LIB_DIR}
+        LIBRARIES    ${BORINGSSL_LIBRARIES}
+        DEPENDS      ext_zlib ext_boringssl
+    )
+endif()
+
+if(NOT USE_SYSTEM_CURL)
+    if (APPLE)
+        message(SEND_ERROR "Please build with USE_SYSTEM_CURL=ON for macOS to prevent linker errors.")
+    endif()
+    include(${CloudViewer_3RDPARTY_DIR}/curl/curl.cmake)
+    import_3rdparty_library(3rdparty_curl
+        INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        LIB_DIR      ${CURL_LIB_DIR}
+        LIBRARIES    ${CURL_LIBRARIES}
+        DEPENDS      ext_zlib ext_curl 3rdparty_openssl
+    )
+    if(APPLE)
+        # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
+        # Link frameworks   : https://stackoverflow.com/a/18330634/1255535
+        # Fixes error:
+        # ```
+        # Undefined symbols for architecture arm64:
+        # "_SCDynamicStoreCopyProxies", referenced from:
+        #     _Curl_resolv in libcurl.a(hostip.c.o)
+        # ```
+        # The "Foundation" framework is already linked by GLFW.
+        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration -framework Foundation")
+    elseif(UNIX)
+        find_library(LIBIDN2 NAMES idn2 libidn2 libidn2.so.0  )
+        if(LIBIDN2)
+            target_link_libraries(3rdparty_curl INTERFACE ${LIBIDN2})
+        endif()
+    endif()
+    target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
+    if (UNIX AND NOT APPLE) # fix undefined symbols for architecture x86_64: _ZSTD_createCStream, _ZSTD_createDStream
+        target_link_libraries(3rdparty_curl INTERFACE zstd)
+    endif()
+endif()
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_curl 3rdparty_openssl)
 
 # PNG
 if (USE_SYSTEM_PNG)
@@ -1085,11 +1284,11 @@ list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM 3rdparty_rply)
 
 # tinyfiledialogs
 build_3rdparty_library(3rdparty_tinyfiledialogs DIRECTORY tinyfiledialogs
-        SOURCES
+    SOURCES
         include/tinyfiledialogs/tinyfiledialogs.c
-        INCLUDE_DIRS
+    INCLUDE_DIRS
         include/
-        )
+)
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_tinyfiledialogs)
 
 # tinygltf
@@ -1149,24 +1348,24 @@ endif()
 if (NOT USE_SYSTEM_QHULLCPP)
     include(${CloudViewer_3RDPARTY_DIR}/qhull/qhull.cmake)
     build_3rdparty_library(3rdparty_qhull_r DIRECTORY ${QHULL_SOURCE_DIR}
-    SOURCES
-        src/libqhull_r/global_r.c
-        src/libqhull_r/stat_r.c
-        src/libqhull_r/geom2_r.c
-        src/libqhull_r/poly2_r.c
-        src/libqhull_r/merge_r.c
-        src/libqhull_r/libqhull_r.c
-        src/libqhull_r/geom_r.c
-        src/libqhull_r/poly_r.c
-        src/libqhull_r/qset_r.c
-        src/libqhull_r/mem_r.c
-        src/libqhull_r/random_r.c
-        src/libqhull_r/usermem_r.c
-        src/libqhull_r/io_r.c
-        src/libqhull_r/user_r.c
-        src/libqhull_r/rboxlib_r.c
-    INCLUDE_DIRS
-        src/
+        SOURCES
+            src/libqhull_r/global_r.c
+            src/libqhull_r/stat_r.c
+            src/libqhull_r/geom2_r.c
+            src/libqhull_r/poly2_r.c
+            src/libqhull_r/merge_r.c
+            src/libqhull_r/libqhull_r.c
+            src/libqhull_r/geom_r.c
+            src/libqhull_r/poly_r.c
+            src/libqhull_r/qset_r.c
+            src/libqhull_r/mem_r.c
+            src/libqhull_r/random_r.c
+            src/libqhull_r/usermem_r.c
+            src/libqhull_r/io_r.c
+            src/libqhull_r/user_r.c
+            src/libqhull_r/rboxlib_r.c
+        INCLUDE_DIRS
+            src/
     )
     build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
         SOURCES
@@ -1192,7 +1391,7 @@ if (NOT USE_SYSTEM_QHULLCPP)
             src/libqhullcpp/RoadLogEvent.cpp
         INCLUDE_DIRS
             src/
-        )
+    )
     target_link_libraries(3rdparty_qhullcpp PRIVATE 3rdparty_qhull_r)
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_qhullcpp)
 else()
@@ -1262,6 +1461,14 @@ import_3rdparty_library(3rdparty_poisson
         )
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_poisson)
 
+# Minizip
+if(WITH_MINIZIP)
+    pkg_config_3rdparty_library(3rdparty_minizip
+        SEARCH_ARGS minizip
+    )
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_minizip)
+endif()
+
 # Googletest
 if (BUILD_UNIT_TESTS)
     if (USE_SYSTEM_GOOGLETEST)
@@ -1276,17 +1483,15 @@ if (BUILD_UNIT_TESTS)
     if (NOT USE_SYSTEM_GOOGLETEST)
         include(${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake)
         build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
-                SOURCES
+            SOURCES
                 googletest/src/gtest-all.cc
                 googlemock/src/gmock-all.cc
-                INCLUDE_DIRS
+            INCLUDE_DIRS
                 googletest/include/
                 googletest/
                 googlemock/include/
                 googlemock/
-                DEPENDS
-                ext_googletest
-                )
+        )
     endif ()
 endif ()
 
@@ -1310,14 +1515,13 @@ if (BUILD_GUI)
     if (NOT USE_SYSTEM_IMGUI)
         include(${CloudViewer_3RDPARTY_DIR}/imgui/imgui.cmake)
         build_3rdparty_library(3rdparty_imgui DIRECTORY ${IMGUI_SOURCE_DIR}
-                SOURCES
+            SOURCES
                 imgui_demo.cpp
                 imgui_draw.cpp
+                imgui_tables.cpp
                 imgui_widgets.cpp
                 imgui.cpp
-                DEPENDS
-                ext_imgui
-                )
+        )
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_imgui)
     else()
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_imgui)
@@ -1503,8 +1707,8 @@ if(BUILD_GUI)
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
-                                  ${CPP_LIBRARY} ${CPPABI_LIBRARY})
-            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY} ${CPPABI_LIBRARY}")
+                                  ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}")
             if (LIBCPP_VERSION GREATER 11)
                 message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that " 
                 "interferes with the system libunwind.so.8 and may crash Python code when exceptions "
@@ -1546,7 +1750,7 @@ list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM 3rdparty_opengl)
 # RPC interface
 # zeromq
 if(USE_SYSTEM_ZEROMQ)
-    opkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
+    pkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
     if(NOT 3rdparty_zeromq_FOUND)
         set(USE_USE_SYSTEM_ZEROMQ OFF)
     endif()
@@ -1572,12 +1776,47 @@ else()
 endif()
 
 # msgpack
-include(${CloudViewer_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
-import_3rdparty_library(3rdparty_msgpack
-        INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
-        DEPENDS ext_msgpack-c
+if(USE_SYSTEM_MSGPACK)
+    find_package_3rdparty_library(3rdparty_msgpack
+        PACKAGE msgpack-cxx
+        TARGETS msgpack-cxx
+    )
+    if(NOT 3rdparty_msgpack_FOUND)
+        find_package_3rdparty_library(3rdparty_msgpack
+            PACKAGE msgpack
+            TARGETS msgpackc
         )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_msgpack)
+    endif()
+    if(NOT 3rdparty_msgpack_FOUND)
+        pkg_config_3rdparty_library(3rdparty_msgpack
+            SEARCH_ARGS msgpack
+        )
+        if(NOT 3rdparty_msgpack_FOUND)
+            set(USE_SYSTEM_MSGPACK OFF)
+        endif()
+    endif()
+endif()
+if(NOT USE_SYSTEM_MSGPACK)
+    include(${CloudViewer_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
+    import_3rdparty_library(3rdparty_msgpack
+        INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
+        DEPENDS      ext_msgpack-c
+    )
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_msgpack)
+else()
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_msgpack)
+endif()
+
+# UVAtlas
+include(${CloudViewer_3RDPARTY_DIR}/uvatlas/uvatlas.cmake)
+import_3rdparty_library(3rdparty_uvatlas
+    HIDDEN
+    INCLUDE_DIRS ${UVATLAS_INCLUDE_DIRS}
+    LIB_DIR      ${UVATLAS_LIB_DIR}
+    LIBRARIES    ${UVATLAS_LIBRARIES}
+    DEPENDS      ext_uvatlas
+)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_uvatlas)
 
 # TBB
 if(USE_SYSTEM_TBB)
@@ -1628,7 +1867,6 @@ if (USE_BLAS)
     if (NOT USE_SYSTEM_BLAS)
         # Install gfortran first for compiling OpenBLAS/Lapack from source.
         message(STATUS "Building OpenBLAS with LAPACK from source")
-        set(BLAS_BUILD_FROM_SOURCE ON)
 
         find_program(gfortran_bin "gfortran")
         if (gfortran_bin)
@@ -1667,22 +1905,36 @@ if (USE_BLAS)
         endif ()
 
         if (LINUX_AARCH64 OR APPLE_AARCH64)
-            # Find libgfortran.a and libgcc.a inside the gfortran library search
-            # directories. This ensures that the library matches the compiler.
-            # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
-            find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-            find_library(gcc_lib NAMES libgcc.a PATHS ${gfortran_lib_dirs} REQUIRED)
-            target_link_libraries(3rdparty_blas INTERFACE
-                    ${gfortran_lib}
-                    ${gcc_lib}
-                    )
-            if (APPLE_AARCH64)
+            if(APPLE_AARCH64)
+                # Find libgfortran.a and libgcc.a inside the gfortran library search
+                # directories. This ensures that the library matches the compiler.
+                # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
+                find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
+            endif()
+            if(LINUX_AARCH64)
+                # On some aarch64 systems, libgfortran.a is not compiled with -fPIC,
+                # which prevents it from being used in a shared library.
+                # We link the shared version (-lgfortran) instead.
+                # TODO: This requires packaging libgfortran with the Python
+                # wheel
+                find_library(gfortran_lib NAMES libgfortran${CMAKE_SHARED_LIBRARY_SUFFIX} PATHS ${gfortran_lib_dirs} REQUIRED)
+                find_library(gcc_lib      NAMES libgcc_s${CMAKE_SHARED_LIBRARY_SUFFIX}      PATHS ${gfortran_lib_dirs} REQUIRED)
+            endif()
+            target_link_libraries(3rdparty_blas INTERFACE ${gfortran_lib} ${gcc_lib})
+            if(APPLE_AARCH64)
                 find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
                 target_link_libraries(3rdparty_blas INTERFACE
-                        ${quadmath_lib})
+                    ${quadmath_lib})
                 # Suppress Apple compiler warnigns.
-                target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
-            endif ()
+                if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+                    message(WARNING "All link warnings have been disabled on Apple Silicon builds "
+                        "due to the large number of spurious warnings that are generated. If you "
+                        "need to see link warnings please build with -DCMAKE_BUILD_TYPE=Debug.")
+                    target_link_options(3rdparty_blas INTERFACE "-Wl,-w")
+                    target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
+                endif()
+            endif()
         elseif (UNIX AND NOT APPLE)
             # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
             # The temporary solution is to link the shared library libgfortran.so.
@@ -1704,7 +1956,7 @@ if (USE_BLAS)
             #   - libgcc.a
             #   - libquadmath.a
             target_link_libraries(3rdparty_blas INTERFACE gfortran)
-            target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+            # target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
         endif ()
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_blas)
     endif ()
@@ -1844,28 +2096,28 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # IPP
-if (WITH_IPPICV)
+if (WITH_IPP)
     # Ref: https://stackoverflow.com/a/45125525
-    set(IPPICV_SUPPORTED_HW AMD64 x86_64 x64 x86 X86 i386 i686)
+    set(IPP_SUPPORTED_HW AMD64 x86_64 x64)  # 32 bit deprecated: x86 X86 i386 i686
     # Unsupported: ARM64 aarch64 armv7l armv8b armv8l ...
-    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPPICV_SUPPORTED_HW)
-        set(WITH_IPPICV OFF)
-        message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPP_SUPPORTED_HW)
+        set(WITH_IPP OFF)
+        message(WARNING "Intel IPP disabled: Unsupported Platform.")
     else ()
-        include(${CloudViewer_3RDPARTY_DIR}/ippicv/ippicv.cmake)
-        if (WITH_IPPICV)
-            message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
-            import_3rdparty_library(3rdparty_ippicv
-                    HIDDEN
-                    INCLUDE_DIRS ${IPPICV_INCLUDE_DIR}
-                    LIBRARIES ${IPPICV_LIBRARIES}
-                    LIB_DIR ${IPPICV_LIB_DIR}
-                    DEPENDS ext_ippicv
-                    )
-            target_compile_definitions(3rdparty_ippicv INTERFACE ${IPPICV_DEFINITIONS})
-            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_ippicv)
-        endif ()
-    endif ()
+        include(${CloudViewer_3RDPARTY_DIR}/ipp/ipp.cmake)
+        if (WITH_IPP)
+            message(STATUS "Using Intel IPP ${IPP_VERSION_STRING}.")
+            import_3rdparty_library(3rdparty_ipp
+                HIDDEN
+                INCLUDE_DIRS ${IPP_INCLUDE_DIR}
+                LIBRARIES    ${IPP_LIBRARIES}
+                LIB_DIR      ${IPP_LIB_DIR}
+                DEPENDS      ext_ipp
+            )
+            target_compile_definitions(3rdparty_ipp INTERFACE IPP_VERSION_INT=${IPP_VERSION_INT})
+            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_ipp)
+        endif()
+    endif()
 endif ()
 
 # Stdgpu
@@ -2150,62 +2402,63 @@ if (BUILD_RECONSTRUCTION)
 endif ()
 
 # opencv
-if (USE_SYSTEM_OPENCV)
-    find_package_3rdparty_library(3rdparty_opencv
-            PUBLIC
-            PACKAGE OpenCV
-            INCLUDE_DIRS OpenCV_INCLUDE_DIRS
-            LIBRARIES OpenCV_LIBRARIES
-            )
-    if (3rdparty_opencv_FOUND)
-        message(STATUS "Using system Opencv")
-        message(STATUS "OpenCV version: ${3rdparty_opencv_VERSION}")
-        if (NOT 3rdparty_opencv_VERSION VERSION_LESS "3.4.0")
-            add_compile_definitions(HAVE_OPENCV3)
-            message(STATUS "defined HAVE_OPENCV3")
+if (BUILD_OPENCV) # only needed by plugins: qAutoSeg, qManualSeg and q3DMASC
+    if (USE_SYSTEM_OPENCV)
+        find_package_3rdparty_library(3rdparty_opencv
+                PUBLIC
+                PACKAGE OpenCV
+                INCLUDE_DIRS OpenCV_INCLUDE_DIRS
+                LIBRARIES OpenCV_LIBRARIES
+                )
+        if (3rdparty_opencv_FOUND)
+            message(STATUS "Using system Opencv")
+            message(STATUS "OpenCV version: ${3rdparty_opencv_VERSION}")
+            if (NOT 3rdparty_opencv_VERSION VERSION_LESS "3.4.0")
+                add_compile_definitions(HAVE_OPENCV3)
+                message(STATUS "defined HAVE_OPENCV3")
 
-            set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${3rdparty_opencv_INCLUDE_DIRS})
-            include(CheckIncludeFileCXX)
+                set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${3rdparty_opencv_INCLUDE_DIRS})
+                include(CheckIncludeFileCXX)
 
-            check_include_file_cxx(opencv2/ccalib/omnidir.hpp HAVE_OPENCV_CONTRIB)
-            if (HAVE_OPENCV_CONTRIB)
-                add_compile_definitions(HAVE_OPENCV_CONTRIB)
-                set(WITH_OPENCV_CONTRIB ON)
+                check_include_file_cxx(opencv2/ccalib/omnidir.hpp HAVE_OPENCV_CONTRIB)
+                if (HAVE_OPENCV_CONTRIB)
+                    add_compile_definitions(HAVE_OPENCV_CONTRIB)
+                    set(WITH_OPENCV_CONTRIB ON)
+                else ()
+                    message(STATUS "OPENCV_CONTRIB NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
+                endif ()
+
+                check_include_file_cxx(opencv2/xfeatures2d/nonfree.hpp HAVE_OPENCV_XFEATURES2D_NONFREE)
+                if (HAVE_OPENCV_XFEATURES2D_NONFREE)
+                    add_compile_definitions(HAVE_OPENCV_XFEATURES2D_NONFREE)
+                else ()
+                    message(STATUS "OPENCV_XFEATURES2D_NONFREE NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
+                endif ()
+
+                check_include_file_cxx(opencv2/cudafeatures2d.hpp HAVE_OPENCV_CUDAFEATURES2D)
+                if (HAVE_OPENCV_CUDAFEATURES2D)
+                    add_compile_definitions(HAVE_OPENCV_CUDAFEATURES2D)
+                else ()
+                    message(STATUS "OPENCV_CUDAFEATURES2D NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY")
+                endif ()
+
             else ()
-                message(STATUS "OPENCV_CONTRIB NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
+                add_compile_definitions(HAVE_OPENCV2)
             endif ()
 
-            check_include_file_cxx(opencv2/xfeatures2d/nonfree.hpp HAVE_OPENCV_XFEATURES2D_NONFREE)
-            if (HAVE_OPENCV_XFEATURES2D_NONFREE)
-                add_compile_definitions(HAVE_OPENCV_XFEATURES2D_NONFREE)
-            else ()
-                message(STATUS "OPENCV_XFEATURES2D_NONFREE NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY, SEE https://github.com/opencv/opencv_contrib")
+            # enable GPU enhanced SURF features
+            # if BOTH CUDA and the OPENCV contrib cuda features are available
+            if (CUDA_FOUND AND HAVE_OPENCV_CUDAFEATURES2D)
+                add_compile_definitions(HAVE_CUDA)
+                message(STATUS "defined HAVE_CUDA")
+                set(CUDA_CUDART_LIBRARY_OPTIONAL ${CUDA_CUDART_LIBRARY})
             endif ()
-
-            check_include_file_cxx(opencv2/cudafeatures2d.hpp HAVE_OPENCV_CUDAFEATURES2D)
-            if (HAVE_OPENCV_CUDAFEATURES2D)
-                add_compile_definitions(HAVE_OPENCV_CUDAFEATURES2D)
-            else ()
-                message(STATUS "OPENCV_CUDAFEATURES2D NOT PRESENT, DISABLING LOTS OF FUNCTIONALITY")
-            endif ()
-
         else ()
-            add_compile_definitions(HAVE_OPENCV2)
+            set(USE_SYSTEM_OPENCV OFF)
+            message(STATUS "Build Opencv from source")
         endif ()
-
-        # enable GPU enhanced SURF features
-        # if BOTH CUDA and the OPENCV contrib cuda features are available
-        if (CUDA_FOUND AND HAVE_OPENCV_CUDAFEATURES2D)
-            add_compile_definitions(HAVE_CUDA)
-            message(STATUS "defined HAVE_CUDA")
-            set(CUDA_CUDART_LIBRARY_OPTIONAL ${CUDA_CUDART_LIBRARY})
-        endif ()
-    else ()
-        set(USE_SYSTEM_OPENCV OFF)
-        message(STATUS "Build Opencv from source")
     endif ()
-endif ()
-if (BUILD_OPENCV) # only needed by plugins: qAutoSeg and qManualSeg
+    
     if (NOT USE_SYSTEM_OPENCV)
         include(${CloudViewer_3RDPARTY_DIR}/opencv/opencv_build.cmake)
         if (WIN32)
@@ -2233,7 +2486,8 @@ endif()
 # why compiling from source on windows
 # main reason: use prebuild pcl and vtk with conda 
 # which indeed not compiled vtk with qt support on windows
-if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
+# Note: import_3rdparty_library(3rdparty_pcl) is not supported on linux and macos platform
+if (WIN32)
     find_package(Boost REQUIRED COMPONENTS
                  filesystem
                  iostreams)
@@ -2247,41 +2501,159 @@ if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
     endif ()
     import_3rdparty_library(3rdparty_vtk
         INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
-        LIB_DIR ${VTK_LIBRARIES_DIRS}
+        LIB_DIR ${VTK_LIB_DIR}
         LIBRARIES ${VTK_LIBRARIES}
         DEPENDS ext_vtk
     )
     if(UNIX AND NOT APPLE)
         target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
     endif()
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
 
-    include(${CloudViewer_3RDPARTY_DIR}/pcl/pcl_build.cmake)
-    import_3rdparty_library(3rdparty_pcl
-        INCLUDE_DIRS ${PCL_INCLUDE_DIRS}
-        LIB_DIR ${PCL_LIBRARY_DIRS}
-        LIBRARIES ${PCL_LIBRARIES}
-        DEPENDS ext_pcl
-    )
+    if (USE_PCL_BACKEND)
+        include(${CloudViewer_3RDPARTY_DIR}/pcl/pcl_build.cmake)
+        import_3rdparty_library(3rdparty_pcl
+            INCLUDE_DIRS ${PCL_INCLUDE_DIRS}
+            LIB_DIR ${PCL_LIBRARY_DIRS}
+            LIBRARIES ${PCL_LIBRARIES}
+            DEPENDS ext_pcl
+        )
 
-    add_dependencies(3rdparty_pcl 3rdparty_vtk)
-    target_link_libraries(3rdparty_pcl INTERFACE 3rdparty_vtk)
-    target_link_libraries(3rdparty_pcl INTERFACE Boost::filesystem Boost::iostreams)
-    list(APPEND CMAKE_MODULE_PATH "${CloudViewer_3RDPARTY_DIR}/CMake/pcl_cmake")
-    find_package(FLANN REQUIRED)
-    if (FLANN_FOUND)
-        message(STATUS "FLANN_ROOT: ${FLANN_ROOT}")
-        target_link_libraries(3rdparty_pcl INTERFACE FLANN::FLANN)
+        add_dependencies(3rdparty_pcl 3rdparty_vtk)
+        target_link_libraries(3rdparty_pcl INTERFACE 3rdparty_vtk)
+        target_link_libraries(3rdparty_pcl INTERFACE Boost::filesystem Boost::iostreams)
+        list(APPEND CMAKE_MODULE_PATH "${CloudViewer_3RDPARTY_DIR}/CMake/pcl_cmake")
+        find_package(FLANN REQUIRED)
+        if (FLANN_FOUND)
+            message(STATUS "FLANN_ROOT: ${FLANN_ROOT}")
+            target_link_libraries(3rdparty_pcl INTERFACE FLANN::FLANN)
+        endif()
+        find_package(Qhull REQUIRED)
+        if (QHULL_FOUND)
+            message(STATUS "QHULL_ROOT: ${QHULL_ROOT}")
+            target_link_libraries(3rdparty_pcl INTERFACE QHULL::QHULL)
+        endif()
+        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
     endif()
-    find_package(Qhull REQUIRED)
-    if (QHULL_FOUND)
-        message(STATUS "QHULL_ROOT: ${QHULL_ROOT}")
-        target_link_libraries(3rdparty_pcl INTERFACE QHULL::QHULL)
-    endif()
-    # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
-    # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
 else()
-    set(3rdparty_vtk "")
-    set(3rdparty_pcl "")
+    # PCL
+    if(USE_PCL_BACKEND AND USE_SYSTEM_PCL)
+        find_package_3rdparty_library(3rdparty_pcl
+            PACKAGE PCL
+            TARGETS
+                pcl_io
+                pcl_ml
+                pcl_common
+                pcl_keypoints
+                pcl_tracking
+                pcl_octree
+                pcl_kdtree
+                pcl_search
+                pcl_filters
+                pcl_surface
+                pcl_features
+                pcl_recognition
+                pcl_registration
+                pcl_segmentation
+                pcl_visualization
+                pcl_sample_consensus
+                Boost::system
+                Boost::filesystem
+                Boost::iostreams
+                FLANN::FLANN
+                QHULL::QHULL
+        )
+        if(NOT 3rdparty_pcl_FOUND)
+            message(WARNING "PCL not found in system")
+            set(USE_SYSTEM_PCL OFF)
+        else()
+            set(PCL_VERSION ${3rdparty_pcl_VERSION})
+            add_definitions( ${PCL_DEFINITIONS} )
+        endif()
+    endif()
+
+    # must build vtk from source due to boost
+    if(NOT USE_SYSTEM_VTK)
+        include(${CloudViewer_3RDPARTY_DIR}/vtk/vtk_build.cmake)
+        import_3rdparty_library(3rdparty_vtk
+            HIDDEN
+            INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
+            LIB_DIR      ${VTK_LIB_DIR}
+            LIBRARIES    ${VTK_LIBRARIES}
+            DEPENDS      ext_vtk ext_boost
+        )
+        if(UNIX AND NOT APPLE)
+            target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
+        endif()
+    else()
+        # VTK
+        find_package_3rdparty_library(3rdparty_vtk
+            PACKAGE VTK
+            TARGETS
+                VTK::ChartsCore
+                VTK::CommonColor
+                VTK::CommonComputationalGeometry
+                VTK::CommonCore
+                VTK::CommonDataModel
+                VTK::CommonExecutionModel
+                VTK::CommonMath
+                VTK::CommonMisc
+                VTK::CommonTransforms
+                VTK::FiltersCore
+                VTK::FiltersExtraction
+                VTK::FiltersGeneral
+                VTK::FiltersGeometry
+                VTK::FiltersModeling
+                VTK::FiltersSources
+                VTK::ImagingCore
+                VTK::ImagingSources
+                VTK::InteractionImage
+                VTK::InteractionStyle
+                VTK::InteractionWidgets
+                VTK::IOCore
+                VTK::IOGeometry
+                VTK::IOImage
+                VTK::IOLegacy
+                VTK::IOPLY
+                VTK::RenderingAnnotation
+                VTK::RenderingCore
+                VTK::RenderingContext2D
+                VTK::RenderingLOD
+                VTK::RenderingFreeType
+                VTK::ViewsCore
+                VTK::ViewsContext2D
+                VTK::RenderingQt
+                VTK::RenderingOpenGL2
+                VTK::RenderingContextOpenGL2
+                VTK::GUISupportQt
+                VTK::CommonSystem
+                VTK::kissfft
+                VTK::pugixml
+                VTK::vtksys
+                VTK::FiltersFlowPaths # vtkStreamTracer
+                VTK::IOLSDyna         # vtkLSDynaReader
+                VTK::RenderingLabel   # vtkLabeledDataMapper
+                VTK::IOChemistry      # vtkPDBReader
+                VTK::IOExport         # vtkVRMLExporter
+                VTK::ViewsInfovis     # vtkSCurveSpline
+                # for MacOS
+                VTK::ParallelCore
+        )
+        if(NOT 3rdparty_vtk_FOUND)
+            message(WARNING "VTK not found in system")
+            set(USE_SYSTEM_VTK OFF)
+        else()
+            set(VTK_VERSION ${3rdparty_vtk_VERSION})
+        endif()
+    endif()
+    if(TARGET 3rdparty_pcl)
+        target_link_libraries(3rdparty_pcl INTERFACE 3rdparty_vtk)
+    endif()
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
+endif()
+
+if (USE_PCL_BACKEND AND NOT TARGET 3rdparty_pcl)
+    message(FATAL_ERROR "PCL backend is enabled but PCL is not found. Please install PCL or disable PCL backend.")
 endif()
 
 # Compactify list of external modules.

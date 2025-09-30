@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import cloudViewer as cv3d
 import cloudViewer.visualization.gui as gui
 import cloudViewer.visualization.rendering as rendering
@@ -14,7 +21,7 @@ def main():
     model_dir = sys.argv[1]
     model_name = os.path.join(model_dir, os.path.basename(model_dir) + ".obj")
     model = cv3d.io.read_triangle_mesh(model_name)
-    material = cv3d.visualization.rendering.Material()
+    material = cv3d.visualization.rendering.MaterialRecord()
     material.shader = "defaultLit"
 
     albedo_name = os.path.join(model_dir, "albedo.png")

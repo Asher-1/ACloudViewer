@@ -1,24 +1,25 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
 import cloudViewer.core as cv3c
 import numpy as np
+import os
+import pickle
+import tempfile
 
 
 # # Tensor
-# 
+#
 # Tensor is a "view" of a data Blob with shape, stride, and a data pointer. I
 # t is a multidimensional and homogeneous matrix containing elements of single data type.
 # It is used in CloudViewer to perform numerical operations. It supports GPU operations as well.
-# 
+#
 # ## Tensor creation
-# 
+#
 # Tensor can be created from list, numpy array, another tensor.
 # A tensor of specific data type and device can be constructed by passing a ```cv3c.Dtype``` and/or ```cv3c.Device```
 # to a constructor. If not passed, the default data type is inferred from the data, and the default device is CPU.
 # Note that while creating tensor from a list or numpy array, the underlying memory is not shared and a copy is created.
-
 
 # Tensor from list.
 a = cv3c.Tensor([0, 1, 2])
@@ -40,10 +41,8 @@ print("\nSpecified data type:\n{}".format(a))
 a = cv3c.Tensor(np.array([0, 1, 2]), device=cv3c.Device("CUDA:0"))
 print("\nSpecified device:\n{}".format(a))
 
-
 #    Tensor can also be created from another tensor by invoking the copy constructor.
 #    This is a shallow copy, the data_ptr will be copied but the memory it points to will not be copied.
-
 
 # Shallow copy constructor.
 vals = np.array([1, 2, 3])
@@ -55,9 +54,7 @@ print("\n")
 print("Source tensor:\n{}".format(src))
 print("\nTarget tensor:\n{}".format(dst))
 
-
 # ## Properties of a tensor
-
 
 vals = np.array((range(24))).reshape(2, 3, 4)
 a = cv3c.Tensor(vals, dtype=cv3c.Dtype.Float64, device=cv3c.Device("CUDA:0"))
@@ -67,7 +64,6 @@ print(f"a.strides: {a.strides}")
 print(f"a.dtype: {a.dtype}")
 print(f"a.device: {a.device}")
 print(f"a.ndim: {a.ndim}")
-
 
 # ## Copy & device transfer
 # We can transfer tensors across host and multiple devices.
@@ -84,15 +80,14 @@ a_cpu = a_gpu.cpu()
 print(a_cpu)
 
 # Device -> another Device.
-a_gpu_0 = cv3c.Tensor([0, 1, 2], device=cv3c.Device("CUDA:0"))
-a_gpu_1 = a_gpu_0.cuda(1)
-print(a_gpu_1)
-
+# a_gpu_0 = cv3c.Tensor([0, 1, 2], device=cv3c.Device("CUDA:0"))
+# a_gpu_1 = a_gpu_0.cuda(1)
+# print(a_gpu_1)
 
 # ## Data Types
-# 
+#
 # CloudViewer defines seven tensor data types.
-# 
+#
 # | Data type                | dtype               | byte_size  |
 # |--------------------------|---------------------|------------|
 # | Uninitialized Tensor     | cv3c.Dtype.Undefined | -          |
@@ -102,7 +97,7 @@ print(a_gpu_1)
 # | 64-bit integer (signed)  | cv3c.Dtype.Int64     | 8          |
 # | 8-bit integer (unsigned) | cv3c.Dtype.UInt8     | 1          |
 # | Boolean                  | cv3c.Dtype.Bool      | 1          |
-# 
+#
 # ### Type casting
 # We can cast tensor's data type. Forced casting might result in data loss.
 
@@ -114,16 +109,14 @@ b = a.to(cv3c.Dtype.Int32)
 print(a)
 print(b)
 
-
 # E.g. int -> float
 a = cv3c.Tensor([1, 2, 3])
 b = a.to(cv3c.Dtype.Float32)
 print(a)
 print(b)
 
-
 # ## Numpy I/O with direct memory map
-# 
+#
 # Tensors created by passing numpy array to the constructor(```cv3c.Tensor(np.array(...)```)
 # do not share memory with the numpy aray. To have shared memory,
 # you can use ```cv3c.Tensor.from_numpy(...)``` and ```cv3c.Tensor.numpy(...)```.
@@ -143,7 +136,6 @@ o3_a[1] += 200
 print(f"np_a: {np_a}")
 print(f"o3_a: {o3_a}")
 
-
 # From numpy.
 print("\n")
 np_a = np.ones((5,), dtype=np.int32)
@@ -154,7 +146,6 @@ np_a[0] += 100
 o3_a[1] += 200
 print(f"np_a: {np_a}")
 print(f"o3_a: {o3_a}")
-
 
 # To numpy.
 print("\n")
@@ -171,10 +162,8 @@ print(f"o3_a: {o3_a}")
 o3_a = cv3c.Tensor([1, 1, 1, 1, 1], device=cv3c.Device("CUDA:0"))
 print(f"\no3_a.cpu().numpy(): {o3_a.cpu().numpy()}")
 
-
 # ## PyTorch I/O with DLPack memory map
 # We can convert tensors from/to DLManagedTensor.
-
 
 import torch
 import torch.utils.dlpack
@@ -193,7 +182,6 @@ o3_a[1] = 200
 print(f"th_a: {th_a}")
 print(f"o3_a: {o3_a}")
 
-
 print("\n")
 # To PyTorch
 o3_a = cv3c.Tensor([1, 1, 1, 1, 1], device=cv3c.Device("CUDA:0"))
@@ -209,9 +197,8 @@ o3_a[1] = 200
 print(f"th_a: {th_a}")
 print(f"o3_a: {o3_a}")
 
-
 # ## Binary element-wise operation:
-# 
+#
 # Supported element-wise binary operations are:
 # 1. `Add(+)`
 # 2. `Sub(-)`
@@ -221,7 +208,7 @@ print(f"o3_a: {o3_a}")
 # 6. `Sub_(-=)`
 # 7. `Mul_(*=)`
 # 8. `Div_(/=)`
-# 
+#
 # Note that the operands have to be of same Device, dtype and Broadcast compatible.
 
 print("\n")
@@ -232,11 +219,9 @@ print("a - b = {}".format(a - b))
 print("a * b = {}".format(a * b))
 print("a / b = {}".format(a / b))
 
-
 # Broadcasting follows the same numpy broadcasting rule as given
 # [here](https://numpy.org/doc/stable/user/basics.broadcasting.html).<br>
 # Automatic type casting is done in a way to avoid data loss.
-
 
 # Automatic broadcasting.
 print("\n")
@@ -253,7 +238,6 @@ print("a + True = {}".format(a + True))  # Float + Bool -> Float.
 a -= True
 print("a = {}".format(a))
 
-
 # ## Unary element-wise operation:
 # Supported unary element-wise operations are:
 # 1. `sqrt`, `sqrt_`(inplace))
@@ -262,7 +246,7 @@ print("a = {}".format(a))
 # 4. `neg`, `neg_`
 # 5. `exp`, `exp_`
 # 6. `abs`, `abs_`
-# 
+#
 
 print("\n")
 a = cv3c.Tensor([4, 9, 16], dtype=cv3c.Dtype.Float32)
@@ -275,9 +259,8 @@ print("a.cos = {}\n".format(a.cos()))
 a.sqrt_()
 print(a)
 
-
 # ## Reduction:
-# 
+#
 # CloudViewer supports following reduction operations.
 # 1. `sum` - returns a tensor with sum of values over a given axis.
 # 2. `mean` - returns a tensor with mean of values over a given axis.
@@ -294,7 +277,6 @@ print("a.sum = {}\n".format(a.sum()))
 print("a.min = {}\n".format(a.min()))
 print("a.ArgMax = {}\n".format(a.argmax()))
 
-
 # With specified dimension.
 print("\n")
 vals = np.array(range(24)).reshape((2, 3, 4))
@@ -307,9 +289,8 @@ print("Along dim=(0, 2)\n{}\n".format(a.sum(dim=(0, 2))))
 print("Shape without retention : {}".format(a.sum(dim=(0, 2)).shape))
 print("Shape with retention : {}".format(a.sum(dim=(0, 2), keepdim=True).shape))
 
-
 # ## Slicing, indexing, getitem, and setitem
-# 
+#
 # Basic slicing is done by passing an integer, slice object(```start:stop:step```),
 # index array or boolean array. Slicing and indexing produce a view of the tensor.
 # Hence any change in it will also get reflected in the original tensor.
@@ -331,7 +312,6 @@ print("a[:, 0:3:2, :] = \n{}\n".format(a[:, 0:3:2, :]))
 # Combined __getitem__
 print("a[:-1, 0:3:2, 2] = \n{}\n".format(a[:-1, 0:3:2, 2]))
 
-
 print("\n")
 vals = np.array(range(24)).reshape((2, 3, 4))
 a = cv3c.Tensor(vals)
@@ -342,7 +322,6 @@ b[0] += 100
 print("b = {}\n".format(b))
 print("a = \n{}".format(a))
 
-
 print("\n")
 vals = np.array(range(24)).reshape((2, 3, 4))
 a = cv3c.Tensor(vals)
@@ -351,9 +330,8 @@ a = cv3c.Tensor(vals)
 a[:, :, 2] += 100
 print(a)
 
-
 # ## Advanced indexing
-# 
+#
 # Advanced indexing is triggered while passing an index array or a boolean array or their
 # combination with integer/slice object. Note that advanced indexing always returns a copy of the data
 # (contrast with basic slicing that returns a view).
@@ -374,7 +352,6 @@ b[0] += 100
 print("b = {}\n".format(b))
 print("a[[0, 0], [0, 1], [1, 1]] = {}".format(a[[0, 0], [0, 1], [1, 1]]))
 
-
 # ### Combining advanced and basic indexing
 # When there is at least one slice(```:```), ellipse(```...```), or newaxis in the index,
 # then the behaviour can be more complicated. It is like concatenating the indexing result for
@@ -382,18 +359,18 @@ print("a[[0, 0], [0, 1], [1, 1]] = {}".format(a[[0, 0], [0, 1], [1, 1]]))
 # sending to the advanced indexing engine.
 # 1. Specific index positions are converted to a Indextensor with the specified index.
 # 2. If slice is non-full slice, then we slice the tensor first, then use full slice for advanced indexing engine.
-# 
+#
 # ```dst = src[1, 0:2, [1, 2]]``` is done in two steps:<br>
 # ```temp = src[:, 0:2, :]```<br>
 # ```dst = temp[[1], :, [1, 2]]```
-# 
+#
 # There are two parts to the indexing operation, the subspace defined by the basic indexing,
 # and the subspace from the advanced indexing part.
-# 
+#
 # 1. The advanced indexes are separated by a slice, Ellipse, or newaxis. For example ```x[arr1, :, arr2]```.
 # 2. The advanced indexes are all next to each other. For example ```x[..., arr1, arr2, :]```,
 # but not ```x[arr1, :, 1]``` since ```1``` is an advanced index here.
-# 
+#
 # In the first case, the dimensions resulting from the advanced indexing operation come first in the result array,
 # and the subspace dimensions after that. In the second case, the dimensions from the advanced indexing operations
 # are inserted into the result array at the same spot as they were in the initial array.
@@ -414,7 +391,6 @@ a = cv3c.Tensor(np.array(range(120)).reshape((2, 3, 4, 5)))
 print("a[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = \n{}\n".format(
     a[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]]))
 
-
 # ### Boolean array indexing
 # Advanced indexing gets triggered when we pass a boolean array as an index, or it is returned
 # from comparision operators. Boolean array should have exactly as many dimensions as it is supposed to work with.
@@ -427,9 +403,8 @@ print("a = {}\n".format(a))
 a[a < 0] += 20
 print("a = {}\n".format(a))
 
-
 # ## Logical operations
-# 
+#
 # CloudViewer supports following logical operators:
 # 1. `logical_and` - returns tensor with element wise logical AND.
 # 2. `logical_or`  - returns tensor with element wise logical OR.
@@ -440,7 +415,7 @@ print("a = {}\n".format(a))
 # 7. `allclose`    - returns true if two tensors are element wise equal within a tolerance.
 # 8. `isclose`     - returns tensor with element wise ```allclose``` operation.
 # 9. `issame`      - returns true if and only if two tensors are same(even same underlying memory).
-# 
+#
 
 print("\n")
 a = cv3c.Tensor(np.array([True, False, True, False]))
@@ -461,7 +436,6 @@ c = cv3c.Tensor(np.array([2.0, 0.0, 3.5, 0.0]))
 d = cv3c.Tensor(np.array([0.0, 3.0, 1.5, 0.0]))
 print("c AND d = {}".format(c.logical_and(d)))
 
-
 a = cv3c.Tensor(np.array([1, 2, 3, 4]), dtype=cv3c.Dtype.Float64)
 b = cv3c.Tensor(np.array([1, 1.99999, 3, 4]))
 
@@ -474,7 +448,6 @@ print("isclose : {}".format(a.isclose(b)))
 
 # Returns false if the device/dtype/shape/ is not same.
 print("issame : {}".format(a.issame(b)))
-
 
 # ## Comparision Operations
 
@@ -493,7 +466,6 @@ print("a != b = {}".format(a != b))
 # If shape is not same, then tensors should be broadcast compatible.
 print("a > b[0] = {}".format(a > b[0]))
 
-
 # ## Nonzero operations
 # 1. When ```as_tuple``` is ```False```(default), it returns a tensor indices of the elements that are non-zero.
 # Each row in the result contains the indices of a non-zero element in the input. If the input has $n$ dimensions,
@@ -503,7 +475,7 @@ print("a > b[0] = {}".format(a > b[0]))
 # one for each dimension in input, each containing the indices of all non-zero elements of input.
 # If the input has $n$ dimension, then the resulting tuple contains $n$ tensors of size $z$,
 # where $z$ is the total number of non-zero elements in the input tensor.
-# 
+#
 
 print("\n")
 a = cv3c.Tensor([[3, 0, 0], [0, 4, 0], [5, 6, 0]])
@@ -511,7 +483,6 @@ a = cv3c.Tensor([[3, 0, 0], [0, 4, 0], [5, 6, 0]])
 print("a = \n{}\n".format(a))
 print("a.nonzero() = \n{}\n".format(a.nonzero()))
 print("a.nonzero(as_tuple = 1) = \n{}".format(a.nonzero(as_tuple=1)))
-
 
 # ## TensorList
 # A tensorlist is a list of tensors of the same shape, similar to ```std::vector<Tensor>```.
@@ -527,61 +498,32 @@ t = cv3c.Tensor(vals)
 b = cv3c.TensorList(t)
 print("b = {}".format(b))
 
-# Empty TensorList.
-a = cv3c.TensorList(shape=[2, 3, 4])
-print("a = {}".format(a))
-print("a.size = {}".format(a.size))
-a.resize(3)
-print("a = {}".format(a))
-print("a.size = {}".format(a.size))
+## Pickle support 
+# Since CloudViewer v0.9.3, tensor can be serialized and deserialized using pickle. This is useful for saving and loading tensors to/from disk.
 
-a.push_back(t)
+a = cv3c.Tensor([1, 2, 3, 4])
+print(f'After serialization: {a}\n')
+with tempfile.TemporaryDirectory() as path:
+    file_name = os.path.join(path, 'tensor')
+    pickle.dump(a, open(file_name, 'wb'))
+    b = pickle.load(open(file_name, 'rb'))
+    print(f'After deserialization: {b}\n')
 
-print("a = {}".format(a))
-print("a.size = {}".format(a.size))
+# Pickle tensor on GPU.
+a = cv3c.Tensor([1, 2, 3, 4], device=cv3c.Device('cuda:0'))
+print(f'After serialization: {a}\n')
+with tempfile.TemporaryDirectory() as path:
+    file_name = os.path.join(path, 'tensor')
+    pickle.dump(a, open(file_name, 'wb'))
+    b = pickle.load(open(file_name, 'rb'))
+    print(f'After deserialization: {b}\n')
 
-print("a.is_resizable = {}".format(a.is_resizable))
-
-
-# ### from_tensor
-# We can create tensorlist from a single tensor where we breaking first dimension into multiple tensors.
-# The first dimension of the tensor will be used as the `size` dimension of the tensorlist.
-# Remaining dimensions will be used as the element shape of the tensor list. For example,
-# if the input tensor has shape `(2, 3, 4)`, the resulting tensorlist will have size 2 and element shape `(3, 4)`.
-# Here the memory will be copied by default.
-# If `inplace == true`, the tensorlist will share the same memory with the input tensor.
-# The input tensor must be contiguous. The resulting tensorlist will not be resizable,
-# and hence we cannot do certain operations like resize, push_back, extend, concatenate, and clear.
-# 
-# ### from_tensors
-# Tensorlist can also be created from a list of tensors. The tensors must have the same shape, dtype and device.
-# Here the values will be copied.
-
-
-vals = np.array(range(24), dtype=np.float32).reshape((2, 3, 4))
-
-# TensorList from tensor.
-c = cv3c.TensorList.from_tensor(cv3c.Tensor(vals))
-print("from tensor = {}\n".format(c))
-
-# TensorList from multiple tensors.
-b = cv3c.TensorList([cv3c.Tensor(vals[0]), cv3c.Tensor(vals[1])])
-print("tensors = {}\n".format(b))
-b = cv3c.TensorList.from_tensors([cv3c.Tensor(vals[0]), cv3c.Tensor(vals[1])])
-print("from tensors = {}\n".format(b))
-
-d = cv3c.TensorList(b)
-print("from tensorlist = {}\n".format(d))
-
-# Below operations are only valid for resizable tensorlist.
-# Concatenate TensorLists.
-print("b + c = {}".format(b + c))
-print("concat(b, c) = {}\n".format(cv3c.TensorList.concat(b, c)))
-
-# Append a Tensor to TensorList.
-d.push_back(cv3c.Tensor(vals[0]))
-print("d = {}\n".format(d))
-
-# Append a TensorList to another TensorList.
-d.extend(c)
-print("extended d = {}".format(d))
+# Pickle non-contiguous tensor.
+a = cv3c.Tensor.ones((100))
+a = a[::2]
+print(f'Contiguous: {a.is_contiguous()}\n')
+with tempfile.TemporaryDirectory() as path:
+    file_name = os.path.join(path, 'tensor')
+    pickle.dump(a, open(file_name, 'wb'))
+    b = pickle.load(open(file_name, 'rb'))
+    print(f'Contiguous: {b.is_contiguous()}\n')

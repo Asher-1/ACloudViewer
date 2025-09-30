@@ -1,6 +1,10 @@
 target_sources(benchmarks PRIVATE
-    Hashmap.cpp
+    BinaryEW.cpp
+    HashMap.cpp
+    Linalg.cpp
     MemoryManager.cpp
+    ParallelFor.cpp
     Reduction.cpp
+    UnaryEW.cpp
     Zeros.cpp
 )

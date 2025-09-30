@@ -25,6 +25,7 @@ target_sources(GUI PRIVATE
         Menu.cpp
         MenuImgui.cpp
         NumberEdit.cpp
+        RadioButton.cpp
         PickPointsInteractor.cpp
         ProgressBar.cpp
         SceneWidget.cpp
@@ -40,6 +41,8 @@ target_sources(GUI PRIVATE
         Util.cpp
         VectorEdit.cpp
         Widget.cpp
+        WidgetProxy.cpp
+        WidgetStack.cpp
         Window.cpp
         )
 
@@ -89,6 +92,7 @@ cloudViewer_add_compiled_materials(materials
         Materials/infiniteGroundPlane.mat
         Materials/normals.mat
         Materials/pointcloud.mat
+        Materials/gaussianSplat.mat
         Materials/ui_blit.mat
         Materials/unlitBackground.mat
         Materials/unlitGradient.mat

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // CV_CORE_LIB
@@ -107,6 +88,7 @@ void pybind_facet(py::module &m) {
 				return std::ref(*facet.getPolygon());
 			} else {
 				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have polygons!");
+				return std::ref(*cloudViewer::make_shared<ccMesh>());
 			}
 		}, "Returns polygon mesh (if any)")
 	.def("set_polygon", [](ccFacet& facet, ccMesh& mesh) {
@@ -117,6 +99,7 @@ void pybind_facet(py::module &m) {
 				return std::ref(*facet.getContour());
 			} else {
 				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have contours!");
+				return std::ref(*cloudViewer::make_shared<ccPolyline>(nullptr));
 			}
 		}, "Returns contour polyline (if any)")
 	.def("set_contour", [](ccFacet& facet, ccPolyline& poly) {
@@ -127,6 +110,7 @@ void pybind_facet(py::module &m) {
 				return std::ref(*facet.getContourVertices());
 			} else {
 				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have origin points!");
+				return std::ref(*cloudViewer::make_shared<ccPointCloud>());
 			}
 		}, "Returns contour vertices (if any)")
 	.def("set_contour_vertices", [](ccFacet& facet, ccPointCloud& vertices) {
@@ -137,6 +121,7 @@ void pybind_facet(py::module &m) {
 				return std::ref(*facet.getOriginPoints());
 			} else {
 				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have origin points!");
+				return std::ref(*cloudViewer::make_shared<ccPointCloud>());
 			}
 		}, "Returns origin points (if any)")
 	.def("set_origin_points", [](ccFacet& facet, ccPointCloud& cloud) {
@@ -145,7 +130,7 @@ void pybind_facet(py::module &m) {
 	.def("clone", [](const ccFacet& facet) {
 			return std::shared_ptr<ccFacet>(facet.clone());
 		}, "Clones this facet.")
-	.def("paint_uniform_color", &ccFacet::paintUniformColor,
+	.def("paint_uniform_color", &ccFacet::PaintUniformColor,
 		" Assigns facet the same color.", "color"_a)
 	.def_static("Create", [](std::shared_ptr<ccPointCloud> cloud, 
 				PointCoordinateType max_edge_length, bool transfer_ownership,

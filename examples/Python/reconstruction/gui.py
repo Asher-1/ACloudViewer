@@ -1,6 +1,9 @@
-# CloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 # examples/Python/reconstruction/feature.py
 
@@ -15,9 +18,10 @@ def generate_project(output_path, quality):
 
 
 def gui(database_path="", image_path="", import_path=""):
-    return cv3d.reconstruction.gui.run_graphical_gui(database_path=database_path,
-                                                     image_path=image_path,
-                                                     import_path=import_path)
+    return cv3d.reconstruction.gui.run_graphical_gui(
+        database_path=database_path,
+        image_path=image_path,
+        import_path=import_path)
 
 
 if __name__ == "__main__":

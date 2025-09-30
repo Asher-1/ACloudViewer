@@ -1,9 +1,10 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.cloudViewer.org                            -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2023 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
+
 import copy
 from os.path import exists, join, dirname, basename, splitext
 import sys
@@ -13,14 +14,9 @@ import cloudViewer as cv3d
 from cloudViewer.visualization.tensorboard_plugin import summary  # noqa
 from cloudViewer.visualization.tensorboard_plugin.util import to_dict_batch
 from torch.utils.tensorboard import SummaryWriter
-import os
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, '../misc'))
-import meshes
 
 BASE_LOGDIR = "demo_logs/pytorch/"
-monkey_path = meshes.MonkeyPath()
-MODEL_PATH = os.path.join(monkey_path, "monkey.obj")
+MODEL_PATH = cv3d.data.MonkeyModel().path
 
 
 def small_scale(run_name="small_scale"):
@@ -32,10 +28,10 @@ def small_scale(run_name="small_scale"):
     cube = cv3d.geometry.ccMesh.create_box(1, 2, 4, create_uv_map=True)
     cube.compute_vertex_normals()
     cylinder = cv3d.geometry.ccMesh.create_cylinder(radius=1.0,
-                                                         height=2.0,
-                                                         resolution=20,
-                                                         split=4,
-                                                         create_uv_map=True)
+                                                    height=2.0,
+                                                    resolution=20,
+                                                    split=4,
+                                                    create_uv_map=True)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
     for step in range(3):
@@ -55,10 +51,10 @@ def property_reference(run_name="property_reference"):
     cube = cv3d.geometry.ccMesh.create_box(1, 2, 4, create_uv_map=True)
     cube.compute_vertex_normals()
     cylinder = cv3d.geometry.ccMesh.create_cylinder(radius=1.0,
-                                                         height=2.0,
-                                                         resolution=20,
-                                                         split=4,
-                                                         create_uv_map=True)
+                                                    height=2.0,
+                                                    resolution=20,
+                                                    split=4,
+                                                    create_uv_map=True)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
     for step in range(3):
@@ -100,7 +96,7 @@ def large_scale(n_steps=16,
             length_split=int(3.5 * resolution),
             width_split=int(0.75 * resolution),
             twists=1,
-            raidus=1,
+            radius=1,
             flatness=1,
             width=1,
             scale=1)
@@ -134,12 +130,12 @@ def with_material(model_path=MODEL_PATH):
         "triangle_indices": model.triangle.indices,
         "material_name": "defaultLit"
     }
-    names_to_cv3dprop = {"ao": "ambient_occlusion"}
+    names_to_o3dprop = {"ao": "ambient_occlusion"}
 
     for texture in ("albedo", "normal", "ao", "metallic", "roughness"):
         texture_file = join(model_dir, texture + ".png")
         if exists(texture_file):
-            texture = names_to_cv3dprop.get(texture, texture)
+            texture = names_to_o3dprop.get(texture, texture)
             summary_3d.update({
                 ("material_texture_map_" + texture):
                     cv3d.t.io.read_image(texture_file)

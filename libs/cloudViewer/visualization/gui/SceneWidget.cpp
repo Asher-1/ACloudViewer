@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/gui/SceneWidget.h"
@@ -228,7 +209,7 @@ public:
         bool redraw = false;
         if (!keys_down_.empty()) {
             auto& bounds = camera_controls_->GetBoundingBox();
-            const float dist = float(0.0025 * bounds.getExtent().norm());
+            const float dist = float(0.0025 * bounds.GetExtent().norm());
             const float angle_rad = 0.0075f;
 
             auto HasKey = [this](uint32_t key) -> bool {
@@ -883,7 +864,7 @@ void SceneWidget::SetupCamera(
     // and the center of rotation needs to be visually consistent.
     Eigen::Vector3f forward = camera->GetForwardVector();
     Eigen::Vector3f pos = camera->GetPosition();
-    Eigen::Vector3f toCenter = scene_bounds.getGeometryCenter().cast<float>() - pos;
+    Eigen::Vector3f toCenter = scene_bounds.GetCenter().cast<float>() - pos;
     float dist = toCenter.dot(forward);
     Eigen::Vector3f cor = pos + dist * forward;
     impl_->controls_->SetCenterOfRotation(cor);
@@ -996,7 +977,7 @@ void SceneWidget::SetViewControls(Controls mode) {
         // position as the user moves the mouse. Use the distance to the
         // center of the model, which should be reasonable.
         auto camera = GetCamera();
-        Eigen::Vector3f to_center = impl_->bounds_.getGeometryCenter().cast<float>() -
+        Eigen::Vector3f to_center = impl_->bounds_.GetCenter().cast<float>() -
                                     camera->GetPosition();
         Eigen::Vector3f forward = camera->GetForwardVector();
         Eigen::Vector3f center =
@@ -1054,8 +1035,8 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     // (0, 0, 0), and this will result in the far plane being not being
     // far enough and clipping the model. To test, use
     // https://docs.google.com/uc?export=download&id=0B-ePgl6HF260ODdvT09Xc1JxOFE
-    float max_dim = float(1.25 * impl_->bounds_.getMaxExtent());
-    Eigen::Vector3f center = impl_->bounds_.getGeometryCenter().cast<float>();
+    float max_dim = float(1.25 * impl_->bounds_.GetMaxExtent());
+    Eigen::Vector3f center = impl_->bounds_.GetCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {
         case CameraPreset::PLUS_X: {

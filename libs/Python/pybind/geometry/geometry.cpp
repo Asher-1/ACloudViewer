@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // CV_CORE_LIB
@@ -34,12 +15,12 @@
 #include <RGBDImage.h>
 #include <VoxelGrid.h>
 #include <ecv2DLabel.h>
-#include <ecvCoordinateSystem.h>
 #include <ecv2DViewportLabel.h>
 #include <ecv2DViewportObject.h>
 #include <ecvBox.h>
 #include <ecvCameraSensor.h>
 #include <ecvCone.h>
+#include <ecvCoordinateSystem.h>
 #include <ecvCylinder.h>
 #include <ecvDish.h>
 #include <ecvExtru.h>
@@ -95,19 +76,6 @@ void pybind_geometry_classes(py::module& m) {
           &ccHObject::GetRotationMatrixFromQuaternion, "rotation"_a);
 
     m.def(
-            "ToGenericPointCloud",
-            [](ccHObject& entity) {
-                if (ccHObjectCaster::ToGenericPointCloud(&entity)) {
-                    return std::ref(
-                            *ccHObjectCaster::ToGenericPointCloud(&entity));
-                } else {
-                    cloudViewer::utility::LogWarning(
-                            "[ccHObjectCaster] converting failed!");
-                }
-            },
-            "Converts current object to ccGenericPointCloud (if possible)",
-            "entity"_a);
-    m.def(
             "ToPointCloud",
             [](ccHObject& entity) {
                 if (ccHObjectCaster::ToPointCloud(&entity)) {
@@ -115,21 +83,10 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccPointCloud>());
                 }
             },
             "Converts current object to 'equivalent' ccPointCloud", "entity"_a);
-    m.def(
-            "ToShifted",
-            [](ccHObject& entity) {
-                if (ccHObjectCaster::ToShifted(&entity)) {
-                    return std::ref(*ccHObjectCaster::ToShifted(&entity));
-                } else {
-                    cloudViewer::utility::LogWarning(
-                            "[ccHObjectCaster] converting failed!");
-                }
-            },
-            "Converts current object to 'equivalent' ccShiftedObject",
-            "entity"_a);
     m.def(
             "ToPolyline",
             [](ccHObject& entity) {
@@ -138,6 +95,8 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(
+                            *cloudViewer::make_shared<ccPolyline>(nullptr));
                 }
             },
             "Converts current object to ccPolyline (if possible)", "entity"_a);
@@ -149,21 +108,10 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccFacet>());
                 }
             },
             "Converts current object to ccFacet (if possible)", "entity"_a);
-    m.def(
-            "ToGenericMesh",
-            [](ccHObject& entity) {
-                if (ccHObjectCaster::ToGenericMesh(&entity)) {
-                    return std::ref(*ccHObjectCaster::ToGenericMesh(&entity));
-                } else {
-                    cloudViewer::utility::LogWarning(
-                            "[ccHObjectCaster] converting failed!");
-                }
-            },
-            "Converts current object to ccGenericMesh (if possible)",
-            "entity"_a);
     m.def(
             "ToMesh",
             [](ccHObject& entity) {
@@ -172,6 +120,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccMesh>());
                 }
             },
             "Converts current object to ccMesh (if possible)", "entity"_a);
@@ -183,21 +132,11 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(
+                            *cloudViewer::make_shared<ccSubMesh>(nullptr));
                 }
             },
             "Converts current object to ccSubMesh (if possible)", "entity"_a);
-    m.def(
-            "ToPlanarEntity",
-            [](ccHObject& entity) {
-                if (ccHObjectCaster::ToPlanarEntity(&entity)) {
-                    return std::ref(*ccHObjectCaster::ToPlanarEntity(&entity));
-                } else {
-                    cloudViewer::utility::LogWarning(
-                            "[ccHObjectCaster] converting failed!");
-                }
-            },
-            "Converts current object to ccPlanarEntityInterface (if possible)",
-            "entity"_a);
     m.def(
             "ToQuadric",
             [](ccHObject& entity) {
@@ -206,6 +145,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccQuadric>());
                 }
             },
             "Converts current object to ccQuadric (if possible)", "entity"_a);
@@ -217,6 +157,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccBox>());
                 }
             },
             "Converts current object to ccBox (if possible)", "entity"_a);
@@ -228,6 +169,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccSphere>());
                 }
             },
             "Converts current object to ccSphere (if possible)", "entity"_a);
@@ -239,6 +181,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccCylinder>());
                 }
             },
             "Converts current object to ccCylinder (if possible)", "entity"_a);
@@ -251,6 +194,8 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(
+                            *cloudViewer::make_shared<ccCoordinateSystem>());
                 }
             },
             "Converts current object to ccCoordinateSystem (if possible)",
@@ -263,6 +208,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccCone>());
                 }
             },
             "Converts current object to ccCone (if possible)", "entity"_a);
@@ -274,6 +220,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccPlane>());
                 }
             },
             "Converts current object to ccPlane (if possible)", "entity"_a);
@@ -285,6 +232,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccDish>());
                 }
             },
             "Converts current object to ccDish (if possible)", "entity"_a);
@@ -296,6 +244,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccExtru>());
                 }
             },
             "Converts current object to ccExtru (if possible)", "entity"_a);
@@ -307,6 +256,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccTorus>());
                 }
             },
             "Converts current object to ccTorus (if possible)", "entity"_a);
@@ -319,6 +269,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccOctreeProxy>());
                 }
             },
             "Converts current object to ccOctreeProxy (if possible)",
@@ -331,6 +282,9 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    auto pcd = std::make_shared<ccPointCloud>();
+                    return std::ref(
+                            *cloudViewer::make_shared<ccKdTree>(pcd.get()));
                 }
             },
             "Converts current object to ccKdTree (if possible)", "entity"_a);
@@ -342,6 +296,8 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(
+                            *cloudViewer::make_shared<ccSensor>("Invalid"));
                 }
             },
             "Converts current object to ccSensor (if possible)", "entity"_a);
@@ -353,6 +309,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccGBLSensor>());
                 }
             },
             "Converts current object to ccGBLSensor (if possible)", "entity"_a);
@@ -364,6 +321,8 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(
+                            *cloudViewer::make_shared<ccCameraSensor>());
                 }
             },
             "Converts current object to ccCameraSensor (if possible)",
@@ -376,6 +335,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccImage>());
                 }
             },
             "Converts current object to ccImage (if possible)", "entity"_a);
@@ -388,6 +348,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<cc2DLabel>());
                 }
             },
             "Converts current object to cc2DLabel (if possible)", "entity"_a);
@@ -400,6 +361,8 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(
+                            *cloudViewer::make_shared<cc2DViewportLabel>());
                 }
             },
             "Converts current object to cc2DViewportLabel (if possible)",
@@ -413,6 +376,8 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(
+                            *cloudViewer::make_shared<cc2DViewportObject>());
                 }
             },
             "Converts current object to cc2DViewportObject (if possible)",
@@ -425,6 +390,8 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<
+                                    ccIndexedTransformationBuffer>());
                 }
             },
             "Converts current object to ccIndexedTransformationBuffer (if "
@@ -438,6 +405,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<Image>());
                 }
             },
             "Converts current object to Image (if possible)", "entity"_a);
@@ -449,6 +417,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<RGBDImage>());
                 }
             },
             "Converts current object to RGBDImage (if possible)", "entity"_a);
@@ -460,6 +429,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<VoxelGrid>());
                 }
             },
             "Converts current object to VoxelGrid (if possible)", "entity"_a);
@@ -471,6 +441,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<LineSet>());
                 }
             },
             "Converts current object to LineSet (if possible)", "entity"_a);
@@ -482,6 +453,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<Octree>());
                 }
             },
             "Converts current object to Octree (if possible)", "entity"_a);
@@ -493,6 +465,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(*cloudViewer::make_shared<ccBBox>());
                 }
             },
             "Converts current object to ccBBox (if possible)", "entity"_a);
@@ -504,6 +477,8 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
+                    return std::ref(
+                            *cloudViewer::make_shared<ecvOrientedBBox>());
                 }
             },
             "Converts current object to ecvOrientedBBox (if possible)",
@@ -549,6 +524,7 @@ void pybind_geometry_classes(py::module& m) {
     docstring::ClassMethodDocInject(m, "ccObject", "is_a");
 
     // cloudViewer.geometry.Geometry.Type
+    // must use py::enum_ instead of py::native_enum
     py::enum_<CV_TYPES::GeometryType> geometry_type(geometry, "Type",
                                                     py::arithmetic());
     // Trick to write docs without listing the members in the enum class again.
@@ -804,47 +780,47 @@ void pybind_geometry_classes(py::module& m) {
                  "Sets the line width.", "width"_a)
             .def("is_serializable", &ccHObject::isSerializable,
                  "Returns whether the instance is a serializable.")
-            .def("is_empty", &ccHObject::isEmpty,
+            .def("is_empty", &ccHObject::IsEmpty,
                  "Returns ``True`` if the geometry is empty.")
-            .def("get_min_bound", &ccHObject::getMinBound,
+            .def("get_min_bound", &ccHObject::GetMinBound,
                  "Returns min bounds for geometry coordinates.")
-            .def("get_max_bound", &ccHObject::getMaxBound,
+            .def("get_max_bound", &ccHObject::GetMaxBound,
                  "Returns max bounds for geometry coordinates.")
-            .def("get_min_2Dbound", &ccHObject::getMin2DBound,
+            .def("get_min_2Dbound", &ccHObject::GetMin2DBound,
                  "Returns min 2d bounds for geometry coordinates.")
-            .def("get_max_2Dbound", &ccHObject::getMax2DBound,
+            .def("get_max_2Dbound", &ccHObject::GetMax2DBound,
                  "Returns max 2d bounds for geometry coordinates.")
-            .def("get_center", &ccHObject::getGeometryCenter,
+            .def("get_center", &ccHObject::GetCenter,
                  "Returns the center of the geometry coordinates.")
             .def("get_own_bounding_box", &ccHObject::getOwnBB,
                  "Returns an axis-aligned bounding box of the geometry.",
                  "withGLFeatures"_a = false)
             .def("get_axis_aligned_bounding_box",
-                 &ccHObject::getAxisAlignedBoundingBox,
+                 &ccHObject::GetAxisAlignedBoundingBox,
                  "Returns an axis-aligned bounding box of the geometry.")
             .def("get_oriented_bounding_box",
-                 &ccHObject::getOrientedBoundingBox,
+                 &ccHObject::GetOrientedBoundingBox,
                  "Returns an oriented bounding box of the geometry.")
-            .def("transform", &ccHObject::transform,
+            .def("transform", &ccHObject::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
-            .def("translate", &ccHObject::translate,
+            .def("translate", &ccHObject::Translate,
                  "Apply translation to the geometry coordinates.",
                  "translation"_a, "relative"_a = true)
-            .def("scale", py::overload_cast<double>(&ccHObject::scale),
-                 "Apply scaling to the geometry coordinates.", "s"_a)
+            .def("scale", py::overload_cast<double>(&ccHObject::Scale),
+                 "Apply scaling to the geometry coordinates.", "scale"_a)
             .def("scale",
                  py::overload_cast<double, const Eigen::Vector3d&>(
-                         &ccHObject::scale),
-                 "Apply scaling to the geometry coordinates.", "s"_a,
+                         &ccHObject::Scale),
+                 "Apply scaling to the geometry coordinates.", "scale"_a,
                  "center"_a)
             .def("rotate",
-                 py::overload_cast<const Eigen::Matrix3d&>(&ccHObject::rotate),
+                 py::overload_cast<const Eigen::Matrix3d&>(&ccHObject::Rotate),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a)
             .def("rotate",
                  py::overload_cast<const Eigen::Matrix3d&,
-                                   const Eigen::Vector3d&>(&ccHObject::rotate),
+                                   const Eigen::Vector3d&>(&ccHObject::Rotate),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a, "center"_a)
             .def(

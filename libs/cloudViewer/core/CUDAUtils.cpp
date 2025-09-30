@@ -1,43 +1,22 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 
-#include "Macro.h"
-
+#include "cloudViewer/Macro.h"
 #include <Logging.h>
 
 #ifdef BUILD_CUDA_MODULE
-#include "core/MemoryManager.h"
+#include "cloudViewer/core/MemoryManager.h"
 #endif
 
 namespace cloudViewer {
 namespace core {
 namespace cuda {
-
 
 int DeviceCount() {
 #ifdef BUILD_CUDA_MODULE
@@ -210,8 +189,8 @@ CUDAScopedDevice::CUDAScopedDevice(const Device& device)
 
 CUDAScopedDevice::~CUDAScopedDevice() { cuda::SetDevice(prev_device_id_); }
 
-CUDAScopedStream::CreateNewStreamTag
-        CUDAScopedStream::CreateNewStream = {};
+constexpr CUDAScopedStream::CreateNewStreamTag
+        CUDAScopedStream::CreateNewStream;
 
 CUDAScopedStream::CUDAScopedStream(const CreateNewStreamTag&)
     : prev_stream_(cuda::GetStream()), owns_new_stream_(true) {
@@ -321,12 +300,11 @@ size_t GetCUDACurrentTotalMemSize() {
 }  // namespace cloudViewer
 
 #ifdef BUILD_CUDA_MODULE
+
 namespace cloudViewer {
 namespace core {
 
-void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err,
-                              const char* file,
-                              const int line) {
+void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err, const char* file, const int line) {
     if (err != cudaSuccess) {
         utility::LogError("{}:{} CUDA runtime error: {}", file, line,
                           cudaGetErrorString(err));
@@ -334,8 +312,8 @@ void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err,
 }
 
 void __CLOUDVIEWER_GET_LAST_CUDA_ERROR(const char* message,
-                                       const char* file,
-                                       const int line) {
+                                  const char* file,
+                                  const int line) {
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         utility::LogError("{}:{} {}: CLOUDVIEWER_GET_LAST_CUDA_ERROR(): {}", file,

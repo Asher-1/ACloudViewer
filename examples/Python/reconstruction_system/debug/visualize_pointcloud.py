@@ -1,17 +1,20 @@
-# CloudViewer: asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
-
-# examples/Python/ReconstructionSystem/debug/visualize_pointcloud.py
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import argparse
 import json
 import math
 import sys
 import cloudViewer as cv3d
-sys.path.append("../utility")
-from file import *
-from visualization import *
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+from cloudViewer_example import *
+
 sys.path.append(".")
 from initialize_config import *
 from make_fragments import *

@@ -1,34 +1,18 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/CUDAUtils.h"
-#include "core/Dispatch.h"
-#include "core/Tensor.h"
-#include "t/geometry/kernel/GeometryIndexer.h"
-#include "t/geometry/kernel/GeometryMacros.h"
+#include <limits>
+
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/Dispatch.h"
+#include "cloudViewer/core/Indexer.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/t/geometry/kernel/GeometryIndexer.h"
+#include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
 
 namespace cloudViewer {
 namespace t {
@@ -40,6 +24,63 @@ namespace image {
 using std::isinf;
 using std::isnan;
 #endif
+
+#ifdef __CUDACC__
+void ToCUDA
+#else
+void ToCPU
+#endif
+        (const core::Tensor& src,
+         core::Tensor& dst,
+         double scale,
+         double offset) {
+    core::Indexer indexer({src}, dst, core::DtypePolicy::NONE);
+    // elem_t: corresponds to dst_dtype.
+    // scalar_t: corresponds to src_dtype.
+    // calc_t: calculation type for intermediate results.
+#define LINEAR_SATURATE(elem_t, calc_t)                                        \
+    elem_t limits[2] = {std::numeric_limits<elem_t>::min(),                    \
+                        std::numeric_limits<elem_t>::max()};                   \
+    calc_t c_scale = static_cast<calc_t>(scale);                               \
+    calc_t c_offset = static_cast<calc_t>(offset);                             \
+    DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {                         \
+        core::ParallelFor(                                                     \
+                src.GetDevice(), indexer.NumWorkloads(),                       \
+                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {                      \
+                    auto src_ptr =                                             \
+                            indexer.GetInputPtr<scalar_t>(0, workload_idx);    \
+                    auto dst_ptr = indexer.GetOutputPtr<elem_t>(workload_idx); \
+                    calc_t out = static_cast<calc_t>(*src_ptr) * c_scale +     \
+                                 c_offset;                                     \
+                    out = out < limits[0] ? limits[0] : out;                   \
+                    out = out > limits[1] ? limits[1] : out;                   \
+                    *dst_ptr = static_cast<elem_t>(out);                       \
+                });                                                            \
+    });
+    core::Dtype dst_dtype = dst.GetDtype();
+    if (dst_dtype == core::Float32) {
+        LINEAR_SATURATE(float, float)
+    } else if (dst_dtype == core::Float64) {
+        LINEAR_SATURATE(double, double)
+    } else if (dst_dtype == core::Int8) {
+        LINEAR_SATURATE(int8_t, float)
+    } else if (dst_dtype == core::UInt8) {
+        LINEAR_SATURATE(uint8_t, float)
+    } else if (dst_dtype == core::Int16) {
+        LINEAR_SATURATE(int16_t, float)
+    } else if (dst_dtype == core::UInt16) {
+        LINEAR_SATURATE(uint16_t, float)
+    } else if (dst_dtype == core::Int32) {
+        LINEAR_SATURATE(int32_t, double)
+    } else if (dst_dtype == core::UInt32) {
+        LINEAR_SATURATE(uint32_t, double)
+    } else if (dst_dtype == core::Int64) {
+        LINEAR_SATURATE(int64_t, double)
+    } else if (dst_dtype == core::UInt64) {
+        LINEAR_SATURATE(uint64_t, double)
+    }
+#undef LINEAR_SATURATE
+}
 
 #ifdef __CUDACC__
 void ClipTransformCUDA
@@ -246,9 +287,11 @@ void CreateNormalMapCPU
                     normal[1] = dz0 * dx1 - dx0 * dz1;
                     normal[2] = dx0 * dy1 - dy0 * dx1;
 
+                    constexpr float EPSILON = 1e-5f;
                     float normal_norm =
                             sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
                                  normal[2] * normal[2]);
+                    normal_norm = std::max(normal_norm, EPSILON);
                     normal[0] /= normal_norm;
                     normal[1] /= normal_norm;
                     normal[2] /= normal_norm;
@@ -279,8 +322,8 @@ void ColorizeDepthCPU
 
     float inv_interval = 255.0f / (max_value - min_value);
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
-        core::ParallelFor(
-                src.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+    core::ParallelFor(
+            src.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                     int64_t y = workload_idx / cols;
                     int64_t x = workload_idx % cols;
 

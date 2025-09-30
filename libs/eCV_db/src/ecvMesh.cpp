@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #include "ecvMesh.h"
 
@@ -186,7 +186,7 @@ void ccMesh::setAssociatedCloud(ccGenericPointCloud* cloud) {
     m_bBox.setValidity(false);
 }
 
-bool ccMesh::createInternalCloud() {
+bool ccMesh::CreateInternalCloud() {
     if (getAssociatedCloud()) {
         if (getChildrenNumber() == 0) {
             addChild(getAssociatedCloud());
@@ -233,8 +233,11 @@ bool ccMesh::hasColors() const {
 }
 
 bool ccMesh::hasNormals() const {
-    return ((m_associatedCloud ? m_associatedCloud->hasNormals() : false) ||
-            hasTriNormals());
+    return (HasVertexNormals() || hasTriNormals());
+}
+
+bool ccMesh::HasVertexNormals() const {
+    return m_associatedCloud ? m_associatedCloud->hasNormals() : false;
 }
 
 bool ccMesh::hasDisplayedScalarField() const {
@@ -824,7 +827,7 @@ bool ccMesh::mergeDuplicatedVertices(unsigned char octreeLevel /*=10*/,
     return false;
 }
 
-Eigen::Vector3d ccMesh::getMinBound() const {
+Eigen::Vector3d ccMesh::GetMinBound() const {
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(getAssociatedCloud());
     if (!cloud) {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
@@ -832,7 +835,7 @@ Eigen::Vector3d ccMesh::getMinBound() const {
     return ComputeMinBound(cloud->getEigenPoints());
 }
 
-Eigen::Vector3d ccMesh::getMaxBound() const {
+Eigen::Vector3d ccMesh::GetMaxBound() const {
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(getAssociatedCloud());
     if (!cloud) {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
@@ -840,7 +843,7 @@ Eigen::Vector3d ccMesh::getMaxBound() const {
     return ComputeMaxBound(cloud->getEigenPoints());
 }
 
-Eigen::Vector3d ccMesh::getGeometryCenter() const {
+Eigen::Vector3d ccMesh::GetCenter() const {
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(getAssociatedCloud());
     if (!cloud) {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
@@ -848,15 +851,15 @@ Eigen::Vector3d ccMesh::getGeometryCenter() const {
     return ComputeCenter(cloud->getEigenPoints());
 }
 
-ccBBox ccMesh::getAxisAlignedBoundingBox() const {
+ccBBox ccMesh::GetAxisAlignedBoundingBox() const {
     return ccBBox::CreateFromPoints(getVertices());
 }
 
-ecvOrientedBBox ccMesh::getOrientedBoundingBox() const {
+ecvOrientedBBox ccMesh::GetOrientedBoundingBox() const {
     return ecvOrientedBBox::CreateFromPoints(getVertices());
 }
 
-ccMesh& ccMesh::transform(const Eigen::Matrix4d& transformation) {
+ccMesh& ccMesh::Transform(const Eigen::Matrix4d& transformation) {
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
     if (!cloud) {
         return *this;
@@ -867,26 +870,26 @@ ccMesh& ccMesh::transform(const Eigen::Matrix4d& transformation) {
     return *this;
 }
 
-ccMesh& ccMesh::translate(const Eigen::Vector3d& translation, bool relative) {
+ccMesh& ccMesh::Translate(const Eigen::Vector3d& translation, bool relative) {
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
     if (!cloud) {
         return *this;
     }
-    cloud->translate(translation, relative);
+    cloud->Translate(translation, relative);
     return *this;
 }
 
-ccMesh& ccMesh::scale(const double s, const Eigen::Vector3d& center) {
+ccMesh& ccMesh::Scale(const double s, const Eigen::Vector3d& center) {
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
     if (!cloud) {
         return *this;
     }
 
-    cloud->scale(s, center);
+    cloud->Scale(s, center);
     return *this;
 }
 
-ccMesh& ccMesh::rotate(const Eigen::Matrix3d& R,
+ccMesh& ccMesh::Rotate(const Eigen::Matrix3d& R,
                        const Eigen::Vector3d& center) {
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
     if (!cloud) {
@@ -902,7 +905,7 @@ ccMesh& ccMesh::rotate(const Eigen::Matrix3d& R,
     return *this;
 }
 
-std::shared_ptr<ccMesh> ccMesh::selectByIndex(
+std::shared_ptr<ccMesh> ccMesh::SelectByIndex(
         const std::vector<size_t>& indices, bool cleanup) const {
     if (hasTriangleUvs()) {
         cloudViewer::utility::LogWarning(
@@ -968,10 +971,10 @@ std::shared_ptr<ccMesh> ccMesh::selectByIndex(
     // do some cleaning
     {
         if (cleanup) {
-            output->removeDuplicatedVertices();
-            output->removeDuplicatedTriangles();
-            output->removeUnreferencedVertices();
-            output->removeDegenerateTriangles();
+            output->RemoveDuplicatedVertices();
+            output->RemoveDuplicatedTriangles();
+            output->RemoveUnreferencedVertices();
+            output->RemoveDegenerateTriangles();
         }
 
         baseVertices->shrinkToFit();
@@ -996,24 +999,24 @@ std::shared_ptr<ccMesh> ccMesh::selectByIndex(
     return output;
 }
 
-std::shared_ptr<ccMesh> ccMesh::crop(const ccBBox& bbox) const {
+std::shared_ptr<ccMesh> ccMesh::Crop(const ccBBox& bbox) const {
     if (!bbox.isValid()) {
         cloudViewer::utility::LogError(
-                "[ccMesh::crop] ccBBox either has zeros "
+                "[ccMesh::Crop] ccBBox either has zeros "
                 "size, or has wrong bounds.");
         return cloudViewer::make_shared<ccMesh>(nullptr);
     }
-    return selectByIndex(bbox.getPointIndicesWithinBoundingBox(getVertices()));
+    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(getVertices()));
 }
 
-std::shared_ptr<ccMesh> ccMesh::crop(const ecvOrientedBBox& bbox) const {
-    if (bbox.isEmpty()) {
+std::shared_ptr<ccMesh> ccMesh::Crop(const ecvOrientedBBox& bbox) const {
+    if (bbox.IsEmpty()) {
         cloudViewer::utility::LogError(
-                "[ccMesh::crop] ecvOrientedBBox either has zeros "
+                "[ccMesh::Crop] ecvOrientedBBox either has zeros "
                 "size, or has wrong bounds.");
         return cloudViewer::make_shared<ccMesh>(nullptr);
     }
-    return selectByIndex(bbox.getPointIndicesWithinBoundingBox(
+    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(
             ccHObjectCaster::ToPointCloud(m_associatedCloud)->getPoints()));
 }
 
@@ -1685,8 +1688,8 @@ bool ccMesh::merge(const ccMesh* mesh, bool createSubMesh) {
         }
 
         // triangle normals
-        bool hasTriangleNormals = m_triNormals && m_triNormalIndexes;
-        if (hasTriangleNormals || otherMeshHasTriangleNormals) {
+        bool HasTriangleNormals = m_triNormals && m_triNormalIndexes;
+        if (HasTriangleNormals || otherMeshHasTriangleNormals) {
             // 1st: does the other mesh has triangle normals
             if (otherMeshHasTriangleNormals) {
                 size_t triIndexShift = 0;
@@ -2329,7 +2332,7 @@ bool ccMesh::resize(size_t n) {
 bool ccMesh::resizeAssociatedCloud(std::size_t n) {
     if (!m_associatedCloud) {
         cloudViewer::utility::LogWarning(
-                "Must call createInternalCloud first!");
+                "Must call CreateInternalCloud first!");
         return false;
     }
     ccPointCloud* baseVertices =
@@ -2357,7 +2360,7 @@ bool ccMesh::reserveAssociatedCloud(std::size_t n,
                                     bool init_normal) {
     if (!m_associatedCloud) {
         cloudViewer::utility::LogWarning(
-                "Must call createInternalCloud first!");
+                "Must call CreateInternalCloud first!");
         return false;
     }
     ccPointCloud* baseVertices =
@@ -2604,10 +2607,11 @@ ccMesh* ccMesh::createNewMeshFromSelection(
         assert(rc.size() !=
                0);  // otherwise 'newVertices->size() == 0' (see above)
         assert(rc.size() !=
-               m_associatedCloud->size());  // in this case
-                                            // createNewCloudFromVisibilitySelection
-                                            // would have return
-                                            // 'm_associatedCloud' itself
+               m_associatedCloud
+                       ->size());  // in this case
+                                   // createNewCloudFromVisibilitySelection
+                                   // would have return
+                                   // 'm_associatedCloud' itself
 
         cloudViewer::GenericIndexedMesh* selection =
                 cloudViewer::ManualSegmentationTools::segmentMesh(
@@ -2736,7 +2740,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(
 
                         // for each triangle of this mesh, try to determine if
                         // its normals are already in use (otherwise add them to
-                        //the new container and increase its index)
+                        // the new container and increase its index)
                         for (unsigned j = 0; j < 3; ++j) {
                             if (triNormIndexes.u[j] >= 0 &&
                                 newNormIndexes[triNormIndexes.u[j]] < 0) {
@@ -2803,7 +2807,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(
                         // for each triangle of this mesh, try to determine if
                         // its textures coordinates are already in use
                         //(otherwise add them to the new container and increase
-                        //its index)
+                        // its index)
                         for (unsigned j = 0; j < 3; ++j) {
                             if (triTexIndexes.u[j] >= 0 &&
                                 newTexIndexes[triTexIndexes.u[j]] < 0) {
@@ -2861,7 +2865,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(
 
                         // for each triangle of this mesh, try to determine if
                         // its material is already in use (otherwise add it to
-                        //the new container and increase its index)
+                        // the new container and increase its index)
                         if (triMatIndex >= 0 &&
                             newMatIndexes[triMatIndex] < 0) {
                             // import old material to new subset (create new
@@ -3023,7 +3027,8 @@ ccMesh* ccMesh::createNewMeshFromSelection(
             if (triangleIndexMap[i] < 0)  // triangle is not used in the new
                                           // mesh, it will be kept in this one
             {
-                const cloudViewer::VerticesIndexes& tsi = m_triVertIndexes->at(i);
+                const cloudViewer::VerticesIndexes& tsi =
+                        m_triVertIndexes->at(i);
                 for (unsigned j = 0; j < 3; ++j) {
                     visArray[tsi.i[j]] = POINT_HIDDEN;
                 }

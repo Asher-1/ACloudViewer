@@ -16,6 +16,7 @@
 // ##########################################################################
 
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 
 #include <ecvCameraSensor.h>
 #include <ecvMesh.h>
@@ -55,14 +56,16 @@ void define_ccCameraSensor(py::module &m)
         .def_readwrite("arrayHeight", &ccCameraSensor::IntrinsicParameters::arrayHeight)
         .def("horizFocal_pix", &ccCameraSensor::IntrinsicParameters::horizFocal_pix);
 
-    py::enum_<ccCameraSensor::DistortionModel>(pyccCameraSensor, "DistortionModel")
+    py::native_enum<ccCameraSensor::DistortionModel>(
+        pyccCameraSensor, "DistortionModel", "enum.Enum", "ccCameraSensor::DistortionModel.")
         .value("NO_DISTORTION_MODEL", ccCameraSensor::DistortionModel::NO_DISTORTION_MODEL)
         .value("SIMPLE_RADIAL_DISTORTION",
                ccCameraSensor::DistortionModel::SIMPLE_RADIAL_DISTORTION)
         .value("BROWN_DISTORTION", ccCameraSensor::DistortionModel::BROWN_DISTORTION)
         .value("EXTENDED_RADIAL_DISTORTION",
                ccCameraSensor::DistortionModel::EXTENDED_RADIAL_DISTORTION)
-        .export_values();
+        .export_values()
+        .finalize();
 
     py::class_<ccCameraSensor::LensDistortionParameters>(pyccCameraSensor,
                                                          "LensDistortionParameters")

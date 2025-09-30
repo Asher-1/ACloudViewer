@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/rendering/filament/FilamentView.h"
@@ -149,6 +130,15 @@ void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
     view_->setRenderTarget(nullptr);
 }
 
+void FilamentView::SetWireframe(bool enable) {
+    // Enable bloom for wireframe mode
+    if (enable) {
+        SetBloom(true, 0.5f, 8);
+    } else {
+        SetBloom(false);
+    }
+}
+
 void FilamentView::SetSampleCount(int n) { view_->setSampleCount(n); }
 
 int FilamentView::GetSampleCount() const { return view_->getSampleCount(); }
@@ -175,6 +165,17 @@ void FilamentView::SetAmbientOcclusion(bool enabled,
     options.enabled = enabled;
     options.ssct.enabled = ssct_enabled;
     view_->setAmbientOcclusionOptions(options);
+}
+
+void FilamentView::SetBloom(bool enabled,
+                            float strength /* = 0.5f */,
+                            int spread /* = 6 */) {
+    filament::View::BloomOptions bloom_options;
+    bloom_options.enabled = enabled;
+    bloom_options.strength = strength;
+    bloom_options.threshold = false;
+    bloom_options.levels = spread;
+    view_->setBloomOptions(bloom_options);
 }
 
 void FilamentView::SetAntiAliasing(bool enabled, bool temporal /* = false */) {

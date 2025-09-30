@@ -1,38 +1,19 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <vector>
 
-#include "core/Tensor.h"
-#include "core/nns/KnnIndex.h"
-#include "core/nns/FixedRadiusIndex.h"
-#include "core/nns/NanoFlannIndex.h"
-#include  <Optional.h>
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/nns/FixedRadiusIndex.h"
+#include "cloudViewer/core/nns/KnnIndex.h"
+#include "cloudViewer/core/nns/NanoFlannIndex.h"
+#include <Optional.h>
 
 namespace cloudViewer {
 namespace core {
@@ -46,12 +27,14 @@ public:
     /// Constructor.
     ///
     /// \param dataset_points Dataset points for constructing search index. Must
-    /// be 2D, with shape {n, d}.
+    /// be 2D, with shape {n, d}. SYCL tensors are not yet supported.
     // NearestNeighborSearch(const Tensor &dataset_points)
     //     : dataset_points_(dataset_points){};
     NearestNeighborSearch(const Tensor &dataset_points,
                           const Dtype &index_dtype = core::Int32)
-        : dataset_points_(dataset_points), index_dtype_(index_dtype){};
+        : dataset_points_(dataset_points), index_dtype_(index_dtype) {
+        AssertNotSYCL(dataset_points_);
+    };
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
     NearestNeighborSearch &operator=(const NearestNeighborSearch &) = delete;

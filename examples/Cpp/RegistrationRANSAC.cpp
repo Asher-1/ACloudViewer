@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Eigen/Dense>
@@ -32,27 +13,26 @@
 
 using namespace cloudViewer;
 
-std::tuple<std::shared_ptr<ccPointCloud>,
-           std::shared_ptr<utility::Feature>>
+std::tuple<std::shared_ptr<ccPointCloud>, std::shared_ptr<utility::Feature>>
 PreprocessPointCloud(const char *file_name) {
     auto pcd = cloudViewer::io::CreatePointCloudFromFile(file_name);
-    auto pcd_down = pcd->voxelDownSample(0.05);
-    pcd_down->estimateNormals(
+    auto pcd_down = pcd->VoxelDownSample(0.05);
+    pcd_down->EstimateNormals(
             cloudViewer::geometry::KDTreeSearchParamHybrid(0.1, 30));
     auto pcd_fpfh = utility::ComputeFPFHFeature(
-            *pcd_down, cloudViewer::geometry::KDTreeSearchParamHybrid(0.25, 100));
+            *pcd_down,
+            cloudViewer::geometry::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
 
 void VisualizeRegistration(const ccPointCloud &source,
                            const ccPointCloud &target,
                            const Eigen::Matrix4d &Transformation) {
-    std::shared_ptr<ccPointCloud> source_transformed_ptr(
-            new ccPointCloud);
+    std::shared_ptr<ccPointCloud> source_transformed_ptr(new ccPointCloud);
     std::shared_ptr<ccPointCloud> target_ptr(new ccPointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;
-    source_transformed_ptr->transform(Transformation);
+    source_transformed_ptr->Transform(Transformation);
     visualization::DrawGeometries({source_transformed_ptr, target_ptr},
                                   "Registration result");
 }

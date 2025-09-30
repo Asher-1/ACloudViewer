@@ -41,6 +41,7 @@ if sys.version_info < (3, 6):
             sys.version_info[0], sys.version_info[1]))
 
 import os
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from download_utils import download_all_files
 

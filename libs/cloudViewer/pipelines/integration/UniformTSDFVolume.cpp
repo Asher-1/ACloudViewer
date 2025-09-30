@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "pipelines/integration/UniformTSDFVolume.h"
@@ -318,6 +299,8 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_;
 
+    std::vector<std::pair<Eigen::Vector3i, geometry::Voxel>> valid_voxels;
+
 #ifdef _WIN32
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
@@ -327,6 +310,9 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
+            std::vector<std::pair<Eigen::Vector3i, geometry::Voxel>>
+                    local_voxels;
+
             for (int z = 0; z < resolution_; z++) {
                 const int ind = IndexOf(x, y, z);
                 const float w = voxels_[ind].weight_;
@@ -335,11 +321,23 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
                     double c = (f + 1.0) * 0.5;
                     Eigen::Vector3d color = Eigen::Vector3d(c, c, c);
                     Eigen::Vector3i index = Eigen::Vector3i(x, y, z);
-                    voxel_grid->voxels_[index] = geometry::Voxel(index, color);
+                    local_voxels.emplace_back(index,
+                                              geometry::Voxel(index, color));
                 }
+            }
+
+#pragma omp critical
+            {
+                valid_voxels.insert(valid_voxels.end(), local_voxels.begin(),
+                                    local_voxels.end());
             }
         }
     }
+
+    for (const auto &voxel_pair : valid_voxels) {
+        voxel_grid->voxels_[voxel_pair.first] = voxel_pair.second;
+    }
+    
     return voxel_grid;
 }
 

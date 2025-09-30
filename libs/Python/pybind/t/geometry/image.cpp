@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "t/geometry/Image.h"
@@ -29,6 +10,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "cloudViewer/core/CUDAUtils.h"
 #include "pybind/docstring.h"
 #include "pybind/pybind_utils.h"
 #include "pybind/t/geometry/geometry.h"
@@ -77,13 +59,15 @@ void pybind_image(py::module &m) {
                   "The Image class stores image with customizable rols, cols, "
                   "channels, dtype and device.");
 
-    py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
+    py::native_enum<Image::InterpType>(m, "InterpType", "enum.Enum",
+                                       "Interpolation type.")
             .value("Nearest", Image::InterpType::Nearest)
             .value("Linear", Image::InterpType::Linear)
             .value("Cubic", Image::InterpType::Cubic)
             .value("Lanczos", Image::InterpType::Lanczos)
             .value("Super", Image::InterpType::Super)
-            .export_values();
+            .export_values()
+            .finalize();
 
     // Constructors
     image.def(py::init<int64_t, int64_t, int64_t, core::Dtype, core::Device>(),
@@ -100,12 +84,40 @@ void pybind_image(py::module &m) {
                  "tensor"_a);
     docstring::ClassMethodDocInject(m, "Image", "__init__",
                                     map_shared_argument_docstrings);
+    py::detail::bind_copy_functions<Image>(image);
+
+    // Pickle support.
+    image.def(py::pickle(
+            [](const Image &image) {
+                // __getstate__
+                return py::make_tuple(image.AsTensor());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 1) {
+                    utility::LogError(
+                            "Cannot unpickle Image! Expecting a tuple of size "
+                            "1.");
+                }
+                return Image(t[0].cast<core::Tensor>());
+            }));
+
     // Buffer protocol.
     image.def_buffer([](Image &I) -> py::buffer_info {
-        return py::buffer_info(I.GetDataPtr(), I.GetDtype().ByteSize(),
+        if (!I.IsCPU()) {
+            utility::LogError(
+                    "Cannot convert image buffer since it's not on CPU. "
+                    "Convert to CPU image by calling .cpu() first.");
+        }
+        core::SizeVector strides_in_bytes = I.AsTensor().GetStrides();
+        const int64_t element_byte_size = I.GetDtype().ByteSize();
+        for (size_t i = 0; i < strides_in_bytes.size(); i++) {
+            strides_in_bytes[i] *= element_byte_size;
+        }
+        return py::buffer_info(I.GetDataPtr(), element_byte_size,
                                pybind_utils::DtypeToArrayFormat(I.GetDtype()),
                                I.AsTensor().NumDims(), I.AsTensor().GetShape(),
-                               I.AsTensor().GetStrides());
+                               strides_in_bytes);
     });
     // Info.
     image.def_property_readonly("dtype", &Image::GetDtype,
@@ -160,7 +172,8 @@ void pybind_image(py::module &m) {
                  "Upsample if sampling rate > 1. Aspect ratio is always "
                  "kept.",
                  "sampling_rate"_a = 0.5,
-                 "interp_type"_a = Image::InterpType::Nearest)
+                 py::arg_v("interp_type", Image::InterpType::Nearest,
+                           "cloudViewer.t.geometry.InterpType.Nearest"))
             .def("pyrdown", &Image::PyrDown,
                  "Return a new downsampled image with pyramid downsampling "
                  "formed by a chained Gaussian filter (kernel_size = 5, sigma"
@@ -214,13 +227,18 @@ void pybind_image(py::module &m) {
               "device"_a, "copy"_a = false);
     image.def("clone", &Image::Clone,
               "Returns a copy of the Image on the same device.");
-    image.def("cpu", &Image::CPU,
-              "Transfer the Image to CPU. If the Image is "
-              "already on CPU, no copy will be performed.");
     image.def(
-            "cuda", &Image::CUDA,
-            "Transfer the Image to a CUDA device. If the Image is "
-            "already on the specified CUDA device, no copy will be performed.",
+            "cpu",
+            [](const Image &image) { return image.To(core::Device("CPU:0")); },
+            "Transfer the image to CPU. If the image "
+            "is already on CPU, no copy will be performed.");
+    image.def(
+            "cuda",
+            [](const Image &image, int device_id) {
+                return image.To(core::Device("CUDA", device_id));
+            },
+            "Transfer the image to a CUDA device. If the image is already "
+            "on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
 
     // Conversion.
@@ -228,7 +246,7 @@ void pybind_image(py::module &m) {
               py::overload_cast<core::Dtype, bool, utility::optional<double>,
                                 double>(&Image::To, py::const_),
               "Returns an Image with the specified Dtype.", "dtype"_a,
-              "scale"_a = py::none(), "offset"_a = 0.0, "copy"_a = false);
+              "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
     docstring::ClassMethodDocInject(
             m, "Image", "to",
             {{"dtype", "The targeted dtype to convert to."},
@@ -240,10 +258,9 @@ void pybind_image(py::module &m) {
               "If true, a new tensor is always created; if false, the copy is "
               "avoided when the original tensor already has the targeted "
               "dtype."}});
-    image.def("to_legacy", &Image::ToLegacy,
-              "Convert to legacy Image type.");
-    image.def_static("from_legacy", &Image::FromLegacy,
-                     "image_legacy"_a, "device"_a = core::Device("CPU:0"),
+    image.def("to_legacy", &Image::ToLegacy, "Convert to legacy Image type.");
+    image.def_static("from_legacy", &Image::FromLegacy, "image_legacy"_a,
+                     "device"_a = core::Device("CPU:0"),
                      "Create a Image from a legacy CloudViewer Image.");
     image.def("as_tensor", &Image::AsTensor);
 
@@ -267,6 +284,26 @@ void pybind_image(py::module &m) {
             .def(py::init<const Image &, const Image &, bool>(),
                  "Parameterized constructor", "color"_a, "depth"_a,
                  "aligned"_a = true)
+
+            // Pickling support.
+            .def(py::pickle(
+                    [](const RGBDImage &rgbd) {
+                        // __getstate__
+                        return py::make_tuple(rgbd.color_, rgbd.depth_,
+                                              rgbd.aligned_);
+                    },
+                    [](py::tuple t) {
+                        // __setstate__
+                        if (t.size() != 3) {
+                            utility::LogError(
+                                    "Cannot unpickle RGBDImage! Expecting a "
+                                    "tuple of size 3.");
+                        }
+
+                        return RGBDImage(t[0].cast<Image>(), t[1].cast<Image>(),
+                                         t[2].cast<bool>());
+                    }))
+
             // Depth and color images.
             .def_readwrite("color", &RGBDImage::color_, "The color image.")
             .def_readwrite("depth", &RGBDImage::depth_, "The depth image.")
@@ -291,14 +328,23 @@ void pybind_image(py::module &m) {
                  "copy"_a = false)
             .def("clone", &RGBDImage::Clone,
                  "Returns a copy of the RGBDImage on the same device.")
-            .def("cpu", &RGBDImage::CPU,
-                 "Transfer the RGBDImage to CPU. If the RGBDImage is "
-                 "already on CPU, no copy will be performed.")
-            .def("cuda", &RGBDImage::CUDA,
-                 "Transfer the RGBDImage to a CUDA device. If the RGBDImage is "
-                 "already on the specified CUDA device, no copy will be "
-                 "performed.",
-                 "device_id"_a = 0)
+            .def(
+                    "cpu",
+                    [](const RGBDImage &rgbd_image) {
+                        return rgbd_image.To(core::Device("CPU:0"));
+                    },
+                    "Transfer the RGBD image to CPU. If the RGBD image "
+                    "is already on CPU, no copy will be performed.")
+            .def(
+                    "cuda",
+                    [](const RGBDImage &rgbd_image, int device_id) {
+                        return rgbd_image.To(core::Device("CUDA", device_id));
+                    },
+                    "Transfer the RGBD image to a CUDA device. If the RGBD "
+                    "image is already "
+                    "on the specified CUDA device, no copy will be performed.",
+                    "device_id"_a = 0)
+
             // Conversion.
             .def("to_legacy", &RGBDImage::ToLegacy,
                  "Convert to legacy RGBDImage type.")

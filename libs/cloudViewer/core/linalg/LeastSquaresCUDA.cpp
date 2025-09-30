@@ -1,35 +1,16 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/Blob.h"
-#include "core/CUDAUtils.h"
-#include "core/linalg/BlasWrapper.h"
-#include "core/linalg/LapackWrapper.h"
-#include "core/linalg/LeastSquares.h"
-#include "core/linalg/LinalgUtils.h"
+#include "cloudViewer/core/Blob.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/linalg/BlasWrapper.h"
+#include "cloudViewer/core/linalg/LapackWrapper.h"
+#include "cloudViewer/core/linalg/LeastSquares.h"
+#include "cloudViewer/core/linalg/LinalgUtils.h"
 
 namespace cloudViewer {
 namespace core {
@@ -56,10 +37,10 @@ void LeastSquaresCUDA(void* A_data,
         int len_geqrf, len_ormqr, len;
         Blob dinfo(sizeof(int), device);
 
-        CLOUDVIEWER_CUSOLVER_CHECK(geqrf_cuda_buffersize<scalar_t>(
+        OPEN3D_CUSOLVER_CHECK(geqrf_cuda_buffersize<scalar_t>(
                                       cusolver_handle, m, n, m, &len_geqrf),
                               "geqrf_buffersize failed in LeastSquaresCUDA");
-        CLOUDVIEWER_CUSOLVER_CHECK(ormqr_cuda_buffersize<scalar_t>(
+        OPEN3D_CUSOLVER_CHECK(ormqr_cuda_buffersize<scalar_t>(
                                       cusolver_handle, CUBLAS_SIDE_LEFT,
                                       CUBLAS_OP_T, m, k, n, m, m, &len_ormqr),
                               "ormqr_buffersize failed in LeastSquaresCUDA");
@@ -69,7 +50,7 @@ void LeastSquaresCUDA(void* A_data,
         Blob tau(n * sizeof(scalar_t), device);
 
         // Step 1: A = QR
-        CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(
+        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
                 geqrf_cuda<scalar_t>(
                         cusolver_handle, m, n, static_cast<scalar_t*>(A_data),
                         m, static_cast<scalar_t*>(tau.GetDataPtr()),
@@ -79,7 +60,7 @@ void LeastSquaresCUDA(void* A_data,
                 static_cast<int*>(dinfo.GetDataPtr()), device);
 
         // Step 2: B' = Q^T*B
-        CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(
+        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
                 ormqr_cuda<scalar_t>(
                         cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m, k, n,
                         static_cast<scalar_t*>(A_data), m,
@@ -92,7 +73,7 @@ void LeastSquaresCUDA(void* A_data,
 
         // Step 3: Solve Rx = B'
         scalar_t alpha = 1.0f;
-        CLOUDVIEWER_CUBLAS_CHECK(
+        OPEN3D_CUBLAS_CHECK(
                 trsm_cuda<scalar_t>(cublas_handle, CUBLAS_SIDE_LEFT,
                                     CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
                                     CUBLAS_DIAG_NON_UNIT, n, k, &alpha,

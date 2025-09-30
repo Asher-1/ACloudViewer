@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "t/geometry/TensorMap.h"
@@ -69,29 +50,54 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
             "__bool__", [](const Map &m) -> bool { return !m.empty(); },
             "Check whether the map is nonempty");
 
+    // Essential: keep list alive while iterator exists
     cl.def(
             "__iter__",
             [](Map &m) { return py::make_key_iterator(m.begin(), m.end()); },
             py::keep_alive<0, 1>()
-            /* Essential: keep list alive while iterator exists */
+
     );
 
+    // Essential: keep list alive while iterator exists
     cl.def(
             "items",
             [](Map &m) { return py::make_iterator(m.begin(), m.end()); },
-            py::keep_alive<0, 1>()
-            /* Essential: keep list alive while iterator exists */
-    );
+            py::keep_alive<0, 1>());
 
     cl.def(
             "__getitem__",
             [](Map &m, const KeyType &k) -> MappedType & {
                 auto it = m.find(k);
-                if (it == m.end()) throw py::key_error();
+                if (it == m.end())
+                    throw py::key_error(
+                            fmt::format("Key {} not found in TensorMap", k));
                 return it->second;
             },
-            py::return_value_policy::reference_internal  // ref + keepalive
-    );
+            // py::return_value_policy::copy is used as the safest option.
+            // The goal is to make TensorMap works similarly as putting Tensors
+            // into a python dict, i.e., {"a": Tensor(xx), "b": Tensor(XX)}.
+            // Accessing a value in the map will return a shallow copy of the
+            // tensor that shares the same underlying memory.
+            //
+            // - automatic          : works, different id
+            // - automatic_reference: works, different id
+            // - take_ownership     : doesn't work, segfault
+            // - copy               : works, different id
+            // - move               : doesn't work, blob is null
+            // - reference          : doesn't work, when a key is deleted, the
+            //                        alias becomes invalid
+            // - reference_internal : doesn't work, value in map overwritten
+            //                        when assigning to alias
+            py::return_value_policy::copy);
+
+    cl.def("__setitem__", [](Map &m, const KeyType &k, const MappedType &v) {
+        if (!TensorMap::GetReservedKeys().count(k)) {
+            m[k] = v;
+        } else {
+            throw py::key_error(
+                    fmt::format("Cannot assign to reserved key \"{}\"", k));
+        }
+    });
 
     cl.def("__contains__", [](Map &m, const KeyType &k) -> bool {
         auto it = m.find(k);
@@ -103,8 +109,9 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
     py::detail::map_assignment<Map, Class_>(cl);
 
     // Deleted the "__delitem__" function.
+    // This will be implemented in `pybind_tensormap()`.
 
-    cl.def("__len__", &Map::size);
+    cl.def("__len__", [](const Map &m) -> size_t { return m.size(); });
 
     return cl;
 }
@@ -134,9 +141,73 @@ void pybind_tensormap(py::module &m) {
 
     // Member functions. Some C++ functions are ignored since the
     // functionalities are already covered in the generic dictionary interface.
-    tm.def("get_primary_key", &TensorMap::GetPrimaryKey);
+    tm.def_property_readonly("primary_key", &TensorMap::GetPrimaryKey);
     tm.def("is_size_synchronized", &TensorMap::IsSizeSynchronized);
     tm.def("assert_size_synchronized", &TensorMap::AssertSizeSynchronized);
+
+    // Pickle support.
+    tm.def(py::pickle(
+            [](const TensorMap &m) {
+                // __getstate__
+                std::unordered_map<std::string, core::Tensor> map;
+                for (const auto &kv : m) {
+                    map[kv.first] = kv.second;
+                }
+
+                return py::make_tuple(m.GetPrimaryKey(), map);
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 2) {
+                    utility::LogError(
+                            "Cannot unpickle TensorMap! Expecting a tuple of "
+                            "size 2.");
+                }
+                return TensorMap(t[0].cast<std::string>(),
+                                 t[1].cast<std::unordered_map<std::string,
+                                                              core::Tensor>>());
+            }));
+
+    tm.def("__setattr__",
+           [](TensorMap &m, const std::string &key, const core::Tensor &val) {
+               if (!TensorMap::GetReservedKeys().count(key)) {
+                   m[key] = val;
+               } else {
+                   throw py::key_error(fmt::format(
+                           "Cannot assign to reserved key \"{}\"", key));
+               }
+           });
+
+    tm.def("__getattr__",
+           [](TensorMap &m, const std::string &key) -> core::Tensor {
+               auto it = m.find(key);
+               if (it == m.end()) {
+                   throw py::key_error(
+                           fmt::format("Key {} not found in TensorMap", key));
+               }
+               return it->second;
+           });
+
+    tm.def("__delattr__", [](TensorMap &m, const std::string &key) {
+        auto it = m.find(key);
+        if (it == m.end()) {
+            throw py::key_error(
+                    fmt::format("Key {} not found in TensorMap", key));
+        }
+        return m.Erase(key);
+    });
+
+    tm.def("__str__", &TensorMap::ToString);
+
+    tm.def("__repr__", &TensorMap::ToString);
+
+    tm.def("__dir__", [](TensorMap &m) {
+        auto keys = py::list();
+        for (const auto &kv : m) {
+            keys.append(kv.first);
+        }
+        return keys;
+    });
 }
 
 }  // namespace geometry

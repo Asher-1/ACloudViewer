@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "pipelines/registration/Registration.h"
@@ -135,7 +116,7 @@ RegistrationResult EvaluateRegistration(const ccPointCloud &source,
     kdtree.SetGeometry(target);
     ccPointCloud pcd = source;
     if (!transformation.isIdentity()) {
-        pcd.transform(transformation);
+        pcd.Transform(transformation);
     }
 
     return GetRegistrationResultAndCorrespondences(
@@ -170,7 +151,7 @@ RegistrationResult RegistrationICP(
     kdtree.SetGeometry(target);
     ccPointCloud pcd = source;
     if (!init.isIdentity()) {
-        pcd.transform(init);
+        pcd.Transform(init);
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
@@ -181,7 +162,7 @@ RegistrationResult RegistrationICP(
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
         transformation = update * transformation;
-        pcd.transform(update);
+        pcd.Transform(update);
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
                 pcd, target, kdtree, max_correspondence_distance,
@@ -253,7 +234,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 if (!check) continue;
 
                 ccPointCloud pcd = source;
-                pcd.transform(transformation);
+                pcd.Transform(transformation);
                 auto result = EvaluateRANSACBasedOnCorrespondence(
                         pcd, target, corres, max_correspondence_distance,
                         transformation);
@@ -381,7 +362,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         const Eigen::Matrix4d &transformation) {
     ccPointCloud pcd = source;
     if (transformation.isIdentity() == false) {
-        pcd.transform(transformation);
+        pcd.Transform(transformation);
     }
     RegistrationResult result;
     geometry::KDTreeFlann target_kdtree(target);

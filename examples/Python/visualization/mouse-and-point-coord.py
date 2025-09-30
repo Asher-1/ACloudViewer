@@ -1,10 +1,14 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import numpy as np
 import cloudViewer as cv3d
 import cloudViewer.visualization.gui as gui
 import cloudViewer.visualization.rendering as rendering
-import os
-
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 # This example displays a point cloud and if you Ctrl-click on a point
@@ -32,7 +36,7 @@ class ExampleApp:
 
         self.widget3d.scene = rendering.CloudViewerScene(self.window.renderer)
 
-        mat = rendering.Material()
+        mat = rendering.MaterialRecord()
         mat.shader = "defaultUnlit"
         # Point size is in native pixels, but "pixel" means different things to
         # different platforms (macOS, in particular), so multiply by Window scale
@@ -77,7 +81,7 @@ class ExampleApp:
                     text = ""
                 else:
                     world = self.widget3d.scene.camera.unproject(
-                        event.x, event.y, depth, self.widget3d.frame.width,
+                        x, y, depth, self.widget3d.frame.width,
                         self.widget3d.frame.height)
                     text = "({:.3f}, {:.3f}, {:.3f})".format(
                         world[0], world[1], world[2])
@@ -107,8 +111,8 @@ def main():
     # This example will also work with a triangle mesh, or any 3D object.
     # If you use a triangle mesh you will probably want to set the material
     # shader to "defaultLit" instead of "defaultUnlit".
-    cloud = cv3d.io.read_point_cloud(SCRIPT_DIR +
-                                    "/../../test_data/ICP/cloud_bin_0.pcd")
+    pcd_data = cv3d.data.DemoICPPointClouds()
+    cloud = cv3d.io.read_point_cloud(pcd_data.paths[0])
     ex = ExampleApp(cloud)
 
     app.run()

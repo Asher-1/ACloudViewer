@@ -1,4 +1,10 @@
-#!/usr/bin/env python3
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import glob
 import numpy as np
 import cloudViewer as cv3d
@@ -145,10 +151,10 @@ class Settings:
 
         self.apply_material = True  # clear to False after processing
         self._materials = {
-            Settings.LIT: rendering.Material(),
-            Settings.UNLIT: rendering.Material(),
-            Settings.NORMALS: rendering.Material(),
-            Settings.DEPTH: rendering.Material()
+            Settings.LIT: rendering.MaterialRecord(),
+            Settings.UNLIT: rendering.MaterialRecord(),
+            Settings.NORMALS: rendering.MaterialRecord(),
+            Settings.DEPTH: rendering.MaterialRecord()
         }
         self._materials[Settings.LIT].base_color = [0.9, 0.9, 0.9, 1.0]
         self._materials[Settings.LIT].shader = Settings.LIT
@@ -493,7 +499,7 @@ class AppWindow:
         self._sun_dir.vector_value = self.settings.sun_dir
         self._sun_color.color_value = self.settings.sun_color
         self._material_prefab.enabled = (
-                self.settings.material.shader == Settings.LIT)
+            self.settings.material.shader == Settings.LIT)
         c = gui.Color(self.settings.material.base_color[0],
                       self.settings.material.base_color[1],
                       self.settings.material.base_color[2],

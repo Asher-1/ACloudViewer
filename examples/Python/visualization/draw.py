@@ -1,15 +1,20 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import math
 import numpy as np
 import cloudViewer as cv3d
 import cloudViewer.visualization as vis
 import os
 import random
-import sys
+import warnings
 
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-import cloudViewer_tutorial as cv3dtut
-
-CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 
 def normalize(v):
@@ -30,6 +35,7 @@ def make_point_cloud(npts, center, radius, colorize):
 def single_object():
     # No colors, no normals, should appear unlit black
     cube = cv3d.geometry.ccMesh.create_box(1, 2, 4)
+    cube.compute_vertex_normals()
     vis.draw(cube)
 
 
@@ -40,21 +46,26 @@ def multi_objects():
     r = 0.4
     sphere_unlit = cv3d.geometry.ccMesh.create_sphere(r)
     sphere_unlit.translate((0, 1, 0))
+    sphere_unlit.compute_vertex_normals()
     sphere_colored_unlit = cv3d.geometry.ccMesh.create_sphere(r)
     sphere_colored_unlit.paint_uniform_color((1.0, 0.0, 0.0))
     sphere_colored_unlit.translate((2, 1, 0))
+    sphere_colored_unlit.compute_vertex_normals()
     sphere_lit = cv3d.geometry.ccMesh.create_sphere(r)
-    sphere_lit.compute_vertex_normals()
     sphere_lit.translate((4, 1, 0))
+    sphere_lit.compute_vertex_normals()
     sphere_colored_lit = cv3d.geometry.ccMesh.create_sphere(r)
-    sphere_colored_lit.compute_vertex_normals()
     sphere_colored_lit.paint_uniform_color((0.0, 1.0, 0.0))
     sphere_colored_lit.translate((6, 1, 0))
-    big_bbox = cv3d.geometry.ccBBox((-pc_rad, -3, -pc_rad), (6.0 + r, 1.0 + r, pc_rad))
+    sphere_colored_lit.compute_vertex_normals()
+    big_bbox = cv3d.geometry.ccBBox((-pc_rad, -3, -pc_rad),
+                                                   (6.0 + r, 1.0 + r, pc_rad))
+    big_bbox.set_color((0.0, 0.0, 0.0))
     sphere_bbox = sphere_unlit.get_axis_aligned_bounding_box()
-    sphere_bbox.set_color([1.0, 0.5, 0.0])
+    sphere_bbox.set_color((1.0, 0.5, 0.0))
     lines = cv3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
         sphere_lit.get_axis_aligned_bounding_box())
+    lines.paint_uniform_color((0.0, 1.0, 0.0))
     lines_colored = cv3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
         sphere_colored_lit.get_axis_aligned_bounding_box())
     lines_colored.paint_uniform_color((0.0, 0.0, 1.0))
@@ -69,16 +80,21 @@ def actions():
     SOURCE_NAME = "Source"
     RESULT_NAME = "Result (Poisson reconstruction)"
     TRUTH_NAME = "Ground truth"
-    bunny = cv3dtut.get_bunny_mesh()
-    bunny.paint_uniform_color((1, 0.75, 0))
-    bunny.compute_vertex_normals()
+
+    bunny = cv3d.data.BunnyMesh()
+    bunny_mesh = cv3d.io.read_triangle_mesh(bunny.path)
+    bunny_mesh.compute_vertex_normals()
+
+    bunny_mesh.paint_uniform_color((1, 0.75, 0))
+    bunny_mesh.compute_vertex_normals()
     cloud = cv3d.geometry.ccPointCloud()
-    cloud.set_points(bunny.get_vertices())
-    cloud.set_normals(bunny.get_vertex_normals())
+    cloud.set_points(bunny_mesh.vertices())
+    cloud.set_normals(bunny_mesh.vertex_normals())
 
     def make_mesh(o3dvis):
-        # TODO: call o3dvis.get_geometry instead of using bunny
-        mesh, _ = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(cloud)
+        # TODO: call o3dvis.get_geometry instead of using bunny_mesh
+        mesh, _ = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(
+            cloud)
         mesh.paint_uniform_color((1, 1, 1))
         mesh.compute_vertex_normals()
         o3dvis.add_geometry({"name": RESULT_NAME, "geometry": mesh})
@@ -94,7 +110,7 @@ def actions():
         "geometry": cloud
     }, {
         "name": TRUTH_NAME,
-        "geometry": bunny,
+        "geometry": bunny_mesh,
         "is_visible": False
     }],
              actions=[("Create Mesh", make_mesh),
@@ -121,40 +137,55 @@ def get_icp_transform(source, target, source_indices, target_indices):
 
 
 def selections():
-    source = cv3d.io.read_point_cloud(CURRENT_DIR +
-                                     "/../../test_data/ICP/cloud_bin_0.pcd")
-    target = cv3d.io.read_point_cloud(CURRENT_DIR +
-                                     "/../../test_data/ICP/cloud_bin_2.pcd")
+    pcd_fragments_data = cv3d.data.DemoICPPointClouds()
+    source = cv3d.io.read_point_cloud(pcd_fragments_data.paths[0])
+    target = cv3d.io.read_point_cloud(pcd_fragments_data.paths[1])
     source.paint_uniform_color([1, 0.706, 0])
     target.paint_uniform_color([0, 0.651, 0.929])
 
     source_name = "Source (yellow)"
     target_name = "Target (blue)"
 
-    def do_icp_one_set(o3dvis):
+    def _prep_correspondences(o3dvis, two_set=False):
         # sets: [name: [{ "index": int, "order": int, "point": (x, y, z)}, ...],
         #        ...]
         sets = o3dvis.get_selection_sets()
-        source_picked = sorted(list(sets[0][source_name]),
-                               key=lambda x: x.order)
-        target_picked = sorted(list(sets[0][target_name]),
-                               key=lambda x: x.order)
-        source_indices = [idx.index for idx in source_picked]
-        target_indices = [idx.index for idx in target_picked]
+        if not sets:
+            warnings.warn(
+                "Empty selection sets. Select point correspondences for initial rough transform.",
+                RuntimeWarning)
+            return [], []
+        if source_name not in sets[0]:
+            warnings.warn(
+                "First selection set should contain Source (yellow) points.",
+                RuntimeWarning)
+            return [], []
 
-        t = get_icp_transform(source, target, source_indices, target_indices)
-        source.transform(t)
-
-        # Update the source geometry
-        o3dvis.remove_geometry(source_name)
-        o3dvis.add_geometry({"name": source_name, "geometry": source})
-
-    def do_icp_two_sets(o3dvis):
-        sets = o3dvis.get_selection_sets()
         source_set = sets[0][source_name]
-        target_set = sets[1][target_name]
+        if two_set:
+            if not len(sets) == 2:
+                warnings.warn(
+                    "Two set registration requires exactly two selection sets of corresponding points.",
+                    RuntimeWarning)
+                return [], []
+            target_set = sets[1][target_name]
+        else:
+            if target_name not in sets[0]:
+                warnings.warn(
+                    "Selection set should contain Target (blue) points.",
+                    RuntimeWarning)
+                return [], []
+            target_set = sets[0][target_name]
         source_picked = sorted(list(source_set), key=lambda x: x.order)
         target_picked = sorted(list(target_set), key=lambda x: x.order)
+        if len(source_picked) != len(target_picked):
+            warnings.warn(
+                f"Registration requires equal number of corresponding points (current selection: {len(source_picked)} source, {len(target_picked)} target).",
+                RuntimeWarning)
+            return [], []
+        return source_picked, target_picked
+
+    def _do_icp(o3dvis, source_picked, target_picked):
         source_indices = [idx.index for idx in source_picked]
         target_indices = [idx.index for idx in target_picked]
 
@@ -164,6 +195,12 @@ def selections():
         # Update the source geometry
         o3dvis.remove_geometry(source_name)
         o3dvis.add_geometry({"name": source_name, "geometry": source})
+
+    def do_icp_one_set(o3dvis):
+        _do_icp(o3dvis, *_prep_correspondences(o3dvis))
+
+    def do_icp_two_sets(o3dvis):
+        _do_icp(o3dvis, *_prep_correspondences(o3dvis, two_set=True))
 
     vis.draw([{
         "name": source_name,
@@ -186,10 +223,10 @@ def time_animation():
     for i in range(1, n):
         amount = float(i) / float(n - 1)
         cloud = cv3d.geometry.ccPointCloud()
-        pts = np.asarray(orig.points)
+        pts = np.asarray(orig.get_points())
         pts = pts * (1.0 + amount * expand) + [amount * v for v in drift_dir]
-        cloud.points = cv3d.utility.Vector3dVector(pts)
-        cloud.colors = orig.colors
+        cloud.set_points(cv3d.utility.Vector3dVector(pts))
+        cloud.set_colors(orig.get_colors())
         clouds.append({
             "name": "points at t=" + str(i),
             "geometry": cloud,
@@ -200,15 +237,15 @@ def time_animation():
 
 
 def groups():
-    building_mat = vis.rendering.Material()
+    building_mat = vis.rendering.MaterialRecord()
     building_mat.shader = "defaultLit"
     building_mat.base_color = (1.0, .90, .75, 1.0)
     building_mat.base_reflectance = 0.1
-    midrise_mat = vis.rendering.Material()
+    midrise_mat = vis.rendering.MaterialRecord()
     midrise_mat.shader = "defaultLit"
     midrise_mat.base_color = (.475, .450, .425, 1.0)
     midrise_mat.base_reflectance = 0.1
-    skyscraper_mat = vis.rendering.Material()
+    skyscraper_mat = vis.rendering.MaterialRecord()
     skyscraper_mat.shader = "defaultLit"
     skyscraper_mat.base_color = (.05, .20, .55, 1.0)
     skyscraper_mat.base_reflectance = 0.9
@@ -225,8 +262,9 @@ def groups():
                 1.0 - abs(half - z) / half)
             h = random.uniform(min_height, max(max_h, min_height + 1.0))
             box = cv3d.geometry.ccMesh.create_box(0.9, h, 0.9)
-            box.compute_triangle_normals()
             box.translate((x + 0.05, 0.0, z + 0.05))
+            box.compute_vertex_normals()
+            # box.compute_triangle_normals()
             if h > 0.333 * max_height:
                 mat = skyscraper_mat
             elif h > 0.1 * max_height:
@@ -308,6 +346,8 @@ def main():
     multi_objects()
     actions()
     selections()
+    groups()
+    time_animation()
 
 
 if __name__ == "__main__":

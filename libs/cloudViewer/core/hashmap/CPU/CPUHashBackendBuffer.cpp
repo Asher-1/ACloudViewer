@@ -1,0 +1,23 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include "cloudViewer/core/hashmap/HashBackendBuffer.h"
+#include <Parallel.h>
+
+namespace cloudViewer {
+namespace core {
+void CPUResetHeap(Tensor& heap) {
+    uint32_t* heap_ptr = heap.GetDataPtr<uint32_t>();
+    int64_t capacity = heap.GetLength();
+
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+    for (int64_t i = 0; i < capacity; ++i) {
+        heap_ptr[i] = i;
+    }
+};
+}  // namespace core
+}  // namespace cloudViewer

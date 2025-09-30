@@ -294,7 +294,7 @@ class ContinuousConv(torch.nn.Module):
                 if return_distances:
                     if self.radius_search_metric == 'L2':
                         neighbors_distance_normalized = self.nns.neighbors_distance / (
-                                radius * radius)
+                            radius * radius)
                     else:  # L1
                         neighbors_distance_normalized = self.nns.neighbors_distance / radius
 

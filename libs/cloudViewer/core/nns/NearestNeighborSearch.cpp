@@ -1,11 +1,11 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                 -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/nns/NearestNeighborSearch.h"
+#include "cloudViewer/core/nns/NearestNeighborSearch.h"
 
 #include <Logging.h>
 
@@ -13,7 +13,7 @@ namespace cloudViewer {
 namespace core {
 namespace nns {
 
-NearestNeighborSearch::~NearestNeighborSearch(){};
+NearestNeighborSearch::~NearestNeighborSearch() {};
 
 bool NearestNeighborSearch::SetIndex() {
     nanoflann_index_.reset(new NanoFlannIndex());
@@ -27,7 +27,7 @@ bool NearestNeighborSearch::KnnIndex() {
         return knn_index_->SetTensorData(dataset_points_, index_dtype_);
 #else
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please recompile cloudViewer with "
+                "-DBUILD_CUDA_MODULE=OFF. Please recompile CloudViewer with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
@@ -48,7 +48,7 @@ bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
 #else
         utility::LogError(
                 "FixedRadiusIndex with GPU tensor is disabled since "
-                "-DBUILD_CUDA_MODULE=OFF. Please recompile cloudViewer with "
+                "-DBUILD_CUDA_MODULE=OFF. Please recompile CloudViewer with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
 
@@ -67,7 +67,7 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
                                                   radius.value(), index_dtype_);
 #else
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please recompile cloudViewer with "
+                "-DBUILD_CUDA_MODULE=OFF. Please recompile CloudViewer with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
 

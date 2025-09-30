@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: asher-1.github.io                    -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 asher-1.github.io
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
@@ -32,14 +13,14 @@ import pytest
 # test intersection with a single triangle
 def test_cast_rays():
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.Dtype.Float32)
+                                dtype=cv3d.core.Dtype.Float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
     scene = cv3d.t.geometry.RaycastingScene()
     geom_id = scene.add_triangles(vertices, triangles)
 
     rays = cv3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
-                           dtype=cv3d.core.Dtype.Float32)
+                            dtype=cv3d.core.Dtype.Float32)
     ans = scene.cast_rays(rays)
 
     # first ray hits the triangle
@@ -55,7 +36,7 @@ def test_cast_rays():
 # we expect no errors for this test
 def test_cast_lots_of_rays():
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.Dtype.Float32)
+                                dtype=cv3d.core.Dtype.Float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
     scene = cv3d.t.geometry.RaycastingScene()
@@ -69,14 +50,14 @@ def test_cast_lots_of_rays():
 
 def test_add_triangle_mesh():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
     rays = cv3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
-                            [10, 10, 10, 1, 0, 0]],
-                           dtype=cv3d.core.Dtype.Float32)
+                             [10, 10, 10, 1, 0, 0]],
+                            dtype=cv3d.core.Dtype.Float32)
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.numpy(), [2, 1, 0])
@@ -84,14 +65,14 @@ def test_add_triangle_mesh():
 
 def test_count_intersections():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
     rays = cv3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
-                            [10, 10, 10, 1, 0, 0]],
-                           dtype=cv3d.core.Dtype.Float32)
+                             [10, 10, 10, 1, 0, 0]],
+                            dtype=cv3d.core.Dtype.Float32)
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.numpy(), [2, 1, 0])
@@ -101,7 +82,7 @@ def test_count_intersections():
 # we expect no errors for this test
 def test_count_lots_of_intersections():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -114,14 +95,14 @@ def test_count_lots_of_intersections():
 
 def test_compute_closest_points():
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.Dtype.Float32)
+                                dtype=cv3d.core.Dtype.Float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
     scene = cv3d.t.geometry.RaycastingScene()
     geom_id = scene.add_triangles(vertices, triangles)
 
     query_points = cv3d.core.Tensor([[0.2, 0.1, 1], [10, 10, 10]],
-                                   dtype=cv3d.core.Dtype.Float32)
+                                    dtype=cv3d.core.Dtype.Float32)
     ans = scene.compute_closest_points(query_points)
 
     assert (geom_id == ans['geometry_ids']).all()
@@ -134,7 +115,7 @@ def test_compute_closest_points():
 
 def test_compute_distance():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -148,7 +129,7 @@ def test_compute_distance():
 
 def test_compute_signed_distance():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -162,13 +143,13 @@ def test_compute_signed_distance():
 
 def test_compute_occupancy():
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(
-        cv3d.geometry.TriangleMesh.create_box())
+        cv3d.geometry.ccMesh.create_box())
 
     scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
     query_points = cv3d.core.Tensor([[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5]],
-                                   dtype=cv3d.core.Dtype.Float32)
+                                    dtype=cv3d.core.Dtype.Float32)
     ans = scene.compute_occupancy(query_points)
     np.testing.assert_allclose(ans.numpy(), [1.0, 0.0])
 
@@ -176,7 +157,7 @@ def test_compute_occupancy():
 @pytest.mark.parametrize("shape", ([11], [1, 2, 3], [32, 14]))
 def test_output_shapes(shape):
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.Dtype.Float32)
+                                dtype=cv3d.core.Dtype.Float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
     scene = cv3d.t.geometry.RaycastingScene()

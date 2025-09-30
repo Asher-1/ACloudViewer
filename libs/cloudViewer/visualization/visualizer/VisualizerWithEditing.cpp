@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/VisualizerWithEditing.h"
@@ -31,7 +12,7 @@
 #include <Image.h>
 #include <LineSet.h>
 #include <Logging.h>
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <tinyfiledialogs/tinyfiledialogs.h>
@@ -90,8 +71,8 @@ bool VisualizerWithEditing::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        auto ptr = cloudViewer::make_shared<geometry::ecvHalfEdgeMesh>();
-        *ptr = (const geometry::ecvHalfEdgeMesh &)*original_geometry_ptr_;
+        auto ptr = cloudViewer::make_shared<geometry::HalfEdgeTriangleMesh>();
+        *ptr = (const geometry::HalfEdgeTriangleMesh &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 cloudViewer::make_shared<glsl::HalfEdgeMeshRenderer>();
@@ -119,7 +100,7 @@ bool VisualizerWithEditing::AddGeometry(
     }
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
-            view_control_ptr_->GetBoundingBox().getPrintInfo().c_str());
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
 
@@ -287,7 +268,7 @@ void VisualizerWithEditing::KeyPressCallback(
                 selection_mode_ == SelectionMode::Polygon) {
                 selection_mode_ = SelectionMode::None;
                 selection_polygon_ptr_->polygon_.pop_back();
-                if (selection_polygon_ptr_->isEmpty()) {
+                if (selection_polygon_ptr_->IsEmpty()) {
                     selection_polygon_ptr_->Clear();
                 } else {
                     selection_polygon_ptr_->FillPolygon(
@@ -368,7 +349,7 @@ void VisualizerWithEditing::KeyPressCallback(
                     utility::LogInfo("Voxel downsample with voxel size {:.4f}.",
                                      voxel_size_);
                     ccPointCloud &pcd = (ccPointCloud &)*editing_geometry_ptr_;
-                    pcd = *pcd.voxelDownSample(voxel_size_);
+                    pcd = *pcd.VoxelDownSample(voxel_size_);
                     UpdateGeometry();
                 } else {
                     utility::LogWarning(

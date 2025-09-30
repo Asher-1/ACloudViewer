@@ -7,6 +7,6 @@ test -d docker || (
 	exit 1
 )
 
-CUDA_VERSION=11.8.0-cudnn8 UBUNTU_VERSION=20.04 docker/build-ubuntu.sh    \
+CUDA_VERSION=11.8.0-cudnn8 UBUNTU_VERSION=18.04 docker/build-ubuntu.sh    \
+&& CUDA_VERSION=11.8.0-cudnn8 UBUNTU_VERSION=20.04 docker/build-ubuntu.sh \
 && CUDA_VERSION=11.8.0-cudnn8 UBUNTU_VERSION=22.04 docker/build-ubuntu.sh \
-&& CUDA_VERSION=11.8.0-cudnn8 UBUNTU_VERSION=18.04 docker/build-ubuntu.sh \

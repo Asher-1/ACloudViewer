@@ -1,33 +1,14 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/kernel/UnaryEW.h"
+#include "cloudViewer/core/kernel/UnaryEW.h"
 
-#include "core/ShapeUtil.h"
-#include "core/Tensor.h"
+#include "cloudViewer/core/ShapeUtil.h"
+#include "cloudViewer/core/Tensor.h"
 #include <Logging.h>
 
 namespace cloudViewer {
@@ -41,6 +22,19 @@ void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                           src.GetShape(), dst.GetShape());
     }
 
+    // Check dtype compatibility
+    const auto float_only_ops = {UnaryEWOpCode::Sqrt,    UnaryEWOpCode::Sin,
+                                 UnaryEWOpCode::Cos,     UnaryEWOpCode::Exp,
+                                 UnaryEWOpCode::IsNan,   UnaryEWOpCode::IsInf,
+                                 UnaryEWOpCode::IsFinite};
+    Dtype src_dtype = src.GetDtype();
+    if (std::find(float_only_ops.begin(), float_only_ops.end(), op_code) !=
+                float_only_ops.end() &&
+        src_dtype != core::Float32 && src_dtype != core::Float64) {
+        utility::LogError("Only supports Float32 and Float64, but {} is used.",
+                          src_dtype.ToString());
+    }
+
     // Dispatch to device
     Device src_device = src.GetDevice();
     Device dst_device = dst.GetDevice();
@@ -49,9 +43,15 @@ void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                           src_device.ToString(), dst_device.ToString());
     }
 
-    if (src_device.GetType() == Device::DeviceType::CPU) {
+    if (src_device.IsCPU()) {
         UnaryEWCPU(src, dst, op_code);
-    } else if (src_device.GetType() == Device::DeviceType::CUDA) {
+    } else if (src_device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        UnaryEWSYCL(src, dst, op_code);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else if (src_device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         UnaryEWCUDA(src, dst, op_code);
 #else
@@ -72,8 +72,8 @@ void Copy(const Tensor& src, Tensor& dst) {
     // Dispatch to device
     Device src_device = src.GetDevice();
     Device dst_device = dst.GetDevice();
-    if ((!src_device.IsCPU() && !src_device.IsCUDA()) ||
-        (!dst_device.IsCPU() && !dst_device.IsCUDA())) {
+    if ((!src_device.IsCPU() && !src_device.IsCUDA() && !src_device.IsSYCL()) ||
+        (!dst_device.IsCPU() && !dst_device.IsCUDA() && !dst_device.IsSYCL())) {
         utility::LogError("Copy: Unimplemented device");
     }
     if (src_device.IsCPU() && dst_device.IsCPU()) {
@@ -85,8 +85,15 @@ void Copy(const Tensor& src, Tensor& dst) {
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
+    } else if ((src_device.IsCPU() || src_device.IsSYCL()) &&
+               (dst_device.IsCPU() || dst_device.IsSYCL())) {
+#ifdef BUILD_SYCL_MODULE
+        CopySYCL(src, dst);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
-        // DO nothing?
+        utility::LogError("Copy: SYCL <-> CUDA Unimplemented device");
     }
 }
 

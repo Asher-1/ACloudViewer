@@ -1,6 +1,9 @@
-# CloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 # examples/Python/reconstruction/feature.py
 
@@ -16,7 +19,8 @@ def merge_database(database_path1, database_path2, out_database_path):
 
 def clean_database(database_path, clean_type):
     # supported type {all, images, features, matches}
-    return cv3d.reconstruction.database.clean_database(database_path, clean_type)
+    return cv3d.reconstruction.database.clean_database(database_path,
+                                                       clean_type)
 
 
 def create_database(database_path):

@@ -170,7 +170,7 @@ void VoxelizeCPU(const size_t num_points,
             [&](const tbb::blocked_range<int64_t>& r) {
                 for (int64_t i = r.begin(); i != r.end(); ++i) {
                     int64_t batch_id = hashes_indices[i].first / batch_hash;
-                    if (batch_id >= batch_size) break;
+                    if (batch_id >= static_cast<int64_t>(batch_size)) break;
                     if (i == 0) {
                         core::AtomicFetchAddRelaxed(&num_voxels[batch_id], 1);
                         continue;
@@ -198,7 +198,7 @@ void VoxelizeCPU(const size_t num_points,
     out_batch_splits[0] = 0;
 
     // prefix sum for batch_splits
-    for (int64_t i = 1; i < batch_size + 1; ++i) {
+    for (size_t i = 1; i < batch_size + 1; ++i) {
         out_batch_splits[i] = out_batch_splits[i - 1] + num_voxels[i - 1];
     }
 
@@ -213,8 +213,8 @@ void VoxelizeCPU(const size_t num_points,
 
     std::vector<int64_t> tmp_point_indices;
     {
-        int64_t hash_i = 0;  // index into the vector hashes_indices
-        for (int64_t voxel_i = 0; voxel_i < total_voxels; ++voxel_i) {
+        size_t hash_i = 0;  // index into the vector hashes_indices
+        for (uint64_t voxel_i = 0; voxel_i < total_voxels; ++voxel_i) {
             // compute voxel coord and the prefix sum value
             auto coord = CoordFn(
                     Vec_t(points + hashes_indices[hash_i].second * NDIM));

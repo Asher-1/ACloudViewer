@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                          -
+// -                        cloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -27,11 +27,12 @@
 #ifndef CV_FILESYSTEM_HEADER
 #define CV_FILESYSTEM_HEADER
 
-#include "CVCoreLib.h"
-#include "Helper.h"
 #include <functional>
 #include <string>
 #include <vector>
+
+#include "CVCoreLib.h"
+#include "Helper.h"
 
 namespace cloudViewer {
 namespace utility {
@@ -46,10 +47,10 @@ std::string JoinPaths(T const &...paths) {
         static_cast<void>(unpack);
         return result;
     } else {
-        int unpack[]{0,
-                     (result = result.empty() ? std::string(paths)
-                                              : result + "/" + std::string(paths),
-                      0)...};
+        int unpack[]{
+                0, (result = result.empty() ? std::string(paths)
+                                            : result + "/" + std::string(paths),
+                    0)...};
         static_cast<void>(unpack);
     }
 
@@ -76,16 +77,36 @@ std::string JoinPaths(T const &...paths) {
 
 std::string CV_CORE_LIB_API GetEnvVar(const std::string &env_var);
 
+/// \brief Get the HOME directory for the user.
+///
+/// The home directory is determined in the following order:
+/// - On Unix:
+///   - $HOME
+///   - /
+/// - On Windows:
+///   - %USERPROFILE%
+///   - %HOMEDRIVE%
+///   - %HOMEPATH%
+///   - %HOME%
+///   - C:/
+///
+/// This is the same logics as used in Qt.
+/// - src/corelib/io/qfilesystemengine_win.cpp
+/// - src/corelib/io/qfilesystemengine_unix.cpp
+std::string CV_CORE_LIB_API GetHomeDirectory();
+
 // Append trailing slash to string if it does not yet end with a slash.
 std::string CV_CORE_LIB_API EnsureTrailingSlash(const std::string &str);
 
 // Check whether file name has the file extension (case insensitive).
-bool CV_CORE_LIB_API HasFileExtension(const std::string &file_name, const std::string &ext);
+bool CV_CORE_LIB_API HasFileExtension(const std::string &file_name,
+                                      const std::string &ext);
 
 // Split the path into its root and extension, for example,
 // "dir/file.jpg" into "dir/file" and ".jpg".
-void CV_CORE_LIB_API SplitFileExtension(const std::string &path, std::string *root,
-                        std::string *ext);
+void CV_CORE_LIB_API SplitFileExtension(const std::string &path,
+                                        std::string *root,
+                                        std::string *ext);
 
 /**
  * @brief Copy a file.
@@ -110,24 +131,31 @@ bool CV_CORE_LIB_API CopyDir(const std::string &from, const std::string &to);
  * @param include_parent_dir Whether copy parent directory or not.
  * @return If the action is successful.
  */
-bool CV_CORE_LIB_API Copy(const std::string &from, const std::string &to,
-          bool include_parent_dir = false, const std::string &extname = "");
+bool CV_CORE_LIB_API Copy(const std::string &from,
+                          const std::string &to,
+                          bool include_parent_dir = false,
+                          const std::string &extname = "");
 
-std::string CV_CORE_LIB_API GetFileExtensionInLowerCase(const std::string &filename);
+std::string CV_CORE_LIB_API
+GetFileExtensionInLowerCase(const std::string &filename);
 
-std::string CV_CORE_LIB_API GetFileNameWithoutExtension(const std::string &filename);
+std::string CV_CORE_LIB_API
+GetFileNameWithoutExtension(const std::string &filename);
 
-std::string CV_CORE_LIB_API GetFileNameWithoutDirectory(const std::string &filename);
+std::string CV_CORE_LIB_API
+GetFileNameWithoutDirectory(const std::string &filename);
 
 std::string CV_CORE_LIB_API GetFileParentDirectory(const std::string &filename);
 
-std::string CV_CORE_LIB_API GetRegularizedDirectoryName(const std::string &directory);
+std::string CV_CORE_LIB_API
+GetRegularizedDirectoryName(const std::string &directory);
 
 std::string CV_CORE_LIB_API GetFileBaseName(const std::string &filename);
 
 std::string CV_CORE_LIB_API GetWorkingDirectory();
 
-std::vector<std::string> CV_CORE_LIB_API GetPathComponents(const std::string& path);
+std::vector<std::string> CV_CORE_LIB_API
+GetPathComponents(const std::string &path);
 
 bool CV_CORE_LIB_API ChangeWorkingDirectory(const std::string &directory);
 
@@ -155,27 +183,29 @@ bool CV_CORE_LIB_API FileExists(const std::string &filename);
 
 bool CV_CORE_LIB_API RemoveFile(const std::string &filename);
 
-bool CV_CORE_LIB_API ListDirectory(const std::string& directory,
-                                   std::vector<std::string>& subdirs,
-                                   std::vector<std::string>& filenames);
+bool CV_CORE_LIB_API ListDirectory(const std::string &directory,
+                                   std::vector<std::string> &subdirs,
+                                   std::vector<std::string> &filenames);
 
 bool CV_CORE_LIB_API ListFilesInDirectory(const std::string &directory,
                                           std::vector<std::string> &filenames);
 
-bool CV_CORE_LIB_API ListFilesInDirectoryWithExtension(const std::string &directory,
-                                                       const std::string &extname,
-                                                       std::vector<std::string> &filenames);
+bool CV_CORE_LIB_API
+ListFilesInDirectoryWithExtension(const std::string &directory,
+                                  const std::string &extname,
+                                  std::vector<std::string> &filenames);
 
 CV_CORE_LIB_API std::vector<std::string> FindFilesRecursively(
-                            const std::string &directory,
-                            std::function<bool(const std::string &)> is_match);
+        const std::string &directory,
+        std::function<bool(const std::string &)> is_match);
 
 // wrapper for fopen that enables unicode paths on Windows
-CV_CORE_LIB_API FILE* FOpen(const std::string &filename, const std::string &mode);
+CV_CORE_LIB_API FILE *FOpen(const std::string &filename,
+                            const std::string &mode);
 std::string CV_CORE_LIB_API GetIOErrorString(const int errnoVal);
-bool CV_CORE_LIB_API FReadToBuffer(const std::string& path,
-    std::vector<char>& bytes,
-    std::string* errorStr);
+bool CV_CORE_LIB_API FReadToBuffer(const std::string &path,
+                                   std::vector<char> &bytes,
+                                   std::string *errorStr);
 
 /// RAII Wrapper for C FILE*
 /// Throws exceptions in situations where the caller is not usually going to
@@ -244,4 +274,4 @@ private:
 }  // namespace utility
 }  // namespace cloudViewer
 
-#endif // CV_FILESYSTEM_HEADER
+#endif  // CV_FILESYSTEM_HEADER

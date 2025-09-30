@@ -4,8 +4,15 @@ import numpy as np
 import cloudViewer as cv3d
 
 
-def align_model(input_path, output_path, database_path='', ref_images_path='', transform_path='',
-                alignment_type='plane', max_error=0.0, min_common_images=3, robust_alignment=True,
+def align_model(input_path,
+                output_path,
+                database_path='',
+                ref_images_path='',
+                transform_path='',
+                alignment_type='plane',
+                max_error=0.0,
+                min_common_images=3,
+                robust_alignment=True,
                 estimate_scale=True):
     """
     align_model(input_path, output_path, database_path='', ref_images_path='', transform_path='',
@@ -29,18 +36,24 @@ def align_model(input_path, output_path, database_path='', ref_images_path='', t
     Returns:
         int
     """
-    return cv3d.reconstruction.model.align_model(input_path=input_path, output_path=output_path,
-                                                 database_path=database_path,
-                                                 ref_images_path=ref_images_path,
-                                                 transform_path=transform_path,
-                                                 alignment_type=alignment_type,
-                                                 max_error=max_error,
-                                                 min_common_images=min_common_images,
-                                                 robust_alignment=robust_alignment,
-                                                 estimate_scale=estimate_scale)
+    return cv3d.reconstruction.model.align_model(
+        input_path=input_path,
+        output_path=output_path,
+        database_path=database_path,
+        ref_images_path=ref_images_path,
+        transform_path=transform_path,
+        alignment_type=alignment_type,
+        max_error=max_error,
+        min_common_images=min_common_images,
+        robust_alignment=robust_alignment,
+        estimate_scale=estimate_scale)
 
 
-def align_model_orientation(image_path, input_path, output_path, method='MANHATTAN-WORLD', max_image_size=1024):
+def align_model_orientation(image_path,
+                            input_path,
+                            output_path,
+                            method='MANHATTAN-WORLD',
+                            max_image_size=1024):
     """
     align_model_orientation(image_path, input_path, output_path, method='MANHATTAN-WORLD', max_image_size=1024)
     Function for the orientation alignment of model
@@ -56,9 +69,12 @@ def align_model_orientation(image_path, input_path, output_path, method='MANHATT
     Returns:
         int
     """
-    return cv3d.reconstruction.model.align_model_orientation(image_path=image_path, input_path=input_path,
-                                                             output_path=output_path, method=method,
-                                                             max_image_size=max_image_size)
+    return cv3d.reconstruction.model.align_model_orientation(
+        image_path=image_path,
+        input_path=input_path,
+        output_path=output_path,
+        method=method,
+        max_image_size=max_image_size)
 
 
 def analyze_model(input_path):
@@ -75,7 +91,11 @@ def analyze_model(input_path):
     return cv3d.reconstruction.model.analyze_model(input_path=input_path)
 
 
-def compare_model(input_path1, input_path2, output_path='', min_inlier_observations=0.3, max_reproj_error=8.0):
+def compare_model(input_path1,
+                  input_path2,
+                  output_path='',
+                  min_inlier_observations=0.3,
+                  max_reproj_error=8.0):
     """
     compare_model(input_path1, input_path2, output_path='', min_inlier_observations=0.3, max_reproj_error=8.0)
     Function for the comparison of model
@@ -92,10 +112,12 @@ def compare_model(input_path1, input_path2, output_path='', min_inlier_observati
     Returns:
         int
     """
-    return cv3d.reconstruction.model.compare_model(input_path1=input_path1, input_path2=input_path2,
-                                                   output_path=output_path,
-                                                   min_inlier_observations=min_inlier_observations,
-                                                   max_reproj_error=max_reproj_error)
+    return cv3d.reconstruction.model.compare_model(
+        input_path1=input_path1,
+        input_path2=input_path2,
+        output_path=output_path,
+        min_inlier_observations=min_inlier_observations,
+        max_reproj_error=max_reproj_error)
 
 
 def convert_model(input_path, output_path, output_type, skip_distortion=False):
@@ -114,9 +136,11 @@ def convert_model(input_path, output_path, output_type, skip_distortion=False):
     Returns:
         int
     """
-    return cv3d.reconstruction.model.convert_model(input_path=input_path, output_path=output_path,
-                                                   output_type=output_type,
-                                                   skip_distortion=skip_distortion)
+    return cv3d.reconstruction.model.convert_model(
+        input_path=input_path,
+        output_path=output_path,
+        output_type=output_type,
+        skip_distortion=skip_distortion)
 
 
 def crop_model(input_path, output_path, boundary, gps_transform_path=''):
@@ -133,8 +157,11 @@ def crop_model(input_path, output_path, boundary, gps_transform_path=''):
     Returns:
         int
     """
-    return cv3d.reconstruction.model.crop_model(input_path=input_path, output_path=output_path, boundary=boundary,
-                                                gps_transform_path=gps_transform_path)
+    return cv3d.reconstruction.model.crop_model(
+        input_path=input_path,
+        output_path=output_path,
+        boundary=boundary,
+        gps_transform_path=gps_transform_path)
 
 
 def merge_model(input_path1, input_path2, output_path, max_reproj_error=64.0):
@@ -151,13 +178,23 @@ def merge_model(input_path1, input_path2, output_path, max_reproj_error=64.0):
     Returns:
         int
     """
-    return cv3d.reconstruction.model.merge_model(input_path1=input_path1, input_path2=input_path2,
-                                                 output_path=output_path,
-                                                 max_reproj_error=max_reproj_error)
+    return cv3d.reconstruction.model.merge_model(
+        input_path1=input_path1,
+        input_path2=input_path2,
+        output_path=output_path,
+        max_reproj_error=max_reproj_error)
 
 
-def split_model(input_path, output_path, split_type, split_params, gps_transform_path='', min_reg_images=10,
-                min_num_points=100, overlap_ratio=0.0, min_area_ratio=0.0, num_threads=-1):
+def split_model(input_path,
+                output_path,
+                split_type,
+                split_params,
+                gps_transform_path='',
+                min_reg_images=10,
+                min_num_points=100,
+                overlap_ratio=0.0,
+                min_area_ratio=0.0,
+                num_threads=-1):
     """
     split_model(input_path, output_path, split_type, split_params, gps_transform_path='', min_reg_images=10,
     min_num_points=100, overlap_ratio=0.0, min_area_ratio=0.0, num_threads=-1)
@@ -178,11 +215,17 @@ def split_model(input_path, output_path, split_type, split_params, gps_transform
     Returns:
         int
     """
-    return cv3d.reconstruction.model.split_model(input_path=input_path, output_path=output_path, split_type=split_type,
-                                                 split_params=split_params, gps_transform_path=gps_transform_path,
-                                                 min_reg_images=min_reg_images, min_num_points=min_num_points,
-                                                 overlap_ratio=overlap_ratio, min_area_ratio=min_area_ratio,
-                                                 num_threads=num_threads)
+    return cv3d.reconstruction.model.split_model(
+        input_path=input_path,
+        output_path=output_path,
+        split_type=split_type,
+        split_params=split_params,
+        gps_transform_path=gps_transform_path,
+        min_reg_images=min_reg_images,
+        min_num_points=min_num_points,
+        overlap_ratio=overlap_ratio,
+        min_area_ratio=min_area_ratio,
+        num_threads=num_threads)
 
 
 def transform_model(input_path, output_path, transform_path, is_inverse=False):
@@ -199,8 +242,11 @@ def transform_model(input_path, output_path, transform_path, is_inverse=False):
     Returns:
         int
     """
-    return cv3d.reconstruction.model.transform_model(input_path=input_path, output_path=output_path,
-                                                     transform_path=transform_path, is_inverse=is_inverse)
+    return cv3d.reconstruction.model.transform_model(
+        input_path=input_path,
+        output_path=output_path,
+        transform_path=transform_path,
+        is_inverse=is_inverse)
 
 
 if __name__ == '__main__':
@@ -215,7 +261,10 @@ if __name__ == '__main__':
     if flag != 0:
         print("analyze_model failed!")
 
-    flag = align_model(input_path=INPUT_PATH, output_path=OUTPUT_PATH,
-                       database_path=DATABASE_PATH, max_error=0.8, alignment_type='plane')
+    flag = align_model(input_path=INPUT_PATH,
+                       output_path=OUTPUT_PATH,
+                       database_path=DATABASE_PATH,
+                       max_error=0.8,
+                       alignment_type='plane')
     if flag != 0:
         print("align_model failed!")

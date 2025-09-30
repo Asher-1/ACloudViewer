@@ -78,29 +78,29 @@ public:
     }
 
 public:  // inherited methods (ccHObject)
-    inline virtual bool isEmpty() const override { return volume() <= 0; }
+    inline virtual bool IsEmpty() const override { return volume() <= 0; }
 
-    virtual inline Eigen::Vector3d getMinBound() const override {
+    virtual inline Eigen::Vector3d GetMinBound() const override {
         return CCVector3d::fromArray(m_bbMin);
     }
-    virtual inline Eigen::Vector3d getMaxBound() const override {
+    virtual inline Eigen::Vector3d GetMaxBound() const override {
         return CCVector3d::fromArray(m_bbMax);
     }
-    virtual inline Eigen::Vector3d getGeometryCenter() const override {
+    virtual inline Eigen::Vector3d GetCenter() const override {
         return CCVector3d::fromArray(getCenter());
     }
 
-    virtual inline ccBBox getAxisAlignedBoundingBox() const override {
+    virtual inline ccBBox GetAxisAlignedBoundingBox() const override {
         return *this;
     }
-    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
 
-    virtual ccBBox& transform(const Eigen::Matrix4d& transformation) override;
-    virtual ccBBox& translate(const Eigen::Vector3d& translation,
+    virtual ccBBox& Transform(const Eigen::Matrix4d& transformation) override;
+    virtual ccBBox& Translate(const Eigen::Vector3d& translation,
                               bool relative = true) override;
-    virtual ccBBox& scale(const double s,
+    virtual ccBBox& Scale(const double s,
                           const Eigen::Vector3d& center) override;
-    virtual ccBBox& rotate(const Eigen::Matrix3d& R,
+    virtual ccBBox& Rotate(const Eigen::Matrix3d& R,
                            const Eigen::Vector3d& center) override;
 
     const ccBBox& operator+=(const ccBBox& other);
@@ -126,12 +126,12 @@ public:
     void draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) const;
 
     /// Returns the 3D dimensions of the bounding box in string format.
-    std::string getPrintInfo() const;
+    std::string GetPrintInfo() const;
 
-    inline void setMinBounds(const Eigen::Vector3d& minBound) {
+    inline void SetMinBounds(const Eigen::Vector3d& minBound) {
         m_bbMin = minBound;
     }
-    inline void setMaxBounds(const Eigen::Vector3d& maxBound) {
+    inline void SetMaxBounds(const Eigen::Vector3d& maxBound) {
         m_bbMax = maxBound;
     }
 
@@ -143,21 +143,21 @@ public:
     static ccBBox CreateFromPoints(const std::vector<Eigen::Vector3d>& points);
 
     /// Get the extent/length of the bounding box in x, y, and z dimension.
-    inline Eigen::Vector3d getExtent() const {
+    inline Eigen::Vector3d GetExtent() const {
         return CCVector3d::fromArray(getDiagVec());
     }
 
     /// Returns the half extent of the bounding box.
-    Eigen::Vector3d getHalfExtent() const { return getExtent() * 0.5; }
+    Eigen::Vector3d GetHalfExtent() const { return GetExtent() * 0.5; }
 
     /// Returns the maximum extent, i.e. the maximum of X, Y and Z axis'
     /// extents.
-    inline PointCoordinateType getMaxExtent() const {
+    inline PointCoordinateType GetMaxExtent() const {
         return (m_bbMax - m_bbMin).maxCoeff();
     }
 
     /// Returns the eight points that define the bounding box.
-    std::vector<Eigen::Vector3d> getBoxPoints() const;
+    std::vector<Eigen::Vector3d> GetBoxPoints() const;
 };
 
 #endif  // ECV_BBOX_HEADER

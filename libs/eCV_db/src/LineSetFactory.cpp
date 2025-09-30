@@ -1,46 +1,26 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-
-#include "LineSet.h"
 
 #include <Helper.h>
+
 #include <Eigen/Dense>
 #include <unordered_set>
 
+#include "LineSet.h"
 #include "ecvBBox.h"
-#include "ecvOrientedBBox.h"
 #include "ecvMesh.h"
-#include "ecvTetraMesh.h"
+#include "ecvOrientedBBox.h"
 #include "ecvPointCloud.h"
+#include "ecvTetraMesh.h"
 
 namespace cloudViewer {
 namespace geometry {
 
-std::shared_ptr<LineSet> 
-LineSet::CreateFromPointCloudCorrespondences(
+std::shared_ptr<LineSet> LineSet::CreateFromPointCloudCorrespondences(
         const ccPointCloud &cloud0,
         const ccPointCloud &cloud1,
         const std::vector<std::pair<int, int>> &correspondences) {
@@ -62,9 +42,7 @@ LineSet::CreateFromPointCloudCorrespondences(
     return lineset_ptr;
 }
 
-std::shared_ptr<LineSet> 
-LineSet::CreateFromTriangleMesh(const ccMesh &mesh)
-{
+std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(const ccMesh &mesh) {
     auto line_set = cloudViewer::make_shared<LineSet>();
     line_set->points_ = mesh.getEigenVertices();
 
@@ -79,22 +57,21 @@ LineSet::CreateFromTriangleMesh(const ccMesh &mesh)
         }
     };
 
-	for (unsigned int i = 0; i < mesh.size(); ++i)
-	{
-		const cloudViewer::VerticesIndexes* tri = mesh.getTriangleVertIndexes(i);
-		InsertEdge(tri->i1, tri->i2);
-		InsertEdge(tri->i2, tri->i3);
-		InsertEdge(tri->i3, tri->i1);
-	}
+    for (unsigned int i = 0; i < mesh.size(); ++i) {
+        const cloudViewer::VerticesIndexes *tri =
+                mesh.getTriangleVertIndexes(i);
+        InsertEdge(tri->i1, tri->i2);
+        InsertEdge(tri->i2, tri->i3);
+        InsertEdge(tri->i3, tri->i1);
+    }
 
     return line_set;
 }
 
-std::shared_ptr<LineSet> 
-LineSet::CreateFromOrientedBoundingBox(const ecvOrientedBBox &box) 
-{
+std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(
+        const ecvOrientedBBox &box) {
     auto line_set = cloudViewer::make_shared<LineSet>();
-    line_set->points_ = box.getBoxPoints();
+    line_set->points_ = box.GetBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
     line_set->lines_.push_back(Eigen::Vector2i(1, 7));
     line_set->lines_.push_back(Eigen::Vector2i(7, 2));
@@ -107,15 +84,14 @@ LineSet::CreateFromOrientedBoundingBox(const ecvOrientedBBox &box)
     line_set->lines_.push_back(Eigen::Vector2i(1, 6));
     line_set->lines_.push_back(Eigen::Vector2i(7, 4));
     line_set->lines_.push_back(Eigen::Vector2i(2, 5));
-    line_set->paintUniformColor(box.getColor());
+    line_set->PaintUniformColor(box.GetColor());
     return line_set;
 }
 
-std::shared_ptr<LineSet>
-LineSet::CreateFromAxisAlignedBoundingBox(const ccBBox &box) 
-{
+std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(
+        const ccBBox &box) {
     auto line_set = cloudViewer::make_shared<LineSet>();
-    line_set->points_ = box.getBoxPoints();
+    line_set->points_ = box.GetBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
     line_set->lines_.push_back(Eigen::Vector2i(1, 7));
     line_set->lines_.push_back(Eigen::Vector2i(7, 2));
@@ -128,12 +104,11 @@ LineSet::CreateFromAxisAlignedBoundingBox(const ccBBox &box)
     line_set->lines_.push_back(Eigen::Vector2i(1, 6));
     line_set->lines_.push_back(Eigen::Vector2i(7, 4));
     line_set->lines_.push_back(Eigen::Vector2i(2, 5));
-    line_set->paintUniformColor(box.getColor());
+    line_set->PaintUniformColor(box.GetColor());
     return line_set;
 }
 
-std::shared_ptr<LineSet> 
-LineSet::CreateFromTetraMesh(const TetraMesh &mesh) {
+std::shared_ptr<LineSet> LineSet::CreateFromTetraMesh(const TetraMesh &mesh) {
     auto line_set = cloudViewer::make_shared<LineSet>();
     line_set->points_ = mesh.vertices_;
 
@@ -171,7 +146,7 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
             intrinsic(2, 0), intrinsic(2, 1), intrinsic(2, 2), 0.0, 0.0, 0.0,
             0.0, 1.0;
     Eigen::Matrix4d m = (intrinsic4 * extrinsic).inverse();
-    auto lines = cloudViewer::make_shared<geometry::LineSet>();
+    auto lines = std::make_shared<geometry::LineSet>();
 
     auto mult = [](const Eigen::Matrix4d &m,
                    const Eigen::Vector3d &v) -> Eigen::Vector3d {
@@ -182,7 +157,7 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
     };
     double w = double(view_width_px);
     double h = double(view_height_px);
-    // Matrix m transforms from homogenous pixel coordinates to world
+    // Matrix m transforms from homogeneous pixel coordinates to world
     // coordinates so x and y need to be multiplied by z. In the case of the
     // first point, the eye point, z=0, so x and y will be zero, too regardless
     // of their initial values as the center.
@@ -201,7 +176,26 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
     lines->lines_.push_back({2, 3});
     lines->lines_.push_back({3, 4});
     lines->lines_.push_back({4, 1});
-    lines->paintUniformColor({0.0f, 0.0f, 1.0f});
+    lines->PaintUniformColor({0.0f, 0.0f, 1.0f});
+
+    // Add XYZ axes
+    lines->points_.push_back(
+            mult(m, Eigen::Vector3d{intrinsic(0, 0) * scale, 0.0, 0.0}));
+    lines->points_.push_back(
+            mult(m, Eigen::Vector3d{0.0, intrinsic(1, 1) * scale, 0.0}));
+    lines->points_.push_back(
+            mult(m, Eigen::Vector3d{intrinsic(0, 2) * scale,
+                                    intrinsic(1, 2) * scale, scale}));
+
+    // Add lines for the axes
+    lines->lines_.push_back({0, 5});  // X axis (red)
+    lines->lines_.push_back({0, 6});  // Y axis (green)
+    lines->lines_.push_back({0, 7});  // Z axis (blue)
+
+    // Set colors for the axes
+    lines->colors_.push_back({1.0f, 0.0f, 0.0f});  // Red
+    lines->colors_.push_back({0.0f, 1.0f, 0.0f});  // Green
+    lines->colors_.push_back({0.0f, 0.0f, 1.0f});  // Blue
 
     return lines;
 }

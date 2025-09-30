@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "io/TriangleMeshIO.h"
@@ -45,10 +26,10 @@
 // ECV_IO_LIB
 #include <ImageIO.h>
 #include <rply.h>
-
-#include "io/FileFormatIO.h"
 #include <tiny_gltf.h>
 #include <tiny_obj_loader.h>
+
+#include "io/FileFormatIO.h"
 
 namespace cloudViewer {
 
@@ -211,7 +192,10 @@ using namespace cloudViewer;
 std::shared_ptr<ccMesh> CreateMeshFromFile(const std::string& filename,
                                            bool print_progress) {
     auto mesh = cloudViewer::make_shared<ccMesh>();
-    mesh->createInternalCloud();
+    if (!mesh->CreateInternalCloud()) {
+        utility::LogError("creating internal cloud failed!");
+        return nullptr;
+    }
 
     ReadTriangleMeshOptions opt;
     opt.print_progress = print_progress;
@@ -223,8 +207,7 @@ bool ReadTriangleMesh(const std::string& filename,
                       ccMesh& mesh,
                       ReadTriangleMeshOptions params /*={}*/) {
     std::string filename_ext =
-            utility::filesystem::GetFileExtensionInLowerCase(
-                    filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Read ccMesh failed: unknown file "
@@ -251,13 +234,19 @@ bool ReadTriangleMesh(const std::string& filename,
         };
     }
 
+    if (!mesh.getAssociatedCloud()) {
+        if (!mesh.CreateInternalCloud()) {
+            utility::LogError("creating internal cloud failed!");
+            return false;
+        }
+    }
+
     bool success = map_itr->second(filename, mesh, params);
-    utility::LogDebug(
-            "Read ccMesh: {:d} triangles and {:d} vertices.", mesh.size(),
-            mesh.getVerticeSize());
-    if (mesh.hasVertices() && !mesh.hasTriangles()) {
+    utility::LogDebug("Read ccMesh: {:d} triangles and {:d} vertices.",
+                      mesh.size(), mesh.getVerticeSize());
+    if (mesh.HasVertices() && !mesh.hasTriangles()) {
         utility::LogWarning(
-                "ccMesh appears to be a geometry::PointCloud "
+                "ccMesh appears to be a geometry::ccPointCloud "
                 "(only contains vertices, but no triangles).");
     }
     return success;
@@ -272,8 +261,7 @@ bool WriteTriangleMesh(const std::string& filename,
                        bool write_triangle_uvs /* = true*/,
                        bool print_progress /* = false*/) {
     std::string filename_ext =
-            utility::filesystem::GetFileExtensionInLowerCase(
-                    filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Write ccMesh failed: unknown file "
@@ -291,9 +279,8 @@ bool WriteTriangleMesh(const std::string& filename,
     bool success = map_itr->second(filename, mesh, write_ascii, compressed,
                                    write_vertex_normals, write_vertex_colors,
                                    write_triangle_uvs, print_progress);
-    utility::LogDebug(
-            "Write ccMesh: {:d} triangles and {:d} vertices.", mesh.size(),
-            mesh.getVerticeSize());
+    utility::LogDebug("Write ccMesh: {:d} triangles and {:d} vertices.",
+                      mesh.size(), mesh.getVerticeSize());
     return success;
 }
 
@@ -499,7 +486,7 @@ bool WriteTriangleMeshToPLY(const std::string& filename,
         return false;
     }
 
-    write_vertex_normals = write_vertex_normals && mesh.hasNormals();
+    write_vertex_normals = write_vertex_normals && mesh.HasVertexNormals();
     write_vertex_colors = write_vertex_colors && mesh.hasColors();
 
     ply_add_comment(ply_file, "Created by cloudViewer");
@@ -550,12 +537,10 @@ bool WriteTriangleMeshToPLY(const std::string& filename,
                         "Write Ply clamped color value to valid range");
                 printed_color_warning = true;
             }
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
+            auto rgb = utility::ColorToUint8(color);
+            ply_write(ply_file, rgb(0));
+            ply_write(ply_file, rgb(1));
+            ply_write(ply_file, rgb(2));
         }
         ++progress_bar;
     }
@@ -584,12 +569,10 @@ FileGeometry ReadFileGeometryTypeSTL(const std::string& path) {
 bool ReadTriangleMeshFromSTL(const std::string& filename,
                              ccMesh& mesh,
                              bool print_progress) {
-    FILE* myFile =
-            utility::filesystem::FOpen(filename.c_str(), "rb");
+    FILE* myFile = utility::filesystem::FOpen(filename.c_str(), "rb");
 
     if (!myFile) {
-        utility::LogWarning(
-                "Read STL failed: unable to open file.");
+        utility::LogWarning("Read STL failed: unable to open file.");
         fclose(myFile);
         return false;
     }
@@ -608,8 +591,7 @@ bool ReadTriangleMeshFromSTL(const std::string& filename,
                     "error!");
         }
     } else {
-        utility::LogWarning(
-                "Read STL failed: unable to read header.");
+        utility::LogWarning("Read STL failed: unable to read header.");
         fclose(myFile);
         return false;
     }
@@ -627,8 +609,8 @@ bool ReadTriangleMeshFromSTL(const std::string& filename,
             ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
     assert(cloud && cloud->reserveThePointsTable(num_of_triangles * 3));
 
-    utility::ConsoleProgressBar progress_bar(
-            num_of_triangles, "Reading STL: ", print_progress);
+    utility::ConsoleProgressBar progress_bar(num_of_triangles,
+                                             "Reading STL: ", print_progress);
     for (int i = 0; i < num_of_triangles; i++) {
         char buffer[50];
         float* float_buffer;
@@ -652,8 +634,7 @@ bool ReadTriangleMeshFromSTL(const std::string& filename,
             // ignore buffer[48] and buffer [49] because it is rarely used.
 
         } else {
-            utility::LogWarning(
-                    "Read STL failed: not enough triangles.");
+            utility::LogWarning("Read STL failed: not enough triangles.");
             fclose(myFile);
             return false;
         }
@@ -699,14 +680,12 @@ bool WriteTriangleMeshToSTL(const std::string& filename,
     std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!myFile) {
-        utility::LogWarning(
-                "Write STL failed: unable to open file.");
+        utility::LogWarning("Write STL failed: unable to open file.");
         return false;
     }
 
     if (!mesh.hasTriNormals()) {
-        utility::LogWarning(
-                "Write STL failed: compute normals first.");
+        utility::LogWarning("Write STL failed: compute normals first.");
         return false;
     }
 
@@ -719,8 +698,8 @@ bool WriteTriangleMeshToSTL(const std::string& filename,
     myFile.write(header, 80);
     myFile.write((char*)(&num_of_triangles), 4);
 
-    utility::ConsoleProgressBar progress_bar(
-            num_of_triangles, "Writing STL: ", print_progress);
+    utility::ConsoleProgressBar progress_bar(num_of_triangles,
+                                             "Writing STL: ", print_progress);
     for (size_t i = 0; i < num_of_triangles; i++) {
         Eigen::Vector3f float_vector3f =
                 mesh.getTriangleNorm(static_cast<unsigned int>(i))
@@ -874,8 +853,11 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
 
     using MaterialParameter = ccMesh::Material::MaterialParameter;
 
-    for (auto& material : materials) {
-        auto& meshMaterial = mesh.materials_[material.name];
+    mesh.materials_.resize(materials.size());
+    for (std::size_t i = 0; i < materials.size(); ++i) {
+        auto& material = materials[i];
+        mesh.materials_[i].first = material.name;
+        auto& meshMaterial = mesh.materials_[i].second;
 
         meshMaterial.baseColor = MaterialParameter::CreateRGB(
                 material.diffuse[0], material.diffuse[1], material.diffuse[2]);
@@ -1117,7 +1099,7 @@ FileGeometry ReadFileGeometryTypeOFF(const std::string& path) {
 
 bool ReadTriangleMeshFromOFF(const std::string& filename,
                              ccMesh& mesh,
-                             const ReadTriangleMeshOptions &params) {
+                             const ReadTriangleMeshOptions& params) {
     std::ifstream file(filename.c_str(), std::ios::in);
     if (!file) {
         utility::LogWarning("Read OFF failed: unable to open file: {}",
@@ -1647,7 +1629,7 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                 std::vector<double> matrix = gltf_node.matrix;
                 Eigen::Matrix4d transform =
                         Eigen::Map<Eigen::Matrix4d>(&matrix[0], 4, 4);
-                mesh_temp.transform(transform);
+                mesh_temp.Transform(transform);
             } else {
                 // The specification states that first the scale is
                 // applied to the vertices, then the rotation, and then the
@@ -1657,7 +1639,7 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                     transform(0, 0) = gltf_node.scale[0];
                     transform(1, 1) = gltf_node.scale[1];
                     transform(2, 2) = gltf_node.scale[2];
-                    mesh_temp.transform(transform);
+                    mesh_temp.Transform(transform);
                 }
                 if (gltf_node.rotation.size() > 0) {
                     Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
@@ -1670,10 +1652,10 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                                gltf_node.rotation[1],
                                                gltf_node.rotation[2])
                                     .toRotationMatrix();
-                    mesh_temp.transform(transform);
+                    mesh_temp.Transform(transform);
                 }
                 if (gltf_node.translation.size() > 0) {
-                    mesh_temp.translate(Eigen::Vector3d(
+                    mesh_temp.Translate(Eigen::Vector3d(
                             gltf_node.translation[0], gltf_node.translation[1],
                             gltf_node.translation[2]));
                 }
@@ -1801,11 +1783,11 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         }
     }
 
-    Eigen::Vector3d min_bound = mesh.getMinBound();
+    Eigen::Vector3d min_bound = mesh.GetMinBound();
     positions_accessor.minValues.push_back(min_bound[0]);
     positions_accessor.minValues.push_back(min_bound[1]);
     positions_accessor.minValues.push_back(min_bound[2]);
-    Eigen::Vector3d max_bound = mesh.getMaxBound();
+    Eigen::Vector3d max_bound = mesh.GetMaxBound();
     positions_accessor.maxValues.push_back(max_bound[0]);
     positions_accessor.maxValues.push_back(max_bound[1]);
     positions_accessor.maxValues.push_back(max_bound[2]);

@@ -1,38 +1,18 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-
-#include <Logging.h>
 
 #include <limits>
 
+#include "cloudViewer/core/Dispatch.h"
+#include "cloudViewer/core/Indexer.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/kernel/Reduction.h"
+#include <Logging.h>
 #include <Parallel.h>
-#include "core/Dispatch.h"
-#include "core/Indexer.h"
-#include "core/Tensor.h"
-#include "core/kernel/Reduction.h"
 
 namespace cloudViewer {
 namespace core {
@@ -142,13 +122,14 @@ private:
         for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
             int64_t start = thread_idx * workload_per_thread;
             int64_t end = std::min(start + workload_per_thread, num_workloads);
+            scalar_t local_result = identity;
             for (int64_t workload_idx = start; workload_idx < end;
                  ++workload_idx) {
                 scalar_t* src = reinterpret_cast<scalar_t*>(
                         indexer.GetInputPtr(0, workload_idx));
-                thread_results[thread_idx] =
-                        element_kernel(*src, thread_results[thread_idx]);
+                local_result = element_kernel(*src, local_result);
             }
+            thread_results[thread_idx] = local_result;
         }
         scalar_t* dst = reinterpret_cast<scalar_t*>(indexer.GetOutputPtr(0));
         for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
@@ -210,14 +191,25 @@ public:
         // elements. We need to keep track of the indices within each
         // sub-iteration.
         int64_t num_output_elements = indexer_.NumOutputElements();
+        if (num_output_elements <= 1) {
+            LaunchArgReductionKernelTwoPass(indexer_, reduce_func, identity);
+        } else {
+            LaunchArgReductionParallelDim(indexer_, reduce_func, identity);
+        }
+    }
 
+    template <typename scalar_t, typename func_t>
+    static void LaunchArgReductionParallelDim(const Indexer& indexer,
+                                              func_t reduce_func,
+                                              scalar_t identity) {
+        int64_t num_output_elements = indexer.NumOutputElements();
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
         for (int64_t output_idx = 0; output_idx < num_output_elements;
              output_idx++) {
             // sub_indexer.NumWorkloads() == ipo.
-            // sub_indexer's workload_idx is indexer_'s ipo_idx.
-            Indexer sub_indexer = indexer_.GetPerOutputIndexer(output_idx);
+            // sub_indexer's workload_idx is indexer's ipo_idx.
+            Indexer sub_indexer = indexer.GetPerOutputIndexer(output_idx);
             scalar_t dst_val = identity;
             for (int64_t workload_idx = 0;
                  workload_idx < sub_indexer.NumWorkloads(); workload_idx++) {
@@ -229,6 +221,52 @@ public:
                 std::tie(*dst_idx, dst_val) =
                         reduce_func(src_idx, *src_val, *dst_idx, dst_val);
             }
+        }
+    }
+
+    /// Create num_threads workers to compute partial arg reductions
+    /// and then reduce to the final results.
+    /// This only applies to arg reduction op with one output.
+    template <typename scalar_t, typename func_t>
+    static void LaunchArgReductionKernelTwoPass(const Indexer& indexer,
+                                                func_t reduce_func,
+                                                scalar_t identity) {
+        if (indexer.NumOutputElements() > 1) {
+            utility::LogError(
+                    "Internal error: two-pass arg reduction only works for "
+                    "single-output arg reduction ops.");
+        }
+        int64_t num_workloads = indexer.NumWorkloads();
+        int64_t num_threads = utility::EstimateMaxThreads();
+        int64_t workload_per_thread =
+                (num_workloads + num_threads - 1) / num_threads;
+        std::vector<int64_t> thread_results_idx(num_threads, 0);
+        std::vector<scalar_t> thread_results_val(num_threads, identity);
+
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
+            int64_t start = thread_idx * workload_per_thread;
+            int64_t end = std::min(start + workload_per_thread, num_workloads);
+            scalar_t local_result_val = identity;
+            int64_t local_result_idx = 0;
+            for (int64_t workload_idx = start; workload_idx < end;
+                 ++workload_idx) {
+                int64_t src_idx = workload_idx;
+                scalar_t* src_val = reinterpret_cast<scalar_t*>(
+                        indexer.GetInputPtr(0, workload_idx));
+                std::tie(local_result_idx, local_result_val) = reduce_func(
+                        src_idx, *src_val, local_result_idx, local_result_val);
+            }
+            thread_results_val[thread_idx] = local_result_val;
+            thread_results_idx[thread_idx] = local_result_idx;
+        }
+        scalar_t dst_val = identity;
+        int64_t* dst_idx = reinterpret_cast<int64_t*>(indexer.GetOutputPtr(0));
+        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
+            std::tie(*dst_idx, dst_val) = reduce_func(
+                    thread_results_idx[thread_idx],
+                    thread_results_val[thread_idx], *dst_idx, dst_val);
         }
     }
 
@@ -260,7 +298,7 @@ void ReductionCPU(const Tensor& src,
                 case ReductionOpCode::Min:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport Min.");
+                                "Zero-size Tensor does not support Min.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::max();
                         dst.Fill(identity);
@@ -270,7 +308,7 @@ void ReductionCPU(const Tensor& src,
                 case ReductionOpCode::Max:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport Max.");
+                                "Zero-size Tensor does not support Max.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::lowest();
                         dst.Fill(identity);
@@ -297,7 +335,7 @@ void ReductionCPU(const Tensor& src,
                 case ReductionOpCode::ArgMin:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport ArgMin.");
+                                "Zero-size Tensor does not support ArgMin.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::max();
                         dst_acc.Fill(identity);
@@ -307,7 +345,7 @@ void ReductionCPU(const Tensor& src,
                 case ReductionOpCode::ArgMax:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport ArgMax.");
+                                "Zero-size Tensor does not support ArgMax.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::lowest();
                         dst_acc.Fill(identity);

@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: asher-1.github.io                    -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 asher-1.github.io
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
@@ -61,9 +42,9 @@ def test_compute_rmse_point_to_point(device):
     target_t.point["points"] = target_points
 
     corres_first = cv3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              cv3c.Dtype.Int64, device)
-    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
                                cv3c.Dtype.Int64, device)
+    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
+                                cv3c.Dtype.Int64, device)
     corres = corres_first, corres_second
 
     estimation_p2p = cv3d.t.pipelines.registration.TransformationEstimationPointToPoint(
@@ -102,9 +83,9 @@ def test_compute_transformation_point_to_point(device):
     target_t.point["points"] = target_points
 
     corres_first = cv3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              cv3c.Dtype.Int64, device)
-    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
                                cv3c.Dtype.Int64, device)
+    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
+                                cv3c.Dtype.Int64, device)
     corres = corres_first, corres_second
 
     estimation_p2p = cv3d.t.pipelines.registration.TransformationEstimationPointToPoint(
@@ -158,9 +139,9 @@ def test_compute_rmse_point_to_plane(device):
     target_t.point["normals"] = target_normals
 
     corres_first = cv3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              cv3c.Dtype.Int64, device)
-    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
                                cv3c.Dtype.Int64, device)
+    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
+                                cv3c.Dtype.Int64, device)
     corres = corres_first, corres_second
 
     estimation_p2l = cv3d.t.pipelines.registration.TransformationEstimationPointToPlane(
@@ -208,9 +189,9 @@ def test_compute_transformation_point_to_plane(device):
     target_t.point["normals"] = target_normals
 
     corres_first = cv3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              cv3c.Dtype.Int64, device)
-    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
                                cv3c.Dtype.Int64, device)
+    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
+                                cv3c.Dtype.Int64, device)
     corres = corres_first, corres_second
 
     estimation_p2l = cv3d.t.pipelines.registration.TransformationEstimationPointToPlane(

@@ -1,39 +1,18 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: Asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <fstream>
+
+#include "cloudViewer/core/EigenConverter.h"
+#include "cloudViewer/t/pipelines/kernel/FillInLinearSystem.h"
+#include "cloudViewer/t/pipelines/slac/SLACOptimizer.h"
 #include <FileSystem.h>
-
-#include <ecvPointCloud.h>
-
-#include "core/EigenConverter.h"
-#include "t/pipelines/kernel/FillInLinearSystem.h"
-#include "t/pipelines/slac/SLACOptimizer.h"
 
 namespace cloudViewer {
 namespace t {
@@ -49,7 +28,7 @@ using t::geometry::PointCloud;
 static PointCloud CreateTPCDFromFile(
         const std::string& fname,
         const core::Device& device = core::Device("CPU:0")) {
-    std::shared_ptr<ccPointCloud> pcd =
+    std::shared_ptr<cloudViewer::geometry::PointCloud> pcd =
             cloudViewer::io::CreatePointCloudFromFile(fname);
     return PointCloud::FromLegacy(*pcd, core::Float32, device);
 }
@@ -67,8 +46,9 @@ static void FillInRigidAlignmentTerm(Tensor& AtA,
     tpcd_i.Transform(Ti);
     tpcd_j.Transform(Tj);
 
-    kernel::FillInRigidAlignmentTerm(AtA, Atb, residual, tpcd_i.GetPoints(),
-                                     tpcd_j.GetPoints(),
+    kernel::FillInRigidAlignmentTerm(AtA, Atb, residual,
+                                     tpcd_i.GetPointPositions(),
+                                     tpcd_j.GetPointPositions(),
                                      tpcd_i.GetPointNormals(), i, j, threshold);
 }
 
@@ -97,11 +77,11 @@ void FillInRigidAlignmentTerm(Tensor& AtA,
         PointCloud tpcd_j = CreateTPCDFromFile(fnames[j], device);
 
         PointCloud tpcd_i_indexed(
-                tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}));
+                tpcd_i.GetPointPositions().IndexGet({corres_ij.T()[0]}));
         tpcd_i_indexed.SetPointNormals(
                 tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]}));
         PointCloud tpcd_j_indexed(
-                tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}));
+                tpcd_j.GetPointPositions().IndexGet({corres_ij.T()[1]}));
 
         Tensor Ti = EigenMatrixToTensor(pose_graph.nodes_[i].pose_)
                             .To(device, core::Float32);
@@ -146,8 +126,8 @@ static void FillInSLACAlignmentTerm(Tensor& AtA,
     PointCloud tpcd_nonrigid_i = ctr_grid.Deform(tpcd_param_i);
     PointCloud tpcd_nonrigid_j = ctr_grid.Deform(tpcd_param_j);
 
-    Tensor Cps = tpcd_nonrigid_i.GetPoints();
-    Tensor Cqs = tpcd_nonrigid_j.GetPoints();
+    Tensor Cps = tpcd_nonrigid_i.GetPointPositions();
+    Tensor Cqs = tpcd_nonrigid_j.GetPointPositions();
     Tensor Cnormal_ps = tpcd_nonrigid_i.GetPointNormals();
 
     Tensor Ri = Ti.Slice(0, 0, 3).Slice(1, 0, 3);
@@ -197,12 +177,12 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
         PointCloud tpcd_j = CreateTPCDFromFile(fnames[j], device);
 
         PointCloud tpcd_i_indexed(
-                tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}));
+                tpcd_i.GetPointPositions().IndexGet({corres_ij.T()[0]}));
         tpcd_i_indexed.SetPointNormals(
                 tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]}));
 
         PointCloud tpcd_j_indexed(
-                tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}));
+                tpcd_j.GetPointPositions().IndexGet({corres_ij.T()[1]}));
         tpcd_j_indexed.SetPointNormals(
                 tpcd_j.GetPointNormals().IndexGet({corres_ij.T()[1]}));
 
@@ -239,13 +219,14 @@ void FillInSLACRegularizerTerm(Tensor& AtA,
                                int n_frags,
                                const SLACOptimizerParams& params,
                                const SLACDebugOption& debug_option) {
-    Tensor active_addrs, nb_addrs, nb_masks;
-    std::tie(active_addrs, nb_addrs, nb_masks) = ctr_grid.GetNeighborGridMap();
+    Tensor active_buf_indices, nb_buf_indices, nb_masks;
+    std::tie(active_buf_indices, nb_buf_indices, nb_masks) =
+            ctr_grid.GetNeighborGridMap();
 
     Tensor positions_init = ctr_grid.GetInitPositions();
     Tensor positions_curr = ctr_grid.GetCurrPositions();
-    kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_addrs,
-                                      nb_addrs, nb_masks, positions_init,
+    kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_buf_indices,
+                                      nb_buf_indices, nb_masks, positions_init,
                                       positions_curr,
                                       n_frags * params.regularizer_weight_,
                                       n_frags, ctr_grid.GetAnchorIdx());

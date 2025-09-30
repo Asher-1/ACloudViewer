@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: Asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -42,7 +23,7 @@ namespace core {
 /// You may use this helper function for exporting data to Numpy.
 ///
 /// To expose a C++ buffer to python, we need to carefully manage the buffer
-/// ownership. You firest need to allocate the memory in the heap (e.g. with
+/// ownership. You first need to allocate the memory in the heap (e.g. with
 /// `new`, `malloc`, avoid using containers that frees up memory when the C++
 /// variable goes out of scope), then in pybind11, define a deleter function for
 /// py::array_t that deallocates the buffer. This deleater function will be
@@ -53,7 +34,7 @@ namespace core {
 /// Alternatively, you can create a Tensor with a **copy** of your data (so that
 /// your original buffer can be freed), and let TensorToPyArray generate a
 /// py::array that manages the buffer lifetime automatically. This is more
-/// convienent, but will require an extra copy.
+/// convenient, but will require an extra copy.
 py::array TensorToPyArray(const Tensor& tensor);
 
 /// Convert py::array (Numpy array) to Tensor.
@@ -124,26 +105,6 @@ Tensor PyHandleToTensor(const py::handle& handle,
                         utility::optional<Dtype> dtype = utility::nullopt,
                         utility::optional<Device> device = utility::nullopt,
                         bool force_copy = false);
-
-// /// Convert py::tuple to SizeVector.
-// ///
-// /// The tuple must contain a list of (1D) integers. Floats are not allowed.
-// SizeVector PyTupleToSizeVector(const py::tuple& tuple);
-
-// /// Convert py::list to SizeVector.
-// ///
-// /// The list must contain a list of (1D) integers. Floats are not allowed.
-// SizeVector PyListToSizeVector(const py::list& list);
-
-// /// Convert supported python types to reduction dimensions.
-// ///
-// /// Supported types:
-// /// 1) int
-// /// 3) list of ints (1D)
-// /// 4) tuple of ints (1D)
-// ///
-// /// An exception will be thrown if the type is not supported.
-// SizeVector PyHandleToSizeVector(const py::handle& handle);
 
 }  // namespace core
 }  // namespace cloudViewer

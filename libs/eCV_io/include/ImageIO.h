@@ -1,47 +1,48 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "eCV_io.h"
+#include <Image.h>
+
 #include <string>
 
-#include <Image.h>
+#include "eCV_io.h"
 
 namespace cloudViewer {
 namespace io {
 
 /// Factory function to create an image from a file (ImageFactory.cpp)
 /// Return an empty image if fail to read the file.
-std::shared_ptr<geometry::Image> ECV_IO_LIB_API CreateImageFromFile(const std::string &filename);
+std::shared_ptr<geometry::Image> ECV_IO_LIB_API
+CreateImageFromFile(const std::string &filename);
+
+/// Factory function to create an image from memory.
+std::shared_ptr<geometry::Image> ECV_IO_LIB_API
+CreateImageFromMemory(const std::string &image_format,
+                      const unsigned char *image_data_ptr,
+                      size_t image_data_size);
 
 /// The general entrance for reading an Image from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
-bool ECV_IO_LIB_API ReadImage(const std::string &filename, geometry::Image &image);
+bool ECV_IO_LIB_API ReadImage(const std::string &filename,
+                              geometry::Image &image);
+
+/// The general entrance for reading an Image from memory
+/// The function calls read functions based on format of image.
+/// \param image_format the format of image, "png" or "jpg".
+/// \param image_data_ptr the pointer to image data in memory.
+/// \param image_data_size the size of image data in memory.
+/// \return return true if the read function is successful, false otherwise.
+bool ECV_IO_LIB_API ReadImageFromMemory(const std::string &image_format,
+                                        const unsigned char *image_data_ptr,
+                                        size_t image_data_size,
+                                        geometry::Image &image);
 
 constexpr int kCloudViewerImageIODefaultQuality = -1;
 
@@ -49,22 +50,47 @@ constexpr int kCloudViewerImageIODefaultQuality = -1;
 /// The function calls write functions based on the extension name of filename.
 /// If the write function supports quality, the parameter will be used.
 /// Otherwise it will be ignored.
+/// \param quality: PNG: [0-9] <=2 fast write for storing intermediate data
+///                            >=3 (default) normal write for balanced speed and
+///                            file size
+///                 JPEG: [0-100] Typically in [70,95]. 90 is default (good
+///                 quality).
 /// \return return true if the write function is successful, false otherwise.
 bool ECV_IO_LIB_API WriteImage(const std::string &filename,
                                const geometry::Image &image,
                                int quality = kCloudViewerImageIODefaultQuality);
 
-bool ECV_IO_LIB_API ReadImageFromPNG(const std::string &filename, geometry::Image &image);
+bool ECV_IO_LIB_API ReadImageFromPNG(const std::string &filename,
+                                     geometry::Image &image);
 
-bool ECV_IO_LIB_API WriteImageToPNG(const std::string &filename,
-                                    const geometry::Image &image,
-                                    int quality = kCloudViewerImageIODefaultQuality);
+/// Read a PNG image from memory.
+/// \param image_data_ptr the pointer to image data in memory.
+/// \param image_data_size the size of image data in memory.
+/// \return return true if the read function is successful, false otherwise.
+bool ECV_IO_LIB_API ReadPNGFromMemory(const unsigned char *image_data_ptr,
+                                      size_t image_data_size,
+                                      geometry::Image &image);
 
-bool ECV_IO_LIB_API ReadImageFromJPG(const std::string &filename, geometry::Image &image);
+bool ECV_IO_LIB_API
+WriteImageToPNG(const std::string &filename,
+                const geometry::Image &image,
+                int quality = kCloudViewerImageIODefaultQuality);
 
-bool ECV_IO_LIB_API WriteImageToJPG(const std::string &filename,
-                                    const geometry::Image &image,
-                                    int quality = kCloudViewerImageIODefaultQuality);
+bool ECV_IO_LIB_API ReadImageFromJPG(const std::string &filename,
+                                     geometry::Image &image);
+
+/// Read a JPG image from memory.
+/// \param image_data_ptr the pointer to image data in memory.
+/// \param image_data_size the size of image data in memory.
+/// \return return true if the read function is successful, false otherwise.
+bool ECV_IO_LIB_API ReadJPGFromMemory(const unsigned char *image_data_ptr,
+                                      size_t image_data_size,
+                                      geometry::Image &image);
+
+bool ECV_IO_LIB_API
+WriteImageToJPG(const std::string &filename,
+                const geometry::Image &image,
+                int quality = kCloudViewerImageIODefaultQuality);
 
 }  // namespace io
 }  // namespace cloudViewer

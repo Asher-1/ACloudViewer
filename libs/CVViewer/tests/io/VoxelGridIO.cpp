@@ -1,33 +1,16 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/VoxelGridIO.h"
+#include "cloudViewer/io/VoxelGridIO.h"
 
-#include "geometry/VoxelGrid.h"
-#include "visualization/utility/DrawGeometry.h"
+#include <FileSystem.h>
+
+#include "cloudViewer/geometry/VoxelGrid.h"
+#include "cloudViewer/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {
@@ -35,7 +18,7 @@ namespace tests {
 
 TEST(VoxelGridIO, PLYWriteRead) {
     // Create voxel_grid (two voxels)
-    auto src_voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
+    auto src_voxel_grid = std::make_shared<geometry::VoxelGrid>();
     src_voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
     src_voxel_grid->voxel_size_ = 5;
     src_voxel_grid->AddVoxel(geometry::Voxel(Eigen::Vector3i(1, 2, 3),
@@ -44,13 +27,13 @@ TEST(VoxelGridIO, PLYWriteRead) {
                                              Eigen::Vector3d(0.4, 0.5, 0.6)));
 
     // Write to file
-    std::string file_name = std::string(TEST_DATA_DIR) + "/temp_voxel_grid.ply";
+    std::string file_name = utility::filesystem::GetTempDirectoryPath() +
+                            "/temp_voxel_grid.ply";
     EXPECT_TRUE(io::WriteVoxelGrid(file_name, *src_voxel_grid));
 
     // Read from file
-    auto dst_voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
+    auto dst_voxel_grid = std::make_shared<geometry::VoxelGrid>();
     EXPECT_TRUE(io::ReadVoxelGrid(file_name, *dst_voxel_grid));
-    EXPECT_EQ(std::remove(file_name.c_str()), 0);
 
     // Check values, account for unit8 conversion lost
     EXPECT_EQ(src_voxel_grid->origin_, dst_voxel_grid->origin_);

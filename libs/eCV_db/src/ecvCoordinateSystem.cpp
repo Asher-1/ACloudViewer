@@ -83,19 +83,19 @@ void ccCoordinateSystem::setDisplayScale(PointCoordinateType scale) {
 std::shared_ptr<ccPlane> ccCoordinateSystem::getXYplane() const {
     auto plane = std::make_shared<ccPlane>(createXYplane(&m_transformation));
     plane->clearTriNormals();
-    plane->computeTriangleNormals();
+    plane->ComputeTriangleNormals();
     return plane;
 }
 std::shared_ptr<ccPlane> ccCoordinateSystem::getYZplane() const {
     auto plane = std::make_shared<ccPlane>(createYZplane(&m_transformation));
     plane->clearTriNormals();
-    plane->computeTriangleNormals();
+    plane->ComputeTriangleNormals();
     return plane;
 }
 std::shared_ptr<ccPlane> ccCoordinateSystem::getZXplane() const {
     auto plane = std::make_shared<ccPlane>(createZXplane(&m_transformation));
     plane->clearTriNormals();
-    plane->computeTriangleNormals();
+    plane->ComputeTriangleNormals();
     return plane;
 }
 
@@ -259,7 +259,7 @@ void ccCoordinateSystem::drawMeOnly(CC_DRAW_CONTEXT& context) {
             {
                 Eigen::Matrix4d transformation =
                         ccGLMatrixd::ToEigenMatrix4(m_transformation);
-                m_axis.transform(transformation);
+                m_axis.Transform(transformation);
             }
 
             tempContext.viewID = m_axis.getViewId();

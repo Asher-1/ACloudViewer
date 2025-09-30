@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.cloudViewer.org                            -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2023 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
@@ -59,6 +59,7 @@ MATERIAL_VECTOR_PROPERTIES = (
     # 'clear_coat_normal',
     # 'emissive',
     # 'post_lighting_color',
+    'emissive_color',
     'absorption_color',
 )
 MATERIAL_TEXTURE_MAPS = (

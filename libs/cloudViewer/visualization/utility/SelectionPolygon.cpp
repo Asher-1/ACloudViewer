@@ -1,32 +1,14 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-
+// clang-format off
 #include "visualization/utility/GLHelper.h"  // must include first!
 #include "visualization/utility/SelectionPolygon.h"
+// clang-format on
 
 #include <Logging.h>
 #include <ecvMesh.h>
@@ -51,7 +33,7 @@ bool SelectionPolygon::isEmpty() const {
     return polygon_.size() <= 1;
 }
 
-Eigen::Vector2d SelectionPolygon::getMin2DBound() const {
+Eigen::Vector2d SelectionPolygon::GetMin2DBound() const {
     if (polygon_.empty()) {
         return Eigen::Vector2d(0.0, 0.0);
     }
@@ -68,7 +50,7 @@ Eigen::Vector2d SelectionPolygon::getMin2DBound() const {
     return Eigen::Vector2d((*itr_x)(0), (*itr_y)(1));
 }
 
-Eigen::Vector2d SelectionPolygon::getMax2DBound() const {
+Eigen::Vector2d SelectionPolygon::GetMax2DBound() const {
     if (polygon_.empty()) {
         return Eigen::Vector2d(0.0, 0.0);
     }
@@ -199,33 +181,33 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
         volume->bounding_polygon_.push_back(point3d);
     }
     const auto &boundingbox = view.GetBoundingBox();
-    double axis_len = boundingbox.getMaxBound()(idx) - boundingbox.getMinBound()(idx);
-    volume->axis_min_ = boundingbox.getMinBound()(idx) - axis_len;
-    volume->axis_max_ = boundingbox.getMaxBound()(idx) + axis_len;
+    double axis_len = boundingbox.GetMaxBound()(idx) - boundingbox.GetMinBound()(idx);
+    volume->axis_min_ = boundingbox.GetMinBound()(idx) - axis_len;
+    volume->axis_max_ = boundingbox.GetMaxBound()(idx) + axis_len;
     return volume;
 }
 
 std::shared_ptr<ccPointCloud>
 SelectionPolygon::CropPointCloudInRectangle(const ccPointCloud &input,
                                             const ViewControl &view) {
-    return input.selectByIndex(CropInRectangle(input.getPoints(), view));
+    return input.SelectByIndex(CropInRectangle(input.getPoints(), view));
 }
 
 std::shared_ptr<ccPointCloud> SelectionPolygon::CropPointCloudInPolygon(
         const ccPointCloud &input, const ViewControl &view) {
-    return input.selectByIndex(CropInPolygon(input.getPoints(), view));
+    return input.SelectByIndex(CropInPolygon(input.getPoints(), view));
 }
 
 std::shared_ptr<ccMesh>
 SelectionPolygon::CropTriangleMeshInRectangle(
         const ccMesh &input, const ViewControl &view) {
-    return input.selectByIndex(CropInRectangle(input.getVertices(), view));
+    return input.SelectByIndex(CropInRectangle(input.getVertices(), view));
 }
 
 std::shared_ptr<ccMesh>
 SelectionPolygon::CropTriangleMeshInPolygon(const ccMesh &input,
                                             const ViewControl &view) {
-    return input.selectByIndex(CropInPolygon(input.getVertices(), view));
+    return input.SelectByIndex(CropInPolygon(input.getVertices(), view));
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(
@@ -234,8 +216,8 @@ std::vector<size_t> SelectionPolygon::CropInRectangle(
     Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
     double half_width = (double)view.GetWindowWidth() * 0.5;
     double half_height = (double)view.GetWindowHeight() * 0.5;
-    auto min_bound = getMin2DBound();
-    auto max_bound = getMax2DBound();
+    auto min_bound = GetMin2DBound();
+    auto max_bound = GetMax2DBound();
     utility::ConsoleProgressBar progress_bar((int64_t)input.size(),
                                              "Cropping geometry: ");
     for (size_t i = 0; i < input.size(); i++) {

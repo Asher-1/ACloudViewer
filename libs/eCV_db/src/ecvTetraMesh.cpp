@@ -53,7 +53,7 @@ TetraMesh &TetraMesh::clear() {
 
 TetraMesh &TetraMesh::operator+=(const TetraMesh &mesh) {
     typedef decltype(tetras_)::value_type Vector4i;
-    if (mesh.isEmpty()) return (*this);
+    if (mesh.IsEmpty()) return (*this);
     size_t old_vert_num = vertices_.size();
     size_t old_tetra_num = tetras_.size();
     size_t add_tetra_num = mesh.tetras_.size();
@@ -70,7 +70,7 @@ TetraMesh TetraMesh::operator+(const TetraMesh &mesh) const {
     return (TetraMesh(*this) += mesh);
 }
 
-TetraMesh &TetraMesh::removeDuplicatedVertices() {
+TetraMesh &TetraMesh::RemoveDuplicatedVertices() {
     typedef decltype(tetras_)::value_type::Scalar Index;
     typedef std::tuple<double, double, double> Coordinate3;
     std::unordered_map<Coordinate3, size_t,
@@ -107,7 +107,7 @@ TetraMesh &TetraMesh::removeDuplicatedVertices() {
     return *this;
 }
 
-TetraMesh &TetraMesh::removeDuplicatedTetras() {
+TetraMesh &TetraMesh::RemoveDuplicatedTetras() {
     typedef decltype(tetras_)::value_type::Scalar Index;
     typedef std::tuple<Index, Index, Index, Index> Index4;
     std::unordered_map<Index4, size_t, utility::hash_tuple::hash<Index4>>
@@ -138,7 +138,7 @@ TetraMesh &TetraMesh::removeDuplicatedTetras() {
     return *this;
 }
 
-TetraMesh &TetraMesh::removeUnreferencedVertices() {
+TetraMesh &TetraMesh::RemoveUnreferencedVertices() {
     typedef decltype(tetras_)::value_type::Scalar Index;
     std::vector<bool> vertex_has_reference(vertices_.size(), false);
     for (const auto &tetra : tetras_) {
@@ -175,7 +175,7 @@ TetraMesh &TetraMesh::removeUnreferencedVertices() {
     return *this;
 }
 
-TetraMesh &TetraMesh::removeDegenerateTetras() {
+TetraMesh &TetraMesh::RemoveDegenerateTetras() {
     size_t old_tetra_num = tetras_.size();
     size_t k = 0;
     for (size_t i = 0; i < old_tetra_num; i++) {
@@ -195,7 +195,7 @@ TetraMesh &TetraMesh::removeDegenerateTetras() {
     return *this;
 }
 
-std::shared_ptr<ccMesh> TetraMesh::extractTriangleMesh(
+std::shared_ptr<ccMesh> TetraMesh::ExtractTriangleMesh(
         const std::vector<double> &values, double level) {
     typedef decltype(tetras_)::value_type::Scalar Index;
     static_assert(std::is_signed<Index>(), "Index type must be signed");

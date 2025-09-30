@@ -1,0 +1,27 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <string>
+
+namespace cloudViewer {
+namespace utility {
+
+/// \brief Returns true if the file is a supported compressed file path. It does
+/// not check if the file exists. It only checks the file extension.
+/// \param file_path The file path to check.
+bool IsSupportedCompressedFilePath(const std::string& file_path);
+
+/// \brief Function to extract compressed files.
+/// \param file_path Path to file. Example: "/path/to/file/file.zip"
+/// \param extract_dir Directory path where the file will be extracted to. If
+/// the directory does not exist, it will be created.
+void Extract(const std::string& file_path, const std::string& extract_dir);
+
+}  // namespace utility
+}  // namespace cloudViewer

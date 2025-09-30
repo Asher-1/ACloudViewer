@@ -1559,13 +1559,13 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
     // tranformation
     {
         Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
-        m_nearPlane.transform(transformation);
+        m_nearPlane.Transform(transformation);
         m_nearPlane.setTempColor(getPlaneColor());
-        m_sideLines.transform(transformation);
+        m_sideLines.Transform(transformation);
         m_sideLines.setTempColor(getFrameColor());
-        m_arrow.transform(transformation);
+        m_arrow.Transform(transformation);
         m_arrow.setTempColor(getFrameColor());
-        m_axis.transform(transformation);
+        m_axis.Transform(transformation);
     }
 
     cameraContext.visible = context.visible;

@@ -1,10 +1,10 @@
-# cloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
-# examples/Python/Advanced/load_save_viewpoint.py
-
-import numpy as np
 import cloudViewer as cv3d
 
 
@@ -30,6 +30,7 @@ def load_view_point(pcd, filename):
 
 
 if __name__ == "__main__":
-    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.pcd")
+    pcd_data = cv3d.data.PCDPointCloud()
+    pcd = cv3d.io.read_point_cloud(pcd_data.path)
     save_view_point(pcd, "viewpoint.json")
     load_view_point(pcd, "viewpoint.json")

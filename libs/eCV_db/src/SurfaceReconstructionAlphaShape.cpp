@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2019 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Logging.h>
@@ -47,7 +28,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
                 "[CreateFromPointCloudAlphaShape] "
                 "ComputeDelaunayTetrahedralization");
         std::tie(tetra_mesh, pt_map_computed) =
-                cloudViewer::utility::Qhull::ComputeDelaunayTetrahedralization(
+                cloudViewer::geometry::Qhull::ComputeDelaunayTetrahedralization(
                         pcd.getPoints());
         pt_map = &pt_map_computed;
         cloudViewer::utility::LogDebug(
@@ -98,32 +79,32 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
     for (size_t tidx = 0; tidx < tetra_mesh->tetras_.size(); ++tidx) {
         const auto& tetra = tetra_mesh->tetras_[tidx];
         // clang-format off
-		Eigen::Matrix4d tmp;
-		tmp << verts[tetra(0)](0), verts[tetra(0)](1), verts[tetra(0)](2), 1,
-			verts[tetra(1)](0), verts[tetra(1)](1), verts[tetra(1)](2), 1,
-			verts[tetra(2)](0), verts[tetra(2)](1), verts[tetra(2)](2), 1,
-			verts[tetra(3)](0), verts[tetra(3)](1), verts[tetra(3)](2), 1;
-		double a = tmp.determinant();
-		tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](1), verts[tetra(0)](2),
-			vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](1), verts[tetra(1)](2),
-			vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](1), verts[tetra(2)](2),
-			vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](1), verts[tetra(3)](2);
-		double c = tmp.determinant();
-		tmp << vsqn[tetra(0)], verts[tetra(0)](1), verts[tetra(0)](2), 1,
-			vsqn[tetra(1)], verts[tetra(1)](1), verts[tetra(1)](2), 1,
-			vsqn[tetra(2)], verts[tetra(2)](1), verts[tetra(2)](2), 1,
-			vsqn[tetra(3)], verts[tetra(3)](1), verts[tetra(3)](2), 1;
-		double dx = tmp.determinant();
-		tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](2), 1,
-			vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](2), 1,
-			vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](2), 1,
-			vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](2), 1;
-		double dy = tmp.determinant();
-		tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](1), 1,
-			vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](1), 1,
-			vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](1), 1,
-			vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](1), 1;
-		double dz = tmp.determinant();
+        Eigen::Matrix4d tmp;
+        tmp << verts[tetra(0)](0), verts[tetra(0)](1), verts[tetra(0)](2), 1,
+                verts[tetra(1)](0), verts[tetra(1)](1), verts[tetra(1)](2), 1,
+                verts[tetra(2)](0), verts[tetra(2)](1), verts[tetra(2)](2), 1,
+                verts[tetra(3)](0), verts[tetra(3)](1), verts[tetra(3)](2), 1;
+        double a = tmp.determinant();
+        tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](1), verts[tetra(0)](2),
+                vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](1), verts[tetra(1)](2),
+                vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](1), verts[tetra(2)](2),
+                vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](1), verts[tetra(3)](2);
+        double c = tmp.determinant();
+        tmp << vsqn[tetra(0)], verts[tetra(0)](1), verts[tetra(0)](2), 1,
+                vsqn[tetra(1)], verts[tetra(1)](1), verts[tetra(1)](2), 1,
+                vsqn[tetra(2)], verts[tetra(2)](1), verts[tetra(2)](2), 1,
+                vsqn[tetra(3)], verts[tetra(3)](1), verts[tetra(3)](2), 1;
+        double dx = tmp.determinant();
+        tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](2), 1,
+                vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](2), 1,
+                vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](2), 1,
+                vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](2), 1;
+        double dy = tmp.determinant();
+        tmp << vsqn[tetra(0)], verts[tetra(0)](0), verts[tetra(0)](1), 1,
+                vsqn[tetra(1)], verts[tetra(1)](0), verts[tetra(1)](1), 1,
+                vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](1), 1,
+                vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](1), 1;
+        double dz = tmp.determinant();
         // clang-format on
         if (a == 0) {
             cloudViewer::utility::LogError(
@@ -188,8 +169,8 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
         if (normals) {
             normals->shrink_to_fit();
         }
-        mesh->removeDuplicatedTriangles();
-        mesh->removeUnreferencedVertices();
+        mesh->RemoveDuplicatedTriangles();
+        mesh->RemoveUnreferencedVertices();
     }
 
     cloudViewer::utility::LogDebug(

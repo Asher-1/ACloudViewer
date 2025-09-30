@@ -1,37 +1,17 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-
-#include "core/TensorCheck.h"
+#include "cloudViewer/core/TensorCheck.h"
 
 #include <string>
 
-#include "core/Device.h"
-#include "core/Dtype.h"
-#include "core/Tensor.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/Tensor.h"
 #include <Helper.h>
 #include <Logging.h>
 
@@ -50,7 +30,7 @@ void AssertTensorDtype_(const char* file,
     std::string error_message =
             fmt::format("Tensor has dtype {}, but is expected to have {}.",
                         tensor.GetDtype().ToString(), dtype.ToString());
-    utility::Logger::LogError(file, line, function, error_message.c_str());
+    utility::Logger::LogError_(file, line, function, error_message.c_str());
 }
 
 void AssertTensorDtypes_(const char* file,
@@ -71,7 +51,7 @@ void AssertTensorDtypes_(const char* file,
     std::string error_message = fmt::format(
             "Tensor has dtype {}, but is expected to have dtype among {{{}}}.",
             tensor.GetDtype().ToString(), utility::JoinStrings(dtype_strings));
-    utility::Logger::LogError(file, line, function, error_message.c_str());
+    utility::Logger::LogError_(file, line, function, error_message.c_str());
 }
 
 void AssertTensorDevice_(const char* file,
@@ -85,7 +65,7 @@ void AssertTensorDevice_(const char* file,
     std::string error_message =
             fmt::format("Tensor has device {}, but is expected to have {}.",
                         tensor.GetDevice().ToString(), device.ToString());
-    utility::Logger::LogError(file, line, function, error_message.c_str());
+    utility::Logger::LogError_(file, line, function, error_message.c_str());
 }
 
 void AssertTensorShape_(const char* file,
@@ -101,7 +81,7 @@ void AssertTensorShape_(const char* file,
                 "Tensor has shape {}, but is expected to have compatible with "
                 "{}.",
                 tensor.GetShape().ToString(), shape.ToString());
-        utility::Logger::LogError(file, line, function, error_message.c_str());
+        utility::Logger::LogError_(file, line, function, error_message.c_str());
     } else {
         SizeVector static_shape = shape.ToSizeVector();
         if (tensor.GetShape() == static_shape) {
@@ -110,7 +90,7 @@ void AssertTensorShape_(const char* file,
         std::string error_message = fmt::format(
                 "Tensor has shape {}, but is expected to have {}.",
                 tensor.GetShape().ToString(), static_shape.ToString());
-        utility::Logger::LogError(file, line, function, error_message.c_str());
+        utility::Logger::LogError_(file, line, function, error_message.c_str());
     }
 }
 

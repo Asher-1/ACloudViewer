@@ -52,8 +52,8 @@ struct ECV_IO_LIB_API ReadPointCloudOption {
             // Attention: when you update the defaults, update the docstrings in
             // pybind/io/class_io.cpp
             std::string format = "auto",
-            bool remove_nan_points = true,
-            bool remove_infinite_points = true,
+            bool remove_nan_points = false,
+            bool remove_infinite_points = false,
             bool print_progress = false,
             std::function<bool(double)> update_progress = {})
         : format(format),
@@ -67,6 +67,7 @@ struct ECV_IO_LIB_API ReadPointCloudOption {
     };
     /// Specifies what format the contents of the file are (and what loader to
     /// use), default "auto" means to go off of file extension.
+    /// Note: "auto" is incompatible when reading directly from memory.
     std::string format;
     /// Whether to remove all points that have nan
     bool remove_nan_points;
@@ -90,11 +91,13 @@ struct ECV_IO_LIB_API WritePointCloudOption {
     WritePointCloudOption(
             // Attention: when you update the defaults, update the docstrings in
             // pybind/io/class_io.cpp
+            std::string format = "auto",
             IsAscii write_ascii = IsAscii::Binary,
             Compressed compressed = Compressed::Uncompressed,
             bool print_progress = false,
             std::function<bool(double)> update_progress = {})
-        : write_ascii(write_ascii),
+        : format(format),
+          write_ascii(write_ascii),
           compressed(compressed),
           print_progress(print_progress),
           update_progress(update_progress){};
@@ -107,10 +110,25 @@ struct ECV_IO_LIB_API WritePointCloudOption {
           compressed(Compressed(compressed)),
           print_progress(print_progress),
           update_progress(update_progress){};
+    // for compatibility
+    WritePointCloudOption(std::string format,
+                          bool write_ascii,
+                          bool compressed = false,
+                          bool print_progress = false,
+                          std::function<bool(double)> update_progress = {})
+        : format(format),
+          write_ascii(IsAscii(write_ascii)),
+          compressed(Compressed(compressed)),
+          print_progress(print_progress),
+          update_progress(update_progress){};
     WritePointCloudOption(std::function<bool(double)> up)
         : WritePointCloudOption() {
         update_progress = up;
     };
+    /// Specifies what format the contents of the file are (and what writer to
+    /// use), default "auto" means to go off of file extension.
+    /// Note: "auto" is incompatible when reading directly from memory.
+    std::string format;
     /// Whether to save in Ascii or Binary.  Some savers are capable of doing
     /// either, other ignore this.
     IsAscii write_ascii;

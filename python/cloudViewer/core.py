@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: asher-1.github.io                          -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018 asher-1.github.io
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
@@ -81,10 +62,6 @@ class TensorList(cv3d.pybind.core.TensorList):
             device = Device("CPU:0")
         super(TensorList, self).__init__(shape, dtype, device)
 
-    @staticmethod
-    def from_tensors(tensors):
-        return TensorList(tensors)
-
     def _reduction_shape_to_size_vector(self, shape):
         if shape is None:
             return SizeVector(list(range(self.ndim)))
@@ -96,4 +73,5 @@ class TensorList(cv3d.pybind.core.TensorList):
             return SizeVector(shape)
         else:
             raise TypeError(
-                "shape must be int, list or tuple, but was {}.".format(type(shape)))
+                "shape must be int, list or tuple, but was {}.".format(
+                    type(shape)))

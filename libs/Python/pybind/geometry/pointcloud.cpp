@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Image.h>
@@ -138,20 +119,16 @@ void pybind_pointcloud(py::module& m) {
                            "Maximum radius threshold.");
 
     // ccPointCloud::RansacParams::RANSAC_PRIMITIVE_TYPES
-    py::enum_<geometry::RansacParams::RANSAC_PRIMITIVE_TYPES>
-            ransac_primitive_type(ransacParam, "RANSAC_PRIMITIVE_TYPES",
-                                  py::arithmetic());
-    ransac_primitive_type.value("Plane", geometry::RansacParams::RPT_PLANE)
+    py::native_enum<geometry::RansacParams::RANSAC_PRIMITIVE_TYPES>(
+            ransacParam, "RANSAC_PRIMITIVE_TYPES", "enum.Enum",
+            "Enum class for Ransac Primitive types.")
+            .value("Plane", geometry::RansacParams::RPT_PLANE)
             .value("Sphere", geometry::RansacParams::RPT_SPHERE)
             .value("Cylinder", geometry::RansacParams::RPT_CYLINDER)
             .value("Cone", geometry::RansacParams::RPT_CONE)
             .value("Torus", geometry::RansacParams::RPT_TORUS)
-            .export_values();
-    ransac_primitive_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Ransac Primitive types.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
 #endif
 
     py::class_<ccPointCloud, PyGeometry<ccPointCloud>,
@@ -178,107 +155,118 @@ void pybind_pointcloud(py::module& m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_covariances", &ccPointCloud::hasCovariances,
+            .def("has_covariances", &ccPointCloud::HasCovariances,
                  "Returns ``True`` if the point cloud contains covariances.")
-            .def("normalize_normals", &ccPointCloud::normalizeNormals,
+            .def("normalize_normals", &ccPointCloud::NormalizeNormals,
                  "Normalize point normals to length 1.")
-            .def("paint_uniform_color", &ccPointCloud::paintUniformColor,
+            .def("paint_uniform_color", &ccPointCloud::PaintUniformColor,
                  "color"_a,
                  "Assigns each point in the PointCloud the same color.")
-            .def("select_by_index", &ccPointCloud::selectByIndex,
+            .def("select_by_index", &ccPointCloud::SelectByIndex,
                  "Function to select points from input pointcloud into output "
                  "pointcloud.",
                  "indices"_a, "invert"_a = false)
-            .def("voxel_down_sample", &ccPointCloud::voxelDownSample,
+            .def("voxel_down_sample", &ccPointCloud::VoxelDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud with "
                  "a voxel. Normals and colors are averaged if they exist.",
                  "voxel_size"_a)
             .def("voxel_down_sample_and_trace",
-                 &ccPointCloud::voxelDownSampleAndTrace,
+                 &ccPointCloud::VoxelDownSampleAndTrace,
                  "Function to downsample using "
                  "ccPointCloud::VoxelDownSample. Also records point "
                  "cloud index before down sampling",
                  "voxel_size"_a, "min_bound"_a, "max_bound"_a,
                  "approximate_class"_a = false)
-            .def("uniform_down_sample", &ccPointCloud::uniformDownSample,
+            .def("uniform_down_sample", &ccPointCloud::UniformDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud "
                  "uniformly. The sample is performed in the order of the "
                  "points with "
                  "the 0-th point always chosen, not at random.",
                  "every_k_points"_a)
-            .def("random_down_sample", &ccPointCloud::randomDownSample,
+            .def("random_down_sample", &ccPointCloud::RandomDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud "
                  "randomly. The sample is generated by randomly sampling "
                  "the indexes from the point cloud.",
                  "sampling_ratio"_a)
+            .def("farthest_point_down_sample",
+                 &ccPointCloud::FarthestPointDownSample,
+                 "Downsamples input pointcloud into output pointcloud with a "
+                 "set of points has farthest distance. The sample is performed "
+                 "by selecting the farthest point from previous selected "
+                 "points iteratively.",
+                 "num_samples"_a,
+                 "Index to start downsampling from. Valid index is a "
+                 "non-negative number less than number of points in the "
+                 "input pointcloud.",
+                 "start_index"_a = 0)
             .def("crop",
-                 (std::shared_ptr<ccPointCloud>(ccPointCloud::*)(const ccBBox&)
+                 (std::shared_ptr<ccPointCloud> (ccPointCloud::*)(const ccBBox&)
                           const) &
                          ccPointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
             .def("crop",
-                 (std::shared_ptr<ccPointCloud>(ccPointCloud::*)(
+                 (std::shared_ptr<ccPointCloud> (ccPointCloud::*)(
                          const ecvOrientedBBox&) const) &
                          ccPointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
             .def("remove_non_finite_points",
-                 &ccPointCloud::removeNonFinitePoints,
+                 &ccPointCloud::RemoveNonFinitePoints,
                  "Function to remove non-finite points from the PointCloud",
                  "remove_nan"_a = true, "remove_infinite"_a = true)
-            .def("remove_radius_outlier", &ccPointCloud::removeRadiusOutliers,
+            .def("remove_radius_outlier", &ccPointCloud::RemoveRadiusOutliers,
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
                  "nb_points"_a, "radius"_a)
             .def("remove_statistical_outlier",
-                 &ccPointCloud::removeStatisticalOutliers,
+                 &ccPointCloud::RemoveStatisticalOutliers,
                  "Function to remove points that are further away from their "
                  "neighbors in average",
                  "nb_neighbors"_a, "std_ratio"_a)
-            .def("estimate_normals", &ccPointCloud::estimateNormals,
+            .def("estimate_normals", &ccPointCloud::EstimateNormals,
                  "Function to compute the normals of a point cloud. Normals "
                  "are oriented with respect to the input point cloud if "
                  "normals exist",
                  "search_param"_a = geometry::KDTreeSearchParamKNN(),
                  "fast_normal_computation"_a = true)
             .def("orient_normals_to_align_with_direction",
-                 &ccPointCloud::orientNormalsToAlignWithDirection,
+                 &ccPointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",
                  "orientation_reference"_a = Eigen::Vector3d(0.0, 0.0, 1.0))
             .def("orient_normals_towards_camera_location",
-                 &ccPointCloud::orientNormalsTowardsCameraLocation,
+                 &ccPointCloud::OrientNormalsTowardsCameraLocation,
                  "Function to orient the normals of a point cloud",
                  "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
             .def("orient_normals_consistent_tangent_plane",
-                 &ccPointCloud::orientNormalsConsistentTangentPlane,
+                 &ccPointCloud::OrientNormalsConsistentTangentPlane,
                  "Function to orient the normals with respect to consistent "
                  "tangent planes",
                  "k"_a)
             .def("compute_point_cloud_distance",
-                 &ccPointCloud::computePointCloudDistance,
+                 &ccPointCloud::ComputePointCloudDistance,
                  "For each point in the source point cloud, compute the "
                  "distance to "
                  "the target point cloud.",
                  "target"_a)
             .def("compute_mahalanobis_distance",
-                 &ccPointCloud::computeMahalanobisDistance,
+                 &ccPointCloud::ComputeMahalanobisDistance,
                  "Function to compute the Mahalanobis distance for points in a "
                  "point "
                  "cloud. See: "
                  "https://en.wikipedia.org/wiki/Mahalanobis_distance.")
             .def("compute_nearest_neighbor_distance",
-                 &ccPointCloud::computeNearestNeighborDistance,
+                 &ccPointCloud::ComputeNearestNeighborDistance,
                  "Function to compute the distance from a point to its nearest "
                  "neighbor in the point cloud")
-            .def("compute_resolution", &ccPointCloud::computeResolution,
+            .def("compute_resolution", &ccPointCloud::ComputeResolution,
                  "Function to compute the point cloud resolution.")
-            .def("compute_convex_hull", &ccPointCloud::computeConvexHull,
+            .def("compute_convex_hull", &ccPointCloud::ComputeConvexHull,
                  "Computes the convex hull of the point cloud.")
-            .def("hidden_point_removal", &ccPointCloud::hiddenPointRemoval,
+            .def("hidden_point_removal", &ccPointCloud::HiddenPointRemoval,
                  "Removes hidden points from a point cloud and returns a mesh "
                  "of the remaining points. Based on Katz et al. 'Direct "
                  "Visibility of Point Sets', 2007. Additional information "
@@ -286,14 +274,14 @@ void pybind_pointcloud(py::module& m) {
                  "found in Mehra et. al. 'Visibility of Noisy Point Cloud "
                  "Data', 2010.",
                  "camera_location"_a, "radius"_a)
-            .def("cluster_dbscan", &ccPointCloud::clusterDBSCAN,
+            .def("cluster_dbscan", &ccPointCloud::ClusterDBSCAN,
                  "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
                  "Spatial Databases with Noise', 1996. Returns a list of point "
                  "labels, -1 indicates noise according to the algorithm.",
                  "eps"_a, "min_points"_a, "print_progress"_a = false)
 #ifdef CV_RANSAC_SUPPORT
-            .def("execute_ransac", &ccPointCloud::executeRANSAC,
+            .def("execute_ransac", &ccPointCloud::ExecuteRANSAC,
                  "Cluster ccPointCloud using the RANSAC algorithm, "
                  "Wrapper to Schnabel et al. library for automatic"
                  " shape detection in point cloud ,Efficient RANSAC"
@@ -303,13 +291,15 @@ void pybind_pointcloud(py::module& m) {
                  "params"_a = geometry::RansacParams(),
                  "print_progress"_a = false)
 #endif
-            .def("segment_plane", &ccPointCloud::segmentPlane,
+            .def("segment_plane", &ccPointCloud::SegmentPlane,
                  "Segments a plane in the point cloud using the RANSAC "
                  "algorithm.",
                  "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a)
             .def("set_point", &ccPointCloud::setEigenPoint,
                  "set point coordinate by given index.", "index"_a, "point"_a)
             .def("get_point", &ccPointCloud::getEigenPoint,
+                 "get point coordinate by given index.", "index"_a)
+            .def("point", &ccPointCloud::getEigenPoint,
                  "get point coordinate by given index.", "index"_a)
             .def("set_points",
                  py::overload_cast<const std::vector<Eigen::Vector3d>&>(
@@ -322,9 +312,15 @@ void pybind_pointcloud(py::module& m) {
                  "``float64`` array of shape ``(num_points, 3)``, "
                  "use ``numpy.asarray()`` to access data: Points "
                  "coordinates.")
+            .def("points", &ccPointCloud::getEigenPoints,
+                 "``float64`` array of shape ``(num_points, 3)``, "
+                 "use ``numpy.asarray()`` to access data: Points "
+                 "coordinates.")
             .def("set_color", &ccPointCloud::setEigenColor,
                  "set point color by given index.", "index"_a, "color"_a)
             .def("get_color", &ccPointCloud::getEigenColor,
+                 "get point color by given index.", "index"_a)
+            .def("color", &ccPointCloud::getEigenColor,
                  "get point color by given index.", "index"_a)
             .def("set_colors", &ccPointCloud::addEigenColors,
                  "``float64`` array of shape ``(num_points, 3)``, "
@@ -335,9 +331,15 @@ void pybind_pointcloud(py::module& m) {
                  "``float64`` array of shape ``(num_points, 3)``, "
                  "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                  "data: RGB colors of points.")
+            .def("colors", &ccPointCloud::getEigenColors,
+                 "``float64`` array of shape ``(num_points, 3)``, "
+                 "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
+                 "data: RGB colors of points.")
             .def("set_normal", &ccPointCloud::setEigenNormal,
                  "set point normal by given index.", "index"_a, "normal"_a)
             .def("get_normal", &ccPointCloud::getEigenNormal,
+                 "get point normal by given index.", "index"_a)
+            .def("normal", &ccPointCloud::getEigenNormal,
                  "get point normal by given index.", "index"_a)
             .def("set_normals", &ccPointCloud::addEigenNorms,
                  "``float64`` array of shape ``(num_points, 3)``, "
@@ -346,7 +348,9 @@ void pybind_pointcloud(py::module& m) {
             .def("get_normals", &ccPointCloud::getEigenNormals,
                  "``float64`` array of shape ``(num_points, 3)``, "
                  "use ``numpy.asarray()`` to access data: Points normals.")
-
+            .def("normals", &ccPointCloud::getEigenNormals,
+                 "``float64`` array of shape ``(num_points, 3)``, "
+                 "use ``numpy.asarray()`` to access data: Points normals.")
             .def("unalloacte_points", &ccPointCloud::unalloactePoints,
                  "Erases the cloud points.")
             .def("unalloacte_colors", &ccPointCloud::unallocateColors,
@@ -524,7 +528,7 @@ void pybind_pointcloud(py::module& m) {
                                 delete ref;
                             }
                             ref = nullptr;
-                            if (polyline.isEmpty()) {
+                            if (polyline.IsEmpty()) {
                                 cloudViewer::utility::LogWarning(
                                         "[ccPointCloud::crop2D] Invalid input "
                                         "polyline");
@@ -534,7 +538,7 @@ void pybind_pointcloud(py::module& m) {
                                         "[ccPointCloud::crop2D] Invalid input "
                                         "ortho_dim");
                             }
-                            if (cloud.isEmpty()) {
+                            if (cloud.IsEmpty()) {
                                 cloudViewer::utility::LogWarning(
                                         "[ccPointCloud::crop2D] Cloud is "
                                         "empty!");
@@ -732,7 +736,7 @@ void pybind_pointcloud(py::module& m) {
                     "field(s).",
                     "export_x"_a = false, "export_y"_a = false,
                     "export_z"_a = false)
-            .def("estimate_covariances", &ccPointCloud::estimateCovariances,
+            .def("estimate_covariances", &ccPointCloud::EstimateCovariances,
                  "Function to compute the covariance matrix for each point "
                  "in the point cloud",
                  "search_param"_a = KDTreeSearchParamKNN())
@@ -810,15 +814,21 @@ void pybind_pointcloud(py::module& m) {
 
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_point");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_points");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "point");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_point");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "points");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_points");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_color");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_colors");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "color");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_color");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "colors");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_colors");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_normal");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "set_normals");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "normal");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_normal");
+    docstring::ClassMethodDocInject(m, "ccPointCloud", "normals");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_normals");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "normalize_normals");
     docstring::ClassMethodDocInject(

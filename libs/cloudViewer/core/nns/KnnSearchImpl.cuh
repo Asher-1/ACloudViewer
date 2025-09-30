@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2023 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -8,7 +8,7 @@
 #pragma once
 
 #include "cub/cub.cuh"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "core/nns/NeighborSearchCommon.h"
 #include <Helper.h>
 #include "utility/MiniVec.h"

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/utility/PointCloudPicker.h"
@@ -43,31 +24,31 @@ bool PointCloudPicker::isEmpty() const {
     return (!pointcloud_ptr_ || picked_indices_.empty());
 }
 
-Eigen::Vector3d PointCloudPicker::getMinBound() const {
+Eigen::Vector3d PointCloudPicker::GetMinBound() const {
     if (pointcloud_ptr_) {
-        return ((const ccPointCloud&)(*pointcloud_ptr_)).getMinBound();
+        return ((const ccPointCloud&)(*pointcloud_ptr_)).GetMinBound();
     } else {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
 }
 
-Eigen::Vector3d PointCloudPicker::getMaxBound() const {
+Eigen::Vector3d PointCloudPicker::GetMaxBound() const {
     if (pointcloud_ptr_) {
-        return ((const ccPointCloud&)(*pointcloud_ptr_)).getMaxBound();
+        return ((const ccPointCloud&)(*pointcloud_ptr_)).GetMaxBound();
     } else {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
 }
 
-Eigen::Vector3d PointCloudPicker::getGeometryCenter() const {
+Eigen::Vector3d PointCloudPicker::GetCenter() const {
     if (pointcloud_ptr_) {
-        return ((const ccPointCloud&)(*pointcloud_ptr_)).getGeometryCenter();
+        return ((const ccPointCloud&)(*pointcloud_ptr_)).GetCenter();
     } else {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
 }
 
-ccBBox PointCloudPicker::getAxisAlignedBoundingBox()
+ccBBox PointCloudPicker::GetAxisAlignedBoundingBox()
         const {
     if (pointcloud_ptr_) {
         return ccBBox::CreateFromPoints(
@@ -77,7 +58,7 @@ ccBBox PointCloudPicker::getAxisAlignedBoundingBox()
     }
 }
 
-ecvOrientedBBox PointCloudPicker::getOrientedBoundingBox() const {
+ecvOrientedBBox PointCloudPicker::GetOrientedBoundingBox() const {
     if (pointcloud_ptr_) {
         return ecvOrientedBBox::CreateFromPoints(
                 ((const ccPointCloud&)(*pointcloud_ptr_)).getPoints());
@@ -86,25 +67,25 @@ ecvOrientedBBox PointCloudPicker::getOrientedBoundingBox() const {
     }
 }
 
-PointCloudPicker& PointCloudPicker::transform(
+PointCloudPicker& PointCloudPicker::Transform(
         const Eigen::Matrix4d& /*transformation*/) {
     // Do nothing
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::translate(
+PointCloudPicker& PointCloudPicker::Translate(
         const Eigen::Vector3d& translation, bool relative) {
     // Do nothing
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::scale(const double s, 
+PointCloudPicker& PointCloudPicker::Scale(const double s, 
 										  const Eigen::Vector3d &center) {
     // Do nothing
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::rotate(const Eigen::Matrix3d& R,
+PointCloudPicker& PointCloudPicker::Rotate(const Eigen::Matrix3d& R,
 										   const Eigen::Vector3d &center) {
     // Do nothing
     return *this;

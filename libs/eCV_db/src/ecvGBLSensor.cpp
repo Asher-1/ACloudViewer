@@ -831,7 +831,7 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
         maxCorner *= scale;
         ccBBox bbox(minCorner, maxCorner);
         m_obbHead = ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(bbox);
-        m_obbHead.setColor(ecvColor::Rgb::ToEigen(m_color));
+        m_obbHead.SetColor(ecvColor::Rgb::ToEigen(m_color));
     }
 
     //sensor legs
@@ -857,9 +857,9 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
     // tranformation
     {
         Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
-        m_obbHead.transform(transformation);
-        m_leg.transform(transformation);
-        m_axis.transform(transformation);
+        m_obbHead.Transform(transformation);
+        m_leg.Transform(transformation);
+        m_axis.Transform(transformation);
     }
 
     cameraContext.visible = context.visible;

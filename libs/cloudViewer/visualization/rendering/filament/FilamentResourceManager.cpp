@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/rendering/filament/FilamentResourceManager.h"
@@ -59,10 +40,11 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
-#include <ImageIO.h>
-#include "t/geometry/Image.h"
 #include <FileSystem.h>
+#include <ImageIO.h>
 #include <Logging.h>
+
+#include "t/geometry/Image.h"
 #include "visualization/gui/Application.h"
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentEntitiesMods.h"
@@ -304,6 +286,8 @@ TextureSettings GetSettingsFromImage(const t::geometry::Image& image,
 }  // namespace
 
 const MaterialHandle FilamentResourceManager::kDefaultLit =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kGaussianSplatShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
         MaterialHandle::Next();
@@ -974,6 +958,28 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = BoxResource(lit_mat, engine_);
 
+    const auto gaussian_path = resource_root + "/gaussianSplat.filamat";
+    auto gaussian_mat = LoadMaterialFromFile(gaussian_path, engine_);
+    gaussian_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                      default_color);
+    gaussian_mat->setDefaultParameter("baseRoughness", 0.7f);
+    gaussian_mat->setDefaultParameter("reflectance", 0.5f);
+    gaussian_mat->setDefaultParameter("baseMetallic", 0.f);
+    gaussian_mat->setDefaultParameter("clearCoat", 0.f);
+    gaussian_mat->setDefaultParameter("clearCoatRoughness", 0.f);
+    gaussian_mat->setDefaultParameter("anisotropy", 0.f);
+    gaussian_mat->setDefaultParameter("pointSize", 3.f);
+    gaussian_mat->setDefaultParameter("albedo", texture, default_sampler);
+    gaussian_mat->setDefaultParameter("ao_rough_metalMap", texture,
+                                      default_sampler);
+    gaussian_mat->setDefaultParameter("normalMap", normal_map, default_sampler);
+    gaussian_mat->setDefaultParameter("reflectanceMap", texture,
+                                      default_sampler);
+
+    gaussian_mat->setDefaultParameter("anisotropyMap", texture,
+                                      default_sampler);
+    materials_[kGaussianSplatShader] = BoxResource(gaussian_mat, engine_);
+
     const auto lit_trans_path =
             resource_root + "/defaultLitTransparency.filamat";
     auto lit_trans_mat = LoadMaterialFromFile(lit_trans_path, engine_);
@@ -1112,8 +1118,10 @@ void FilamentResourceManager::LoadDefaults() {
 
     const auto line_path = resource_root + "/unlitLine.filamat";
     auto line_mat = LoadMaterialFromFile(line_path, engine_);
-    line_mat->setDefaultParameter("baseColor", filament::RgbType::LINEAR,
-                                  {1.f, 1.f, 1.f});
+    line_mat->setDefaultParameter("baseColor", filament::RgbaType::LINEAR,
+                                  default_color_alpha);
+    line_mat->setDefaultParameter("emissiveColor",
+                                  filament::math::float4(0.0, 0.0, 0.0, 1.0f));
     line_mat->setDefaultParameter("lineWidth", 1.f);
     materials_[kDefaultLineShader] = BoxResource(line_mat, engine_);
 

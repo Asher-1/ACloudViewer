@@ -48,6 +48,8 @@ if (BUILD_WITH_CONDA)
     else ()
         SET(CONDA_LIB_DIR ${CONDA_PREFIX}/lib ${CONDA_PREFIX}/lib/cmake)
     endif()
+else()
+    set(CONDA_LIB_DIR "")
 endif()
 
 ExternalProject_Add(ext_pcl
@@ -64,7 +66,8 @@ ExternalProject_Add(ext_pcl
             ${ExternalProject_CMAKE_ARGS_hidden}
             ${VTK_CMAKE_FLAGS}
             ${EIGEN_CMAKE_FLAGS}
-            -DBUILD_SHARED_LIBS=ON-DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
+            -DBUILD_SHARED_LIBS=ON
+            -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
             # checking CXX_COMPILER_ID is not supported.
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>

@@ -1,30 +1,11 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                       -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/PointCloudIO.h"
+#include "cloudViewer/io/PointCloudIO.h"
 
 #include <Logging.h>
 #include <benchmark/benchmark.h>
@@ -98,7 +79,7 @@ class TestPCGrid0 {
 public:
     void Setup(int size) {
         if (size_ == size) return;
-        cloudViewer::utility::LogInfo("setup PCGrid size={}", size);
+        utility::LogInfo("setup PCGrid size={}", size);
         pc_.clear();
 
         size_ = size;
@@ -139,17 +120,20 @@ public:
 
         const double pointsMaxError =
                 1e-3;  //.ply ascii has the highest error, others <1e-4
-        CheckLE(AverageDistance(pc.getEigenPoints(), pc2.getEigenPoints()), pointsMaxError);
+        CheckLE(AverageDistance(pc.getEigenPoints(), pc2.getEigenPoints()),
+                pointsMaxError);
         if (int(args.compare) & int(Compare::NORMALS)) {
             const double normalsMaxError =
                     1e-6;  //.ply ascii has the highest error, others <1e-7
-            CheckLE(AverageDistance(pc.getEigenNormals(), pc2.getEigenNormals()),
+            CheckLE(AverageDistance(pc.getEigenNormals(),
+                                    pc2.getEigenNormals()),
                     normalsMaxError);
         }
         if (int(args.compare) & int(Compare::COLORS)) {
             const double colorsMaxError =
                     1e-2;  // colors are saved as uint8_t[3] in a lot of formats
-            CheckLE(AverageDistance(pc.getEigenColors(), pc2.getEigenColors()), colorsMaxError);
+            CheckLE(AverageDistance(pc.getEigenColors(), pc2.getEigenColors()),
+                    colorsMaxError);
         }
     }
 };

@@ -121,16 +121,16 @@ public:
 	ccFacet* clone() const;
 	bool clone(ccFacet* facet) const;
 
-	virtual bool isEmpty() const override;
-	virtual Eigen::Vector3d getMinBound() const override;
-	virtual Eigen::Vector3d getMaxBound() const override;
-	virtual Eigen::Vector3d getGeometryCenter() const override;
-	virtual ccBBox getAxisAlignedBoundingBox() const override;
-	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-	virtual ccFacet& transform(const Eigen::Matrix4d &transformation) override;
-	virtual ccFacet& translate(const Eigen::Vector3d &translation, bool relative = true) override;
-	virtual ccFacet& scale(const double s, const Eigen::Vector3d &center) override;
-	virtual ccFacet& rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) override;
+	virtual bool IsEmpty() const override;
+	virtual Eigen::Vector3d GetMinBound() const override;
+	virtual Eigen::Vector3d GetMaxBound() const override;
+	virtual Eigen::Vector3d GetCenter() const override;
+	virtual ccBBox GetAxisAlignedBoundingBox() const override;
+	virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+	virtual ccFacet& Transform(const Eigen::Matrix4d &transformation) override;
+	virtual ccFacet& Translate(const Eigen::Vector3d &translation, bool relative = true) override;
+	virtual ccFacet& Scale(const double s, const Eigen::Vector3d &center) override;
+	virtual ccFacet& Rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) override;
 
 	//! Copy constructor
 	/** \param poly polyline to clone
@@ -144,7 +144,7 @@ public:
 	/// \brief Assigns each line in the LineSet the same color.
 	///
 	/// \param color Specifies the color to be applied.
-	ccFacet &paintUniformColor(const Eigen::Vector3d &color) {
+	ccFacet &PaintUniformColor(const Eigen::Vector3d &color) {
 		setColor(ecvColor::Rgb::FromEigen(color));
 		return (*this);
 	}

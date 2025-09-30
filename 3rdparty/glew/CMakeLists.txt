@@ -18,7 +18,7 @@ if (GLEW_OSMESA)
 	else ()
 		set (OSMESA_LIB_NAME OSMesa)
 	endif ()
-	add_compile_definitions(GLEW_OSMESA)
+	add_definitions (-DGLEW_OSMESA)
 	set (GLEW_LIBRARIES ${OSMESA_LIB_NAME} ${OPENGL_LIBRARIES})
 	set (X11_LIBRARIES)
 endif ()
@@ -39,6 +39,7 @@ add_library(${GLEW_LIBRARY} STATIC ${glew_sources} ${glew_headers})
 set_target_properties(${GLEW_LIBRARY} PROPERTIES
 		OUTPUT_NAME ${GLEW_LIBRARY}
 		POSITION_INDEPENDENT_CODE ON
+		CXX_VISIBILITY_PRESET "hidden"
 		FOLDER "3rdparty"
 )
 

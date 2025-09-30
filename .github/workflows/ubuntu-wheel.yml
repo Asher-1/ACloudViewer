@@ -79,9 +79,21 @@ jobs:
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
           fi
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 10240
+          swap-size-mb: 4096
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+          build-mount-path: '/var/lib/docker'
+          build-mount-path-ownership: 'root:root'
       - name: Checkout source code
         uses: actions/checkout@v4
-      - name: Maximize build space
+      - name: Additional space optimization
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
@@ -90,6 +102,9 @@ jobs:
       - name: Docker build
         run: |
           echo "DEVELOPER_BUILD is $DEVELOPER_BUILD"
+          
+          # Clean up before build to ensure maximum space
+          docker system prune -f --volumes || true
           if [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py38_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
@@ -115,6 +130,15 @@ jobs:
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudViewer_cpu*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
           echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME" >> $GITHUB_ENV
+          
+          echo "=== Post-build cleanup and disk space ==="
+          # Clean up Docker build cache and unused images
+          docker builder prune -f || true
+          docker image prune -f || true
+          
+          # Show final disk usage
+          df -h
+          docker system df
 
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
@@ -145,7 +169,6 @@ jobs:
             ${{ env.PIP_PKG_NAME }}
             ${{ env.PIP_CPU_PKG_NAME }}
 
-  # due to undefined symbol: _ZN6google14FlagRegistererC1ISsEEPKcS3_S3_PT_S5_
   test-wheel:
     name: Test wheel
     permissions:
@@ -168,7 +191,6 @@ jobs:
           - is_main: false
             python_version: '3.11'
     env:
-      CONDA_DEP_FILE: ".ci/conda_linux.yml"
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
       - name: Checkout source code
@@ -176,41 +198,29 @@ jobs:
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
+          maximize_ubuntu_github_actions_build_space_simple
       - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
+          ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
           pattern: cloudViewer*-manylinux*.whl
           merge-multiple: true
-      # - name: Set up Python
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: ${{ matrix.python_version }}
-      - name: Set up Python version
-        run: |
-          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
-
-      - name: Set up Python environment
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          activate-environment: python${{ matrix.python_version }}
-          auto-activate-base: false
-          environment-file: ${{ env.CONDA_DEP_FILE }}
-          
+          python-version: ${{ matrix.python_version }}
       - name: Test Python package
-        shell: bash -l {0}
         run: |
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           test_wheel cloudViewer-[0-9]*-"$pi_tag"-*.whl
       - name: Test Python package (CPU)
-        shell: bash -l {0}
         env:
           BUILD_CUDA_MODULE: OFF
         run: |

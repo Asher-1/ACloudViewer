@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: Asher-1.github.io                    -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2020 Asher-1.github.io
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
@@ -30,6 +11,7 @@ import pytest
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from cloudViewer_test import list_devices
 
@@ -42,9 +24,10 @@ from cloudViewer_test import list_devices
 def test_matmul(device, dtype):
     # Shape takes tuple, list or cv3d.core.SizeVector
     a = cv3d.core.Tensor([[1, 2.5, 3], [4, 5, 6.2]], dtype=dtype, device=device)
-    b = cv3d.core.Tensor([[7.5, 8, 9, 10], [11, 12, 13, 14], [15, 16, 17.8, 18]],
-                        dtype=dtype,
-                        device=device)
+    b = cv3d.core.Tensor(
+        [[7.5, 8, 9, 10], [11, 12, 13, 14], [15, 16, 17.8, 18]],
+        dtype=dtype,
+        device=device)
     c = cv3d.core.matmul(a, b)
     assert c.shape == cv3d.core.SizeVector([2, 4])
 
@@ -96,8 +79,8 @@ def test_matmul(device, dtype):
 ])
 def test_inverse(device, dtype):
     a = cv3d.core.Tensor([[7, 2, 1], [0, 3, -1], [-3, 4, 2]],
-                        dtype=dtype,
-                        device=device)
+                         dtype=dtype,
+                         device=device)
 
     if dtype in [cv3d.core.Dtype.Int32, cv3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
@@ -150,8 +133,8 @@ def test_inverse(device, dtype):
 ])
 def test_svd(device, dtype):
     a = cv3d.core.Tensor([[2, 4], [1, 3], [0, 0], [0, 0]],
-                        dtype=dtype,
-                        device=device)
+                         dtype=dtype,
+                         device=device)
     if dtype in [cv3d.core.Dtype.Int32, cv3d.core.Dtype.Int64]:
         with pytest.raises(RuntimeError) as excinfo:
             cv3d.core.svd(a)
@@ -250,9 +233,9 @@ def test_lstsq(device, dtype):
         dtype=dtype,
         device=device)
     b = cv3d.core.Tensor([[8.58, 9.35], [8.26, -4.43], [8.48, -0.70],
-                         [-5.28, -0.26], [5.72, -7.36], [8.93, -2.52]],
-                        dtype=dtype,
-                        device=device)
+                          [-5.28, -0.26], [5.72, -7.36], [8.93, -2.52]],
+                         dtype=dtype,
+                         device=device)
     x = a.lstsq(b)
     x_numpy, _, _, _ = np.linalg.lstsq(a.cpu().numpy(),
                                        b.cpu().numpy(),

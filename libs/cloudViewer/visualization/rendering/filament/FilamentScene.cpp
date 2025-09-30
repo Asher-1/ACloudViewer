@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
@@ -33,6 +14,7 @@
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
 #include <unordered_set>
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293 4305)
@@ -121,7 +103,8 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
          ResourceManager::kDefaultUnlitPolygonOffsetShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
         {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
-        {"unlitLine", ResourceManager::kDefaultLineShader}};
+        {"unlitLine", ResourceManager::kDefaultLineShader},
+        {"gaussianSplat", ResourceManager::kGaussianSplatShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -176,7 +159,21 @@ FilamentScene::FilamentScene(filament::Engine& engine,
     // covers up any SceneWidgets in the window.
 }
 
-FilamentScene::~FilamentScene() {}
+FilamentScene::~FilamentScene() {
+    for (auto& le : lights_) {
+        engine_.destroy(le.second.filament_entity);
+        le.second.filament_entity.clear();
+    }
+    engine_.destroy(sun_.filament_entity);
+    sun_.filament_entity.clear();
+    if (ibl_handle_) {
+        resource_mgr_.Destroy(ibl_handle_);
+    }
+    if (skybox_handle_) {
+        resource_mgr_.Destroy(skybox_handle_);
+    }
+    engine_.destroy(scene_);
+}
 
 Scene* FilamentScene::Copy() {
     auto copy = new FilamentScene(engine_, resource_mgr_, renderer_);
@@ -296,7 +293,7 @@ void FilamentScene::SetActiveCamera(const std::string& camera_name) {}
 
 MaterialInstanceHandle FilamentScene::AssignMaterialToFilamentGeometry(
         filament::RenderableManager::Builder& builder,
-        const Material& material) {
+        const MaterialRecord& material) {
     // TODO: put this in a method
     auto shader = defaults_mapping::shader_mappings[material.shader];
     if (!shader) shader = defaults_mapping::kColorOnlyMesh;
@@ -311,7 +308,7 @@ MaterialInstanceHandle FilamentScene::AssignMaterialToFilamentGeometry(
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const ccHObject& geometry,
-                                const Material& material,
+                                const MaterialRecord& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
     if (geometries_.count(object_name) > 0) {
@@ -322,7 +319,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     // Basic sanity checks
-    if (geometry.isEmpty()) {
+    if (geometry.IsEmpty()) {
         utility::LogDebug(
                 "Geometry for object {} is empty. Not adding geometry to scene",
                 object_name);
@@ -338,14 +335,12 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     // Build Filament buffers
-    auto geometry_buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
-    if (!geometry_buffer_builder) {
+    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
+    if (!buffer_builder) {
         utility::LogWarning("Geometry type {} is not supported yet!",
                             static_cast<size_t>(geometry.getClassID()));
         return false;
     }
-
-    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
@@ -373,79 +368,51 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
-                                const t::geometry::PointCloud& point_cloud,
-                                const Material& material,
+                                const t::geometry::Geometry& geometry,
+                                const MaterialRecord& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
-    // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
-    // in particular macOS with clang 11.0.0. This is a temporary fix.
-    auto ComputeAABB =
-            [](const t::geometry::PointCloud& cloud) -> filament::Box {
-        Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
-        Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
-        const auto& points = cloud.GetPoints();
-        const size_t n = points.GetLength();
-        float* pts = (float*)points.GetDataPtr();
-        for (size_t i = 0; i < 3 * n; i += 3) {
-            min_pt[0] = std::min(min_pt[0], pts[i]);
-            min_pt[1] = std::min(min_pt[1], pts[i + 1]);
-            min_pt[2] = std::min(min_pt[2], pts[i + 2]);
-            max_pt[0] = std::max(max_pt[0], pts[i]);
-            max_pt[1] = std::max(max_pt[1], pts[i + 1]);
-            max_pt[2] = std::max(max_pt[2], pts[i + 2]);
-        }
-
-        filament::math::float3 min(min_pt.x(), min_pt.y(), min_pt.z());
-        filament::math::float3 max(max_pt.x(), max_pt.y(), max_pt.z());
-
-        filament::Box aabb;
-        aabb.set(min, max);
-        if (aabb.isEmpty()) {
-            min -= 1.f;
-            max += 1.f;
-            aabb.set(min, max);
-        }
-        return aabb;
-    };
-
     // Basic sanity checks
-    if (point_cloud.IsEmpty()) {
-        utility::LogWarning("Point cloud for object {} is empty", object_name);
+    if (geometry.IsEmpty()) {
+        utility::LogWarning("Geometry for object {} is empty", object_name);
         return false;
     }
-    const auto& points = point_cloud.GetPoints();
-    if (points.GetDtype() != core::Float32) {
-        utility::LogWarning("tensor point cloud must have Dtype of Float32");
-        return false;
-    }
-
-    t::geometry::PointCloud cpu_pcloud;
-    std::unique_ptr<GeometryBuffersBuilder> buffer_builder;
-    if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
+    if (!buffer_builder) {
         utility::LogWarning(
-                "GPU resident tensor point clouds are not supported at this "
-                "time for direct visualization. Copying point cloud to CPU.");
-        cpu_pcloud = point_cloud.CPU();
-        buffer_builder = GeometryBuffersBuilder::GetBuilder(cpu_pcloud);
-    } else {
-        cpu_pcloud = point_cloud;
-        buffer_builder = GeometryBuffersBuilder::GetBuilder(point_cloud);
+                "Unable to create GPU resources for object {}. Please check "
+                "console for further details.",
+                object_name);
+        return false;
     }
 
+    // Setup and build filament resources
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
     buffer_builder->SetAdjustColorsForSRGBToneMapping(material.sRGB_color);
+    if (material.shader == "unlitLine") {
+        buffer_builder->SetWideLines();
+    }
+
     auto buffers = buffer_builder->ConstructBuffers();
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    filament::Box aabb = ComputeAABB(cpu_pcloud);
+    filament::Box aabb = buffer_builder->ComputeAABB();
+    // NOTE: pointer not checked because if we get to this point then we know
+    // that the dynamic cast must succeed
+    auto* drawable_geom =
+            dynamic_cast<const t::geometry::DrawableGeometry*>(&geometry);
+    MaterialRecord internal_material = material;
+    if (drawable_geom->HasMaterial()) {
+        drawable_geom->GetMaterial().ToMaterialRecord(internal_material);
+    }
     bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
-                                              aabb, vb, ib, material);
+                                              aabb, vb, ib, internal_material);
     if (success && ib_downsampled) {
         if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
-                                        vb, ib_downsampled, material,
+                                        vb, ib_downsampled, internal_material,
                                         BufferReuse::kYes)) {
             // If we failed to create a downsampled cloud, which would be
             // unlikely, create another entity with the original buffers
@@ -460,7 +427,8 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 #ifndef NDEBUG
-void OutputMaterialProperties(const visualization::rendering::Material& mat) {
+void OutputMaterialProperties(
+        const visualization::rendering::MaterialRecord& mat) {
     utility::LogInfo("Material {}", mat.name);
     utility::LogInfo("\tAlpha: {}", mat.has_alpha);
     utility::LogInfo("\tBase Color: {},{},{},{}", mat.base_color.x(),
@@ -507,7 +475,7 @@ bool FilamentScene::CreateAndAddFilamentEntity(
         filament::Box& aabb,
         VertexBufferHandle vb,
         IndexBufferHandle ib,
-        const Material& material,
+        const MaterialRecord& material,
         BufferReuse reusing_vertex_buffer /*= kNo*/) {
     auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
     auto ibuf = resource_mgr_.GetIndexBuffer(ib).lock();
@@ -532,6 +500,7 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                 object_name,
                 RenderableGeometry{object_name,
                                    true,
+                                   false,
                                    true,
                                    true,
                                    true,
@@ -750,8 +719,9 @@ FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
         using namespace filament::math;
         transform_mgr.create(geom->filament_entity);
         itransform = transform_mgr.getInstance(geom->filament_entity);
-        transform_mgr.create(geom->filament_entity, itransform,
-                             mat4f::translation(float3{0.0f, 0.0f, 0.0f}));
+        transform_mgr.create(
+                geom->filament_entity, itransform,
+                mat4f::translation(filament::math::float3{0.0f, 0.0f, 0.0f}));
     }
     return itransform;
 }
@@ -879,6 +849,32 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+void FilamentScene::UpdateGaussianSplat(GeometryMaterialInstance& geom_mi) {
+    auto& material = geom_mi.properties;
+    auto& maps = geom_mi.maps;
+
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", material.base_color, false)
+            .SetParameter("pointSize", material.point_size)
+            .SetParameter("baseRoughness", material.base_roughness)
+            .SetParameter("baseMetallic", material.base_metallic)
+            .SetParameter("reflectance", material.base_reflectance)
+            .SetParameter("clearCoat", material.base_clearcoat)
+            .SetParameter("clearCoatRoughness",
+                          material.base_clearcoat_roughness)
+            .SetParameter("anisotropy", material.base_anisotropy)
+            .SetParameter("shDegree", material.sh_degree)
+            .SetTexture("albedo", maps.albedo_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("normalMap", maps.normal_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("ao_rough_metalMap", maps.ao_rough_metal_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .SetTexture("reflectanceMap", maps.reflectance_map,
+                        rendering::TextureSamplerParameters::Pretty())
+            .Finish();
+}
+
 void FilamentScene::UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi) {
     auto& material = geom_mi.properties;
     auto& maps = geom_mi.maps;
@@ -992,6 +988,7 @@ void FilamentScene::UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi) {
 void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetColor("emissiveColor", geom_mi.properties.emissive_color, false)
             .SetParameter("lineWidth", geom_mi.properties.line_width)
             .Finish();
 }
@@ -1163,13 +1160,15 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
         UpdateUnlitPolygonOffsetShader(geom.mat);
+    } else if (props.shader == "gaussianSplat") {
+        UpdateGaussianSplat(geom.mat);
     } else {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
 }
 
 void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
-                                             const Material& material,
+                                             const MaterialRecord& material,
                                              bool shader_only) {
     // Has the shader changed?
     if (geom->mat.properties.shader != material.shader) {
@@ -1226,7 +1225,7 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
 }
 
 void FilamentScene::OverrideMaterial(const std::string& object_name,
-                                     const Material& material) {
+                                     const MaterialRecord& material) {
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         OverrideMaterialInternal(g, material);
@@ -1239,7 +1238,7 @@ void FilamentScene::QueryGeometry(std::vector<std::string>& geometry) {
     }
 }
 
-void FilamentScene::OverrideMaterialAll(const Material& material,
+void FilamentScene::OverrideMaterialAll(const MaterialRecord& material,
                                         bool shader_only) {
     for (auto& ge : geometries_) {
         if (ge.first == kBackgroundName) {
@@ -1573,6 +1572,9 @@ Eigen::Vector3f FilamentScene::GetSunLightDirection() {
 }
 
 bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
+    auto old_ibl = ibl_handle_;
+    auto old_sky = skybox_handle_;
+
     // Load IBL
     std::string ibl_path = ibl_name + std::string("_ibl.ktx");
     rendering::IndirectLightHandle new_ibl =
@@ -1586,6 +1588,10 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
         indirect_light_ = wlight;
         if (ibl_enabled_) scene_->setIndirectLight(light.get());
         ibl_name_ = ibl_name;
+        ibl_handle_ = new_ibl;
+        if (old_ibl) {
+            resource_mgr_.Destroy(old_ibl);
+        }
     }
 
     // Load matching skybox
@@ -1598,6 +1604,10 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
         if (skybox_enabled_) {
             scene_->setSkybox(skybox.get());
             ShowSkybox(true);
+        }
+        skybox_handle_ = sky;
+        if (old_sky) {
+            resource_mgr_.Destroy(old_sky);
         }
     }
 
@@ -1670,7 +1680,7 @@ bool FilamentScene::GetSkyboxVisible() const {
 void FilamentScene::CreateBackgroundGeometry() {
     if (!HasGeometry(kBackgroundName)) {
         ccMesh quad;
-        quad.createInternalCloud();
+        quad.CreateInternalCloud();
         // The coordinates are in raw GL coordinates, what Filament calls
         // "device coordinates". Since we want to draw on the entire screen,
         // and GL's native coordinates range from (-1, 1) to (1, 1), that's
@@ -1679,12 +1689,12 @@ void FilamentScene::CreateBackgroundGeometry() {
 
         quad.reserve(2);
         quad.addEigenVertices({{-1.0, -1.0, 0.0},
-                          {1.0, -1.0, 0.0},
-                          {1.0, 1.0, 0.0},
-                          {-1.0, 1.0, 0.0}});
+                               {1.0, -1.0, 0.0},
+                               {1.0, 1.0, 0.0},
+                               {-1.0, 1.0, 0.0}});
         quad.addTriangles({{0, 1, 2}, {0, 2, 3}});
 
-        Material m;
+        MaterialRecord m;
         m.shader = "unlitBackground";
         m.base_color = {1.f, 1.f, 1.f, 1.f};
         m.aspect_ratio = 0.0;
@@ -1712,7 +1722,7 @@ void FilamentScene::SetBackground(
         new_image = image;
     }
 
-    Material m;
+    MaterialRecord m;
     m.shader = "unlitBackground";
     m.base_color = color;
     if (new_image) {
@@ -1773,7 +1783,7 @@ void FilamentScene::SetBackground(TextureHandle image) {
 
 void FilamentScene::CreateGroundPlaneGeometry() {
     ccMesh quad;
-    quad.createInternalCloud();
+    quad.CreateInternalCloud();
     // Please see note above about drawing a full screen quad with
     // Filament. However, the ground plane shader expects the full screen quad
     // to be rendered at the far plan hence the z must be set to 1.0
@@ -1783,7 +1793,7 @@ void FilamentScene::CreateGroundPlaneGeometry() {
                            {1.0, 1.0, 1.0},
                            {-1.0, 1.0, 1.0}});
     quad.addTriangles({{0, 1, 2}, {0, 2, 3}});
-    rendering::Material m;
+    rendering::MaterialRecord m;
     m.shader = "infiniteGroundPlane";
     m.base_color = kDefaultGroundPlaneColor;
     AddGeometry(kGroundPlaneName, quad, m);
@@ -1797,7 +1807,7 @@ void FilamentScene::EnableGroundPlane(bool enable, GroundPlane plane) {
         CreateGroundPlaneGeometry();
     }
     if (enable) {
-        rendering::Material m;
+        rendering::MaterialRecord m;
         m.shader = "infiniteGroundPlane";
         m.base_color = kDefaultGroundPlaneColor;
         if (plane == GroundPlane::XY) {
@@ -1936,6 +1946,25 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
         container.view->PostRender();
     }
 }
+
+void FilamentScene::HideRefractedMaterials(bool hide) {
+    for (auto geom : geometries_) {
+        if (geom.second.mat.properties.shader == "defaultLitSSR") {
+            if (hide) {
+                if (!geom.second.visible) {
+                    geom.second.was_hidden_before_picking = true;
+                } else {
+                    ShowGeometry(geom.first, false);
+                }
+            } else {
+                if (!geom.second.was_hidden_before_picking) {
+                    ShowGeometry(geom.first, true);
+                }
+            }
+        }
+    }
+}
+
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace cloudViewer

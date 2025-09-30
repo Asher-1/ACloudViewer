@@ -1,68 +1,54 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import cloudViewer as cv3d
 import numpy as np
 import re
 import os
-import sys
-from cloudViewer_test import download_fountain_dataset
 
 
-def get_file_list(path, extension=None):
-
-    def sorted_alphanum(file_list_ordered):
-        convert = lambda text: int(text) if text.isdigit() else text
-        alphanum_key = lambda key: [
-            convert(c) for c in re.split('([0-9]+)', key)
-        ]
-        return sorted(file_list_ordered, key=alphanum_key)
-
-    if extension is None:
-        file_list = [
-            path + f
-            for f in os.listdir(path)
-            if os.path.isfile(os.path.join(path, f))
-        ]
-    else:
-        file_list = [
-            path + f
-            for f in os.listdir(path)
-            if os.path.isfile(os.path.join(path, f)) and
-            os.path.splitext(f)[1] == extension
-        ]
-    file_list = sorted_alphanum(file_list)
-    return file_list
-
-
-def test_color_map():
-    path = download_fountain_dataset()
-    depth_image_path = get_file_list(os.path.join(path, "depth/"),
-                                     extension=".png")
-    color_image_path = get_file_list(os.path.join(path, "image/"),
-                                     extension=".jpg")
-    assert (len(depth_image_path) == len(color_image_path))
-
+def load_fountain_dataset():
     rgbd_images = []
-    for i in range(len(depth_image_path)):
-        depth = cv3d.io.read_image(os.path.join(depth_image_path[i]))
-        color = cv3d.io.read_image(os.path.join(color_image_path[i]))
+    fountain_rgbd_dataset = cv3d.data.SampleFountainRGBDImages()
+    for i in range(len(fountain_rgbd_dataset.depth_paths)):
+        depth = cv3d.io.read_image(fountain_rgbd_dataset.depth_paths[i])
+        color = cv3d.io.read_image(fountain_rgbd_dataset.color_paths[i])
         rgbd_image = cv3d.geometry.RGBDImage.create_from_color_and_depth(
             color, depth, convert_rgb_to_intensity=False)
         rgbd_images.append(rgbd_image)
 
     camera_trajectory = cv3d.io.read_pinhole_camera_trajectory(
-        os.path.join(path, "scene/key.log"))
-    mesh = cv3d.io.read_triangle_mesh(
-        os.path.join(path, "scene", "integrated.ply"))
-    verts = np.asarray(mesh.get_vertices())
-    mesh_colors = np.tile([0.40322907, 0.37276872, 0.54375919], (verts.shape[0], 1))
-    # mesh_colors = [0.40322907, 0.37276872, 0.54375919]
-    mesh.set_vertex_colors(cv3d.utility.Vector3dVector(mesh_colors))
-    # mesh.set_vertex_colors(mesh_colors)
-    vertex_mean = np.mean(np.asarray(mesh.get_vertex_colors()), axis=0)
+        fountain_rgbd_dataset.keyframe_poses_log_path)
+    mesh = cv3d.io.read_triangle_mesh(fountain_rgbd_dataset.reconstruction_path)
+
+    return mesh, rgbd_images, camera_trajectory
+
+
+def test_color_map():
+    """
+    Hard-coded values are from the 0.12 release. We expect the values to match
+    exactly when OMP_NUM_THREADS=1. If more threads are used, there could be
+    some small numerical differences.
+    """
+    cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
+
+    # Load dataset
+    mesh, rgbd_images, camera_trajectory = load_fountain_dataset()
+
+    # Computes averaged color without optimization, for debugging
+    mesh, camera_trajectory = cv3d.pipelines.color_map.run_rigid_optimizer(
+        mesh, rgbd_images, camera_trajectory,
+        cv3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=0))
+    vertex_mean = np.mean(np.asarray(mesh.vertex_colors()), axis=0)
     extrinsic_mean = np.array(
         [c.extrinsic for c in camera_trajectory.parameters]).mean(axis=0)
     np.testing.assert_allclose(vertex_mean,
                                np.array([0.40322907, 0.37276872, 0.54375919]),
-                               rtol=1e-2)
+                               rtol=1e-5)
     np.testing.assert_allclose(
         extrinsic_mean,
         np.array([[0.77003829, -0.10813595, 0.06467495, -0.56212008],
@@ -76,7 +62,7 @@ def test_color_map():
         mesh, rgbd_images, camera_trajectory,
         cv3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=10))
 
-    vertex_mean = np.mean(np.asarray(mesh.get_vertex_colors()), axis=0)
+    vertex_mean = np.mean(np.asarray(mesh.vertex_colors()), axis=0)
     extrinsic_mean = np.array(
         [c.extrinsic for c in camera_trajectory.parameters]).mean(axis=0)
     np.testing.assert_allclose(vertex_mean,
@@ -95,7 +81,7 @@ def test_color_map():
         mesh, rgbd_images, camera_trajectory,
         cv3d.pipelines.color_map.NonRigidOptimizerOption(maximum_iteration=10))
 
-    vertex_mean = np.mean(np.asarray(mesh.get_vertex_colors()), axis=0)
+    vertex_mean = np.mean(np.asarray(mesh.vertex_colors()), axis=0)
     extrinsic_mean = np.array(
         [c.extrinsic for c in camera_trajectory.parameters]).mean(axis=0)
     np.testing.assert_allclose(vertex_mean,

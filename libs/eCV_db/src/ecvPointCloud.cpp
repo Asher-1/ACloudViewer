@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #include "ecvPointCloud.h"
 
@@ -1064,7 +1064,7 @@ const ccPointCloud& ccPointCloud::append(ccPointCloud* addedCloud,
     }
 
     // Covariances
-    if ((!hasPoints() || hasCovariances()) && addedCloud->hasCovariances()) {
+    if ((!hasPoints() || HasCovariances()) && addedCloud->HasCovariances()) {
         covariances_.resize(this->size());
         for (size_t i = 0; i < addedPoints; i++)
             covariances_[pointCountBefore + i] = addedCloud->covariances_[i];
@@ -1501,7 +1501,7 @@ bool ccPointCloud::resize(unsigned newNumberOfPoints) {
         return false;
     }
 
-    if (hasCovariances()) {
+    if (HasCovariances()) {
         covariances_.resize(m_points.size());
     }
 
@@ -1509,7 +1509,7 @@ bool ccPointCloud::resize(unsigned newNumberOfPoints) {
     return m_points.size() == newNumberOfPoints &&
            (!hasColors() || m_rgbColors->currentSize() == newNumberOfPoints) &&
            (!hasNormals() || m_normals->currentSize() == newNumberOfPoints) &&
-           (!hasCovariances() || covariances_.size() == newNumberOfPoints) &&
+           (!HasCovariances() || covariances_.size() == newNumberOfPoints) &&
            (!hasFWF() || m_fwfWaveforms.size() == newNumberOfPoints);
 }
 
@@ -1719,9 +1719,10 @@ void ccPointCloud::invalidateBoundingBox() {
 }
 
 void ccPointCloud::addRGBColor(const ecvColor::Rgb& C) {
-    assert(m_rgbColors && m_rgbColors->isAllocated());
+    // allocate colors if necessary
+    if (!hasColors())
+        if (!reserveTheRGBTable()) return;
     m_rgbColors->emplace_back(C);
-
     // We must update the VBOs
     colorsHaveChanged();
 }
@@ -1815,13 +1816,18 @@ void ccPointCloud::getNorms(std::vector<CompressedNormType>& idxes) const {
 }
 
 void ccPointCloud::addNormIndex(CompressedNormType index) {
-    assert(m_normals && m_normals->isAllocated());
+    if (!hasNormals()) {
+        reserveTheNormsTable();
+    }
     m_normals->addElement(index);
 }
 
 void ccPointCloud::addNormAtIndex(const PointCoordinateType* N,
                                   unsigned index) {
-    assert(m_normals && m_normals->isAllocated());
+    if (!hasNormals()) {
+        reserveTheNormsTable();
+    }
+
     // we get the real normal vector corresponding to current index
     CCVector3 P(ccNormalVectors::GetNormal(m_normals->getValue(index)));
     // we add the provided vector (N)
@@ -2189,13 +2195,13 @@ void ccPointCloud::applyRigidTransformation(const ccGLMatrix& trans) {
     refreshBB();  // calls notifyGeometryUpdate + releaseVBOs
 }
 
-ccPointCloud& ccPointCloud::transform(const Eigen::Matrix4d& trans) {
+ccPointCloud& ccPointCloud::Transform(const Eigen::Matrix4d& trans) {
     applyRigidTransformation(ccGLMatrix::FromEigenMatrix(trans));
     TransformCovariances(trans, covariances_);
     return *this;
 }
 
-ccPointCloud& ccPointCloud::translate(const Eigen::Vector3d& translation,
+ccPointCloud& ccPointCloud::Translate(const Eigen::Vector3d& translation,
                                       bool relative) {
     CCVector3 T = translation;
     if (cloudViewer::LessThanEpsilon(fabs(T.x) + fabs(T.y) + fabs(T.z)))
@@ -2238,7 +2244,7 @@ ccPointCloud& ccPointCloud::translate(const Eigen::Vector3d& translation,
     return *this;
 }
 
-ccPointCloud& ccPointCloud::scale(const double s,
+ccPointCloud& ccPointCloud::Scale(const double s,
                                   const Eigen::Vector3d& center) {
     scale(static_cast<PointCoordinateType>(s),
           static_cast<PointCoordinateType>(s),
@@ -2247,7 +2253,7 @@ ccPointCloud& ccPointCloud::scale(const double s,
     return *this;
 }
 
-ccPointCloud& ccPointCloud::rotate(const Eigen::Matrix3d& R,
+ccPointCloud& ccPointCloud::Rotate(const Eigen::Matrix3d& R,
                                    const Eigen::Vector3d& center) {
     ccGLMatrix trans;
     trans.setRotation(R.data());
@@ -2359,7 +2365,9 @@ void ccPointCloud::scale(PointCoordinateType fx,
     }
 
     // update the transformation history
-    { m_glTransHistory = scaleTrans * m_glTransHistory; }
+    {
+        m_glTransHistory = scaleTrans * m_glTransHistory;
+    }
 
     notifyGeometryUpdate();  // calls releaseVBOs()
 }
@@ -4390,7 +4398,7 @@ cloudViewer::ReferenceCloud* ccPointCloud::crop(const ccBBox& box,
 }
 
 cloudViewer::ReferenceCloud* ccPointCloud::crop(const ecvOrientedBBox& bbox) {
-    if (bbox.isEmpty()) {
+    if (bbox.IsEmpty()) {
         CVLog::Warning("[ccPointCloud::crop] Invalid bounding-box");
         return nullptr;
     }
@@ -4409,7 +4417,7 @@ cloudViewer::ReferenceCloud* ccPointCloud::crop(const ecvOrientedBBox& bbox) {
     }
 
     std::vector<size_t> indices =
-            bbox.getPointIndicesWithinBoundingBox(m_points);
+            bbox.GetPointIndicesWithinBoundingBox(m_points);
 
     for (size_t index : indices) {
         ref->addPointIndex(static_cast<unsigned int>(index));
@@ -4425,11 +4433,11 @@ cloudViewer::ReferenceCloud* ccPointCloud::crop(const ecvOrientedBBox& bbox) {
     return ref;
 }
 
-ccBBox ccPointCloud::getAxisAlignedBoundingBox() const {
+ccBBox ccPointCloud::GetAxisAlignedBoundingBox() const {
     return ccBBox::CreateFromPoints(m_points);
 }
 
-ecvOrientedBBox ccPointCloud::getOrientedBoundingBox() const {
+ecvOrientedBBox ccPointCloud::GetOrientedBoundingBox() const {
     return ecvOrientedBBox::CreateFromPoints(m_points);
 }
 
@@ -5455,12 +5463,12 @@ bool ccPointCloud::exportNormalToSF(bool exportDims[3]) {
     return true;
 }
 
-std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
+std::shared_ptr<ccPointCloud> ccPointCloud::SelectByIndex(
         const std::vector<size_t>& indices, bool invert /* = false */) const {
     auto output = cloudViewer::make_shared<ccPointCloud>("pointCloud");
     bool has_normals = hasNormals();
     bool has_colors = hasColors();
-    bool has_covariance = hasCovariances();
+    bool has_covariance = HasCovariances();
     bool has_fwf = hasFWF();
 
     unsigned int n = size();
@@ -5484,7 +5492,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
     if (n) {
         if (!output->reserveThePointsTable(out_n)) {
             CVLog::Error(
-                    "[ccPointCloud::selectByIndex] Not enough memory to "
+                    "[ccPointCloud::SelectByIndex] Not enough memory to "
                     "duplicate cloud!");
             return nullptr;
         }
@@ -5495,7 +5503,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
                 output->showColors(colorsShown());
             } else {
                 CVLog::Warning(
-                        "[ccPointCloud::selectByIndex] Not enough memory to "
+                        "[ccPointCloud::SelectByIndex] Not enough memory to "
                         "copy RGB colors!");
                 has_colors = false;
             }
@@ -5507,7 +5515,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
                 output->showNormals(normalsShown());
             } else {
                 CVLog::Warning(
-                        "[ccPointCloud::selectByIndex] Not enough memory to "
+                        "[ccPointCloud::SelectByIndex] Not enough memory to "
                         "copy normals!");
                 has_normals = false;
             }
@@ -5521,14 +5529,14 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
                     output->fwfData() = fwfData();
                 } catch (const std::bad_alloc&) {
                     CVLog::Warning(
-                            "[ccPointCloud::selectByIndex] Not enough memory "
+                            "[ccPointCloud::SelectByIndex] Not enough memory "
                             "to copy waveform signals!");
                     output->clearFWFData();
                     has_fwf = false;
                 }
             } else {
                 CVLog::Warning(
-                        "[ccPointCloud::selectByIndex] Not enough memory to "
+                        "[ccPointCloud::SelectByIndex] Not enough memory to "
                         "copy waveform signals!");
                 has_fwf = false;
             }
@@ -5604,7 +5612,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
                             // creation
                             output->deleteScalarField(sfIdx);
                             CVLog::Warning(
-                                    QString("[ccPointCloud::selectByIndex] Not "
+                                    QString("[ccPointCloud::SelectByIndex] Not "
                                             "enough memory to copy scalar "
                                             "field '%1'!")
                                             .arg(sf->getName()));
@@ -5669,7 +5677,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::selectByIndex(
             } catch (const std::bad_alloc&) {
                 // not enough memory
                 CVLog::Warning(
-                        QString("[ccPointCloud::selectByIndex] Not enough "
+                        QString("[ccPointCloud::SelectByIndex] Not enough "
                                 "memory to copy the grid structure(s)"));
             }
         }

@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: Asher-1.github.io                    -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2020 Asher-1.github.io
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
@@ -31,6 +12,7 @@ import pytest
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from cloudViewer_test import list_devices
 
@@ -61,7 +43,8 @@ def test_constructor_and_accessors(device):
 
     # Edit and access values.
     pcd.point["points"][0] = cv3c.Tensor([1, 2, 3], dtype, device)
-    assert pcd.point["points"][0].allclose(cv3c.Tensor([1, 2, 3], dtype, device))
+    assert pcd.point["points"][0].allclose(cv3c.Tensor([1, 2, 3], dtype,
+                                                       device))
 
     # Pushback.
     pcd.synchronized_push_back({"points": one_point, "colors": one_color})
@@ -74,19 +57,18 @@ def test_from_legacy(device):
     dtype = cv3c.Dtype.Float32
 
     legacy_pcd = cv3d.geometry.ccPointCloud()
-    legacy_pcd.set_points(cv3d.utility.Vector3dVector(
-        np.array([
+    legacy_pcd.set_points(
+        cv3d.utility.Vector3dVector(np.array([
             [0, 1, 2],
             [3, 4, 5],
         ])))
-    legacy_pcd.set_colors(cv3d.utility.Vector3dVector(
-        np.array([
+    legacy_pcd.set_colors(
+        cv3d.utility.Vector3dVector(np.array([
             [6, 7, 8],
             [9, 10, 11],
         ])))
 
-    pcd = cv3d.t.geometry.PointCloud.from_legacy(
-        legacy_pcd, dtype, device)
+    pcd = cv3d.t.geometry.PointCloud.from_legacy(legacy_pcd, dtype, device)
     assert pcd.point["points"].as_tensor().allclose(
         cv3c.Tensor([
             [0, 1, 2],
@@ -116,12 +98,12 @@ def test_to_legacy_pointcloud(device):
         ], dtype, device))
 
     legacy_pcd = pcd.to_legacy()
-    np.testing.assert_allclose(np.asarray(legacy_pcd.points),
+    np.testing.assert_allclose(np.asarray(legacy_pcd.get_points()),
                                np.array([
                                    [0, 1, 2],
                                    [3, 4, 5],
                                ]))
-    np.testing.assert_allclose(np.asarray(legacy_pcd.colors),
+    np.testing.assert_allclose(np.asarray(legacy_pcd.get_colors()),
                                np.array([
                                    [6, 7, 8],
                                    [9, 10, 11],
@@ -141,7 +123,8 @@ def test_member_functions(device):
             [50, 60, 3],
         ], dtype, device))
     assert pcd.get_min_bound().allclose(cv3c.Tensor([1, 2, 3], dtype, device))
-    assert pcd.get_max_bound().allclose(cv3c.Tensor([50, 60, 40], dtype, device))
+    assert pcd.get_max_bound().allclose(cv3c.Tensor([50, 60, 40], dtype,
+                                                    device))
     assert pcd.get_center().allclose(cv3c.Tensor([27, 24, 21], dtype, device))
 
     # transform.

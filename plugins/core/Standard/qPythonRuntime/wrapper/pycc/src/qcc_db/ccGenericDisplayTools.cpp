@@ -19,6 +19,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <pybind11/native_enum.h>
 
 #include <QPointF>
 #include <QSize>
@@ -65,14 +66,17 @@ void define_ccGenericDisplayTools(py::module &m)
 
     py::class_<ecvGenericDisplayTools> PyecvGenericDisplayTools(m, "ccGenericDisplayTools");
 
-    py::enum_<ecvGenericDisplayTools::TextAlign>(PyecvGenericDisplayTools, "TextAlign")
+    py::native_enum<ecvGenericDisplayTools::TextAlign>(
+        PyecvGenericDisplayTools, "TextAlign", "enum.Enum", "ecvGenericDisplayTools::TextAlign.")
         .value("ALIGN_HLEFT", ecvGenericDisplayTools::TextAlign::ALIGN_HLEFT)
         .value("ALIGN_HMIDDLE", ecvGenericDisplayTools::TextAlign::ALIGN_HMIDDLE)
         .value("ALIGN_HRIGHT", ecvGenericDisplayTools::TextAlign::ALIGN_HRIGHT)
         .value("ALIGN_VTOP", ecvGenericDisplayTools::TextAlign::ALIGN_VTOP)
         .value("ALIGN_VMIDDLE", ecvGenericDisplayTools::TextAlign::ALIGN_VMIDDLE)
         .value("ALIGN_VBOTTOM", ecvGenericDisplayTools::TextAlign::ALIGN_VBOTTOM)
-        .value("ALIGN_DEFAULT", ecvGenericDisplayTools::TextAlign::ALIGN_DEFAULT);
+        .value("ALIGN_DEFAULT", ecvGenericDisplayTools::TextAlign::ALIGN_DEFAULT)
+        .export_values()
+        .finalize();
 
     // TODO as widget
 }

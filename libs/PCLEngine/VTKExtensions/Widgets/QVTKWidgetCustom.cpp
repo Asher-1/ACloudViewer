@@ -196,8 +196,7 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
       m_logoWidget(nullptr),
       m_scalarbarWidget(nullptr),
       m_axesWidget(nullptr),
-      m_scaleBar(nullptr)
-{
+      m_scaleBar(nullptr) {
     this->setWindowTitle("3D View");
 
     QSurfaceFormat fmt = QVTKOpenGLNativeWidget::defaultFormat();
@@ -221,7 +220,10 @@ QVTKWidgetCustom::~QVTKWidgetCustom() {
         delete d_ptr;
         d_ptr = nullptr;
     }
-    if (m_scaleBar) { delete m_scaleBar; m_scaleBar = nullptr; }
+    if (m_scaleBar) {
+        delete m_scaleBar;
+        m_scaleBar = nullptr;
+    }
 }
 
 vtkSmartPointer<vtkLookupTable> QVTKWidgetCustom::createLookupTable(
@@ -280,7 +282,7 @@ void QVTKWidgetCustom::updateScene() {
     if (m_scaleBar) m_scaleBar->update(m_render, m_interactor);
     if (IsCalledFromMainThread() && this->GetRenderWindow()) {
         this->GetRenderWindow()->Render();
-    } else { // only core threading enabled rendering
+    } else {  // only core threading enabled rendering
         QMetaObject::invokeMethod(
                 this, [=]() { this->GetRenderWindow()->Render(); },
                 Qt::QueuedConnection);
@@ -732,7 +734,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             emit m_tools->labelmove2D(x, y, 0, 0);
             ecvDisplayTools::UpdateNamePoseRecursive();
         }
-    } else if ((event->buttons() & Qt::MidButton)) {
+    } else if ((event->buttons() & Qt::MiddleButton)) {
         // right button = panning / translating
         if (m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_PAN) {
             // displacement vector (in "3D")
@@ -1191,7 +1193,7 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                                          ecvDisplayTools::PIVOT_ALWAYS_SHOW);
     }
 
-    if ((event->button() == Qt::MidButton)) {
+    if ((event->button() == Qt::MiddleButton)) {
         if (mouseHasMoved) {
             event->accept();
             m_tools->m_activeItems.clear();
@@ -1205,7 +1207,7 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                 ccInteractor* item = m_tools->m_activeItems.front();
                 m_tools->m_activeItems.clear();
                 if (item->acceptClick(event->x(), height() - 1 - event->y(),
-                                      Qt::MidButton)) {
+                                      Qt::MiddleButton)) {
                     event->accept();
                 }
             }

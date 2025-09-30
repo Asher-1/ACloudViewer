@@ -250,11 +250,11 @@ if (WIN32)
 endif ()
 
 # Auxiliary files
-set(auxFiles ${COLOUDVIEWER_PROJECT_PATH}/CHANGELOG.txt bin_other/license.txt bin_other/global_shift_list_template.txt)
+set(auxFiles ${COLOUDVIEWER_PROJECT_PATH}/CHANGELOG.txt ${CMAKE_CURRENT_SOURCE_DIR}/bin_other/license.txt ${CMAKE_CURRENT_SOURCE_DIR}/bin_other/global_shift_list_template.txt)
 
 if (WIN32)
     # Additional auxiliary file(s)
-    file(GLOB batch_list bin_other/*.bat)
+    file(GLOB batch_list ${CMAKE_CURRENT_SOURCE_DIR}/bin_other/*.bat)
     list(APPEND auxFiles ${batch_list})
 endif ()
 

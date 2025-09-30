@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,8 +26,9 @@
 
 #pragma once
 
-#include "t/geometry/Geometry.h"
+#include "cloudViewer/core/Device.h"
 #include "pybind/cloudViewer_pybind.h"
+#include "t/geometry/Geometry.h"
 
 namespace cloudViewer {
 namespace t {
@@ -46,16 +47,22 @@ public:
     bool IsEmpty() const override {
         PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
     }
+
+    core::Device GetDevice() const override {
+        PYBIND11_OVERLOAD_PURE(core::Device, GeometryBase, );
+    }
 };
 
 void pybind_geometry(py::module& m);
 void pybind_geometry_class(py::module& m);
+void pybind_drawable_geometry(py::module& m);
 void pybind_tensormap(py::module& m);
-void pybind_image(py::module& m);
 void pybind_pointcloud(py::module& m);
+void pybind_lineset(py::module& m);
 void pybind_trianglemesh(py::module& m);
 void pybind_image(py::module& m);
-void pybind_tsdf_voxelgrid(py::module& m);
+void pybind_boundingvolume(py::module& m);
+void pybind_voxel_block_grid(py::module& m);
 void pybind_raycasting_scene(py::module& m);
 
 }  // namespace geometry

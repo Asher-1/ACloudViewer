@@ -125,8 +125,15 @@ cuda_wheel_build() {
 }
 
 ci_build() {
+    if [ "${UBUNTU_VERSION}" = "${UBUNTU_JAMMY}" ]; then
+        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
+    else 
+        QT_BASE_DIR="/opt/qt515"
+    fi
+
     echo "[ci_build()] DOCKER_TAG=${DOCKER_TAG}"
     echo "[ci_build()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[ci_build()] QT_BASE_DIR: ${QT_BASE_DIR}"
     echo "[ci_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
     echo "[ci_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
     echo "[ci_build()] CMAKE_VERSION=${CMAKE_VERSION}"
@@ -140,6 +147,7 @@ ci_build() {
     pushd "${HOST_CLOUDVIEWER_ROOT}"
     docker build \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
+        --build-arg QT_BASE_DIR="${QT_BASE_DIR}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
