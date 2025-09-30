@@ -1,57 +1,37 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/OctreeIO.h"
+#include "cloudViewer/io/OctreeIO.h"
 
+#include <FileSystem.h>
+#include <IJsonConvertible.h>
+#include <ecvPointCloud.h>
 #include <json/json.h>
 
 #include <cstdio>
 
-#include "geometry/Octree.h"
-#include <ecvPointCloud.h>
-#include "io/PointCloudIO.h"
-#include <IJsonConvertible.h>
+#include "cloudViewer/data/Dataset.h"
+#include "cloudViewer/geometry/Octree.h"
+#include "cloudViewer/io/PointCloudIO.h"
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {
 namespace tests {
 
-void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
-                             bool delete_temp = true) {
+void WriteReadAndAssertEqual(const geometry::Octree& src_octree) {
     // Write to file
-    std::string file_name = std::string(TEST_DATA_DIR) + "/temp_octree.json";
+    std::string file_name =
+            utility::filesystem::GetTempDirectoryPath() + "/temp_octree.json";
     EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
 
     // Read from file
     geometry::Octree dst_octree;
     EXPECT_TRUE(io::ReadOctree(file_name, dst_octree));
     EXPECT_TRUE(src_octree == dst_octree);
-    if (delete_temp) {
-        EXPECT_EQ(std::remove(file_name.c_str()), 0);
-    }
 }
 
 TEST(OctreeIO, EmptyTree) {
@@ -75,7 +55,8 @@ TEST(OctreeIO, ZeroDepth) {
 TEST(OctreeIO, JsonFileIOFragment) {
     // Create octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 6;
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd, 0.01);

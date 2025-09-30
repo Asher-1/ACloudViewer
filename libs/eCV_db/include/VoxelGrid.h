@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -31,8 +12,8 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include "ecvHObject.h"
 
@@ -102,19 +83,19 @@ public:
     virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
     VoxelGrid &Clear();
-    inline virtual bool isEmpty() const override { return !HasVoxels(); }
-    virtual Eigen::Vector3d getMinBound() const override;
-    virtual Eigen::Vector3d getMaxBound() const override;
-    virtual Eigen::Vector3d getGeometryCenter() const override;
-    virtual ccBBox getAxisAlignedBoundingBox() const override;
-    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual VoxelGrid &transform(
+    inline virtual bool IsEmpty() const override { return !HasVoxels(); }
+    virtual Eigen::Vector3d GetMinBound() const override;
+    virtual Eigen::Vector3d GetMaxBound() const override;
+    virtual Eigen::Vector3d GetCenter() const override;
+    virtual ccBBox GetAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    virtual VoxelGrid &Transform(
             const Eigen::Matrix4d &transformation) override;
-    virtual VoxelGrid &translate(const Eigen::Vector3d &translation,
+    virtual VoxelGrid &Translate(const Eigen::Vector3d &translation,
                                  bool relative = true) override;
-    virtual VoxelGrid &scale(const double s,
+    virtual VoxelGrid &Scale(const double s,
                              const Eigen::Vector3d &center) override;
-    virtual VoxelGrid &rotate(const Eigen::Matrix3d &R,
+    virtual VoxelGrid &Rotate(const Eigen::Matrix3d &R,
                               const Eigen::Vector3d &center) override;
 
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
@@ -145,6 +126,9 @@ public:
 
     /// Add a voxel with specified grid index and color.
     void AddVoxel(const Voxel &voxel);
+
+    /// Remove a voxel with specified grid index.
+    void RemoveVoxel(const Eigen::Vector3i &idx);
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(
@@ -209,30 +193,42 @@ public:
                                                   double height,
                                                   double depth);
 
-    /// Creates a VoxelGrid from a given ccPointCloud. The color value of a
-    /// given voxel is the average color value of the points that fall into it
-    /// (if the ccPointCloud has colors). The bounds of the created VoxelGrid
-    /// are computed from the ccPointCloud.
+    /// \enum VoxelPoolingMode
     ///
-    /// \param input The input ccPointCloud.
-    /// \param voxel_size Voxel size of of the VoxelGrid construction.
-    static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
-            const ccPointCloud &input, double voxel_size);
+    /// \brief Possible ways of determining voxel color from PointCloud.
+    enum class VoxelPoolingMode { AVG, MIN, MAX, SUM };
 
-    /// Creates a VoxelGrid from a given ccPointCloud. The color value of a
-    /// given voxel is the average color value of the points that fall into it
-    /// (if the ccPointCloud has colors). The bounds of the created VoxelGrid
-    /// are defined by the given parameters.
+    /// Creates a VoxelGrid from a given PointCloud. The color value of a given
+    /// voxel is determined by the VoxelPoolingMode, e.g. by default the average
+    /// color value of the points that fall into it (if the
+    /// PointCloud has colors).
+    /// The bounds of the created VoxelGrid are computed from the PointCloud.
     ///
-    /// \param input The input ccPointCloud.
+    /// \param input The input PointCloud.
+    /// \param voxel_size Voxel size of of the VoxelGrid construction.
+    /// \param color_mode Mode of determining color for each voxel.
+    static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
+            const ccPointCloud &input,
+            double voxel_size,
+            VoxelPoolingMode color_mode = VoxelPoolingMode::AVG);
+
+    /// Creates a VoxelGrid from a given PointCloud. The color value of a given
+    /// voxel is determined by the VoxelPoolingMode, e.g. by default the average
+    /// color value of the points that fall into it (if the
+    /// PointCloud has colors).
+    /// The bounds of the created VoxelGrid are defined by the given parameters.
+    ///
+    /// \param input The input PointCloud.
     /// \param voxel_size Voxel size of of the VoxelGrid construction.
     /// \param min_bound Minimum boundary point for the VoxelGrid to create.
     /// \param max_bound Maximum boundary point for the VoxelGrid to create.
+    /// \param color_mode Mode of determining color for each voxel.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloudWithinBounds(
             const ccPointCloud &input,
             double voxel_size,
             const Eigen::Vector3d &min_bound,
-            const Eigen::Vector3d &max_bound);
+            const Eigen::Vector3d &max_bound,
+            VoxelPoolingMode color_mode = VoxelPoolingMode::AVG);
 
     /// Creates a VoxelGrid from a given ccMesh. No color information is
     /// converted. The bounds of the created VoxelGrid are computed from the
@@ -282,7 +278,13 @@ class ECV_DB_LIB_API AvgColorVoxel {
 public:
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-    AvgColorVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
+    AvgColorVoxel()
+        : num_of_points_(0),
+          color_(0.0, 0.0, 0.0),
+          min_color_(Eigen::Vector3d::Constant(
+                  std::numeric_limits<double>::max())),
+          max_color_(Eigen::Vector3d::Constant(
+                  std::numeric_limits<double>::lowest())) {}
 
 public:
     void Add(const Eigen::Vector3i &voxel_index) {
@@ -310,10 +312,20 @@ public:
         }
     }
 
+    Eigen::Vector3d GetMinColor() const { return min_color_; }
+
+    Eigen::Vector3d GetMaxColor() const { return max_color_; }
+
+    Eigen::Vector3d GetSumColor() const { return color_; }
+
 public:
     int num_of_points_;
     Eigen::Vector3i voxel_index_;
     Eigen::Vector3d color_;
+
+private:
+    Eigen::Vector3d min_color_;
+    Eigen::Vector3d max_color_;
 };
 
 }  // namespace geometry

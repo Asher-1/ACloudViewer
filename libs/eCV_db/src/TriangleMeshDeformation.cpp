@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2019 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Logging.h>
@@ -37,7 +18,7 @@
 
 using namespace cloudViewer;
 
-std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
+std::shared_ptr<ccMesh> ccMesh::DeformAsRigidAsPossible(
         const std::vector<int>& constraint_vertex_indices,
         const std::vector<Eigen::Vector3d>& constraint_vertex_positions,
         size_t max_iter,
@@ -54,10 +35,10 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
     prime->addTriangles(this->getTriangles());
 
     utility::LogDebug("[DeformAsRigidAsPossible] setting up S'");
-    prime->computeAdjacencyList();
-    auto edges_to_vertices = prime->getEdgeToVerticesMap();
+    prime->ComputeAdjacencyList();
+    auto edges_to_vertices = prime->GetEdgeToVerticesMap();
     auto edge_weights =
-            prime->computeEdgeWeightsCot(edges_to_vertices, /*min_weight=*/0);
+            prime->ComputeEdgeWeightsCot(edges_to_vertices, /*min_weight=*/0);
     utility::LogDebug("[DeformAsRigidAsPossible] done setting up S'");
 
     std::unordered_map<int, Eigen::Vector3d> constraints;
@@ -74,7 +55,7 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
     std::vector<Eigen::Matrix3d> Rs(getVerticeSize());
     std::vector<Eigen::Matrix3d> Rs_old;
     if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
-        surface_area = prime->getSurfaceArea();
+        surface_area = prime->GetSurfaceArea();
         Rs_old.resize(getVerticeSize());
     }
 

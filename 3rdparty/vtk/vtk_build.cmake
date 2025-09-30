@@ -43,6 +43,7 @@ if(BUILD_VTK_FROM_SOURCE)
         CMAKE_ARGS
             ${ExternalProject_CMAKE_ARGS_hidden}
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
             -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DVTK_GROUP_ENABLE_Imaging=NO
@@ -288,7 +289,7 @@ if(BUILD_VTK_FROM_SOURCE)
             ${VTK_BUILD_BYPRODUCTS})
 
     ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
-    set(VTK_LIBRARIES_DIRS ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
+    set(VTK_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
     set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-${VTK_VERSION}/")
 
 else() #### download prebuilt vtk
@@ -338,10 +339,10 @@ else() #### download prebuilt vtk
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS
             ${VTK_BUILD_BYPRODUCTS}
-)
+    )
 
     ExternalProject_Get_Property(ext_vtk SOURCE_DIR)
-    set(VTK_LIBRARIES_DIRS "${SOURCE_DIR}/lib")
+    set(VTK_LIB_DIR "${SOURCE_DIR}/lib")
     set(VTK_INCLUDE_DIRS "${SOURCE_DIR}/include/vtk-${VTK_VERSION}/")
 
 endif() # BUILD_VTK_FROM_SOURCE

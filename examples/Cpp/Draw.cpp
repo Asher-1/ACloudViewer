@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cstdlib>
@@ -55,7 +36,7 @@ std::shared_ptr<ccPointCloud> MakePointCloud(int npts,
 void SingleObject() {
     // No colors, no normals, should appear unlit black
     auto cube = ccMesh::CreateBox(1, 2, 4);
-    cube->clearTriNormals();
+    cube->ComputeVertexNormals();
     visualization::Draw({cube});
 }
 
@@ -65,59 +46,55 @@ void MultiObjects() {
     auto pc_color = MakePointCloud(100, {3.0, -2.0, 0.0}, pc_rad, true);
     const double r = 0.4;
     auto sphere_unlit = ccMesh::CreateSphere(r);
-    sphere_unlit->translate({0.0, 1.0, 0.0});
+    sphere_unlit->ComputeVertexNormals();
+    sphere_unlit->Translate({0.0, 1.0, 0.0});
     auto sphere_colored_unlit = ccMesh::CreateSphere(r);
-    sphere_colored_unlit->paintUniformColor({1.0, 0.0, 0.0});
-    sphere_colored_unlit->translate({2.0, 1.0, 0.0});
+    sphere_colored_unlit->PaintUniformColor({1.0, 0.0, 0.0});
+    sphere_colored_unlit->Translate({2.0, 1.0, 0.0});
+    sphere_colored_unlit->ComputeVertexNormals();
     auto sphere_lit = ccMesh::CreateSphere(r);
-    sphere_lit->computeVertexNormals();
-    sphere_lit->translate({4, 1, 0});
+    sphere_lit->ComputeVertexNormals();
+    sphere_lit->Translate({4, 1, 0});
     auto sphere_colored_lit = ccMesh::CreateSphere(r);
-    sphere_colored_lit->computeVertexNormals();
-    sphere_colored_lit->paintUniformColor({0.0, 1.0, 0.0});
-    sphere_colored_lit->translate({6, 1, 0});
-    auto big_bbox = cloudViewer::make_shared<ccBBox>(
-            Eigen::Vector3d{-pc_rad, -3, -pc_rad},
-            Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
-    auto bbox = sphere_unlit->getAxisAlignedBoundingBox();
-    auto sphere_bbox = cloudViewer::make_shared<ccBBox>(bbox.getMinBound(),
-                                                        bbox.getMaxBound());
-    sphere_bbox->setColor({1.0, 0.5, 0.0});
+    sphere_colored_lit->ComputeVertexNormals();
+    sphere_colored_lit->PaintUniformColor({0.0, 1.0, 0.0});
+    sphere_colored_lit->Translate({6, 1, 0});
+    auto big_bbox =
+            std::make_shared<ccBBox>(Eigen::Vector3d{-pc_rad, -3, -pc_rad},
+                                     Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
+    big_bbox->SetColor({0.0, 0.0, 0.0});
+    auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
+    auto sphere_bbox =
+            std::make_shared<ccBBox>(bbox.GetMinBound(), bbox.GetMaxBound());
+    sphere_bbox->SetColor({1.0, 0.5, 0.0});
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-            sphere_lit->getAxisAlignedBoundingBox());
+            sphere_lit->GetAxisAlignedBoundingBox());
+    lines->PaintUniformColor({0.0, 1.0, 0.0});
     auto lines_colored = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-            sphere_colored_lit->getAxisAlignedBoundingBox());
-    lines_colored->paintUniformColor({0.0, 0.0, 1.0});
+            sphere_colored_lit->GetAxisAlignedBoundingBox());
+    lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
 
     visualization::Draw({pc_nocolor, pc_color, sphere_unlit,
                          sphere_colored_unlit, sphere_lit, sphere_colored_lit,
                          big_bbox, sphere_bbox, lines, lines_colored});
 }
 
-void Actions(const std::string test_dir) {
+void Actions() {
     const char *SOURCE_NAME = "Source";
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
     auto bunny = cloudViewer::make_shared<ccMesh>();
-    bunny->createInternalCloud();
-    io::ReadTriangleMesh(test_dir + "/Bunny.ply", *bunny);
-    if (bunny->isEmpty()) {
-        utility::LogError(
-                "Please download the Standford Bunny dataset using:\n"
-                "   cd <cloudViewer_dir>/examples/python\n"
-                "   python -c 'from cloudViewer_tutorial import *; "
-                "get_bunny_mesh()'");
-        return;
-    }
+    data::BunnyMesh bunny_data;
+    io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 
-    bunny->paintUniformColor({1, 0.75, 0});
-    bunny->computeVertexNormals();
+    bunny->PaintUniformColor({1, 0.75, 0});
+    bunny->ComputeVertexNormals();
     auto cloud = cloudViewer::make_shared<ccPointCloud>();
 
     cloud->addPoints(bunny->getVerticesPtr());
     cloud->addEigenNorms(bunny->getVertexNormals());
-    cloud->paintUniformColor({0, 0.2, 1.0});
+    cloud->PaintUniformColor({0, 0.2, 1.0});
 
     auto make_mesh = [SOURCE_NAME, RESULT_NAME](
                              visualization::visualizer::O3DVisualizer &o3dvis) {
@@ -125,8 +102,8 @@ void Actions(const std::string test_dir) {
                 std::dynamic_pointer_cast<ccPointCloud>(
                         o3dvis.GetGeometry(SOURCE_NAME).geometry);
         auto mesh = std::get<0>(ccMesh::CreateFromPointCloudPoisson(*source));
-        mesh->paintUniformColor({1, 1, 1});
-        mesh->computeVertexNormals();
+        mesh->PaintUniformColor({1, 1, 1});
+        mesh->ComputeVertexNormals();
         o3dvis.AddGeometry(RESULT_NAME, mesh);
         o3dvis.ShowGeometry(SOURCE_NAME, false);
     };
@@ -170,7 +147,7 @@ Eigen::Matrix4d_u GetICPTransform(
     return result.transformation_;
 }
 
-void Selections(const std::string test_dir) {
+void Selections() {
     std::cout << "Selection example:" << std::endl;
     std::cout << "  One set:  pick three points from the source (yellow), "
               << std::endl;
@@ -183,22 +160,23 @@ void Selections(const std::string test_dir) {
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
-    const auto cloud0_path = test_dir + "/ICP/cloud_bin_0.pcd";
-    const auto cloud1_path = test_dir + "/ICP/cloud_bin_2.pcd";
+    data::DemoICPPointClouds demo_icp_pointclouds;
     auto source = cloudViewer::make_shared<ccPointCloud>();
-    io::ReadPointCloud(cloud0_path, *source);
-    if (source->isEmpty()) {
-        utility::LogError("Could not open {}", cloud0_path);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *source);
+    if (source->IsEmpty()) {
+        utility::LogError("Could not open {}",
+                          demo_icp_pointclouds.GetPaths(0));
         return;
     }
     auto target = cloudViewer::make_shared<ccPointCloud>();
-    io::ReadPointCloud(cloud1_path, *target);
-    if (target->isEmpty()) {
-        utility::LogError("Could not open {}", cloud1_path);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(1), *target);
+    if (target->IsEmpty()) {
+        utility::LogError("Could not open {}",
+                          demo_icp_pointclouds.GetPaths(1));
         return;
     }
-    source->paintUniformColor({1.000, 0.706, 0.000});
-    target->paintUniformColor({0.000, 0.651, 0.929});
+    source->PaintUniformColor({1.000, 0.706, 0.000});
+    target->PaintUniformColor({0.000, 0.651, 0.929});
 
     const char *source_name = "Source (yellow)";
     const char *target_name = "Target (blue)";
@@ -228,7 +206,7 @@ void Selections(const std::string test_dir) {
 
                 auto t = GetICPTransform(*source, *target, source_picked,
                                          target_picked);
-                source->transform(t);
+                source->Transform(t);
 
                 // Update the source geometry
                 o3dvis.RemoveGeometry(source_name);
@@ -260,7 +238,7 @@ void Selections(const std::string test_dir) {
 
                 auto t = GetICPTransform(*source, *target, source_picked,
                                          target_picked);
-                source->transform(t);
+                source->Transform(t);
 
                 // Update the source geometry
                 o3dvis.RemoveGeometry(source_name);
@@ -275,19 +253,8 @@ void Selections(const std::string test_dir) {
 }
 
 int main(int argc, char **argv) {
-    if (argc <= 1) {
-        utility::LogError("missing input directionary!");
-        return 0;
-    }
-    std::string TEST_DIR(argv[1]);
-    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
-        utility::LogError(
-                "This example needs to be run from the <build>/bin/examples "
-                "directory");
-    }
-
     SingleObject();
     MultiObjects();
-    Actions(TEST_DIR);
-    Selections(TEST_DIR);
+    Actions();
+    Selections();
 }

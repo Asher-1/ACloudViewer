@@ -496,7 +496,7 @@ bool ccPolyline::split(PointCoordinateType maxEdgeLength,
 }
 
 bool ccPolyline::add(const ccPointCloud& cloud) {
-    if (cloud.isEmpty()) {
+    if (cloud.IsEmpty()) {
         return false;
     }
 
@@ -673,19 +673,19 @@ ccPointCloud* ccPolyline::samplePoints(bool densityBased,
     return cloud;
 }
 
-Eigen::Vector3d ccPolyline::getMinBound() const {
+Eigen::Vector3d ccPolyline::GetMinBound() const {
     return CCVector3d::fromArray(m_bbox.minCorner());
 }
 
-Eigen::Vector3d ccPolyline::getMaxBound() const {
+Eigen::Vector3d ccPolyline::GetMaxBound() const {
     return CCVector3d::fromArray(m_bbox.maxCorner());
 }
 
-Eigen::Vector3d ccPolyline::getGeometryCenter() const {
+Eigen::Vector3d ccPolyline::GetCenter() const {
     return CCVector3d::fromArray(m_bbox.getCenter());
 }
 
-ccBBox ccPolyline::getAxisAlignedBoundingBox() const {
+ccBBox ccPolyline::GetAxisAlignedBoundingBox() const {
     std::vector<CCVector3> points;
     for (unsigned index : m_theIndexes) {
         points.push_back(*m_theAssociatedCloud->getPoint(index));
@@ -693,7 +693,7 @@ ccBBox ccPolyline::getAxisAlignedBoundingBox() const {
     return ccBBox::CreateFromPoints(points);
 }
 
-ecvOrientedBBox ccPolyline::getOrientedBoundingBox() const {
+ecvOrientedBBox ccPolyline::GetOrientedBoundingBox() const {
     if (!m_theAssociatedCloud) {
         return ecvOrientedBBox();
     }
@@ -705,20 +705,20 @@ ecvOrientedBBox ccPolyline::getOrientedBoundingBox() const {
     return ecvOrientedBBox::CreateFromPoints(points);
 }
 
-ccPolyline& ccPolyline::transform(const Eigen::Matrix4d& transformation) {
+ccPolyline& ccPolyline::Transform(const Eigen::Matrix4d& transformation) {
     GenericIndexedCloudPersist* asCloud = getAssociatedCloud();
     if (!asCloud) {
         return *this;
     }
     ccPointCloud* cloud = static_cast<ccPointCloud*>(asCloud);
     if (cloud) {
-        cloud->transform(transformation);
+        cloud->Transform(transformation);
     }
 
     return *this;
 }
 
-ccPolyline& ccPolyline::translate(const Eigen::Vector3d& translation,
+ccPolyline& ccPolyline::Translate(const Eigen::Vector3d& translation,
                                   bool relative) {
     GenericIndexedCloudPersist* asCloud = getAssociatedCloud();
     if (!asCloud) {
@@ -726,24 +726,24 @@ ccPolyline& ccPolyline::translate(const Eigen::Vector3d& translation,
     }
     ccPointCloud* cloud = static_cast<ccPointCloud*>(asCloud);
     if (cloud) {
-        cloud->translate(translation, relative);
+        cloud->Translate(translation, relative);
     }
     return *this;
 }
 
-ccPolyline& ccPolyline::scale(const double s, const Eigen::Vector3d& center) {
+ccPolyline& ccPolyline::Scale(const double s, const Eigen::Vector3d& center) {
     GenericIndexedCloudPersist* asCloud = getAssociatedCloud();
     if (!asCloud) {
         return *this;
     }
     ccPointCloud* cloud = static_cast<ccPointCloud*>(asCloud);
     if (cloud) {
-        cloud->scale(s, center);
+        cloud->Scale(s, center);
     }
     return *this;
 }
 
-ccPolyline& ccPolyline::rotate(const Eigen::Matrix3d& R,
+ccPolyline& ccPolyline::Rotate(const Eigen::Matrix3d& R,
                                const Eigen::Vector3d& center) {
     GenericIndexedCloudPersist* asCloud = getAssociatedCloud();
     if (!asCloud) {
@@ -751,13 +751,13 @@ ccPolyline& ccPolyline::rotate(const Eigen::Matrix3d& R,
     }
     ccPointCloud* cloud = static_cast<ccPointCloud*>(asCloud);
     if (cloud) {
-        cloud->rotate(R, center);
+        cloud->Rotate(R, center);
     }
     return *this;
 }
 
 ccPolyline& ccPolyline::operator+=(const ccPolyline& polyline) {
-    if (polyline.isEmpty()) return (*this);
+    if (polyline.IsEmpty()) return (*this);
     if (!polyline.getAssociatedCloud()) {
         cloudViewer::utility::LogError(
                 "[ccPolyline] Cannot find associated cloud in polyline!");

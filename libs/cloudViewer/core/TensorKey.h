@@ -1,33 +1,14 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <Logging.h>
-#include  <Optional.h>
+#include <Optional.h>
 
 namespace cloudViewer {
 namespace core {
@@ -101,15 +82,15 @@ public:
     /// For TensorKeyMode::Slice only.
     int64_t GetStart() const;
 
-    /// Get stop index. Throws exception if start is None.
+    /// Get stop index. Throws exception if stop is None.
     /// For TensorKeyMode::Slice only.
     int64_t GetStop() const;
 
-    /// Get step index. Throws exception if start is None.
+    /// Get step index. Throws exception if step is None.
     /// For TensorKeyMode::Slice only.
     int64_t GetStep() const;
 
-    /// When dim_size is know, conver the None values in start, stop, step with
+    /// When dim_size is know, convert the None values in start, stop, step with
     /// to concrete values and returns a new TensorKey.
     /// \code
     /// E.g. if t.shape == (5,), t[:4]:

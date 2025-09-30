@@ -1,8 +1,9 @@
-# cloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
-
-# examples/Python/Advanced/customized_visualization_key_action.py
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
 
@@ -40,10 +41,45 @@ def custom_key_action_without_kb_repeat_delay(pcd):
     vis.run()
 
 
-if __name__ == "__main__":
-    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.ply")
+def custom_mouse_action(pcd):
 
-    print(
-        "Customized visualization with smooth key action (without keyboard repeat delay)"
-    )
+    vis = cv3d.visualization.VisualizerWithKeyCallback()
+    buttons = ['left', 'right', 'middle']
+    actions = ['up', 'down']
+    mods_name = ['shift', 'ctrl', 'alt', 'cmd']
+
+    def on_key_action(vis, action, mods):
+        print("on_key_action", action, mods)
+
+    vis.register_key_action_callback(ord("A"), on_key_action)
+
+    def on_mouse_move(vis, x, y):
+        print(f"on_mouse_move({x:.2f}, {y:.2f})")
+
+    def on_mouse_scroll(vis, x, y):
+        print(f"on_mouse_scroll({x:.2f}, {y:.2f})")
+
+    def on_mouse_button(vis, button, action, mods):
+        pressed_mods = " ".join(
+            [mods_name[i] for i in range(4) if mods & (1 << i)])
+        print(f"on_mouse_button: {buttons[button]}, {actions[action]}, " +
+              pressed_mods)
+
+    vis.register_mouse_move_callback(on_mouse_move)
+    vis.register_mouse_scroll_callback(on_mouse_scroll)
+    vis.register_mouse_button_callback(on_mouse_button)
+
+    vis.create_window()
+    vis.add_geometry(pcd)
+    vis.run()
+
+
+if __name__ == "__main__":
+    ply_data = cv3d.data.PLYPointCloud()
+    pcd = cv3d.io.read_point_cloud(ply_data.path)
+
+    print("Customized visualization with smooth key action "
+          "(without keyboard repeat delay). Press the space-bar.")
     custom_key_action_without_kb_repeat_delay(pcd)
+    print("Customized visualization with mouse action.")
+    custom_mouse_action(pcd)

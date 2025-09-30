@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: Asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -31,10 +12,10 @@
 #include <unordered_map>
 #include <utility>
 
-#include "core/Dtype.h"
+#include "cloudViewer/core/Dtype.h"
 #include <IJsonConvertibleIO.h>
-#include "io/sensor/RGBDSensorConfig.h"
-#include "t/io/sensor/RGBDVideoMetadata.h"
+#include "cloudViewer/io/sensor/RGBDSensorConfig.h"
+#include "cloudViewer/t/io/sensor/RGBDVideoMetadata.h"
 
 // Forward declarations
 namespace rs2 {
@@ -100,7 +81,7 @@ public:
                                RGBDVideoMetadata &metadata);
 
 public:
-    /// Convert rs2_format enum to cloudViewer Dtype and number of channels
+    /// Convert rs2_format enum to CloudViewer Dtype and number of channels
     /// \param rs2_format_enum An int is accepted instead of rs2_format enum
     /// to prevent dependence on the realsense headers.
     static std::pair<core::Dtype, uint8_t> get_dtype_channels(
@@ -117,7 +98,7 @@ public:
 struct RealSenseValidConfigs {
     std::string serial;  ///< Device serial number.
     std::string name;    ///< Device name.
-    /// Mapping between configuraiton option name and a list of valid
+    /// Mapping between configuration option name and a list of valid
     /// values.
     std::unordered_map<std::string, std::set<std::string>> valid_configs;
 };

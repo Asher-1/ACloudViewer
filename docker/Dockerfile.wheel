@@ -81,6 +81,23 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         apt-file \
         net-tools \
         mesa-utils \
+        # reference cloudViewer
+        libzstd-dev \
+        zlib1g \
+        zlib1g-dev \
+        libssl-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libncursesw5-dev \
+        libcurl4-openssl-dev \
+        xz-utils \
+        tk-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libffi-dev \
+        liblzma-dev \
+        ca-certificates \
         # for opencv
         libavcodec-dev \
         libavformat-dev \
@@ -113,7 +130,7 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         flex \
         fontconfig \
         # libgdal-dev \
-        # libcgal-dev \
+        libcgal-dev \
         # for QT
         libxcb-xkb1 \
         libxcb-shape0 \
@@ -124,7 +141,6 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libxcb-xinerama0 \
         libxkbcommon-x11-0 \
         libxcb-render-util0
-
 
 # Install Qt5
 RUN apt-get -y update && \
@@ -151,49 +167,47 @@ ENV QT_BASE_DIR=${QT_BASE_DIR} \
     LD_LIBRARY_PATH=${QT_BASE_DIR}/lib:$LD_LIBRARY_PATH \
     PKG_CONFIG_PATH=${QT_BASE_DIR}/lib/pkgconfig:$PKG_CONFIG_PATH
 
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version \
+
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
- # Miniconda or Intel conda
-# The **/cloudViewer/bin paths are used during docker run, in this way docker run
-# does not need to activate the environment again.
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/cloudViewer/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
- && bash Miniconda3-latest-Linux-x86_64.sh -b \
- && rm Miniconda3-latest-Linux-x86_64.sh \
- && conda --version
-
-ENV ACloudViewer_DEV=/root \
-    ACloudViewer_BUILD=/root/ACloudViewer/build \
-    ACloudViewer_INSTALL=/root/install
+# Dependencies: cmake
+ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
+ && cmake --version
 
 # Checkout CloudViewer-ML main branch
 # TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
 RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
 
-ENV PATH="/root/miniconda3/bin:$PATH" \
-    CONDA_EXE="/root/miniconda3/bin/conda"
-
-RUN if [ -n "$CONDA_EXE" ]; then \
-        CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE")); \
-    elif [ -n "$CONDA_PREFIX" ]; then \
-        CONDA_ROOT=$(dirname "$CONDA_PREFIX"); \
-    else \
-        echo "Failed to find Miniconda3 install path..."; \
-        exit 1; \
-    fi && \
-    echo "CONDA_ROOT is set to: $CONDA_ROOT" && \
-    source "$CONDA_ROOT/etc/profile.d/conda.sh" 
-
 # ACloudViewer repo
 # Always keep /root/ACloudViewer as the WORKDIR
+ENV ACloudViewer_DEV=/root \
+    ACloudViewer_BUILD=/root/ACloudViewer/build \
+    ACloudViewer_INSTALL=/root/install
 COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # ACloudViewer C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes
+RUN ./util/install_deps_ubuntu.sh assume-yes \
+&& rm -rf /var/lib/apt/lists/*
 
 # ACloudViewer Jupyter dependencies
 RUN mkdir -p /etc/apt/keyrings \
@@ -208,18 +222,17 @@ RUN mkdir -p /etc/apt/keyrings \
  && npm install -g yarn \
  && yarn --version
 
-
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
 # no need to test wheel and will test it in ci later!
 ENV IGNORE_TEST=ON
 
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 # Build cloudViewer wheel
 RUN echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." \
     && rm -rf ${ACloudViewer_BUILD}/* \
     && ./docker/build_cloudviewer_whl.sh ${PYTHON_VERSION} \
     && rm -rf ${ACloudViewer_BUILD}/*
-    
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
-RUN echo "Docker build done."
+RUN echo "Docker wheel build done."

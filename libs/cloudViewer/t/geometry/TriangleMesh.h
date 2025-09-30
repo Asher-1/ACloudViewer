@@ -1,133 +1,124 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <ecvMesh.h>
 
-#include "core/Tensor.h"
-#include "t/geometry/Geometry.h"
-#include "t/geometry/TensorMap.h"
+#include <list>
+#include <type_traits>
+#include <unordered_map>
+
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/TensorCheck.h"
+#include "cloudViewer/t/geometry/BoundingVolume.h"
+#include "cloudViewer/t/geometry/DrawableGeometry.h"
+#include "cloudViewer/t/geometry/Geometry.h"
+#include "cloudViewer/t/geometry/Image.h"
+#include "cloudViewer/t/geometry/TensorMap.h"
+#include "cloudViewer/visualization/rendering/Model.h"
 
 namespace cloudViewer {
 namespace t {
 namespace geometry {
 
+class LineSet;
+class PointCloud;
+
 /// \class TriangleMesh
-/// \brief A TriangleMesh contains vertices and triangles.
+/// \brief A triangle mesh contains vertices and triangles.
 ///
-/// The TriangleMesh class stores the attribute data in key-value pairs for
-/// flexibility, where the key is a string representing the attribute name and
-/// value is a Tensor containing the attribute data.
+/// The triangle mesh class stores the attribute data in key-value maps. There
+/// are two maps: the vertex attributes map, and the triangle attribute map.
 ///
-/// By default, there are two sets of dictionaries, i.e. `vertex_attr_` and
-/// `triangle_attr_`. In most cases, the length of an attribute should be
-/// equal to the length of the the data corresponding to the master key. For
-/// instance `vertex_attr_["normals"]` should have the same length as
-/// `vertex_attr_["vertices"]`.
-///
-/// Although the attributes are all stored in a key-value pair dictionary, the
-/// attributes have different levels:
-///
-/// - Level 0: Default attribute {"vertices", "triangles"}.
-///     - Created by default, required for all trianglemeshes.
-///     - The tensor must be of shape N x {3,}.
-///     - Convenience functions:
+/// - Default attribute: vertex_attr_["positions"], triangle_attr_["indices"]
+///     - Vertex positions
 ///         - TriangleMesh::GetVertexPositions()
-///         - TriangleMesh::SetVertices(vertices_tensor)
-///         - TriangleMesh::HasVertices()
+///         - TriangleMesh::SetVertexPositions(const Tensor& vertex_positions)
+///         - TriangleMesh::HasVertexPositions()
+///         - Value tensor must have shape {num_vertices, 3}.
+///     - Triangle indices
 ///         - TriangleMesh::GetTriangleIndices()
-///         - TriangleMesh::SetTriangles(triangles_tensor)
-///         - TriangleMesh::HasTriangles()
-///     - The device of "vertices" and "triangles" must be consistent and they
-///       determine the device of the trianglemesh.
-/// - Level 1: Commonly-used attributes: {"normals", "colors"} for vertices and
-///            {"normals"} for triangles.
-///     - Not created by default.
-///     - The tensor must be of shape N x 3.
-///     - Convenience functions:
-///         - Vertex normals (stored at vertex_attr_["normals"])
-///             - TriangleMesh::GetVertexNormals()
-///             - TriangleMesh::SetVertexNormals(vertex_normals_tensor)
-///             - TriangleMesh::HasVertexNormals()
-///         - Vertex colors (stored at vertex_attr_["colors"])
-///             - TriangleMesh::GetVertexColors()
-///             - TriangleMesh::SetVertexColors(vertex_colors_tensor)
-///             - TriangleMesh::HasVertexColors()
-///         - Triangle normals (stored at triangle_attr_["normals"])
-///             - TriangleMesh::GetTriangleNormals()
-///             - TriangleMesh::SetTriangleNormals(triangle_normals_tensor)
-///             - TriangleMesh::HasTriangleNormals()
-///         - Triangle colors (stored at triangle_attr_["colors"])
-///             - TriangleMesh::GetTriangleColors()
-///             - TriangleMesh::SetTriangleColors(triangle_colors_tensor)
-///             - TriangleMesh::HasTriangleColors()
-///     - For all attributes, the device must be consistent with the device of
-///       the trianglemesh. Dtype can be different.
-/// - Level 2: Custom attributes, e.g. {"labels"}.
-///     - Not created by default. Created by users.
-///     - No convenience functions.
-///     - Use generalized helper functions. Examples:
-///         - TriangleMesh::GetVertexAttr("labels")
-///         - TriangleMesh::SetVertexAttr("labels",
-///                                       vertex_labels_tensor)
-///         - TriangleMesh::HasVertexAttr("labels")
-///         - TriangleMesh::GetTriangleAttr("labels")
-///         - TriangleMesh::SetTriangleAttr("labels",
-///                                         triangle_labels_tensor)
-///         - TriangleMesh::HasTriangleAttr("labels")
-///     - For all attributes, the device must be consistent with the device of
-///       the trianglemesh. Dtype can be different.
+///         - TriangleMesh::SetTriangleIndices(const Tensor& triangle_indices)
+///         - TriangleMesh::HasTriangleIndices()
+///         - Value tensor must have shape {num_triangles, 3}.
+///     - Created by default, required for all triangle meshes.
+///     - The device of vertex positions and triangle indices must be the same.
+///       They determine the device of the trianglemesh.
 ///
-/// Note that the level 0 and level 1 convenience functions can also be achieved
-/// via the generalized helper functions.
-class TriangleMesh : public Geometry {
+/// - Common attributes: vertex_attr_["normals"], vertex_attr_["colors"]
+///                      triangle_attr_["normals"], triangle_attr_["colors"]
+///     - Vertex normals
+///         - TriangleMesh::GetVertexNormals()
+///         - TriangleMesh::SetVertexNormals(const Tensor& vertex_normals)
+///         - TriangleMesh::HasVertexNormals()
+///         - Value tensor must have shape {num_vertices, 3}.
+///         - Value tensor can have any dtype.
+///     - Vertex colors
+///         - TriangleMesh::GetVertexColors()
+///         - TriangleMesh::SetVertexColors(const Tensor& vertex_colors)
+///         - TriangleMesh::HasVertexColors()
+///         - Value tensor must have shape {num_vertices, 3}.
+///         - Value tensor can have any dtype.
+///     - Triangle normals
+///         - TriangleMesh::GetTriangleNormals()
+///         - TriangleMesh::SetTriangleNormals(const Tensor& triangle_normals)
+///         - TriangleMesh::HasTriangleNormals()
+///         - Value tensor must have shape {num_triangles, 3}.
+///         - Value tensor can have any dtype.
+///     - Triangle colors
+///         - TriangleMesh::GetTriangleColors()
+///         - TriangleMesh::SetTriangleColors(const Tensor& triangle_colors)
+///         - TriangleMesh::HasTriangleColors()
+///         - Value tensor must have shape {num_triangles, 3}.
+///         - Value tensor can have any dtype.
+///     - Not created by default.
+///     - For all attributes above, the device must be consistent with the
+///       device of the triangle mesh.
+///
+/// - Custom attributes: e.g. vetex_attr_["labels"], triangle_attr_["labels"]
+///     - Use generalized helper functions, e.g.:
+///         - TriangleMesh::GetVertexAttr(const std::string& key)
+///         - TriangleMesh::SetVertexAttr(const std::string& key,
+///                                       const Tensor& value)
+///         - TriangleMesh::HasVertexAttr(const std::string& key)
+///         - TriangleMesh::GetTriangleAttr(const std::string& key)
+///         - TriangleMesh::SetTriangleAttr(const std::string& key,
+///                                         const Tensor& value)
+///         - TriangleMesh::HasTriangleAttr(const std::string& key)
+///     - Not created by default. Users can add their own custom attributes.
+///     - Value tensor must be on the same device as the triangle mesh.
+///
+/// Note that the we can also use the generalized helper functions for the
+/// default and common attributes.
+class TriangleMesh : public Geometry, public DrawableGeometry {
 public:
-    /// Construct an empty trianglemesh.
+    /// Construct an empty trianglemesh on the provided device.
+    /// \param device The device on which to initialize the trianglemesh
+    /// (default: 'CPU:0').
     TriangleMesh(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a trianglemesh from vertices and triangles.
     ///
     /// The input tensors will be directly used as the underlying storage of
-    /// the trianglemsh (no memory copy). If the tensor is created in-place
-    /// from a pre-allocated buffer, the tensor has a fixed size and thus
-    /// the resulting trianglemesh will have a fixed size and calling to
-    /// functions like `SynchronizedPushBack` will raise an exception.
+    /// the triangle mesh (no memory copy). The device for \p vertex_positions
+    /// must be consistent with \p triangle_indices.
     ///
-    /// The resulting trianglemesh will have the same dtype and device as the
-    /// tensor. The device for \p vertices must be consistent with
-    /// \p triangles.
-    ///
-    /// \param vertices A tensor with element shape (3,).
-    /// \param triangles A tensor with element shape (3,).
-    TriangleMesh(const core::Tensor &vertices, const core::Tensor &triangles);
+    /// \param vertex_positions A tensor with element shape {3}.
+    /// \param triangle_indices A tensor with element shape {3}.
+    TriangleMesh(const core::Tensor &vertex_positions,
+                 const core::Tensor &triangle_indices);
 
     virtual ~TriangleMesh() override {}
 
 public:
+    /// \brief Text description.
+    std::string ToString() const;
+
     /// Transfer the triangle mesh to a specified device.
     /// \param device The targeted device to convert to.
     /// \param copy If true, a new triangle mesh is always created; if false,
@@ -136,23 +127,13 @@ public:
     TriangleMesh To(const core::Device &device, bool copy = false) const;
 
     /// Returns copy of the triangle mesh on the same device.
-    TriangleMesh Clone() const { return To(GetDevice()); }
-
-    /// Transfer the triangle mesh to CPU.
-    ///
-    /// If the triangle mesh is already on CPU, no copy will be performed.
-    TriangleMesh CPU() const { return To(core::Device("CPU:0")); };
-
-    /// Transfer the triangle mesh to a CUDA device.
-    ///
-    /// If the triangle mesh is already on the specified CUDA device, no copy
-    /// will be performed.
-    TriangleMesh CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    };
+    TriangleMesh Clone() const { return To(GetDevice(), /*copy=*/true); }
 
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }
+
+    /// Getter for vertex_attr_ TensorMap.
+    TensorMap &GetVertexAttr() { return vertex_attr_; }
 
     /// Get vertex attributes in vertex_attr_. Throws exception if the attribute
     /// does not exist.
@@ -176,6 +157,9 @@ public:
 
     /// Getter for triangle_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetTriangleAttr() const { return triangle_attr_; }
+
+    /// Getter for triangle_attr_ TensorMap.
+    TensorMap &GetTriangleAttr() { return triangle_attr_; }
 
     /// Get triangle attributes in triangle_attr_. Throws exception if the
     /// attribute does not exist.
@@ -204,7 +188,7 @@ public:
         return vertex_attr_.at(key);
     }
 
-    /// Removes vertex attribute by key value. Primary attribute "vertices"
+    /// Removes vertex attribute by key value. Primary attribute "positions"
     /// cannot be removed. Throws warning if attribute key does not exists.
     ///
     /// \param key Attribute name.
@@ -236,7 +220,7 @@ public:
         return triangle_attr_.at(key);
     }
 
-    /// Removes triangle attribute by key value. Primary attribute "triangles"
+    /// Removes triangle attribute by key value. Primary attribute "indices"
     /// cannot be removed. Throws warning if attribute key does not exists.
     ///
     /// \param key Attribute name.
@@ -268,28 +252,28 @@ public:
     /// \param key Attribute name.
     /// \param value A tensor.
     void SetVertexAttr(const std::string &key, const core::Tensor &value) {
-        value.AssertDevice(device_);
+        core::AssertTensorDevice(value, device_);
         vertex_attr_[key] = value;
     }
 
-    /// Set the value of the "vertices" attribute in vertex_attr_.
+    /// Set the value of the "positions" attribute in vertex_attr_.
     /// Convenience function.
-    void SetVertices(const core::Tensor &value) {
-        value.AssertShapeCompatible({utility::nullopt, 3});
-        SetVertexAttr("vertices", value);
+    void SetVertexPositions(const core::Tensor &value) {
+        core::AssertTensorShape(value, {utility::nullopt, 3});
+        SetVertexAttr("positions", value);
     }
 
     /// Set the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
     void SetVertexColors(const core::Tensor &value) {
-        value.AssertShapeCompatible({utility::nullopt, 3});
+        core::AssertTensorShape(value, {utility::nullopt, 3});
         SetVertexAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute in vertex_attr_.
     /// This is a convenience function.
     void SetVertexNormals(const core::Tensor &value) {
-        value.AssertShapeCompatible({utility::nullopt, 3});
+        core::AssertTensorShape(value, {utility::nullopt, 3});
         SetVertexAttr("normals", value);
     }
 
@@ -299,31 +283,31 @@ public:
     /// \param key Attribute name.
     /// \param value A tensor.
     void SetTriangleAttr(const std::string &key, const core::Tensor &value) {
-        value.AssertDevice(device_);
+        core::AssertTensorDevice(value, device_);
         triangle_attr_[key] = value;
     }
 
-    /// Set the vlaue of the "triangles" attribute in triangle_attr_.
-    void SetTriangles(const core::Tensor &value) {
-        value.AssertShapeCompatible({utility::nullopt, 3});
-        SetTriangleAttr("triangles", value);
+    /// Set the value of the "indices" attribute in triangle_attr_.
+    void SetTriangleIndices(const core::Tensor &value) {
+        core::AssertTensorShape(value, {utility::nullopt, 3});
+        SetTriangleAttr("indices", value);
     }
 
     /// Set the value of the "normals" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleNormals(const core::Tensor &value) {
-        value.AssertShapeCompatible({utility::nullopt, 3});
+        core::AssertTensorShape(value, {utility::nullopt, 3});
         SetTriangleAttr("normals", value);
     }
 
     /// Set the value of the "colors" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleColors(const core::Tensor &value) {
-        value.AssertShapeCompatible({utility::nullopt, 3});
+        core::AssertTensorShape(value, {utility::nullopt, 3});
         SetTriangleAttr("colors", value);
     }
 
-    /// Returns true if all of the followings are true in vertex_attr_:
+    /// Returns true if all of the following are true in vertex_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as vertices' length
     /// 3) attribute's length > 0
@@ -334,52 +318,301 @@ public:
                        GetVertexPositions().GetLength();
     }
 
-    /// Check if the "vertices" attribute's value in vertex_attr_ has length >
+    /// Check if the "positions" attribute's value in vertex_attr_ has length >
     /// 0. Convenience function.
-    bool HasVertices() const { return HasVertexAttr("vertices"); }
+    bool HasVertexPositions() const { return HasVertexAttr("positions"); }
 
-    /// Returns true if all of the followings are true in vertex_attr_:
+    /// Returns true if all of the following are true in vertex_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as vertices' length
     /// 3) attribute "colors"'s length > 0
     /// Convenience function.
     bool HasVertexColors() const { return HasVertexAttr("colors"); }
 
-    /// Returns true if all of the followings are true in vertex_attr_:
+    /// Returns true if all of the following are true in vertex_attr_:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as vertices' length
     /// 3) attribute "normals"'s length > 0
     /// Convenience function.
     bool HasVertexNormals() const { return HasVertexAttr("normals"); }
 
-    /// Returns true if all of the followings are true in triangle_attr_:
+    /// Returns true if all of the following are true in triangle_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as triangles' length
     /// 3) attribute's length > 0
     bool HasTriangleAttr(const std::string &key) const {
         return triangle_attr_.Contains(key) &&
                GetTriangleAttr(key).GetLength() > 0 &&
-               GetTriangleAttr(key).GetLength() == GetTriangleIndices().GetLength();
+               GetTriangleAttr(key).GetLength() ==
+                       GetTriangleIndices().GetLength();
     }
 
-    /// Check if the "triangles" attribute's value in triangle_attr_ has length
+    /// Check if the "indices" attribute's value in triangle_attr_ has length
     /// > 0.
     /// Convenience function.
-    bool HasTriangles() const { return HasTriangleAttr("triangles"); }
+    bool HasTriangleIndices() const { return HasTriangleAttr("indices"); }
 
-    /// Returns true if all of the followings are true in triangle_attr_:
+    /// Returns true if all of the following are true in triangle_attr_:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as vertices' length
     /// 3) attribute "normals"'s length > 0
     /// Convenience function.
     bool HasTriangleNormals() const { return HasTriangleAttr("normals"); }
 
-    /// Returns true if all of the followings are true in triangle_attr_:
+    /// Returns true if all of the following are true in triangle_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as vertices' length
     /// 3) attribute "colors"'s length > 0
     /// Convenience function.
     bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
+
+    /// Create a box triangle mesh. One vertex of the box will be placed at
+    /// the origin and the box aligns with the positive x, y, and z axes.
+    /// \param width is x-directional length.
+    /// \param height is y-directional length.
+    /// \param depth is z-directional length.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateBox(
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a sphere triangle mesh. The sphere with radius will be centered
+    /// at (0, 0, 0). Its axis is aligned with z-axis.
+    /// \param radius defines the radius of the sphere.
+    /// \param resolution defines the resolution of the sphere. The longitudes
+    /// will be split into resolution segments (i.e. there are resolution + 1
+    /// latitude lines including the north and south pole). The latitudes will
+    /// be split into `2 * resolution segments (i.e. there are 2 * resolution
+    /// longitude lines.)
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateSphere(
+            double radius = 1.0,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a tetrahedron triangle mesh. The centroid of the mesh will be
+    /// placed at (0, 0, 0) and the vertices have a distance of radius to the
+    /// center.
+    /// \param radius defines the distance from centroid to mesh vertices.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateTetrahedron(
+            double radius = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a octahedron triangle mesh. The centroid of the mesh will be
+    /// placed at (0, 0, 0) and the vertices have a distance of radius to the
+    /// center.
+    /// \param radius defines the distance from centroid to mesh vertices.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateOctahedron(
+            double radius = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a icosahedron triangle mesh. The centroid of the mesh will be
+    /// placed at (0, 0, 0) and the vertices have a distance of radius to the
+    /// center.
+    /// \param radius defines the distance from centroid to mesh vertices.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateIcosahedron(
+            double radius = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a cylinder triangle mesh.
+    /// \param radius defines the radius of the cylinder.
+    /// \param height defines the height of the cylinder. The axis of the
+    /// cylinder will be from (0, 0, -height/2) to (0, 0, height/2).
+    /// \param resolution defines the resolution of the cylinder. The circle
+    /// will be split into resolution segments
+    /// \param split defines the number of segments along the height direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateCylinder(
+            double radius = 1.0,
+            double height = 2.0,
+            int resolution = 20,
+            int split = 4,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a cone triangle mesh.
+    /// \param radius defines the radius of the cone.
+    /// \param height defines the height of the cone. The axis of the
+    /// cone will be from (0, 0, 0) to (0, 0, height).
+    /// \param resolution defines the resolution of the cone. The circle
+    /// will be split into resolution segments.
+    /// \param split defines the number of segments along the height direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateCone(
+            double radius = 1.0,
+            double height = 2.0,
+            int resolution = 20,
+            int split = 1,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a torus triangle mesh.
+    /// \param torus_radius defines the radius from the center of the
+    /// torus to the center of the tube.
+    /// \param tube_radius defines the radius of the torus tube.
+    /// \param radial_resolution defines the number of segments along the
+    /// radial direction.
+    /// \param tubular_resolution defines the number of segments along
+    /// the tubular direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateTorus(
+            double torus_radius = 1.0,
+            double tube_radius = 0.5,
+            int radial_resolution = 30,
+            int tubular_resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a arrow triangle mesh.
+    /// \param cylinder_radius defines the radius of the cylinder.
+    /// \param cone_radius defines the radius of the cone.
+    /// \param cylinder_height defines the height of the cylinder. The axis of
+    /// cylinder is from (0, 0, 0) to (0, 0, cylinder_height).
+    /// \param cone_height defines the height of the cone. The axis of the
+    /// cone will be from (0, 0, cylinder_height) to (0, 0, cylinder_height +
+    /// cone_height). \param resolution defines the resolution of the cone. The
+    /// circle will be split into resolution segments. \param cylinder_split
+    /// defines the number of segments along the cylinder_height direction.
+    /// \param cone_split defines the number of segments along
+    /// the cone_height direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateArrow(
+            double cylinder_radius = 1.0,
+            double cone_radius = 1.5,
+            double cylinder_height = 5.0,
+            double cone_height = 4.0,
+            int resolution = 20,
+            int cylinder_split = 4,
+            int cone_split = 1,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a coordinate frame mesh.
+    /// \param size defines the size of the coordinate frame.
+    /// \param origin defines the origin of the coordinate frame.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateCoordinateFrame(
+            double size = 1.0,
+            const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0),
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a Mobius strip.
+    /// \param length_split defines the number of segments along the Mobius
+    /// strip.
+    /// \param width_split defines the number of segments along the width
+    /// of the Mobius strip.
+    /// \param twists defines the number of twists of the strip.
+    /// \param radius defines the radius of the Mobius strip.
+    /// \param flatness controls the height of the strip.
+    /// \param width controls the width of the Mobius strip.
+    /// \param scale is used to scale the entire Mobius strip.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateMobius(
+            int length_split = 70,
+            int width_split = 15,
+            int twists = 1,
+            double radius = 1,
+            double flatness = 1,
+            double width = 1,
+            double scale = 1,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a text triangle mesh.
+    /// \param text The text for generating the mesh. ASCII characters 32-126
+    /// are supported (includes alphanumeric characters and punctuation). In
+    /// addition the line feed '\n' is supported to start a new line.
+    /// \param depth The depth of the generated mesh. If depth is 0 then a flat
+    /// mesh will be generated.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateText(
+            const std::string &text,
+            double depth = 0.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a mesh from a 3D scalar field (volume) by computing the
+    /// isosurface. This method uses the Flying Edges dual contouring method
+    /// that computes the isosurface similar to Marching Cubes.  The center of
+    /// the first voxel of the volume is at the origin (0,0,0).  The center of
+    /// the voxel at index [z,y,x] will be at (x,y,z).
+    /// \param volume 3D tensor with the volume.
+    /// \param contour_values A list of contour values at which isosurfaces will
+    /// be generated. The default value is 0.
+    /// \param device The device for the returned mesh.
+    static TriangleMesh CreateIsosurfaces(
+            const core::Tensor &volume,
+            const std::vector<double> contour_values = {0.0},
+            const core::Device &device = core::Device("CPU:0"));
 
 public:
     /// Clear all data in the trianglemesh.
@@ -389,8 +622,8 @@ public:
         return *this;
     }
 
-    /// Returns !HasVertices(), triangles are ignored.
-    bool IsEmpty() const override { return !HasVertices(); }
+    /// Returns !HasVertexPositions(), triangles are ignored.
+    bool IsEmpty() const override { return !HasVertexPositions(); }
 
     core::Tensor GetMinBound() const { return GetVertexPositions().Min({0}); }
 
@@ -398,16 +631,94 @@ public:
 
     core::Tensor GetCenter() const { return GetVertexPositions().Mean({0}); }
 
+    /// \brief Transforms the VertexPositions, VertexNormals and TriangleNormals
+    /// (if exist) of the TriangleMesh.
+    ///
+    /// Transformation matrix is a 4x4 matrix.
+    ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
+    ///               [ O(1x3)  s(1x1) ]]
+    ///  (s = 1 for Transformation without scaling)
+    ///
+    ///  It applies the following general transform to each `positions` and
+    ///  `normals`.
+    ///   |x'|   | R(0,0) R(0,1) R(0,2) t(0)|   |x|
+    ///   |y'| = | R(1,0) R(1,1) R(1,2) t(1)| @ |y|
+    ///   |z'|   | R(2,0) R(2,1) R(2,2) t(2)|   |z|
+    ///   |w'|   | O(0,0) O(0,1) O(0,2)  s  |   |1|
+    ///
+    ///   [x, y, z] = [x', y', z'] / w'
+    ///
+    /// \param transformation Transformation [Tensor of dim {4,4}].
+    /// \return Transformed TriangleMesh
     TriangleMesh &Transform(const core::Tensor &transformation);
 
+    /// \brief Translates the VertexPositions of the TriangleMesh.
+    /// \param translation translation tensor of dimension {3}
+    /// \param relative if true (default): translates relative to Center
+    /// \return Translated TriangleMesh
     TriangleMesh &Translate(const core::Tensor &translation,
                             bool relative = true);
 
+    /// \brief Scales the VertexPositions of the TriangleMesh.
+    /// \param scale Scale [double] of dimension
+    /// \param center Center [Tensor of dim {3}] about which the TriangleMesh is
+    /// to be scaled.
+    /// \return Scaled TriangleMesh
     TriangleMesh &Scale(double scale, const core::Tensor &center);
 
+    /// \brief Rotates the VertexPositions, VertexNormals and TriangleNormals
+    /// (if exists).
+    /// \param R Rotation [Tensor of dim {3,3}].
+    /// \param center Center [Tensor of dim {3}] about which the TriangleMesh is
+    /// to be scaled.
+    /// \return Rotated TriangleMesh
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
-    core::Device GetDevice() const { return device_; }
+    /// Normalize both triangle normals and vertex normals to length 1.
+    TriangleMesh &NormalizeNormals();
+
+    /// \brief Function to compute triangle normals, usually called before
+    /// rendering.
+    TriangleMesh &ComputeTriangleNormals(bool normalized = true);
+
+    /// \brief Function to compute vertex normals, usually called before
+    /// rendering.
+    TriangleMesh &ComputeVertexNormals(bool normalized = true);
+
+    /// \brief Function that computes the surface area of the mesh, i.e. the sum
+    /// of the individual triangle surfaces.
+    double GetSurfaceArea() const;
+
+    /// \brief Function to compute triangle areas and save it as a triangle
+    /// attribute "areas". Prints a warning, if mesh is empty or has no
+    /// triangles.
+    TriangleMesh &ComputeTriangleAreas();
+
+    /// \brief Clip mesh with a plane.
+    /// This method clips the triangle mesh with the specified plane.
+    /// Parts of the mesh on the positive side of the plane will be kept and
+    /// triangles intersected by the plane will be cut.
+    /// \param point A point on the plane as [Tensor of dim {3}].
+    /// \param normal The normal of the plane as [Tensor of dim {3}]. The normal
+    /// points to the positive side of the plane for which the geometry will be
+    /// kept.
+    /// \return New triangle mesh clipped with the plane.
+    TriangleMesh ClipPlane(const core::Tensor &point,
+                           const core::Tensor &normal) const;
+
+    /// \brief Extract contour slices given a plane.
+    /// This method extracts slices as LineSet from the mesh at specific
+    /// contour values defined by the specified plane.
+    /// \param point A point on the plane as [Tensor of dim {3}].
+    /// \param normal The normal of the plane as [Tensor of dim {3}].
+    /// \param contour_values Contour values at which slices will be generated.
+    /// The value describes the signed distance to the plane.
+    /// \return LineSet with the extracted contours.
+    LineSet SlicePlane(const core::Tensor &point,
+                       const core::Tensor &normal,
+                       const std::vector<double> contour_values = {0.0}) const;
+
+    core::Device GetDevice() const override { return device_; }
 
     /// Create a TriangleMesh from a legacy CloudViewer TriangleMesh.
     /// \param mesh_legacy Legacy CloudViewer TriangleMesh.
@@ -415,7 +726,8 @@ public:
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
     /// triangles.
-    /// \param device The device where the resulting TriangleMesh resides in.
+    /// \param device The device where the resulting TriangleMesh resides in
+    /// (default CPU:0).
     static geometry::TriangleMesh FromLegacy(
             const ccMesh &mesh_legacy,
             core::Dtype float_dtype = core::Float32,
@@ -424,6 +736,364 @@ public:
 
     /// Convert to a legacy CloudViewer TriangleMesh.
     ccMesh ToLegacy() const;
+
+    /// Convert a TriangleMeshModel (e.g. as read from a file with
+    /// cloudViewer::io::ReadTriangleMeshModel) to an unordered map of mesh
+    /// names to TriangleMeshes. Only one material is supported per mesh.
+    /// Materials common to multiple meshes will be dupicated. Textures (as
+    /// t::geometry::Image) will use shared storage.
+    /// \param model TriangleMeshModel to convert.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in
+    /// (default CPU:0). Material textures use CPU storage - GPU resident
+    /// texture images are not yet supported.
+    /// \return unordered map of constituent mesh names to TriangleMeshes, with
+    /// materials.
+    static std::unordered_map<std::string, geometry::TriangleMesh>
+    FromTriangleMeshModel(
+            const cloudViewer::visualization::rendering::TriangleMeshModel
+                    &model,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Compute the convex hull of the triangle mesh using qhull.
+    ///
+    /// This runs on the CPU.
+    ///
+    /// \param joggle_inputs (default False). Handle precision problems by
+    /// randomly perturbing the input data. Set to True if perturbing the input
+    /// iis acceptable but you need convex simplicial output. If False,
+    /// neighboring facets may be merged in case of precision problems. See
+    /// [QHull docs](http://www.qhull.org/html/qh-impre.htm#joggle) for more
+    /// details.
+    ///
+    /// \return TriangleMesh representing the convexh hull. This contains an
+    /// extra vertex property "point_map" that contains the index of the
+    /// corresponding vertex in the original mesh.
+    TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
+
+    /// Function to simplify mesh using Quadric Error Metric Decimation by
+    /// Garland and Heckbert.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param target_reduction The factor of triangles to delete, i.e.,
+    /// setting this to 0.9 will return a mesh with about 10% of the original
+    /// triangle count.
+    /// It is not guaranteed that the target reduction factor will be reached.
+    /// \param preserve_volume If set to true this enables volume preservation
+    /// which reduces the error in triangle normal direction.
+    ///
+    /// \return Simplified TriangleMesh.
+    TriangleMesh SimplifyQuadricDecimation(double target_reduction,
+                                           bool preserve_volume = true) const;
+
+    /// Computes the mesh that encompasses the union of the volumes of two
+    /// meshes.
+    /// Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the union volume.
+    TriangleMesh BooleanUnion(const TriangleMesh &mesh,
+                              double tolerance = 1e-6) const;
+
+    /// Computes the mesh that encompasses the intersection of the volumes of
+    /// two meshes. Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the intersection volume.
+    TriangleMesh BooleanIntersection(const TriangleMesh &mesh,
+                                     double tolerance = 1e-6) const;
+
+    /// Computes the mesh that encompasses the volume after subtracting the
+    /// volume of the second operand. Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the difference volume.
+    TriangleMesh BooleanDifference(const TriangleMesh &mesh,
+                                   double tolerance = 1e-6) const;
+
+    /// Create an axis-aligned bounding box from vertex attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// Create an oriented bounding box from vertex attribute "positions".
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
+    /// Fill holes by triangulating boundary edges.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param hole_size This is the approximate threshold for filling holes.
+    /// The value describes the maximum radius of holes to be filled.
+    ///
+    /// \return New mesh after filling holes.
+    TriangleMesh FillHoles(double hole_size = 1e6) const;
+
+    /// Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the
+    /// mesh.
+    ///
+    /// Input meshes must be manifold for this method to work.
+    ///
+    /// The algorithm is based on:
+    /// - Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using
+    /// Spectral Analysis", Eurographics Symposium on Geometry Processing (2004)
+    /// - Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The target size of the texture (size x size). The uv
+    /// coordinates will still be in the range [0..1] but parameters like gutter
+    /// use pixels as units.
+    /// \param gutter This is the space around the uv islands in pixels.
+    /// \param max_stretch The maximum amount of stretching allowed. The
+    /// parameter range is [0..1] with 0 meaning no stretch allowed.
+    /// \param parallel_partitions The approximate number of partitions created
+    /// before computing the UV atlas for parallelizing the computation.
+    /// Parallelization can be enabled with values > 1. Note that
+    /// parallelization increases the number of UV islands and can lead to
+    /// results with lower quality.
+    /// \param nthreads The number of threads used
+    /// when parallel_partitions is > 1. Set to 0 for automatic number of thread
+    /// detection.
+    ///
+    /// \return Tuple with (max stretch, num_charts, num_partitions) storing the
+    /// actual amount of stretch, the number of created charts, and the number
+    /// of parallel partitions created.
+    std::tuple<float, int, int> ComputeUVAtlas(size_t size = 512,
+                                               float gutter = 1.0f,
+                                               float max_stretch = 1.f / 6,
+                                               int parallel_partitions = 1,
+                                               int nthreads = 0);
+
+    /// Bake vertex attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    /// Only float type attributes can be baked to textures.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeVertexAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &vertex_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
+
+    /// Bake triangle attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeTriangleAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &triangle_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
+
+    /// Sweeps the triangle mesh rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeRotation(double angle,
+                                 const core::Tensor &axis,
+                                 int resolution = 16,
+                                 double translation = 0.0,
+                                 bool capping = true) const;
+
+    /// Sweeps the triangle mesh along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A triangle
+    /// mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeLinear(const core::Tensor &vector,
+                               double scale = 1.0,
+                               bool capping = true) const;
+
+    /// Partition the mesh by recursively doing PCA.
+    /// This function creates a new triangle attribute with the name
+    /// "partition_ids".
+    /// \param max_faces The maximum allowed number of faces in a partition.
+    /// \return The number of partitions.
+    int PCAPartition(int max_faces);
+
+    /// Returns a new mesh with the faces selected by a boolean mask.
+    /// \param mask A boolean mask with the shape (N) with N as the number of
+    /// faces in the mesh.
+    /// \return A new mesh with the selected faces. If the original mesh is
+    /// empty, return an empty mesh.
+    TriangleMesh SelectFacesByMask(const core::Tensor &mask) const;
+
+    /// Returns a new mesh with the vertices selected by a vector of indices.
+    /// If an item from the indices list exceeds the max vertex number of
+    /// the mesh or has a negative value, it is ignored.
+    /// \param indices An integer list of indices. Duplicates are
+    /// allowed, but ignored. Signed and unsigned integral types are allowed.
+    /// \param copy_attributes Indicates if vertex attributes (other than
+    /// positions) and triangle attributes (other than indices) should be copied
+    /// to the returned mesh.
+    /// \return A new mesh with the selected vertices and faces built
+    /// from the selected vertices. If the original mesh is empty, return
+    /// an empty mesh.
+    TriangleMesh SelectByIndex(const core::Tensor &indices,
+                               bool copy_attributes = true) const;
+
+    /// Removes unreferenced vertices from the mesh.
+    /// \return The reference to itself.
+    TriangleMesh RemoveUnreferencedVertices();
+
+    /// Create an albedo for the triangle mesh using calibrated images. The
+    /// triangle mesh must have texture coordinates ("texture_uvs" triangle
+    /// attribute). This works by back projecting the images onto the texture
+    /// surface. Overlapping images are blended together in the resulting
+    /// albedo. For best results, use images captured with exposure and white
+    /// balance lock to reduce the chance of seams in the output texture.
+    ///
+    /// This function is only supported on the CPU device.
+    ///
+    /// \param images vector of images.
+    /// \param intrinsic_matrices vector of {3,3} intrinsic matrices describing
+    /// the pinhole camera.
+    /// \param extrinsic_matrices vector of {4,4} extrinsic matrices describing
+    /// the position and orientation of the camera.
+    /// \param tex_size Output albedo texture size. This is a square image, so
+    /// only one side is needed.
+    /// \param update_material Whether to update the material of the triangle
+    /// mesh, possibly overwriting an existing albedo texture.
+    /// \return Image with albedo texture
+    Image ProjectImagesToAlbedo(
+            const std::vector<Image> &images,
+            const std::vector<core::Tensor> &intrinsic_matrices,
+            const std::vector<core::Tensor> &extrinsic_matrices,
+            int tex_size = 1024,
+            bool update_material = true);
+
+    /// Removes all non-manifold edges, by successively deleting triangles
+    /// with the smallest surface area adjacent to the
+    /// non-manifold edge until the number of adjacent triangles to the edge is
+    /// `<= 2`. If mesh is empty or has no triangles, prints a warning and
+    /// returns immediately. \return The reference to itself.
+    TriangleMesh RemoveNonManifoldEdges();
+
+    /// Returns the non-manifold edges of the triangle mesh.
+    /// If \param allow_boundary_edges is set to false, then also boundary
+    /// edges are returned.
+    /// \return 2d integer tensor with shape {n,2} encoding ordered edges.
+    /// If mesh is empty or has no triangles, returns an empty tensor.
+    core::Tensor GetNonManifoldEdges(bool allow_boundary_edges = true) const;
+
+    /// Sample points uniformly from the triangle mesh surface and return as a
+    /// PointCloud. Normals and colors are interpolated from the triangle mesh.
+    /// If texture_uvs and albedo are present, these are used to estimate the
+    /// sampled point color, otherwise vertex colors are used, if present.
+    /// During sampling, triangle areas are computed and saved in the "areas"
+    /// attribute.
+    /// \param number_of_points The number of points to sample.
+    /// \param use_triangle_normal If true, use the triangle normal as the
+    /// normal of the sampled point. Otherwise, interpolate the vertex normals.
+    PointCloud SamplePointsUniformly(size_t number_of_points,
+                                     bool use_triangle_normal = false);
+
+    /// Compute various metrics between two triangle meshes. This uses ray
+    /// casting for distance computations between a sampled point cloud and a
+    /// triangle mesh. Currently, Chamfer distance, Hausdorff distance  and
+    /// F-Score <a
+    /// href="../tutorial/reference.html#Knapitsch2017">[[Knapitsch2017]]</a>
+    /// are supported. The Chamfer distance is the sum of the mean distance to
+    /// the nearest neighbor from the sampled surface points of the first mesh
+    /// to the second mesh and vice versa. The F-Score at a fixed threshold
+    /// radius is the harmonic mean of the Precision and Recall. Recall is the
+    /// percentage of surface points from the first mesh that have the second
+    /// mesh within the threshold radius, while Precision is the percentage of
+    /// sampled points from the second mesh that have the first mesh surface
+    /// within the threshold radius.
+
+    /// \f{eqnarray*}{
+    ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
+    ///   || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X)
+    ///   || \\{}
+    ///   \text{Hausdorff distance: } d_H(X,Y) &=& \max \left\{ \max_{i \in X}
+    ///   || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}
+    ///   \\{}
+    ///   \text{Precision: } P(X,Y|d) &=& \frac{100}{|X|} \sum_{i \in X} || x_i
+    ///   - n(x_i, Y) || < d \\{}
+    ///   \text{Recall: } R(X,Y|d) &=& \frac{100}{|Y|} \sum_{i \in Y} || y_i -
+    ///  n(y_i, X) || < d \\{}
+    ///   \text{F-Score: } F(X,Y|d) &=& \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) +
+    ///  R(X,Y|d)}
+    /// \f}
+
+    /// As a side effect, the triangle areas are saved in the "areas" attribute.
+    /// \param mesh2 Other point cloud to compare with.
+    /// \param metrics List of Metric s to compute. Multiple metrics can be
+    /// computed at once for efficiency.
+    /// \param params MetricParameters struct holds parameters required by
+    /// different metrics.
+    /// \returns Tensor containing the requested metrics.
+    core::Tensor ComputeMetrics(
+            const TriangleMesh &mesh2,
+            std::vector<Metric> metrics = {Metric::ChamferDistance},
+            MetricParameters params = MetricParameters()) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

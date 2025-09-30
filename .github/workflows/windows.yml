@@ -172,6 +172,8 @@ jobs:
             -DBUILD_BENCHMARKS=OFF `
             -DBUILD_OPENCV=ON `
             -DBUILD_RECONSTRUCTION=ON `
+            -DUSE_PCL_BACKEND=ON `
+            -DWITH_PCL_NURBS=ON `
             -DCVCORELIB_USE_CGAL=ON `
             -DCVCORELIB_SHARED=ON `
             -DCVCORELIB_USE_QT_CONCURRENT=ON `
@@ -338,6 +340,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
+          ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       # DGM: without caching, using conda on Windows takes a long time...

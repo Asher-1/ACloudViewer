@@ -1,36 +1,17 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-
-#include "RGBDImage.h"
 
 #include <Logging.h>
 
+#include "RGBDImage.h"
+
 namespace cloudViewer {
 namespace geometry {
-	using namespace cloudViewer;
+using namespace cloudViewer;
 
 std::shared_ptr<RGBDImage> RGBDImage::CreateFromColorAndDepth(
         const Image &color,
@@ -38,7 +19,8 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromColorAndDepth(
         double depth_scale /* = 1000.0*/,
         double depth_trunc /* = 3.0*/,
         bool convert_rgb_to_intensity /* = true*/) {
-    std::shared_ptr<RGBDImage> rgbd_image = cloudViewer::make_shared<RGBDImage>();
+    std::shared_ptr<RGBDImage> rgbd_image =
+            cloudViewer::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {
         utility::LogError(
                 "[CreateFromColorAndDepth] Unsupported image "
@@ -77,7 +59,8 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromSUNFormat(
         const Image &color,
         const Image &depth,
         bool convert_rgb_to_intensity /* = true*/) {
-    std::shared_ptr<RGBDImage> rgbd_image = cloudViewer::make_shared<RGBDImage>();
+    std::shared_ptr<RGBDImage> rgbd_image =
+            cloudViewer::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {
         utility::LogError(
                 "[CreateRGBDImageFromSUNFormat] Unsupported image format.");
@@ -98,7 +81,8 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromNYUFormat(
         const Image &color,
         const Image &depth,
         bool convert_rgb_to_intensity /* = true*/) {
-    std::shared_ptr<RGBDImage> rgbd_image = cloudViewer::make_shared<RGBDImage>();
+    std::shared_ptr<RGBDImage> rgbd_image =
+            cloudViewer::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {
         utility::LogError(
                 "[CreateRGBDImageFromNYUFormat] Unsupported image format.");

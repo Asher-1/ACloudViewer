@@ -807,7 +807,7 @@ QStringList cc2DLabel::getLabelContent(int precision) const {
 }
 
 bool cc2DLabel::acceptClick(int x, int y, Qt::MouseButton button) {
-    if (button == Qt::MidButton) {
+    if (button == Qt::MiddleButton) {
         QRect rect = QRect(0, 0, m_labelROI.width(), m_labelROI.height());
         if (rect.contains(x - m_lastScreenPos[0], y - m_lastScreenPos[1])) {
             // toggle collapse state

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,9 +26,9 @@
 
 #include "core/Blob.h"
 
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
-#include "pybind/cloudViewer_pybind.h"
 
 namespace cloudViewer {
 namespace core {

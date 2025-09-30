@@ -1,61 +1,37 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "pipelines/registration/Registration.h"
 
+#include <Logging.h>
 #include <benchmark/benchmark.h>
+#include <ecvKDTreeFlann.h>
+#include <ecvPointCloud.h>
 
 #include <Eigen/Eigen>
 
-#include <ecvKDTreeFlann.h>
-#include <ecvPointCloud.h>
-#include "io/PointCloudIO.h"
-#include "pipelines/registration/TransformationEstimation.h"
-#include <Logging.h>
-
-// Testing parameters:
-// Filename for pointcloud registration data.
-static const std::string source_pointcloud_filename =
-        TEST_DATA_DIR "/ICP/cloud_bin_0.pcd";
-static const std::string target_pointcloud_filename =
-        TEST_DATA_DIR "/ICP/cloud_bin_1.pcd";
-
-static const double voxel_downsampling_factor = 0.02;
-
-// ICP ConvergenceCriteria.
-static const double relative_fitness = 1e-6;
-static const double relative_rmse = 1e-6;
-static const int max_iterations = 30;
-
-// NNS parameter.
-static const double max_correspondence_distance = 0.05;
+#include "cloudViewer/data/Dataset.h"
+#include "cloudViewer/io/PointCloudIO.h"
+#include "cloudViewer/pipelines/registration/TransformationEstimation.h"
 
 namespace cloudViewer {
 namespace pipelines {
 namespace registration {
+
+// Testing parameters:
+// ICP ConvergenceCriteria.
+static const double relative_fitness = 1e-6;
+static const double relative_rmse = 1e-6;
+static const int max_iterations = 10;
+
+static const double voxel_downsampling_factor = 0.02;
+
+// NNS parameter.
+static const double max_correspondence_distance = 0.05;
 
 static std::tuple<ccPointCloud, ccPointCloud> LoadPointCloud(
         const std::string& source_filename,
@@ -69,31 +45,32 @@ static std::tuple<ccPointCloud, ccPointCloud> LoadPointCloud(
 
     // Eliminates the case of impractical values (including negative).
     if (voxel_downsample_factor > 0.001) {
-        source = *source.voxelDownSample(voxel_downsample_factor);
-        target = *target.voxelDownSample(voxel_downsample_factor);
+        source = *source.VoxelDownSample(voxel_downsample_factor);
+        target = *target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                " voxelDownSample: Impractical voxel size [< 0.001], skiping "
+                " VoxelDownSample: Impractical voxel size [< 0.001], skiping "
                 "downsampling.");
     }
 
     return std::make_tuple(source, target);
 }
 
-static void BenchmarkRegistrationICPLegacy(
-        benchmark::State& state, const TransformationEstimationType& type) {
-    ccPointCloud source;
-    ccPointCloud target;
-
-    std::tie(source, target) = LoadPointCloud(source_pointcloud_filename,
-                                              target_pointcloud_filename,
+static void BenchmarkICPLegacy(benchmark::State& state,
+                               const TransformationEstimationType& type) {
+    data::DemoICPPointClouds demo_icp_pointclouds;
+    ccPointCloud source, target;
+    std::tie(source, target) = LoadPointCloud(demo_icp_pointclouds.GetPaths(0),
+                                              demo_icp_pointclouds.GetPaths(1),
                                               voxel_downsampling_factor);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {
-        estimation = cloudViewer::make_shared<TransformationEstimationPointToPlane>();
+        estimation = cloudViewer::make_shared<
+                TransformationEstimationPointToPlane>();
     } else if (type == TransformationEstimationType::PointToPoint) {
-        estimation = cloudViewer::make_shared<TransformationEstimationPointToPoint>();
+        estimation = cloudViewer::make_shared<
+                TransformationEstimationPointToPoint>();
     }
 
     Eigen::Matrix4d init_trans;
@@ -121,12 +98,12 @@ static void BenchmarkRegistrationICPLegacy(
                       reg_result.inlier_rmse_);
 }
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
+BENCHMARK_CAPTURE(BenchmarkICPLegacy,
                   PointToPlane / CPU,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
+BENCHMARK_CAPTURE(BenchmarkICPLegacy,
                   PointToPoint / CPU,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);

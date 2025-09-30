@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/VisualizerWithVertexSelection.h"
@@ -32,7 +13,7 @@
 #include <LineSet.h>
 #include <Logging.h>
 #include <ecvHObjectCaster.h>
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvTetraMesh.h>
@@ -177,7 +158,7 @@ bool VisualizerWithVertexSelection::AddGeometry(
     }
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
-            view_control_ptr_->GetBoundingBox().getPrintInfo().c_str());
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
 
@@ -261,7 +242,7 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
             break;
     }
 
-    ui_points_geometry_ptr_->paintUniformColor(CHOOSE_POINTS_COLOR);
+    ui_points_geometry_ptr_->PaintUniformColor(CHOOSE_POINTS_COLOR);
     ui_points_renderer_ptr_->UpdateGeometry();
 
     geometry_renderer_ptr_->UpdateGeometry();
@@ -534,7 +515,7 @@ void VisualizerWithVertexSelection::KeyPressCallback(
         case GLFW_KEY_R:
             if (mods & GLFW_MOD_CONTROL) {
                 ui_selected_points_geometry_ptr_->clear();
-                ui_selected_points_geometry_ptr_->paintUniformColor(
+                ui_selected_points_geometry_ptr_->PaintUniformColor(
                         SELECTED_POINTS_COLOR);
                 ui_selected_points_renderer_ptr_->UpdateGeometry();
                 is_redraw_required_ = true;
@@ -764,7 +745,7 @@ void VisualizerWithVertexSelection::AddPickedPoints(
         }
     }
 
-    ui_selected_points_geometry_ptr_->paintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
     if (on_selection_changed_) {
@@ -782,7 +763,7 @@ void VisualizerWithVertexSelection::RemovePickedPoints(
     for (auto &kv : selected_points_) {
         ui_selected_points_geometry_ptr_->addPoint(kv.second);
     }
-    ui_selected_points_geometry_ptr_->paintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
     if (on_selection_changed_) {
@@ -799,7 +780,7 @@ void VisualizerWithVertexSelection::DragSelectedPoints(
         selected_points_[index] = new_coord;
         ui_selected_points_geometry_ptr_->addEigenPoint(new_coord);
     }
-    ui_selected_points_geometry_ptr_->paintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
     if (type == DRAG_MOVING && on_selection_moving_) {

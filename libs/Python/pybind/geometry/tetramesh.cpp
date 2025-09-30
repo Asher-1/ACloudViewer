@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <ecvTetraMesh.h>
@@ -60,30 +41,30 @@ void pybind_tetramesh(py::module &m) {
             .def(py::self + py::self)
             .def(py::self += py::self)
             .def("remove_duplicated_vertices",
-                 &TetraMesh::removeDuplicatedVertices,
+                 &TetraMesh::RemoveDuplicatedVertices,
                  "Function that removes duplicated vertices, i.e., vertices "
                  "that have identical coordinates.")
             .def("remove_duplicated_tetras",
-                 &TetraMesh::removeDuplicatedTetras,
+                 &TetraMesh::RemoveDuplicatedTetras,
                  "Function that removes duplicated tetras, i.e., removes "
                  "tetras that reference the same four vertices, "
                  "independent of their order.")
             .def("remove_unreferenced_vertices",
-                 &TetraMesh::removeUnreferencedVertices,
+                 &TetraMesh::RemoveUnreferencedVertices,
                  "This function removes vertices from the tetra mesh that "
                  "are not referenced in any tetra of the mesh.")
             .def("remove_degenerate_tetras",
-                 &TetraMesh::removeDegenerateTetras,
+                 &TetraMesh::RemoveDegenerateTetras,
                  "Function that removes degenerate tetras, i.e., tetras "
                  "that references a single vertex multiple times in a single "
                  "tetra. They are usually the product of removing "
                  "duplicated vertices.")
-            .def("has_vertices", &TetraMesh::hasVertices,
+            .def("has_vertices", &TetraMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
-            .def("has_tetras", &TetraMesh::hasTetras,
+            .def("has_tetras", &TetraMesh::HasTetras,
                  "Returns ``True`` if the mesh contains tetras.")
             .def("extract_triangle_mesh",
-                 &TetraMesh::extractTriangleMesh,
+                 &TetraMesh::ExtractTriangleMesh,
                  "Function that generates a triangle mesh of the specified "
                  "iso-surface.",
                  "values"_a, "level"_a)

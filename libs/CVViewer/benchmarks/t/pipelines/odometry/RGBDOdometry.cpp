@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "t/pipelines/odometry/RGBDOdometry.h"
@@ -29,12 +10,13 @@
 #include <benchmark/benchmark.h>
 
 #include "camera/PinholeCameraIntrinsic.h"
-#include "core/CUDAUtils.h"
-#include "core/Tensor.h"
-#include "t/geometry/Image.h"
-#include "t/geometry/PointCloud.h"
-#include "t/io/ImageIO.h"
-#include "t/io/PointCloudIO.h"
+#include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/data/Dataset.h"
+#include "cloudViewer/t/geometry/Image.h"
+#include "cloudViewer/t/geometry/PointCloud.h"
+#include "cloudViewer/t/io/ImageIO.h"
+#include "cloudViewer/t/io/PointCloudIO.h"
 
 namespace cloudViewer {
 namespace t {
@@ -54,8 +36,7 @@ static core::Tensor CreateIntrisicTensor() {
 
 static void ComputeOdometryResultPointToPlane(benchmark::State& state,
                                               const core::Device& device) {
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {
+    if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
 
@@ -63,10 +44,12 @@ static void ComputeOdometryResultPointToPlane(benchmark::State& state,
     const float depth_diff = 0.07;
     const float depth_max = 3.0;
 
-    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
-    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
+    data::SampleRedwoodRGBDImages redwood_data;
+    t::geometry::Image src_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
+    t::geometry::Image dst_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[2]);
+
     src_depth = src_depth.To(device);
     dst_depth = dst_depth.To(device);
 
@@ -114,8 +97,7 @@ static void RGBDOdometryMultiScale(
         benchmark::State& state,
         const core::Device& device,
         const t::pipelines::odometry::Method& method) {
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {
+    if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
 
@@ -123,15 +105,17 @@ static void RGBDOdometryMultiScale(
     const float depth_max = 3.0;
     const float depth_diff = 0.07;
 
-    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
-    t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00000.jpg");
+    data::SampleRedwoodRGBDImages redwood_data;
+    t::geometry::Image src_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
+    t::geometry::Image src_color =
+            *t::io::CreateImageFromFile(redwood_data.GetColorPaths()[0]);
 
-    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
-    t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00002.jpg");
+    t::geometry::Image dst_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[2]);
+
+    t::geometry::Image dst_color =
+            *t::io::CreateImageFromFile(redwood_data.GetColorPaths()[0]);
 
     t::geometry::RGBDImage source, target;
     source.color_ = src_color.To(device);

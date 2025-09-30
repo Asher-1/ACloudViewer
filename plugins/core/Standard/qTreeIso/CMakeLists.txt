@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
+# Suppress CMP0167 warning
+if (POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)
+endif()
+
 option( PLUGIN_STANDARD_QTREEISO "Install qTreeIso plugin" OFF )
 
 if( PLUGIN_STANDARD_QTREEISO )

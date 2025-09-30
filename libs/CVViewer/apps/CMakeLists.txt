@@ -21,7 +21,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
         set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (C) 2023 by ${CLOUDVIEWER_APP_NAME}")
+        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (C) 2018-2025 by www.cloudViewer.org")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
         set_target_properties(${TARGET_NAME} PROPERTIES
@@ -47,7 +47,6 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
         set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${APP_NAME})
-        # set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib/")
     endif ()
 
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
@@ -145,32 +144,14 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
             install(DIRECTORY "${APP_DIR}"
                     DESTINATION "${APP_INSTALL_PATH}"
                     USE_SOURCE_PERMISSIONS)
-        #     if (CMAKE_INSTALL_PREFIX MATCHES "^(/usr/local|/opt)")
-        #         set(DESKTOP_INSTALL_DIR "/usr/share")
-        #     else ()
-        #         set(DESKTOP_INSTALL_DIR "$ENV{HOME}/.local/share")
-        #     endif ()
-        #     configure_file("${SOURCE_DIR}/${TARGET_NAME}.desktop.in"
-        #             "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop")
-        #     # Install using freedesktop.org standards
-        #     install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop"
-        #             DESTINATION "${DESKTOP_INSTALL_DIR}/applications")
-        #     install(FILES "${SOURCE_DIR}/icon.svg"
-        #             DESTINATION "${DESKTOP_INSTALL_DIR}/icons/hicolor/scalable/apps"
-        #             RENAME "${APP_NAME}.svg")
-        #     install(FILES "${SOURCE_DIR}/${TARGET_NAME}.xml"
-        #             DESTINATION "${DESKTOP_INSTALL_DIR}/mime/packages"
-        #             RENAME "${APP_NAME}.xml")
-        #     # Various caches need to be updated for the app to become visible
-        #     install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
     endif ()
 
     # Auxiliary files
-    set(auxFiles bin_other/license.txt)
+    set(auxFiles ${CMAKE_CURRENT_SOURCE_DIR}/bin_other/license.txt)
 
     if (WIN32)
         # Additional auxiliary file(s)
-        file(GLOB batch_list bin_other/*.bat)
+        file(GLOB batch_list ${CMAKE_CURRENT_SOURCE_DIR}/bin_other/*.bat)
         list(APPEND auxFiles ${batch_list})
     endif ()
 

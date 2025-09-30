@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -32,6 +13,7 @@
 #include <Eigen/Geometry>
 #include <tuple>
 #include <vector>
+#include "cloudViewer/pipelines/registration/TransformationEstimation.h"
 
 class ccPointCloud;
 namespace cloudViewer {
@@ -63,7 +45,8 @@ public:
     /// \param iteration_number Maximum number of iterations.
     /// \param tuple_scale Similarity measure used for tuples of feature points.
     /// \param maximum_tuple_count Maximum numer of tuples.
-    /// \param seed Random seed.
+    /// \param tuple_test Set to `true` to perform geometric compatibility tests
+    /// on initial set of correspondences.
     FastGlobalRegistrationOption(
             double division_factor = 1.4,
             bool use_absolute_scale = false,
@@ -72,7 +55,7 @@ public:
             int iteration_number = 64,
             double tuple_scale = 0.95,
             int maximum_tuple_count = 1000,
-            utility::optional<unsigned int> seed = utility::nullopt)
+            bool tuple_test = true)
         : division_factor_(division_factor),
           use_absolute_scale_(use_absolute_scale),
           decrease_mu_(decrease_mu),
@@ -80,7 +63,7 @@ public:
           iteration_number_(iteration_number),
           tuple_scale_(tuple_scale),
           maximum_tuple_count_(maximum_tuple_count),
-          seed_(seed) {}
+          tuple_test_(tuple_test) {}
     ~FastGlobalRegistrationOption() {}
 
 public:
@@ -101,17 +84,37 @@ public:
     double tuple_scale_;
     /// Maximum number of tuples..
     int maximum_tuple_count_;
-    /// Random seed
-    utility::optional<unsigned int> seed_;
+    /// Set to `true` to perform geometric compatibility tests on initial set of
+    /// correspondences.
+    bool tuple_test_;
 };
 
-RegistrationResult FastGlobalRegistration(
-        const ccPointCloud &source,
-        const ccPointCloud &target,
-        const utility::Feature &source_feature,
-        const utility::Feature &target_feature,
-        const FastGlobalRegistrationOption &option =
-                FastGlobalRegistrationOption());
+/// \brief Fast Global Registration based on a given set of correspondences.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param corres Correspondence indices between source and target point clouds.
+/// \param option FGR options
+RegistrationResult FastGlobalRegistrationBasedOnCorrespondence(
+    const ccPointCloud &source,
+    const ccPointCloud &target,
+    const CorrespondenceSet &corres,
+    const FastGlobalRegistrationOption &option =
+            FastGlobalRegistrationOption());
+
+/// \brief Fast Global Registration based on a given set of FPFH features.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param corres Correspondence indices between source and target point clouds.
+/// \param option FGR options
+RegistrationResult FastGlobalRegistrationBasedOnFeatureMatching(
+    const ccPointCloud &source,
+    const ccPointCloud &target,
+    const utility::Feature &source_feature,
+    const utility::Feature &target_feature,
+    const FastGlobalRegistrationOption &option =
+            FastGlobalRegistrationOption());
 
 }  // namespace registration
 }  // namespace pipelines

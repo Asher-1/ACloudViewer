@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "CloudViewer.h"
@@ -67,7 +48,7 @@ int main(int argc, char **argv) {
     vis.CreateVisualizerWindow("Crop Point Cloud", 1920, 1080, 100, 100);
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd_ptr = io::CreatePointCloudFromFile(argv[2]);
-        if (pcd_ptr == nullptr || !pcd_ptr->isEmpty()) {
+        if (pcd_ptr == nullptr || !pcd_ptr->IsEmpty()) {
             utility::LogWarning("Failed to read the point cloud.");
             return 1;
         }
@@ -77,7 +58,7 @@ int main(int argc, char **argv) {
         }
     } else if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh_ptr = io::CreateMeshFromFile(argv[2]);
-        if (mesh_ptr == nullptr || mesh_ptr->isEmpty()) {
+        if (mesh_ptr == nullptr || mesh_ptr->IsEmpty()) {
             utility::LogWarning("Failed to read the mesh.");
             return 1;
         }

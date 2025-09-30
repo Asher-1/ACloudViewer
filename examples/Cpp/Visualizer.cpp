@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <iostream>
@@ -63,7 +44,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
     } else if (option == "editmesh") {
         auto mesh_ptr = std::make_shared<ccMesh>();
@@ -73,7 +54,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometriesWithVertexSelection(
                 {mesh_ptr}, "Edit Mesh", 1600, 900);
     } else if (option == "spin") {
@@ -84,7 +65,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometriesWithAnimationCallback(
                 {mesh_ptr},
                 [&](visualization::Visualizer *vis) {
@@ -101,7 +82,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometriesWithKeyCallbacks(
                 {mesh_ptr},
                 {{GLFW_KEY_SPACE,
@@ -120,7 +101,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        cloud_ptr->normalizeNormals();
+        cloud_ptr->NormalizeNormals();
         visualization::DrawGeometries({cloud_ptr}, "PointCloud", 1600, 900);
     } else if (option == "rainbow") {
         auto cloud_ptr = std::make_shared<ccPointCloud>();
@@ -130,7 +111,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        cloud_ptr->normalizeNormals();
+        cloud_ptr->NormalizeNormals();
         cloud_ptr->resizeTheRGBTable();
         double color_index = 0.0;
         double color_index_step = 0.05;
@@ -226,14 +207,13 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
-        mesh_ptr->computeVertexNormals();
+        mesh_ptr->ComputeVertexNormals();
         if (argc == 3) {
             visualization::DrawGeometriesWithCustomAnimation(
                     {mesh_ptr}, "Animation", 1920, 1080);
         } else {
             visualization::DrawGeometriesWithCustomAnimation(
-                    {mesh_ptr}, "Animation",
-                    1600, 900, 50, 50, argv[3]);
+                    {mesh_ptr}, "Animation", 1600, 900, 50, 50, argv[3]);
         }
     }
 

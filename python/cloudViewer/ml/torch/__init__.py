@@ -1,27 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: asher-1.github.io                          -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2020 asher-1.github.io
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Torch specific machine learning functions."""
 import os as _os
@@ -38,9 +20,9 @@ _cv3d_torch_version = _verp(_build_config["Pytorch_VERSION"])
 if _verp(_torch.__version__).release[:2] != _cv3d_torch_version.release[:2]:
     match_torch_ver = '.'.join(
         str(v) for v in _cv3d_torch_version.release[:2] + ('*',))
-    raise Exception('Version mismatch: CloudViewer needs PyTorch version {}, but '
-                    'version {} is installed!'.format(match_torch_ver,
-                                                      _torch.__version__))
+    raise Exception(
+        'Version mismatch: CloudViewer needs PyTorch version {}, but '
+        'version {} is installed!'.format(match_torch_ver, _torch.__version__))
 
 # Precompiled wheels at
 # https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2
@@ -71,7 +53,7 @@ if (_build_config["BUILD_CUDA_MODULE"] and
 
 --------------------------------------------------------------------------------
 """)
-    
+
 _lib_path = []
 # allow overriding the path to the op library with an env var.
 if 'CLOUDVIEWER_TORCH_OP_LIB' in _os.environ:

@@ -1,8 +1,9 @@
-# cloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
-
-# examples/Python/Advanced/remove_geometry.py
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
 import numpy as np
@@ -17,7 +18,8 @@ def visualize_non_blocking(vis, pcds):
     vis.update_renderer()
 
 
-pcd_orig = cv3d.io.read_point_cloud("../../test_data/fragment.pcd")
+pcd_data = cv3d.data.PCDPointCloud()
+pcd_orig = cv3d.io.read_point_cloud(pcd_data.path)
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 pcd_orig.transform(flip_transform)
 n_pcd = 5
@@ -36,7 +38,7 @@ added = [False] * n_pcd
 curr_sec = int(time.time() - start_time)
 prev_sec = curr_sec - 1
 
-while True:
+while curr_sec < 10:
     curr_sec = int(time.time() - start_time)
     if curr_sec - prev_sec == 1:
         prev_sec = curr_sec
@@ -52,3 +54,4 @@ while True:
                 print("Removing %d" % i)
 
     visualize_non_blocking(vis, pcds)
+    time.sleep(0.025)  # yield CPU to others while maintaining responsiveness

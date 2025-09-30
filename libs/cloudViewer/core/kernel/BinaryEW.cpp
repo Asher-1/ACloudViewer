@@ -1,35 +1,16 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/kernel/BinaryEW.h"
+#include "cloudViewer/core/kernel/BinaryEW.h"
 
 #include <vector>
 
-#include "core/ShapeUtil.h"
-#include "core/Tensor.h"
+#include "cloudViewer/core/ShapeUtil.h"
+#include "cloudViewer/core/Tensor.h"
 #include <Logging.h>
 
 namespace cloudViewer {
@@ -68,10 +49,15 @@ void BinaryEW(const Tensor& lhs,
                 broadcasted_input_shape, dst.GetShape());
     }
 
-    Device::DeviceType device_type = lhs.GetDevice().GetType();
-    if (device_type == Device::DeviceType::CPU) {
+    if (lhs.IsCPU()) {
         BinaryEWCPU(lhs, rhs, dst, op_code);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (lhs.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        BinaryEWSYCL(lhs, rhs, dst, op_code);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else if (lhs.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         BinaryEWCUDA(lhs, rhs, dst, op_code);
 #else

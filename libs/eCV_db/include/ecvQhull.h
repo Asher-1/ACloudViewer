@@ -34,29 +34,27 @@
 class ccMesh;
 
 namespace cloudViewer {
+namespace geometry {
 
-	namespace geometry {
-		class TetraMesh;
-	}
-
-namespace utility {
+class TetraMesh;
 
 class Qhull {
 public:
-	static std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
-	ComputeConvexHull(const std::vector<Eigen::Vector3d>& points);
+    static std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
+    ComputeConvexHull(const std::vector<Eigen::Vector3d>& points);
 
-	static std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
-	ComputeConvexHull(const std::vector<CCVector3>& points);
+    static std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
+    ComputeConvexHull(const std::vector<CCVector3>& points);
 
-	static std::tuple<std::shared_ptr<geometry::TetraMesh>, std::vector<size_t>>
-	ComputeDelaunayTetrahedralization(const std::vector<Eigen::Vector3d>& points);
+    static std::tuple<std::shared_ptr<TetraMesh>, std::vector<size_t>>
+    ComputeDelaunayTetrahedralization(
+            const std::vector<Eigen::Vector3d>& points);
 
-	static std::tuple<std::shared_ptr<geometry::TetraMesh>, std::vector<size_t>>
-		ComputeDelaunayTetrahedralization(const std::vector<CCVector3>& points);
+    static std::tuple<std::shared_ptr<TetraMesh>, std::vector<size_t>>
+    ComputeDelaunayTetrahedralization(const std::vector<CCVector3>& points);
 };
 
-}  // namespace utility
+}  // namespace geometry
 }  // namespace cloudViewer
 
-#endif // ECV_QHULL_HEADER
+#endif  // ECV_QHULL_HEADER

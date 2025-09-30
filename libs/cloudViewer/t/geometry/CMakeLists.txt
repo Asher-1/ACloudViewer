@@ -5,12 +5,16 @@ add_library(tgeometry OBJECT $<TARGET_OBJECTS:tgeometry_kernel> ${T_GEOMETRY_HEA
 
 target_sources(tgeometry PRIVATE
     Image.cpp
+    LineSet.cpp
+    BoundingVolume.cpp
     PointCloud.cpp
-    RaycastingScene.cpp
     RGBDImage.cpp
     TensorMap.cpp
     TriangleMesh.cpp
-    TSDFVoxelGrid.cpp
+    RaycastingScene.cpp
+    TriangleMeshFactory.cpp
+    VoxelBlockGrid.cpp
+    VtkUtils.cpp
 )
 
 cloudViewer_show_and_abort_on_warning(tgeometry)

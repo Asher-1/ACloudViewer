@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "CloudViewer.h"
@@ -42,8 +23,8 @@ void TryGLVersion(int major,
             (forwardCompat ? "GLFW_OPENGL_FORWARD_COMPAT " : "");
     std::string profileStr = "UnknownProfile";
 #define CLOUDVIEWER_CHECK_PROFILESTR(p) \
-    if (profileId == p) {          \
-        profileStr = #p;           \
+    if (profileId == p) {               \
+        profileStr = #p;                \
     }
     CLOUDVIEWER_CHECK_PROFILESTR(GLFW_OPENGL_CORE_PROFILE);
     CLOUDVIEWER_CHECK_PROFILESTR(GLFW_OPENGL_COMPAT_PROFILE);
@@ -51,11 +32,15 @@ void TryGLVersion(int major,
 #undef CLOUDVIEWER_CHECK_PROFILESTR
 
     cloudViewer::utility::LogInfo("TryGLVersion: {:d}.{:d} {}{}", major, minor,
-                     forwardCompatStr, profileStr);
+                                  forwardCompatStr, profileStr);
 
-    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(
+            cloudViewer::utility::VerbosityLevel::Debug);
 
     glfwSetErrorCallback(GLFWErrorCallback);
+#ifdef HEADLESS_RENDERING
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
+#endif
     if (!glfwInit()) {
         cloudViewer::utility::LogError("Failed to initialize GLFW");
     }
@@ -77,12 +62,21 @@ void TryGLVersion(int major,
     }
 
     auto reportGlStringFunc = [](GLenum id, std::string name) {
+// Note: with GLFW 3.3.9 it appears that OpenGL entry points are no longer auto
+// loaded? The else part crashes on Apple with a null pointer.
+#ifdef __APPLE__
+        PFNGLGETSTRINGIPROC _glGetString =
+                (PFNGLGETSTRINGIPROC)glfwGetProcAddress("glGetString");
+        const auto r = _glGetString(id, 0);
+#else
         const auto r = glGetString(id);
+#endif
         if (!r) {
-            cloudViewer::utility::LogWarning("Unable to get info on {} id {:d}", name, id);
+            cloudViewer::utility::LogWarning("Unable to get info on {} id {:d}",
+                                             name, id);
         } else {
             cloudViewer::utility::LogDebug("{}:\t{}", name,
-                              reinterpret_cast<const char *>(r));
+                                           reinterpret_cast<const char *>(r));
         }
     };
 #define CLOUDVIEWER_REPORT_GL_STRING(n) reportGlStringFunc(n, #n)

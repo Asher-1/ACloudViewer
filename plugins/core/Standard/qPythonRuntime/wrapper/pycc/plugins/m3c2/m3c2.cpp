@@ -1,4 +1,5 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 
 #include <qM3C2Dialog.h>
 #include <qM3C2Process.h>
@@ -44,11 +45,13 @@ void define_m3c2_plugin(py::module_ &m)
 
     py::class_<qM3C2Dialog> pyM3C2Dialog(m, "qM3C2Dialog");
 
-    py::enum_<qM3C2Dialog::ExportOptions>(pyM3C2Dialog, "ExportOptions")
+    py::native_enum<qM3C2Dialog::ExportOptions>(
+        pyM3C2Dialog, "ExportOptions", "enum.Enum", "qM3C2Dialog::ExportOptions.")
         .value("PROJECT_ON_CLOUD1", qM3C2Dialog::ExportOptions::PROJECT_ON_CLOUD1)
         .value("PROJECT_ON_CLOUD2", qM3C2Dialog::ExportOptions::PROJECT_ON_CLOUD2)
         .value("PROJECT_ON_CORE_POINTS", qM3C2Dialog::ExportOptions::PROJECT_ON_CORE_POINTS)
-        .export_values();
+        .export_values()
+        .finalize();
 
     pyM3C2Dialog
         .def(py::init([](ccPointCloud *cloud1, ccPointCloud *cloud2)

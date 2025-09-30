@@ -1,14 +1,16 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2023 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import numpy as np
 import cloudViewer as cv3d
 import cloudViewer.visualization.gui as gui
 import cloudViewer.visualization.rendering as rendering
-import os
 import time
 import threading
-
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-RGB_DIR = os.path.join(SCRIPT_DIR, "../../test_data/RGBD/color")
-DEPTH_DIR = os.path.join(SCRIPT_DIR, "../../test_data/RGBD/depth")
 
 
 def rescale_greyscale(img):
@@ -26,18 +28,17 @@ class VideoWindow:
 
     def __init__(self):
         self.rgb_images = []
-        for f in os.listdir(RGB_DIR):
-            if f.endswith(".jpg") or f.endswith(".png"):
-                img = cv3d.io.read_image(os.path.join(RGB_DIR, f))
-                self.rgb_images.append(img)
+        rgbd_data = cv3d.data.SampleRedwoodRGBDImages()
+        for path in rgbd_data.color_paths:
+            img = cv3d.io.read_image(path)
+            self.rgb_images.append(img)
         self.depth_images = []
-        for f in os.listdir(DEPTH_DIR):
-            if f.endswith(".jpg") or f.endswith(".png"):
-                img = cv3d.io.read_image(os.path.join(DEPTH_DIR, f))
-                # The images are pretty dark, so rescale them so that it is
-                # obvious that this is a depth image, for the sake of the example
-                img = rescale_greyscale(img)
-                self.depth_images.append(img)
+        for path in rgbd_data.depth_paths:
+            img = cv3d.io.read_image(path)
+            # The images are pretty dark, so rescale them so that it is
+            # obvious that this is a depth image, for the sake of the example
+            img = rescale_greyscale(img)
+            self.depth_images.append(img)
         assert (len(self.rgb_images) == len(self.depth_images))
 
         self.window = gui.Application.instance.create_window(
@@ -49,7 +50,7 @@ class VideoWindow:
         self.widget3d.scene = rendering.CloudViewerScene(self.window.renderer)
         self.window.add_child(self.widget3d)
 
-        lit = rendering.Material()
+        lit = rendering.MaterialRecord()
         lit.shader = "defaultLit"
         tet = cv3d.geometry.ccMesh.create_tetrahedron()
         tet.compute_vertex_normals()

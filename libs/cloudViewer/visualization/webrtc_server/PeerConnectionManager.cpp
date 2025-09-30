@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 // Contains source code from
@@ -34,6 +15,7 @@
 
 #include "visualization/webrtc_server/PeerConnectionManager.h"
 
+#include <IJsonConvertible.h>
 #include <api/audio_codecs/builtin_audio_decoder_factory.h>
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/rtc_event_log/rtc_event_log_factory.h>
@@ -48,7 +30,6 @@
 #include <functional>
 #include <utility>
 
-#include <IJsonConvertible.h>
 #include "visualization/webrtc_server/BitmapTrackSource.h"
 #include "visualization/webrtc_server/ImageCapturer.h"
 #include "visualization/webrtc_server/VideoFilter.h"
@@ -159,19 +140,19 @@ PeerConnectionManager::PeerConnectionManager(
     // Register api in http server.
     func_["/api/getMediaList"] = [this](const struct mg_request_info *req_info,
                                         const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/getMediaList");
+        utility::LogDebug("[Called HTTP API] /api/getMediaList");
         return this->GetMediaList();
     };
 
     func_["/api/getIceServers"] = [this](const struct mg_request_info *req_info,
                                          const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/getIceServers");
+        utility::LogDebug("[Called HTTP API] /api/getIceServers");
         return this->GetIceServers();
     };
 
     func_["/api/call"] = [this](const struct mg_request_info *req_info,
                                 const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/call");
+        utility::LogDebug("[Called HTTP API] /api/call");
         std::string peerid;
         std::string url;  // window_uid.
         std::string options;
@@ -186,7 +167,7 @@ PeerConnectionManager::PeerConnectionManager(
     func_["/api/getIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/getIceCandidate");
+        utility::LogDebug("[Called HTTP API] /api/getIceCandidate");
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -197,7 +178,7 @@ PeerConnectionManager::PeerConnectionManager(
     func_["/api/addIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/addIceCandidate");
+        utility::LogDebug("[Called HTTP API] /api/addIceCandidate");
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -207,7 +188,7 @@ PeerConnectionManager::PeerConnectionManager(
 
     func_["/api/hangup"] = [this](const struct mg_request_info *req_info,
                                   const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/hangup");
+        utility::LogDebug("[Called HTTP API] /api/hangup");
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -288,15 +269,27 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
         if (!candidate.get()) {
             utility::LogWarning("Can't parse received candidate message.");
         } else {
-            std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
-            rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-                    peer_connection = this->GetPeerConnection(peerid);
-            if (peer_connection) {
-                if (!peer_connection->AddIceCandidate(candidate.get())) {
-                    utility::LogWarning(
-                            "Failed to apply the received candidate.");
-                } else {
-                    result = true;
+            bool dc_ready = false;
+            {  // avoid holding lock in the else{} block
+                std::lock_guard<std::mutex> mutex_lock(
+                        peerid_data_channel_mutex_);
+                dc_ready = peerid_data_channel_ready_.count(peerid) > 0;
+            }
+            if (dc_ready) {
+                utility::LogDebug(
+                        "DataChannels ready. Skipping AddIceCandidate.");
+            } else {
+                std::lock_guard<std::mutex> mutex_lock(
+                        peerid_to_connection_mutex_);
+                rtc::scoped_refptr<webrtc::PeerConnectionInterface>
+                        peer_connection = this->GetPeerConnection(peerid);
+                if (peer_connection) {
+                    if (!peer_connection->AddIceCandidate(candidate.get())) {
+                        utility::LogWarning(
+                                "Failed to apply the received candidate.");
+                    } else {
+                        result = true;
+                    }
                 }
             }
         }
@@ -474,8 +467,6 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
                 std::string window_uid = stream->id();
                 bool still_used = this->WindowStillUsed(window_uid);
                 if (!still_used) {
-                    utility::LogDebug("HangUp stream is no more used {}.",
-                                      window_uid);
                     std::lock_guard<std::mutex> mlock(
                             window_uid_to_track_source_mutex_);
                     auto it = window_uid_to_track_source_.find(window_uid);
@@ -561,6 +552,8 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
             this, peerid, config, std::move(port_allocator));
     if (!obs) {
         utility::LogError("CreatePeerConnection failed.");
+    } else {
+        utility::LogDebug("CreatePeerConnection success!");
     }
     return obs;
 }
@@ -720,8 +713,8 @@ void PeerConnectionManager::SendInitFramesToPeer(const std::string &peerid) {
 
 void PeerConnectionManager::CloseWindowConnections(
         const std::string &window_uid) {
-    utility::LogInfo("PeerConnectionManager::CloseWindowConnections: {}",
-                     window_uid);
+    utility::LogDebug("PeerConnectionManager::CloseWindowConnections: {}",
+                      window_uid);
     std::set<std::string> peerids;
     {
         std::lock_guard<std::mutex> mlock(window_uid_to_peerids_mutex_);

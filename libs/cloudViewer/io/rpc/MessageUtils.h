@@ -1,32 +1,20 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "io/rpc/ReceiverBase.h"
+#include <map>
+#include <tuple>
+
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/t/geometry/LineSet.h"
+#include "cloudViewer/t/geometry/PointCloud.h"
+#include "cloudViewer/t/geometry/TensorMap.h"
+#include "cloudViewer/t/geometry/TriangleMesh.h"
 
 namespace zmq {
 class message_t;
@@ -37,8 +25,10 @@ namespace io {
 namespace rpc {
 
 namespace messages {
+struct Array;
 struct Status;
-}
+struct MeshData;
+}  // namespace messages
 
 /// Helper function for unpacking the Status message from a reply.
 /// \param msg     The message that contains the Reply and the Status messages.
@@ -73,6 +63,33 @@ std::tuple<int32_t, std::string> GetStatusCodeAndStr(
         const messages::Status& status);
 
 std::shared_ptr<zmq::message_t> CreateStatusOKMsg();
+
+/// Converts MeshData to a geometry type. MeshData can store TriangleMesh,
+/// PointCloud, and LineSet. The function returns a pointer to the base class
+/// Geometry. The pointer is null if the conversion is not successful. Note that
+/// the msgpack object backing the memory for \p mesh_data must be alive for
+/// calling this function.
+std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
+        const messages::MeshData& mesh_data);
+
+/// Creates MeshData from a TriangleMesh. This function returns the MeshData
+/// object for serialization.
+messages::MeshData GeometryToMeshData(const t::geometry::TriangleMesh& trimesh);
+
+/// Creates MeshData from a TriangleMesh. This function returns the MeshData
+/// object for serialization.
+messages::MeshData GeometryToMeshData(const t::geometry::PointCloud& pcd);
+
+/// Creates MeshData from a LineSet. This function returns the MeshData
+/// object for serialization.
+messages::MeshData GeometryToMeshData(const t::geometry::LineSet& ls);
+
+/// This function returns the geometry, the path and the time stored in a
+/// SetMeshData message. \p data must contain the Request header message
+/// followed by the SetMeshData message. The function returns a null pointer for
+/// the geometry if not successful.
+std::tuple<std::string, double, std::shared_ptr<t::geometry::Geometry>>
+DataBufferToMetaGeometry(std::string& data);
 
 }  // namespace rpc
 }  // namespace io

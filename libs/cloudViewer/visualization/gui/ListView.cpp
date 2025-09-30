@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/gui/ListView.h"
@@ -41,12 +22,14 @@ namespace gui {
 namespace {
 static const int NO_SELECTION = -1;
 static int g_next_list_box_id = 1;
+static const int g_min_visible_items = 3;
 }  // namespace
 
 struct ListView::Impl {
     std::string imgui_id_;
     std::vector<std::string> items_;
     int selected_index_ = NO_SELECTION;
+    int max_visible_item_ = -1;
     std::function<void(const char *, bool)> on_value_changed_;
 };
 
@@ -76,6 +59,15 @@ void ListView::SetSelectedIndex(int index) {
     impl_->selected_index_ = std::min(int(impl_->items_.size() - 1), index);
 }
 
+void ListView::SetMaxVisibleItems(int num) {
+    if (num > 0) {
+        impl_->max_visible_item_ = std::max(g_min_visible_items, num);
+    } else {
+        // unlimited, will make height be DIM_GROW
+        impl_->max_visible_item_ = -1;
+    }
+}
+
 void ListView::SetOnValueChanged(
         std::function<void(const char *, bool)> on_value_changed) {
     impl_->on_value_changed_ = on_value_changed;
@@ -84,6 +76,7 @@ void ListView::SetOnValueChanged(
 Size ListView::CalcPreferredSize(const LayoutContext &context,
                                  const Constraints &constraints) const {
     auto padding = ImGui::GetStyle().FramePadding;
+    auto fh = ImGui::GetFrameHeight();
     auto *font = ImGui::GetFont();
     ImVec2 size(0, 0);
 
@@ -92,13 +85,21 @@ Size ListView::CalcPreferredSize(const LayoutContext &context,
                                              float(constraints.width), 0.0,
                                              item.c_str());
         size.x = std::max(size.x, item_size.x);
-        size.y += ImGui::GetFrameHeight();
+        size.y += fh;
     }
-    return Size(int(std::ceil(size.x + 2.0f * padding.x)), Widget::DIM_GROW);
+    auto h = Widget::DIM_GROW;
+    if (impl_->max_visible_item_ > 0) {
+        // make sure show at least g_min_visible_items items, and
+        // at most max_visible_item_ items.
+        h = std::max((int)impl_->items_.size(), g_min_visible_items);
+        h = std::min(h, impl_->max_visible_item_);
+        h = int(std::ceil((float)h * fh));
+    }
+    return Size{int(std::ceil(size.x + 2.0f * padding.x)), h};
 }
 
 Size ListView::CalcMinimumSize(const LayoutContext &context) const {
-    return Size(0, 3 * context.theme.font_size);
+    return Size(0, g_min_visible_items * context.theme.font_size);
 }
 
 Widget::DrawResult ListView::Draw(const DrawContext &context) {

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 #include "CloudViewer.h"
 
@@ -111,12 +92,14 @@ int main(int argc, char* argv[]) {
     // Visualize before odometry
     auto source_pcd = cloudViewer::make_shared<ccPointCloud>(
             PointCloud::CreateFromDepthImage(src.depth_, intrinsic_t, trans,
-                                             depth_scale).ToLegacy());
-    source_pcd->paintUniformColor(Eigen::Vector3d(1, 0, 0));
+                                             depth_scale)
+                    .ToLegacy());
+    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
     auto target_pcd = cloudViewer::make_shared<ccPointCloud>(
             PointCloud::CreateFromDepthImage(dst.depth_, intrinsic_t, trans,
-                                             depth_scale).ToLegacy());
-    target_pcd->paintUniformColor(Eigen::Vector3d(0, 1, 0));
+                                             depth_scale)
+                    .ToLegacy());
+    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 
     // Decide method
@@ -145,12 +128,12 @@ int main(int argc, char* argv[]) {
                     RGBDImage(src.color_, src.depth_), intrinsic_t,
                     result.transformation_.Inverse(), depth_scale)
                     .ToLegacy());
-    source_pcd->paintUniformColor(Eigen::Vector3d(1, 0, 0));
+    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
     target_pcd = cloudViewer::make_shared<ccPointCloud>(
             PointCloud::CreateFromRGBDImage(
                     RGBDImage(dst.color_, dst.depth_), intrinsic_t,
                     Tensor::Eye(4, core::Dtype::Float32, device), depth_scale)
                     .ToLegacy());
-    target_pcd->paintUniformColor(Eigen::Vector3d(0, 1, 0));
+    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 }

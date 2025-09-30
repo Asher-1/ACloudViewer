@@ -1,34 +1,15 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/TensorList.h"
+#include "cloudViewer/core/TensorList.h"
 
 #include <string>
 
-#include "core/SizeVector.h"
+#include "cloudViewer/core/SizeVector.h"
 
 namespace cloudViewer {
 namespace core {
@@ -37,7 +18,7 @@ namespace core {
 static void AssertIsResizable(const TensorList& tensorlist,
                               const std::string& func_name) {
     if (!tensorlist.IsResizable()) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "TensorList::{}: TensorList is not resizable. Typically this "
                 "tensorlist is created with shared memory from a Tensor.",
                 func_name);
@@ -47,7 +28,7 @@ static void AssertIsResizable(const TensorList& tensorlist,
 TensorList TensorList::FromTensor(const Tensor& tensor, bool inplace) {
     SizeVector shape = tensor.GetShape();
     if (shape.size() == 0) {
-        cloudViewer::utility::LogError("Tensor should at least have one dimension.");
+        utility::LogError("Tensor should at least have one dimension.");
     }
     SizeVector element_shape =
             SizeVector(std::next(shape.begin()), shape.end());
@@ -55,7 +36,7 @@ TensorList TensorList::FromTensor(const Tensor& tensor, bool inplace) {
 
     if (inplace) {
         if (!tensor.IsContiguous()) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Tensor must be contiguous for inplace tensorlist "
                     "construction.");
         }
@@ -102,20 +83,10 @@ void TensorList::Resize(int64_t new_size) {
 void TensorList::PushBack(const Tensor& tensor) {
     AssertIsResizable(*this, __FUNCTION__);
 
-    if (element_shape_ != tensor.GetShape()) {
-        cloudViewer::utility::LogError(
-                "TensorList has element shape {}, but tensor has shape {}.",
-                element_shape_, tensor.GetShape());
-    }
-    if (GetDtype() != tensor.GetDtype()) {
-        cloudViewer::utility::LogError("TensorList has dtype {}, but tensor has shape {}.",
-                          GetDtype().ToString(), tensor.GetDtype().ToString());
-    }
-    if (GetDevice() != tensor.GetDevice()) {
-        cloudViewer::utility::LogError("TensorList has device {}, but tensor has shape {}.",
-                          GetDevice().ToString(),
-                          tensor.GetDevice().ToString());
-    }
+    AssertTensorDevice(tensor, GetDevice());
+    AssertTensorDtype(tensor, GetDtype());
+    AssertTensorShape(tensor, element_shape_);
+
     ResizeWithExpand(size_ + 1);
     internal_tensor_[size_ - 1] = tensor;  // same as operator[](-1) = tensor;
 }
@@ -125,15 +96,15 @@ void TensorList::Extend(const TensorList& other) {
 
     // Check consistency
     if (element_shape_ != other.GetElementShape()) {
-        cloudViewer::utility::LogError("TensorList shapes {} and {} are inconsistent.",
+        utility::LogError("TensorList shapes {} and {} are inconsistent.",
                           element_shape_, other.GetElementShape());
     }
     if (GetDevice() != other.GetDevice()) {
-        cloudViewer::utility::LogError("TensorList device {} and {} are inconsistent.",
+        utility::LogError("TensorList device {} and {} are inconsistent.",
                           GetDevice().ToString(), other.GetDevice().ToString());
     }
     if (GetDtype() != other.GetDtype()) {
-        cloudViewer::utility::LogError("TensorList dtype {} and {} are inconsistent.",
+        utility::LogError("TensorList dtype {} and {} are inconsistent.",
                           GetDtype().ToString(), other.GetDtype().ToString());
     }
 
@@ -184,12 +155,12 @@ void TensorList::ResizeWithExpand(int64_t new_size) {
 
 int64_t TensorList::ComputeReserveSize(int64_t n) {
     if (n < 0) {
-        cloudViewer::utility::LogError("Negative tensorlist size {} is not supported.", n);
+        utility::LogError("Negative tensorlist size {} is not supported.", n);
     }
 
     int64_t base = 1;
     if (n > (base << 61)) {
-        cloudViewer::utility::LogError("Too large tensorlist size {} is not supported.", n);
+        utility::LogError("Too large tensorlist size {} is not supported.", n);
     }
 
     for (int i = 63; i >= 0; --i) {
@@ -219,4 +190,4 @@ std::string TensorList::ToString() const {
 }
 
 }  // namespace core
-}  // namespace CloudViewer
+}  // namespace cloudViewer

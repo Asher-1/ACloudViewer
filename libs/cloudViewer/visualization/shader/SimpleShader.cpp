@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/shader/SimpleShader.h"
@@ -34,7 +15,7 @@
 #include <ecvBBox.h>
 #include <ecvCone.h>
 #include <ecvHObjectCaster.h>
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
@@ -801,18 +782,18 @@ bool SimpleShaderForLineSet::PrepareBinding(
         return false;
     }
     const geometry::LineSet &lineset = (const geometry::LineSet &)geometry;
-    if (!lineset.hasLines()) {
+    if (!lineset.HasLines()) {
         PrintShaderWarning("Binding failed with empty geometry::LineSet.");
         return false;
     }
     points.resize(lineset.lines_.size() * 2);
     colors.resize(lineset.lines_.size() * 2);
     for (size_t i = 0; i < lineset.lines_.size(); i++) {
-        const auto point_pair = lineset.getLineCoordinate(i);
+        const auto point_pair = lineset.GetLineCoordinate(i);
         points[i * 2] = point_pair.first.cast<float>();
         points[i * 2 + 1] = point_pair.second.cast<float>();
         Eigen::Vector3d color;
-        if (lineset.hasColors()) {
+        if (lineset.HasColors()) {
             color = lineset.colors_[i];
         } else {
             color = Eigen::Vector3d::Zero();
@@ -990,7 +971,7 @@ bool SimpleShaderForTetraMesh::PrepareBinding(
     }
     const geometry::TetraMesh &tetramesh =
             (const geometry::TetraMesh &)geometry;
-    if (!tetramesh.hasTetras()) {
+    if (!tetramesh.HasTetras()) {
         PrintShaderWarning("Binding failed with empty geometry::TetraMesh.");
         return false;
     }
@@ -1052,11 +1033,11 @@ bool SimpleShaderForOrientedBoundingBox::PrepareBinding(
     points.resize(lineset->lines_.size() * 2);
     colors.resize(lineset->lines_.size() * 2);
     for (size_t i = 0; i < lineset->lines_.size(); i++) {
-        const auto point_pair = lineset->getLineCoordinate(i);
+        const auto point_pair = lineset->GetLineCoordinate(i);
         points[i * 2] = point_pair.first.cast<float>();
         points[i * 2 + 1] = point_pair.second.cast<float>();
         Eigen::Vector3d color;
-        if (lineset->hasColors()) {
+        if (lineset->HasColors()) {
             color = lineset->colors_[i];
         } else {
             color = Eigen::Vector3d::Zero();
@@ -1097,11 +1078,11 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
     points.resize(lineset->lines_.size() * 2);
     colors.resize(lineset->lines_.size() * 2);
     for (size_t i = 0; i < lineset->lines_.size(); i++) {
-        const auto point_pair = lineset->getLineCoordinate(i);
+        const auto point_pair = lineset->GetLineCoordinate(i);
         points[i * 2] = point_pair.first.cast<float>();
         points[i * 2 + 1] = point_pair.second.cast<float>();
         Eigen::Vector3d color;
-        if (lineset->hasColors()) {
+        if (lineset->HasColors()) {
             color = lineset->colors_[i];
         } else {
             color = Eigen::Vector3d::Zero();
@@ -1206,8 +1187,8 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
         draw_arrays_mode_ = GL_TRIANGLES;
         draw_arrays_size_ = GLsizei(points.size());
     } else if (geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        const geometry::ecvHalfEdgeMesh &mesh =
-                (const geometry::ecvHalfEdgeMesh &)geometry;
+        const geometry::HalfEdgeTriangleMesh &mesh =
+                (const geometry::HalfEdgeTriangleMesh &)geometry;
         if (!mesh.hasTriangles()) {
             PrintShaderWarning("Binding failed with empty triangle mesh.");
             return false;
@@ -1242,7 +1223,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
                                         vertex(2)));
                         break;
                     case RenderOption::MeshColorOption::Color:
-                        if (mesh.hasVertexColors()) {
+                        if (mesh.HasVertexColors()) {
                             color = mesh.vertex_colors_[vi];
                         } else {
                             color = option.default_mesh_color_;
@@ -1466,7 +1447,7 @@ bool SimpleShaderForOctreeFace::PrepareBinding(
         return false;
     }
     const geometry::Octree &octree = (const geometry::Octree &)geometry;
-    if (octree.isEmpty()) {
+    if (octree.IsEmpty()) {
         PrintShaderWarning("Binding failed with empty octree.");
         return false;
     }
@@ -1563,7 +1544,7 @@ bool SimpleShaderForOctreeLine::PrepareBinding(
         return false;
     }
     const geometry::Octree &octree = (const geometry::Octree &)geometry;
-    if (octree.isEmpty()) {
+    if (octree.IsEmpty()) {
         PrintShaderWarning("Binding failed with empty octree.");
         return false;
     }

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "pybind/reconstruction/reconstruction_options.h"
@@ -233,18 +214,14 @@ void pybind_sift_extraction_options(py::module& m) {
                     "Relja Arandjelovic and Andrew Zisserman, CVPR 2012.");
 
     // cloudViewer.reconstruction.options.NormalizationType
-    py::enum_<colmap::SiftExtractionOptions::Normalization> normalization_type(
-            sift_extraction_options, "NormalizationType", py::arithmetic());
-    normalization_type
+    py::native_enum<colmap::SiftExtractionOptions::Normalization>(
+            sift_extraction_options, "NormalizationType", "enum.Enum",
+            "Enum class for Reconstruction Normalization types.")
             .value("L1_ROOT",
                    colmap::SiftExtractionOptions::Normalization::L1_ROOT)
             .value("L2", colmap::SiftExtractionOptions::Normalization::L2)
-            .export_values();
-    normalization_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Reconstruction Normalization types.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
 }
 
 void pybind_sift_matching_options(py::module& m) {
@@ -605,22 +582,17 @@ void pybind_bundle_adjustment_options(py::module& m) {
                            "iterative solvers.");
 
     // cloudViewer.reconstruction.options.LossFunctionType
-    py::enum_<colmap::BundleAdjustmentOptions::LossFunctionType>
-            loss_function_type(bundle_adjustment_options, "LossFunctionType",
-                               py::arithmetic());
-    loss_function_type
+    py::native_enum<colmap::BundleAdjustmentOptions::LossFunctionType>(
+            bundle_adjustment_options, "LossFunctionType", "enum.Enum",
+            "Enum class for Reconstruction LossFunction types.")
             .value("TRIVIAL",
                    colmap::BundleAdjustmentOptions::LossFunctionType::TRIVIAL)
             .value("SOFT_L1",
                    colmap::BundleAdjustmentOptions::LossFunctionType::SOFT_L1)
             .value("CAUCHY",
                    colmap::BundleAdjustmentOptions::LossFunctionType::CAUCHY)
-            .export_values();
-    loss_function_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Reconstruction LossFunction types.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
 }
 
 void pybind_incremental_triangulator_options(py::module& m) {
@@ -867,10 +839,9 @@ void pybind_incremental_mapper_options(py::module& m) {
                     "and select next best image to register.");
 
     // cloudViewer.reconstruction.options.ImageSelectionMethod
-    py::enum_<colmap::IncrementalMapper::Options::ImageSelectionMethod>
-            image_selection_method(incremental_mapper_sub_options,
-                                   "ImageSelectionMethod", py::arithmetic());
-    image_selection_method
+    py::native_enum<colmap::IncrementalMapper::Options::ImageSelectionMethod>(
+            incremental_mapper_sub_options, "ImageSelectionMethod", "enum.Enum",
+            "Enum class for Reconstruction ImageSelection Method.")
             .value("MAX_VISIBLE_POINTS_NUM",
                    colmap::IncrementalMapper::Options::ImageSelectionMethod::
                            MAX_VISIBLE_POINTS_NUM)
@@ -880,12 +851,8 @@ void pybind_incremental_mapper_options(py::module& m) {
             .value("MIN_UNCERTAINTY",
                    colmap::IncrementalMapper::Options::ImageSelectionMethod::
                            MIN_UNCERTAINTY)
-            .export_values();
-    image_selection_method.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Reconstruction ImageSelection Method.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
 
     // cloudViewer.reconstruction.options.IncrementalMapperOptions
     py::class_<colmap::IncrementalMapperOptions> incremental_mapper_options(

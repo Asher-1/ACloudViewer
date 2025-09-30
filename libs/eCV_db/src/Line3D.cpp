@@ -29,7 +29,7 @@ Line3D::Line3D(const Eigen::Vector3d& origin,
 }
 
 void Line3D::Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t) {
-    this->transform(t);
+    this->Transform(t);
 }
 
 std::pair<double, double> Line3D::SlabAABBBase(
@@ -85,16 +85,16 @@ utility::optional<double> Line3D::ExactAABB(
     // position from the original plane point. This tolerance seems to
     // eliminate the issue.
     double tol = 1e-10;
-    ccBBox b_tol{box.getMinBound() - Vector3d(tol, tol, tol),
-                 box.getMaxBound() + Vector3d(tol, tol, tol)};
+    ccBBox b_tol{box.GetMinBound() - Vector3d(tol, tol, tol),
+                 box.GetMaxBound() + Vector3d(tol, tol, tol)};
 
     using plane_t = Eigen::Hyperplane<double, 3>;
-    std::array<plane_t, 6> planes{{{{-1, 0, 0}, box.getMinBound()},
-                                   {{1, 0, 0}, box.getMaxBound()},
-                                   {{0, -1, 0}, box.getMinBound()},
-                                   {{0, 1, 0}, box.getMaxBound()},
-                                   {{0, 0, -1}, box.getMinBound()},
-                                   {{0, 0, 1}, box.getMaxBound()}}};
+    std::array<plane_t, 6> planes{{{{-1, 0, 0}, box.GetMinBound()},
+                                   {{1, 0, 0}, box.GetMaxBound()},
+                                   {{0, -1, 0}, box.GetMinBound()},
+                                   {{0, 1, 0}, box.GetMaxBound()},
+                                   {{0, 0, -1}, box.GetMinBound()},
+                                   {{0, 0, 1}, box.GetMaxBound()}}};
 
     // Get the intersections
     std::vector<double> parameters;
@@ -117,7 +117,7 @@ utility::optional<double> Line3D::ExactAABB(
     }
 
     // Find the ones which are contained
-    auto contained_indices = b_tol.getPointIndicesWithinBoundingBox(points);
+    auto contained_indices = b_tol.GetPointIndicesWithinBoundingBox(points);
     if (contained_indices.empty()) return {};
 
     // Return the lowest parameter
@@ -323,7 +323,7 @@ Segment3D::Segment3D(const std::pair<Eigen::Vector3d, Eigen::Vector3d>& pair)
     : Segment3D(std::get<0>(pair), std::get<1>(pair)) {}
 
 void Segment3D::Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t) {
-    this->transform(t);
+    this->Transform(t);
     end_point_ = t * end_point_;
 }
 

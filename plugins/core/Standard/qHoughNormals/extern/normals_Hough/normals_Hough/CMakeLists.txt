@@ -26,9 +26,4 @@ Normals.h
 pc_io.cpp
 pc_io.h)
 target_link_libraries(Hough_Exec ${EXTRA_LIBS} ${PROJECT_LINK_LIB} )
-# target_link_libraries(Hough_Exec ${EXTRA_LIBS} ${Boost_LIBRARIES} ${PROJECT_LINK_LIB} )
-if (NOT USE_SYSTEM_PCL)
-	target_link_libraries(Hough_Exec 3rdparty_pcl)
-else()
-	target_link_libraries(Hough_Exec ${PCL_LIBRARIES})
-endif()
+target_link_libraries(Hough_Exec 3rdparty_pcl)

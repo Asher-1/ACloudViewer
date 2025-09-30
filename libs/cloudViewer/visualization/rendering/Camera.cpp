@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/rendering/Camera.h"
@@ -72,10 +53,10 @@ float Camera::CalcFarPlane(
     // The far plane needs to be the max absolute distance, not just the
     // max extent, so that axes are visible if requested.
     // See also RotationInteractorLogic::UpdateCameraFarPlane().
-    auto far1 = scene_bounds.getMinBound().norm();
-    auto far2 = scene_bounds.getMaxBound().norm();
+    auto far1 = scene_bounds.GetMinBound().norm();
+    auto far2 = scene_bounds.GetMaxBound().norm();
     auto far3 = camera.GetModelMatrix().translation().cast<double>().norm();
-    auto model_size = 2.0 * scene_bounds.getExtent().norm();
+    auto model_size = 2.0 * scene_bounds.GetExtent().norm();
     auto far_v = std::max(MIN_FAR_PLANE,
                         std::max(std::max(far1, far2), far3) + model_size);
     return far_v;

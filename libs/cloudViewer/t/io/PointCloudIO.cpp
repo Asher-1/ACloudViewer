@@ -1,40 +1,22 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "t/io/PointCloudIO.h"
+#include "cloudViewer/t/io/PointCloudIO.h"
 
 #include <iostream>
 #include <unordered_map>
 
+#include "cloudViewer/io/PointCloudIO.h"
+#include "eCV_db/include/ecvPointCloud.h"
+#include "cloudViewer/t/io/NumpyIO.h"
 #include <FileSystem.h>
 #include <Helper.h>
 #include <Logging.h>
 #include <ProgressReporters.h>
-
-#include "io/PointCloudIO.h"
 
 namespace cloudViewer {
 namespace t {
@@ -46,8 +28,15 @@ static const std::unordered_map<
                            geometry::PointCloud &,
                            const cloudViewer::io::ReadPointCloudOption &)>>
         file_extension_to_pointcloud_read_function{
-                {"xyzi", ReadPointCloudFromXYZI},
+                {"npz", ReadPointCloudFromNPZ},
+                {"xyz", ReadPointCloudFromTXT},
+                {"xyzd", ReadPointCloudFromTXT},
+                {"xyzi", ReadPointCloudFromTXT},
+                {"xyzn", ReadPointCloudFromTXT},
+                {"xyzrgb", ReadPointCloudFromTXT},
+                {"pcd", ReadPointCloudFromPCD},
                 {"ply", ReadPointCloudFromPLY},
+                {"splat", ReadPointCloudFromSPLAT},
                 {"pts", ReadPointCloudFromPTS},
         };
 
@@ -57,8 +46,15 @@ static const std::unordered_map<
                            const geometry::PointCloud &,
                            const cloudViewer::io::WritePointCloudOption &)>>
         file_extension_to_pointcloud_write_function{
-                {"xyzi", WritePointCloudToXYZI},
+                {"npz", WritePointCloudToNPZ},
+                {"xyz", WritePointCloudToTXT},
+                {"xyzd", WritePointCloudToTXT},
+                {"xyzi", WritePointCloudToTXT},
+                {"xyzn", WritePointCloudToTXT},
+                {"xyzrgb", WritePointCloudToTXT},
+                {"pcd", WritePointCloudToPCD},
                 {"ply", WritePointCloudToPLY},
+                {"splat", WritePointCloudToSPLAT},
                 {"pts", WritePointCloudToPTS},
         };
 
@@ -67,7 +63,8 @@ std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &format,
         bool print_progress) {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
-    ReadPointCloud(filename, *pointcloud, {format, true, true, print_progress});
+    ReadPointCloud(filename, *pointcloud,
+                   {format, false, false, print_progress});
     return pointcloud;
 }
 
@@ -84,16 +81,13 @@ bool ReadPointCloud(const std::string &filename,
     bool success = false;
     auto map_itr = file_extension_to_pointcloud_read_function.find(format);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-        ccPointCloud legacy_pointcloud;
-        success =
-                cloudViewer::io::ReadPointCloud(filename, legacy_pointcloud, params);
-        if (!success) return false;
-        pointcloud = geometry::PointCloud::FromLegacy(legacy_pointcloud,
-                                                      core::Float64);
+        utility::LogWarning(
+                "Read geometry::PointCloud failed: unknown file extension for "
+                "{} (format: {}).",
+                filename, params.format);
+        return false;
     } else {
         success = map_itr->second(filename, pointcloud, params);
-        utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
-                          (int)pointcloud.GetPoints().GetLength());
         if (params.remove_nan_points || params.remove_infinite_points) {
             utility::LogError(
                     "remove_nan_points and remove_infinite_points options are "
@@ -101,6 +95,16 @@ bool ReadPointCloud(const std::string &filename,
             return false;
         }
     }
+
+    utility::LogDebug(
+            "Read t::geometry::PointCloud with following attributes: ");
+    for (auto &kv : pointcloud.GetPointAttr()) {
+        utility::LogDebug(" {} [shape: {}, stride: {}, {}]", kv.first,
+                          kv.second.GetShape().ToString(),
+                          kv.second.GetStrides().ToString(),
+                          kv.second.GetDtype().ToString());
+    }
+
     return success;
 }
 
@@ -134,14 +138,16 @@ bool WritePointCloud(const std::string &filename,
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     auto map_itr = file_extension_to_pointcloud_write_function.find(format);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-        return cloudViewer::io::WritePointCloud(
-                filename, pointcloud.ToLegacy(), params);
+        // Use legacy writer with legacy point cloud conversion
+        cloudViewer::geometry::PointCloud legacy = pointcloud.ToLegacy();
+        return cloudViewer::io::WritePointCloud(filename, legacy, params);
     }
 
-    bool success = map_itr->second(filename, pointcloud.CPU(), params);
+    bool success = map_itr->second(
+            filename, pointcloud.To(core::Device("CPU:0")), params);
     if (!pointcloud.IsEmpty()) {
         utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
-                          (int)pointcloud.GetPoints().GetLength());
+                          (int)pointcloud.GetPointPositions().GetLength());
     } else {
         utility::LogDebug("Write geometry::PointCloud: 0 vertices.");
     }
@@ -164,6 +170,38 @@ bool WritePointCloud(const std::string &filename,
             print_progress);
     p.update_progress = progress_updater;
     return WritePointCloud(filename, pointcloud, p);
+}
+
+bool ReadPointCloudFromNPZ(const std::string &filename,
+                           geometry::PointCloud &pointcloud,
+                           const ReadPointCloudOption &params) {
+    // Required checks are performed in the pointcloud constructor itself.
+    pointcloud = geometry::PointCloud(ReadNpz(filename));
+    return true;
+}
+
+bool WritePointCloudToNPZ(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params) {
+    if (bool(params.write_ascii)) {
+        utility::LogError("PointCloud can't be saved in ASCII format as .npz.");
+    }
+    // TODO: When open3d NPZ io supports compression in future, update this.
+    if (bool(params.compressed)) {
+        utility::LogError(
+                "PointCloud can't be saved in compressed format as .npz.");
+    }
+
+    WriteNpz(filename, pointcloud.GetPointAttr());
+    utility::LogDebug("Saved pointcloud has the following attributes:");
+    for (auto &kv : pointcloud.GetPointAttr()) {
+        utility::LogDebug(" {} [shape: {}, stride: {}, {}]", kv.first,
+                          kv.second.GetShape().ToString(),
+                          kv.second.GetStrides().ToString(),
+                          kv.second.GetDtype().ToString());
+    }
+
+    return true;
 }
 
 }  // namespace io

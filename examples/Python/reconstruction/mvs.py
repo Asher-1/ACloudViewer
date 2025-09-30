@@ -20,11 +20,13 @@ def mesh_delaunay(input_path, output_path, input_type='dense'):
     Returns:
         int
     """
-    delaunay_meshing_options = cv3d.reconstruction.options.DelaunayMeshingOptions()
-    return cv3d.reconstruction.mvs.mesh_delaunay(input_path=input_path,
-                                                 output_path=output_path,
-                                                 input_type=input_type,
-                                                 delaunay_meshing_options=delaunay_meshing_options)
+    delaunay_meshing_options = cv3d.reconstruction.options.DelaunayMeshingOptions(
+    )
+    return cv3d.reconstruction.mvs.mesh_delaunay(
+        input_path=input_path,
+        output_path=output_path,
+        input_type=input_type,
+        delaunay_meshing_options=delaunay_meshing_options)
 
 
 def poisson_mesh(input_path, output_path):
@@ -42,13 +44,21 @@ def poisson_mesh(input_path, output_path):
     Returns:
         int
     """
-    poisson_meshing_options = cv3d.reconstruction.options.PoissonMeshingOptions()
-    return cv3d.reconstruction.mvs.poisson_mesh(input_path=input_path, output_path=output_path,
-                                                poisson_meshing_options=poisson_meshing_options)
+    poisson_meshing_options = cv3d.reconstruction.options.PoissonMeshingOptions(
+    )
+    return cv3d.reconstruction.mvs.poisson_mesh(
+        input_path=input_path,
+        output_path=output_path,
+        poisson_meshing_options=poisson_meshing_options)
 
 
-def stereo_fuse(workspace_path, output_path, bbox_path='', stereo_input_type='geometric', output_type='PLY',
-                workspace_format='COLMAP', pmvs_option_name='option-all'):
+def stereo_fuse(workspace_path,
+                output_path,
+                bbox_path='',
+                stereo_input_type='geometric',
+                output_type='PLY',
+                workspace_format='COLMAP',
+                pmvs_option_name='option-all'):
     """
     stereo_fuse(workspace_path, output_path, bbox_path='', stereo_input_type='geometric', output_type='PLY',
      workspace_format='COLMAP', pmvs_option_name='option-all',
@@ -71,17 +81,21 @@ def stereo_fuse(workspace_path, output_path, bbox_path='', stereo_input_type='ge
     """
 
     stereo_fusion_options = cv3d.reconstruction.options.StereoFusionOptions()
-    return cv3d.reconstruction.mvs.stereo_fuse(workspace_path=workspace_path,
-                                               output_path=output_path,
-                                               bbox_path=bbox_path,
-                                               stereo_input_type=stereo_input_type,
-                                               output_type=output_type,
-                                               workspace_format=workspace_format,
-                                               pmvs_option_name=pmvs_option_name,
-                                               stereo_fusion_options=stereo_fusion_options)
+    return cv3d.reconstruction.mvs.stereo_fuse(
+        workspace_path=workspace_path,
+        output_path=output_path,
+        bbox_path=bbox_path,
+        stereo_input_type=stereo_input_type,
+        output_type=output_type,
+        workspace_format=workspace_format,
+        pmvs_option_name=pmvs_option_name,
+        stereo_fusion_options=stereo_fusion_options)
 
 
-def stereo_patch_match(workspace_path, config_path='', workspace_format='COLMAP', pmvs_option_name='option-all'):
+def stereo_patch_match(workspace_path,
+                       config_path='',
+                       workspace_format='COLMAP',
+                       pmvs_option_name='option-all'):
     """
     stereo_patch_match(workspace_path, config_path='', workspace_format='COLMAP', pmvs_option_name='option-all',
     patch_match_options=<cloudViewer.cuda.pybind.reconstruction.options.PatchMatchOptions object at 0x7f82ad55e9d0>)
@@ -99,11 +113,12 @@ def stereo_patch_match(workspace_path, config_path='', workspace_format='COLMAP'
         int
     """
     patch_match_options = cv3d.reconstruction.options.PatchMatchOptions()
-    return cv3d.reconstruction.mvs.stereo_patch_match(workspace_path=workspace_path,
-                                                      config_path=config_path,
-                                                      workspace_format=workspace_format,
-                                                      pmvs_option_name=pmvs_option_name,
-                                                      patch_match_options=patch_match_options)
+    return cv3d.reconstruction.mvs.stereo_patch_match(
+        workspace_path=workspace_path,
+        config_path=config_path,
+        workspace_format=workspace_format,
+        pmvs_option_name=pmvs_option_name,
+        patch_match_options=patch_match_options)
 
 
 if __name__ == '__main__':
@@ -116,13 +131,16 @@ if __name__ == '__main__':
     POISSON_INPUT_PATH = "/media/asher/data/datasets/gui_test/dense/0/fused.ply"
     POISSON_OUTPUT_PATH = "/media/asher/data/datasets/gui_test/meshes/poisson_meshed.ply"
 
-    flag = mesh_delaunay(input_path=DELAUNAY_INPUT_PATH, output_path=DELAUNAY_OUTPUT_PATH, input_type='dense')
+    flag = mesh_delaunay(input_path=DELAUNAY_INPUT_PATH,
+                         output_path=DELAUNAY_OUTPUT_PATH,
+                         input_type='dense')
     if flag != 0:
         print("mesh_delaunay failed!")
     else:
         print("mesh_delaunay successfully!")
 
-    flag = poisson_mesh(input_path=POISSON_INPUT_PATH, output_path=POISSON_OUTPUT_PATH)
+    flag = poisson_mesh(input_path=POISSON_INPUT_PATH,
+                        output_path=POISSON_OUTPUT_PATH)
     if flag != 0:
         print("poisson_mesh failed!")
     else:

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2023 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "core/nns/kernel/BlockSelect.cuh"
 #include "core/nns/kernel/Limits.cuh"
 

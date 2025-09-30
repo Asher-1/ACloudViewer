@@ -16,6 +16,7 @@ ARG BUILD_CUDA_MODULE
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
+ARG QT_BASE_DIR
 ARG CI
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
@@ -52,11 +53,14 @@ ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV PACKAGE=${PACKAGE}
+ENV QT_BASE_DIR=${QT_BASE_DIR}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
+ENV VTK_VERSION=9.3.1
+ENV PCL_VERSION=1.14.1
 
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
@@ -79,10 +83,32 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         apt-file \
         net-tools \
         mesa-utils \
+        # reference cloudViewer
+        libzstd-dev \
+        zlib1g \
+        zlib1g-dev \
+        libssl-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libncursesw5-dev \
+        libcurl4-openssl-dev \
+        xz-utils \
+        tk-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libffi-dev \ 
+        liblzma-dev \
+        ca-certificates \
         # for opencv
+        libavcodec-dev \
+        libavformat-dev \
+        libavutil-dev \
+        libswscale-dev \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
+        libhdf5-dev \
         # for colmap
         libatlas-base-dev \
         # for package
@@ -106,8 +132,20 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         nasm \
         flex \
         fontconfig \
+        # for pcl
+        libopenni-dev \
+        libopenni2-dev \
+        libjsoncpp-dev \
         # libgdal-dev \
-        # libcgal-dev \
+        libcgal-dev \
+        libusb-1.0-0-dev \
+        libeigen3-dev \
+        libboost-all-dev \
+        libglew-dev \
+        'libqhull*' \
+        libqhull-dev \
+        libflann1.9 \
+        libflann-dev \
         # for QT
         libxcb-xkb1 \
         libxcb-shape0 \
@@ -119,28 +157,55 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libxkbcommon-x11-0 \
         libxcb-render-util0
 
+# Install Qt5
+RUN apt-get -y update && \
+    if [ "$(lsb_release -c --short)" = "jammy" ]; then \
+        apt-get install -qy \
+          libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
+          libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
+          qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev; \
+    else \
+        add-apt-repository ppa:beineri/opt-qt-5.15.2-$(lsb_release -c --short) -y; \
+        apt-get -y update; \
+        apt-get -y install qt515base qt515imageformats qt515declarative qt515quickcontrols2 qt515svg qt515tools \
+            qt515translations qt515websockets qt515x11extras qt515xmlpatterns qt515networkauth-no-lgpl; \
+    fi && \
+    ldconfig && rm -rf /var/lib/apt/lists/*
 
-# Dependencies: basic
-RUN apt-get update && apt-get install -y \
-    git  \
-    wget \
-    curl \
-    build-essential \
-    pkg-config \
- && rm -rf /var/lib/apt/lists/*
+CMD ["/bin/bash", "-c", "source /root/.bashrc && exec bash"]
+RUN echo "QT_BASE_DIR=${QT_BASE_DIR}"
+ENV QT_BASE_DIR=${QT_BASE_DIR} \
+    QT_ROOT=${QT_BASE_DIR} \
+    QTDIR=${QT_BASE_DIR} \
+    QT_DIR=${QT_BASE_DIR} \
+    PATH=${QT_BASE_DIR}/bin:$PATH \
+    LD_LIBRARY_PATH=${QT_BASE_DIR}/lib:$LD_LIBRARY_PATH \
+    PKG_CONFIG_PATH=${QT_BASE_DIR}/lib/pkgconfig:$PKG_CONFIG_PATH
+
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. cloudViewer) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version \
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
- # Miniconda or Intel conda
-# The **/cloudViewer/bin paths are used during docker run, in this way docker run
-# does not need to activate the environment again.
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/cloudViewer/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
- && bash Miniconda3-latest-Linux-x86_64.sh -b \
- && rm Miniconda3-latest-Linux-x86_64.sh \
- && conda --version
+# Dependencies: cmake
+ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
+ && cmake --version
 
 # deploy package installer
 WORKDIR /root
@@ -154,20 +219,6 @@ ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
 
-ENV PATH="/root/miniconda3/bin:$PATH" \
-    CONDA_EXE="/root/miniconda3/bin/conda"
-
-RUN if [ -n "$CONDA_EXE" ]; then \
-        CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE")); \
-    elif [ -n "$CONDA_PREFIX" ]; then \
-        CONDA_ROOT=$(dirname "$CONDA_PREFIX"); \
-    else \
-        echo "Failed to find Miniconda3 install path..."; \
-        exit 1; \
-    fi && \
-    echo "CONDA_ROOT is set to: $CONDA_ROOT" && \
-    source "$CONDA_ROOT/etc/profile.d/conda.sh" 
-
 # ACloudViewer repo
 # Always keep /root/ACloudViewer as the WORKDIR
 COPY . ${ACloudViewer_DEV}/ACloudViewer
@@ -176,13 +227,108 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 # ACloudViewer C++ dependencies
 RUN ./util/install_deps_ubuntu.sh assume-yes
 
+# ACloudViewer PCL+VTK dependencies
+
+# Update eigen to 3.4+
+WORKDIR /opt
+RUN mv -f /usr/include/eigen3 /usr/include/eigen337.bak
+RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz -O "/opt/eigen-3.4.0.tar.gz"
+RUN tar -xvf eigen-3.4.0.tar.gz && \
+    cd eigen-3.4.0 && \
+    mkdir -p build && cd build && \
+    cmake .. && \
+    make install "-j$(nproc)" \
+    && ldconfig \
+    && rm -rf /opt/eigen-3.4.0 \
+    && rm -rf /opt/eigen-3.4.0.tar.gz
+    
+# Install metslib for pcl
+WORKDIR /opt
+RUN wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz -O "/opt/metslib-0.5.3.tgz"
+RUN tar -xvf metslib-0.5.3.tgz && \
+    cd metslib-0.5.3 && \
+    sh ./configure && \
+    make && \
+    make install \
+    && ldconfig \
+    && rm -rf /opt/metslib-0.5.3 \
+    && rm -rf /opt/metslib-0.5.3.tgz
+
+# Install laszip
+WORKDIR /opt
+RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "/opt/laszip-src-3.4.3.tar.gz"
+RUN tar -xvf laszip-src-3.4.3.tar.gz && \
+    cd laszip-src-3.4.3 && \
+    mkdir -p build && cd build && \
+    cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" \
+    && ldconfig \
+    && rm -rf /opt/laszip-src-3.4.3 \
+    && rm -rf /opt/laszip-src-3.4.3.zip
+
+# Install xerces-c
+WORKDIR /opt
+RUN wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/opt/xerces-c-3.2.3.zip"
+RUN unzip xerces-c-3.2.3.zip \
+    && cd ./xerces-c-3.2.3 \
+    && chmod +x configure \
+    && ./configure --prefix=/usr \
+    && make \
+    && make install \
+    && make clean \
+    && rm -rf /opt/xerces-c-3.2.3 \
+    && rm -rf /opt/xerces-c-3.2.3.zip
+
+# Install vtk
+WORKDIR /opt
+RUN wget https://vtk.org/files/release/9.3/VTK-${VTK_VERSION}.tar.gz -O "/opt/VTK-${VTK_VERSION}.tar.gz"
+RUN tar -zxvf VTK-${VTK_VERSION}.tar.gz && \
+    cd VTK-${VTK_VERSION} && \
+    mkdir -p build && cd build && \
+    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DVTK_GROUP_ENABLE_Qt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
+            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
+            -DVTK_QT_VERSION:STRING=5 \
+            -DBUILD_SHARED_LIBS:BOOL=ON \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig && \
+    rm -rf /opt/VTK-${VTK_VERSION} /opt/VTK-${VTK_VERSION}.tar.gz
+
+# Install pcl
+WORKDIR /opt
+RUN wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-${PCL_VERSION}/source.zip -O "/opt/pcl-${PCL_VERSION}.zip"
+RUN unzip pcl-${PCL_VERSION}.zip && \
+    cd pcl && \
+    mkdir -p build && cd build && \
+    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DBUILD_GPU=OFF \
+            -DBUILD_apps=OFF \
+            -DBUILD_examples=OFF \
+            -DBUILD_surface_on_nurbs=ON \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig && \
+    rm -rf /opt/pcl /opt/pcl-${PCL_VERSION}.zip
+
+# save disk space
+RUN rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 # Build ACloudViewer app installer
-RUN echo "Start Build ACloudViewer apps installer..." \
-    && rm -rf ${ACloudViewer_BUILD}/* \
-    && ./docker/build_gui_app_conda.sh ${PYTHON_VERSION} \
+RUN echo "Start Build ACloudViewer apps installer..."                           \
+    && rm -rf ${ACloudViewer_BUILD}/*                                           \
+    && ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}         \
     && rm -rf ${ACloudViewer_BUILD}/*
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
-RUN echo "Docker build done."
+RUN echo "Docker ci build done."

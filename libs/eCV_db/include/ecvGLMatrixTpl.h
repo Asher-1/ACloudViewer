@@ -150,6 +150,15 @@ public:
             m_mat[i] = mat.m_mat[i];
     }
 
+    //! Copy assignment operator
+    ccGLMatrixTpl<T>& operator=(const ccGLMatrixTpl<T>& mat) {
+        if (this != &mat) {
+            for (unsigned i = 0; i < OPENGL_MATRIX_SIZE; ++i)
+                m_mat[i] = mat.m_mat[i];
+        }
+        return *this;
+    }
+
     //! Constructor from a float GL matrix array
     /** \param mat16f a 16 elements array (column major order)
      **/

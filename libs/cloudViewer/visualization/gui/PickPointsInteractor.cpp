@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/gui/PickPointsInteractor.h"
@@ -36,7 +17,7 @@
 #include "t/geometry/TriangleMesh.h"
 #include <Logging.h>
 #include "visualization/gui/Events.h"
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
@@ -211,7 +192,7 @@ void PickPointsInteractor::SetPickableGeometry(
             // over the occluded points. We paint with a special "mesh index"
             // so that we can to enhanced picking if we hit a mesh index.
             auto mesh_color = CalcIndexColor(kMeshIndex);
-            rendering::Material mat;
+            rendering::MaterialRecord mat;
             mat.shader = "unlitSolidColor";  // ignore any vertex colors!
             mat.base_color = {float(mesh_color.x()), float(mesh_color.y()),
                               float(mesh_color.z()), 1.0f};
@@ -346,8 +327,8 @@ void PickPointsInteractor::ClearPick() {
     SetNeedsRedraw();
 }
 
-rendering::Material PickPointsInteractor::MakeMaterial() {
-    rendering::Material mat;
+rendering::MaterialRecord PickPointsInteractor::MakeMaterial() {
+    rendering::MaterialRecord mat;
     mat.shader = "unlitPolygonOffset";
     mat.point_size = float(point_size_);
     // We are not tonemapping, so src colors are RGB. This prevents the colors

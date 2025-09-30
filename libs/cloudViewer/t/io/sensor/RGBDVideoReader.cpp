@@ -1,37 +1,19 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "t/io/sensor/RGBDVideoReader.h"
+#include "cloudViewer/t/io/sensor/RGBDVideoReader.h"
 
 #include <string>
 
 #include <IJsonConvertibleIO.h>
 #include <ImageIO.h>
-#include "t/io/sensor/realsense/RSBagReader.h"
+#include "cloudViewer/t/io/sensor/realsense/RSBagReader.h"
 #include <FileSystem.h>
+#include <Helper.h>
 
 namespace cloudViewer {
 namespace t {
@@ -52,18 +34,20 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
                                  uint64_t start_time,
                                  uint64_t end_time) {
     if (!IsOpened()) {
-        cloudViewer::utility::LogError("Null file handler. Please call Open().");
+        utility::LogError("Null file handler. Please call Open().");
     }
-    bool success = cloudViewer::utility::filesystem::MakeDirectoryHierarchy(fmt::format("{}/color", frame_path));
-    success &= cloudViewer::utility::filesystem::MakeDirectoryHierarchy(fmt::format("{}/depth", frame_path));
+    bool success = utility::filesystem::MakeDirectoryHierarchy(
+            fmt::format("{}/color", frame_path));
+    success &= utility::filesystem::MakeDirectoryHierarchy(
+            fmt::format("{}/depth", frame_path));
     if (!success) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Could not create color or depth subfolder in {} or they "
                 "already exist.",
                 frame_path);
     }
     cloudViewer::io::WriteIJsonConvertibleToJSON(
-                fmt::format("{}/intrinsic.json", frame_path), GetMetadata());
+            fmt::format("{}/intrinsic.json", frame_path), GetMetadata());
     SeekTimestamp(start_time);
     int idx = 0;
     cloudViewer::geometry::Image im_color, im_depth;
@@ -77,7 +61,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
             cloudViewer::io::WriteImage(color_file, im_color);
-            cloudViewer::utility::LogDebug("Written color image to {}", color_file);
+            utility::LogDebug("Written color image to {}", color_file);
         }
 #pragma omp section
         {
@@ -85,25 +69,29 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
             cloudViewer::io::WriteImage(depth_file, im_depth);
-            cloudViewer::utility::LogDebug("Written depth image to {}", depth_file);
+            utility::LogDebug("Written depth image to {}", depth_file);
         }
     }
-    cloudViewer::utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/",
-                            idx, frame_path);
+    utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/",
+                     idx, frame_path);
 }
 
 std::unique_ptr<RGBDVideoReader> RGBDVideoReader::Create(
         const std::string &filename) {
 #ifdef BUILD_LIBREALSENSE
-    if (cloudViewer::utility::ToLower(filename).compare(filename.length() - 4, 4, ".bag") ==
+    if (utility::ToLower(filename).compare(filename.length() - 4, 4, ".bag") ==
         0) {
         auto reader = std::make_unique<RSBagReader>();
         reader->Open(filename);
         return reader;
-    } else
+    } else {
+        utility::LogError("Unsupported file format for {}.", filename);
+    }
 #endif
-        cloudViewer::utility::LogError("Unsupported file format for {}", filename);
+    utility::LogError(
+            "Build with -DBUILD_LIBREALSENSE=ON to use RealSense bag file.");
 }
+
 }  // namespace io
 }  // namespace t
 }  // namespace cloudViewer

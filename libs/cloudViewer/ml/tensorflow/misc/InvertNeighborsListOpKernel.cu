@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2023 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -7,7 +7,7 @@
 
 #define EIGEN_USE_GPU
 #include "InvertNeighborsListOpKernel.h"
-#include "core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAUtils.h"
 #include "ml/impl/misc/InvertNeighborsList.cuh"
 
 using namespace cloudViewer;

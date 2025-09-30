@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.cloudViewer.org                            -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2023 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
@@ -15,15 +15,15 @@ from dash import Dash
 
 
 def get_point_object(geometry, point_sample_factor=1):
-    points = np.asarray(geometry.points)
+    points = np.asarray(geometry.points())
     colors = None
     if geometry.has_colors():
-        colors = np.asarray(geometry.colors)
+        colors = np.asarray(geometry.colors())
     elif geometry.has_normals():
-        colors = (0.5, 0.5, 0.5) + np.asarray(geometry.normals) * 0.5
+        colors = (0.5, 0.5, 0.5) + np.asarray(geometry.normals()) * 0.5
     else:
         geometry.paint_uniform_color((1.0, 0.0, 0.0))
-        colors = np.asarray(geometry.colors)
+        colors = np.asarray(geometry.colors())
     if (point_sample_factor > 0 and point_sample_factor < 1):
         indices = np.random.choice(len(points),
                                    (int)(len(points) * point_sample_factor),
@@ -40,8 +40,8 @@ def get_point_object(geometry, point_sample_factor=1):
 
 def get_mesh_object(geometry,):
     pl_mygrey = [0, 'rgb(153, 153, 153)'], [1., 'rgb(255,255,255)']
-    triangles = np.asarray(geometry.triangles)
-    vertices = np.asarray(geometry.vertices)
+    triangles = np.asarray(geometry.triangles())
+    vertices = np.asarray(geometry.vertices())
 
     mesh_3d = go.Mesh3d(x=vertices[:, 0],
                         y=vertices[:, 1],
@@ -64,8 +64,8 @@ def get_mesh_object(geometry,):
 
 
 def get_wireframe_object(geometry):
-    triangles = np.asarray(geometry.triangles)
-    vertices = np.asarray(geometry.vertices)
+    triangles = np.asarray(geometry.triangles())
+    vertices = np.asarray(geometry.vertices())
     x = []
     y = []
     z = []
@@ -101,19 +101,20 @@ def get_graph_objects(geometry_list,
 
     graph_objects = []
     for geometry in geometry_list:
-        geometry_type = geometry.get_geometry_type()
-
-        if geometry_type == cv3d.geometry.Geometry.Type.PointCloud:
-            graph_objects.append(get_point_object(geometry,
+        if geometry.is_kind_of(cv3d.geometry.ccObject.POINT_CLOUD):
+            pcd = cv3d.geometry.ToPointCloud(geometry)
+            graph_objects.append(get_point_object(pcd,
                                                   point_sample_factor))
 
-        if geometry_type == cv3d.geometry.Geometry.Type.TriangleMesh:
-            graph_objects.append(get_mesh_object(geometry))
+        if geometry.is_kind_of(cv3d.geometry.ccObject.MESH):
+            mesh = cv3d.geometry.ToMesh(geometry)
+            graph_objects.append(get_mesh_object(mesh))
             if (mesh_show_wireframe):
-                graph_objects.append(get_wireframe_object(geometry))
+                graph_objects.append(get_wireframe_object(mesh))
 
-        if geometry_type == cv3d.geometry.Geometry.Type.LineSet:
-            graph_objects.append(get_lineset_object(geometry))
+        if geometry.is_kind_of(cv3d.geometry.ccObject.LINESET):
+            lineset = cv3d.geometry.ToLineSet(geometry)
+            graph_objects.append(get_lineset_object(lineset))
 
     return graph_objects
 
@@ -144,6 +145,39 @@ def get_plotly_fig(geometry_list,
                    lookat=None,
                    up=None,
                    zoom=1.0):
+    """Generates a Plotly Figure object for a list of CloudViewer geometries.
+
+    Args:
+        geometry_list (List[cloudViewer.geometry.ccHObject]): A list of CloudViewer
+            geometry objects (e.g., ccPointCloud, ccMesh, LineSet) to be
+            visualized.
+        width (int, optional): The width of the Plotly figure in pixels.
+            Defaults to 600.
+        height (int, optional): The height of the Plotly figure in pixels.
+            Defaults to 400.
+        mesh_show_wireframe (bool, optional): If True, a wireframe will be
+            rendered for ccMesh geometries in addition to the mesh
+            itself. Defaults to False.
+        point_sample_factor (float, optional): A factor between 0.0 and 1.0
+            that determines the fraction of points to sample from ccPointCloud
+            geometries. A value of 1.0 means all points are used.
+            Defaults to 1.0.
+        front (list of float, optional): A list of 3 floats representing the
+            camera's front vector (e.g., [x, y, z]). If None, a default
+            orientation is used. Defaults to None.
+        lookat (list of float, optional): A list of 3 floats representing the
+            point the camera is looking at (e.g., [x, y, z]). If None, the
+            camera looks at the center of the combined geometries.
+            Defaults to None.
+        up (list of float, optional): A list of 3 floats representing the
+            camera's up vector (e.g., [x, y, z]). Defaults to Plotly's default
+            (0,0,1) if None.
+        zoom (float, optional): The zoom level of the camera. Affects the
+            distance of the eye position from the center. Defaults to 1.0.
+
+    Returns:
+        plotly.graph_objects.Figure: The generated Plotly figure object.
+    """
     graph_objects = get_graph_objects(geometry_list, mesh_show_wireframe,
                                       point_sample_factor)
     geometry_center = get_geometry_center(geometry_list)
@@ -198,10 +232,37 @@ def draw_plotly(geometry_list,
                 lookat=None,
                 up=None,
                 zoom=1.0):
+    """Draws CloudViewer geometries using Plotly and displays them.
 
+    This function creates a Plotly figure from the provided geometries and
+    then calls `show()` to render it.
+
+    Args:
+        geometry_list (List[cloudViewer.geometry.ccHObject]): A list of CloudViewer
+            geometry objects.
+        window_name (str, optional): The title of the window where the figure is
+            displayed.
+        width (int, optional): The width of the Plotly figure in pixels.
+            Defaults to 600.
+        height (int, optional): The height of the Plotly figure in pixels.
+            Defaults to 400.
+        mesh_show_wireframe (bool, optional): If True, renders a wireframe for
+            ccMesh geometries. Defaults to False.
+        point_sample_factor (float, optional): Sampling factor for point clouds
+            (0.0 to 1.0). Defaults to 1.0.
+        front (list of float, optional): Camera's front vector. Defaults to None.
+        lookat (list of float, optional): Point camera is looking at.
+            Defaults to None.
+        up (list of float, optional): Camera's up vector. Defaults to None.
+        zoom (float, optional): Camera zoom level. Defaults to 1.0.
+
+    Returns:
+        plotly.graph_objects.Figure: The generated and displayed Plotly figure.
+    """
     fig = get_plotly_fig(geometry_list, width, height, mesh_show_wireframe,
                          point_sample_factor, front, lookat, up, zoom)
     fig.show()
+    # return fig
 
 
 def draw_plotly_server(geometry_list,
@@ -215,7 +276,38 @@ def draw_plotly_server(geometry_list,
                        up=None,
                        zoom=1.0,
                        port=8050):
+    """Serves CloudViewer geometries via a Dash web application using Plotly.
 
+    This function creates a Plotly figure and embeds it within a Dash web
+    application. The application is then run on a local development server,
+    making the visualization accessible through a web browser at the
+    specified port.
+
+    Args:
+        geometry_list (List[cloudViewer.geometry.ccHObject]): A list of CloudViewer
+            geometry objects.
+        window_name (str, optional): The title for the Dash application,
+            which also appears as the browser tab title. Defaults to 'CloudViewer'.
+        width (int, optional): The width of the Plotly figure in pixels.
+            Defaults to 1080.
+        height (int, optional): The height of the Plotly figure in pixels.
+            Defaults to 960.
+        mesh_show_wireframe (bool, optional): If True, renders a wireframe for
+            ccMesh geometries. Defaults to False.
+        point_sample_factor (float, optional): Sampling factor for point clouds
+            (0.0 to 1.0). Defaults to 1.0.
+        front (list of float, optional): Camera's front vector. Defaults to None.
+        lookat (list of float, optional): Point camera is looking at.
+            Defaults to None.
+        up (list of float, optional): Camera's up vector. Defaults to None.
+        zoom (float, optional): Camera zoom level. Defaults to 1.0.
+        port (int, optional): The port number on which the Dash application
+            will be served. Defaults to 8050.
+
+    Returns:
+        tuple[dash.Dash, plotly.graph_objects.Figure]: A tuple containing the
+        Dash application instance and the Plotly figure object.
+    """
     fig = get_plotly_fig(geometry_list, width, height, mesh_show_wireframe,
                          point_sample_factor, front, lookat, up, zoom)
     app = Dash(window_name)
@@ -233,3 +325,4 @@ def draw_plotly_server(geometry_list,
         ),
     ])
     app.run_server(debug=False, port=port)
+    return (app, fig)

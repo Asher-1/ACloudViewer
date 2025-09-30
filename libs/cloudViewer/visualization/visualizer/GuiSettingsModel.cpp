@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/GuiSettingsModel.h"
@@ -176,15 +157,8 @@ GuiSettingsModel::GetDefaultLightingProfile() {
 
 const GuiSettingsModel::LightingProfile&
 GuiSettingsModel::GetDefaultPointCloudLightingProfile() {
-    for (auto& lp : GuiSettingsModel::lighting_profiles_) {
-        if (lp.name == POINT_CLOUD_PROFILE_NAME) {
-            return lp;
-        }
-    }
-    utility::LogWarning(
-            "Internal Error: could not find default point cloud lighting "
-            "profile");
-    return GuiSettingsModel::GetDefaultLightingProfile();
+    // Lighting profile 0 will always be default even for Point Clouds
+    return GuiSettingsModel::lighting_profiles_[0];
 }
 
 const GuiSettingsModel::LitMaterial& GuiSettingsModel::GetDefaultLitMaterial() {
@@ -224,10 +198,23 @@ void GuiSettingsModel::SetShowGround(bool show) {
     NotifyChanged();
 }
 
-
 bool GuiSettingsModel::GetSunFollowsCamera() const { return sun_follows_cam_; }
 void GuiSettingsModel::SetSunFollowsCamera(bool follow) {
     sun_follows_cam_ = follow;
+    NotifyChanged();
+}
+
+bool GuiSettingsModel::GetBasicMode() const { return basic_mode_enabled_; }
+void GuiSettingsModel::SetBasicMode(bool enable) {
+    basic_mode_enabled_ = enable;
+    NotifyChanged(true);
+}
+
+bool GuiSettingsModel::GetWireframeMode() const {
+    return wireframe_mode_enabled_;
+}
+void GuiSettingsModel::SetWireframeMode(bool enable) {
+    wireframe_mode_enabled_ = enable;
     NotifyChanged();
 }
 
@@ -242,6 +229,7 @@ void GuiSettingsModel::SetBackgroundColor(const Eigen::Vector3f& color) {
 const GuiSettingsModel::LightingProfile& GuiSettingsModel::GetLighting() const {
     return lighting_;
 }
+
 void GuiSettingsModel::SetLightingProfile(const LightingProfile& profile) {
     lighting_ = profile;
     user_has_changed_lighting_profile_ = true;
@@ -348,7 +336,7 @@ void GuiSettingsModel::ResetColors() {
     NotifyChanged(true);
 }
 
-void GuiSettingsModel::SetCustomDefaultColor(const Eigen::Vector3f& color) {
+void GuiSettingsModel::SetCustomDefaultColor(const Eigen::Vector3f color) {
     custom_default_color = color;
 }
 
@@ -363,6 +351,20 @@ int GuiSettingsModel::GetPointSize() const {
 void GuiSettingsModel::SetPointSize(int size) {
     current_materials_.point_size = float(size);
     NotifyChanged(true);
+}
+
+bool GuiSettingsModel::GetUserWantsEstimateNormals() {
+    if (user_wants_estimate_normals_) {
+        user_wants_estimate_normals_ = false;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void GuiSettingsModel::EstimateNormalsClicked() {
+    user_wants_estimate_normals_ = true;
+    NotifyChanged();
 }
 
 bool GuiSettingsModel::GetDisplayingPointClouds() const {

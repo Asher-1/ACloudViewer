@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <iostream>
@@ -118,27 +99,19 @@ int main(int argc, char *argv[]) {
             utility::GetProgramOptionAsString(argc, argv, "--log");
     std::string gt_filename =
             utility::GetProgramOptionAsString(argc, argv, "--gt");
-    std::string pcd_dirname =
-            utility::GetProgramOptionAsString(argc, argv, "--dir");
+
     double threshold =
             utility::GetProgramOptionAsDouble(argc, argv, "--threshold");
     double threshold_rmse = utility::GetProgramOptionAsDouble(
             argc, argv, "--threshold_rmse", threshold * 2.0);
-    if (pcd_dirname.empty()) {
-        pcd_dirname =
-                utility::filesystem::GetFileParentDirectory(log_filename) +
-                "pcds/";
-    }
+
     double threshold2 = threshold * threshold;
-    std::vector<std::string> pcd_names;
-    utility::filesystem::ListFilesInDirectoryWithExtension(pcd_dirname, "pcd",
-                                                           pcd_names);
-    std::vector<ccPointCloud> pcds(pcd_names.size());
-    std::vector<geometry::KDTreeFlann> kdtrees(pcd_names.size());
-    for (size_t i = 0; i < pcd_names.size(); i++) {
-        io::ReadPointCloud(
-                pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
-                pcds[i]);
+
+    data::DemoICPPointClouds sample_data;
+    std::vector<geometry::PointCloud> pcds(sample_data.GetPaths().size());
+    std::vector<geometry::KDTreeFlann> kdtrees(sample_data.GetPaths().size());
+    for (size_t i = 0; i < sample_data.GetPaths().size(); i++) {
+        io::ReadPointCloud(sample_data.GetPaths()[i], pcds[i]);
         kdtrees[i].SetGeometry(pcds[i]);
     }
 
@@ -153,9 +126,9 @@ int main(int argc, char *argv[]) {
     double positive_rmse = 0;
     for (size_t k = 0; k < pair_ids.size(); k++) {
         ccPointCloud source = pcds[pair_ids[k].second];
-        source.transform(transformations[k]);
+        source.Transform(transformations[k]);
         ccPointCloud gtsource = pcds[pair_ids[k].second];
-        gtsource.transform(gt_trans[k]);
+        gtsource.Transform(gt_trans[k]);
         std::vector<int> indices(1);
         std::vector<double> distance2(1);
         int correspondence_num = 0;

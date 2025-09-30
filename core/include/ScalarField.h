@@ -133,7 +133,8 @@ protected:  // members
 };
 
 inline void ScalarField::computeMinAndMax() {
-    ScalarType minVal, maxVal;
+    ScalarType minVal = 0.0f;
+    ScalarType maxVal = 0.0f;
 
     bool minMaxInitialized = false;
     for (std::size_t i = 0; i < size(); ++i) {

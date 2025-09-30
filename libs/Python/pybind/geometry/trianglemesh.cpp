@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Image.h>
@@ -40,15 +21,17 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_trianglemesh(py::module& m) {
-    py::enum_<ccMesh::MESH_SCALAR_FIELD_PROCESS>(m,
-                                                 "MeshScalarFieldProcessType")
+    py::native_enum<ccMesh::MESH_SCALAR_FIELD_PROCESS>(
+            m, "MeshScalarFieldProcessType", "enum.Enum",
+            "Method for mesh scalar field process.")
             .value("SMOOTH_MESH_SF",
                    ccMesh::MESH_SCALAR_FIELD_PROCESS::SMOOTH_MESH_SF,
                    "Smooth Scalar fields.")
             .value("ENHANCE_MESH_SF",
                    ccMesh::MESH_SCALAR_FIELD_PROCESS::ENHANCE_MESH_SF,
                    "Enhance Scalar fields.")
-            .export_values();
+            .export_values()
+            .finalize();
 
     py::class_<ccMesh, PyGeometry<ccMesh>, std::shared_ptr<ccMesh>,
                ccGenericMesh, ccHObject>
@@ -262,23 +245,23 @@ void pybind_trianglemesh(py::module& m) {
                     },
                     "Transforms the mesh per-triangle normals.",
                     "transformation"_a)
-            .def("get_triangle_area", &ccMesh::getTriangleArea,
+            .def("get_triangle_area", &ccMesh::GetTriangleArea,
                  "Function that computes the area of a mesh triangle "
                  "identified by the triangle index.",
                  "triangle_index"_a)
-            .def("is_bbox_intersecting", &ccMesh::isBoundingBoxIntersecting,
+            .def("is_bbox_intersecting", &ccMesh::IsBoundingBoxIntersecting,
                  "Function that tests if the bounding boxes of the triangle "
                  "meshes are intersecting.",
                  "other"_a)
-            .def("get_edge_to_triangles_map", &ccMesh::getEdgeToTrianglesMap,
+            .def("get_edge_to_triangles_map", &ccMesh::GetEdgeToTrianglesMap,
                  "Function that returns a map from edges (vertex0, vertex1) to "
                  "the"
                  " triangle indices the given edge belongs to.")
-            .def("get_edge_to_vertices_map", &ccMesh::getEdgeToVerticesMap,
+            .def("get_edge_to_vertices_map", &ccMesh::GetEdgeToVerticesMap,
                  "Function that returns a map from edges (vertex0, vertex1) to "
                  "the"
                  " vertex (vertex2) indices the given edge belongs to.")
-            .def("get_triangle_plane", &ccMesh::getTrianglePlane,
+            .def("get_triangle_plane", &ccMesh::GetTrianglePlane,
                  "Function that computes the plane equation of a mesh triangle "
                  "identified by the triangle index."
                  "triangle_index"_a)
@@ -295,44 +278,44 @@ void pybind_trianglemesh(py::module& m) {
                         }
                     },
                     "Sets the associated vertices cloud (warning)", "cloud"_a)
-            .def("create_internal_cloud", &ccMesh::createInternalCloud,
+            .def("create_internal_cloud", &ccMesh::CreateInternalCloud,
                  "Sets the associated vertices cloud (warning)")
-            .def("compute_triangle_normals", &ccMesh::computeTriangleNormals,
+            .def("compute_triangle_normals", &ccMesh::ComputeTriangleNormals,
                  "Function to compute triangle normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
-            .def("compute_vertex_normals", &ccMesh::computeVertexNormals,
+            .def("compute_vertex_normals", &ccMesh::ComputeVertexNormals,
                  "Function to compute vertex normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
-            .def("compute_adjacency_list", &ccMesh::computeAdjacencyList,
+            .def("compute_adjacency_list", &ccMesh::ComputeAdjacencyList,
                  "Function to compute adjacency list, call before adjacency "
                  "list is needed")
             .def("remove_duplicated_vertices",
-                 &ccMesh::removeDuplicatedVertices,
+                 &ccMesh::RemoveDuplicatedVertices,
                  "Function that removes duplicated verties, i.e., vertices "
                  "that have identical coordinates.")
             .def("remove_duplicated_triangles",
-                 &ccMesh::removeDuplicatedTriangles,
+                 &ccMesh::RemoveDuplicatedTriangles,
                  "Function that removes duplicated triangles, i.e., removes "
                  "triangles that reference the same three vertices, "
                  "independent of their order.")
             .def("remove_unreferenced_vertices",
-                 &ccMesh::removeUnreferencedVertices,
+                 &ccMesh::RemoveUnreferencedVertices,
                  "This function removes vertices from the triangle mesh that "
                  "are not referenced in any triangle of the mesh.")
             .def("remove_degenerate_triangles",
-                 &ccMesh::removeDegenerateTriangles,
+                 &ccMesh::RemoveDegenerateTriangles,
                  "Function that removes degenerate triangles, i.e., triangles "
                  "that references a single vertex multiple times in a single "
                  "triangle. They are usually the product of removing "
                  "duplicated vertices.")
-            .def("remove_non_manifold_edges", &ccMesh::removeNonManifoldEdges,
+            .def("remove_non_manifold_edges", &ccMesh::RemoveNonManifoldEdges,
                  "Function that removes all non-manifold edges, by "
                  "successively deleting  triangles with the smallest surface "
                  "area adjacent to the non-manifold edge until the number of "
                  "adjacent triangles to the edge is `<= 2`.")
-            .def("merge_close_vertices", &ccMesh::mergeCloseVertices,
+            .def("merge_close_vertices", &ccMesh::MergeCloseVertices,
                  "Function that will merge close by vertices to a single one. "
                  "The vertex position, "
                  "normal and color will be the average of the vertices. The "
@@ -341,7 +324,7 @@ void pybind_trianglemesh(py::module& m) {
                  "function might help to "
                  "close triangle soups.",
                  "eps"_a)
-            .def("filter_sharpen", &ccMesh::filterSharpen,
+            .def("filter_sharpen", &ccMesh::FilterSharpen,
                  "Function to sharpen triangle mesh. The output value "
                  "(:math:`v_o`) is the input value (:math:`v_i`) plus strength "
                  "times the input value minus he sum of he adjacent values. "
@@ -349,7 +332,7 @@ void pybind_trianglemesh(py::module& m) {
                  "v_n)`",
                  "number_of_iterations"_a = 1, "strength"_a = 1,
                  "filter_scope"_a = ccMesh::FilterScope::All)
-            .def("filter_smooth_simple", &ccMesh::filterSmoothSimple,
+            .def("filter_smooth_simple", &ccMesh::FilterSmoothSimple,
                  "Function to smooth triangle mesh with simple neighbor "
                  "average. :math:`v_o = \\frac{v_i + \\sum_{n \\in N} "
                  "v_n)}{|N| + 1}`, with :math:`v_i` being the input value, "
@@ -357,7 +340,7 @@ void pybind_trianglemesh(py::module& m) {
                  "adjacent neighbours.",
                  "number_of_iterations"_a = 1,
                  "filter_scope"_a = ccMesh::FilterScope::All)
-            .def("filter_smooth_laplacian", &ccMesh::filterSmoothLaplacian,
+            .def("filter_smooth_laplacian", &ccMesh::FilterSmoothLaplacian,
                  "Function to smooth triangle mesh using Laplacian. :math:`v_o "
                  "= v_i \\cdot \\lambda (sum_{n \\in N} w_n v_n - v_i)`, with "
                  ":math:`v_i` being the input value, :math:`v_o` the output "
@@ -367,7 +350,7 @@ void pybind_trianglemesh(py::module& m) {
                  "lambda is the smoothing parameter.",
                  "number_of_iterations"_a = 1, "lambda"_a = 0.5,
                  "filter_scope"_a = ccMesh::FilterScope::All)
-            .def("filter_smooth_taubin", &ccMesh::filterSmoothTaubin,
+            .def("filter_smooth_taubin", &ccMesh::FilterSmoothTaubin,
                  "Function to smooth triangle mesh using method of Taubin, "
                  "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
                  "Applies in each iteration two times filter_smooth_laplacian, "
@@ -376,7 +359,7 @@ void pybind_trianglemesh(py::module& m) {
                  "shrinkage of the triangle mesh.",
                  "number_of_iterations"_a = 1, "lambda"_a = 0.5, "mu"_a = -0.53,
                  "filter_scope"_a = ccMesh::FilterScope::All)
-            .def("has_vertices", &ccMesh::hasVertices,
+            .def("has_vertices", &ccMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &ccMesh::hasTriangles,
                  "Returns ``True`` if the mesh contains triangles.")
@@ -387,6 +370,8 @@ void pybind_trianglemesh(py::module& m) {
             .def("set_triangle", &ccMesh::setTriangle,
                  "set triangle indices by index", "index"_a, "triangle"_a)
             .def("get_triangle", &ccMesh::getTriangle,
+                 "get triangle indices by index", "index"_a)
+            .def("triangle", &ccMesh::getTriangle,
                  "get triangle indices by index", "index"_a)
             .def("add_triangles", &ccMesh::addTriangles,
                  "``int`` array of shape ``(num_triangles, 3)``, use "
@@ -405,9 +390,16 @@ void pybind_trianglemesh(py::module& m) {
                  "``numpy.asarray()`` to access data: List of "
                  "triangles denoted by the index of points forming "
                  "the triangle.")
+            .def("triangles", &ccMesh::getTriangles,
+                 "``int`` array of shape ``(num_triangles, 3)``, use "
+                 "``numpy.asarray()`` to access data: List of "
+                 "triangles denoted by the index of points forming "
+                 "the triangle.")
             .def("set_triangle_normal", &ccMesh::setTriangleNorm,
                  "set triangle normal by index", "index"_a, "triangle_normal"_a)
             .def("get_triangle_normal", &ccMesh::getTriangleNorm,
+                 "get triangle indices by index", "index"_a)
+            .def("triangle_normal", &ccMesh::getTriangleNorm,
                  "get triangle indices by index", "index"_a)
             .def("set_triangle_normals", &ccMesh::setTriangleNorms,
                  "``int`` array of shape ``(num_triangles, 3)``, use "
@@ -420,10 +412,17 @@ void pybind_trianglemesh(py::module& m) {
                  "``numpy.asarray()`` to access data: List of "
                  "triangles denoted by the index of points forming "
                  "the triangle.")
+            .def("triangle_normals", &ccMesh::getTriangleNorms,
+                 "``int`` array of shape ``(num_triangles, 3)``, use "
+                 "``numpy.asarray()`` to access data: List of "
+                 "triangles denoted by the index of points forming "
+                 "the triangle.")
             .def("set_vertice", &ccMesh::setVertice,
                  "set vertex coordinate by given index.", "index"_a,
                  "vertice"_a)
             .def("get_vertice", &ccMesh::getVertice,
+                 "get vertex coordinate by given index.", "index"_a)
+            .def("vertice", &ccMesh::getVertice,
                  "get vertex coordinate by given index.", "index"_a)
             .def("set_vertices", &ccMesh::addEigenVertices,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
@@ -434,9 +433,15 @@ void pybind_trianglemesh(py::module& m) {
                  "``float64`` array of shape ``(num_vertices, 3)``, "
                  "use ``numpy.asarray()`` to access data: Vertex "
                  "coordinates.")
+            .def("vertices", &ccMesh::getEigenVertices,
+                 "``float64`` array of shape ``(num_vertices, 3)``, "
+                 "use ``numpy.asarray()`` to access data: Vertex "
+                 "coordinates.")
             .def("set_vertex_normal", &ccMesh::setVertexNormal,
                  "set vertex normal by given index.", "index"_a, "normal"_a)
             .def("get_vertex_normal", &ccMesh::getVertexNormal,
+                 "get vertex normal by given index.", "index"_a)
+            .def("vertex_normal", &ccMesh::getVertexNormal,
                  "get vertex normal by given index.", "index"_a)
             .def("set_vertex_normals", &ccMesh::addVertexNormals,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
@@ -447,9 +452,15 @@ void pybind_trianglemesh(py::module& m) {
                  "``float64`` array of shape ``(num_vertices, 3)``, "
                  "use ``numpy.asarray()`` to access data: Vertex "
                  "normals.")
+            .def("vertex_normals", &ccMesh::getVertexNormals,
+                 "``float64`` array of shape ``(num_vertices, 3)``, "
+                 "use ``numpy.asarray()`` to access data: Vertex "
+                 "normals.")
             .def("set_vertex_color", &ccMesh::setVertexColor,
                  "set vertex color by given index.", "index"_a, "color"_a)
             .def("get_vertex_color", &ccMesh::getVertexColor,
+                 "get vertex color by given index.", "index"_a)
+            .def("vertex_color", &ccMesh::getVertexColor,
                  "get vertex color by given index.", "index"_a)
             .def("set_vertex_colors", &ccMesh::addVertexColors,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
@@ -457,19 +468,24 @@ void pybind_trianglemesh(py::module& m) {
                  "data: RGB colors of vertices.",
                  "colors"_a)
             .def(
-               "set_vertex_colors",
-               [](ccMesh& mesh, const Eigen::Vector3d& color) {
-                    ccPointCloud* vertices =
-                                   ccHObjectCaster::ToPointCloud(&mesh);
-                    if (!vertices) {
-                         throw std::runtime_error("empty vertex found in mesh.");
-                    }
-                    std::vector<Eigen::Vector3d> color_vec;
-                    color_vec.resize(vertices->size(), color);
-                    mesh.setVertexColors(color_vec);
-               },
-               "Sets the associated vertices cloud (warning)", "cloud"_a)
+                    "set_vertex_colors",
+                    [](ccMesh& mesh, const Eigen::Vector3d& color) {
+                        ccPointCloud* vertices =
+                                ccHObjectCaster::ToPointCloud(&mesh);
+                        if (!vertices) {
+                            throw std::runtime_error(
+                                    "empty vertex found in mesh.");
+                        }
+                        std::vector<Eigen::Vector3d> color_vec;
+                        color_vec.resize(vertices->size(), color);
+                        mesh.setVertexColors(color_vec);
+                    },
+                    "Sets the associated vertices cloud (warning)", "cloud"_a)
             .def("get_vertex_colors", &ccMesh::getVertexColors,
+                 "``float64`` array of shape ``(num_vertices, 3)``, "
+                 "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
+                 "data: RGB colors of vertices.")
+            .def("vertex_colors", &ccMesh::getVertexColors,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
                  "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                  "data: RGB colors of vertices.")
@@ -481,44 +497,44 @@ void pybind_trianglemesh(py::module& m) {
                  "Returns ``True`` if the mesh contains material ids.")
             .def("has_textures", &ccMesh::hasEigenTextures,
                  "Returns ``True`` if the mesh contains a texture image.")
-            .def("normalize_normals", &ccMesh::normalizeNormals,
+            .def("normalize_normals", &ccMesh::NormalizeNormals,
                  "Normalize both triangle normals and vertex normals to length "
                  "1.")
-            .def("paint_uniform_color", &ccMesh::paintUniformColor,
+            .def("paint_uniform_color", &ccMesh::PaintUniformColor,
                  "Assigns each vertex in the TriangleMesh the same color.")
             .def("euler_poincare_characteristic",
-                 &ccMesh::eulerPoincareCharacteristic,
+                 &ccMesh::EulerPoincareCharacteristic,
                  "Function that computes the Euler-Poincaré characteristic, "
                  "i.e., V + F - E, where V is the number of vertices, F is the "
                  "number of triangles, and E is the number of edges.")
-            .def("get_non_manifold_edges", &ccMesh::getNonManifoldEdges,
+            .def("get_non_manifold_edges", &ccMesh::GetNonManifoldEdges,
                  "Get list of non-manifold edges.",
                  "allow_boundary_edges"_a = true)
-            .def("is_edge_manifold", &ccMesh::isEdgeManifold,
+            .def("is_edge_manifold", &ccMesh::IsEdgeManifold,
                  "Tests if the triangle mesh is edge manifold.",
                  "allow_boundary_edges"_a = true)
-            .def("get_non_manifold_vertices", &ccMesh::getNonManifoldVertices,
+            .def("get_non_manifold_vertices", &ccMesh::GetNonManifoldVertices,
                  "Returns a list of indices to non-manifold vertices.")
-            .def("is_vertex_manifold", &ccMesh::isVertexManifold,
+            .def("is_vertex_manifold", &ccMesh::IsVertexManifold,
                  "Tests if all vertices of the triangle mesh are manifold.")
-            .def("is_self_intersecting", &ccMesh::isSelfIntersecting,
+            .def("is_self_intersecting", &ccMesh::IsSelfIntersecting,
                  "Tests if the triangle mesh is self-intersecting.")
             .def("get_self_intersecting_triangles",
-                 &ccMesh::getSelfIntersectingTriangles,
+                 &ccMesh::GetSelfIntersectingTriangles,
                  "Returns a list of indices to triangles that intersect the "
                  "mesh.")
-            .def("is_intersecting", &ccMesh::isIntersecting,
+            .def("is_intersecting", &ccMesh::IsIntersecting,
                  "Tests if the triangle mesh is intersecting the other "
                  "triangle mesh.")
-            .def("is_orientable", &ccMesh::isOrientable,
+            .def("is_orientable", &ccMesh::IsOrientable,
                  "Tests if the triangle mesh is orientable.")
-            .def("is_watertight", &ccMesh::isWatertight,
+            .def("is_watertight", &ccMesh::IsWatertight,
                  "Tests if the triangle mesh is watertight.")
-            .def("orient_triangles", &ccMesh::orientTriangles,
+            .def("orient_triangles", &ccMesh::OrientTriangles,
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
                  "direction.")
-            .def("select_by_index", &ccMesh::selectByIndex,
+            .def("select_by_index", &ccMesh::SelectByIndex,
                  "Function to select mesh from input triangle mesh into output "
                  "triangle mesh. ``input``: The input triangle mesh. "
                  "``indices``: "
@@ -526,33 +542,33 @@ void pybind_trianglemesh(py::module& m) {
                  "indices"_a, "cleanup"_a = true)
             .def("crop",
                  (std::shared_ptr<ccMesh>(ccMesh::*)(const ccBBox&) const) &
-                         ccMesh::crop,
+                         ccMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("crop",
                  (std::shared_ptr<ccMesh>(ccMesh::*)(const ecvOrientedBBox&)
                           const) &
-                         ccMesh::crop,
+                         ccMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("get_surface_area",
-                 py::overload_cast<>(&ccMesh::getSurfaceArea, py::const_),
+                 py::overload_cast<>(&ccMesh::GetSurfaceArea, py::const_),
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
             .def("get_surface_area",
                  py::overload_cast<std::vector<double>&>(
-                         &ccMesh::getSurfaceArea, py::const_),
+                         &ccMesh::GetSurfaceArea, py::const_),
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.",
                  "triangle_areas"_a)
-            .def("get_volume", (double (ccMesh::*)() const) & ccMesh::getVolume,
+            .def("get_volume", (double(ccMesh::*)() const) & ccMesh::GetVolume,
                  "Function that computes the volume of the mesh, under the "
                  "condition that it is watertight and orientable.")
-            .def("sample_points_uniformly", &ccMesh::samplePointsUniformly,
+            .def("sample_points_uniformly", &ccMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
                  "number_of_points"_a = 100, "use_triangle_normal"_a = false,
                  "seed"_a = -1)
-            .def("sample_points_poisson_disk", &ccMesh::samplePointsPoissonDisk,
+            .def("sample_points_poisson_disk", &ccMesh::SamplePointsPoissonDisk,
                  "Function to sample points from the mesh, where each point "
                  "has "
                  "approximately the same distance to the neighbouring points "
@@ -561,59 +577,59 @@ void pybind_trianglemesh(py::module& m) {
                  "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
                  "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
                  "use_triangle_normal"_a = false, "seed"_a = -1)
-            .def("subdivide_midpoint", &ccMesh::subdivideMidpoint,
+            .def("subdivide_midpoint", &ccMesh::SubdivideMidpoint,
                  "Function subdivide mesh using midpoint algorithm.",
                  "number_of_iterations"_a = 1)
-            .def("subdivide_loop", &ccMesh::subdivideLoop,
+            .def("subdivide_loop", &ccMesh::SubdivideLoop,
                  "Function subdivide mesh using Loop's algorithm. Loop, "
                  "\"Smooth "
                  "subdivision surfaces based on triangles\", 1987.",
                  "number_of_iterations"_a = 1)
             .def("simplify_vertex_clustering",
-                 &ccMesh::simplifyVertexClustering,
+                 &ccMesh::SimplifyVertexClustering,
                  "Function to simplify mesh using vertex clustering.",
                  "voxel_size"_a,
                  "contraction"_a = ccMesh::SimplificationContraction::Average)
             .def("simplify_quadric_decimation",
-                 &ccMesh::simplifyQuadricDecimation,
+                 &ccMesh::SimplifyQuadricDecimation,
                  "Function to simplify mesh using Quadric Error Metric "
                  "Decimation by "
                  "Garland and Heckbert",
                  "target_number_of_triangles"_a,
                  "maximum_error"_a = std::numeric_limits<double>::infinity(),
                  "boundary_weight"_a = 1.0)
-            .def("compute_convex_hull", &ccMesh::computeConvexHull,
+            .def("compute_convex_hull", &ccMesh::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
             .def("cluster_connected_triangles",
-                 &ccMesh::clusterConnectedTriangles,
+                 &ccMesh::ClusterConnectedTriangles,
                  "Function that clusters connected triangles, i.e., triangles "
                  "that are connected via edges are assigned the same cluster "
                  "index.  This function retuns an array that contains the "
                  "cluster index per triangle, a second array contains the "
                  "number of triangles per cluster, and a third vector contains "
                  "the surface area per cluster.")
-            .def("remove_triangles_by_index", &ccMesh::removeTrianglesByIndex,
+            .def("remove_triangles_by_index", &ccMesh::RemoveTrianglesByIndex,
                  "This function removes the triangles with index in "
                  "triangle_indices.  Call remove_unreferenced_vertices to "
                  "clean up vertices afterwards.",
                  "triangle_indices"_a)
-            .def("remove_triangles_by_mask", &ccMesh::removeTrianglesByMask,
+            .def("remove_triangles_by_mask", &ccMesh::RemoveTrianglesByMask,
                  "This function removes the triangles where triangle_mask is "
                  "set to true.  Call remove_unreferenced_vertices to clean up "
                  "vertices afterwards.",
                  "triangle_mask"_a)
-            .def("remove_vertices_by_index", &ccMesh::removeVerticesByIndex,
+            .def("remove_vertices_by_index", &ccMesh::RemoveVerticesByIndex,
                  "This function removes the vertices with index in "
                  "vertex_indices. Note that also all triangles associated with "
                  "the vertices are removed.",
                  "vertex_indices"_a)
-            .def("remove_vertices_by_mask", &ccMesh::removeVerticesByMask,
+            .def("remove_vertices_by_mask", &ccMesh::RemoveVerticesByMask,
                  "This function removes the vertices that are masked in "
                  "vertex_mask. Note that also all triangles associated with "
                  "the vertices are removed.",
                  "vertex_mask"_a)
             .def("deform_as_rigid_as_possible",
-                 &ccMesh::deformAsRigidAsPossible,
+                 &ccMesh::DeformAsRigidAsPossible,
                  "This function deforms the mesh using the method by Sorkine "
                  "and Alexa, "
                  "'As-Rigid-As-Possible Surface Modeling', 2007",
@@ -639,7 +655,8 @@ void pybind_trianglemesh(py::module& m) {
                         "vidx2"_a)
             .def_static(
                     "triangulate",
-                    [](ccGenericPointCloud& cloud, cloudViewer::TRIANGULATION_TYPES type,
+                    [](ccGenericPointCloud& cloud,
+                       cloudViewer::TRIANGULATION_TYPES type,
                        bool update_normals, PointCoordinateType max_edge_length,
                        unsigned char dim) {
                         return std::shared_ptr<ccMesh>(ccMesh::Triangulate(
@@ -761,19 +778,18 @@ void pybind_trianglemesh(py::module& m) {
                         "cylinder_height"_a = 5.0, "cone_height"_a = 4.0,
                         "resolution"_a = 20, "cylinder_split"_a = 4,
                         "cone_split"_a = 1)
-            .def_static("create_coordinate_frame",
-                        &ccMesh::CreateCoordinateFrame,
-                        "Factory function to create a coordinate frame mesh. "
-                        "The coordinate "
-                        "frame will be centered at ``origin``. The x, y, z "
-                        "axis will be "
-                        "rendered as red, green, and blue arrows respectively.",
-                        "size"_a = 1.0,
-                        "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
-            .def_static("create_moebius", &ccMesh::CreateMoebius,
-                        "Factory function to create a Moebius strip.",
+            .def_static(
+                    "create_coordinate_frame", &ccMesh::CreateCoordinateFrame,
+                    "Factory function to create a coordinate frame mesh. "
+                    "The coordinate "
+                    "frame will be centered at ``origin``. The x, y, z "
+                    "axis will be "
+                    "rendered as red, green, and blue arrows respectively.",
+                    "size"_a = 1.0, "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
+            .def_static("create_mobius", &ccMesh::CreateMobius,
+                        "Factory function to create a Mobius strip.",
                         "length_split"_a = 70, "width_split"_a = 15,
-                        "twists"_a = 1, "raidus"_a = 1, "flatness"_a = 1,
+                        "twists"_a = 1, "radius"_a = 1, "flatness"_a = 1,
                         "width"_a = 1, "scale"_a = 1)
             .def_readwrite(
                     "adjacency_list", &ccMesh::adjacency_list_,
@@ -847,24 +863,34 @@ void pybind_trianglemesh(py::module& m) {
     docstring::ClassMethodDocInject(m, "ccMesh", "has_adjacency_list");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertices");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertice");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertice");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertice");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertices");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertices");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertex_normal");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertex_normals");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertex_normal");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertex_normal");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertex_normals");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertex_normals");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertex_colors");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_vertex_color");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertex_color");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertex_color");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertex_colors");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_vertex_colors");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_triangle");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_triangles");
+    docstring::ClassMethodDocInject(m, "ccMesh", "triangle");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_triangle");
+    docstring::ClassMethodDocInject(m, "ccMesh", "triangles");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_triangles");
     docstring::ClassMethodDocInject(m, "ccMesh", "add_triangles");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_triangle_normal");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_triangle_normals");
+    docstring::ClassMethodDocInject(m, "ccMesh", "triangle_normal");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_triangle_normal");
+    docstring::ClassMethodDocInject(m, "ccMesh", "triangle_normals");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_triangle_normals");
     docstring::ClassMethodDocInject(m, "ccMesh", "has_triangles");
     docstring::ClassMethodDocInject(m, "ccMesh", "has_triangle_uvs");
@@ -946,8 +972,7 @@ void pybind_trianglemesh(py::module& m) {
               "If true calls number of mesh cleanup functions to remove "
               "unreferenced vertices and degenerate triangles"}});
     docstring::ClassMethodDocInject(
-            m, "ccMesh", "crop",
-            {{"bounding_box", "ccBBox to crop points"}});
+            m, "ccMesh", "crop", {{"bounding_box", "ccBBox to crop points"}});
     docstring::ClassMethodDocInject(m, "ccMesh", "get_volume");
     docstring::ClassMethodDocInject(
             m, "ccMesh", "sample_points_uniformly",
@@ -1200,16 +1225,15 @@ void pybind_trianglemesh(py::module& m) {
             {{"size", "The size of the coordinate frame."},
              {"origin", "The origin of the cooridnate frame."}});
     docstring::ClassMethodDocInject(
-            m, "ccMesh", "create_moebius",
-            {{"length_split",
-              "The number of segments along the Moebius strip."},
+            m, "ccMesh", "create_mobius",
+            {{"length_split", "The number of segments along the Mobius strip."},
              {"width_split",
-              "The number of segments along the width of the Moebius strip."},
-             {"twists", "Number of twists of the Moebius strip."},
-             {"radius", "The radius of the Moebius strip."},
-             {"flatness", "Controls the flatness/height of the Moebius strip."},
-             {"width", "Width of the Moebius strip."},
-             {"scale", "Scale the complete Moebius strip."}});
+              "The number of segments along the width of the Mobius strip."},
+             {"twists", "Number of twists of the Mobius strip."},
+             {"radius", "The radius of the Mobius strip."},
+             {"flatness", "Controls the flatness/height of the Mobius strip."},
+             {"width", "Width of the Mobius strip."},
+             {"scale", "Scale the complete Mobius strip."}});
 }
 
 void pybind_trianglemesh_methods(py::module& m) {}

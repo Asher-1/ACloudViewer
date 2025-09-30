@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,18 +26,26 @@
 
 #include "core/Dtype.h"
 
-#include <pybind11/pybind11.h>
-
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
-#include "pybind/cloudViewer_pybind.h"
 
 namespace cloudViewer {
 namespace core {
 
 void pybind_core_dtype(py::module &m) {
     // cloudViewer.core.Dtype class
-    py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype", "CloudViewer data types.");
+    py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype",
+                                                    "CloudViewer data types.");
+    py::native_enum<Dtype::DtypeCode>(dtype, "DtypeCode", "enum.Enum")
+            .value("Undefined", Dtype::DtypeCode::Undefined)
+            .value("Bool", Dtype::DtypeCode::Bool)
+            .value("Int", Dtype::DtypeCode::Int)
+            .value("UInt", Dtype::DtypeCode::UInt)
+            .value("Float", Dtype::DtypeCode::Float)
+            .value("Object", Dtype::DtypeCode::Object)
+            .finalize();
+
     dtype.def(py::init<Dtype::DtypeCode, int64_t, const std::string &>());
     dtype.def_readonly_static("Undefined", &core::Undefined);
     dtype.def_readonly_static("Float32", &core::Float32);
@@ -65,7 +73,7 @@ void pybind_core_dtype(py::module &m) {
     dtype.def("__str__", &Dtype::ToString);
 
     // Dtype shortcuts.
-    // E.g. cloudViewer.core.Float32
+    // E.g. cloudViewer.core.float32
     m.attr("undefined") = &core::Undefined;
     m.attr("float32") = core::Float32;
     m.attr("float64") = core::Float64;
@@ -80,7 +88,6 @@ void pybind_core_dtype(py::module &m) {
     m.attr("bool") = core::Bool;
     m.attr("bool8") = core::Bool;
 }
-
 
 }  // namespace core
 }  // namespace cloudViewer

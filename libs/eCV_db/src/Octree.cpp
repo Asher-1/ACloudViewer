@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "Octree.h"
@@ -498,7 +479,7 @@ bool Octree::operator==(const Octree& that) const {
 
 ccBBox Octree::getOwnBB(bool withGLFeatures)
 {
-	return getAxisAlignedBoundingBox();
+	return GetAxisAlignedBoundingBox();
 }
 
 Octree& Octree::Clear() {
@@ -509,54 +490,54 @@ Octree& Octree::Clear() {
     return *this;
 }
 
-Eigen::Vector3d Octree::getMinBound() const {
-    if (isEmpty()) {
+Eigen::Vector3d Octree::GetMinBound() const {
+    if (IsEmpty()) {
         return Eigen::Vector3d::Zero();
     } else {
         return origin_;
     }
 }
 
-Eigen::Vector3d Octree::getMaxBound() const {
-    if (isEmpty()) {
+Eigen::Vector3d Octree::GetMaxBound() const {
+    if (IsEmpty()) {
         return Eigen::Vector3d::Zero();
     } else {
         return origin_ + Eigen::Vector3d(size_, size_, size_);
     }
 }
 
-Eigen::Vector3d Octree::getGeometryCenter() const {
+Eigen::Vector3d Octree::GetCenter() const {
     return origin_ + Eigen::Vector3d(size_, size_, size_) / 2;
 }
 
-ccBBox Octree::getAxisAlignedBoundingBox() const {
+ccBBox Octree::GetAxisAlignedBoundingBox() const {
     ccBBox box;
-    box.minCorner() = getMinBound();
-    box.maxCorner() = getMaxBound();
-	box.setValidity(!box.isEmpty());
+    box.minCorner() = GetMinBound();
+    box.maxCorner() = GetMaxBound();
+	box.setValidity(!box.IsEmpty());
     return box;
 }
 
-ecvOrientedBBox Octree::getOrientedBoundingBox() const {
-    return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(getAxisAlignedBoundingBox());
+ecvOrientedBBox Octree::GetOrientedBoundingBox() const {
+    return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(GetAxisAlignedBoundingBox());
 }
 
-Octree& Octree::transform(const Eigen::Matrix4d& transformation) {
+Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-Octree& Octree::translate(const Eigen::Vector3d& translation, bool relative) {
+Octree& Octree::Translate(const Eigen::Vector3d& translation, bool relative) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-Octree& Octree::scale(const double s, const Eigen::Vector3d& center) {
+Octree& Octree::Scale(const double s, const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-Octree& Octree::rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
+Octree& Octree::Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
@@ -569,8 +550,8 @@ void Octree::ConvertFromPointCloud(const ccPointCloud& point_cloud,
 
     // Set bounds
     Clear();
-    Eigen::Array3d min_bound = point_cloud.getMinBound();
-    Eigen::Array3d max_bound = point_cloud.getMaxBound();
+    Eigen::Array3d min_bound = point_cloud.GetMinBound();
+    Eigen::Array3d max_bound = point_cloud.GetMaxBound();
     Eigen::Array3d center = (min_bound + max_bound) / 2;
     Eigen::Array3d half_sizes = center - min_bound;
     double max_half_size = half_sizes.maxCoeff();
@@ -808,7 +789,7 @@ bool Octree::ConvertFromJsonValue(const Json::Value& value) {
 
 void Octree::CreateFromVoxelGrid(const geometry::VoxelGrid& voxel_grid) {
     origin_ = voxel_grid.origin_;
-    size_ = (voxel_grid.getMaxBound() - origin_).maxCoeff();
+    size_ = (voxel_grid.GetMaxBound() - origin_).maxCoeff();
     double half_voxel_size = voxel_grid.voxel_size_ / 2.;
     for (const auto& voxel_iter : voxel_grid.voxels_) {
         const geometry::Voxel& voxel = voxel_iter.second;

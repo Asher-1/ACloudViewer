@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "VisualizerForAlignment.h"
@@ -156,7 +137,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         transformation_ =
                                 result.transformation_ * transformation_;
                         PrintTransformation();
-                        source_copy_ptr_->transform(result.transformation_);
+                        source_copy_ptr_->Transform(result.transformation_);
                         UpdateGeometry();
                     }
                 } else {
@@ -193,7 +174,7 @@ void VisualizerForAlignment::KeyPressCallback(
                     utility::LogInfo("Voxel downsample with voxel size {:.4f}.",
                                      voxel_size_);
                     *source_copy_ptr_ =
-                            *source_copy_ptr_->voxelDownSample(voxel_size_);
+                            *source_copy_ptr_->VoxelDownSample(voxel_size_);
                     UpdateGeometry();
                 } else {
                     utility::LogWarning(
@@ -276,7 +257,7 @@ bool VisualizerForAlignment::LoadSessionFromFile(const std::string &filename) {
     with_scaling_ = alignment_session_.with_scaling_;
     transformation_ = alignment_session_.transformation_;
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
-    source_copy_ptr_->transform(transformation_);
+    source_copy_ptr_->Transform(transformation_);
     source_visualizer_.UpdateRender();
     target_visualizer_.UpdateRender();
     ResetViewPoint(true);
@@ -308,7 +289,7 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
                                       *alignment_session_.target_ptr_, corres);
     PrintTransformation();
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
-    source_copy_ptr_->transform(transformation_);
+    source_copy_ptr_->Transform(transformation_);
     utility::LogInfo("Error is {:.4f} before alignment.",
                      p2p.ComputeRMSE(*source_copy_ptr_,
                                      *alignment_session_.target_ptr_, corres));
@@ -350,7 +331,7 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
 
     io::WritePointCloud(source_filename, *source_copy_ptr_);
     auto source_dis =
-            source_copy_ptr_->computePointCloudDistance(*target_copy_ptr_);
+            source_copy_ptr_->ComputePointCloudDistance(*target_copy_ptr_);
     f = utility::filesystem::FOpen(source_binname, "wb");
     if (!f) {
         utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",
@@ -361,7 +342,7 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
     fclose(f);
     io::WritePointCloud(target_filename, *target_copy_ptr_);
     auto target_dis =
-            target_copy_ptr_->computePointCloudDistance(*source_copy_ptr_);
+            target_copy_ptr_->ComputePointCloudDistance(*source_copy_ptr_);
     f = utility::filesystem::FOpen(target_binname, "wb");
     if (!f) {
         utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",

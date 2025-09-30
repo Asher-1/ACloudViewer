@@ -1,32 +1,13 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/shader/PhongShader.h"
 
-#include <ecvHalfEdgeMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
@@ -155,8 +136,8 @@ void PhongShader::SetLighting(const ViewControl &view,
     light_color_data_.setOnes();
     for (int i = 0; i < 4; i++) {
         light_position_world_data_.block<3, 1>(0, i) =
-                box.getGeometryCenter().cast<GLfloat>() +
-                (float)box.getMaxExtent() *
+                box.GetCenter().cast<GLfloat>() +
+                (float)box.GetMaxExtent() *
                         ((float)option.light_position_relative_[i](0) *
                                  view.GetRight() +
                          (float)option.light_position_relative_[i](1) *
@@ -307,9 +288,9 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
             PrintShaderWarning("Binding failed with empty triangle mesh.");
             return false;
         }
-        if (!mesh.hasTriNormals() || !mesh.hasNormals()) {
+        if (!mesh.HasTriangleNormals() || !mesh.hasNormals()) {
             PrintShaderWarning("Binding failed because mesh has no normals.");
-            PrintShaderWarning("Call computeVertexNormals() before binding.");
+            PrintShaderWarning("Call ComputeVertexNormals() before binding.");
             return false;
         }
         const ColorMap &global_color_map = *GetGlobalColorMap();
@@ -372,13 +353,13 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         draw_arrays_mode_ = GL_TRIANGLES;
         draw_arrays_size_ = GLsizei(points.size());
     } else if (geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        const geometry::ecvHalfEdgeMesh &mesh =
-                (const geometry::ecvHalfEdgeMesh &)geometry;
+        const geometry::HalfEdgeTriangleMesh &mesh =
+                (const geometry::HalfEdgeTriangleMesh &)geometry;
         if (!mesh.hasTriangles()) {
             PrintShaderWarning("Binding failed with empty triangle mesh.");
             return false;
         }
-        if (!mesh.hasTriangleNormals() || !mesh.hasVertexNormals()) {
+        if (!mesh.HasTriangleNormals() || !mesh.HasVertexNormals()) {
             PrintShaderWarning("Binding failed because mesh has no normals.");
             PrintShaderWarning("Call ComputeVertexNormals() before binding.");
             return false;
@@ -414,7 +395,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
                                         vertex(2)));
                         break;
                     case RenderOption::MeshColorOption::Color:
-                        if (mesh.hasVertexColors()) {
+                        if (mesh.HasVertexColors()) {
                             color = mesh.vertex_colors_[vi];
                         } else {
                             color = option.default_mesh_color_;

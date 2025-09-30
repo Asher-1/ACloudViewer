@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/rendering/ModelInteractorLogic.h"
@@ -48,7 +29,7 @@ void ModelInteractorLogic::SetBoundingBox(
     // Initialize parent's matrix_ (in case we do a mouse wheel, which
     // doesn't involve a mouse down) and the center of rotation.
     SetMouseDownInfo(Camera::Transform::Identity(),
-                     bounds.getGeometryCenter().cast<float>());
+                     bounds.GetCenter().cast<float>());
 }
 
 void ModelInteractorLogic::SetModel(
@@ -137,8 +118,8 @@ void ModelInteractorLogic::Pan(int dx, int dy) {
 void ModelInteractorLogic::UpdateBoundingBox(const Camera::Transform& t) {
     using Transform4 = Eigen::Transform<double, 3, Eigen::Affine>;
     Transform4 change = t.cast<double>();
-    Eigen::Vector3d new_min = change * model_bounds_.getMinBound();
-    Eigen::Vector3d new_max = change * model_bounds_.getMaxBound();
+    Eigen::Vector3d new_min = change * model_bounds_.GetMinBound();
+    Eigen::Vector3d new_max = change * model_bounds_.GetMaxBound();
     // Call super's not our SetBoundingBox(): we also update the
     // center of rotation, because normally this call is not done during
     // mouse movement, but rather, once to initalize the interactor.

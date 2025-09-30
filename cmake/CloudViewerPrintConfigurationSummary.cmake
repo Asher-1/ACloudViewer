@@ -54,12 +54,14 @@ function(cloudViewer_print_configuration_summary)
             Opencv
             Eigen3
             BLAS
+            curl
+            openssl
             filament
             fmt
             GLEW
             GLFW
             imgui
-            ippicv
+            ipp
             JPEG
             jsoncpp
             liblzf

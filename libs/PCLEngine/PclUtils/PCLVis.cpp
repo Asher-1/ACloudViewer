@@ -1909,7 +1909,7 @@ bool PCLVis::addOrientedCube(const ecvOrientedBBox& obb,
     vtkSmartPointer<vtkLODActor> actor;
     PclTools::CreateActorFromVTKDataSet(data, actor);
     actor->GetProperty()->SetRepresentationToSurface();
-    Eigen::Vector3d color = obb.getColor();
+    Eigen::Vector3d color = obb.GetColor();
     actor->GetProperty()->SetColor(color(0), color(1), color(2));
     addActorToRenderer(actor, viewport);
 

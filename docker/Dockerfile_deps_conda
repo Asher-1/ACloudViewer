@@ -9,8 +9,6 @@ ARG QT_BASE_DIR
 # For bash-specific commands
 SHELL ["/bin/bash", "-c"]
 
-# FROM nvidia/opengl:1.2-glvnd-devel-ubuntu${UBUNTU_VERSION}
-# FROM gezp/ubuntu-nomachine:${UBUNTU_VERSION}-cu${CUDA_VERSION}
 LABEL maintainer="ACloudViewer Team ludahai19@163.com"
 
 # Env vars for the nvidia-container-runtime.
@@ -23,7 +21,7 @@ ENV REFRESHED_AT=2023-06-04\
     CLOUDVIEWER_DEV=/opt/ACloudViewer \
     DEBIAN_FRONTEND=noninteractive
 
-# cloudViewer Jupyter dependencies
+# Set apt source to speedup
 RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
 && apt-get clean && apt-get update --fix-missing -y
 
@@ -44,6 +42,23 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         apt-file \
         net-tools \
         mesa-utils \
+        # reference cloudViewer
+        libzstd-dev \
+        zlib1g \
+        zlib1g-dev \
+        libssl-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libncursesw5-dev \
+        libcurl4-openssl-dev \
+        xz-utils \
+        tk-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libffi-dev \ 
+        liblzma-dev \
+        ca-certificates \
         # for opencv
         libjpeg-dev \
         libpng-dev \
@@ -110,13 +125,27 @@ RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/opt/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
 # Install Miniconda3
+# ENV PATH="/root/miniconda3/bin:${PATH}"
+# ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
+# ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/cloudViewer/bin:${PATH}"
+# RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+#  && bash Miniconda3-latest-Linux-x86_64.sh -b \
+#  && rm Miniconda3-latest-Linux-x86_64.sh \
+#  && conda --version
 WORKDIR /opt
 ENV PATH="/root/miniconda3/bin:$PATH"
+# Configure pip timeout and retry settings
+ENV PIP_DEFAULT_TIMEOUT=1000
+ENV PIP_RETRIES=5
+ENV PIP_TIMEOUT=1000
 COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
 RUN bash Miniconda3-latest-Linux-x86_64.sh -b \
  && rm Miniconda3-latest-Linux-x86_64.sh \
  && conda --version \
  && which python \
- && python --version
+ && python --version \
+ && pip config set global.timeout 1000 \
+ && pip config set global.retries 5 \
+ && pip config set install.trusted-host "pypi.org files.pythonhosted.org pypi.python.org download.pytorch.org"
 
 WORKDIR /root

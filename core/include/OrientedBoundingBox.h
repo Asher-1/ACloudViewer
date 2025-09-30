@@ -60,25 +60,25 @@ public:
 
     /// Get the extent/length of the bounding box
     /// in x, y, and z dimension in its frame of reference.
-    inline const Eigen::Vector3d& getExtent() const { return extent_; }
+    inline const Eigen::Vector3d& GetExtent() const { return extent_; }
 
     //! Returns center
     inline CCVector3 getCenter() const { return center_; }
 
     /// Returns the half extent of the bounding box in its frame of reference.
-    Eigen::Vector3d getHalfExtent() const { return getExtent() * 0.5; }
+    Eigen::Vector3d GetHalfExtent() const { return GetExtent() * 0.5; }
 
     /// Returns the max extent of the bounding box in its frame of reference.
-    inline double getMaxExtent() const { return extent_.maxCoeff(); }
+    inline double GetMaxExtent() const { return extent_.maxCoeff(); }
 
     /// Sets the bounding box color.
-    inline void setColor(const Eigen::Vector3d& color) { color_ = color; }
+    inline void SetColor(const Eigen::Vector3d& color) { color_ = color; }
     /// Gets the bounding box color.
-    inline const Eigen::Vector3d& getColor() const { return color_; }
+    inline const Eigen::Vector3d& GetColor() const { return color_; }
 
-    inline const Eigen::Matrix3d& getRotation() const { return R_; }
+    inline const Eigen::Matrix3d& GetRotation() const { return R_; }
 
-    inline const Eigen::Vector3d& getPosition() const { return center_; }
+    inline const Eigen::Vector3d& GetPosition() const { return center_; }
 
     /// Returns the volume of the bounding box.
     double volume() const;
@@ -103,13 +103,13 @@ public:
     ///   |/                |/
     /// 5 ------------------- 4
     /// \endverbatim
-    std::vector<Eigen::Vector3d> getBoxPoints() const;
+    std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.
-    std::vector<size_t> getPointIndicesWithinBoundingBox(
+    std::vector<size_t> GetPointIndicesWithinBoundingBox(
             const std::vector<Eigen::Vector3d>& points) const;
 
-    std::vector<size_t> getPointIndicesWithinBoundingBox(
+    std::vector<size_t> GetPointIndicesWithinBoundingBox(
             const std::vector<CCVector3>& points) const;
 
     /// Returns an oriented bounding box from the AxisAlignedBoundingBox.

@@ -1,52 +1,47 @@
-# cloudViewer: Asher-1.github.io
-# The MIT License (MIT)
-# See license file or visit Asher-1.github.io for details
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 # examples/Python/Benchmark/benchmark_pre.py
 
 import os
 import sys
-sys.path.append("../Advanced")
-sys.path.append("../Utility")
-import numpy as np
-from file import *
-from visualization import *
-from downloader import *
-from fast_global_registration import *
-from trajectory_io import *
-
 import pickle
+import cloudViewer as cv3d
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from cloudViewer_example import *
 
 do_visualization = True
 
+def preprocess_point_cloud(pcd, voxel_size):
+    print(":: Downsample with a voxel size %.3f." % voxel_size)
+    pcd_down = pcd.voxel_down_sample(voxel_size)
 
-def get_ply_path(dataset_name, id):
-    return "%s/%s/cloud_bin_%d.ply" % (dataset_path, dataset_name, id)
+    radius_normal = voxel_size * 2
+    print(":: Estimate normal with search radius %.3f." % radius_normal)
+    pcd_down.estimate_normals(
+        cv3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30))
 
-
-def get_log_path(dataset_name):
-    return "%s/fgr_%s.log" % (dataset_path, dataset_name)
-
-
-dataset_path = 'testdata'
-dataset_names = ['livingroom1', 'livingroom2', 'office1', 'office2']
+    radius_feature = voxel_size * 5
+    print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
+    pcd_fpfh = cv3d.pipelines.registration.compute_fpfh_feature(
+        pcd_down,
+        cv3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100))
+    return pcd_down, pcd_fpfh
 
 if __name__ == "__main__":
     # data preparation
-    get_redwood_dataset()
+    dataset = cv3d.data.LivingRoomPointClouds()
+    n_ply_files = len(dataset.paths)
     voxel_size = 0.05
 
-    # do RANSAC based alignment
-    for dataset_name in dataset_names:
-        ply_file_names = get_file_list("%s/%s/" % (dataset_path, dataset_name),
-                                       ".ply")
-        n_ply_files = len(ply_file_names)
-
-        alignment = []
-        for s in range(n_ply_files):
-            source = cv3d.io.read_point_cloud(get_ply_path(dataset_name, s))
-            source_down, source_fpfh = preprocess_point_cloud(
-                source, voxel_size)
-            f = open('store.pckl', 'wb')
-            pickle.dump([source_down, source_fpfh], f)
-            f.close()
+    alignment = []
+    for s in range(n_ply_files):
+        source = cv3d.io.read_point_cloud(dataset.paths[s])
+        source_down, source_fpfh = preprocess_point_cloud(source, voxel_size)

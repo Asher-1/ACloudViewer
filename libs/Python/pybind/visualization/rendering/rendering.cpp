@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <camera/PinholeCameraIntrinsic.h>
@@ -30,11 +11,12 @@
 #include "pybind/docstring.h"
 #include "pybind/visualization/gui/gui.h"
 #include "pybind/visualization/visualization.h"
+#include "t/geometry/Geometry.h"
 #include "t/geometry/PointCloud.h"
 #include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/ColorGrading.h"
 #include "visualization/rendering/Gradient.h"
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Model.h"
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/Scene.h"
@@ -50,14 +32,13 @@ class PyOffscreenRenderer {
 public:
     PyOffscreenRenderer(int width,
                         int height,
-                        const std::string &resource_path,
-                        bool headless) {
-        gui::InitializeForPython(resource_path);
+                        const std::string &resource_path) {
+        gui::InitializeForPython(resource_path, true);
         width_ = width;
         height_ = height;
-        if (headless) {
-            EngineInstance::EnableHeadless();
-        }
+        // NOTE: OffscreenRenderer now always uses headless so that a window
+        // system is never required
+        EngineInstance::EnableHeadless();
         renderer_ = new FilamentRenderer(EngineInstance::GetInstance(), width,
                                          height,
                                          EngineInstance::GetResourceManager());
@@ -67,6 +48,8 @@ public:
     ~PyOffscreenRenderer() {
         delete scene_;
         delete renderer_;
+        // Destroy Filament Engine here so OffscreenRenderer can be reused
+        EngineInstance::DestroyInstance();
     }
 
     CloudViewerScene *GetScene() { return scene_; }
@@ -75,8 +58,10 @@ public:
         return gui::RenderToImageWithoutWindow(scene_, width_, height_);
     }
 
-    std::shared_ptr<geometry::Image> RenderToDepthImage() {
-        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
+    std::shared_ptr<geometry::Image> RenderToDepthImage(
+            bool z_in_view_space = false) {
+        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_,
+                                                    z_in_view_space);
     }
 
     void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
@@ -97,16 +82,22 @@ public:
     void SetupCamera(float verticalFoV,
                      const Eigen::Vector3f &center,
                      const Eigen::Vector3f &eye,
-                     const Eigen::Vector3f &up) {
+                     const Eigen::Vector3f &up,
+                     float nearClip = -1.0f,
+                     float farClip = -1.0f) {
         float aspect = 1.0f;
         if (height_ > 0) {
             aspect = float(width_) / float(height_);
         }
         auto *camera = scene_->GetCamera();
-        auto far_plane =
-                Camera::CalcFarPlane(*camera, scene_->GetBoundingBox());
-        camera->SetProjection(verticalFoV, aspect, Camera::CalcNearPlane(),
-                              far_plane, rendering::Camera::FovType::Vertical);
+        auto far_plane = farClip > 0.0
+                                 ? farClip
+                                 : Camera::CalcFarPlane(
+                                           *camera, scene_->GetBoundingBox());
+        camera->SetProjection(
+                verticalFoV, aspect,
+                nearClip > 0.0 ? nearClip : Camera::CalcNearPlane(), far_plane,
+                rendering::Camera::FovType::Vertical);
         camera->LookAt(center, eye, up);
     }
 
@@ -119,9 +110,11 @@ private:
     CloudViewerScene *scene_;
 };
 
-void pybind_rendering_classes(py::module &m) {
+void pybind_rendering_classes(py::module &m_rendering) {
+    py::class_<TextureHandle> texture_handle(m_rendering, "TextureHandle",
+                                             "Handle to a texture");
     py::class_<Renderer> renderer(
-            m, "Renderer",
+            m_rendering, "Renderer",
             "Renderer class that manages 3D resources. Get from gui.Window.");
     renderer.def("set_clear_color", &Renderer::SetClearColor,
                  "Sets the background color for the renderer, [r, g, b, a]. "
@@ -132,25 +125,24 @@ void pybind_rendering_classes(py::module &m) {
                          const std::shared_ptr<geometry::Image>, bool)) &
                          Renderer::AddTexture,
                  "image"_a, "is_sRGB"_a = false,
-                 "Adds a texture: add_texture(geometry.Image, bool). The first "
-                 "parameter is the image, the second parameter is optional and "
-                 "is True if the image is in the sRGB colorspace and False "
-                 "otherwise")
+                 "Adds a texture. The first parameter is the image, the second "
+                 "parameter is optional and is True if the image is in the "
+                 "sRGB colorspace and False otherwise")
             .def("update_texture",
-                 (bool (Renderer::*)(TextureHandle,
-                                     const std::shared_ptr<geometry::Image>,
-                                     bool)) &
+                 (bool(Renderer::*)(TextureHandle,
+                                    const std::shared_ptr<geometry::Image>,
+                                    bool)) &
                          Renderer::UpdateTexture,
                  "texture"_a, "image"_a, "is_sRGB"_a = false,
                  "Updates the contents of the texture to be the new image, or "
                  "returns False and does nothing if the image is a different "
                  "size. It is more efficient to call update_texture() rather "
                  "than removing and adding a new texture, especially when "
-                 "changes happen frequently, such as when implmenting video. "
+                 "changes happen frequently, such as when implementing video. "
                  "add_texture(geometry.Image, bool). The first parameter is "
                  "the image, the second parameter is optional and is True "
                  "if the image is in the sRGB colorspace and False otherwise")
-            .def("remove_texture", &Renderer::RemoveTexture,
+            .def("remove_texture", &Renderer::RemoveTexture, "texture"_a,
                  "Deletes the texture. This does not remove the texture from "
                  "any existing materials or GUI widgets, and must be done "
                  "prior to this call.");
@@ -159,103 +151,105 @@ void pybind_rendering_classes(py::module &m) {
     // that Python needs to own this class and Python needs to not own Renderer,
     // and pybind does not let us mix the two styles of ownership.
     py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>>
-            offscreen(m, "OffscreenRenderer",
+            offscreen(m_rendering, "OffscreenRenderer",
                       "Renderer instance that can be used for rendering to an "
                       "image");
     offscreen
-            .def(py::init([](int w, int h, const std::string &resource_path,
-                             bool headless) {
+            .def(py::init([](int w, int h, const std::string &resource_path) {
                      return std::make_shared<PyOffscreenRenderer>(
-                             w, h, resource_path, headless);
+                             w, h, resource_path);
                  }),
                  "width"_a, "height"_a, "resource_path"_a = "",
-                 "headless"_a = false,
-                 "Takes width, height and optionally a resource_path and "
-                 "headless flag. If "
-                 "unspecified, resource_path will use the resource path from "
-                 "the installed CloudViewer library. By default a running windowing "
-                 "session is required. To enable headless rendering set "
-                 "headless to True")
+                 "Takes width, height and optionally a resource_path. "
+                 " If unspecified, resource_path will use the resource path "
+                 "from "
+                 "the installed CloudViewer library.")
             .def_property_readonly(
                     "scene", &PyOffscreenRenderer::GetScene,
-                    "Returns the CloudViewerScene for this renderer. This scene is "
+                    "Returns the CloudViewerScene for this renderer. This "
+                    "scene is "
                     "destroyed when the renderer is destroyed and should not "
                     "be accessed after that point.")
             .def("setup_camera",
                  py::overload_cast<float, const Eigen::Vector3f &,
                                    const Eigen::Vector3f &,
-                                   const Eigen::Vector3f &>(
+                                   const Eigen::Vector3f &, float, float>(
                          &PyOffscreenRenderer::SetupCamera),
-                 "setup_camera(vertical_field_of_view, center, eye, up): "
-                 "sets camera view using bounding box of current geometry")
+                 "vertical_field_of_view"_a, "center"_a, "eye"_a, "up"_a,
+                 "near_clip"_a = -1.0f, "far_clip"_a = -1.0f,
+                 "Sets camera view using bounding box of current geometry if "
+                 "the near_clip and far_clip parameters are not set")
             .def("setup_camera",
                  py::overload_cast<const camera::PinholeCameraIntrinsic &,
                                    const Eigen::Matrix4d &>(
                          &PyOffscreenRenderer::SetupCamera),
-                 "setup_camera(intrinsics, extrinsic_matrix): "
-                 "sets the camera view using bounding box of current geometry")
+                 "intrinsics"_a, "extrinsic_matrix"_a,
+                 "Sets the camera view using bounding box of current geometry")
             .def("setup_camera",
                  py::overload_cast<const Eigen::Matrix3d &,
                                    const Eigen::Matrix4d &, int, int>(
                          &PyOffscreenRenderer::SetupCamera),
-                 "setup_camera(intrinsic_matrix, extrinsic_matrix, "
-                 "intrinsic_width_px, intrinsic_height_px): "
-                 "sets the camera view using bounding box of current geometry")
+                 "intrinsic_matrix"_a, "extrinsic_matrix"_a,
+                 "intrinsic_width_px"_a, "intrinsic_height_px"_a,
+                 "Sets the camera view using bounding box of current geometry")
             .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
                  "Renders scene to an image, blocking until the image is "
                  "returned")
             .def("render_to_depth_image",
                  &PyOffscreenRenderer::RenderToDepthImage,
+                 "z_in_view_space"_a = false,
                  "Renders scene depth buffer to a float image, blocking until "
                  "the image is returned. Pixels range from 0 (near plane) to "
-                 "1 (far plane)");
+                 "1 (far plane). If z_in_view_space is set to True then pixels "
+                 "are pre-transformed into view space (i.e., distance from "
+                 "camera).");
 
     // ---- Camera ----
-    py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
+    py::class_<Camera, std::shared_ptr<Camera>> cam(m_rendering, "Camera",
                                                     "Camera object");
-    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic(),
-                                        "Enum class for Camera field of view "
-                                        "types.");
-    fov_type.value("Vertical", Camera::FovType::Vertical)
+    py::native_enum<Camera::FovType>(
+            cam, "FovType", "enum.Enum",
+            "Enum class for Camera field of view types.")
+            .value("Vertical", Camera::FovType::Vertical)
             .value("Horizontal", Camera::FovType::Horizontal)
-            .export_values();
+            .export_values()
+            .finalize();
 
-    py::enum_<Camera::Projection> proj_type(cam, "Projection", py::arithmetic(),
-                                            "Enum class for Camera projection "
-                                            "types.");
-    proj_type.value("Perspective", Camera::Projection::Perspective)
+    py::native_enum<Camera::Projection>(
+            cam, "Projection", "enum.Enum",
+            "Enum class for Camera projection types.")
+            .value("Perspective", Camera::Projection::Perspective)
             .value("Ortho", Camera::Projection::Ortho)
-            .export_values();
+            .export_values()
+            .finalize();
 
     cam.def("set_projection",
-            (void (Camera::*)(double, double, double, double,
-                              Camera::FovType)) &
+            (void(Camera::*)(double, double, double, double, Camera::FovType)) &
                     Camera::SetProjection,
-            "Sets a perspective projection. set_projection(field_of_view, "
-            "aspect_ratio, far_plane, field_of_view_type)")
+            "field_of_view"_a, "aspect_ratio"_a, "near_plane"_a, "far_plane"_a,
+            "field_of_view_type"_a, "Sets a perspective projection.")
             .def("set_projection",
-                 (void (Camera::*)(Camera::Projection, double, double, double,
-                                   double, double, double)) &
+                 (void(Camera::*)(Camera::Projection, double, double, double,
+                                  double, double, double)) &
                          Camera::SetProjection,
-                 "Sets the camera projection via a viewing frustum. "
-                 "set_projection(projection_type, left, right, bottom, top, "
-                 "near, far)")
+                 "projection_type"_a, "left"_a, "right"_a, "bottom"_a, "top"_a,
+                 "near"_a, "far"_a,
+                 "Sets the camera projection via a viewing frustum. ")
             .def("set_projection",
-                 (void (Camera::*)(const Eigen::Matrix3d &, double, double,
-                                   double, double)) &
+                 (void(Camera::*)(const Eigen::Matrix3d &, double, double,
+                                  double, double)) &
                          Camera::SetProjection,
-                 "Sets the camera projection via intrinsics matrix. "
-                 "set_projection(intrinsics, near_place, far_plane, "
-                 "image_width, image_height)")
-            .def("look_at", &Camera::LookAt,
-                 "Sets the position and orientation of the camera: "
-                 "look_at(center, eye, up)")
-            .def("unproject", &Camera::Unproject,
-                 "unproject(x, y, z, view_width, view_height): takes the "
-                 "(x, y, z) location in the view, where x, y are the number of "
-                 "pixels from the upper left of the view, and z is the depth "
-                 "value. Returns the world coordinate (x', y', z').")
-            .def("copy_from", &Camera::CopyFrom,
+                 "intrinsics"_a, "near_plane"_a, "far_plane"_a, "image_width"_a,
+                 "image_height"_a,
+                 "Sets the camera projection via intrinsics matrix.")
+            .def("look_at", &Camera::LookAt, "center"_a, "eye"_a, "up"_a,
+                 "Sets the position and orientation of the camera: ")
+            .def("unproject", &Camera::Unproject, "x"_a, "y"_a, "z"_a,
+                 "view_width"_a, "view_height"_a,
+                 "Takes the (x, y, z) location in the view, where x, y are the "
+                 "number of pixels from the upper left of the view, and z is "
+                 "the depth value. Returns the world coordinate (x', y', z').")
+            .def("copy_from", &Camera::CopyFrom, "camera"_a,
                  "Copies the settings from the camera passed as the argument "
                  "into this camera")
             .def("get_near", &Camera::GetNear,
@@ -291,7 +285,7 @@ void pybind_rendering_classes(py::module &m) {
 
     // ---- Gradient ----
     py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
-            m, "Gradient",
+            m_rendering, "Gradient",
             "Manages a gradient for the unlitGradient shader."
             "In gradient mode, the array of points specifies points along "
             "the gradient, from 0 to 1 (inclusive). These do need to be "
@@ -313,10 +307,12 @@ void pybind_rendering_classes(py::module &m) {
             "the texture."
             "  The points *must* be sorted from the smallest value to the "
             "largest. The values must be in the range [0, 1].");
-    py::enum_<Gradient::Mode> gradient_mode(gradient, "Mode", py::arithmetic());
-    gradient_mode.value("GRADIENT", Gradient::Mode::kGradient)
+
+    py::native_enum<Gradient::Mode>(gradient, "Mode", "enum.Enum")
+            .value("GRADIENT", Gradient::Mode::kGradient)
             .value("LUT", Gradient::Mode::kLUT)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<Gradient::Point> gpt(gradient, "Point");
     gpt.def(py::init<float, const Eigen::Vector4f>())
             .def("__repr__",
@@ -336,52 +332,60 @@ void pybind_rendering_classes(py::module &m) {
             .def_property("points", &Gradient::GetPoints, &Gradient::SetPoints)
             .def_property("mode", &Gradient::GetMode, &Gradient::SetMode);
 
-    // ---- Material ----
-    py::class_<Material> mat(m, "Material",
-                             "Describes the real-world, physically based (PBR) "
-                             "material used to render a geometry");
+    // ---- MaterialRecord ----
+    py::class_<MaterialRecord> mat(
+            m_rendering, "MaterialRecord",
+            "Describes the real-world, physically based (PBR) "
+            "material used to render a geometry");
     mat.def(py::init<>())
-            .def_readwrite("has_alpha", &Material::has_alpha)
-            .def_readwrite("base_color", &Material::base_color)
-            .def_readwrite("base_metallic", &Material::base_metallic)
-            .def_readwrite("base_roughness", &Material::base_roughness)
-            .def_readwrite("base_reflectance", &Material::base_reflectance)
-            .def_readwrite("base_clearcoat", &Material::base_clearcoat)
+            .def_readwrite("has_alpha", &MaterialRecord::has_alpha)
+            .def_readwrite("base_color", &MaterialRecord::base_color)
+            .def_readwrite("base_metallic", &MaterialRecord::base_metallic)
+            .def_readwrite("base_roughness", &MaterialRecord::base_roughness)
+            .def_readwrite("base_reflectance",
+                           &MaterialRecord::base_reflectance)
+            .def_readwrite("base_clearcoat", &MaterialRecord::base_clearcoat)
             .def_readwrite("base_clearcoat_roughness",
-                           &Material::base_clearcoat_roughness)
-            .def_readwrite("base_anisotropy", &Material::base_anisotropy)
-            .def_readwrite("thickness", &Material::thickness)
-            .def_readwrite("transmission", &Material::transmission)
-            .def_readwrite("absorption_color", &Material::absorption_color)
+                           &MaterialRecord::base_clearcoat_roughness)
+            .def_readwrite("base_anisotropy", &MaterialRecord::base_anisotropy)
+            .def_readwrite("emissive_color", &MaterialRecord::emissive_color)
+            .def_readwrite("thickness", &MaterialRecord::thickness)
+            .def_readwrite("transmission", &MaterialRecord::transmission)
+            .def_readwrite("absorption_color",
+                           &MaterialRecord::absorption_color)
             .def_readwrite("absorption_distance",
-                           &Material::absorption_distance)
-            .def_readwrite("point_size", &Material::point_size)
-            .def_readwrite("line_width", &Material::line_width,
+                           &MaterialRecord::absorption_distance)
+            .def_readwrite("point_size", &MaterialRecord::point_size)
+            .def_readwrite("line_width", &MaterialRecord::line_width,
                            "Requires 'shader' to be 'unlitLine'")
-            .def_readwrite("albedo_img", &Material::albedo_img)
-            .def_readwrite("normal_img", &Material::normal_img)
-            .def_readwrite("ao_img", &Material::ao_img)
-            .def_readwrite("metallic_img", &Material::metallic_img)
-            .def_readwrite("roughness_img", &Material::roughness_img)
-            .def_readwrite("reflectance_img", &Material::reflectance_img)
-            .def_readwrite("clearcoat_img", &Material::clearcoat_img)
+            .def_readwrite("albedo_img", &MaterialRecord::albedo_img)
+            .def_readwrite("normal_img", &MaterialRecord::normal_img)
+            .def_readwrite("ao_img", &MaterialRecord::ao_img)
+            .def_readwrite("metallic_img", &MaterialRecord::metallic_img)
+            .def_readwrite("roughness_img", &MaterialRecord::roughness_img)
+            .def_readwrite("reflectance_img", &MaterialRecord::reflectance_img)
+            .def_readwrite("clearcoat_img", &MaterialRecord::clearcoat_img)
             .def_readwrite("clearcoat_roughness_img",
-                           &Material::clearcoat_roughness_img)
-            .def_readwrite("anisotropy_img", &Material::anisotropy_img)
-            .def_readwrite("generic_params", &Material::generic_params)
-            .def_readwrite("generic_imgs", &Material::generic_imgs)
-            .def_readwrite("gradient", &Material::gradient)
-            .def_readwrite("scalar_min", &Material::scalar_min)
-            .def_readwrite("scalar_max", &Material::scalar_max)
-            .def_readwrite("sRGB_color", &Material::sRGB_color)
-            .def_readwrite("aspect_ratio", &Material::aspect_ratio)
-            .def_readwrite("ground_plane_axis", &Material::ground_plane_axis)
-            .def_readwrite("shader", &Material::shader);
+                           &MaterialRecord::clearcoat_roughness_img)
+            .def_readwrite("anisotropy_img", &MaterialRecord::anisotropy_img)
+            .def_readwrite("ao_rough_metal_img",
+                           &MaterialRecord::ao_rough_metal_img)
+            .def_readwrite("generic_params", &MaterialRecord::generic_params)
+            .def_readwrite("generic_imgs", &MaterialRecord::generic_imgs)
+            .def_readwrite("gradient", &MaterialRecord::gradient)
+            .def_readwrite("scalar_min", &MaterialRecord::scalar_min)
+            .def_readwrite("scalar_max", &MaterialRecord::scalar_max)
+            .def_readwrite("sRGB_color", &MaterialRecord::sRGB_color)
+            .def_readwrite("aspect_ratio", &MaterialRecord::aspect_ratio)
+            .def_readwrite("ground_plane_axis",
+                           &MaterialRecord::ground_plane_axis)
+            .def_readwrite("shader", &MaterialRecord::shader);
 
     // ---- TriangleMeshModel ----
     py::class_<TriangleMeshModel, std::shared_ptr<TriangleMeshModel>> tri_model(
-            m, "TriangleMeshModel",
-            "A list of geometry.TriangleMesh and Material that can describe a "
+            m_rendering, "TriangleMeshModel",
+            "A list of geometry.TriangleMesh and MaterialRecord that can "
+            "describe a "
             "complex model with multiple meshes, such as might be stored in an "
             "FBX, OBJ, or GLTF file");
     py::class_<TriangleMeshModel::MeshInfo> tri_model_info(tri_model,
@@ -402,27 +406,29 @@ void pybind_rendering_classes(py::module &m) {
 
     // ---- ColorGradingParams ---
     py::class_<ColorGradingParams> color_grading(
-            m, "ColorGrading", "Parameters to control color grading options");
+            m_rendering, "ColorGrading",
+            "Parameters to control color grading options");
 
-    py::enum_<ColorGradingParams::Quality> cgp_quality(
-            color_grading, "Quality",
-            "Quality level of color grading operations");
-    cgp_quality.value("LOW", ColorGradingParams::Quality::kLow)
+    py::native_enum<ColorGradingParams::Quality>(
+            color_grading, "Quality", "enum.Enum",
+            "Quality level of color grading operations")
+            .value("LOW", ColorGradingParams::Quality::kLow)
             .value("MEDIUM", ColorGradingParams::Quality::kMedium)
             .value("HIGH", ColorGradingParams::Quality::kHigh)
-            .value("ULTRA", ColorGradingParams::Quality::kUltra);
-
-    py::enum_<ColorGradingParams::ToneMapping> cgp_tone(
-            color_grading, "ToneMapping",
-            "Specifies the tone-mapping algorithm");
-    cgp_tone.value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
+            .value("ULTRA", ColorGradingParams::Quality::kUltra)
+            .finalize();
+    py::native_enum<ColorGradingParams::ToneMapping>(
+            color_grading, "ToneMapping", "enum.Enum",
+            "Specifies the tone-mapping algorithm")
+            .value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
             .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
             .value("ACES", ColorGradingParams::ToneMapping::kAces)
             .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
             .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
             .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
             .value("DISPLAY_RANGE",
-                   ColorGradingParams::ToneMapping::kDisplayRange);
+                   ColorGradingParams::ToneMapping::kDisplayRange)
+            .finalize();
 
     color_grading
             .def(py::init([](ColorGradingParams::Quality q,
@@ -447,98 +453,164 @@ void pybind_rendering_classes(py::module &m) {
                     "Tint on the green/magenta axis. Ranges from -1.0 to 1.0.");
 
     // ---- View ----
-    py::class_<View, UnownedPointer<View>> view(m, "View",
+    py::class_<View, UnownedPointer<View>> view(m_rendering, "View",
                                                 "Low-level view class");
+    py::native_enum<View::ShadowType>(
+            view, "ShadowType", "enum.Enum",
+            "Available shadow mapping algorithm options")
+            .value("PCF", View::ShadowType::kPCF)
+            .value("VSM", View::ShadowType::kVSM)
+            .finalize();
     view.def("set_color_grading", &View::SetColorGrading,
-             "Sets the parameters to be used for the color grading algorithms");
+             "Sets the parameters to be used for the color grading algorithms")
+            .def("set_post_processing", &View::SetPostProcessing,
+                 "True to enable, False to disable post processing. Post "
+                 "processing effects include: color grading, ambient occlusion "
+                 "(and other screen space effects), and anti-aliasing.")
+            .def("set_ambient_occlusion", &View::SetAmbientOcclusion,
+                 "enabled"_a, "ssct_enabled"_a = false,
+                 "True to enable, False to disable ambient occlusion. "
+                 "Optionally, screen-space cone tracing may be enabled with "
+                 "ssct_enabled=True.")
+            .def("set_antialiasing", &View::SetAntiAliasing, "enabled"_a,
+                 "temporal"_a = false,
+                 "True to enable, False to disable anti-aliasing. Note that "
+                 "this only impacts anti-aliasing post-processing. MSAA is "
+                 "controlled separately by `set_sample_count`. Temporal "
+                 "anti-aliasing may be optionally enabled with temporal=True.")
+            .def("set_sample_count", &View::SetSampleCount,
+                 "Sets the sample count for MSAA. Set to 1 to disable MSAA. "
+                 "Typical values are 2, 4 or 8. The maximum possible value "
+                 "depends on the underlying GPU and OpenGL driver.")
+            .def("set_shadowing", &View::SetShadowing, "enabled"_a,
+                 py::arg_v("type", View::ShadowType::kPCF,
+                           "cloudViewer.visualization.rendering.View."
+                           "ShadowType.PCF"),
+                 "True to enable, false to enable all shadow mapping when "
+                 "rendering this View. When enabling shadow mapping you may "
+                 "also specify one of two shadow mapping algorithms: PCF "
+                 "(default) or VSM. Note: shadowing is enabled by default with "
+                 "PCF shadow mapping.")
+            .def("get_camera", &View::GetCamera,
+                 "Returns the Camera associated with this View.");
 
     // ---- Scene ----
-    py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
+    py::class_<Scene, UnownedPointer<Scene>> scene(m_rendering, "Scene",
                                                    "Low-level rendering scene");
-    py::enum_<Scene::GroundPlane> ground_plane(
-            scene, "GroundPlane", py::arithmetic(),
-            "Plane on which to show ground plane: XZ, XY, or YZ");
-    ground_plane.value("XZ", Scene::GroundPlane::XZ)
+    py::native_enum<Scene::GroundPlane>(
+            scene, "GroundPlane", "enum.Enum",
+            "Plane on which to show ground plane: XZ, XY, or YZ")
+            .value("XZ", Scene::GroundPlane::XZ)
             .value("XY", Scene::GroundPlane::XY)
             .value("YZ", Scene::GroundPlane::YZ)
-            .export_values();
-    scene.def("add_camera", &Scene::AddCamera, "Adds a camera to the scene")
-            .def("remove_camera", &Scene::RemoveCamera,
+            .export_values()
+            .finalize();
+    scene.def("add_camera", &Scene::AddCamera, "name"_a, "camera"_a,
+              "Adds a camera to the scene")
+            .def("remove_camera", &Scene::RemoveCamera, "name"_a,
                  "Removes the camera with the given name")
-            .def("set_active_camera", &Scene::SetActiveCamera,
+            .def("set_active_camera", &Scene::SetActiveCamera, "name"_a,
                  "Sets the camera with the given name as the active camera for "
                  "the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(
-                         const std::string &, const ccHObject &,
-                         const Material &, const std::string &, size_t)) &
+                 (bool(Scene::*)(const std::string &, const ccHObject &,
+                                 const MaterialRecord &, const std::string &,
+                                 size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
                  "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(
-                         const std::string &, const t::geometry::PointCloud &,
-                         const Material &, const std::string &, size_t)) &
+                 (bool(Scene::*)(
+                         const std::string &, const t::geometry::Geometry &,
+                         const MaterialRecord &, const std::string &, size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
                  "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
-            .def("has_geometry", &Scene::HasGeometry,
+            .def("has_geometry", &Scene::HasGeometry, "name"_a,
                  "Returns True if a geometry with the provided name exists in "
                  "the scene.")
-            .def("update_geometry", &Scene::UpdateGeometry,
+            .def("update_geometry", &Scene::UpdateGeometry, "name"_a,
+                 "point_cloud"_a, "update_flag"_a,
                  "Updates the flagged arrays from the tgeometry.PointCloud. "
                  "The flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
                  "Scene.UPDATE_UV0_FLAG")
+            .def("remove_geometry", &Scene::RemoveGeometry, "name"_a,
+                 "Removes the named geometry from the scene.")
+            .def("show_geometry", &Scene::ShowGeometry, "name"_a, "show"_a,
+                 "Show or hide the named geometry.")
+            .def("geometry_is_visible", &Scene::GeometryIsVisible, "name"_a,
+                 "Returns false if the geometry is hidden, True otherwise. "
+                 "Note: this is different from whether or not the geometry is "
+                 "in view.")
+            .def("geometry_shadows", &Scene::GeometryShadows, "name"_a,
+                 "cast_shadows"_a, "receive_shadows"_a,
+                 "Controls whether an object casts and/or receives shadows: "
+                 "geometry_shadows(name, cast_shadows, receieve_shadows)")
+            .def("set_geometry_culling", &Scene::SetGeometryCulling, "name"_a,
+                 "enable"_a,
+                 "Enable/disable view frustum culling on the named object. "
+                 "Culling is enabled by default.")
+            .def("set_geometry_priority", &Scene::SetGeometryPriority, "name"_a,
+                 "priority"_a,
+                 "Set sorting priority for named object. Objects with higher "
+                 "priority will be rendering on top of overlapping geometry "
+                 "with lower priority.")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
-                 "Enables or disables indirect lighting")
-            .def("set_indirect_light", &Scene::SetIndirectLight,
+                 "enable"_a, "Enables or disables indirect lighting")
+            .def("set_indirect_light", &Scene::SetIndirectLight, "name"_a,
                  "Loads the indirect light. The name parameter is the name of "
                  "the file to load")
             .def("set_indirect_light_intensity",
-                 &Scene::SetIndirectLightIntensity,
+                 &Scene::SetIndirectLightIntensity, "intensity"_a,
                  "Sets the brightness of the indirect light")
-            .def("enable_sun_light", &Scene::EnableSunLight)
-            .def("set_sun_light", &Scene::SetSunLight,
-                 "Sets the parameters of the sun light: direction, "
+            .def("enable_sun_light", &Scene::EnableSunLight, "enable"_a)
+            .def("set_sun_light", &Scene::SetSunLight, "direction"_a, "color"_a,
+                 "intensity"_a,
+                 "Sets the parameters of the sun light direction, "
                  "color, intensity")
-            .def("add_point_light", &Scene::AddPointLight,
-                 "Adds a point light to the scene: add_point_light(name, "
-                 "color, position, intensity, falloff, cast_shadows)")
-            .def("add_spot_light", &Scene::AddSpotLight,
-                 "Adds a spot light to the scene: add_point_light(name, "
-                 "color, position, direction, intensity, falloff, "
-                 "inner_cone_angle, outer_cone_angle, cast_shadows)")
-            .def("add_directional_light", &Scene::AddDirectionalLight,
-                 "Adds a directional light to the scene: add_point_light(name, "
-                 "color, intensity, cast_shadows)")
-            .def("remove_light", &Scene::RemoveLight,
-                 "Removes the named light from the scene: remove_light(name)")
-            .def("update_light_color", &Scene::UpdateLightColor,
+            .def("add_point_light", &Scene::AddPointLight, "name"_a, "color"_a,
+                 "position"_a, "intensity"_a, "falloff"_a, "cast_shadows"_a,
+                 "Adds a point light to the scene.")
+            .def("add_spot_light", &Scene::AddSpotLight, "name"_a, "color"_a,
+                 "position"_a, "direction"_a, "intensity"_a, "falloff"_a,
+                 "inner_cone_angle"_a, "outer_cone_angle"_a, "cast_shadows"_a,
+                 "Adds a spot light to the scene.")
+            .def("add_directional_light", &Scene::AddDirectionalLight, "name"_a,
+                 "color"_a, "direction"_a, "intensity"_a, "cast_shadows"_a,
+                 "Adds a directional light to the scene")
+            .def("remove_light", &Scene::RemoveLight, "name"_a,
+                 "Removes the named light from the scene.")
+            .def("update_light_color", &Scene::UpdateLightColor, "name"_a,
+                 "color"_a,
                  "Changes a point, spot, or directional light's color")
-            .def("update_light_position", &Scene::UpdateLightPosition,
-                 "Changes a point or spot light's position")
+            .def("update_light_position", &Scene::UpdateLightPosition, "name"_a,
+                 "position"_a, "Changes a point or spot light's position.")
             .def("update_light_direction", &Scene::UpdateLightDirection,
-                 "Changes a spot or directional light's direction")
+                 "name"_a, "direction"_a,
+                 "Changes a spot or directional light's direction.")
             .def("update_light_intensity", &Scene::UpdateLightIntensity,
-                 "Changes a point, spot or directional light's intensity")
-            .def("update_light_falloff", &Scene::UpdateLightFalloff,
-                 "Changes a point or spot light's falloff")
+                 "name"_a, "intensity"_a,
+                 "Changes a point, spot or directional light's intensity.")
+            .def("update_light_falloff", &Scene::UpdateLightFalloff, "name"_a,
+                 "falloff"_a, "Changes a point or spot light's falloff.")
             .def("update_light_cone_angles", &Scene::UpdateLightConeAngles,
-                 "Changes a spot light's inner and outer cone angles")
-            .def("enable_light_shadow", &Scene::EnableLightShadow,
+                 "name"_a, "inner_cone_angle"_a, "outer_cone_angle"_a,
+                 "Changes a spot light's inner and outer cone angles.")
+            .def("enable_light_shadow", &Scene::EnableLightShadow, "name"_a,
+                 "can_cast_shadows"_a,
                  "Changes whether a point, spot, or directional light can "
-                 "cast shadows:  enable_light_shadow(name, can_cast_shadows)")
+                 "cast shadows.")
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
                  "GUI app. To render without a window, use "
-                 "Application.render_to_image")
+                 "``Application.render_to_image``.")
             .def("render_to_depth_image", &Scene::RenderToDepthImage,
                  "Renders the scene to a depth image. This can only be used in "
                  "GUI app. To render without a window, use "
-                 "Application.render_to_depth_image. Pixels range from "
+                 "``Application.render_to_depth_image``. Pixels range from "
                  "0.0 (near plane) to 1.0 (far plane)");
 
     scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
@@ -548,27 +620,32 @@ void pybind_rendering_classes(py::module &m) {
 
     // ---- CloudViewerScene ----
     py::class_<CloudViewerScene, UnownedPointer<CloudViewerScene>> o3dscene(
-            m, "CloudViewerScene", "High-level scene for rending");
-    py::enum_<CloudViewerScene::LightingProfile> lighting(
-            o3dscene, "LightingProfile", py::arithmetic(),
-            "Enum for conveniently setting lighting");
-    lighting.value("HARD_SHADOWS", CloudViewerScene::LightingProfile::HARD_SHADOWS)
-            .value("DARK_SHADOWS", CloudViewerScene::LightingProfile::DARK_SHADOWS)
-            .value("MED_SHADOWS", CloudViewerScene::LightingProfile::MED_SHADOWS)
-            .value("SOFT_SHADOWS", CloudViewerScene::LightingProfile::SOFT_SHADOWS)
+            m_rendering, "CloudViewerScene", "High-level scene for rending");
+    py::native_enum<CloudViewerScene::LightingProfile>(
+            o3dscene, "LightingProfile", "enum.Enum",
+            "Enum for conveniently setting lighting")
+            .value("HARD_SHADOWS",
+                   CloudViewerScene::LightingProfile::HARD_SHADOWS)
+            .value("DARK_SHADOWS",
+                   CloudViewerScene::LightingProfile::DARK_SHADOWS)
+            .value("MED_SHADOWS",
+                   CloudViewerScene::LightingProfile::MED_SHADOWS)
+            .value("SOFT_SHADOWS",
+                   CloudViewerScene::LightingProfile::SOFT_SHADOWS)
             .value("NO_SHADOWS", CloudViewerScene::LightingProfile::NO_SHADOWS)
-            .export_values();
+            .export_values()
+            .finalize();
 
     o3dscene.def(py::init<Renderer &>())
-            .def("show_skybox", &CloudViewerScene::ShowSkybox,
+            .def("show_skybox", &CloudViewerScene::ShowSkybox, "enable"_a,
                  "Toggles display of the skybox")
-            .def("show_axes", &CloudViewerScene::ShowAxes,
+            .def("show_axes", &CloudViewerScene::ShowAxes, "enable"_a,
                  "Toggles display of xyz axes")
             .def("show_ground_plane", &CloudViewerScene::ShowGroundPlane,
-                 "Toggles display of ground plane")
-            .def("set_lighting", &CloudViewerScene::SetLighting,
-                 "Sets a simple lighting model. set_lighting(profile, "
-                 "sun_dir). The default value is "
+                 "enable"_a, "plane"_a, "Toggles display of ground plane")
+            .def("set_lighting", &CloudViewerScene::SetLighting, "profile"_a,
+                 "sun_dir"_a,
+                 "Sets a simple lighting model. The default value is "
                  "set_lighting(CloudViewerScene.LightingProfile.MED_SHADOWS, "
                  "(0.577, -0.577, -0.577))")
             .def(
@@ -588,39 +665,53 @@ void pybind_rendering_classes(py::module &m) {
                  "background color and (optionally) image of the scene. ")
             .def("clear_geometry", &CloudViewerScene::ClearGeometry)
             .def("add_geometry",
-                 py::overload_cast<const std::string &,
-                                   const ccHObject *,
-                                   const Material &, bool>(
+                 py::overload_cast<const std::string &, const ccHObject *,
+                                   const MaterialRecord &, bool>(
                          &CloudViewerScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
-                 "add_downsampled_copy_for_fast_rendering"_a = true)
+                 "add_downsampled_copy_for_fast_rendering"_a = true,
+                 "Adds a geometry with the specified name. Default visible is "
+                 "true.")
             .def("add_geometry",
                  py::overload_cast<const std::string &,
-                                   const t::geometry::PointCloud *,
-                                   const Material &, bool>(
+                                   const t::geometry::Geometry *,
+                                   const MaterialRecord &, bool>(
                          &CloudViewerScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
-                 "add_downsampled_copy_for_fast_rendering"_a = true)
-            .def("add_model", &CloudViewerScene::AddModel,
+                 "add_downsampled_copy_for_fast_rendering"_a = true,
+                 "Adds a geometry with the specified name. Default visible is "
+                 "true.")
+            .def("add_model", &CloudViewerScene::AddModel, "name"_a, "model"_a,
                  "Adds TriangleMeshModel to the scene.")
-            .def("has_geometry", &CloudViewerScene::HasGeometry,
-                 "has_geometry(name): returns True if the geometry has been "
-                 "added to the scene, False otherwise")
-            .def("remove_geometry", &CloudViewerScene::RemoveGeometry,
+            .def("has_geometry", &CloudViewerScene::HasGeometry, "name"_a,
+                 "Returns True if the geometry has been added to the scene, "
+                 "False otherwise")
+            .def("remove_geometry", &CloudViewerScene::RemoveGeometry, "name"_a,
                  "Removes the geometry with the given name")
+            .def("geometry_is_visible", &CloudViewerScene::GeometryIsVisible,
+                 "name"_a, "Returns True if the geometry name is visible")
+            .def("set_geometry_transform",
+                 &CloudViewerScene::SetGeometryTransform, "name"_a,
+                 "transform"_a,
+                 "sets the pose of the geometry name to transform")
+            .def("get_geometry_transform",
+                 &CloudViewerScene::GetGeometryTransform, "name"_a,
+                 "Returns the pose of the geometry name in the scene")
             .def("modify_geometry_material",
-                 &CloudViewerScene::ModifyGeometryMaterial,
-                 "modify_geometry_material(name, material). Modifies the "
-                 "material of the specified geometry")
-            .def("show_geometry", &CloudViewerScene::ShowGeometry,
-                 "Shows or hides the geometry with the given name")
+                 &CloudViewerScene::ModifyGeometryMaterial, "name"_a,
+                 "material"_a,
+                 "Modifies the material of the specified geometry")
+            .def("show_geometry", &CloudViewerScene::ShowGeometry, "name"_a,
+                 "show"_a, "Shows or hides the geometry with the given name")
             .def("update_material", &CloudViewerScene::UpdateMaterial,
+                 "material"_a,
                  "Applies the passed material to all the geometries")
             .def(
                     "set_view_size",
                     [](CloudViewerScene *scene, int width, int height) {
                         scene->GetView()->SetViewport(0, 0, width, height);
                     },
+                    "width"_a, "height"_a,
                     "Sets the view size. This should not be used except for "
                     "rendering to an image")
             .def_property_readonly("scene", &CloudViewerScene::GetScene,
@@ -628,7 +719,8 @@ void pybind_rendering_classes(py::module &m) {
                                    "(read-only)")
             .def_property_readonly("camera", &CloudViewerScene::GetCamera,
                                    "The camera object (read-only)")
-            .def_property_readonly("bounding_box", &CloudViewerScene::GetBoundingBox,
+            .def_property_readonly("bounding_box",
+                                   &CloudViewerScene::GetBoundingBox,
                                    "The bounding box of all the items in the "
                                    "scene, visible and invisible")
             .def_property_readonly(

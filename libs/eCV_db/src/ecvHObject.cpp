@@ -259,7 +259,7 @@ void ccHObject::ResizeAndPaintUniformColor(std::vector<Eigen::Vector3d>& colors,
     if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
         cloudViewer::utility::LogWarning(
                 "[ccHObject::ResizeAndPaintUniformColor] invalid color in "
-                "paintUniformColor, clipping to [0, 1]");
+                "PaintUniformColor, clipping to [0, 1]");
         clipped_color = clipped_color.array()
                                 .max(Eigen::Vector3d(0, 0, 0).array())
                                 .matrix();
@@ -447,9 +447,9 @@ Eigen::Matrix3d ccHObject::GetRotationMatrixFromEulerAngle(
     return rotation_matrix;
 }
 
-ccBBox ccHObject::getAxisAlignedBoundingBox() const { return ccBBox(); }
+ccBBox ccHObject::GetAxisAlignedBoundingBox() const { return ccBBox(); }
 
-ecvOrientedBBox ccHObject::getOrientedBoundingBox() const {
+ecvOrientedBBox ccHObject::GetOrientedBoundingBox() const {
     return ecvOrientedBBox();
 }
 
@@ -1030,7 +1030,7 @@ void ccHObject::drawBB(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) {
             if (box.isValid()) {
                 ecvOrientedBBox obb =
                         ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(box);
-                obb.transform(ccGLMatrixd::ToEigenMatrix4(trans));
+                obb.Transform(ccGLMatrixd::ToEigenMatrix4(trans));
                 obb.draw(context, col);
             }
         } break;

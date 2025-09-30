@@ -1,33 +1,15 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "ml/contrib/IoU.h"
 
 #include <Logging.h>
 #include "pybind/core/tensor_converter.h"
+#include "cloudViewer/core/TensorCheck.h"
 #include "pybind/docstring.h"
 #include "pybind/ml/contrib/contrib.h"
 #include "pybind/cloudViewer_pybind.h"
@@ -40,14 +22,14 @@ namespace contrib {
 py::array IouBevCPU(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous();
-    boxes_a_tensor.AssertDtype(core::Float32);
-    boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 5});
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 5});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous();
-    boxes_b_tensor.AssertDtype(core::Float32);
-    boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 5});
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 5});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -64,14 +46,14 @@ py::array IouBevCPU(py::array boxes_a, py::array boxes_b) {
 py::array Iou3dCPU(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous();
-    boxes_a_tensor.AssertDtype(core::Float32);
-    boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 7});
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 7});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous();
-    boxes_b_tensor.AssertDtype(core::Float32);
-    boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 7});
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 7});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -90,14 +72,14 @@ py::array IouBevCUDA(py::array boxes_a, py::array boxes_b) {
     core::Device cuda_device("CUDA:0");
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous().To(cuda_device);
-    boxes_a_tensor.AssertDtype(core::Float32);
-    boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 5});
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 5});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous().To(cuda_device);
-    boxes_b_tensor.AssertDtype(core::Float32);
-    boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 5});
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 5});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -114,14 +96,14 @@ py::array Iou3dCUDA(py::array boxes_a, py::array boxes_b) {
     core::Device cuda_device("CUDA:0");
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous().To(cuda_device);
-    boxes_a_tensor.AssertDtype(core::Float32);
-    boxes_a_tensor.AssertShapeCompatible({utility::nullopt, 7});
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 7});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous().To(cuda_device);
-    boxes_b_tensor.AssertDtype(core::Float32);
-    boxes_b_tensor.AssertShapeCompatible({utility::nullopt, 7});
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 7});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(

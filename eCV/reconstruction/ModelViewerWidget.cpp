@@ -710,7 +710,7 @@ void ModelViewerWidget::UploadPointConnectionData() {
         point_line_data_.lines_.push_back(Eigen::Vector2i(0, ++index));
     }
 
-    point_line_data_.paintUniformColor(Eigen::Vector3d(kSelectedPointColor(0),
+    point_line_data_.PaintUniformColor(Eigen::Vector3d(kSelectedPointColor(0),
                                                        kSelectedPointColor(1),
                                                        kSelectedPointColor(2)));
     drawLines(point_line_data_);
@@ -826,7 +826,7 @@ void ModelViewerWidget::UploadImageConnectionData() {
         }
     }
 
-    image_line_data_.paintUniformColor(Eigen::Vector3d(
+    image_line_data_.PaintUniformColor(Eigen::Vector3d(
             kSelectedImageFrameColor(0), kSelectedImageFrameColor(1),
             kSelectedImageFrameColor(2)));
     drawLines(image_line_data_);
@@ -863,7 +863,7 @@ void ModelViewerWidget::UploadMovieGrabberData() {
             movie_grabber_path_.lines_.push_back(Eigen::Vector2i(start, end));
             prev_proj_center = curr_proj_center;
         }
-        movie_grabber_path_.paintUniformColor(Eigen::Vector3d(
+        movie_grabber_path_.PaintUniformColor(Eigen::Vector3d(
                 kSelectedImageFrameColor(0), kSelectedImageFrameColor(1),
                 kSelectedImageFrameColor(2)));
 
@@ -923,7 +923,7 @@ void ModelViewerWidget::UploadMovieGrabberData() {
 void ModelViewerWidget::update() { ecvDisplayTools::UpdateScreen(); }
 
 void ModelViewerWidget::drawPointCloud(ccPointCloud* cloud) {
-    if (cloud->isEmpty()) {
+    if (cloud->IsEmpty()) {
         cloud->setVisible(false);
         cloud->setEnabled(false);
         cloud->setRedrawFlagRecursive(false);
@@ -956,7 +956,7 @@ void ModelViewerWidget::resetPointCloud(ccPointCloud* cloud) {
 }
 
 void ModelViewerWidget::drawLines(geometry::LineSet& lineset) {
-    if (!lineset.isEmpty()) {
+    if (!lineset.IsEmpty()) {
         CC_DRAW_CONTEXT context;
         if (lineset.isColorOverridden()) {
             context.defaultPolylineColor = lineset.getTempColor();

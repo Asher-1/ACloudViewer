@@ -1,35 +1,16 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
+#include <FileIO.h>
+
 #include <memory>
 #include <string>
-
-#include <FileIO.h>
 
 class ccPointCloud;
 namespace cloudViewer {
@@ -42,20 +23,30 @@ std::shared_ptr<ccPointCloud> CreatePointCloudFromFile(
         const std::string &format = "auto",
         bool print_progress = false);
 
+/// Factory function to create a pointcloud from memory
+/// Return an empty pointcloud if fail to read from buffer.
+std::shared_ptr<ccPointCloud> CreatePointCloudFromMemory(
+        const unsigned char *buffer,
+        const size_t length,
+        const std::string &format,
+        bool print_progress = false);
+
 /// The general entrance for reading a PointCloud from a file
 /// The function calls read functions based on the extension name of filename.
 /// See \p ReadPointCloudOption for additional options you can pass.
 /// \return return true if the read function is successful, false otherwise.
 bool ReadPointCloud(const std::string &filename,
                     ccPointCloud &pointcloud,
-                    const ReadPointCloudOption& params = {});
-//bool ReadPointCloud(const std::string& filename,
-//    ccPointCloud& pointcloud,
-//    const std::string& format = "auto",
-//    bool remove_nan_points = true,
-//    bool remove_infinite_points = true,
-//    bool print_progress = false);
+                    const ReadPointCloudOption &params = {});
 
+/// The general entrance for reading a PointCloud from memory
+/// The function calls read functions based on the format.
+/// See \p ReadPointCloudOption for additional options you can pass.
+/// \return return true if the read function is successful, false otherwise.
+bool ReadPointCloud(const unsigned char *buffer,
+                    const size_t length,
+                    ccPointCloud &pointcloud,
+                    const ReadPointCloudOption &params = {});
 
 /// The general entrance for writing a PointCloud to a file
 /// The function calls write functions based on the extension name of filename.
@@ -63,60 +54,77 @@ bool ReadPointCloud(const std::string &filename,
 /// \return return true if the write function is successful, false otherwise.
 bool WritePointCloud(const std::string &filename,
                      const ccPointCloud &pointcloud,
-                     const WritePointCloudOption& params = {});
-//bool WritePointCloud(const std::string &filename,
-//                     const ccPointCloud &pointcloud,
-//                     bool write_ascii  = false,
-//                     bool compressed  = false,
-//                     bool print_progress = false);
+                     const WritePointCloudOption &params = {});
+
+/// The general entrance for writing a PointCloud to memory
+/// The function calls write functions based on the format.
+/// WARNING: buffer gets initialized by WritePointCloud, you need to
+/// delete it when finished when ret is true
+/// See \p WritePointCloudOption for additional options you can pass.
+/// \return return true if the write function is
+/// successful, false otherwise.
+bool WritePointCloud(unsigned char *&buffer,
+                     size_t &length,
+                     const ccPointCloud &pointcloud,
+                     const WritePointCloudOption &params = {});
 
 bool ReadPointCloudFromXYZ(const std::string &filename,
                            ccPointCloud &pointcloud,
-                           const ReadPointCloudOption& params);
+                           const ReadPointCloudOption &params);
+
+bool ReadPointCloudInMemoryFromXYZ(const unsigned char *buffer,
+                                   const size_t length,
+                                   ccPointCloud &pointcloud,
+                                   const ReadPointCloudOption &params);
 
 bool WritePointCloudToXYZ(const std::string &filename,
                           const ccPointCloud &pointcloud,
-                          const WritePointCloudOption& params);
+                          const WritePointCloudOption &params);
+
+bool WritePointCloudInMemoryToXYZ(unsigned char *&buffer,
+                                  size_t &length,
+                                  const ccPointCloud &pointcloud,
+                                  const WritePointCloudOption &params);
 
 bool ReadPointCloudFromXYZN(const std::string &filename,
                             ccPointCloud &pointcloud,
-                            const ReadPointCloudOption& params);
+                            const ReadPointCloudOption &params);
 
 bool WritePointCloudToXYZN(const std::string &filename,
                            const ccPointCloud &pointcloud,
-                           const WritePointCloudOption& params);
+                           const WritePointCloudOption &params);
 
 bool ReadPointCloudFromXYZRGB(const std::string &filename,
                               ccPointCloud &pointcloud,
-                              const ReadPointCloudOption& params);
+                              const ReadPointCloudOption &params);
 
 bool WritePointCloudToXYZRGB(const std::string &filename,
                              const ccPointCloud &pointcloud,
-                             const WritePointCloudOption& params);
+                             const WritePointCloudOption &params);
 
 bool ReadPointCloudFromPLY(const std::string &filename,
                            ccPointCloud &pointcloud,
-                           const ReadPointCloudOption& params);
+                           const ReadPointCloudOption &params);
 
 bool WritePointCloudToPLY(const std::string &filename,
                           const ccPointCloud &pointcloud,
-                          const WritePointCloudOption& params);
+                          const WritePointCloudOption &params);
 
 bool ReadPointCloudFromPCD(const std::string &filename,
                            ccPointCloud &pointcloud,
-                           const ReadPointCloudOption& params);
+                           const ReadPointCloudOption &params);
 
 bool WritePointCloudToPCD(const std::string &filename,
                           const ccPointCloud &pointcloud,
-                          const WritePointCloudOption& params);
+                          const WritePointCloudOption &params);
 
 bool ReadPointCloudFromPTS(const std::string &filename,
                            ccPointCloud &pointcloud,
-                           const ReadPointCloudOption& params);
+                           const ReadPointCloudOption &params);
 
 bool WritePointCloudToPTS(const std::string &filename,
                           const ccPointCloud &pointcloud,
-                          const WritePointCloudOption& params);
+                          const WritePointCloudOption &params);
 
 }  // namespace io
 }  // namespace cloudViewer

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <limits>
@@ -108,14 +89,14 @@ void convert(int argc,
     double mahalanobis_threshold = utility::GetProgramOptionAsDouble(
             argc, argv, "--filter_mahalanobis", 0.0);
     if (mahalanobis_threshold > 0.0) {
-        auto mahalanobis = pointcloud_ptr->computeMahalanobisDistance();
+        auto mahalanobis = pointcloud_ptr->ComputeMahalanobisDistance();
         std::vector<size_t> indices;
         for (size_t i = 0; i < pointcloud_ptr->size(); i++) {
             if (mahalanobis[i] < mahalanobis_threshold) {
                 indices.push_back(i);
             }
         }
-        auto pcd = pointcloud_ptr->selectByIndex(indices);
+        auto pcd = pointcloud_ptr->SelectByIndex(indices);
         utility::LogDebug(
                 "Based on Mahalanobis distance, {:d} points were filtered.",
                 (int)(pointcloud_ptr->size() - pcd->size()));
@@ -128,7 +109,7 @@ void convert(int argc,
     if (every_k > 1) {
         utility::LogDebug("Downsample point cloud uniformly every {:d} points.",
                           every_k);
-        pointcloud_ptr = pointcloud_ptr->uniformDownSample(every_k);
+        pointcloud_ptr = pointcloud_ptr->UniformDownSample(every_k);
         processed = true;
     }
 
@@ -138,7 +119,7 @@ void convert(int argc,
     if (voxel_size > 0.0) {
         utility::LogDebug("Downsample point cloud with voxel size {:.4f}.",
                           voxel_size);
-        pointcloud_ptr = pointcloud_ptr->voxelDownSample(voxel_size);
+        pointcloud_ptr = pointcloud_ptr->VoxelDownSample(voxel_size);
         processed = true;
     }
 
@@ -148,7 +129,7 @@ void convert(int argc,
     if (radius > 0.0) {
         utility::LogDebug("Estimate normals with search radius {:.4f}.",
                           radius);
-        pointcloud_ptr->estimateNormals(
+        pointcloud_ptr->EstimateNormals(
                 geometry::KDTreeSearchParamRadius(radius));
         processed = true;
     }
@@ -157,7 +138,7 @@ void convert(int argc,
                                            0);
     if (k > 0) {
         utility::LogDebug("Estimate normals with search knn {:d}.", k);
-        pointcloud_ptr->estimateNormals(geometry::KDTreeSearchParamKNN(k));
+        pointcloud_ptr->EstimateNormals(geometry::KDTreeSearchParamKNN(k));
         processed = true;
     }
 
@@ -168,7 +149,7 @@ void convert(int argc,
         utility::LogDebug("Orient normals to [%.2f, %.2f, %.2f].", direction(0),
                           direction(1), direction(2));
         Eigen::Vector3d dir(direction);
-        pointcloud_ptr->orientNormalsToAlignWithDirection(dir);
+        pointcloud_ptr->OrientNormalsToAlignWithDirection(dir);
         processed = true;
     }
     Eigen::VectorXd camera_loc = utility::GetProgramOptionAsEigenVectorXd(
@@ -177,7 +158,7 @@ void convert(int argc,
         utility::LogDebug("Orient normals towards [%.2f, %.2f, %.2f].",
                           camera_loc(0), camera_loc(1), camera_loc(2));
         Eigen::Vector3d loc(camera_loc);
-        pointcloud_ptr->orientNormalsTowardsCameraLocation(loc);
+        pointcloud_ptr->OrientNormalsTowardsCameraLocation(loc);
         processed = true;
     }
 

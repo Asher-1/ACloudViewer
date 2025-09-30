@@ -1,33 +1,37 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/Indexer.h"
+#include "cloudViewer/core/Indexer.h"
+
+#include <numeric>
+
+#ifdef BUILD_ISPC_MODULE
+#include "Indexer_ispc.h"
+#endif
 
 namespace cloudViewer {
 namespace core {
+
+#ifdef BUILD_ISPC_MODULE
+ispc::TensorRef TensorRef::ToISPC() const {
+    ispc::TensorRef ispc_tensor_ref;
+
+    ispc_tensor_ref.data_ptr_ = data_ptr_;
+    ispc_tensor_ref.ndims_ = ndims_;
+    ispc_tensor_ref.dtype_byte_size_ = dtype_byte_size_;
+    for (int64_t i = 0; i < ndims_; ++i) {
+        ispc_tensor_ref.shape_[i] = shape_[i];
+        ispc_tensor_ref.byte_strides_[i] = byte_strides_[i];
+    }
+
+    return ispc_tensor_ref;
+}
+#endif
+
 Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                  const Tensor& output_tensor,
                  DtypePolicy dtype_policy,

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2019 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "ecvMesh.h"
@@ -92,7 +73,7 @@ public:
 	double c_;
 };
 
-std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
+std::shared_ptr<ccMesh> ccMesh::SimplifyVertexClustering(
 	double voxel_size,
 	SimplificationContraction
 	contraction /* = SimplificationContraction::Average */) const {
@@ -106,7 +87,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 	if (!cloud)
 	{
 		utility::LogError(
-			"[ccMesh::simplifyVertexClustering] mesh"
+			"[ccMesh::SimplifyVertexClustering] mesh"
 			"should set associated cloud before using!");
 	}
 
@@ -124,8 +105,8 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 
 	Eigen::Vector3d voxel_size3 =
 		Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
-	Eigen::Vector3d voxel_min_bound = getMinBound() - voxel_size3 * 0.5;
-	Eigen::Vector3d voxel_max_bound = getMaxBound() + voxel_size3 * 0.5;
+	Eigen::Vector3d voxel_min_bound = GetMinBound() - voxel_size3 * 0.5;
+	Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
 	if (voxel_size * std::numeric_limits<int>::max() <
 		(voxel_max_bound - voxel_min_bound).maxCoeff()) {
 		utility::LogError("[VoxelGridFromPointCloud] voxel_size is too small.");
@@ -223,8 +204,8 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 			Quadric q;
 			for (int vidx : voxel.second) {
 				for (int tidx : vert_to_triangles[vidx]) {
-					Eigen::Vector4d p = getTrianglePlane(tidx);
-					double area = getTriangleArea(tidx);
+					Eigen::Vector4d p = GetTrianglePlane(tidx);
+					double area = GetTriangleArea(tidx);
 					q += Quadric(p, area);
 				}
 			}
@@ -287,13 +268,13 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 	}
 
 	if (hasTriNormals()) {
-		mesh->computeTriangleNormals();
+		mesh->ComputeTriangleNormals();
 	}
 
 	return mesh;
 }
 
-std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
+std::shared_ptr<ccMesh> ccMesh::SimplifyQuadricDecimation(
         int target_number_of_triangles,
         double maximum_error/* = std::numeric_limits<double>::infinity()*/,
         double boundary_weight/* = 1.0*/) const {
@@ -308,7 +289,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	if (!cloud)
 	{
 		utility::LogError(
-			"[ccMesh::simplifyVertexClustering] mesh"
+			"[ccMesh::SimplifyVertexClustering] mesh"
 			"should set associated cloud before using!");
 	}
 
@@ -335,8 +316,8 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 		vert_to_triangles[tri->i2].emplace(static_cast<int>(tidx));
 		vert_to_triangles[tri->i3].emplace(static_cast<int>(tidx));
 
-		triangle_planes[tidx] = getTrianglePlane(tidx);
-		triangle_areas[tidx] = getTriangleArea(tidx);
+		triangle_planes[tidx] = GetTrianglePlane(tidx);
+		triangle_areas[tidx] = GetTriangleArea(tidx);
 	}
 
 	// Compute the error metric per vertex
@@ -348,7 +329,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	}
 
 	// For boundary edges add perpendicular plane quadric
-	auto edge_triangle_count = getEdgeToTrianglesMap();
+	auto edge_triangle_count = GetEdgeToTrianglesMap();
 	auto AddPerpPlaneQuadric = [&](int vidx0, int vidx1, int vidx2,
 		double area) {
 		int min = std::min(vidx0, vidx1);
@@ -602,7 +583,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	mesh->resize(next_free);
 
 	if (hasTriNormals()) {
-		mesh->computeTriangleNormals();
+		mesh->ComputeTriangleNormals();
 	}
 
 	return mesh;

@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import cloudViewer as cv3d
 import random
 
@@ -25,7 +32,7 @@ def main():
     # so the renderer requires a custom shader to implement this: "unlitLine".
     # The line_width field is only used by this shader; all other shaders ignore
     # it.
-    mat = cv3d.visualization.rendering.Material()
+    mat = cv3d.visualization.rendering.MaterialRecord()
     mat.shader = "unlitLine"
     mat.line_width = 10  # note that this is scaled with respect to pixels,
     # so will give different results depending on the

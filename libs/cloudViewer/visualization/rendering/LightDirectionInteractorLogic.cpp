@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/rendering/LightDirectionInteractorLogic.h"
@@ -30,7 +11,7 @@
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include "visualization/rendering/Camera.h"
-#include "visualization/rendering/Material.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Scene.h"
 
 namespace cloudViewer {
@@ -169,9 +150,9 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     // attribute. If/when we have a shader specifically for line sets we can use
     // it to avoid the warning.
     auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphere_tris);
-    sphere->paintUniformColor(kSkyColor);
+    sphere->PaintUniformColor(kSkyColor);
     auto t0 = Camera::Transform::Identity();
-    Material mat;
+    MaterialRecord mat;
     mat.shader = "defaultUnlit";
     scene_->AddGeometry("__suncagesphere__", *sphere, mat);
     scene_->SetGeometryTransform("__suncagesphere__", t0);
@@ -180,8 +161,8 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
 
     auto sun_radius = 0.05 * size;
     auto sun = ccMesh::CreateSphere(sun_radius, 20);
-    sun->paintUniformColor(kSunColor);
-    sun->computeVertexNormals();
+    sun->PaintUniformColor(kSunColor);
+    sun->ComputeVertexNormals();
     sun->triangle_uvs_.resize(sun->size() * 3, {0.f, 0.f});
     auto t1 = Camera::Transform::Identity();
     t1.translate(-sphere_size * dir);
@@ -194,8 +175,8 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     const double arrow_length = 0.333 * size;
     auto sun_dir = CreateArrow(dir.cast<double>(), arrow_radius, arrow_length,
                                0.1 * arrow_length, 20);
-    sun_dir->paintUniformColor(kSunColor);
-    sun_dir->computeVertexNormals();
+    sun_dir->PaintUniformColor(kSunColor);
+    sun_dir->ComputeVertexNormals();
     sun_dir->triangle_uvs_.resize(sun_dir->size() * 3, {0.f, 0.f});
     auto t2 = Camera::Transform::Identity();
     t2.translate(-sphere_size * dir);
@@ -208,7 +189,7 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
 }
 
 void LightDirectionInteractorLogic::UpdateMouseDragUI() {
-    Eigen::Vector3f model_center = model_bounds_.getGeometryCenter().cast<float>();
+    Eigen::Vector3f model_center = model_bounds_.GetCenter().cast<float>();
     for (auto& o : ui_objs_) {
         Camera::Transform t = GetMatrix() * o.transform;
         t.pretranslate(model_center);

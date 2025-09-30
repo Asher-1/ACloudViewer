@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 /// \file CUDAUtils.h
@@ -32,20 +13,8 @@
 
 #pragma once
 
-// fix redefinition 'small' between dispatch_segmented_sort.cuh and Windows.h
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
-    #define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-    #define NOMINMAX
-#endif
-#include "Windows.h"
-#endif
-
+#include "cloudViewer/core/Device.h"
 #include <Logging.h>
-
-#include "core/Device.h"
 
 #ifdef BUILD_CUDA_MODULE
 
@@ -60,7 +29,7 @@
 #define CLOUDVIEWER_FORCE_INLINE __forceinline__
 #define CLOUDVIEWER_HOST_DEVICE __host__ __device__
 #define CLOUDVIEWER_DEVICE __device__
-#define CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(type)                       \
+#define CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
     static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
                   #type " must be a __host__ __device__ lambda")
 #define CLOUDVIEWER_CUDA_CHECK(err) \
@@ -78,7 +47,8 @@
 #define CLOUDVIEWER_CUDA_CHECK(err)
 #define CLOUDVIEWER_GET_LAST_CUDA_ERROR(message)
 #define CUDA_CALL(cuda_function, ...) \
-    utility::LogError("Not built with CUDA, cannot call " #cuda_function);
+    cloudViewer::utility::LogError(        \
+            "Not built with CUDA, cannot call " #cuda_function);
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
@@ -174,7 +144,7 @@ private:
     };
 
 public:
-    static CreateNewStreamTag CreateNewStream;
+    constexpr static CreateNewStreamTag CreateNewStream = {};
 
     explicit CUDAScopedStream(const CreateNewStreamTag&);
 
@@ -253,22 +223,23 @@ public:
 #endif
 
 namespace cuda {
-/// Returns the number of available CUDA devices. Returns 0 if cloudViewer is not
+
+/// Returns the number of available CUDA devices. Returns 0 if CloudViewer is not
 /// compiled with CUDA support.
 int DeviceCount();
 
-/// Returns true if cloudViewer is compiled with CUDA support and at least one
+/// Returns true if CloudViewer is compiled with CUDA support and at least one
 /// compatible CUDA device is detected.
 bool IsAvailable();
 
 /// Releases CUDA memory manager cache. This is typically used for debugging.
 void ReleaseCache();
 
-/// Calls cudaDeviceSynchronize() for all CUDA devices. If cloudViewer is not
+/// Calls cudaDeviceSynchronize() for all CUDA devices. If CloudViewer is not
 /// compiled with CUDA this function has no effect.
 void Synchronize();
 
-/// Calls cudaDeviceSynchronize() for the specified device. If cloudViewer is not
+/// Calls cudaDeviceSynchronize() for the specified device. If CloudViewer is not
 /// compiled with CUDA or if \p device is not a CUDA device, this function has
 /// no effect.
 /// \param device The device to be synchronized.
@@ -309,13 +280,11 @@ cudaStream_t GetDefaultStream();
 namespace cloudViewer {
 namespace core {
 
-void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err,
-                              const char* file,
-                              const int line);
+void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err, const char* file, const int line);
 
 void __CLOUDVIEWER_GET_LAST_CUDA_ERROR(const char* message,
-                                       const char* file,
-                                       const int line);
+                                  const char* file,
+                                  const int line);
 
 }  // namespace core
 }  // namespace cloudViewer

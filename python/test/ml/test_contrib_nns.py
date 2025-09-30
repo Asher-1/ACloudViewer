@@ -1,3 +1,10 @@
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 import cloudViewer.core as cv3c
 import numpy as np
 import pytest
@@ -63,7 +70,8 @@ def test_knn_search():
                              knn).numpy()
 
     with pytest.raises(TypeError):
-        indices = knn_search(None, cv3c.Tensor.from_numpy(dataset_points[:, :2]),
+        indices = knn_search(None,
+                             cv3c.Tensor.from_numpy(dataset_points[:, :2]),
                              knn).numpy()
 
 
@@ -123,7 +131,8 @@ def test_radius_search():
     with pytest.raises(RuntimeError):
         indices = radius_search(
             cv3c.Tensor.from_numpy(np.array(points, dtype=np.int32)),
-            cv3c.Tensor.from_numpy(points), cv3c.Tensor.from_numpy(query_batches),
+            cv3c.Tensor.from_numpy(points),
+            cv3c.Tensor.from_numpy(query_batches),
             cv3c.Tensor.from_numpy(dataset_batches), 11.0).numpy()
 
     with pytest.raises(RuntimeError):

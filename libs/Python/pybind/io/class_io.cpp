@@ -1,35 +1,16 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <AutoIO.h>
 #include <FeatureIO.h>
 #include <IJsonConvertibleIO.h>
 #include <ImageIO.h>
-#include <OctreeIO.h>
 #include <LineSetIO.h>
+#include <OctreeIO.h>
 #include <PinholeCameraTrajectoryIO.h>
 #include <VoxelGridIO.h>
 #include <camera/PinholeCameraIntrinsic.h>
@@ -105,18 +86,14 @@ static const std::unordered_map<std::string, std::string>
 };
 
 void pybind_class_io(py::module &m_io) {
-    py::enum_<FileGeometry> geom_type(m_io, "FileGeometry", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    geom_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Geometry types";
-            }),
-            py::none(), py::none(), "");
-    geom_type.value("CONTENTS_UKNWOWN", FileGeometry::CONTENTS_UNKNOWN)
+    py::native_enum<FileGeometry>(m_io, "FileGeometry", "enum.IntFlag",
+                                  "Geometry types.")
+            .value("CONTENTS_UKNWOWN", FileGeometry::CONTENTS_UNKNOWN)
             .value("CONTAINS_POINTS", FileGeometry::CONTAINS_POINTS)
             .value("CONTAINS_LINES", FileGeometry::CONTAINS_LINES)
             .value("CONTAINS_TRIANGLES", FileGeometry::CONTAINS_TRIANGLES)
-            .export_values();
+            .export_values()
+            .finalize();
     m_io.def(
             "read_file_geometry_type", &ReadFileGeometryType,
             "Returns the type of geometry of the file. This is a faster way of "
@@ -126,10 +103,10 @@ void pybind_class_io(py::module &m_io) {
     // ccHObject
     m_io.def(
             "read_entity",
-            [](const std::string &filename, const std::string &format,
+            [](const fs::path &filename, const std::string &format,
                bool print_progress) {
                 auto entity = cloudViewer::make_shared<ccHObject>("group");
-                ReadEntity(filename, *entity, format, print_progress);
+                ReadEntity(filename.string(), *entity, format, print_progress);
                 return entity;
             },
             "Function to read entity from file", "filename"_a,
@@ -139,10 +116,10 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_entity",
-            [](const std::string &filename, const ccHObject &entity,
+            [](const fs::path &filename, const ccHObject &entity,
                bool write_ascii, bool compressed, bool print_progress) {
-                return WriteEntity(filename, entity, write_ascii, compressed,
-                                   print_progress);
+                return WriteEntity(filename.string(), entity, write_ascii,
+                                   compressed, print_progress);
             },
             "Function to write entity to file", "filename"_a, "entity"_a,
             "write_ascii"_a = false, "compressed"_a = false,
@@ -153,10 +130,10 @@ void pybind_class_io(py::module &m_io) {
     // cloudViewer::geometry::Image
     m_io.def(
             "read_image",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 py::gil_scoped_release release;
                 geometry::Image image;
-                ReadImage(filename, image);
+                ReadImage(filename.string(), image);
                 return image;
             },
             "Function to read Image from file", "filename"_a);
@@ -165,10 +142,10 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_image",
-            [](const std::string &filename, const geometry::Image &image,
+            [](const fs::path &filename, const geometry::Image &image,
                int quality) {
                 py::gil_scoped_release release;
-                return WriteImage(filename, image, quality);
+                return WriteImage(filename.string(), image, quality);
             },
             "Function to write Image to file", "filename"_a, "image"_a,
             "quality"_a = kCloudViewerImageIODefaultQuality);
@@ -178,11 +155,12 @@ void pybind_class_io(py::module &m_io) {
     // cloudViewer::geometry::LineSet
     m_io.def(
             "read_line_set",
-            [](const std::string &filename, const std::string &format,
+            [](const fs::path &filename, const std::string &format,
                bool print_progress) {
                 py::gil_scoped_release release;
                 geometry::LineSet line_set;
-                ReadLineSet(filename, line_set, format, print_progress);
+                ReadLineSet(filename.string(), line_set, format,
+                            print_progress);
                 return line_set;
             },
             "Function to read LineSet from file", "filename"_a,
@@ -192,11 +170,11 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_line_set",
-            [](const std::string &filename, const geometry::LineSet &line_set,
+            [](const fs::path &filename, const geometry::LineSet &line_set,
                bool write_ascii, bool compressed, bool print_progress) {
                 py::gil_scoped_release release;
-                return WriteLineSet(filename, line_set, write_ascii, compressed,
-                                    print_progress);
+                return WriteLineSet(filename.string(), line_set, write_ascii,
+                                    compressed, print_progress);
             },
             "Function to write LineSet to file", "filename"_a, "line_set"_a,
             "write_ascii"_a = false, "compressed"_a = false,
@@ -207,49 +185,99 @@ void pybind_class_io(py::module &m_io) {
     // ccPointCloud
     m_io.def(
             "read_point_cloud",
-            [](const std::string &filename, const std::string &format,
+            [](const fs::path &filename, const std::string &format,
                bool remove_nan_points, bool remove_infinite_points,
                bool print_progress) {
                 py::gil_scoped_release release;
                 auto pcd = cloudViewer::make_shared<ccPointCloud>();
-                ReadPointCloud(filename, *pcd,
+                ReadPointCloud(filename.string(), *pcd,
                                {format, remove_nan_points,
                                 remove_infinite_points, print_progress});
                 return pcd;
             },
             "Function to read PointCloud from file", "filename"_a,
-            "format"_a = "auto", "remove_nan_points"_a = true,
-            "remove_infinite_points"_a = true, "print_progress"_a = false);
+            "format"_a = "auto", "remove_nan_points"_a = false,
+            "remove_infinite_points"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_point_cloud",
                                  map_shared_argument_docstrings);
 
     m_io.def(
+            "read_point_cloud_from_bytes",
+            [](const py::bytes &bytes, const std::string &format,
+               bool remove_nan_points, bool remove_infinite_points,
+               bool print_progress) {
+                const char *dataptr = PYBIND11_BYTES_AS_STRING(bytes.ptr());
+                auto length = PYBIND11_BYTES_SIZE(bytes.ptr());
+                auto buffer = new unsigned char[length];
+                // copy before releasing GIL
+                std::memcpy(buffer, dataptr, length);
+                py::gil_scoped_release release;
+                auto pcd = cloudViewer::make_shared<ccPointCloud>();
+                ReadPointCloud(reinterpret_cast<const unsigned char *>(buffer),
+                               length, *pcd,
+                               {format, remove_nan_points,
+                                remove_infinite_points, print_progress});
+                delete[] buffer;
+                return pcd;
+            },
+            "Function to read PointCloud from memory", "bytes"_a,
+            "format"_a = "auto", "remove_nan_points"_a = false,
+            "remove_infinite_points"_a = false, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "read_point_cloud_from_bytes",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
             "write_point_cloud",
-            [](const std::string &filename, const ccPointCloud &pointcloud,
-               bool write_ascii, bool compressed, bool print_progress) {
+            [](const fs::path &filename, const ccPointCloud &pointcloud,
+               const std::string &format, bool write_ascii, bool compressed,
+               bool print_progress) {
                 py::gil_scoped_release release;
                 return WritePointCloud(
-                        filename, pointcloud,
-                        {write_ascii, compressed, print_progress});
+                        filename.string(), pointcloud,
+                        {format, write_ascii, compressed, print_progress});
             },
             "Function to write PointCloud to file", "filename"_a,
-            "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false,
-            "print_progress"_a = false);
+            "pointcloud"_a, "format"_a = "auto", "write_ascii"_a = false,
+            "compressed"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "write_point_cloud_to_bytes",
+            [](const ccPointCloud &pointcloud, const std::string &format,
+               bool write_ascii, bool compressed, bool print_progress) {
+                py::gil_scoped_release release;
+                size_t len = 0;
+                unsigned char *buffer = nullptr;
+                bool wrote = WritePointCloud(
+                        buffer, len, pointcloud,
+                        {format, write_ascii, compressed, print_progress});
+                py::gil_scoped_acquire acquire;
+                if (!wrote) {
+                    return py::bytes();
+                }
+                auto ret =
+                        py::bytes(reinterpret_cast<const char *>(buffer), len);
+                delete[] buffer;
+                return ret;
+            },
+            "Function to write PointCloud to memory", "pointcloud"_a,
+            "format"_a = "auto", "write_ascii"_a = false,
+            "compressed"_a = false, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "write_point_cloud_to_bytes",
                                  map_shared_argument_docstrings);
 
     // cloudViewer::ccMesh
     m_io.def(
             "read_triangle_mesh",
-            [](const std::string &filename, bool enable_post_processing,
+            [](const fs::path &filename, bool enable_post_processing,
                bool print_progress) {
                 py::gil_scoped_release release;
                 ccMesh mesh;
-                mesh.createInternalCloud();
                 ReadTriangleMeshOptions opt;
                 opt.enable_post_processing = enable_post_processing;
                 opt.print_progress = print_progress;
-                ReadTriangleMesh(filename, mesh, opt);
+                ReadTriangleMesh(filename.string(), mesh, opt);
                 // do some cleaning
                 {
                     mesh.shrinkToFit();
@@ -267,12 +295,12 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_triangle_mesh",
-            [](const std::string &filename, const ccMesh &mesh,
-               bool write_ascii, bool compressed, bool write_vertex_normals,
+            [](const fs::path &filename, const ccMesh &mesh, bool write_ascii,
+               bool compressed, bool write_vertex_normals,
                bool write_vertex_colors, bool write_triangle_uvs,
                bool print_progress) {
                 py::gil_scoped_release release;
-                return WriteTriangleMesh(filename, mesh, write_ascii,
+                return WriteTriangleMesh(filename.string(), mesh, write_ascii,
                                          compressed, write_vertex_normals,
                                          write_vertex_colors,
                                          write_triangle_uvs, print_progress);
@@ -287,12 +315,12 @@ void pybind_class_io(py::module &m_io) {
     // cloudViewer::visualization::rendering::TriangleMeshModel (Model.h)
     m_io.def(
             "read_triangle_model",
-            [](const std::string &filename, bool print_progress) {
+            [](const fs::path &filename, bool print_progress) {
                 py::gil_scoped_release release;
                 visualization::rendering::TriangleMeshModel model;
                 ReadTriangleModelOptions opt;
                 opt.print_progress = print_progress;
-                ReadTriangleModel(filename, model, opt);
+                ReadTriangleModel(filename.string(), model, opt);
                 return model;
             },
             "Function to read visualization.rendering.TriangleMeshModel from "
@@ -304,11 +332,11 @@ void pybind_class_io(py::module &m_io) {
     // cloudViewer::geometry::VoxelGrid
     m_io.def(
             "read_voxel_grid",
-            [](const std::string &filename, const std::string &format,
+            [](const fs::path &filename, const std::string &format,
                bool print_progress) {
                 py::gil_scoped_release release;
                 geometry::VoxelGrid voxel_grid;
-                ReadVoxelGrid(filename, voxel_grid, format);
+                ReadVoxelGrid(filename.string(), voxel_grid, format);
                 return voxel_grid;
             },
             "Function to read VoxelGrid from file", "filename"_a,
@@ -318,12 +346,11 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_voxel_grid",
-            [](const std::string &filename,
-               const geometry::VoxelGrid &voxel_grid, bool write_ascii,
-               bool compressed, bool print_progress) {
+            [](const fs::path &filename, const geometry::VoxelGrid &voxel_grid,
+               bool write_ascii, bool compressed, bool print_progress) {
                 py::gil_scoped_release release;
-                return WriteVoxelGrid(filename, voxel_grid, write_ascii,
-                                      compressed, print_progress);
+                return WriteVoxelGrid(filename.string(), voxel_grid,
+                                      write_ascii, compressed, print_progress);
             },
             "Function to write VoxelGrid to file", "filename"_a, "voxel_grid"_a,
             "write_ascii"_a = false, "compressed"_a = false,
@@ -334,10 +361,10 @@ void pybind_class_io(py::module &m_io) {
     // cloudViewer::Octree
     m_io.def(
             "read_octree",
-            [](const std::string &filename, const std::string &format) {
+            [](const fs::path &filename, const std::string &format) {
                 py::gil_scoped_release release;
                 geometry::Octree octree;
-                ReadOctree(filename, octree, format);
+                ReadOctree(filename.string(), octree, format);
                 return octree;
             },
             "Function to read Octree from file", "filename"_a,
@@ -347,9 +374,9 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_octree",
-            [](const std::string &filename, const geometry::Octree &octree) {
+            [](const fs::path &filename, const geometry::Octree &octree) {
                 py::gil_scoped_release release;
-                return WriteOctree(filename, octree);
+                return WriteOctree(filename.string(), octree);
             },
             "Function to write Octree to file", "filename"_a, "octree"_a);
     docstring::FunctionDocInject(m_io, "write_octree",
@@ -358,10 +385,10 @@ void pybind_class_io(py::module &m_io) {
     // cloudViewer::camera
     m_io.def(
             "read_pinhole_camera_intrinsic",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 py::gil_scoped_release release;
                 camera::PinholeCameraIntrinsic intrinsic;
-                ReadIJsonConvertible(filename, intrinsic);
+                ReadIJsonConvertible(filename.string(), intrinsic);
                 return intrinsic;
             },
             "Function to read PinholeCameraIntrinsic from file", "filename"_a);
@@ -370,10 +397,10 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_pinhole_camera_intrinsic",
-            [](const std::string &filename,
+            [](const fs::path &filename,
                const camera::PinholeCameraIntrinsic &intrinsic) {
                 py::gil_scoped_release release;
-                return WriteIJsonConvertible(filename, intrinsic);
+                return WriteIJsonConvertible(filename.string(), intrinsic);
             },
             "Function to write PinholeCameraIntrinsic to file", "filename"_a,
             "intrinsic"_a);
@@ -382,10 +409,10 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "read_pinhole_camera_parameters",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 py::gil_scoped_release release;
                 camera::PinholeCameraParameters parameters;
-                ReadIJsonConvertible(filename, parameters);
+                ReadIJsonConvertible(filename.string(), parameters);
                 return parameters;
             },
             "Function to read PinholeCameraParameters from file", "filename"_a);
@@ -394,10 +421,10 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_pinhole_camera_parameters",
-            [](const std::string &filename,
+            [](const fs::path &filename,
                const camera::PinholeCameraParameters &parameters) {
                 py::gil_scoped_release release;
-                return WriteIJsonConvertible(filename, parameters);
+                return WriteIJsonConvertible(filename.string(), parameters);
             },
             "Function to write PinholeCameraParameters to file", "filename"_a,
             "parameters"_a);
@@ -406,10 +433,10 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "read_pinhole_camera_trajectory",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 py::gil_scoped_release release;
                 camera::PinholeCameraTrajectory trajectory;
-                ReadPinholeCameraTrajectory(filename, trajectory);
+                ReadPinholeCameraTrajectory(filename.string(), trajectory);
                 return trajectory;
             },
             "Function to read PinholeCameraTrajectory from file", "filename"_a);
@@ -418,10 +445,11 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_pinhole_camera_trajectory",
-            [](const std::string &filename,
+            [](const fs::path &filename,
                const camera::PinholeCameraTrajectory &trajectory) {
                 py::gil_scoped_release release;
-                return WritePinholeCameraTrajectory(filename, trajectory);
+                return WritePinholeCameraTrajectory(filename.string(),
+                                                    trajectory);
             },
             "Function to write PinholeCameraTrajectory to file", "filename"_a,
             "trajectory"_a);
@@ -431,10 +459,10 @@ void pybind_class_io(py::module &m_io) {
     // cloudViewer::registration
     m_io.def(
             "read_feature",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 py::gil_scoped_release release;
                 utility::Feature feature;
-                ReadFeature(filename, feature);
+                ReadFeature(filename.string(), feature);
                 return feature;
             },
             "Function to read registration.Feature from file", "filename"_a);
@@ -443,9 +471,9 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_feature",
-            [](const std::string &filename, const utility::Feature &feature) {
+            [](const fs::path &filename, const utility::Feature &feature) {
                 py::gil_scoped_release release;
-                return WriteFeature(filename, feature);
+                return WriteFeature(filename.string(), feature);
             },
             "Function to write Feature to file", "filename"_a, "feature"_a);
     docstring::FunctionDocInject(m_io, "write_feature",
@@ -453,10 +481,10 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "read_pose_graph",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 py::gil_scoped_release release;
                 pipelines::registration::PoseGraph pose_graph;
-                ReadPoseGraph(filename, pose_graph);
+                ReadPoseGraph(filename.string(), pose_graph);
                 return pose_graph;
             },
             "Function to read PoseGraph from file", "filename"_a);
@@ -465,10 +493,10 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_pose_graph",
-            [](const std::string &filename,
+            [](const fs::path &filename,
                const pipelines::registration::PoseGraph pose_graph) {
                 py::gil_scoped_release release;
-                WritePoseGraph(filename, pose_graph);
+                WritePoseGraph(filename.string(), pose_graph);
             },
             "Function to write PoseGraph to file", "filename"_a,
             "pose_graph"_a);
@@ -478,13 +506,14 @@ void pybind_class_io(py::module &m_io) {
 #ifdef BUILD_AZURE_KINECT
     m_io.def(
             "read_azure_kinect_sensor_config",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 AzureKinectSensorConfig config;
-                bool success = ReadIJsonConvertibleFromJSON(filename, config);
+                bool success =
+                        ReadIJsonConvertibleFromJSON(filename.string(), config);
                 if (!success) {
                     utility::LogWarning(
                             "Invalid sensor config {}, using default instead",
-                            filename);
+                            filename.string());
                     return AzureKinectSensorConfig();
                 }
                 return config;
@@ -496,9 +525,8 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_azure_kinect_sensor_config",
-            [](const std::string &filename,
-               const AzureKinectSensorConfig config) {
-                return WriteIJsonConvertibleToJSON(filename, config);
+            [](const fs::path &filename, const AzureKinectSensorConfig config) {
+                return WriteIJsonConvertibleToJSON(filename.string(), config);
             },
             "Function to write Azure Kinect sensor config to file",
             "filename"_a, "config"_a);
@@ -507,13 +535,14 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "read_azure_kinect_mkv_metadata",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 MKVMetadata metadata;
-                bool success = ReadIJsonConvertibleFromJSON(filename, metadata);
+                bool success = ReadIJsonConvertibleFromJSON(filename.string(),
+                                                            metadata);
                 if (!success) {
                     utility::LogWarning(
                             "Invalid mkv metadata {}, using default instead",
-                            filename);
+                            filename.string());
                     return MKVMetadata();
                 }
                 return metadata;
@@ -524,8 +553,8 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_azure_kinect_mkv_metadata",
-            [](const std::string &filename, const MKVMetadata metadata) {
-                return WriteIJsonConvertibleToJSON(filename, metadata);
+            [](const fs::path &filename, const MKVMetadata metadata) {
+                return WriteIJsonConvertibleToJSON(filename.string(), metadata);
             },
             "Function to write Azure Kinect metadata to file", "filename"_a,
             "config"_a);

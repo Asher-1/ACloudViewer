@@ -1,36 +1,17 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: Asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 Asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "core/Tensor.h"
-#include "core/hashmap/Hashmap.h"
-#include "t/geometry/Geometry.h"
-#include "t/geometry/Image.h"
-#include "t/geometry/PointCloud.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/hashmap/HashMap.h"
+#include "cloudViewer/t/geometry/Geometry.h"
+#include "cloudViewer/t/geometry/Image.h"
+#include "cloudViewer/t/geometry/PointCloud.h"
 
 namespace cloudViewer {
 namespace t {
@@ -81,8 +62,8 @@ public:
     /// Get the neighbor indices per grid to construct the regularizer.
     /// \return A 6-way neighbor grid map for all the active entries of shape
     /// (N, ).
-    /// - addrs Active indices in the buffer of shape (N, )
-    /// - addrs_nb Neighbor indices (including non-allocated entries) for
+    /// - buf_indices Active indices in the buffer of shape (N, )
+    /// - buf_indices_nb Neighbor indices (including non-allocated entries) for
     /// the active entries of shape (N, 6).
     /// - masks_nb Corresponding neighbor masks of shape (N, 6).
     std::tuple<core::Tensor, core::Tensor, core::Tensor> GetNeighborGridMap();
@@ -128,7 +109,7 @@ public:
     /// in-place).
     core::Tensor GetCurrPositions() { return ctr_hashmap_->GetValueTensor(); }
 
-    std::shared_ptr<core::Hashmap> GetHashmap() { return ctr_hashmap_; }
+    std::shared_ptr<core::HashMap> GetHashMap() { return ctr_hashmap_; }
     int64_t Size() { return ctr_hashmap_->Size(); }
 
     core::Device GetDevice() { return device_; }
@@ -142,7 +123,7 @@ private:
     float grid_size_;
 
     core::Device device_ = core::Device("CPU:0");
-    std::shared_ptr<core::Hashmap> ctr_hashmap_;
+    std::shared_ptr<core::HashMap> ctr_hashmap_;
 };
 
 }  // namespace slac

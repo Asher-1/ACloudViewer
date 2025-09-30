@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -52,7 +33,7 @@ namespace visualization {
 namespace rendering {
 
 class Camera;
-struct Material;
+struct MaterialRecord;
 struct TriangleMeshModel;
 
 class CloudViewerScene {
@@ -96,24 +77,30 @@ public:
     /// Adds a geometry with the specified name. Default visible is true.
     void AddGeometry(const std::string& name,
                      const ccHObject* geom,
-                     const Material& mat,
+                     const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     // Note: we can't use shared_ptr here, as we might be given something
     //       from Python, which is using unique_ptr. The pointer must live long
     //       enough to get copied to the GPU by the render thread.
     void AddGeometry(const std::string& name,
-                     const t::geometry::PointCloud* geom,
-                     const Material& mat,
+                     const t::geometry::Geometry* geom,
+                     const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     bool HasGeometry(const std::string& name) const;
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
-    void ModifyGeometryMaterial(const std::string& name, const Material& mat);
+    bool GeometryIsVisible(const std::string& name);
+    void SetGeometryTransform(const std::string& name,
+                              const Eigen::Matrix4d& transform);
+    Eigen::Matrix4d GetGeometryTransform(const std::string& name);
+
+    void ModifyGeometryMaterial(const std::string& name,
+                                const MaterialRecord& mat);
     void AddModel(const std::string& name, const TriangleMeshModel& model);
 
     /// Updates all geometries to use this material
-    void UpdateMaterial(const Material& mat);
+    void UpdateMaterial(const MaterialRecord& mat);
     /// Updates the named model to use this material
     void UpdateModelMaterial(const std::string& name,
                              const TriangleMeshModel& model);

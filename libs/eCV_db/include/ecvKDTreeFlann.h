@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #ifndef CV_KDTREE_FLANN_HEADER
@@ -152,7 +133,7 @@ public:
         indices.resize(knn);
         distance2.resize(knn);
         std::vector<Eigen::Index> indices_eigen(knn);
-        int k = nanoflann_index_->index->knnSearch(
+        int k = nanoflann_index_->index_->knnSearch(
                 query.data(), knn, indices_eigen.data(), distance2.data());
         indices.resize(k);
         distance2.resize(k);
@@ -166,17 +147,16 @@ public:
                      std::vector<int> &indices,
                      std::vector<double> &distance2) const {
         // This is optimized code for heavily repeated search.
-        // Since max_nn is not given, we let flann to do its own memory
-        // management. Other flann::Index::radiusSearch() implementations lose
-        // performance due to memory management and CPU caching.
-        if (data_.empty() || dataset_size_ <= 0 ||
-            size_t(query.rows()) != dimension_) {
+        // Since max_nn is not given, we let flann to do its own memory management.
+        // Other flann::Index::radiusSearch() implementations lose performance due
+        // to memory management and CPU caching.
+        if (data_.empty() || dataset_size_ <= 0 || size_t(query.rows()) != dimension_) {
             return -1;
         }
-        std::vector<std::pair<Eigen::Index, double>> indices_dists;
-        int k = nanoflann_index_->index->radiusSearch(
+        std::vector<nanoflann::ResultItem<Eigen::Index, double>> indices_dists;
+        int k = nanoflann_index_->index_->radiusSearch(
                 query.data(), radius * radius, indices_dists,
-                nanoflann::SearchParams(-1, 0.0));
+                nanoflann::SearchParameters(0.0));
         indices.resize(k);
         distance2.resize(k);
         for (int i = 0; i < k; ++i) {
@@ -202,7 +182,7 @@ public:
         }
         distance2.resize(max_nn);
         std::vector<Eigen::Index> indices_eigen(max_nn);
-        int k = nanoflann_index_->index->knnSearch(
+        int k = nanoflann_index_->index_->knnSearch(
                 query.data(), max_nn, indices_eigen.data(), distance2.data());
         k = std::distance(
                 distance2.begin(),

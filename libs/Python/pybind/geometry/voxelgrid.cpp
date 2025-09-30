@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Image.h>
@@ -71,11 +52,20 @@ void pybind_voxelgrid(py::module &m) {
                     "color", &Voxel::color_,
                     "Float64 numpy array of shape (3,): Color of the voxel.");
 
- py::class_<geometry::VoxelGrid, PyGeometry<geometry::VoxelGrid>,
+    py::class_<geometry::VoxelGrid, PyGeometry<geometry::VoxelGrid>,
                std::shared_ptr<geometry::VoxelGrid>, ccHObject>
             voxelgrid(m, "VoxelGrid",
                       "VoxelGrid is a collection of voxels which are aligned "
                       "in grid.");
+
+    py::native_enum<geometry::VoxelGrid::VoxelPoolingMode>(
+            voxelgrid, "VoxelPoolingMode", "enum.Enum",
+            "Mode of determining color for each voxel.")
+            .value("AVG", geometry::VoxelGrid::VoxelPoolingMode::AVG)
+            .value("MIN", geometry::VoxelGrid::VoxelPoolingMode::MIN)
+            .value("MAX", geometry::VoxelGrid::VoxelPoolingMode::MAX)
+            .value("SUM", geometry::VoxelGrid::VoxelPoolingMode::SUM)
+            .finalize();
     py::detail::bind_default_constructor<geometry::VoxelGrid>(voxelgrid);
     py::detail::bind_copy_functions<geometry::VoxelGrid>(voxelgrid);
     voxelgrid
@@ -97,6 +87,10 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns ``True`` if the voxel grid contains voxels.")
             .def("get_voxel", &VoxelGrid::GetVoxel, "point"_a,
                  "Returns voxel index given query point.")
+            .def("add_voxel", &VoxelGrid::AddVoxel, "voxel"_a,
+                 "Add a new voxel into the VoxelGrid.")
+            .def("remove_voxel", &VoxelGrid::RemoveVoxel, "idx"_a,
+                 "Remove a voxel given index.")
             .def("check_if_included", &VoxelGrid::CheckIfIncluded, "queries"_a,
                  "Element-wise check if a query in the list is included in "
                  "the VoxelGrid. Queries are double precision and "
@@ -127,22 +121,29 @@ void pybind_voxelgrid(py::module &m) {
                         "carving",
                         "origin"_a, "color"_a, "voxel_size"_a, "width"_a,
                         "height"_a, "depth"_a)
-            .def_static("create_from_point_cloud",
-                        &VoxelGrid::CreateFromPointCloud,
-                        "Creates a VoxelGrid from a given PointCloud. The "
-                        "color value of a given  voxel is the average color "
-                        "value of the points that fall into it (if the "
-                        "PointCloud has colors). The bounds of the created "
-                        "VoxelGrid are computed from the PointCloud.",
-                        "input"_a, "voxel_size"_a)
-            .def_static("create_from_point_cloud_within_bounds",
-                        &VoxelGrid::CreateFromPointCloudWithinBounds,
-                        "Creates a VoxelGrid from a given PointCloud. The "
-                        "color value of a given voxel is the average color "
-                        "value of the points that fall into it (if the "
-                        "PointCloud has colors). The bounds of the created "
-                        "VoxelGrid are defined by the given parameters.",
-                        "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
+            .def_static(
+                    "create_from_point_cloud", &VoxelGrid::CreateFromPointCloud,
+                    "Creates a VoxelGrid from a given PointCloud. The "
+                    "color value of a given  voxel is determined by the "
+                    "VoxelPoolingMode, e.g. by default the average color "
+                    "value of the points that fall into it (if the "
+                    "PointCloud has colors). The bounds of the created "
+                    "VoxelGrid are computed from the PointCloud.",
+                    "input"_a, "voxel_size"_a,
+                    py::arg_v("pooling_mode", VoxelGrid::VoxelPoolingMode::AVG,
+                              "VoxelPoolingMode.AVG"))
+            .def_static(
+                    "create_from_point_cloud_within_bounds",
+                    &VoxelGrid::CreateFromPointCloudWithinBounds,
+                    "Creates a VoxelGrid from a given PointCloud. The "
+                    "color value of a given voxel is determined by the "
+                    "VoxelPoolingMode, e.g. by default the average color "
+                    "value of the points that fall into it (if the "
+                    "PointCloud has colors). The bounds of the created "
+                    "VoxelGrid are defined by the given parameters.",
+                    "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a,
+                    py::arg_v("pooling_mode", VoxelGrid::VoxelPoolingMode::AVG,
+                              "VoxelPoolingMode.AVG"))
             .def_static("create_from_triangle_mesh",
                         &VoxelGrid::CreateFromTriangleMesh,
                         "Creates a VoxelGrid from a given TriangleMesh. No "
@@ -167,6 +168,11 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
                                     {{"point", "The query point."}});
+    docstring::ClassMethodDocInject(m, "VoxelGrid", "add_voxel",
+                                    {{"Voxel", "A new voxel."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "remove_voxel",
+            {{"idx", "The grid index of the target voxel."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "check_if_included",
             {{"query", "a list of voxel indices to check."}});
@@ -204,15 +210,20 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_point_cloud",
             {{"input", "The input PointCloud"},
-             {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
+             {"voxel_size", "Voxel size of the VoxelGrid construction."},
+             {"pooling_mode",
+              "VoxelPoolingMode for determining voxel color."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_point_cloud_within_bounds",
             {{"input", "The input PointCloud"},
-             {"voxel_size", "Voxel size of of the VoxelGrid construction."},
+             {"voxel_size", "Voxel size of the VoxelGrid construction."},
              {"min_bound",
               "Minimum boundary point for the VoxelGrid to create."},
              {"max_bound",
-              "Maximum boundary point for the VoxelGrid to create."}});
+              "Maximum boundary point for the VoxelGrid to create."},
+             {"pooling_mode",
+              "VoxelPoolingMode that determines how to compute the voxel "
+              "color."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_triangle_mesh",
             {{"input", "The input TriangleMesh"},

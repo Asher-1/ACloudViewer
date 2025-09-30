@@ -1,36 +1,18 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/VisualizerWithKeyCallback.h"
+
 #include <Logging.h>
 
 namespace cloudViewer {
 
 namespace visualization {
-	using namespace cloudViewer;
+using namespace cloudViewer;
 
 VisualizerWithKeyCallback::VisualizerWithKeyCallback() {}
 
@@ -47,6 +29,13 @@ void VisualizerWithKeyCallback::PrintVisualizerHelp() {
     utility::LogInfo(
             "    The default functions of these keys will be overridden.");
     utility::LogInfo("");
+
+    std::string mouse_callbacks = (mouse_move_callback_ ? "MouseMove, " : "");
+    mouse_callbacks += (mouse_scroll_callback_ ? "MouseScroll, " : "");
+    mouse_callbacks += (mouse_button_callback_ ? "MouseButton, " : "");
+    utility::LogInfo("    Custom mouse callbacks registered for: {}",
+                     mouse_callbacks.substr(0, mouse_callbacks.size() - 2));
+    utility::LogInfo("");
 }
 
 void VisualizerWithKeyCallback::RegisterKeyCallback(
@@ -57,6 +46,21 @@ void VisualizerWithKeyCallback::RegisterKeyCallback(
 void VisualizerWithKeyCallback::RegisterKeyActionCallback(
         int key, std::function<bool(Visualizer *, int, int)> callback) {
     key_action_to_callback_[key] = callback;
+}
+
+void VisualizerWithKeyCallback::RegisterMouseMoveCallback(
+        std::function<bool(Visualizer *, double, double)> callback) {
+    mouse_move_callback_ = callback;
+}
+
+void VisualizerWithKeyCallback::RegisterMouseScrollCallback(
+        std::function<bool(Visualizer *, double, double)> callback) {
+    mouse_scroll_callback_ = callback;
+}
+
+void VisualizerWithKeyCallback::RegisterMouseButtonCallback(
+        std::function<bool(Visualizer *, int, int, int)> callback) {
+    mouse_button_callback_ = callback;
 }
 
 void VisualizerWithKeyCallback::KeyPressCallback(
@@ -81,6 +85,46 @@ void VisualizerWithKeyCallback::KeyPressCallback(
         UpdateRender();
     } else {
         Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+    }
+}
+
+void VisualizerWithKeyCallback::MouseMoveCallback(GLFWwindow *window,
+                                                  double x,
+                                                  double y) {
+    if (mouse_move_callback_) {
+        if (mouse_move_callback_(this, x, y)) {
+            UpdateGeometry();
+        }
+        UpdateRender();
+    } else {
+        Visualizer::MouseMoveCallback(window, x, y);
+    }
+}
+
+void VisualizerWithKeyCallback::MouseScrollCallback(GLFWwindow *window,
+                                                    double x,
+                                                    double y) {
+    if (mouse_scroll_callback_) {
+        if (mouse_scroll_callback_(this, x, y)) {
+            UpdateGeometry();
+        }
+        UpdateRender();
+    } else {
+        Visualizer::MouseScrollCallback(window, x, y);
+    }
+}
+
+void VisualizerWithKeyCallback::MouseButtonCallback(GLFWwindow *window,
+                                                    int button,
+                                                    int action,
+                                                    int mods) {
+    if (mouse_button_callback_) {
+        if (mouse_button_callback_(this, button, action, mods)) {
+            UpdateGeometry();
+        }
+        UpdateRender();
+    } else {
+        Visualizer::MouseButtonCallback(window, button, action, mods);
     }
 }
 

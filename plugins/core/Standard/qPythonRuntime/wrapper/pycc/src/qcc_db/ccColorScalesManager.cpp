@@ -16,6 +16,7 @@
 // ##########################################################################
 
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
@@ -32,7 +33,10 @@ void define_ccColorScalesManager(py::module &m)
 {
     py::class_<ccColorScalesManager> pyColorScalesManager(m, "ccColorScalesManager");
 
-    py::enum_<ccColorScalesManager::DEFAULT_SCALES>(pyColorScalesManager, "DEFAULT_SCALES")
+    py::native_enum<ccColorScalesManager::DEFAULT_SCALES>(pyColorScalesManager,
+                                                          "DEFAULT_SCALES",
+                                                          "enum.Enum",
+                                                          "ccColorScalesManager::DEFAULT_SCALES.")
         .value("BGYR", ccColorScalesManager::DEFAULT_SCALES::BGYR)
         .value("GREY", ccColorScalesManager::DEFAULT_SCALES::GREY)
         .value("BWR", ccColorScalesManager::DEFAULT_SCALES::BWR)
@@ -49,7 +53,8 @@ void define_ccColorScalesManager(py::module &m)
         .value("TOPO_LANDSERF", ccColorScalesManager::DEFAULT_SCALES::TOPO_LANDSERF)
         .value("HIGH_CONTRAST", ccColorScalesManager::DEFAULT_SCALES::HIGH_CONTRAST)
         .value("CIVIDIS", ccColorScalesManager::DEFAULT_SCALES::CIVIDIS)
-        .export_values();
+        .export_values()
+        .finalize();
 
     pyColorScalesManager
         .def_static("GetUniqueInstance",

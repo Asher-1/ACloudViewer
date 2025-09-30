@@ -1,32 +1,14 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <png.h>
 
-#include "t/io/ImageIO.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/t/io/ImageIO.h"
 #include <Logging.h>
 
 namespace cloudViewer {
@@ -60,6 +42,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     pngimage.version = PNG_IMAGE_VERSION;
     if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
         utility::LogWarning("Read PNG failed: unable to parse header.");
+        image.Clear();
         return false;
     }
 
@@ -70,12 +53,12 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     }
     if (pngimage.format & PNG_FORMAT_FLAG_LINEAR) {
         image.Reset(pngimage.height, pngimage.width,
-                    PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
-                    core::UInt16, image.GetDevice());
+                    PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format), core::UInt16,
+                    image.GetDevice());
     } else {
         image.Reset(pngimage.height, pngimage.width,
-                    PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
-                    core::UInt8, image.GetDevice());
+                    PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format), core::UInt8,
+                    image.GetDevice());
     }
 
     if (png_image_finish_read(&pngimage, NULL, image.GetDataPtr(), 0, NULL) ==
@@ -83,6 +66,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
         utility::LogWarning("Read PNG failed: unable to read file: {}",
                             filename);
         utility::LogWarning("PNG error: {}", pngimage.message);
+        image.Clear();
         return false;
     }
     return true;
@@ -95,7 +79,7 @@ bool WriteImageToPNG(const std::string &filename,
         utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
-    if (image.GetDtype() != core::UInt8 &&
+    if (image.GetDtype() != core::Bool && image.GetDtype() != core::UInt8 &&
         image.GetDtype() != core::UInt16) {
         utility::LogWarning("Write PNG failed: unsupported image data.");
         return false;
@@ -118,6 +102,50 @@ bool WriteImageToPNG(const std::string &filename,
                                 image.GetDataPtr(), 0, NULL) == 0) {
         utility::LogWarning("Write PNG failed: unable to write file: {}",
                             filename);
+        return false;
+    }
+    return true;
+}
+
+bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
+                             const t::geometry::Image &image,
+                             int quality) {
+    if (image.IsEmpty()) {
+        utility::LogWarning("Write PNG failed: image has no data.");
+        return false;
+    }
+    if (image.GetDtype() != core::UInt8 && image.GetDtype() != core::UInt16) {
+        utility::LogWarning("Write PNG failed: unsupported image data.");
+        return false;
+    }
+    if (quality == kCloudViewerImageIODefaultQuality)  // Set default quality
+    {
+        quality = 6;
+    }
+    if (quality < 0 || quality > 9) {
+        utility::LogWarning(
+                "Write PNG failed: quality ({}) must be in the range [0,9]",
+                quality);
+        return false;
+    }
+    png_image pngimage;
+    memset(&pngimage, 0, sizeof(pngimage));
+    pngimage.version = PNG_IMAGE_VERSION;
+    SetPNGImageFromImage(image, quality, pngimage);
+
+    // Compute bytes required
+    size_t mem_bytes = 0;
+    if (png_image_write_to_memory(&pngimage, nullptr, &mem_bytes, 0,
+                                  image.GetDataPtr(), 0, nullptr) == 0) {
+        utility::LogWarning(
+                "Could not compute bytes needed for encoding to PNG in "
+                "memory.");
+        return false;
+    }
+    buffer.resize(mem_bytes);
+    if (png_image_write_to_memory(&pngimage, &buffer[0], &mem_bytes, 0,
+                                  image.GetDataPtr(), 0, nullptr) == 0) {
+        utility::LogWarning("Unable to encode to PNG in memory.");
         return false;
     }
     return true;

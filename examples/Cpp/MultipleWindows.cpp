@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <atomic>
@@ -37,7 +18,6 @@ using namespace cloudViewer::visualization;
 
 const int WIDTH = 1024;
 const int HEIGHT = 768;
-const std::string DATA_PATH = "../../../examples/test_data/ICP/cloud_bin_0.pcd";
 const Eigen::Vector3f CENTER_OFFSET(0.0f, 0.0f, -3.0f);
 const std::string CLOUD_NAME = "points";
 
@@ -70,24 +50,25 @@ private:
     void OnSnapshot() {
         n_snapshots_ += 1;
         snapshot_pos_ = gui::Point(snapshot_pos_.x + 50, snapshot_pos_.y + 50);
-        auto title = std::string("CloudViewer - Multi-Window Demo (Snapshot #") +
-                     std::to_string(n_snapshots_) + ")";
+        auto title =
+                std::string("CloudViewer - Multi-Window Demo (Snapshot #") +
+                std::to_string(n_snapshots_) + ")";
         auto new_vis = cloudViewer::make_shared<visualizer::O3DVisualizer>(
                 title, WIDTH, HEIGHT);
 
         ccBBox bounds;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
-            auto mat = rendering::Material();
+            auto mat = rendering::MaterialRecord();
             mat.shader = "defaultUnlit";
             new_vis->AddGeometry(
                     CLOUD_NAME + " #" + std::to_string(n_snapshots_), cloud_,
                     &mat);
-            bounds = cloud_->getAxisAlignedBoundingBox();
+            bounds = cloud_->GetAxisAlignedBoundingBox();
         }
 
         new_vis->ResetCameraToDefault();
-        auto center = bounds.getGeometryCenter().cast<float>();
+        auto center = bounds.GetCenter().cast<float>();
         new_vis->SetupCamera(60, center, center + CENTER_OFFSET,
                              {0.0f, -1.0f, 0.0f});
         gui::Application::GetInstance().AddWindow(new_vis);
@@ -110,15 +91,16 @@ private:
 
         ccBBox bounds;
         Eigen::Vector3d extent;
+        data::DemoICPPointClouds demo_icp_pointclouds;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
             cloud_ = cloudViewer::make_shared<ccPointCloud>();
-            io::ReadPointCloud(DATA_PATH, *cloud_);
-            bounds = cloud_->getAxisAlignedBoundingBox();
-            extent = bounds.getExtent();
+            io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *cloud_);
+            bounds = cloud_->GetAxisAlignedBoundingBox();
+            extent = bounds.GetExtent();
         }
 
-        auto mat = rendering::Material();
+        auto mat = rendering::MaterialRecord();
         mat.shader = "defaultUnlit";
 
         gui::Application::GetInstance().PostToMainThread(
@@ -126,7 +108,8 @@ private:
                     std::lock_guard<std::mutex> lock(cloud_lock_);
                     main_vis_->AddGeometry(CLOUD_NAME, cloud_, &mat);
                     main_vis_->ResetCameraToDefault();
-                    Eigen::Vector3f center = bounds.getGeometryCenter().cast<float>();
+                    Eigen::Vector3f center =
+                            bounds.GetCenter().cast<float>();
                     main_vis_->SetupCamera(60, center, center + CENTER_OFFSET,
                                            {0.0f, -1.0f, 0.0f});
                 });

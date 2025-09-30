@@ -1,31 +1,15 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "visualization/webrtc_server/WebRTCWindowSystem.h"
 
+#include <Helper.h>
+#include <IJsonConvertible.h>
+#include <Logging.h>
 #include <p2p/base/basic_packet_socket_factory.h>
 #include <p2p/base/stun_server.h>
 #include <p2p/base/turn_server.h>
@@ -38,9 +22,6 @@
 #include <unordered_map>
 
 #include "core/Tensor.h"
-#include <Helper.h>
-#include <IJsonConvertible.h>
-#include <Logging.h>
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Events.h"
 #include "visualization/gui/Window.h"
@@ -160,12 +141,30 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                 const Json::Value value = utility::StringToJson(message);
                 const std::string window_uid =
                         value.get("window_uid", "").asString();
+                const auto os_window = GetOSWindowByUID(window_uid);
                 if (value.get("class_name", "").asString() == "MouseEvent" &&
-                    window_uid != "") {
+                    os_window != nullptr) {
                     gui::MouseEvent me;
-                    if (me.FromJson(value)) {
-                        PostMouseEvent(GetOSWindowByUID(window_uid), me);
-                    }
+                    if (me.FromJson(value)) PostMouseEvent(os_window, me);
+                }
+                return "";  // empty string is not sent back
+            });
+
+    // Synchronized MouseEvents over multiple windows
+    RegisterDataChannelMessageCallback(
+            "SyncMouseEvent",
+            [this](const std::string &message) -> std::string {
+                Json::Value value = utility::StringToJson(message);
+                if (value.get("class_name", "").asString() != "SyncMouseEvent")
+                    return "Error.";
+                value["class_name"] = "MouseEvent";
+                gui::MouseEvent me;
+                if (!me.FromJson(value)) return "Bad MouseEvent. Ignoring.";
+                for (const auto &json_window_uid :
+                     value.get("window_uid_list", "")) {
+                    const auto os_window =
+                            GetOSWindowByUID(json_window_uid.asString());
+                    if (os_window != nullptr) PostMouseEvent(os_window, me);
                 }
                 return "";  // empty string is not sent back
             });
@@ -175,8 +174,9 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                 const Json::Value value = utility::StringToJson(message);
                 const std::string window_uid =
                         value.get("window_uid", "").asString();
+                const auto os_window = GetOSWindowByUID(window_uid);
                 if (value.get("class_name", "").asString() == "ResizeEvent" &&
-                    window_uid != "") {
+                    os_window != nullptr) {
                     const int height = value.get("height", 0).asInt();
                     const int width = value.get("width", 0).asInt();
                     if (height <= 0 || width <= 0) {
@@ -189,8 +189,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                     } else {
                         utility::LogDebug("ResizeEvent {}: ({}, {})",
                                           window_uid, height, width);
-                        SetWindowSize(GetOSWindowByUID(window_uid), width,
-                                      height);
+                        SetWindowSize(os_window, width, height);
                     }
                 }
                 return "";  // empty string is not sent back
@@ -283,7 +282,8 @@ void WebRTCWindowSystem::StartWebRTCServer() {
                 ice_servers.insert(ice_servers.end(), custom_servers.begin(),
                                    custom_servers.end());
             }
-            ice_servers.insert(ice_servers.end(), s_cloudViewer_ice_servers.begin(),
+            ice_servers.insert(ice_servers.end(),
+                               s_cloudViewer_ice_servers.begin(),
                                s_cloudViewer_ice_servers.end());
             utility::LogInfo("ICE servers: {}", ice_servers);
 
@@ -360,10 +360,14 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
     try {
         const Json::Value value = utility::StringToJson(message);
         const std::string class_name = value.get("class_name", "").asString();
+        const std::string window_uid = value.get("window_uid", "").asString();
 
         if (impl_->data_channel_message_callbacks_.count(class_name) != 0) {
-            return impl_->data_channel_message_callbacks_.at(class_name)(
+            reply = impl_->data_channel_message_callbacks_.at(class_name)(
                     message);
+            const auto os_window = GetOSWindowByUID(window_uid);
+            if (os_window) PostRedrawEvent(os_window);
+            return reply;
         } else {
             reply = fmt::format(
                     "OnDataChannelMessage: {}. Message cannot be parsed, as "
@@ -388,6 +392,9 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
 void WebRTCWindowSystem::RegisterDataChannelMessageCallback(
         const std::string &class_name,
         const std::function<std::string(const std::string &)> callback) {
+    utility::LogDebug(
+            "WebRTCWindowSystem::RegisterDataChannelMessageCallback: {}",
+            class_name);
     impl_->data_channel_message_callbacks_[class_name] = callback;
 }
 
@@ -400,8 +407,10 @@ void WebRTCWindowSystem::SendInitFrames(const std::string &window_uid) {
     utility::LogInfo("Sending init frames to {}.", window_uid);
     static const int s_max_initial_frames = 5;
     static const int s_sleep_between_frames_ms = 100;
-    for (int i = 0; i < s_max_initial_frames; ++i) {
-        PostRedrawEvent(GetOSWindowByUID(window_uid));
+    const auto os_window = GetOSWindowByUID(window_uid);
+    if (!os_window) return;
+    for (int i = 0; os_window != nullptr && i < s_max_initial_frames; ++i) {
+        PostRedrawEvent(os_window);
         std::this_thread::sleep_for(
                 std::chrono::milliseconds(s_sleep_between_frames_ms));
         utility::LogDebug("Sent init frames #{} to {}.", i, window_uid);
@@ -411,13 +420,16 @@ void WebRTCWindowSystem::SendInitFrames(const std::string &window_uid) {
 std::string WebRTCWindowSystem::CallHttpAPI(const std::string &entry_point,
                                             const std::string &query_string,
                                             const std::string &data) const {
-    utility::LogInfo("[Called HTTP API (custom handshake)] {}", entry_point);
+    utility::LogDebug("[Called HTTP API (custom handshake)] {}", entry_point);
 
     std::string query_string_trimmed = "";
     if (!query_string.empty() && query_string[0] == '?') {
         query_string_trimmed =
                 query_string.substr(1, query_string.length() - 1);
     }
+    utility::LogDebug("entry_point: {}", entry_point);
+    utility::LogDebug("query_string_trimmed: {}", query_string_trimmed);
+    utility::LogDebug("data: {}", data);
 
     std::string result = "";
     if (entry_point == "/api/getMediaList") {
@@ -466,9 +478,6 @@ std::string WebRTCWindowSystem::CallHttpAPI(const std::string &entry_point,
                         peerid, utility::StringToJson(data)));
     }
 
-    utility::LogDebug("entry_point: {}", entry_point);
-    utility::LogDebug("query_string_trimmed: {}", query_string_trimmed);
-    utility::LogDebug("data: {}", data);
     utility::LogDebug("result: {}", result);
 
     return result;

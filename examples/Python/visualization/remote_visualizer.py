@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.cloudViewer.org                            -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2023 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
@@ -58,8 +58,8 @@ def server_time_animation():
 
 def client_time_animation():
     cv3d.visualization.draw(title="CloudViewer - Remote Visualizer Client",
-                           show_ui=True,
-                           rpc_interface=True)
+                            show_ui=True,
+                            rpc_interface=True)
 
 
 if __name__ == "__main__":

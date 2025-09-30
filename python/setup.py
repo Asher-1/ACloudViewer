@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
-# -                        cloudViewer: asher-1.github.io                          -
+# -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018 asher-1.github.io
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import os
@@ -54,7 +35,7 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
         import jupyterlab
     except ImportError as error:
         print(error.__class__.__name__ + ": " + error.message)
-        print("Run `pip install jupyter_packaging ipywidgets jupyterlab`.")
+        print("Run `pip install -r requirements-jupyter-build.txt`.")
 
     here = os.path.dirname(os.path.abspath(__file__))
     js_dir = os.path.join(here, 'js')
@@ -72,9 +53,11 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
 else:
     cmdclass = dict()
 
+
 # Force platform specific wheel.
 # https://stackoverflow.com/a/45150383/1255535
 try:
+
     class bdist_wheel(_bdist_wheel):
 
         def finalize_options(self):
@@ -88,7 +71,8 @@ try:
             if plat[:5] == "linux":
                 libc = ctypes.CDLL("libc.so.6")
                 libc.gnu_get_libc_version.restype = ctypes.c_char_p
-                GLIBC_VER = libc.gnu_get_libc_version().decode("utf8").split(".")
+                GLIBC_VER = libc.gnu_get_libc_version().decode("utf8").split(
+                    ".")
                 plat = f"manylinux_{GLIBC_VER[0]}_{GLIBC_VER[1]}{plat[5:]}"
             elif plat[:6] == "macosx":
                 # If the Python interpreter is an universal2 app the resulting wheel is tagged as
@@ -96,7 +80,6 @@ try:
                 plat = plat.replace("universal2", platform.machine())
 
             return python, abi, plat
-
 
     cmdclass['bdist_wheel'] = bdist_wheel
 
@@ -181,17 +164,18 @@ name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
 # cloudViewer-cpu wheel for Linux OR Windows x86_64
-if (sys.platform.startswith("linux") or sys.platform.startswith("win32")) and platform.machine() in (
-        'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
+if (sys.platform.startswith("linux") or
+        sys.platform.startswith("win32")) and platform.machine() in (
+            'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
     name += "-cpu"
     long_description += ("\n\nThis wheel only contains CPU functionality. "
                          "Use the cloudViewer wheel for full functionality.")
     classifiers.remove("Environment :: GPU :: NVIDIA CUDA")
-    
+
 setup_args = dict(
     name=name,
     version='@PROJECT_VERSION@',
-    python_requires='>=3.6',
+    python_requires='>=3.8',
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),
