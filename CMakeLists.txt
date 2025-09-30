@@ -661,6 +661,11 @@ if (USE_SIMD)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
     endif ()
 
+    if (UNIX AND NOT APPLE)
+        # disable avx512f for linux for fix Illegal instruction issues with cloudViewer python package
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx512f")
+    endif()
+
     message(STATUS "Enabling SIMD support")
     message(STATUS "Using CPU native flags for SSE optimization: ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS}")
 else ()
