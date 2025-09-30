@@ -17,7 +17,6 @@
 import os
 import re
 import sys
-import platform
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 # Enable thread composability manager to coordinate Intel OpenMP and TBB threads. Only works with Intel OpenMP.
@@ -30,6 +29,9 @@ import warnings
 from cloudViewer._build_config import _build_config
 
 MAIN_LIB_PATH = Path(__file__).parent / "lib"
+
+if sys.platform == "win32":  # Unix: Use rpath to find libraries
+    _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
 
 
 def load_cdll(path):
@@ -89,13 +91,12 @@ if os.path.exists(MAIN_LIB_PATH):
     if _build_config["BUILD_RECONSTRUCTION"]:
         os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = LIB_PATH
 
-    if platform.system() == "Windows":
+    if sys.platform == "win32":
         os.environ['path'] = LIB_PATH + ";" + os.environ['path']
     else:
         os.environ['PATH'] = LIB_PATH + ":" + os.environ['PATH']
 
-    if platform.system(
-    ) == "Linux":  # must load shared library in order on linux
+    if sys.platform == "linux":  # must load shared library in order on linux
         # os.environ['LD_LIBRARY_PATH'] = LIB_PATH + ":" +  os.environ.get('LD_LIBRARY_PATH', '')
         os.environ['LD_LIBRARY_PATH'] = LIB_PATH
         try_load_cdll('libtbb*')  # fix missing libtbb.so
@@ -120,7 +121,6 @@ if os.path.exists(MAIN_LIB_PATH):
             try_load_cdll('libfreeimage*')
             try_load_cdll('libgflags*')
             try_load_cdll('libglog*')
-            try_load_cdll('libglog*')
             try_load_cdll('libblas*')
             try_load_cdll('liblapack*')
             try_load_cdll('libceres*')
@@ -136,8 +136,8 @@ if _build_config["BUILD_CUDA_MODULE"]:
         load_cdll(str(next((Path(__file__).parent / 'cpu').glob('pybind*'))))
     except StopIteration:
         warnings.warn(
-            "cloudViewer was built with CUDA support, but cloudViewer CPU Python "
-            "bindings were not found. cloudViewer will not work on systems without"
+            "CloudViewer was built with CUDA support, but CloudViewer CPU Python "
+            "bindings were not found. CloudViewer will not work on systems without"
             " CUDA devices.",
             ImportWarning,
         )
@@ -284,8 +284,7 @@ if (_build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
 # CLOUDVIEWER_ML_ROOT points to the root of the CloudViewer-ML repo.
 # If set this will override the integrated CloudViewer-ML.
 if 'CLOUDVIEWER_ML_ROOT' in os.environ:
-    print('Using external CloudViewer-ML in {}'.format(
-        os.environ['CLOUDVIEWER_ML_ROOT']))
+    print('Using external CloudViewer-ML in {}'.format(os.environ['CLOUDVIEWER_ML_ROOT']))
     sys.path.append(os.environ['CLOUDVIEWER_ML_ROOT'])
 import cloudViewer.ml
 
@@ -336,4 +335,6 @@ def _jupyter_nbextension_paths():
     }]
 
 
-del os, re, sys, platform, CDLL, load_cdll, try_load_cdll, find_library, Path, warnings, _insert_pybind_names
+if sys.platform == "win32":
+    _win32_dll_dir.close()
+del os, re, sys, CDLL, load_cdll, try_load_cdll, find_library, Path, warnings, _insert_pybind_names
