@@ -43,10 +43,7 @@ RUN curl https://pyenv.run | bash \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
-RUN python --version && pip --version \
-    && pip config set global.timeout 1000 \
-    && pip config set global.retries 5 \
-    && pip config set install.trusted-host "pypi.org files.pythonhosted.org pypi.python.org download.pytorch.org"
+RUN python --version && pip --version 
 
 # Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-c"]
@@ -62,6 +59,8 @@ COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 RUN mkdir -p ${ACloudViewer_INSTALL}
+
+RUN ./docker/scripts/configure_pip_timeout.sh
 
 # Build ACloudViewer app installer
 RUN if [ "${BUILD_GUI}" = "ON" ]; then                                      \
