@@ -131,6 +131,13 @@ if (UNIX AND NOT APPLE)
         message(WARNING "File ${SVGICON_LIB_PATH} does not exist.")
     endif()
 
+    # for ACloudViewer deps
+    execute_process(COMMAND bash ${PACK_SCRIPTS}
+                    "${BUILD_LIB_PATH}/${MAIN_APP_NAME}${APP_EXTENSION}"
+                    ${DEPLOY_LIB_PATH}
+                    ${EXTERNAL_LIB_DIR}
+                    WORKING_DIRECTORY ${BUILD_LIB_PATH})
+
 elseif (WIN32)
     # deploy plugins and translations for ACloudViewer
     file(COPY 
