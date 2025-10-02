@@ -99,7 +99,10 @@ if (UNIX AND NOT APPLE)
     endif()
 
     # deploy c++ library dependency
-    set(EXTERNAL_LIB_DIR "${CONDA_PREFIX}/lib")
+    set(EXTERNAL_LIB_DIR ${EXTERNAL_INSTALL_DIRS}/${LIBS_FOLDER_NAME})
+    if (${BUILD_WITH_CONDA} STREQUAL "ON")
+        list(APPEND EXTERNAL_LIB_DIR "${CONDA_PREFIX}/lib")
+    endif()
     execute_process(COMMAND bash ${PACK_SCRIPTS}
                     "${BUILD_LIB_PATH}" ${DEPLOY_LIB_PATH}
                     ${EXTERNAL_LIB_DIR}
@@ -128,6 +131,14 @@ if (UNIX AND NOT APPLE)
         message(WARNING "File ${SVGICON_LIB_PATH} does not exist.")
     endif()
 
+    # for ACloudViewer deps
+    set(EXTERNAL_LIB_DIR2 ${EXTERNAL_LIB_DIR} ${BUILD_LIB_PATH})
+    execute_process(COMMAND bash ${PACK_SCRIPTS}
+                    "${BUILD_LIB_PATH}/${MAIN_APP_NAME}${APP_EXTENSION}"
+                    ${DEPLOY_LIB_PATH}
+                    ${EXTERNAL_LIB_DIR2}
+                    WORKING_DIRECTORY ${BUILD_LIB_PATH})
+
 elseif (WIN32)
     # deploy plugins and translations for ACloudViewer
     file(COPY 
@@ -146,7 +157,10 @@ elseif (WIN32)
     endif()
 
     # prepare search path for powershell
-    set(EXTERNAL_DLL_DIR ${EXTERNAL_INSTALL_DIRS} ${CONDA_PREFIX}/Library/bin)
+    set(EXTERNAL_DLL_DIR ${EXTERNAL_INSTALL_DIRS})
+    if (${BUILD_WITH_CONDA} STREQUAL "ON")
+        list(APPEND EXTERNAL_DLL_DIR ${CONDA_PREFIX}/Library/bin)
+    endif()
     message(STATUS "Start search dependency from path: ${EXTERNAL_DLL_DIR}")
     string(REPLACE ";" "\",\"" PS_SEARCH_PATHS "${EXTERNAL_DLL_DIR}")
     set(PS_SEARCH_PATHS "\"${PS_SEARCH_PATHS}\"")
@@ -179,6 +193,19 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}"
         DESTINATION "${COLMAP_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS)
+
+    if (UNIX AND NOT APPLE)
+        # for Colmap deps
+        set(EXTERNAL_LIB_DIR ${EXTERNAL_INSTALL_DIRS}/${LIBS_FOLDER_NAME})
+        if (${BUILD_WITH_CONDA} STREQUAL "ON")
+            list(APPEND EXTERNAL_LIB_DIR "${CONDA_PREFIX}/lib")
+        endif()
+        execute_process(COMMAND bash ${PACK_SCRIPTS}
+                        "${BUILD_LIB_PATH}/${COLMAP_APP_NAME}${APP_EXTENSION}"
+                        ${DEPLOY_LIB_PATH}
+                        ${EXTERNAL_LIB_DIR}
+                        WORKING_DIRECTORY ${BUILD_LIB_PATH})
+    endif()
 endif()
 
 ## 3. Package

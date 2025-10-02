@@ -17,8 +17,8 @@ SHELL ["/bin/bash", "-c"]
 LABEL maintainer="ACloudViewer Team ludahai19@163.com"
 
 # Env vars for the nvidia-container-runtime.
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES all
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=all
 ENV SUDO=command
 
 ENV REFRESHED_AT=2024-12-04\
@@ -205,7 +205,7 @@ COPY docker_files/laszip-src-3.4.3.tar.gz /opt
 RUN tar -xvf laszip-src-3.4.3.tar.gz && \
     cd laszip-src-3.4.3 && \
     mkdir -p build && cd build && \
-    cmake .. && \
+    cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" \
     && ldconfig \
