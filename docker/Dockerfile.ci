@@ -63,8 +63,8 @@ ENV VTK_VERSION=9.3.1
 ENV PCL_VERSION=1.14.1
 
 # Env vars for the nvidia-container-runtime.
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES all
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=all
 
 # Update apt and install libs needed by Qt
 RUN apt-get clean && apt-get update --fix-missing -y \
@@ -260,7 +260,7 @@ RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/
 RUN tar -xvf laszip-src-3.4.3.tar.gz && \
     cd laszip-src-3.4.3 && \
     mkdir -p build && cd build && \
-    cmake .. && \
+    cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" \
     && ldconfig \
