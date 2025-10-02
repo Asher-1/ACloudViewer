@@ -24,6 +24,8 @@ ExternalProject_Add(
     URL https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.44.0.tar.gz #  2020 Apr 1
     URL_HASH SHA256=5b0158592646984f0f7348da3783e2fb49e99308a97f2348fe3cc82c770c6dde
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
+    # building log to file
+    LOG_BUILD 1
     BUILD_ALWAYS 0
     # patch for macOS ARM64 unsupported options: -mfpu=neon -mfloat-abi=hard
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_if_different 
@@ -38,6 +40,10 @@ ExternalProject_Add(
     COMMAND ${PATCH_CUDACRT_COMMAND}
     # Patch for macOS ARM64 support for versions < 2.50.0
     COMMAND ${PATCH_MACOS_ARM64_COMMAND}
+    # Patch for libusb and libfw URL to use official release instead of ev-mp mirror
+    GIT_CONFIG http.postBuffer=524288000
+                   http.lowSpeedLimit=0
+                   http.lowSpeedTime=999999
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
