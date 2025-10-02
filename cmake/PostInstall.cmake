@@ -99,7 +99,10 @@ if (UNIX AND NOT APPLE)
     endif()
 
     # deploy c++ library dependency
-    set(EXTERNAL_LIB_DIR "${CONDA_PREFIX}/lib")
+    set(EXTERNAL_LIB_DIR ${EXTERNAL_INSTALL_DIRS}/${LIBS_FOLDER_NAME})
+    if (${BUILD_WITH_CONDA} STREQUAL "ON")
+        list(APPEND EXTERNAL_LIB_DIR "${CONDA_PREFIX}/lib")
+    endif()
     execute_process(COMMAND bash ${PACK_SCRIPTS}
                     "${BUILD_LIB_PATH}" ${DEPLOY_LIB_PATH}
                     ${EXTERNAL_LIB_DIR}
@@ -146,7 +149,10 @@ elseif (WIN32)
     endif()
 
     # prepare search path for powershell
-    set(EXTERNAL_DLL_DIR ${EXTERNAL_INSTALL_DIRS} ${CONDA_PREFIX}/Library/bin)
+    set(EXTERNAL_DLL_DIR ${EXTERNAL_INSTALL_DIRS})
+    if (${BUILD_WITH_CONDA} STREQUAL "ON")
+        list(APPEND EXTERNAL_DLL_DIR ${CONDA_PREFIX}/Library/bin)
+    endif()
     message(STATUS "Start search dependency from path: ${EXTERNAL_DLL_DIR}")
     string(REPLACE ";" "\",\"" PS_SEARCH_PATHS "${EXTERNAL_DLL_DIR}")
     set(PS_SEARCH_PATHS "\"${PS_SEARCH_PATHS}\"")

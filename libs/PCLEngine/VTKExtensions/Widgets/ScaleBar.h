@@ -8,7 +8,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkCamera.h>
 
-// Qt版本兼容性处理
+// Qt version compatibility handling
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QScreen>
@@ -23,21 +23,21 @@ public:
 private:
     vtkSmartPointer<vtkActor2D> lineActor;
     vtkSmartPointer<vtkTextActor> textActor;
-    vtkSmartPointer<vtkActor2D> leftTickActor;   // 左端刻度线
-    vtkSmartPointer<vtkActor2D> rightTickActor;  // 右端刻度线
+    vtkSmartPointer<vtkActor2D> leftTickActor;   // Left tick mark
+    vtkSmartPointer<vtkActor2D> rightTickActor;  // Right tick mark
     double lastLength = 0.0;
     bool visible = true;
     double dpiScale = 1.0;
     
-    // 兼容不同Qt版本的DPI获取方法
+    // DPI retrieval method compatible with different Qt versions
     double getDPIScale();
     
-    // 跨平台字体大小优化函数
+    // Cross-platform font size optimization function
     int getOptimizedFontSize(int baseFontSize = 18);
     
-    // 跨平台DPI缩放处理函数
+    // Cross-platform DPI scaling function
     double getPlatformAwareDPIScale();
     
-    // 创建刻度线
+    // Create tick mark actor
     vtkSmartPointer<vtkActor2D> createTickActor(double x, double y, double length);
 }; 
