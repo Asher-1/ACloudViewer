@@ -132,10 +132,11 @@ if (UNIX AND NOT APPLE)
     endif()
 
     # for ACloudViewer deps
+    set(EXTERNAL_LIB_DIR2 ${EXTERNAL_LIB_DIR} ${BUILD_LIB_PATH})
     execute_process(COMMAND bash ${PACK_SCRIPTS}
                     "${BUILD_LIB_PATH}/${MAIN_APP_NAME}${APP_EXTENSION}"
                     ${DEPLOY_LIB_PATH}
-                    ${EXTERNAL_LIB_DIR}
+                    ${EXTERNAL_LIB_DIR2}
                     WORKING_DIRECTORY ${BUILD_LIB_PATH})
 
 elseif (WIN32)
