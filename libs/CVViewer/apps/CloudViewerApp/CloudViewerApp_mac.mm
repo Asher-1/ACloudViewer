@@ -53,8 +53,7 @@ protected:
                 // for the file types below. THIS SHOULD ONLY BE CALLED AFTER
                 // THE USER EXPLICITLY CONFIRMS THAT THEY WANT TO DO THIS!
                 CFStringRef cloudViewerBundleId =
-                        (__bridge CFStringRef) @"com.isl-org.cloudViewer."
-                                               @"CloudViewer";
+                        (__bridge CFStringRef) @"com.asher.cloudViewer.CloudViewer";
                 // The UTIs should match what we declare in Info.plist
                 LSSetDefaultRoleHandlerForContentType(
                         (__bridge CFStringRef) @"public.gl-transmission-format",
@@ -158,11 +157,10 @@ static void LoadAndCreateWindow(const char *path) {
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
-    // -application:openFile: runs befure applicationDidFinishLaunching: so we
+    // -application:openFile: runs before applicationDidFinishLaunching: so we
     // need to check if we loaded a file or we need to display an empty window.
-    if (open_empty_window_) {
-        LoadAndCreateWindow("");
-    }
+    // Note: Window is now created in main() before the event loop starts
+    // to ensure the GUI is ready when Run() is called.
 }
 
 // Called by [NSApp run] if the user passes command line arguments (which may
@@ -217,6 +215,15 @@ int main(int argc, const char *argv[]) {
     AppDelegate *delegate = [[AppDelegate alloc] init];
     NSApplication *application = [NSApplication sharedApplication];
     [application setDelegate:delegate];
+    
+    // Create initial window before starting the event loop.
+    // Check if a file was passed as command line argument.
+    const char *path = nullptr;
+    if (argc >= 2) {
+        path = argv[1];
+    }
+    LoadAndCreateWindow(path ? path : "");
+    
     // ---- [NSApp run] equivalent ----
     // https://www.cocoawithlove.com/2009/01/demystifying-nsapplication-by.html
     [NSApp finishLaunching];
