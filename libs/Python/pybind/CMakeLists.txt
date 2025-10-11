@@ -62,7 +62,7 @@ if (WIN32)
 elseif (APPLE)
     file(GENERATE OUTPUT pybind.map CONTENT
         [=[_PyInit_pybind
-cloudViewer_core_cuda_device_count
+_cloudViewer_core_cuda_device_count
         ]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         -Wl,-exported_symbols_list
