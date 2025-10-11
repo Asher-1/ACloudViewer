@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #ifndef CV_FILESYSTEM_HEADER
@@ -75,6 +56,12 @@ std::string JoinPaths(T const &...paths) {
     return result;
 }
 
+std::string CV_CORE_LIB_API
+JoinPath(const std::vector<std::string> &path_components);
+
+std::string CV_CORE_LIB_API JoinPath(const std::string &path_component1,
+                                     const std::string &path_component2);
+
 std::string CV_CORE_LIB_API GetEnvVar(const std::string &env_var);
 
 /// \brief Get the HOME directory for the user.
@@ -124,6 +111,9 @@ bool CV_CORE_LIB_API CopyFile(const std::string &from, const std::string &to);
  */
 bool CV_CORE_LIB_API CopyDir(const std::string &from, const std::string &to);
 
+bool CV_CORE_LIB_API CopyA(const std::string &src_path,
+                           const std::string &dst_path);
+
 /**
  * @brief Copy a file or directory.
  * @param from The path to copy from.
@@ -157,6 +147,8 @@ std::string CV_CORE_LIB_API GetWorkingDirectory();
 std::vector<std::string> CV_CORE_LIB_API
 GetPathComponents(const std::string &path);
 
+std::string CV_CORE_LIB_API GetTempDirectoryPath();
+
 bool CV_CORE_LIB_API ChangeWorkingDirectory(const std::string &directory);
 
 bool CV_CORE_LIB_API IsFile(const std::string &filename);
@@ -164,6 +156,11 @@ bool CV_CORE_LIB_API IsFile(const std::string &filename);
 bool CV_CORE_LIB_API IsDirectory(const std::string &directory);
 
 bool CV_CORE_LIB_API DirectoryExists(const std::string &directory);
+
+// Return true if the directory is present and empty. Return false if the
+// directory is present but not empty. Throw an exception if the directory is
+// not present.
+bool CV_CORE_LIB_API DirectoryIsEmpty(const std::string &directory);
 
 /**
  * @brief Check if a specified directory specified by directory_path exists.
@@ -206,6 +203,9 @@ std::string CV_CORE_LIB_API GetIOErrorString(const int errnoVal);
 bool CV_CORE_LIB_API FReadToBuffer(const std::string &path,
                                    std::vector<char> &bytes,
                                    std::string *errorStr);
+
+std::string CV_CORE_LIB_API AddIfExist(
+        const std::string &path, const std::vector<std::string> &folder_names);
 
 /// RAII Wrapper for C FILE*
 /// Throws exceptions in situations where the caller is not usually going to
