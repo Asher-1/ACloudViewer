@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "FileSystem.h"
@@ -31,8 +12,8 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
-#include <sstream>
 #include <fstream>
+#include <sstream>
 
 #include "CVPlatform.h"
 #include "Logging.h"
@@ -49,12 +30,38 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #include <cstring>
+#endif
+
+#ifdef CV_WINDOWS
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#endif
+#ifdef CV_MAC_OS
+#include <filesystem>
+namespace fs = std::__fs::filesystem;
+#else
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 #endif
 
 namespace cloudViewer {
 namespace utility {
 namespace filesystem {
+
+std::string JoinPath(const std::string &path_component1,
+                     const std::string &path_component2) {
+    fs::path path(path_component1);
+    return (path / path_component2).string();
+}
+
+std::string JoinPath(const std::vector<std::string> &path_components) {
+    fs::path path;
+    for (const auto &pc : path_components) {
+        path /= pc;
+    }
+    return path.string();
+}
 
 std::string GetEnvVar(const std::string &env_var) {
     if (const char *env_p = std::getenv(env_var.c_str())) {
@@ -66,7 +73,7 @@ std::string GetEnvVar(const std::string &env_var) {
 
 std::string GetHomeDirectory() {
     std::string home_dir = "";
-#ifdef _WIN32
+#ifdef CV_WINDOWS
     // %USERPROFILE%
     // %HOMEDRIVE%
     // %HOMEPATH%
@@ -154,22 +161,25 @@ void SplitFileExtension(const std::string &path,
 }
 
 bool CopyFile(const std::string &from, const std::string &to) {
+    // Check if source is a directory
+    if (IsDirectory(from)) {
+        utility::LogWarning("Source is a directory, use CopyDir instead: {}",
+                            from);
+        return CopyA(from, to);
+    }
+
+    // Try standard file copy first
     std::ifstream src(from, std::ios::binary);
-    if (!src || IsDirectory(to)) {
-        if (!src) {
-            utility::LogWarning("Source path could not be normally opened: {}",
-                                from);
-        }
-        std::string command = "cp -r " + from + " " + to;
-        utility::LogDebug(command.c_str());
-        const int ret = std::system(command.c_str());
-        if (ret == 0) {
-            utility::LogDebug("Copy success, command returns: {}", ret);
-            return true;
-        } else {
-            utility::LogDebug("CCopy error, command returns: {}", ret);
-            return false;
-        }
+    if (!src) {
+        utility::LogWarning("Source file could not be opened: {}", from);
+        return false;
+    }
+
+    // Check if destination is a directory
+    if (IsDirectory(to)) {
+        utility::LogWarning("Destination is a directory: {}", to);
+        // Use cross-platform fs::copy
+        return CopyA(from, to);
     }
 
     std::ofstream dst(to, std::ios::binary);
@@ -179,6 +189,13 @@ bool CopyFile(const std::string &from, const std::string &to) {
     }
 
     dst << src.rdbuf();
+
+    if (!dst.good()) {
+        utility::LogError("Error occurred during file copy: {} -> {}", from,
+                          to);
+        return false;
+    }
+
     return true;
 }
 
@@ -211,6 +228,22 @@ bool CopyDir(const std::string &from, const std::string &to) {
     }
     closedir(directory);
     return ret;
+}
+
+// TODO: this is not a good name. Currently FileSystem.cpp includes windows.h
+// and "CopyFile" will be expanded to "CopyFileA" on Windows. This will be
+// resolved when we switch to C++17's std::filesystem.
+bool CopyA(const std::string &src_path, const std::string &dst_path) {
+    try {
+        fs::copy(src_path, dst_path,
+                 fs::copy_options::recursive |
+                         fs::copy_options::overwrite_existing);
+    } catch (std::exception &e) {
+        utility::LogWarning("Failed to copy {} to {}. Exception: {}.", src_path,
+                            dst_path, e.what());
+        return false;
+    }
+    return true;
 }
 
 bool Copy(const std::string &from,
@@ -387,6 +420,10 @@ std::vector<std::string> GetPathComponents(const std::string &path) {
     return components;
 }
 
+std::string GetTempDirectoryPath() {
+    return fs::temp_directory_path().string();
+}
+
 bool ChangeWorkingDirectory(const std::string &directory) {
 #ifdef CV_WINDOWS
     return (_chdir(directory.c_str()) == 0);
@@ -396,10 +433,9 @@ bool ChangeWorkingDirectory(const std::string &directory) {
 }
 
 bool IsFile(const std::string &filename) {
-#ifdef _WIN32
+#ifdef CV_WINDOWS
     DWORD attributes = GetFileAttributes(filename.c_str());
-    if (attributes == INVALID_FILE_ATTRIBUTES)
-        return false;
+    if (attributes == INVALID_FILE_ATTRIBUTES) return false;
     return !(attributes & FILE_ATTRIBUTE_DIRECTORY);
 #else
     if (0 != access(filename.c_str(), F_OK)) {
@@ -416,10 +452,9 @@ bool IsFile(const std::string &filename) {
 }
 
 bool IsDirectory(const std::string &directory) {
-#ifdef _WIN32
+#ifdef CV_WINDOWS
     DWORD attributes = GetFileAttributes(directory.c_str());
-    if (attributes == INVALID_FILE_ATTRIBUTES)
-        return false;
+    if (attributes == INVALID_FILE_ATTRIBUTES) return false;
     return (attributes & FILE_ATTRIBUTE_DIRECTORY);
 #else
     if (0 != access(directory.c_str(), F_OK)) {
@@ -436,9 +471,14 @@ bool IsDirectory(const std::string &directory) {
 }
 
 bool DirectoryExists(const std::string &directory) {
-    struct stat info;
-    if (stat(directory.c_str(), &info) == -1) return false;
-    return S_ISDIR(info.st_mode);
+    return fs::is_directory(directory);
+}
+
+bool DirectoryIsEmpty(const std::string &directory) {
+    if (!DirectoryExists(directory)) {
+        utility::LogError("Directory {} does not exist.", directory);
+    }
+    return fs::is_empty(directory);
 }
 
 bool EnsureDirectory(const std::string &directory_path) {
@@ -472,23 +512,17 @@ bool MakeDirectoryHierarchy(const std::string &directory) {
 }
 
 bool DeleteDirectory(const std::string &directory) {
-#ifdef CV_WINDOWS
-    return (_rmdir(directory.c_str()) == 0);
-#else
-    return (rmdir(directory.c_str()) == 0);
-#endif
+    std::error_code error;
+    if (fs::remove_all(directory, error) == static_cast<std::uintmax_t>(-1)) {
+        utility::LogWarning("Failed to remove directory {}: {}.", directory,
+                            error.message());
+        return false;
+    }
+    return true;
 }
 
 bool FileExists(const std::string &filename) {
-#ifdef CV_WINDOWS
-    struct _stat64 info;
-    if (_stat64(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#else
-    struct stat info;
-    if (stat(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#endif
+    return fs::exists(filename) && fs::is_regular_file(filename);
 }
 
 bool RemoveFile(const std::string &filename) {
@@ -687,6 +721,17 @@ bool FReadToBuffer(const std::string &path,
 
     fclose(file);
     return true;
+}
+
+std::string AddIfExist(const std::string &path,
+                       const std::vector<std::string> &folder_names) {
+    for (const auto &folder_name : folder_names) {
+        const std::string folder_path = JoinPath(path, folder_name);
+        if (utility::filesystem::DirectoryExists(folder_path)) {
+            return folder_path;
+        }
+    }
+    return path;
 }
 
 CFile::~CFile() { Close(); }
