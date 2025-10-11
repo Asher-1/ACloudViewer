@@ -37,6 +37,7 @@
 codesign --deep --force -s - --timestamp colmap.app
 codesign --deep --force -s - --timestamp ACloudViewer.app
 codesign --deep --force -s - --timestamp CloudViewer.app
+codesign --deep --force -s - --timestamp /Users/asher/develop/code/github/ACloudViewer/build_app/bin/CloudViewer.app
 codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/deploy/packages/colmap/data/colmap.app
 codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/deploy/packages/CloudViewer/data/CloudViewer.app
 codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
