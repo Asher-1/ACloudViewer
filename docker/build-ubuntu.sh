@@ -163,7 +163,7 @@ release_build() {
 			--build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
 			--build-arg PACKAGE="${PACKAGE}" \
 			--tag "$CLOUDVIEWER_IMAGE_TAG" \
-			-f docker/Dockerfile_build${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-${PYTHON_VERSION}-${BUILD_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}-${POST_SUFFIX}.log
+			-f docker/Dockerfile_build${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-py${PYTHON_VERSION}-${BUILD_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}-${POST_SUFFIX}.log
 
 			if [ "$BUILD_GUI" = "ON" ]; then
 				docker run -v "${HOST_INSTALL_PATH}:/opt/mount" --rm "$CLOUDVIEWER_IMAGE_TAG" \
