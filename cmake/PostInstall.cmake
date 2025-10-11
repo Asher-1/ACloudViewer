@@ -191,20 +191,19 @@ endif()
 ## deploy Colmap
 if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}"
-        DESTINATION "${COLMAP_DEPLOY_PATH}"
-        USE_SOURCE_PERMISSIONS)
+                DESTINATION "${COLMAP_DEPLOY_PATH}"
+                USE_SOURCE_PERMISSIONS)
 
     if (UNIX AND NOT APPLE)
         # for Colmap deps
-        set(EXTERNAL_LIB_DIR ${EXTERNAL_INSTALL_DIRS}/${LIBS_FOLDER_NAME})
-        if (${BUILD_WITH_CONDA} STREQUAL "ON")
-            list(APPEND EXTERNAL_LIB_DIR "${CONDA_PREFIX}/lib")
+        if(EXISTS "${LINK_GFLAGS_FILE_PATH}")
+            file(COPY "${LINK_GFLAGS_FILE_PATH}"
+                        DESTINATION "${DEPLOY_LIB_PATH}"
+                        USE_SOURCE_PERMISSIONS)
+            message(STATUS "Copied ${LINK_GFLAGS_FILE_PATH} to ${DEPLOY_LIB_PATH}")
+        else()
+            message(WARNING "File ${LINK_GFLAGS_FILE_PATH} does not exist.")
         endif()
-        execute_process(COMMAND bash ${PACK_SCRIPTS}
-                        "${BUILD_LIB_PATH}/${COLMAP_APP_NAME}${APP_EXTENSION}"
-                        ${DEPLOY_LIB_PATH}
-                        ${EXTERNAL_LIB_DIR}
-                        WORKING_DIRECTORY ${BUILD_LIB_PATH})
     endif()
 endif()
 
