@@ -12,8 +12,10 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*.*.*'
+
+  release:
+    types: [published]
+
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
@@ -50,7 +52,7 @@ jobs:
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == "release" ]]; then
             echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
@@ -212,7 +214,7 @@ jobs:
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == "release" ]]; then
             echo "DEVELOPER_BUILD=OFF" >> $GITHUB_ENV
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV

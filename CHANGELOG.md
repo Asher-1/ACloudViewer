@@ -1,7 +1,7 @@
 ACloudViewer Version History
 ============================
 
-v3.9.3 (Asher) - 08/22/2025
+v3.9.3 (Asher) - 10/14/2025
 ----------------------
 
 ## ACloudViewer 3.9.3 Release Notes
