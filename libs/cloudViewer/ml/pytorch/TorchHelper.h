@@ -6,6 +6,10 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+// https://stackoverflow.com/q/77034039 : False Alarm warnings from PyTorch
+// headers
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 #include <torch/script.h>
 
 #include <sstream>
@@ -95,7 +99,7 @@ inline bool CompareTorchDtype(const TDtype& t) {
 inline bool SameDeviceType(std::initializer_list<torch::Tensor> tensors) {
     if (tensors.size()) {
         auto device_type = tensors.begin()->device().type();
-        for (auto t : tensors) {
+        for (const auto& t : tensors) {
             if (device_type != t.device().type()) {
                 return false;
             }
@@ -108,7 +112,7 @@ inline bool SameDeviceType(std::initializer_list<torch::Tensor> tensors) {
 inline bool SameDtype(std::initializer_list<torch::Tensor> tensors) {
     if (tensors.size()) {
         auto dtype = tensors.begin()->dtype();
-        for (auto t : tensors) {
+        for (const auto& t : tensors) {
             if (dtype != t.dtype()) {
                 return false;
             }
