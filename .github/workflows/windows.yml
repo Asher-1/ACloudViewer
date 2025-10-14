@@ -6,6 +6,8 @@
 name: Windows
 permissions: {}
 
+# TODO: conda do not support python3.13 now
+
 on:
   workflow_dispatch:
     inputs:
