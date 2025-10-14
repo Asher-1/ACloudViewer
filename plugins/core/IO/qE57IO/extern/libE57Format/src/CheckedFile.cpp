@@ -60,7 +60,7 @@
 
 #include "CheckedFile.h"
 
-//#define E57_CHECK_FILE_DEBUG
+// #define E57_CHECK_FILE_DEBUG
 #ifdef E57_CHECK_FILE_DEBUG
 #include <cassert>
 #endif

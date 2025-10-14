@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include <cub/cub.cuh>
-
 #include <Helper.h>
 
+#include <cub/cub.cuh>
+
 namespace cloudViewer {
-    namespace ml {
+namespace ml {
 namespace impl {
 
 namespace {

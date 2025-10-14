@@ -1,17 +1,9 @@
-/*! \file
-*  \brief Picture UI
-*  \author Asher
-*  \date 2013
-*  \version 1.0
-*  \copyright 2013 PERAGlobal Ltd. All rights reserved.
-*
-*/
-/****************************************************************************
-**
-** Copyright (c) 2013 PERAGlobal Ltd. All rights reserved.
-** All rights reserved.
-**
-****************************************************************************/
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef COLORCOMBOBOX_H
 #define COLORCOMBOBOX_H
@@ -20,15 +12,13 @@
 
 #include "../qPCL.h"
 
-namespace Widgets
-{
+namespace Widgets {
 
-class QPCL_ENGINE_LIB_API ColorComboBox : public QComboBox
-{
+class QPCL_ENGINE_LIB_API ColorComboBox : public QComboBox {
     Q_OBJECT
 
 public:
-    ColorComboBox(QWidget *parent = 0);
+    ColorComboBox(QWidget* parent = 0);
     void setColor(const QColor& c);
     QColor color() const;
     static QList<QColor> colorList();
@@ -50,5 +40,5 @@ private:
     Q_DISABLE_COPY(ColorComboBox)
 };
 
-}
-#endif // COLORCOMBOBOX_H
+}  // namespace Widgets
+#endif  // COLORCOMBOBOX_H

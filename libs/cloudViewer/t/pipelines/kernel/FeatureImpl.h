@@ -23,10 +23,10 @@ using std::min;
 
 template <typename scalar_t>
 CLOUDVIEWER_HOST_DEVICE void ComputePairFeature(const scalar_t *p1,
-                                           const scalar_t *n1,
-                                           const scalar_t *p2,
-                                           const scalar_t *n2,
-                                           scalar_t *feature) {
+                                                const scalar_t *n1,
+                                                const scalar_t *p2,
+                                                const scalar_t *n2,
+                                                scalar_t *feature) {
     scalar_t dp2p1[3], n1_copy[3], n2_copy[3];
     dp2p1[0] = p2[0] - p1[0];
     dp2p1[1] = p2[1] - p1[1];
@@ -86,9 +86,9 @@ CLOUDVIEWER_HOST_DEVICE void ComputePairFeature(const scalar_t *p1,
 
 template <typename scalar_t>
 CLOUDVIEWER_HOST_DEVICE void UpdateSPFHFeature(const scalar_t *feature,
-                                          int64_t idx,
-                                          scalar_t hist_incr,
-                                          scalar_t *spfh) {
+                                               int64_t idx,
+                                               scalar_t hist_incr,
+                                               scalar_t *spfh) {
     int h_index1 =
             static_cast<int>(floor(11 * (feature[0] + M_PI) / (2.0 * M_PI)));
     h_index1 = h_index1 >= 11 ? 10 : max(0, h_index1);

@@ -22,18 +22,19 @@ Original ZIP package is copyrighted by Gilles Vollant and contributors,
 see quazip/(un)zip.h files for details. Basically it's the zlib license.
 */
 
-#include <QFileInfo>
-
 #include "quazipnewinfo.h"
 
 #include <string.h>
 
+#include <QFileInfo>
+
 static void QuaZipNewInfo_setPermissions(QuaZipNewInfo *info,
-        QFile::Permissions perm, bool isDir, bool isSymLink = false)
-{
+                                         QFile::Permissions perm,
+                                         bool isDir,
+                                         bool isSymLink = false) {
     quint32 uPerm = isDir ? 0040000 : 0100000;
 
-    if ( isSymLink ) {
+    if (isSymLink) {
 #ifdef Q_OS_WIN
         uPerm = 0200000;
 #else
@@ -41,30 +42,20 @@ static void QuaZipNewInfo_setPermissions(QuaZipNewInfo *info,
 #endif
     }
 
-    if ((perm & QFile::ReadOwner) != 0)
-        uPerm |= 0400;
-    if ((perm & QFile::WriteOwner) != 0)
-        uPerm |= 0200;
-    if ((perm & QFile::ExeOwner) != 0)
-        uPerm |= 0100;
-    if ((perm & QFile::ReadGroup) != 0)
-        uPerm |= 0040;
-    if ((perm & QFile::WriteGroup) != 0)
-        uPerm |= 0020;
-    if ((perm & QFile::ExeGroup) != 0)
-        uPerm |= 0010;
-    if ((perm & QFile::ReadOther) != 0)
-        uPerm |= 0004;
-    if ((perm & QFile::WriteOther) != 0)
-        uPerm |= 0002;
-    if ((perm & QFile::ExeOther) != 0)
-        uPerm |= 0001;
+    if ((perm & QFile::ReadOwner) != 0) uPerm |= 0400;
+    if ((perm & QFile::WriteOwner) != 0) uPerm |= 0200;
+    if ((perm & QFile::ExeOwner) != 0) uPerm |= 0100;
+    if ((perm & QFile::ReadGroup) != 0) uPerm |= 0040;
+    if ((perm & QFile::WriteGroup) != 0) uPerm |= 0020;
+    if ((perm & QFile::ExeGroup) != 0) uPerm |= 0010;
+    if ((perm & QFile::ReadOther) != 0) uPerm |= 0004;
+    if ((perm & QFile::WriteOther) != 0) uPerm |= 0002;
+    if ((perm & QFile::ExeOther) != 0) uPerm |= 0001;
     info->externalAttr = (info->externalAttr & ~0xFFFF0000u) | (uPerm << 16);
 }
 
-template<typename FileInfo>
-void QuaZipNewInfo_init(QuaZipNewInfo &self, const FileInfo &existing)
-{
+template <typename FileInfo>
+void QuaZipNewInfo_init(QuaZipNewInfo &self, const FileInfo &existing) {
     self.name = existing.name;
     self.dateTime = existing.dateTime;
     self.internalAttr = existing.internalAttr;
@@ -75,57 +66,51 @@ void QuaZipNewInfo_init(QuaZipNewInfo &self, const FileInfo &existing)
     self.uncompressedSize = existing.uncompressedSize;
 }
 
-QuaZipNewInfo::QuaZipNewInfo(const QuaZipFileInfo &existing)
-{
+QuaZipNewInfo::QuaZipNewInfo(const QuaZipFileInfo &existing) {
     QuaZipNewInfo_init(*this, existing);
 }
 
-QuaZipNewInfo::QuaZipNewInfo(const QuaZipFileInfo64 &existing)
-{
+QuaZipNewInfo::QuaZipNewInfo(const QuaZipFileInfo64 &existing) {
     QuaZipNewInfo_init(*this, existing);
 }
 
-QuaZipNewInfo::QuaZipNewInfo(const QString& name):
-  name(name), dateTime(QDateTime::currentDateTime()), internalAttr(0), externalAttr(0),
-  uncompressedSize(0)
-{
+QuaZipNewInfo::QuaZipNewInfo(const QString &name)
+    : name(name),
+      dateTime(QDateTime::currentDateTime()),
+      internalAttr(0),
+      externalAttr(0),
+      uncompressedSize(0) {}
+
+QuaZipNewInfo::QuaZipNewInfo(const QString &name, const QString &file)
+    : name(name), internalAttr(0), externalAttr(0), uncompressedSize(0) {
+    QFileInfo info(file);
+    QDateTime lm = info.lastModified();
+    if (!info.exists()) {
+        dateTime = QDateTime::currentDateTime();
+    } else {
+        dateTime = lm;
+        QuaZipNewInfo_setPermissions(this, info.permissions(), info.isDir(),
+                                     info.isSymLink());
+    }
 }
 
-QuaZipNewInfo::QuaZipNewInfo(const QString& name, const QString& file):
-  name(name), internalAttr(0), externalAttr(0), uncompressedSize(0)
-{
-  QFileInfo info(file);
-  QDateTime lm = info.lastModified();
-  if (!info.exists()) {
-    dateTime = QDateTime::currentDateTime();
-  } else {
-    dateTime = lm;
-    QuaZipNewInfo_setPermissions(this, info.permissions(), info.isDir(), info.isSymLink());
-  }
+void QuaZipNewInfo::setFileDateTime(const QString &file) {
+    QFileInfo info(file);
+    QDateTime lm = info.lastModified();
+    if (info.exists()) dateTime = lm;
 }
 
-void QuaZipNewInfo::setFileDateTime(const QString& file)
-{
-  QFileInfo info(file);
-  QDateTime lm = info.lastModified();
-  if (info.exists())
-    dateTime = lm;
-}
-
-void QuaZipNewInfo::setFilePermissions(const QString &file)
-{
+void QuaZipNewInfo::setFilePermissions(const QString &file) {
     QFileInfo info = QFileInfo(file);
     QFile::Permissions perm = info.permissions();
     QuaZipNewInfo_setPermissions(this, perm, info.isDir(), info.isSymLink());
 }
 
-void QuaZipNewInfo::setPermissions(QFile::Permissions permissions)
-{
+void QuaZipNewInfo::setPermissions(QFile::Permissions permissions) {
     QuaZipNewInfo_setPermissions(this, permissions, name.endsWith('/'));
 }
 
-void QuaZipNewInfo::setFileNTFSTimes(const QString &fileName)
-{
+void QuaZipNewInfo::setFileNTFSTimes(const QString &fileName) {
     QFileInfo fi(fileName);
     if (!fi.exists()) {
         qWarning("QuaZipNewInfo::setFileNTFSTimes(): '%s' doesn't exist",
@@ -141,50 +126,56 @@ void QuaZipNewInfo::setFileNTFSTimes(const QString &fileName)
 #endif
 }
 
-static void setNTFSTime(QByteArray &extra, const QDateTime &time, int position,
+static void setNTFSTime(QByteArray &extra,
+                        const QDateTime &time,
+                        int position,
                         int fineTicks) {
     int ntfsPos = -1, timesPos = -1;
     unsigned ntfsLength = 0, ntfsTimesLength = 0;
-    for (int i = 0; i <= extra.size() - 4; ) {
-        unsigned type = static_cast<unsigned>(static_cast<unsigned char>(
-                                                  extra.at(i)))
-                | (static_cast<unsigned>(static_cast<unsigned char>(
-                                                  extra.at(i + 1))) << 8);
+    for (int i = 0; i <= extra.size() - 4;) {
+        unsigned type =
+                static_cast<unsigned>(static_cast<unsigned char>(extra.at(i))) |
+                (static_cast<unsigned>(
+                         static_cast<unsigned char>(extra.at(i + 1)))
+                 << 8);
         i += 2;
-        unsigned length = static_cast<unsigned>(static_cast<unsigned char>(
-                                                  extra.at(i)))
-                | (static_cast<unsigned>(static_cast<unsigned char>(
-                                                  extra.at(i + 1))) << 8);
+        unsigned length =
+                static_cast<unsigned>(static_cast<unsigned char>(extra.at(i))) |
+                (static_cast<unsigned>(
+                         static_cast<unsigned char>(extra.at(i + 1)))
+                 << 8);
         i += 2;
         if (type == QUAZIP_EXTRA_NTFS_MAGIC) {
-            ntfsPos = i - 4; // the beginning of the NTFS record
+            ntfsPos = i - 4;  // the beginning of the NTFS record
             ntfsLength = length;
             if (length <= 4) {
-                break; // no times in the NTFS record
+                break;  // no times in the NTFS record
             }
-            i += 4; // reserved
+            i += 4;  // reserved
             while (i <= extra.size() - 4) {
-                unsigned tag = static_cast<unsigned>(
-                            static_cast<unsigned char>(extra.at(i)))
-                        | (static_cast<unsigned>(
-                               static_cast<unsigned char>(extra.at(i + 1)))
-                           << 8);
+                unsigned tag =
+                        static_cast<unsigned>(
+                                static_cast<unsigned char>(extra.at(i))) |
+                        (static_cast<unsigned>(
+                                 static_cast<unsigned char>(extra.at(i + 1)))
+                         << 8);
                 i += 2;
-                unsigned tagsize = static_cast<unsigned>(
-                            static_cast<unsigned char>(extra.at(i)))
-                        | (static_cast<unsigned>(
-                               static_cast<unsigned char>(extra.at(i + 1)))
-                           << 8);
+                unsigned tagsize =
+                        static_cast<unsigned>(
+                                static_cast<unsigned char>(extra.at(i))) |
+                        (static_cast<unsigned>(
+                                 static_cast<unsigned char>(extra.at(i + 1)))
+                         << 8);
                 i += 2;
                 if (tag == QUAZIP_EXTRA_NTFS_TIME_MAGIC) {
-                    timesPos = i - 4; // the beginning of the NTFS times tag
+                    timesPos = i - 4;  // the beginning of the NTFS times tag
                     ntfsTimesLength = tagsize;
                     break;
                 } else {
                     i += tagsize;
                 }
             }
-            break; // I ain't going to search for yet another NTFS record!
+            break;  // I ain't going to search for yet another NTFS record!
         } else {
             i += length;
         }
@@ -197,15 +188,15 @@ static void setNTFSTime(QByteArray &extra, const QDateTime &time, int position,
         // the NTFS record header
         extra[ntfsPos] = static_cast<char>(QUAZIP_EXTRA_NTFS_MAGIC);
         extra[ntfsPos + 1] = static_cast<char>(QUAZIP_EXTRA_NTFS_MAGIC >> 8);
-        extra[ntfsPos + 2] = 32; // the 2-byte size in LittleEndian
+        extra[ntfsPos + 2] = 32;  // the 2-byte size in LittleEndian
         extra[ntfsPos + 3] = 0;
         // zero the record
         memset(extra.data() + ntfsPos + 4, 0, 32);
         timesPos = ntfsPos + 8;
         // now set the tag data
         extra[timesPos] = static_cast<char>(QUAZIP_EXTRA_NTFS_TIME_MAGIC);
-        extra[timesPos + 1] = static_cast<char>(QUAZIP_EXTRA_NTFS_TIME_MAGIC
-                                               >> 8);
+        extra[timesPos + 1] =
+                static_cast<char>(QUAZIP_EXTRA_NTFS_TIME_MAGIC >> 8);
         // the size:
         extra[timesPos + 2] = 24;
         extra[timesPos + 3] = 0;
@@ -224,8 +215,8 @@ static void setNTFSTime(QByteArray &extra, const QDateTime &time, int position,
         ntfsLength += 28;
         // now set the tag data
         extra[timesPos] = static_cast<char>(QUAZIP_EXTRA_NTFS_TIME_MAGIC);
-        extra[timesPos + 1] = static_cast<char>(QUAZIP_EXTRA_NTFS_TIME_MAGIC
-                                               >> 8);
+        extra[timesPos + 1] =
+                static_cast<char>(QUAZIP_EXTRA_NTFS_TIME_MAGIC >> 8);
         // the size:
         extra[timesPos + 2] = 24;
         extra[timesPos + 3] = 0;
@@ -256,10 +247,11 @@ static void setNTFSTime(QByteArray &extra, const QDateTime &time, int position,
     quint64 ticks = base.msecsTo(time) * 10000 + fineTicks;
 #else
     QDateTime utc = time.toUTC();
-    quint64 ticks = (static_cast<qint64>(base.date().daysTo(utc.date()))
-            * Q_INT64_C(86400000)
-            + static_cast<qint64>(base.time().msecsTo(utc.time())))
-        * Q_INT64_C(10000) + fineTicks;
+    quint64 ticks = (static_cast<qint64>(base.date().daysTo(utc.date())) *
+                             Q_INT64_C(86400000) +
+                     static_cast<qint64>(base.time().msecsTo(utc.time()))) *
+                            Q_INT64_C(10000) +
+                    fineTicks;
 #endif
     extra[timesPos + 4 + position] = static_cast<char>(ticks);
     extra[timesPos + 5 + position] = static_cast<char>(ticks >> 8);
@@ -271,20 +263,17 @@ static void setNTFSTime(QByteArray &extra, const QDateTime &time, int position,
     extra[timesPos + 11 + position] = static_cast<char>(ticks >> 56);
 }
 
-void QuaZipNewInfo::setFileNTFSmTime(const QDateTime &mTime, int fineTicks)
-{
+void QuaZipNewInfo::setFileNTFSmTime(const QDateTime &mTime, int fineTicks) {
     setNTFSTime(extraLocal, mTime, 0, fineTicks);
     setNTFSTime(extraGlobal, mTime, 0, fineTicks);
 }
 
-void QuaZipNewInfo::setFileNTFSaTime(const QDateTime &aTime, int fineTicks)
-{
+void QuaZipNewInfo::setFileNTFSaTime(const QDateTime &aTime, int fineTicks) {
     setNTFSTime(extraLocal, aTime, 8, fineTicks);
     setNTFSTime(extraGlobal, aTime, 8, fineTicks);
 }
 
-void QuaZipNewInfo::setFileNTFScTime(const QDateTime &cTime, int fineTicks)
-{
+void QuaZipNewInfo::setFileNTFScTime(const QDateTime &cTime, int fineTicks) {
     setNTFSTime(extraLocal, cTime, 16, fineTicks);
     setNTFSTime(extraGlobal, cTime, 16, fineTicks);
 }

@@ -5,10 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Parallel.h>
+
 #include <numeric>
 
 #include "core/nns/NearestNeighborSearch.h"
-#include <Parallel.h>
 
 namespace cloudViewer {
 namespace ml {

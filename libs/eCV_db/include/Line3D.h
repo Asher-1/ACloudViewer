@@ -7,11 +7,11 @@
 
 #pragma once
 
+#include <Optional.h>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <limits>
-
-#include <Optional.h>
 
 #include "ecvBBox.h"
 
@@ -150,7 +150,8 @@ public:
     /// \warning A line that lies exactly in one of the AABB's planes within the
     /// double floating point precision will not intersect correctly by this
     /// method
-    virtual cloudViewer::utility::optional<double> SlabAABB(const ccBBox& box) const;
+    virtual cloudViewer::utility::optional<double> SlabAABB(
+            const ccBBox& box) const;
 
     /// \brief Returns the lower intersection parameter for a line with an
     /// axis aligned bounding box or empty if no intersection. This method is
@@ -174,7 +175,8 @@ public:
     /// is important.  In such cases if performance is important, a simple
     /// custom implementation based on the problem directionality will likely
     /// outperform even the slab method.
-    virtual cloudViewer::utility::optional<double> ExactAABB(const ccBBox& box) const;
+    virtual cloudViewer::utility::optional<double> ExactAABB(
+            const ccBBox& box) const;
 
     /// \brief Computes the two corresponding parameters of the closest distance
     /// between two Line3D objects, including derived types Ray3D and Segment3D,
@@ -217,8 +219,7 @@ protected:
     /// semantic interpretation of the line, it's up to the derived classes
     /// to use them in conjunction with other information to determine what the
     /// intersection parameter is.
-    std::pair<double, double> SlabAABBBase(
-            const ccBBox& box) const;
+    std::pair<double, double> SlabAABBBase(const ccBBox& box) const;
 
 private:
     const LineType line_type_ = LineType::Line;
@@ -280,7 +281,8 @@ public:
     /// \warning A ray that lies exactly in one of the AABB's planes within the
     /// double floating point precision will not intersect correctly by this
     /// method
-    cloudViewer::utility::optional<double> SlabAABB(const ccBBox& box) const override;
+    cloudViewer::utility::optional<double> SlabAABB(
+            const ccBBox& box) const override;
 
     /// \brief Clamps/bounds a parameter value to the closest valid place where
     /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
@@ -316,7 +318,6 @@ public:
 /// the api surface for client code.
 class Segment3D : public Line3D {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     /// \brief Creates a Segment3D through two points.  The origin will take the
@@ -383,7 +384,8 @@ public:
     /// \warning A segment that lies exactly in one of the AABB's planes within
     /// the double floating point precision will not intersect correctly by this
     /// method
-    cloudViewer::utility::optional<double> SlabAABB(const ccBBox& box) const override;
+    cloudViewer::utility::optional<double> SlabAABB(
+            const ccBBox& box) const override;
 
     /// \brief Returns the lower intersection parameter for a segment with an
     /// axis aligned bounding box or empty if no intersection. This method is
@@ -404,7 +406,8 @@ public:
     /// intersection is important.  In such cases if performance is important, a
     /// simple custom implementation based on the problem directionality will
     /// likely outperform even the slab method.
-    cloudViewer::utility::optional<double> ExactAABB(const ccBBox& box) const override;
+    cloudViewer::utility::optional<double> ExactAABB(
+            const ccBBox& box) const override;
 
     /// \brief Clamps/bounds a parameter value to the closest valid place where
     /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D

@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "ecvHObjectCaster.h"
 
@@ -484,8 +474,7 @@ bool ccHObjectCaster::CloneChildren(
             // GBL sensor
             case CV_TYPES::GBL_SENSOR: {
                 ccGBLSensor* gblSensor = static_cast<ccGBLSensor*>(child);
-                ccGBLSensor* clonedGBLSensor =
-                        new ccGBLSensor(*gblSensor);
+                ccGBLSensor* clonedGBLSensor = new ccGBLSensor(*gblSensor);
 
                 currentDestEntity->addChild(clonedGBLSensor);
             } break;

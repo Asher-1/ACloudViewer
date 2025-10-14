@@ -41,16 +41,16 @@ CLOUDVIEWER_HOST_DEVICE inline float Cross(const Point &a, const Point &b) {
 }
 
 CLOUDVIEWER_HOST_DEVICE inline float Cross(const Point &p1,
-                                      const Point &p2,
-                                      const Point &p0) {
+                                           const Point &p2,
+                                           const Point &p0) {
     return (p1.x_ - p0.x_) * (p2.y_ - p0.y_) -
            (p2.x_ - p0.x_) * (p1.y_ - p0.y_);
 }
 
 CLOUDVIEWER_HOST_DEVICE inline int CheckRectCross(const Point &p1,
-                                             const Point &p2,
-                                             const Point &q1,
-                                             const Point &q2) {
+                                                  const Point &p2,
+                                                  const Point &q1,
+                                                  const Point &q2) {
     int ret = fmin(p1.x_, p2.x_) <= fmax(q1.x_, q2.x_) &&
               fmin(q1.x_, q2.x_) <= fmax(p1.x_, p2.x_) &&
               fmin(p1.y_, p2.y_) <= fmax(q1.y_, q2.y_) &&
@@ -58,7 +58,8 @@ CLOUDVIEWER_HOST_DEVICE inline int CheckRectCross(const Point &p1,
     return ret;
 }
 
-CLOUDVIEWER_HOST_DEVICE inline int CheckInBox2D(const float *box, const Point &p) {
+CLOUDVIEWER_HOST_DEVICE inline int CheckInBox2D(const float *box,
+                                                const Point &p) {
     // box (5): [x1, y1, x2, y2, angle].
     const float MARGIN = static_cast<float>(1e-5);
 
@@ -75,10 +76,10 @@ CLOUDVIEWER_HOST_DEVICE inline int CheckInBox2D(const float *box, const Point &p
 }
 
 CLOUDVIEWER_HOST_DEVICE inline int Intersection(const Point &p1,
-                                           const Point &p0,
-                                           const Point &q1,
-                                           const Point &q0,
-                                           Point &ans) {
+                                                const Point &p0,
+                                                const Point &q1,
+                                                const Point &q0,
+                                                Point &ans) {
     // Fast exclusion.
     if (CheckRectCross(p0, p1, q0, q1) == 0) return 0;
 
@@ -111,9 +112,9 @@ CLOUDVIEWER_HOST_DEVICE inline int Intersection(const Point &p1,
 }
 
 CLOUDVIEWER_HOST_DEVICE inline void RotateAroundCenter(const Point &center,
-                                                  const float angle_cos,
-                                                  const float angle_sin,
-                                                  Point &p) {
+                                                       const float angle_cos,
+                                                       const float angle_sin,
+                                                       Point &p) {
     float new_x = (p.x_ - center.x_) * angle_cos +
                   (p.y_ - center.y_) * angle_sin + center.x_;
     float new_y = -(p.x_ - center.x_) * angle_sin +
@@ -122,14 +123,14 @@ CLOUDVIEWER_HOST_DEVICE inline void RotateAroundCenter(const Point &center,
 }
 
 CLOUDVIEWER_HOST_DEVICE inline int PointCmp(const Point &a,
-                                       const Point &b,
-                                       const Point &center) {
+                                            const Point &b,
+                                            const Point &center) {
     return atan2(a.y_ - center.y_, a.x_ - center.x_) >
            atan2(b.y_ - center.y_, b.x_ - center.x_);
 }
 
 CLOUDVIEWER_HOST_DEVICE inline float BoxOverlap(const float *box_a,
-                                           const float *box_b) {
+                                                const float *box_b) {
     // box_a (5) [x1, y1, x2, y2, angle].
     // box_b (5) [x1, y1, x2, y2, angle].
     float a_x1 = box_a[0], a_y1 = box_a[1], a_x2 = box_a[2], a_y2 = box_a[3],
@@ -264,8 +265,8 @@ CLOUDVIEWER_HOST_DEVICE inline float IoUBev2DWithCenterAndSize(
 }
 
 /// (x_center, y_max, z_center, x_size, y_size, z_size, y_rotate)
-CLOUDVIEWER_HOST_DEVICE inline float IoU3DWithCenterAndSize(const float *box_a,
-                                                       const float *box_b) {
+CLOUDVIEWER_HOST_DEVICE inline float IoU3DWithCenterAndSize(
+        const float *box_a, const float *box_b) {
     float box_a_2d[5];
     box_a_2d[0] = box_a[0];
     box_a_2d[1] = box_a[2];

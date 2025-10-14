@@ -7,7 +7,6 @@
 
 #pragma once
 #include "CVCoreLib.h"
-
 #include "Logging.h"  //for ConsoleProgressBar
 
 namespace cloudViewer {

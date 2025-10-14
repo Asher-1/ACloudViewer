@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef MODELTOVECTORSCONVERTER_H
 #define MODELTOVECTORSCONVERTER_H
 
@@ -5,11 +12,9 @@
 #include "utils.h"
 #include "vector4f.h"
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 class TableModel;
-class QPCL_ENGINE_LIB_API ModelToVectorsConverter : public SignalledRunnable
-{
+class QPCL_ENGINE_LIB_API ModelToVectorsConverter : public SignalledRunnable {
     Q_OBJECT
 public:
     ModelToVectorsConverter(TableModel* model);
@@ -23,5 +28,5 @@ private:
     TableModel* m_model = nullptr;
 };
 
-} // namespace Utils
-#endif // MODELTOVECTORSCONVERTER_H
+}  // namespace VtkUtils
+#endif  // MODELTOVECTORSCONVERTER_H

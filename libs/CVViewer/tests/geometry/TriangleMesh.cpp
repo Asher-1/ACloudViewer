@@ -5,10 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <ecvMesh.h>
-
 #include <ecvBBox.h>
+#include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {
@@ -1605,8 +1605,7 @@ TEST(TriangleMesh, CropTriangleMesh) {
     Eigen::Vector3d cropBoundMin(300.0, 300.0, 300.0);
     Eigen::Vector3d cropBoundMax(800.0, 800.0, 800.0);
 
-    auto output_tm = tm.Crop(
-            ccBBox(cropBoundMin, cropBoundMax));
+    auto output_tm = tm.Crop(ccBBox(cropBoundMin, cropBoundMax));
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);

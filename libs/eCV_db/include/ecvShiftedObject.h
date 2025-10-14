@@ -1,49 +1,39 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_SHIFTED_INTERFACE_HEADER
 #define ECV_SHIFTED_INTERFACE_HEADER
 
-//Local
+// Local
 #include "ecvHObject.h"
 
 //! Shifted entity interface
 /** Shifted entities are entities which coordinates can be
-	(optionally) shifted so as to reduce their amplitude and
-	therefore display or accuracy issues.
+        (optionally) shifted so as to reduce their amplitude and
+        therefore display or accuracy issues.
 **/
-class ECV_DB_LIB_API ccShiftedObject : public ccHObject
-{
+class ECV_DB_LIB_API ccShiftedObject : public ccHObject {
 public:
-
-	//! Default constructor
+    //! Default constructor
     ccShiftedObject(QString name = QString());
-	//! Copy constructor
-	ccShiftedObject(const ccShiftedObject& s);
+    //! Copy constructor
+    ccShiftedObject(const ccShiftedObject& s);
 
     //! Copies the Global Shift and Scale from another entity
     /** \param s shifted entity to copy information from
-    **/
+     **/
     void copyGlobalShiftAndScale(const ccShiftedObject& s);
 
     //! Sets shift applied to original coordinates (information storage only)
     /** Such a shift can typically be applied at loading time.
-    **/
-    virtual inline void setGlobalShift(double x, double y, double z) { return setGlobalShift(CCVector3d(x, y, z)); }
+     **/
+    virtual inline void setGlobalShift(double x, double y, double z) {
+        return setGlobalShift(CCVector3d(x, y, z));
+    }
 
     //! Sets shift applied to original coordinates (information storage only)
     /** Such a shift can typically be applied at loading time.
@@ -53,51 +43,49 @@ public:
 
     //! Returns the shift applied to original coordinates
     /** See ccGenericPointCloud::setOriginalShift
-    **/
+     **/
     virtual const CCVector3d& getGlobalShift() const { return m_globalShift; }
 
-    //! Sets the scale applied to original coordinates (information storage only)
+    //! Sets the scale applied to original coordinates (information storage
+    //! only)
     virtual void setGlobalScale(double scale);
 
     //! Returns the scale applied to original coordinates
     virtual double getGlobalScale() const { return m_globalScale; }
 
     //! Returns whether the cloud is shifted or not
-    inline bool isShifted() const
-    {
-    const CCVector3d& globalShift = getGlobalShift();
-    return (	globalShift.x != 0
-            ||	globalShift.y != 0
-            ||	globalShift.z != 0
-            ||	getGlobalScale() != 1.0 );
+    inline bool isShifted() const {
+        const CCVector3d& globalShift = getGlobalShift();
+        return (globalShift.x != 0 || globalShift.y != 0 ||
+                globalShift.z != 0 || getGlobalScale() != 1.0);
     }
 
     //! Returns the point back-projected into the original coordinates system
-    template<typename T> inline CCVector3d toGlobal3d(const Vector3Tpl<T>& Plocal) const
-    {
+    template <typename T>
+    inline CCVector3d toGlobal3d(const Vector3Tpl<T>& Plocal) const {
         // Pglobal = Plocal/scale - shift
         return Plocal.toDouble() / getGlobalScale() - getGlobalShift();
     }
 
     //! Returns the point projected into the local (shifted) coordinates system
-    template<typename T> inline CCVector3d toLocal3d(const Vector3Tpl<T>& Pglobal) const
-    {
+    template <typename T>
+    inline CCVector3d toLocal3d(const Vector3Tpl<T>& Pglobal) const {
         // Plocal = (Pglobal + shift) * scale
         return (Pglobal.toDouble() + getGlobalShift()) * getGlobalScale();
     }
     //! Returns the point projected into the local (shifted) coordinates system
-    template<typename T> inline CCVector3 toLocal3pc(const Vector3Tpl<T>& Pglobal) const
-    {
-        CCVector3d Plocal = Pglobal.toDouble() * getGlobalScale() + getGlobalShift();
+    template <typename T>
+    inline CCVector3 toLocal3pc(const Vector3Tpl<T>& Pglobal) const {
+        CCVector3d Plocal =
+                Pglobal.toDouble() * getGlobalScale() + getGlobalShift();
         return Plocal.toPC();
     }
 
-    //inherited from ccHObject
+    // inherited from ccHObject
     bool getOwnGlobalBB(CCVector3d& minCorner, CCVector3d& maxCorner) override;
     GlobalBoundingBox getOwnGlobalBB(bool withGLFeatures = false) override;
 
 protected:
-
     //! Serialization helper (output)
     bool saveShiftInfoToFile(QFile& out) const;
     //! Serialization helper (input)
@@ -108,7 +96,6 @@ protected:
 
     //! Global scale (typically applied at loading time)
     double m_globalScale;
-
 };
 
-#endif // ECV_SHIFTED_INTERFACE_HEADER
+#endif  // ECV_SHIFTED_INTERFACE_HEADER

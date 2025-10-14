@@ -1,44 +1,16 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2019 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-//
-// Reference:
-// https://github.com/open-mmlab/OpenPCDet/blob/master/pcdet/ops/iou3d_nms/src/iou3d_nms_kernel.cu
-//
-// Reference:
-// https://github.com/open-mmlab/mmdetection3d/blob/master/mmdet3d/ops/iou3d/src/iou3d_kernel.cu
-// 3D IoU Calculation and Rotated NMS(modified from 2D NMS written by others)
-// Written by Shaoshuai Shi
-// All Rights Reserved 2019-2020.
 
+#include <Helper.h>
 #include <thrust/device_vector.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/sequence.h>
 #include <thrust/sort.h>
 
-#include <Helper.h>
 #include "ml/Helper.h"
 #include "ml/contrib/IoUImpl.h"
 #include "ml/contrib/Nms.h"
@@ -148,18 +120,20 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
 
     // Compute sort indices.
     float *scores_copy = nullptr;
-    CLOUDVIEWER_CUDA_CHECK(cudaMalloc((void **)&scores_copy, n * sizeof(float)));
+    CLOUDVIEWER_CUDA_CHECK(
+            cudaMalloc((void **)&scores_copy, n * sizeof(float)));
     CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(scores_copy, scores, n * sizeof(float),
-                                    cudaMemcpyDeviceToDevice));
+                                      cudaMemcpyDeviceToDevice));
     int64_t *sort_indices = nullptr;
-    CLOUDVIEWER_CUDA_CHECK(cudaMalloc((void **)&sort_indices, n * sizeof(int64_t)));
+    CLOUDVIEWER_CUDA_CHECK(
+            cudaMalloc((void **)&sort_indices, n * sizeof(int64_t)));
     SortIndices(scores_copy, sort_indices, n, true);
     CLOUDVIEWER_CUDA_CHECK(cudaFree(scores_copy));
 
     // Allocate masks on device.
     uint64_t *mask_ptr = nullptr;
     CLOUDVIEWER_CUDA_CHECK(cudaMalloc((void **)&mask_ptr,
-                                    n * num_block_cols * sizeof(uint64_t)));
+                                      n * num_block_cols * sizeof(uint64_t)));
 
     // Launch kernel.
     dim3 blocks(cloudViewer::utility::DivUp(n, NMS_BLOCK_SIZE),
@@ -172,14 +146,15 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
     std::vector<uint64_t> mask_vec(n * num_block_cols);
     uint64_t *mask = mask_vec.data();
     CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(mask_vec.data(), mask_ptr,
-                                    n * num_block_cols * sizeof(uint64_t),
-                                    cudaMemcpyDeviceToHost));
+                                      n * num_block_cols * sizeof(uint64_t),
+                                      cudaMemcpyDeviceToHost));
     CLOUDVIEWER_CUDA_CHECK(cudaFree(mask_ptr));
 
     // Copy sort_indices to cpu.
     std::vector<int64_t> sort_indices_cpu(n);
     CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(sort_indices_cpu.data(), sort_indices,
-                                    n * sizeof(int64_t), cudaMemcpyDeviceToHost));
+                                      n * sizeof(int64_t),
+                                      cudaMemcpyDeviceToHost));
 
     // Write to keep_indices in CPU.
     // remv_cpu has n bits in total. If the bit is 1, the corresponding

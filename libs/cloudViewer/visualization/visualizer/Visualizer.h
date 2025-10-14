@@ -253,7 +253,7 @@ protected:
     // window
     GLFWwindow *window_ = nullptr;
     std::string window_name_ = "CloudViewer";
-    
+
     /// \brief Shared GLFW context.
     std::shared_ptr<GLFWContext> glfw_context_ = nullptr;
 

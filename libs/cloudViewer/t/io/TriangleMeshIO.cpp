@@ -7,12 +7,13 @@
 
 #include "cloudViewer/t/io/TriangleMeshIO.h"
 
+#include <FileSystem.h>
+#include <Logging.h>
+
 #include <set>
 #include <unordered_map>
 
 #include "cloudViewer/t/io/NumpyIO.h"
-#include <FileSystem.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -87,7 +88,8 @@ bool ReadTriangleMesh(const std::string &filename,
     bool success = false;
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
         ccMesh legacy_mesh;
-        success = cloudViewer::io::ReadTriangleMesh(filename, legacy_mesh, params);
+        success = cloudViewer::io::ReadTriangleMesh(filename, legacy_mesh,
+                                                    params);
         if (!success) {
             return false;
         }
@@ -182,9 +184,9 @@ bool ReadTriangleMeshFromNPZ(
                 mesh.GetMaterial().SetDefaultProperties();
             }
             mesh.GetMaterial().SetTextureMap(key, geometry::Image(attr.second));
-            // Note: due to quirk of CloudViewer shader implementation if we have a
-            // metallic texture we need to set the metallic scalar propert to
-            // 1.0
+            // Note: due to quirk of CloudViewer shader implementation if we
+            // have a metallic texture we need to set the metallic scalar
+            // propert to 1.0
             if (key == "metallic") {
                 mesh.GetMaterial().SetScalarProperty("metallic", 1.0);
             }

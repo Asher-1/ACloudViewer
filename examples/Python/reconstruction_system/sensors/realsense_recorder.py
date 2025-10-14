@@ -115,7 +115,7 @@ if __name__ == "__main__":
     # Create a config and configure the pipeline to stream
     #  different resolutions of color and depth streams
     config = rs.config()
-    
+
     color_profiles, depth_profiles = get_profiles()
 
     if args.record_imgs or args.record_rosbag:

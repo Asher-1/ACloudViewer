@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                    COPYRIGHT: CLOUDVIEWER  project                     #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "PclTools.h"
 
@@ -855,8 +845,10 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
         }
     }
 
-    std::vector<ccColorScale::Label> sortedKeyValues(keyValues.begin(), keyValues.end());
-    double maxRange = sortedKeyValues.back().value - sortedKeyValues.front().value;
+    std::vector<ccColorScale::Label> sortedKeyValues(keyValues.begin(),
+                                                     keyValues.end());
+    double maxRange =
+            sortedKeyValues.back().value - sortedKeyValues.front().value;
 
     const ecvGui::ParamStruct& displayParams =
             ecvDisplayTools::GetDisplayParameters();
@@ -888,12 +880,14 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
     vlabelSet drawnLabels;
     {
         // add first label
-        drawnLabels.emplace_back(0, 0, strHeight, sortedKeyValues.front().value);
+        drawnLabels.emplace_back(0, 0, strHeight,
+                                 sortedKeyValues.front().value);
 
         if (keyValues.size() > 1) {
             // add last label
             drawnLabels.emplace_back(scaleMaxHeight, scaleMaxHeight - strHeight,
-                                     scaleMaxHeight, sortedKeyValues.back().value);
+                                     scaleMaxHeight,
+                                     sortedKeyValues.back().value);
         }
 
         // we try to display the other keyPoints (if any)
@@ -914,10 +908,10 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
                      nLabels.second->yMin >= yScale + minGap)) {
                     // insert it at the right place (so as to keep a sorted
                     // list!)
-                    drawnLabels.insert(
-                            nLabels.second,
-                            vlabel(yScale, yScale - strHeight / 2,
-                                   yScale + strHeight / 2, sortedKeyValues[i].value));
+                    drawnLabels.insert(nLabels.second,
+                                       vlabel(yScale, yScale - strHeight / 2,
+                                              yScale + strHeight / 2,
+                                              sortedKeyValues[i].value));
                 }
             }
         }
@@ -940,9 +934,9 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
                     if (it1->yMax + 2 * minGap < it2->yMin) {
                         // insert label
                         double val = (it1->val + it2->val) / 2.0;
-                        int yScale =
-                                static_cast<int>((val - sortedKeyValues[0].value) *
-                                                 scaleMaxHeight / maxRange);
+                        int yScale = static_cast<int>(
+                                (val - sortedKeyValues[0].value) *
+                                scaleMaxHeight / maxRange);
 
                         // insert it at the right place (so as to keep a sorted
                         // list!)
@@ -1001,8 +995,8 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
         // }
 
         for (int j = 0; j < scaleMaxHeight; ++j) {
-            double baseValue =
-                    sortedKeyValues.front().value + (j * maxRange) / scaleMaxHeight;
+            double baseValue = sortedKeyValues.front().value +
+                               (j * maxRange) / scaleMaxHeight;
             double value = baseValue;
             if (logScale) {
                 value = std::exp(value * c_log10);

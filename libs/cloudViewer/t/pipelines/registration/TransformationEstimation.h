@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include <cmath>
 #include <memory>
 #include <string>
@@ -17,7 +19,6 @@
 #include "cloudViewer/t/geometry/PointCloud.h"
 #include "cloudViewer/t/pipelines/kernel/TransformationConverter.h"
 #include "cloudViewer/t/pipelines/registration/RobustKernel.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 

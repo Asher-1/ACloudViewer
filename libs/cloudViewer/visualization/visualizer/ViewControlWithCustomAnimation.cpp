@@ -6,10 +6,10 @@
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/ViewControlWithCustomAnimation.h"
-#include <Helper.h>
-#include <Logging.h>
 
+#include <Helper.h>
 #include <IJsonConvertibleIO.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {

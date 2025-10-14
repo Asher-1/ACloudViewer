@@ -7,12 +7,11 @@
 
 #pragma once
 
-#include "eCV_db.h"
-
 #include <memory>
 #include <vector>
 
 #include "camera/PinholeCameraIntrinsic.h"
+#include "eCV_db.h"
 
 namespace cloudViewer {
 namespace camera {
@@ -20,8 +19,8 @@ namespace camera {
 /// \class PinholeCameraParameters
 ///
 /// \brief Contains both intrinsic and extrinsic pinhole camera parameters.
-class ECV_DB_LIB_API PinholeCameraParameters :
-	public cloudViewer::utility::IJsonConvertible {
+class ECV_DB_LIB_API PinholeCameraParameters
+    : public cloudViewer::utility::IJsonConvertible {
 public:
     // Must comment it due to unreferenced symbols when linked
     // CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW

@@ -41,18 +41,19 @@ def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
                                                     target_rgbd_image,
                                                     intrinsic, False)
             if success_5pt:
-                [success, trans, info
-                ] = cv3d.pipelines.odometry.compute_rgbd_odometry(
-                    source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
-                    cv3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm(),
-                    option)
+                [success, trans,
+                 info] = cv3d.pipelines.odometry.compute_rgbd_odometry(
+                     source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
+                     cv3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm(
+                     ), option)
                 return [success, trans, info]
         return [False, np.identity(4), np.identity(6)]
     else:
         odo_init = np.identity(4)
         [success, trans, info] = cv3d.pipelines.odometry.compute_rgbd_odometry(
             source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
-            cv3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
+            cv3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm(),
+            option)
         return [success, trans, info]
 
 
@@ -81,10 +82,10 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files,
                         trans_odometry_inv))
                 pose_graph.edges.append(
                     cv3d.pipelines.registration.PoseGraphEdge(s - sid,
-                                                             t - sid,
-                                                             trans,
-                                                             info,
-                                                             uncertain=False))
+                                                              t - sid,
+                                                              trans,
+                                                              info,
+                                                              uncertain=False))
 
             # keyframe loop closure
             if s % config['n_keyframes_per_n_frame'] == 0 \
@@ -139,10 +140,10 @@ def make_pointcloud_for_fragment(path_dataset, color_files, depth_files,
     pcd_name = join(path_dataset,
                     config["template_fragment_pointcloud"] % fragment_id)
     cv3d.io.write_point_cloud(pcd_name,
-                             pcd,
-                             format='auto',
-                             write_ascii=False,
-                             compressed=True)
+                              pcd,
+                              format='auto',
+                              write_ascii=False,
+                              compressed=True)
 
 
 def process_single_fragment(fragment_id, color_files, depth_files, n_files,

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
 #include <tbb/concurrent_unordered_set.h>
 
 #include "cloudViewer/core/Dispatch.h"
@@ -19,7 +20,6 @@
 #include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
 #include "cloudViewer/t/geometry/kernel/VoxelBlockGrid.h"
 #include "cloudViewer/t/geometry/kernel/VoxelBlockGridImpl.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

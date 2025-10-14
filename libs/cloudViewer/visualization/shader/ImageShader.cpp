@@ -7,8 +7,9 @@
 
 #include "visualization/shader/ImageShader.h"
 
-#include <algorithm>
 #include <Image.h>
+
+#include <algorithm>
 
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"

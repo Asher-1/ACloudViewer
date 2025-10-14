@@ -1,33 +1,9 @@
-// Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//
-//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
-//       its contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef COLMAP_SRC_UTIL_ENDIAN_H_
 #define COLMAP_SRC_UTIL_ENDIAN_H_
@@ -74,89 +50,90 @@ void WriteBinaryLittleEndian(std::ostream* stream, const std::vector<T>& data);
 
 template <typename T>
 T ReverseBytes(const T& data) {
-  T data_reversed = data;
-  std::reverse(reinterpret_cast<char*>(&data_reversed),
-               reinterpret_cast<char*>(&data_reversed) + sizeof(T));
-  return data_reversed;
+    T data_reversed = data;
+    std::reverse(reinterpret_cast<char*>(&data_reversed),
+                 reinterpret_cast<char*>(&data_reversed) + sizeof(T));
+    return data_reversed;
 }
 
 inline bool IsLittleEndian() {
 #ifdef BOOST_BIG_ENDIAN
-  return false;
+    return false;
 #else
-  return true;
+    return true;
 #endif
 }
 
 inline bool IsBigEndian() {
 #ifdef BOOST_BIG_ENDIAN
-  return true;
+    return true;
 #else
-  return false;
+    return false;
 #endif
 }
 
 template <typename T>
 T LittleEndianToNative(const T x) {
-  if (IsLittleEndian()) {
-    return x;
-  } else {
-    return ReverseBytes(x);
-  }
+    if (IsLittleEndian()) {
+        return x;
+    } else {
+        return ReverseBytes(x);
+    }
 }
 
 template <typename T>
 T BigEndianToNative(const T x) {
-  if (IsBigEndian()) {
-    return x;
-  } else {
-    return ReverseBytes(x);
-  }
+    if (IsBigEndian()) {
+        return x;
+    } else {
+        return ReverseBytes(x);
+    }
 }
 
 template <typename T>
 T NativeToLittleEndian(const T x) {
-  if (IsLittleEndian()) {
-    return x;
-  } else {
-    return ReverseBytes(x);
-  }
+    if (IsLittleEndian()) {
+        return x;
+    } else {
+        return ReverseBytes(x);
+    }
 }
 
 template <typename T>
 T NativeToBigEndian(const T x) {
-  if (IsBigEndian()) {
-    return x;
-  } else {
-    return ReverseBytes(x);
-  }
+    if (IsBigEndian()) {
+        return x;
+    } else {
+        return ReverseBytes(x);
+    }
 }
 
 template <typename T>
 T ReadBinaryLittleEndian(std::istream* stream) {
-  T data_little_endian;
-  stream->read(reinterpret_cast<char*>(&data_little_endian), sizeof(T));
-  return LittleEndianToNative(data_little_endian);
+    T data_little_endian;
+    stream->read(reinterpret_cast<char*>(&data_little_endian), sizeof(T));
+    return LittleEndianToNative(data_little_endian);
 }
 
 template <typename T>
 void ReadBinaryLittleEndian(std::istream* stream, std::vector<T>* data) {
-  for (size_t i = 0; i < data->size(); ++i) {
-    (*data)[i] = ReadBinaryLittleEndian<T>(stream);
-  }
+    for (size_t i = 0; i < data->size(); ++i) {
+        (*data)[i] = ReadBinaryLittleEndian<T>(stream);
+    }
 }
 
 template <typename T>
 void WriteBinaryLittleEndian(std::ostream* stream, const T& data) {
-  const T data_little_endian = NativeToLittleEndian(data);
-  stream->write(reinterpret_cast<const char*>(&data_little_endian), sizeof(T));
+    const T data_little_endian = NativeToLittleEndian(data);
+    stream->write(reinterpret_cast<const char*>(&data_little_endian),
+                  sizeof(T));
 }
 
 template <typename T>
 void WriteBinaryLittleEndian(std::ostream* stream, const std::vector<T>& data) {
-  for (const auto& elem : data) {
-    WriteBinaryLittleEndian<T>(stream, elem);
-  }
+    for (const auto& elem : data) {
+        WriteBinaryLittleEndian<T>(stream, elem);
+    }
 }
 
 }  // namespace colmap

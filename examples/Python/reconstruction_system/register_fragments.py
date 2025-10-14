@@ -50,13 +50,12 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
         result = cv3d.pipelines.registration.registration_ransac_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh, False, distance_threshold,
             cv3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False), 4,
-            [
-                cv3d.pipelines.registration.
-                CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                cv3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                    distance_threshold)
-            ],
+                False), 4, [
+                    cv3d.pipelines.registration.
+                    CorrespondenceCheckerBasedOnEdgeLength(0.9),
+                    cv3d.pipelines.registration.
+                    CorrespondenceCheckerBasedOnDistance(distance_threshold)
+                ],
             cv3d.pipelines.registration.RANSACConvergenceCriteria(
                 1000000, 0.999))
     if (result.transformation.trace() == 4.0):
@@ -106,17 +105,17 @@ def update_posegraph_for_scene(s, t, transformation, information, odometry,
             cv3d.pipelines.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
             cv3d.pipelines.registration.PoseGraphEdge(s,
-                                                     t,
-                                                     transformation,
-                                                     information,
-                                                     uncertain=False))
+                                                      t,
+                                                      transformation,
+                                                      information,
+                                                      uncertain=False))
     else:  # loop closure case
         pose_graph.edges.append(
             cv3d.pipelines.registration.PoseGraphEdge(s,
-                                                     t,
-                                                     transformation,
-                                                     information,
-                                                     uncertain=True))
+                                                      t,
+                                                      transformation,
+                                                      information,
+                                                      uncertain=True))
     return (odometry, pose_graph)
 
 

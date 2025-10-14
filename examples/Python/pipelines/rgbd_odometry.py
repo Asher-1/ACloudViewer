@@ -54,4 +54,3 @@ if __name__ == "__main__":
             source_rgbd_image, pinhole_camera_intrinsic)
         source_pcd_hybrid_term.transform(trans_hybrid_term)
         cv3d.visualization.draw([target_pcd, source_pcd_hybrid_term])
-

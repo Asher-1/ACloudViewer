@@ -1,15 +1,20 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef CLIPWINDOW_H
 #define CLIPWINDOW_H
 
 #include "cutwindow.h"
 
-namespace Ui
-{
-    class ClipConfig;
+namespace Ui {
+class ClipConfig;
 }
 
-class ClipWindow : public CutWindow
-{
+class ClipWindow : public CutWindow {
     Q_OBJECT
 
 public:
@@ -17,7 +22,6 @@ public:
     ~ClipWindow();
 
     void apply();
-
 };
 
-#endif // CLIPWINDOW_H
+#endif  // CLIPWINDOW_H

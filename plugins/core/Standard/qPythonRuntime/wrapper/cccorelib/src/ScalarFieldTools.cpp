@@ -1,19 +1,9 @@
-// ##########################################################################
-// #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                       #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                   COPYRIGHT: Thomas Montaigu                           #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -93,8 +83,10 @@ void define_ScalarFieldTools(py::module &cccorelib)
                     "K"_a,
                     "kmcc"_a,
                     "progressCb"_a = nullptr)
-        .def_static(
-            "SetScalarValueToNaN", &cloudViewer::ScalarFieldTools::SetScalarValueToNaN, "P"_a, "scalarValue"_a)
+        .def_static("SetScalarValueToNaN",
+                    &cloudViewer::ScalarFieldTools::SetScalarValueToNaN,
+                    "P"_a,
+                    "scalarValue"_a)
         .def_static(
             "SetScalarValueInverted", &ScalarFieldTools::SetScalarValueInverted, "P"_a, "scalarValue"_a)
         .def_static(

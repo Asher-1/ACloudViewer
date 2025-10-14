@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "cloudViewer/core/Dtype.h"
 #include <Logging.h>
+
+#include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/utility/MiniVec.h"
 
 #define INSTANTIATE_TYPES(DTYPE, DIM)                \
@@ -93,7 +94,8 @@ namespace utility {
 template <typename T, int N>
 struct MiniVecHash {
 public:
-    CLOUDVIEWER_HOST_DEVICE uint64_t operator()(const MiniVec<T, N>& key) const {
+    CLOUDVIEWER_HOST_DEVICE uint64_t
+    operator()(const MiniVec<T, N>& key) const {
         uint64_t hash = UINT64_C(14695981039346656037);
 #if defined(__CUDA_ARCH__)
 #pragma unroll
@@ -110,7 +112,7 @@ template <typename T, int N>
 struct MiniVecEq {
 public:
     CLOUDVIEWER_HOST_DEVICE bool operator()(const MiniVec<T, N>& lhs,
-                                       const MiniVec<T, N>& rhs) const {
+                                            const MiniVec<T, N>& rhs) const {
         bool is_equal = true;
 #if defined(__CUDA_ARCH__)
 #pragma unroll

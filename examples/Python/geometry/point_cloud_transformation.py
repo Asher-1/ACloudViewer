@@ -27,7 +27,7 @@ def translate():
         "name": "Translated (in Y) Geometry",
         "geometry": pcd_ty
     }],
-                           show_ui=True)
+                            show_ui=True)
 
 
 def rotate():
@@ -44,7 +44,8 @@ def rotate():
     }, {
         "name": "Rotated Geometry",
         "geometry": pcd_r
-    }], show_ui=True)
+    }],
+                            show_ui=True)
 
 
 def scale():
@@ -60,7 +61,8 @@ def scale():
     }, {
         "name": "Scaled Geometry",
         "geometry": pcd_s
-    }], show_ui=True)
+    }],
+                            show_ui=True)
 
 
 def transform():
@@ -80,7 +82,8 @@ def transform():
     }, {
         "name": "Transformed Geometry",
         "geometry": pcd_t
-    }], show_ui=True)
+    }],
+                            show_ui=True)
 
 
 if __name__ == "__main__":

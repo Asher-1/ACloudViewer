@@ -54,9 +54,10 @@ bool ReadTriangleMeshUsingASSIMP(
         geometry::TriangleMesh &mesh,
         const cloudViewer::io::ReadTriangleMeshOptions &params);
 
-bool ReadTriangleMeshFromNPZ(const std::string &filename,
-                             geometry::TriangleMesh &mesh,
-                             const cloudViewer::io::ReadTriangleMeshOptions &params);
+bool ReadTriangleMeshFromNPZ(
+        const std::string &filename,
+        geometry::TriangleMesh &mesh,
+        const cloudViewer::io::ReadTriangleMeshOptions &params);
 
 bool WriteTriangleMeshUsingASSIMP(const std::string &filename,
                                   const geometry::TriangleMesh &mesh,

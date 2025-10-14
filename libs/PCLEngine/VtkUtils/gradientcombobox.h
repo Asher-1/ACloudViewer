@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef GRADIENTCOMBOBOX_H
 #define GRADIENTCOMBOBOX_H
 
@@ -6,12 +13,10 @@
 #include "../qPCL.h"
 
 class QListWidgetItem;
-namespace Widgets
-{
+namespace Widgets {
 
 class GradientComboBoxPrivate;
-class QPCL_ENGINE_LIB_API GradientComboBox : public QComboBox
-{
+class QPCL_ENGINE_LIB_API GradientComboBox : public QComboBox {
     Q_OBJECT
 public:
     explicit GradientComboBox(QWidget* parent = nullptr);
@@ -30,10 +35,12 @@ public:
     void hidePopup();
 
 signals:
-    void colorsChanged(const QString& name, const QColor& clr1, const QColor& clr2);
+    void colorsChanged(const QString& name,
+                       const QColor& clr1,
+                       const QColor& clr2);
 
 protected:
-    void paintEvent(QPaintEvent *e);
+    void paintEvent(QPaintEvent* e);
     void resizeEvent(QResizeEvent* e);
     QSize minimumSizeHint() const;
 
@@ -45,5 +52,5 @@ private:
     Q_DISABLE_COPY(GradientComboBox)
 };
 
-} // namespace Widgets
-#endif // GRADIENTCOMBOBOX_H
+}  // namespace Widgets
+#endif  // GRADIENTCOMBOBOX_H

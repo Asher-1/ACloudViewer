@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef COLORSERIES_H
 #define COLORSERIES_H
 
@@ -5,12 +12,10 @@
 
 #include "../qPCL.h"
 
-namespace Utils
-{
+namespace Utils {
 
 class ColorSeriesPrivate;
-class QPCL_ENGINE_LIB_API ColorSeries
-{
+class QPCL_ENGINE_LIB_API ColorSeries {
 public:
     enum Scheme { Spectrum, Warm, Cool, Blues, WildFlower, Citrus };
 
@@ -28,5 +33,5 @@ private:
     Q_DISABLE_COPY(ColorSeries)
 };
 
-} // namespace Utils
-#endif // COLORSERIES_H
+}  // namespace Utils
+#endif  // COLORSERIES_H

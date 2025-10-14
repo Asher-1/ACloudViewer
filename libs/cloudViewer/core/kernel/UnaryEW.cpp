@@ -7,9 +7,10 @@
 
 #include "cloudViewer/core/kernel/UnaryEW.h"
 
+#include <Logging.h>
+
 #include "cloudViewer/core/ShapeUtil.h"
 #include "cloudViewer/core/Tensor.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

@@ -7,6 +7,8 @@
 
 #include "cloudViewer/t/io/sensor/realsense/RealSenseSensorConfig.h"
 
+#include <Logging.h>
+#include <camera/PinholeCameraIntrinsic.h>
 #include <json/json.h>
 
 #include <cstdlib>
@@ -16,10 +18,8 @@
 #include <tuple>
 #include <unordered_map>
 
-#include <camera/PinholeCameraIntrinsic.h>
 #include "cloudViewer/t/io/sensor/RGBDVideoMetadata.h"
 #include "cloudViewer/t/io/sensor/realsense/RealSensePrivate.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

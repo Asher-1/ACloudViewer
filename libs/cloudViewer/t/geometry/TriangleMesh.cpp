@@ -374,11 +374,10 @@ double TriangleMesh::GetSurfaceArea() const {
     return surface_area;
 }
 
-geometry::TriangleMesh TriangleMesh::FromLegacy(
-        const ccMesh &mesh_legacy,
-        core::Dtype float_dtype,
-        core::Dtype int_dtype,
-        const core::Device &device) {
+geometry::TriangleMesh TriangleMesh::FromLegacy(const ccMesh &mesh_legacy,
+                                                core::Dtype float_dtype,
+                                                core::Dtype int_dtype,
+                                                const core::Device &device) {
     if (float_dtype != core::Float32 && float_dtype != core::Float64) {
         utility::LogError("float_dtype must be Float32 or Float64, but got {}.",
                           float_dtype.ToString());

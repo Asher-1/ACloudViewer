@@ -1,17 +1,22 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <QImage>
 #include <QColor>
+#include <QImage>
 #include <QtMath>
-
 #include <complex>
 
 #include "../qPCL.h"
 
 class vtkActor;
-namespace Utils
-{
+namespace Utils {
 
 // alphabetical char
 QString QPCL_ENGINE_LIB_API character(int index);
@@ -22,10 +27,9 @@ QImage QPCL_ENGINE_LIB_API star(const QSize& size = QSize(30, 30));
 double QPCL_ENGINE_LIB_API random(int low, int high);
 
 template <typename T>
-inline static std::complex<T> random(int low, int high)
-{
-	std::complex<T> c(random(low, high), random(low, high));
-	return c;
+inline static std::complex<T> random(int low, int high) {
+    std::complex<T> c(random(low, high), random(low, high));
+    return c;
 }
 
 // convert QColor to double[3] clr
@@ -34,115 +38,93 @@ QColor QPCL_ENGINE_LIB_API qColor(double* pClr);
 void QPCL_ENGINE_LIB_API qColor2HSV(const QColor& clr, double* hsv);
 
 template <typename T, int size = 3>
-class ArrayComparator
-{
+class ArrayComparator {
 public:
-	bool operator()(const T* lhs, const T* rhs)
-	{
-		for (auto i = 0; i < size; ++i) {
-			if (lhs[i] != rhs[i])
-				return false;
-		}
-		return true;
-	}
+    bool operator()(const T* lhs, const T* rhs) {
+        for (auto i = 0; i < size; ++i) {
+            if (lhs[i] != rhs[i]) return false;
+        }
+        return true;
+    }
 };
 
 template <typename T, int size = 3>
-class ArrayAssigner
-{
+class ArrayAssigner {
 public:
-	void operator()(T* lhs, const T* rhs)
-	{
-		//memset(lhs, rhs, 3 * sizeof(T));
-		for (auto i = 0; i < size; ++i)
-			lhs[i] = rhs[i];
-	}
+    void operator()(T* lhs, const T* rhs) {
+        // memset(lhs, rhs, 3 * sizeof(T));
+        for (auto i = 0; i < size; ++i) lhs[i] = rhs[i];
+    }
 };
 
 template <typename T, int size = 3>
-class ArrayInitializer
-{
+class ArrayInitializer {
 public:
-	void operator()(T* array, T value = T())
-	{
-		for (auto i = 0; i < size; ++i)
-			array[i] = value;
-	}
+    void operator()(T* array, T value = T()) {
+        for (auto i = 0; i < size; ++i) array[i] = value;
+    }
 };
 
-class Normalizer
-{
+class Normalizer {
 public:
-	void operator()(const double* input, double* output)
-	{
-		double mod = qSqrt(input[0] * input[0] +
-						   input[1] * input[1] +
-						   input[2] * input[2]);
-		if (mod == 0) {
-			output[0] = input[0];
-			output[1] = input[1];
-			output[2] = input[2];
-		} else {
-			output[0] = input[0] / mod;
-			output[1] = input[1] / mod;
-			output[2] = input[2] / mod;
-		}
-	}
+    void operator()(const double* input, double* output) {
+        double mod = qSqrt(input[0] * input[0] + input[1] * input[1] +
+                           input[2] * input[2]);
+        if (mod == 0) {
+            output[0] = input[0];
+            output[1] = input[1];
+            output[2] = input[2];
+        } else {
+            output[0] = input[0] / mod;
+            output[1] = input[1] / mod;
+            output[2] = input[2] / mod;
+        }
+    }
 };
 
 typedef QList<vtkActor*> ActorList;
 
 template <class T>
-inline void vtkSafeDelete(T* obj)
-{
-	if (obj)
-		obj->Delete();
+inline void vtkSafeDelete(T* obj) {
+    if (obj) obj->Delete();
 }
 
 template <class T>
-inline void vtkSafeDelete(QList<T*>& objList)
-{
-	foreach (T* obj, objList)
-		obj->Delete();
-	objList.clear();
+inline void vtkSafeDelete(QList<T*>& objList) {
+    foreach (T* obj, objList) obj->Delete();
+    objList.clear();
 }
 
 template <typename T>
-inline T boundedValue(const T& value, const T& min, const T& max)
-{
-	if (value < min)
-		return min;
-	if (value > max)
-		return max;
-	return value;
+inline T boundedValue(const T& value, const T& min, const T& max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
 }
 
 template <typename T>
-static inline double module(T* vector)
-{
-	return qSqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
+static inline double module(T* vector) {
+    return qSqrt(vector[0] * vector[0] + vector[1] * vector[1] +
+                 vector[2] * vector[2]);
 }
 
 template <typename T>
-static inline double distance(T* pot1, T* pot2)
-{
-	double dX = pot2[0] - pot1[0];
-	double dY = pot2[1] - pot1[1];
-	double dZ = pot2[2] - pot1[2];
-	return qSqrt(dX * dX + dY * dY + dZ * dZ);
+static inline double distance(T* pot1, T* pot2) {
+    double dX = pot2[0] - pot1[0];
+    double dY = pot2[1] - pot1[1];
+    double dZ = pot2[2] - pot1[2];
+    return qSqrt(dX * dX + dY * dY + dZ * dZ);
 }
 
 /*!
  * \brief get vector between two points
  */
 template <typename T>
-static inline void normal(T* inPot1, T* inPot2, T* outPot)
-{
-	outPot[0] = -(inPot2[1] - inPot1[1]);
-	outPot[1] = inPot2[0] - inPot1[0];
-	outPot[2] = inPot1[2];
+static inline void normal(T* inPot1, T* inPot2, T* outPot) {
+    outPot[0] = -(inPot2[1] - inPot1[1]);
+    outPot[1] = inPot2[0] - inPot1[0];
+    outPot[2] = inPot1[2];
 }
 
-
-} // namespace Utils
+}  // namespace Utils
 #endif

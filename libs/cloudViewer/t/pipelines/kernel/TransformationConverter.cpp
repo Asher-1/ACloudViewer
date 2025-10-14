@@ -7,6 +7,8 @@
 
 #include "cloudViewer/t/pipelines/kernel/TransformationConverter.h"
 
+#include <Logging.h>
+
 #include <cmath>
 
 #include "cloudViewer/core/CUDAUtils.h"
@@ -14,7 +16,6 @@
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/TensorCheck.h"
 #include "cloudViewer/t/pipelines/kernel/TransformationConverterImpl.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

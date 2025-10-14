@@ -7,13 +7,12 @@
 
 #include "cloudViewer/t/geometry/TensorMap.h"
 
+#include <Logging.h>
 #include <fmt/format.h>
 
 #include <sstream>
 #include <string>
 #include <unordered_map>
-
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

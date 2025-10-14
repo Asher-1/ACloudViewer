@@ -1,59 +1,48 @@
-//##########################################################################
-//#                                                                        #
-//#                       CLOUDVIEWER  PLUGIN: qPCV                        #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                  COPYRIGHT: Daniel Girardeau-Montaut                   #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef Q_PCV_PLUGIN_HEADER
 #define Q_PCV_PLUGIN_HEADER
 
-#include "ecvStdPluginInterface.h"
 #include "PCVCommand.h"
+#include "ecvStdPluginInterface.h"
 
-//! Wrapper to the ShadeVis algorithm for computing Ambient Occlusion on meshes and point clouds
-/** "Visibility based methods and assessment for detail-recovery", M. Tarini, P. Cignoni, R. Scopigno
-	Proc. of Visualization 2003, October 19-24, Seattle, USA.
-	http://vcg.sourceforge.net/index.php/ShadeVis
+//! Wrapper to the ShadeVis algorithm for computing Ambient Occlusion on meshes
+//! and point clouds
+/** "Visibility based methods and assessment for detail-recovery", M. Tarini, P.
+Cignoni, R. Scopigno Proc. of Visualization 2003, October 19-24, Seattle, USA.
+        http://vcg.sourceforge.net/index.php/ShadeVis
 **/
 
-class qPCV : public QObject, public ccStdPluginInterface
-{
-	Q_OBJECT
-	Q_INTERFACES( ccPluginInterface ccStdPluginInterface)
-	Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qPCV" FILE "../info.json")
+class qPCV : public QObject, public ccStdPluginInterface {
+    Q_OBJECT
+    Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
+    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qPCV" FILE "../info.json")
 
 public:
+    //! Default constructor
+    explicit qPCV(QObject* parent = nullptr);
 
-	//! Default constructor
-	explicit qPCV(QObject* parent = nullptr);
-	
-	virtual ~qPCV() = default;
+    virtual ~qPCV() = default;
 
-	//inherited from ccStdPluginInterface
-	virtual void onNewSelection(const ccHObject::Container& selectedEntities) override;
-	virtual QList<QAction *> getActions() override;
-	virtual void registerCommands(ccCommandLineInterface *cmd) override;
+    // inherited from ccStdPluginInterface
+    virtual void onNewSelection(
+            const ccHObject::Container& selectedEntities) override;
+    virtual QList<QAction*> getActions() override;
+    virtual void registerCommands(ccCommandLineInterface* cmd) override;
 
 protected slots:
 
-	//! Slot called when associated ation is triggered
-	void doAction();
+    //! Slot called when associated ation is triggered
+    void doAction();
 
 protected:
-
-	//! Associated action
-	QAction* m_action;
+    //! Associated action
+    QAction* m_action;
 };
 
-#endif // Q_PCV_PLUGIN_HEADER
+#endif  // Q_PCV_PLUGIN_HEADER

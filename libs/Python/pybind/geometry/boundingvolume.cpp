@@ -62,8 +62,7 @@ void pybind_boundingvolume(py::module &m) {
             .def("get_box_points",
                  &cloudViewer::OrientedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
-            .def("box_points",
-                 &cloudViewer::OrientedBoundingBox::GetBoxPoints,
+            .def("box_points", &cloudViewer::OrientedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
             .def("clear", &cloudViewer::OrientedBoundingBox::Clear,
                  "Clear all elements in the geometry..")

@@ -5,23 +5,22 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-
 // clang-format off
 #include <visualization/visualizer/Visualizer.h> // must include first
 #include <visualization/visualizer/VisualizerWithEditing.h>
 // clang-format on
 
-#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertible.h>
-
+#include <IJsonConvertibleIO.h>
+#include <Logging.h>
 #include <ecvBBox.h>
+#include <ecvKDTreeFlann.h>
 #include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
-#include "io/PointCloudIO.h"
-#include <ecvKDTreeFlann.h>
-#include <IJsonConvertibleIO.h>
+
 #include "AlignmentSession.h"
+#include "io/PointCloudIO.h"
 
 namespace cloudViewer {
 

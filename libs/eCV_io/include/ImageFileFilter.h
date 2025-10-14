@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / TELECOM ParisTech (ENST-TSI)             #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_IMAGE_FILE_FILTER_HEADER
 #define ECV_IMAGE_FILE_FILTER_HEADER
@@ -21,28 +11,32 @@
 #include "FileIOFilter.h"
 
 //! Filter to load or save an image (all types supported by Qt)
-class ECV_IO_LIB_API ImageFileFilter : public FileIOFilter
-{
+class ECV_IO_LIB_API ImageFileFilter : public FileIOFilter {
 public:
-	ImageFileFilter();
+    ImageFileFilter();
 
-	//inherited from FileIOFilter
-	virtual CC_FILE_ERROR loadFile(const QString& filename, ccHObject& container, LoadParameters& parameters) override;
-	
-	virtual bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const override;
-	virtual CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
+    // inherited from FileIOFilter
+    virtual CC_FILE_ERROR loadFile(const QString& filename,
+                                   ccHObject& container,
+                                   LoadParameters& parameters) override;
 
-	//! Helper: select an input image filename
-	static QString GetLoadFilename(	const QString& dialogTitle,
-									const QString& imageLoadPath,
-									QWidget* parentWidget = nullptr);
+    virtual bool canSave(CV_CLASS_ENUM type,
+                         bool& multiple,
+                         bool& exclusive) const override;
+    virtual CC_FILE_ERROR saveToFile(ccHObject* entity,
+                                     const QString& filename,
+                                     const SaveParameters& parameters) override;
 
-	//! Helper: select an output image filename
-	static QString GetSaveFilename(	const QString& dialogTitle,
-									const QString& baseName,
-									const QString& imageSavePath,
-									QWidget* parentWidget = nullptr);
+    //! Helper: select an input image filename
+    static QString GetLoadFilename(const QString& dialogTitle,
+                                   const QString& imageLoadPath,
+                                   QWidget* parentWidget = nullptr);
 
+    //! Helper: select an output image filename
+    static QString GetSaveFilename(const QString& dialogTitle,
+                                   const QString& baseName,
+                                   const QString& imageSavePath,
+                                   QWidget* parentWidget = nullptr);
 };
 
-#endif // ECV_IMAGE_FILE_FILTER_HEADER
+#endif  // ECV_IMAGE_FILE_FILTER_HEADER

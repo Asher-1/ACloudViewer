@@ -1,11 +1,17 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef PROBEWINDOW_H
 #define PROBEWINDOW_H
 
 #include "filterwindow.h"
 
-namespace Ui
-{
-    class ProbeConfig;
+namespace Ui {
+class ProbeConfig;
 }
 
 class vtkLineWidget;
@@ -14,8 +20,7 @@ class vtkSphereWidget;
 class vtkPlaneWidget;
 class vtkImplicitPlaneWidget;
 class QCustomPlot;
-class ProbeWindow : public FilterWindow
-{
+class ProbeWindow : public FilterWindow {
     Q_OBJECT
 public:
     explicit ProbeWindow(QWidget* parent = nullptr);
@@ -39,7 +44,7 @@ private:
     void showProbeWidget();
 
 protected:
-    enum WidgetType { WT_Line, WT_Sphere, WT_Box, WT_ImplicitPlane};
+    enum WidgetType { WT_Line, WT_Sphere, WT_Box, WT_ImplicitPlane };
 
     Ui::ProbeConfig* m_configUi = nullptr;
 
@@ -60,4 +65,4 @@ protected:
     double m_planeNormal[3];
 };
 
-#endif // PROBEWINDOW_H
+#endif  // PROBEWINDOW_H

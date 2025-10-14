@@ -7,11 +7,12 @@
 
 #include "cloudViewer/core/TensorKey.h"
 
+#include <Logging.h>
+
 #include <memory>
 #include <sstream>
 
 #include "cloudViewer/core/Tensor.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

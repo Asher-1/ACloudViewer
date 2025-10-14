@@ -12,11 +12,11 @@
 
 #ifdef BUILD_CUDA_MODULE
 
+#include <Logging.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 
 #include "cloudViewer/core/CUDAUtils.h"
-#include <Logging.h>
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
@@ -29,9 +29,9 @@ namespace ml {
     __CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(err, __FILE__, __LINE__)
 
 inline void __CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(CUresult err,
-                                          const char *file,
-                                          const int line,
-                                          bool abort = true) {
+                                               const char *file,
+                                               const int line,
+                                               bool abort = true) {
     if (err != CUDA_SUCCESS) {
         const char *error_string;
         CUresult err_get_string = cuGetErrorString(err, &error_string);

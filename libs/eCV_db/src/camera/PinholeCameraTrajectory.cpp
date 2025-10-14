@@ -6,11 +6,11 @@
 // ----------------------------------------------------------------------------
 
 #include "camera/PinholeCameraTrajectory.h"
-#include "camera/PinholeCameraIntrinsic.h"
 
 #include <Logging.h>
 #include <json/json.h>
 
+#include "camera/PinholeCameraIntrinsic.h"
 
 namespace cloudViewer {
 namespace camera {

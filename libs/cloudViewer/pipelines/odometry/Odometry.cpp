@@ -6,14 +6,15 @@
 // ----------------------------------------------------------------------------
 
 #include "pipelines/odometry/Odometry.h"
-#include "pipelines/odometry/RGBDOdometryJacobian.h"
-
-#include <Eigen/Dense>
-#include <memory>
-#include <Timer.h>
 
 #include <Image.h>
 #include <RGBDImage.h>
+#include <Timer.h>
+
+#include <Eigen/Dense>
+#include <memory>
+
+#include "pipelines/odometry/RGBDOdometryJacobian.h"
 
 namespace cloudViewer {
 namespace pipelines {
@@ -151,7 +152,7 @@ static CorrespondenceSetPixelWise ComputeCorrespondence(
                                     depth_buffer_private);
 
         }  //    omp critical
-    }      //    omp parallel
+    }  //    omp parallel
 
     CorrespondenceSetPixelWise correspondence;
     int correspondence_count = CountCorrespondence(correspondence_map);

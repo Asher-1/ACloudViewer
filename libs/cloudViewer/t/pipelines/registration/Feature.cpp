@@ -7,11 +7,12 @@
 
 #include "cloudViewer/t/pipelines/registration/Feature.h"
 
+#include <Parallel.h>
+
 #include "cloudViewer/core/ParallelFor.h"
 #include "cloudViewer/core/nns/NearestNeighborSearch.h"
 #include "cloudViewer/t/geometry/PointCloud.h"
 #include "cloudViewer/t/pipelines/kernel/Feature.h"
-#include <Parallel.h>
 
 namespace cloudViewer {
 namespace t {

@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "pybind/io/io.h"
+
 #include "pybind/cloudViewer_pybind.h"
 
 namespace cloudViewer {

@@ -9,8 +9,8 @@
 
 #include <Logging.h>
 #include <ecvBBox.h>
-#include <ecvPointCloud.h>
 #include <ecvOrientedBBox.h>
+#include <ecvPointCloud.h>
 
 namespace cloudViewer {
 namespace visualization {
@@ -48,8 +48,7 @@ Eigen::Vector3d PointCloudPicker::GetCenter() const {
     }
 }
 
-ccBBox PointCloudPicker::GetAxisAlignedBoundingBox()
-        const {
+ccBBox PointCloudPicker::GetAxisAlignedBoundingBox() const {
     if (pointcloud_ptr_) {
         return ccBBox::CreateFromPoints(
                 ((const ccPointCloud&)(*pointcloud_ptr_)).getPoints());
@@ -79,20 +78,19 @@ PointCloudPicker& PointCloudPicker::Translate(
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::Scale(const double s, 
-										  const Eigen::Vector3d &center) {
+PointCloudPicker& PointCloudPicker::Scale(const double s,
+                                          const Eigen::Vector3d& center) {
     // Do nothing
     return *this;
 }
 
 PointCloudPicker& PointCloudPicker::Rotate(const Eigen::Matrix3d& R,
-										   const Eigen::Vector3d &center) {
+                                           const Eigen::Vector3d& center) {
     // Do nothing
     return *this;
 }
 
-bool PointCloudPicker::SetPointCloud(
-        std::shared_ptr<const ccHObject> ptr) {
+bool PointCloudPicker::SetPointCloud(std::shared_ptr<const ccHObject> ptr) {
     if (!ptr || !ptr->isKindOf(CV_TYPES::POINT_CLOUD)) {
         return false;
     }

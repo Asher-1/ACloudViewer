@@ -23,12 +23,11 @@ bool gpuSupportCUDA(int minComputeCapabilityMajor,
                     int minComputeCapabilityMinor,
                     int minTotalDeviceMemory = 0);
 
-
 /**
  * @brief gpuInformationCUDA
  * @return string with all CUDA device(s) information
  */
 std::string gpuInformationCUDA();
 
-} // namespace gpu
-} // namespace cloudViewer
+}  // namespace gpu
+}  // namespace cloudViewer

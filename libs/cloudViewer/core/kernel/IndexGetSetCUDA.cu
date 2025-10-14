@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/AdvancedIndexing.h"
 #include "cloudViewer/core/CUDAUtils.h"
+#include "core/AdvancedIndexing.h"
 #include "core/Dispatch.h"
 #include "core/Indexer.h"
 #include "core/ParallelFor.h"
@@ -31,7 +31,7 @@ void LaunchAdvancedIndexerKernel(const Device& device,
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDACopyElementKernel(const void* src,
-                                                     void* dst) {
+                                                          void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
 }
 

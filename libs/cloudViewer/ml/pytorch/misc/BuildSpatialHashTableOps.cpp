@@ -106,7 +106,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> BuildSpatialHashTable(
 }
 
 static auto registry = torch::RegisterOperators(
-        "cloudViewer::build_spatial_hash_table(Tensor points, float radius, Tensor "
+        "cloudViewer::build_spatial_hash_table(Tensor points, float radius, "
+        "Tensor "
         "points_row_splits, float hash_table_size_factor, int "
         "max_hash_table_size=33554432) -> (Tensor hash_table_index, Tensor "
         "hash_table_cell_splits, Tensor hash_table_splits)",

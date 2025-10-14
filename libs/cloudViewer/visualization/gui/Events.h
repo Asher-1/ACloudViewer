@@ -7,11 +7,11 @@
 
 #pragma once
 
+#include <IJsonConvertible.h>
+
 #include <cstdint>
 #include <sstream>
 #include <string>
-
-#include <IJsonConvertible.h>
 
 /// @cond
 namespace Json {

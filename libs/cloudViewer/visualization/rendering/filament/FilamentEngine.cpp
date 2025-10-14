@@ -19,9 +19,10 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
+#include <FileSystem.h>
+
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 
-#include <FileSystem.h>
 #include "visualization/rendering/filament/FilamentResourceManager.h"
 
 namespace cloudViewer {

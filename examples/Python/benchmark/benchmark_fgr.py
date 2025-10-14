@@ -17,7 +17,6 @@ sys.path.append(pyexample_path)
 
 from cloudViewer_example import *
 
-
 do_visualization = False
 
 
@@ -46,7 +45,8 @@ def preprocess_point_cloud(pcd, voxel_size):
     print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
     pcd_fpfh = cv3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
-        cv3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100))
+        cv3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature,
+                                              max_nn=100))
     return pcd_down, pcd_fpfh
 
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     dataset = cv3d.data.LivingRoomPointClouds()
     n_ply_files = len(dataset.paths)
     voxel_size = 0.05
-    
+
     alignment = []
     for s in range(n_ply_files):
         for t in range(s + 1, n_ply_files):

@@ -6,11 +6,12 @@
 // ----------------------------------------------------------------------------
 
 #include "visualization/shader/NormalShader.h"
-#include "visualization/shader/Shader.h"
 
-#include <ecvMesh.h>
 #include <HalfEdgeTriangleMesh.h>
+#include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
+#include "visualization/shader/Shader.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -99,10 +100,9 @@ void NormalShader::UnbindGeometry() {
     }
 }
 
-bool NormalShaderForPointCloud::PrepareRendering(
-        const ccHObject &geometry,
-        const RenderOption &option,
-        const ViewControl &view) {
+bool NormalShaderForPointCloud::PrepareRendering(const ccHObject &geometry,
+                                                 const RenderOption &option,
+                                                 const ViewControl &view) {
     if (!geometry.isKindOf(CV_TYPES::POINT_CLOUD)) {
         PrintShaderWarning("Rendering type is not ccPointCloud.");
         return false;
@@ -124,8 +124,7 @@ bool NormalShaderForPointCloud::PrepareBinding(
         return false;
     }
 
-    const ccPointCloud &pointcloud =
-            (const ccPointCloud &)geometry;
+    const ccPointCloud &pointcloud = (const ccPointCloud &)geometry;
     if (pointcloud.size() == 0) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
@@ -139,7 +138,7 @@ bool NormalShaderForPointCloud::PrepareBinding(
     normals.resize(pointcloud.size());
     for (size_t i = 0; i < pointcloud.size(); i++) {
         const auto &point = pointcloud.getEigenPoint(i);
-		const auto &normal = pointcloud.getEigenNormal(i);
+        const auto &normal = pointcloud.getEigenNormal(i);
         points[i] = point.cast<float>();
         normals[i] = normal.cast<float>();
     }
@@ -148,11 +147,10 @@ bool NormalShaderForPointCloud::PrepareBinding(
     return true;
 }
 
-bool NormalShaderForTriangleMesh::PrepareRendering(
-        const ccHObject &geometry,
-        const RenderOption &option,
-        const ViewControl &view) {
-    if (!geometry.isKindOf(CV_TYPES::MESH) && 
+bool NormalShaderForTriangleMesh::PrepareRendering(const ccHObject &geometry,
+                                                   const RenderOption &option,
+                                                   const ViewControl &view) {
+    if (!geometry.isKindOf(CV_TYPES::MESH) &&
         !geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
         PrintShaderWarning("Rendering type is not ccMesh.");
         return false;

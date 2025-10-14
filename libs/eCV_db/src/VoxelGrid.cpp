@@ -89,7 +89,7 @@ ccBBox VoxelGrid::GetAxisAlignedBoundingBox() const {
     ccBBox box;
     box.minCorner() = GetMinBound();
     box.maxCorner() = GetMaxBound();
-    	box.setValidity(!box.IsEmpty());
+    box.setValidity(!box.IsEmpty());
     return box;
 }
 

@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef CC_ICM_FILTER_HEADER
 #define CC_ICM_FILTER_HEADER
@@ -21,17 +11,20 @@
 #include "FileIOFilter.h"
 
 //! Calibrated images and cloud meta-file I/O filter
-class /*ECV_IO_LIB_API*/ IcmFilter : public FileIOFilter
-{
+class /*ECV_IO_LIB_API*/ IcmFilter : public FileIOFilter {
 public:
-	IcmFilter();
+    IcmFilter();
 
-	//inherited from FileIOFilter
-	virtual CC_FILE_ERROR loadFile(const QString& filename, ccHObject& container, LoadParameters& parameters) override;
+    // inherited from FileIOFilter
+    virtual CC_FILE_ERROR loadFile(const QString& filename,
+                                   ccHObject& container,
+                                   LoadParameters& parameters) override;
 
 protected:
-
-	static int LoadCalibratedImages(ccHObject* entities, const QString& path, const QString& imageDescFilename, const ccBBox& globalBBox);
+    static int LoadCalibratedImages(ccHObject* entities,
+                                    const QString& path,
+                                    const QString& imageDescFilename,
+                                    const ccBBox& globalBBox);
 };
 
-#endif //CC_ICM_FILTER_HEADER
+#endif  // CC_ICM_FILTER_HEADER

@@ -69,7 +69,7 @@ std::vector<int> ccPointCloud::ClusterDBSCAN(double eps,
 #ifdef _OPENMP
 #pragma omp critical(ClusterDBSCAN)
 #endif
-            { ++progress_bar; }
+        { ++progress_bar; }
     }
     utility::LogDebug("Done Precompute Neighbours");
 

@@ -7,14 +7,14 @@
 
 #pragma once
 
+#include <Eigen.h>
+#include <Helper.h>
 #include <tbb/parallel_for.h>
 
 #include <set>
 
 #include "cloudViewer/core/Atomic.h"
 #include "cloudViewer/core/nns/NeighborSearchCommon.h"
-#include <Eigen.h>
-#include <Helper.h>
 #include "cloudViewer/utility/ParallelScan.h"
 
 namespace cloudViewer {

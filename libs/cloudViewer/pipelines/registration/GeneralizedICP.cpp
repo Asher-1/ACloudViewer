@@ -11,13 +11,13 @@
 
 #include "pipelines/registration/GeneralizedICP.h"
 
-#include <Eigen/Dense>
-#include <unsupported/Eigen/MatrixFunctions>
-
-#include <ecvKDTreeSearchParam.h>
-#include <ecvPointCloud.h>
 #include <Eigen.h>
 #include <Logging.h>
+#include <ecvKDTreeSearchParam.h>
+#include <ecvPointCloud.h>
+
+#include <Eigen/Dense>
+#include <unsupported/Eigen/MatrixFunctions>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -58,7 +58,8 @@ std::shared_ptr<ccPointCloud> InitializePointCloudForGeneralizedICP(
     } else {
         // Compute covariances the same way is done in the original GICP paper.
         utility::LogDebug("GeneralizedICP: Computing covariances from points.");
-        output->EstimateNormals(cloudViewer::geometry::KDTreeSearchParamKNN(20));
+        output->EstimateNormals(
+                cloudViewer::geometry::KDTreeSearchParamKNN(20));
     }
 
     output->covariances_.resize(output->size());

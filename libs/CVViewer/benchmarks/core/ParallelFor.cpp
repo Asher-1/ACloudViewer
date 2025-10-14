@@ -52,7 +52,8 @@ void ParallelForVectorized(benchmark::State& state, int size) {
                     float x2 = x * x;
                     output[idx] = x2;
                 },
-                CLOUDVIEWER_VECTORIZED(SquareKernel, input.data(), output.data()));
+                CLOUDVIEWER_VECTORIZED(SquareKernel, input.data(),
+                                       output.data()));
     }
 
     for (auto _ : state) {
@@ -63,7 +64,8 @@ void ParallelForVectorized(benchmark::State& state, int size) {
                     float x2 = x * x;
                     output[idx] = x2;
                 },
-                CLOUDVIEWER_VECTORIZED(SquareKernel, input.data(), output.data()));
+                CLOUDVIEWER_VECTORIZED(SquareKernel, input.data(),
+                                       output.data()));
     }
 }
 

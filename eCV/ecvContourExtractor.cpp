@@ -1,21 +1,10 @@
-// ##########################################################################
-// #                                                                        #
-// #                              CLOUDVIEWER                               #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-// LOCAl
 #include "ecvContourExtractor.h"
 
 #include "ecvContourExtractorDlg.h"
@@ -129,7 +118,7 @@ static PointCoordinateType FindNearestCandidate(
                     if (minDist2 < 0 || dist2 < minDist2) {
                         // the 'nearest' point must also be a valid candidate
                         //(i.e. at least one of the created edges is smaller
-                        //than the original one and we don't create too small
+                        // than the original one and we don't create too small
                         // edges!)
                         const PointCoordinateType squareLengthAP = AP.norm2();
                         const PointCoordinateType squareLengthBP =
@@ -179,7 +168,7 @@ static PointCoordinateType FindNearestCandidate(
             if (minDist2 < 0 || dist2 < minDist2) {
                 // the 'nearest' point must also be a valid candidate
                 //(i.e. at least one of the created edges is smaller than the
-                //original one and we don't create too small edges!)
+                // original one and we don't create too small edges!)
                 PointCoordinateType squareLengthAP = AP.norm2();
                 PointCoordinateType squareLengthBP = (P - **itB).norm2();
                 if (squareLengthAP >= minSquareEdgeLength &&
@@ -481,7 +470,7 @@ bool ccContourExtractor::ExtractConcaveHull2D(
                 // PointCoordinateType squareLengthAP = (P-**itA).norm2();
                 // PointCoordinateType squareLengthPB = (**itB-P).norm2();
                 ////at least one of the new segments must be smaller than the
-                ///initial one!
+                /// initial one!
                 // assert( squareLengthAP < e.squareLength || squareLengthPB <
                 // e.squareLength ); if (squareLengthAP < minSquareEdgeLength ||
                 // squareLengthPB < minSquareEdgeLength)
@@ -490,7 +479,7 @@ bool ccContourExtractor::ExtractConcaveHull2D(
                 //	edges.push(e); //retest the edge!
                 //	if (enableVisualDebugMode)
                 //		debugDialog.displayMessage("nearest point is too
-                //close!",true);
+                // close!",true);
                 // }
 
                 // last check: the new segments must not intersect with the

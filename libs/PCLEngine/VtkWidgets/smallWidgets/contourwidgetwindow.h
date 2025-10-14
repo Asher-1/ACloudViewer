@@ -1,36 +1,41 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef CONTOURWIDGETWINDOW_H
 #define CONTOURWIDGETWINDOW_H
 
 #include "basewidgetwindow.h"
 
-namespace Ui
-{
-	class ContourWidgetConfig;
+namespace Ui {
+class ContourWidgetConfig;
 }
 
 class vtkContourWidget;
 class vtkContextActor;
 class vtkPolyData;
-class ContourWidgetWindow : public BaseWidgetWindow
-{
-	Q_OBJECT
+class ContourWidgetWindow : public BaseWidgetWindow {
+    Q_OBJECT
 public:
-	explicit ContourWidgetWindow(QWidget* parent = nullptr);
-	~ContourWidgetWindow();
+    explicit ContourWidgetWindow(QWidget* parent = nullptr);
+    ~ContourWidgetWindow();
 
 protected:
-	void createWidget();
-	void createUi();
+    void createWidget();
+    void createUi();
 
 private slots:
-	void on_clearButton_clicked();
-	void on_showNodesCheckBox_toggled(bool checked);
-	void onDataChanged(vtkPolyData* pd);
+    void on_clearButton_clicked();
+    void on_showNodesCheckBox_toggled(bool checked);
+    void onDataChanged(vtkPolyData* pd);
 
 private:
-	Ui::ContourWidgetConfig* m_configUi = nullptr;
+    Ui::ContourWidgetConfig* m_configUi = nullptr;
 
-	vtkSmartPointer<vtkContourWidget> m_contour;
+    vtkSmartPointer<vtkContourWidget> m_contour;
 };
 
-#endif // CONTOURWIDGETWINDOW_H
+#endif  // CONTOURWIDGETWINDOW_H

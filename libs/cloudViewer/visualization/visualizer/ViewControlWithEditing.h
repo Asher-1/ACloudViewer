@@ -14,7 +14,6 @@ namespace visualization {
 
 class ViewControlWithEditing : public ViewControl {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     enum EditingMode {

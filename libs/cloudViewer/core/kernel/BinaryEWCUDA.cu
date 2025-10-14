@@ -34,56 +34,56 @@ void LaunchBinaryEWKernel(const Device& device,
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAMaxElementKernel(const void* lhs,
-                                                    const void* rhs,
-                                                    void* dst) {
+                                                         const void* rhs,
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = max(*static_cast<const scalar_t*>(lhs),
                                        *static_cast<const scalar_t*>(rhs));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAMinElementKernel(const void* lhs,
-                                                    const void* rhs,
-                                                    void* dst) {
+                                                         const void* rhs,
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = min(*static_cast<const scalar_t*>(lhs),
                                        *static_cast<const scalar_t*>(rhs));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAAddElementKernel(const void* lhs,
-                                                    const void* rhs,
-                                                    void* dst) {
+                                                         const void* rhs,
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) +
                                    *static_cast<const scalar_t*>(rhs);
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDASubElementKernel(const void* lhs,
-                                                    const void* rhs,
-                                                    void* dst) {
+                                                         const void* rhs,
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) -
                                    *static_cast<const scalar_t*>(rhs);
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAMulElementKernel(const void* lhs,
-                                                    const void* rhs,
-                                                    void* dst) {
+                                                         const void* rhs,
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) *
                                    *static_cast<const scalar_t*>(rhs);
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDADivElementKernel(const void* lhs,
-                                                    const void* rhs,
-                                                    void* dst) {
+                                                         const void* rhs,
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) /
                                    *static_cast<const scalar_t*>(rhs);
 }
 
 template <typename src_t, typename dst_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDALogicalAndElementKernel(const void* lhs,
-                                                           const void* rhs,
-                                                           void* dst) {
+                                                                const void* rhs,
+                                                                void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             static_cast<bool>(*static_cast<const src_t*>(lhs)) &&
             static_cast<bool>(*static_cast<const src_t*>(rhs)));
@@ -91,8 +91,8 @@ static CLOUDVIEWER_HOST_DEVICE void CUDALogicalAndElementKernel(const void* lhs,
 
 template <typename src_t, typename dst_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDALogicalOrElementKernel(const void* lhs,
-                                                          const void* rhs,
-                                                          void* dst) {
+                                                               const void* rhs,
+                                                               void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             static_cast<bool>(*static_cast<const src_t*>(lhs)) ||
             static_cast<bool>(*static_cast<const src_t*>(rhs)));
@@ -100,8 +100,8 @@ static CLOUDVIEWER_HOST_DEVICE void CUDALogicalOrElementKernel(const void* lhs,
 
 template <typename src_t, typename dst_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDALogicalXorElementKernel(const void* lhs,
-                                                           const void* rhs,
-                                                           void* dst) {
+                                                                const void* rhs,
+                                                                void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             static_cast<bool>(*static_cast<const src_t*>(lhs)) !=
             static_cast<bool>(*static_cast<const src_t*>(rhs)));
@@ -109,48 +109,48 @@ static CLOUDVIEWER_HOST_DEVICE void CUDALogicalXorElementKernel(const void* lhs,
 
 template <typename src_t, typename dst_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAGtElementKernel(const void* lhs,
-                                                   const void* rhs,
-                                                   void* dst) {
+                                                        const void* rhs,
+                                                        void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             *static_cast<const src_t*>(lhs) > *static_cast<const src_t*>(rhs));
 }
 
 template <typename src_t, typename dst_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDALtElementKernel(const void* lhs,
-                                                   const void* rhs,
-                                                   void* dst) {
+                                                        const void* rhs,
+                                                        void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             *static_cast<const src_t*>(lhs) < *static_cast<const src_t*>(rhs));
 }
 
 template <typename src_t, typename dst_t>
 static void CLOUDVIEWER_HOST_DEVICE CUDAGeqElementKernel(const void* lhs,
-                                                    const void* rhs,
-                                                    void* dst) {
+                                                         const void* rhs,
+                                                         void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             *static_cast<const src_t*>(lhs) >= *static_cast<const src_t*>(rhs));
 }
 
 template <typename src_t, typename dst_t>
 static void CLOUDVIEWER_HOST_DEVICE CUDALeqElementKernel(const void* lhs,
-                                                    const void* rhs,
-                                                    void* dst) {
+                                                         const void* rhs,
+                                                         void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             *static_cast<const src_t*>(lhs) <= *static_cast<const src_t*>(rhs));
 }
 
 template <typename src_t, typename dst_t>
 static void CLOUDVIEWER_HOST_DEVICE CUDAEqElementKernel(const void* lhs,
-                                                   const void* rhs,
-                                                   void* dst) {
+                                                        const void* rhs,
+                                                        void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             *static_cast<const src_t*>(lhs) == *static_cast<const src_t*>(rhs));
 }
 
 template <typename src_t, typename dst_t>
 static void CLOUDVIEWER_HOST_DEVICE CUDANeqElementKernel(const void* lhs,
-                                                    const void* rhs,
-                                                    void* dst) {
+                                                         const void* rhs,
+                                                         void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             *static_cast<const src_t*>(lhs) != *static_cast<const src_t*>(rhs));
 }
@@ -167,7 +167,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             LaunchBinaryEWKernel<src_t, dst_t>(
                     device, indexer,
                     [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                          void* dst) {
+                                               void* dst) {
                         CUDALogicalAndElementKernel<src_t, dst_t>(lhs, rhs,
                                                                   dst);
                     });
@@ -176,7 +176,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             LaunchBinaryEWKernel<src_t, dst_t>(
                     device, indexer,
                     [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                          void* dst) {
+                                               void* dst) {
                         CUDALogicalOrElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
@@ -184,7 +184,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             LaunchBinaryEWKernel<src_t, dst_t>(
                     device, indexer,
                     [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                          void* dst) {
+                                               void* dst) {
                         CUDALogicalXorElementKernel<src_t, dst_t>(lhs, rhs,
                                                                   dst);
                     });
@@ -193,7 +193,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             LaunchBinaryEWKernel<src_t, dst_t>(
                     device, indexer,
                     [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                          void* dst) {
+                                               void* dst) {
                         CUDAGtElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
@@ -201,7 +201,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             LaunchBinaryEWKernel<src_t, dst_t>(
                     device, indexer,
                     [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                          void* dst) {
+                                               void* dst) {
                         CUDALtElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
@@ -209,7 +209,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             LaunchBinaryEWKernel<src_t, dst_t>(
                     device, indexer,
                     [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                          void* dst) {
+                                               void* dst) {
                         CUDAGeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
@@ -217,7 +217,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             LaunchBinaryEWKernel<src_t, dst_t>(
                     device, indexer,
                     [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                          void* dst) {
+                                               void* dst) {
                         CUDALeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
@@ -225,7 +225,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             LaunchBinaryEWKernel<src_t, dst_t>(
                     device, indexer,
                     [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                          void* dst) {
+                                               void* dst) {
                         CUDAEqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
@@ -233,7 +233,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             LaunchBinaryEWKernel<src_t, dst_t>(
                     device, indexer,
                     [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                          void* dst) {
+                                               void* dst) {
                         CUDANeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
@@ -286,16 +286,16 @@ void BinaryEWCUDA(const Tensor& lhs,
                 case BinaryEWOpCode::Maximum:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                  void* dst) {
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
                                 CUDAMaxElementKernel<scalar_t>(lhs, rhs, dst);
                             });
                     break;
                 case BinaryEWOpCode::Minimum:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                  void* dst) {
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
                                 CUDAMinElementKernel<scalar_t>(lhs, rhs, dst);
                             });
                     break;
@@ -310,32 +310,32 @@ void BinaryEWCUDA(const Tensor& lhs,
                 case BinaryEWOpCode::Add:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                  void* dst) {
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
                                 CUDAAddElementKernel<scalar_t>(lhs, rhs, dst);
                             });
                     break;
                 case BinaryEWOpCode::Sub:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                  void* dst) {
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
                                 CUDASubElementKernel<scalar_t>(lhs, rhs, dst);
                             });
                     break;
                 case BinaryEWOpCode::Mul:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                  void* dst) {
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
                                 CUDAMulElementKernel<scalar_t>(lhs, rhs, dst);
                             });
                     break;
                 case BinaryEWOpCode::Div:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                  void* dst) {
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
                                 CUDADivElementKernel<scalar_t>(lhs, rhs, dst);
                             });
                     break;

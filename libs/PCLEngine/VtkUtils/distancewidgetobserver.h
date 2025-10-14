@@ -1,13 +1,19 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef DISTANCEWIDGETOBSERVER_H
 #define DISTANCEWIDGETOBSERVER_H
 
 #include "abstractwidgetobserver.h"
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-class QPCL_ENGINE_LIB_API DistanceWidgetObserver : public AbstractWidgetObserver
-{
+class QPCL_ENGINE_LIB_API DistanceWidgetObserver
+    : public AbstractWidgetObserver {
     Q_OBJECT
 public:
     explicit DistanceWidgetObserver(QObject* parent = nullptr);
@@ -20,8 +26,8 @@ signals:
     void displayPoint2Changed(double* pos);
 
 protected:
-    void Execute(vtkObject *caller, unsigned long eventId, void* callData);
+    void Execute(vtkObject* caller, unsigned long eventId, void* callData);
 };
 
-} // namespace VtkUtils
-#endif // DISTANCEWIDGETOBSERVER_H
+}  // namespace VtkUtils
+#endif  // DISTANCEWIDGETOBSERVER_H

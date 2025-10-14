@@ -284,7 +284,8 @@ if (_build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
 # CLOUDVIEWER_ML_ROOT points to the root of the CloudViewer-ML repo.
 # If set this will override the integrated CloudViewer-ML.
 if 'CLOUDVIEWER_ML_ROOT' in os.environ:
-    print('Using external CloudViewer-ML in {}'.format(os.environ['CLOUDVIEWER_ML_ROOT']))
+    print('Using external CloudViewer-ML in {}'.format(
+        os.environ['CLOUDVIEWER_ML_ROOT']))
     sys.path.append(os.environ['CLOUDVIEWER_ML_ROOT'])
 import cloudViewer.ml
 

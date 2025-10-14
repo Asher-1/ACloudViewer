@@ -46,7 +46,7 @@ void _CConvTransposeComputeFeaturesCPU(
         const TReal* extents,
         const TReal* offsets) {
     const bool NEIGHBORS_IMPORTANCE = inp_neighbors_importance_sum;
-    //const int VECSIZE = 32;
+    // const int VECSIZE = 32;
 #define VECSIZE 32
     typedef Eigen::Array<TReal, VECSIZE, 1> Vec_t;
     typedef InterpolationVec<TReal, VECSIZE, INTERPOLATION> InterpolationVec_t;

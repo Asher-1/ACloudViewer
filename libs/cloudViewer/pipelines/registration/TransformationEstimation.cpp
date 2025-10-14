@@ -8,9 +8,9 @@
 #include "pipelines/registration/TransformationEstimation.h"
 
 #include <Eigen.h>
-#include <Eigen/Geometry>
-
 #include <ecvPointCloud.h>
+
+#include <Eigen/Geometry>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -23,7 +23,8 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
     if (corres.empty()) return 0.0;
     double err = 0.0;
     for (const auto &c : corres) {
-        err += (source.getEigenPoint(c[0]) - target.getEigenPoint(c[1])).squaredNorm();
+        err += (source.getEigenPoint(c[0]) - target.getEigenPoint(c[1]))
+                       .squaredNorm();
     }
     return std::sqrt(err / (double)corres.size());
 }
@@ -57,34 +58,36 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 }
 
 Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
-    const ccPointCloud& source,
-    const ccPointCloud& target,
-    const CorrespondenceSet& corres) const {
+        const ccPointCloud &source,
+        const ccPointCloud &target,
+        const CorrespondenceSet &corres) const {
     if (corres.empty() || target.hasNormals() == false)
         return Eigen::Matrix4d::Identity();
 
-    auto compute_jacobian_and_residual = [&](int i, Eigen::Vector6d& J_r,
-                                             double& r, double& w) {
-            const Eigen::Vector3d& vs = source.getEigenPoint(corres[i][0]);
-            const Eigen::Vector3d& vt = target.getEigenPoint(corres[i][1]);
-            const Eigen::Vector3d& nt = target.getEigenNormal(corres[i][1]);
-            r = (vs - vt).dot(nt);
-            w = kernel_->Weight(r);
-            J_r.block<3, 1>(0, 0) = vs.cross(nt);
-            J_r.block<3, 1>(3, 0) = nt;
+    auto compute_jacobian_and_residual = [&](int i, Eigen::Vector6d &J_r,
+                                             double &r, double &w) {
+        const Eigen::Vector3d &vs = source.getEigenPoint(corres[i][0]);
+        const Eigen::Vector3d &vt = target.getEigenPoint(corres[i][1]);
+        const Eigen::Vector3d &nt = target.getEigenNormal(corres[i][1]);
+        r = (vs - vt).dot(nt);
+        w = kernel_->Weight(r);
+        J_r.block<3, 1>(0, 0) = vs.cross(nt);
+        J_r.block<3, 1>(3, 0) = nt;
     };
 
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
     double r2;
     std::tie(JTJ, JTr, r2) =
-        cloudViewer::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-            compute_jacobian_and_residual, (int)corres.size());
+            cloudViewer::utility::ComputeJTJandJTr<Eigen::Matrix6d,
+                                                   Eigen::Vector6d>(
+                    compute_jacobian_and_residual, (int)corres.size());
 
     bool is_success;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
-        cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(
+                    JTJ, JTr);
 
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 };

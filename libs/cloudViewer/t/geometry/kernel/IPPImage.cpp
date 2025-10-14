@@ -26,12 +26,13 @@
 #include <ipp/iw++/iw_image_transform.hpp>
 #endif
 
+#include <Logging.h>
+
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/ShapeUtil.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/t/geometry/Image.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

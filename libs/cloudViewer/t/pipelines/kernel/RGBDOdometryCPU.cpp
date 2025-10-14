@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Parallel.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
@@ -15,7 +16,6 @@
 #include "cloudViewer/t/pipelines/kernel/RGBDOdometryImpl.h"
 #include "cloudViewer/t/pipelines/kernel/RGBDOdometryJacobianImpl.h"
 #include "cloudViewer/t/pipelines/kernel/TransformationConverter.h"
-#include <Parallel.h>
 
 namespace cloudViewer {
 namespace t {

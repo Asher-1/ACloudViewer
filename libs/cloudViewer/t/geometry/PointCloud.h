@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include <initializer_list>
 #include <string>
 #include <unordered_map>
@@ -23,7 +25,6 @@
 #include "cloudViewer/t/geometry/RGBDImage.h"
 #include "cloudViewer/t/geometry/TensorMap.h"
 #include "cloudViewer/t/geometry/TriangleMesh.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -143,16 +144,19 @@ public:
     // ---------------------------------------------------------------------
     // Backward-compatibility helpers for pre-v0.19 API
     // ---------------------------------------------------------------------
-    /// Backward-compatible getter for point positions (alias of GetPointPositions).
+    /// Backward-compatible getter for point positions (alias of
+    /// GetPointPositions).
     core::Tensor &GetPoints() { return GetPointPositions(); }
 
     /// Backward-compatible const getter for point positions.
     const core::Tensor &GetPoints() const { return GetPointPositions(); }
 
-    /// Backward-compatible setter for point positions (alias of SetPointPositions).
+    /// Backward-compatible setter for point positions (alias of
+    /// SetPointPositions).
     void SetPoints(const core::Tensor &value) { SetPointPositions(value); }
 
-    /// Backward-compatible presence check for point positions (alias of HasPointPositions).
+    /// Backward-compatible presence check for point positions (alias of
+    /// HasPointPositions).
     bool HasPoints() const { return HasPointPositions(); }
 
     /// Get the value of the "colors" attribute. Convenience function.

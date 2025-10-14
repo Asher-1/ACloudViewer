@@ -1,163 +1,150 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef VTKUTILS_H
 #define VTKUTILS_H
 
-#include "../qPCL.h"
-
-#include <vtkSmartPointer.h>
-#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkConeSource.h>
+#include <vtkCubeSource.h>
+#include <vtkCylinderSource.h>
+#include <vtkDelaunay2D.h>
+#include <vtkDoubleArray.h>
+#include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
-#include <vtkDoubleArray.h>
-#include <vtkDelaunay2D.h>
-#include <vtkActor.h>
-#include <vtkPointData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkSmartPointer.h>
 #include <vtkSphereSource.h>
-#include <vtkConeSource.h>
-#include <vtkCylinderSource.h>
-#include <vtkCubeSource.h>
 
-#include "utils.h"
+#include "../qPCL.h"
 #include "point3f.h"
+#include "utils.h"
 #include "vector4f.h"
 
 // macroes
 #ifndef VTK_CREATE
-#define VTK_CREATE(TYPE, NAME) vtkSmartPointer<TYPE> NAME = vtkSmartPointer<TYPE>::New()
+#define VTK_CREATE(TYPE, NAME) \
+    vtkSmartPointer<TYPE> NAME = vtkSmartPointer<TYPE>::New()
 #endif
 
 class vtkImageData;
 class QVTKOpenGLNativeWidget;
 class vtkPolyDataAlgorithm;
-namespace VtkUtils
-{
+namespace VtkUtils {
 
 QImage QPCL_ENGINE_LIB_API vtkImageDataToQImage(vtkImageData* imageData);
 void QPCL_ENGINE_LIB_API qImageToVtkImage(QImage& img, vtkImageData* imageData);
 QImage QPCL_ENGINE_LIB_API vtkWidgetSnapshot(QVTKOpenGLNativeWidget* widget);
 
 template <class T>
-void vtkInitOnce(T** obj)
-{
-	if (*obj == nullptr)
-		*obj = T::New();
+void vtkInitOnce(T** obj) {
+    if (*obj == nullptr) *obj = T::New();
 }
 
 template <class T>
-void vtkInitOnce(vtkSmartPointer<T>& obj)
-{
-	if (!obj)
-		obj = vtkSmartPointer<T>::New();
+void vtkInitOnce(vtkSmartPointer<T>& obj) {
+    if (!obj) obj = vtkSmartPointer<T>::New();
 }
 
 template <class T>
-void vtkSafeDelete(T* obj)
-{
-	if (obj)
-		obj->Delete();
+void vtkSafeDelete(T* obj) {
+    if (obj) obj->Delete();
 }
 
-static inline vtkActor* createSourceActor(vtkPolyDataAlgorithm* algo)
-{
-	vtkActor* actor = vtkActor::New();
-	vtkSmartPointer<vtkPolyDataMapper> mapper(vtkPolyDataMapper::New());
-	mapper->SetInputConnection(algo->GetOutputPort());
-	actor->SetMapper(mapper);
+static inline vtkActor* createSourceActor(vtkPolyDataAlgorithm* algo) {
+    vtkActor* actor = vtkActor::New();
+    vtkSmartPointer<vtkPolyDataMapper> mapper(vtkPolyDataMapper::New());
+    mapper->SetInputConnection(algo->GetOutputPort());
+    actor->SetMapper(mapper);
 
-	return actor;
+    return actor;
 }
 
 template <class T>
-class SourceSetter
-{
+class SourceSetter {
 public:
-	void config(T* source)
-	{
-		Q_UNUSED(source)
-		// no impl
-	}
+    void config(T* source) {
+        Q_UNUSED(source)
+        // no impl
+    }
 };
 
 template <>
-class SourceSetter<vtkSphereSource>
-{
+class SourceSetter<vtkSphereSource> {
 public:
-	void config(vtkSphereSource* source)
-	{
-
-	}
+    void config(vtkSphereSource* source) {}
 };
 
 template <>
-class SourceSetter<vtkConeSource>
-{
+class SourceSetter<vtkConeSource> {
 public:
-	void config(vtkConeSource* source)
-	{
-
-	}
+    void config(vtkConeSource* source) {}
 };
 
 template <class T>
-static inline vtkActor* createSourceActor(SourceSetter<T>* setter = nullptr)
-{
-	vtkActor* actor = vtkActor::New();
+static inline vtkActor* createSourceActor(SourceSetter<T>* setter = nullptr) {
+    vtkActor* actor = vtkActor::New();
 
-	vtkSmartPointer<T> source(T::New());
+    vtkSmartPointer<T> source(T::New());
 
-	if (setter)
-		setter->config(source);
+    if (setter) setter->config(source);
 
-	vtkSmartPointer<vtkPolyDataMapper> mapper(vtkPolyDataMapper::New());
-	mapper->SetInputConnection(source->GetOutputPort());
-	actor->SetMapper(mapper);
+    vtkSmartPointer<vtkPolyDataMapper> mapper(vtkPolyDataMapper::New());
+    mapper->SetInputConnection(source->GetOutputPort());
+    actor->SetMapper(mapper);
 
-	return actor;
+    return actor;
 }
 
-static vtkActor* createSurfaceActor(const QList<Point3F>& points, const QList<qreal>& scalars = QList<qreal>())
-{
-	vtkSmartPointer<vtkPoints> vtkpoints(vtkPoints::New());
-	foreach (const Point3F& p3f, points)
-		vtkpoints->InsertNextPoint(p3f.x, p3f.y, p3f.z);
+static vtkActor* createSurfaceActor(
+        const QList<Point3F>& points,
+        const QList<qreal>& scalars = QList<qreal>()) {
+    vtkSmartPointer<vtkPoints> vtkpoints(vtkPoints::New());
+    foreach (const Point3F& p3f, points)
+        vtkpoints->InsertNextPoint(p3f.x, p3f.y, p3f.z);
 
-	vtkSmartPointer<vtkPolyData> polyData(vtkPolyData::New());
-	polyData->SetPoints(vtkpoints);
+    vtkSmartPointer<vtkPolyData> polyData(vtkPolyData::New());
+    polyData->SetPoints(vtkpoints);
 
-	vtkSmartPointer<vtkDoubleArray> scalarArray(vtkDoubleArray::New());
-	scalarArray->SetName("scalar");
-	foreach (qreal scalar, scalars)
-		scalarArray->InsertNextTuple1(scalar);
+    vtkSmartPointer<vtkDoubleArray> scalarArray(vtkDoubleArray::New());
+    scalarArray->SetName("scalar");
+    foreach (qreal scalar, scalars) scalarArray->InsertNextTuple1(scalar);
 
-//    vtkSmartPointer<vtkPointData> pointdata(vtkPointData::New());
-//    pointdata->SetScalars(dataArray);
-	vtkpoints->SetData(scalarArray);
+    //    vtkSmartPointer<vtkPointData> pointdata(vtkPointData::New());
+    //    pointdata->SetScalars(dataArray);
+    vtkpoints->SetData(scalarArray);
 
-	vtkSmartPointer<vtkDelaunay2D> del(vtkDelaunay2D::New());
-	del->SetInputData(polyData);
-	del->Update();
+    vtkSmartPointer<vtkDelaunay2D> del(vtkDelaunay2D::New());
+    del->SetInputData(polyData);
+    del->Update();
 
-	vtkSmartPointer<vtkPolyDataMapper> mapper(vtkPolyDataMapper::New());
-	mapper->SetInputConnection(del->GetOutputPort());
+    vtkSmartPointer<vtkPolyDataMapper> mapper(vtkPolyDataMapper::New());
+    mapper->SetInputConnection(del->GetOutputPort());
 
-	vtkActor* actor = vtkActor::New();
-	actor->SetMapper(mapper);
+    vtkActor* actor = vtkActor::New();
+    actor->SetMapper(mapper);
 
-	return actor;
+    return actor;
 }
 
 template <class DataObject, class Mapper = vtkPolyDataMapper>
-static inline vtkActor* createActorFromData(DataObject* data)
-{
-	vtkActor* actor = vtkActor::New();
+static inline vtkActor* createActorFromData(DataObject* data) {
+    vtkActor* actor = vtkActor::New();
 
-	VTK_CREATE(Mapper, mapper);
-	mapper->SetInputData(data);
-	actor->SetMapper(mapper);
+    VTK_CREATE(Mapper, mapper);
+    mapper->SetInputData(data);
+    actor->SetMapper(mapper);
 
-	return actor;
+    return actor;
 }
 
-void QPCL_ENGINE_LIB_API exportActorToFile(vtkActor* actor, const QString& outfile);
+void QPCL_ENGINE_LIB_API exportActorToFile(vtkActor* actor,
+                                           const QString& outfile);
 
-}
-#endif // VTKUTILS_H
+}  // namespace VtkUtils
+#endif  // VTKUTILS_H

@@ -1,18 +1,25 @@
-﻿#ifndef MOVEACTORINTERACTORSTYLE_H
-#define MOVEACTORINTERACTORSTYLE_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include <QObject>
+#ifndef MOVEACTORINTERACTORSTYLE_H
+#define MOVEACTORINTERACTORSTYLE_H
 
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkSmartPointer.h>
 
+#include <QObject>
+
 #include "../qPCL.h"
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-class QPCL_ENGINE_LIB_API MoveActorInteractorStyle : public QObject, public vtkInteractorStyleTrackballCamera
-{
+class QPCL_ENGINE_LIB_API MoveActorInteractorStyle
+    : public QObject,
+      public vtkInteractorStyleTrackballCamera {
     Q_OBJECT
 public:
     static MoveActorInteractorStyle *New();
@@ -30,7 +37,7 @@ public:
 
     // Todo: add some signals
 signals:
-    void actorMoved(vtkActor* actor);
+    void actorMoved(vtkActor *actor);
 
 protected:
     explicit MoveActorInteractorStyle(QObject *parent = 0);
@@ -42,5 +49,5 @@ protected:
     vtkSmartPointer<vtkActor> m_highlightActor;
 };
 
-} // namespace VtkUtils
-#endif // MOVEACTORINTERACTORSTYLE_H
+}  // namespace VtkUtils
+#endif  // MOVEACTORINTERACTORSTYLE_H

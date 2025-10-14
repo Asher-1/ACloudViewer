@@ -7,13 +7,14 @@
 
 #pragma once
 
+#include <Optional.h>
+
 #include <vector>
 
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/nns/FixedRadiusIndex.h"
 #include "cloudViewer/core/nns/KnnIndex.h"
 #include "cloudViewer/core/nns/NanoFlannIndex.h"
-#include <Optional.h>
 
 namespace cloudViewer {
 namespace core {

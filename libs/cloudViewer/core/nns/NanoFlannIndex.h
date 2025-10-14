@@ -7,12 +7,13 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include <vector>
 
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/nns/NNSIndex.h"
 #include "cloudViewer/core/nns/NeighborSearchCommon.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

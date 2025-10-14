@@ -1,12 +1,15 @@
-#!/usr/bin/env python
-# coding: utf-8
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
 
 import cloudViewer.core as cv3c
 import numpy as np
 import os
 import pickle
 import tempfile
-
 
 # # Tensor
 #
@@ -498,7 +501,7 @@ t = cv3c.Tensor(vals)
 b = cv3c.TensorList(t)
 print("b = {}".format(b))
 
-## Pickle support 
+## Pickle support
 # Since CloudViewer v0.9.3, tensor can be serialized and deserialized using pickle. This is useful for saving and loading tensors to/from disk.
 
 a = cv3c.Tensor([1, 2, 3, 4])

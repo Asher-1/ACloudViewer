@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include <ecvMesh.h>
+
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
 
-#include <ecvMesh.h>
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/RendererHandle.h"
 
@@ -110,8 +111,8 @@ public:
     SkyboxHandle CreateColorSkybox(const Eigen::Vector3f& color);
     SkyboxHandle CreateSkybox(const ResourceLoadRequest& request);
 
-    // Since rendering uses not all CloudViewer geometry/filament features, we don't
-    // know which arguments pass to CreateVB(...). Thus creation of VB is
+    // Since rendering uses not all CloudViewer geometry/filament features, we
+    // don't know which arguments pass to CreateVB(...). Thus creation of VB is
     // managed by FilamentGeometryBuffersBuilder class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertex_buffer);
     void ReuseVertexBuffer(VertexBufferHandle vb);

@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef CLOUDCOMPAREPROJECTS_PYPRINTLOGGER_H
 #define CLOUDCOMPAREPROJECTS_PYPRINTLOGGER_H
 #include <CVLog.h>

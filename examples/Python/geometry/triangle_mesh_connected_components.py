@@ -12,7 +12,6 @@ import numpy as np
 import copy
 import time
 
-
 if __name__ == "__main__":
     cv3d.utility.set_verbosity_level(cv3d.utility.Debug)
 

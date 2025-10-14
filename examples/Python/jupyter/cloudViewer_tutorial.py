@@ -10,7 +10,6 @@ import numpy as np
 import PIL.Image
 import IPython.display
 
-
 interactive = True
 
 
@@ -132,7 +131,8 @@ def get_non_manifold_vertex_mesh():
 
 def get_open_box_mesh():
     mesh = cv3d.geometry.ccMesh.create_box()
-    mesh.set_triangles(cv3d.utility.Vector3iVector(np.asarray(mesh.get_triangles())[:-2]))
+    mesh.set_triangles(
+        cv3d.utility.Vector3iVector(np.asarray(mesh.get_triangles())[:-2]))
     mesh.compute_vertex_normals()
     mesh.rotate(
         mesh.get_rotation_matrix_from_xyz((0.8 * np.pi, 0, 0.66 * np.pi)),

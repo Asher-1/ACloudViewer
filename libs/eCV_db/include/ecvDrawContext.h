@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_GL_DRAW_CONTEXT_HEADER
 #define ECV_GL_DRAW_CONTEXT_HEADER
@@ -346,12 +336,12 @@ enum CC_DRAWING_FLAGS {
     CC_SKIP_SELECTED = 0x0020,
     CC_SKIP_ALL = 0x0030,  // = CC_SKIP_UNSELECTED | CC_SKIP_SELECTED
     CC_DRAW_ENTITY_NAMES = 0x0040,
-    // CC_FREE_FLAG							= 0x0080,		// UNUSED (formerly
-    // CC_DRAW_POINT_NAMES)
-    // CC_FREE_FLAG							= 0x0100,		// UNUSED (formerly
-    // CC_DRAW_TRI_NAMES)
+    // CC_FREE_FLAG							=
+    // 0x0080,		// UNUSED (formerly CC_DRAW_POINT_NAMES) CC_FREE_FLAG
+    // = 0x0100,		// UNUSED (formerly CC_DRAW_TRI_NAMES)
     CC_DRAW_FAST_NAMES_ONLY = 0x0200,
-    // CC_FREE_FLAG							= 0x03C0,		// UNUSED (formerly CC_DRAW_ANY_NAMES =
+    // CC_FREE_FLAG							=
+    // 0x03C0,		// UNUSED (formerly CC_DRAW_ANY_NAMES =
     // CC_DRAW_ENTITY_NAMES | CC_DRAW_POINT_NAMES | CC_DRAW_TRI_NAMES)
     CC_LOD_ACTIVATED = 0x0400,
     CC_VIRTUAL_TRANS_ENABLED = 0x0800

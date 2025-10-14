@@ -10,7 +10,6 @@ import cloudViewer as cv3d
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
@@ -45,7 +44,7 @@ def custom_draw_geometry_with_rotation(pcd):
         return False
 
     cv3d.visualization.draw_geometries_with_animation_callback([pcd],
-                                                              rotate_view)
+                                                               rotate_view)
 
 
 def custom_draw_geometry_load_option(pcd, render_option_path):
@@ -85,7 +84,8 @@ def custom_draw_geometry_with_key_callback(pcd, render_option_path):
     key_to_callback[ord("R")] = load_render_option
     key_to_callback[ord(",")] = capture_depth
     key_to_callback[ord(".")] = capture_image
-    cv3d.visualization.draw_geometries_with_key_callbacks([pcd], key_to_callback)
+    cv3d.visualization.draw_geometries_with_key_callbacks([pcd],
+                                                          key_to_callback)
 
 
 def custom_draw_geometry_with_camera_trajectory(pcd, render_option_path,
@@ -175,4 +175,3 @@ if __name__ == "__main__":
     print("6. Customized visualization playing a camera trajectory")
     custom_draw_geometry_with_camera_trajectory(
         pcd, sample_data.render_option_path, sample_data.camera_trajectory_path)
-

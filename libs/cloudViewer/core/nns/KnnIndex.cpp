@@ -7,10 +7,11 @@
 
 #include "cloudViewer/core/nns/KnnIndex.h"
 
+#include <Logging.h>
+
 #include "cloudViewer/core/Device.h"
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/TensorCheck.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

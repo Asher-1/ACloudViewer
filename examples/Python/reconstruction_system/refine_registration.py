@@ -30,17 +30,17 @@ def update_posegraph_for_scene(s, t, transformation, information, odometry,
             cv3d.pipelines.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
             cv3d.pipelines.registration.PoseGraphEdge(s,
-                                                     t,
-                                                     transformation,
-                                                     information,
-                                                     uncertain=False))
+                                                      t,
+                                                      transformation,
+                                                      information,
+                                                      uncertain=False))
     else:  # loop closure case
         pose_graph.edges.append(
             cv3d.pipelines.registration.PoseGraphEdge(s,
-                                                     t,
-                                                     transformation,
-                                                     information,
-                                                     uncertain=True))
+                                                      t,
+                                                      transformation,
+                                                      information,
+                                                      uncertain=True))
     return (odometry, pose_graph)
 
 
@@ -61,19 +61,19 @@ def multiscale_icp(source,
             result_icp = cv3d.pipelines.registration.registration_icp(
                 source_down, target_down, distance_threshold,
                 current_transformation,
-                cv3d.pipelines.registration.TransformationEstimationPointToPoint(
-                ),
+                cv3d.pipelines.registration.
+                TransformationEstimationPointToPoint(),
                 cv3d.pipelines.registration.ICPConvergenceCriteria(
                     max_iteration=iter))
         else:
             source_down.estimate_normals(
                 cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
-                                                     2.0,
-                                                     max_nn=30))
+                                                      2.0,
+                                                      max_nn=30))
             target_down.estimate_normals(
                 cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
-                                                     2.0,
-                                                     max_nn=30))
+                                                      2.0,
+                                                      max_nn=30))
             if config["icp_method"] == "point_to_plane":
                 result_icp = cv3d.pipelines.registration.registration_icp(
                     source_down, target_down, distance_threshold,

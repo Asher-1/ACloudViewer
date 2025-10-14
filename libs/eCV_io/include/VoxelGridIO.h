@@ -7,21 +7,21 @@
 
 #pragma once
 
-#include "eCV_io.h"
+#include <VoxelGrid.h>
 
 #include <string>
 
-#include <VoxelGrid.h>
+#include "eCV_io.h"
 
 namespace cloudViewer {
 namespace io {
 
 /// Factory function to create a voxelgrid from a file.
 /// \return return an empty voxelgrid if fail to read the file.
-std::shared_ptr<geometry::VoxelGrid> ECV_IO_LIB_API CreateVoxelGridFromFile(
-                            const std::string &filename,
-                            const std::string &format = "auto",
-                            bool print_progress = false);
+std::shared_ptr<geometry::VoxelGrid> ECV_IO_LIB_API
+CreateVoxelGridFromFile(const std::string &filename,
+                        const std::string &format = "auto",
+                        bool print_progress = false);
 
 /// The general entrance for reading a VoxelGrid from a file
 /// The function calls read functions based on the extension name of filename.

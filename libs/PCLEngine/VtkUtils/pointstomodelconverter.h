@@ -1,20 +1,25 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef POINTSTOMODELCONVERTER_H
 #define POINTSTOMODELCONVERTER_H
 
-#include "qPCL.h"
-
 #include <QObject>
 #include <QRunnable>
-#include "utils.h"
-#include "point3f.h"
-#include "signalledrunable.h"
 
-namespace VtkUtils
-{
+#include "point3f.h"
+#include "qPCL.h"
+#include "signalledrunable.h"
+#include "utils.h"
+
+namespace VtkUtils {
 
 class TableModel;
-class QPCL_ENGINE_LIB_API PointsToModelConverter : public SignalledRunnable
-{
+class QPCL_ENGINE_LIB_API PointsToModelConverter : public SignalledRunnable {
     Q_OBJECT
 public:
     PointsToModelConverter(const QList<Point3F>& points, TableModel* model);
@@ -26,6 +31,6 @@ private:
     TableModel* m_model = nullptr;
 };
 
-} // namespace VtkUtils
+}  // namespace VtkUtils
 
-#endif // POINTSTOMODELCONVERTER_H
+#endif  // POINTSTOMODELCONVERTER_H

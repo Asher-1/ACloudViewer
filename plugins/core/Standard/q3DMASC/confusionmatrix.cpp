@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "confusionmatrix.h"
 
 #include <CVConst.h>
@@ -26,7 +33,8 @@ static QColor GetColor(double value, double r1, double g1, double b1) {
     int g = static_cast<int>((g1 - g0) * value + g0);
     int b = static_cast<int>((b1 - b0) * value + b0);
     //	CVLog::Warning("value " + QString::number(value) + " (" +
-    //QString::number(r) + ", " + QString::number(g) + ", " + QString::number(b)
+    // QString::number(r) + ", " + QString::number(g) + ", " +
+    // QString::number(b)
     //+ ")");
     return QColor(r, g, b);
 }
@@ -91,8 +99,7 @@ void ConfusionMatrix::computePrecisionRecallF1Score(
         }
         float TP_FN = TP + FN;
         if (TP_FN == 0)
-            precisionRecallF1Score.at<float>(realIdx, RECALL) =
-                    NAN_VALUE;
+            precisionRecallF1Score.at<float>(realIdx, RECALL) = NAN_VALUE;
         else
             precisionRecallF1Score.at<float>(realIdx, RECALL) = TP / TP_FN;
         vec_TP_FN.at<int>(realIdx, 0) = TP_FN;
@@ -103,8 +110,7 @@ void ConfusionMatrix::computePrecisionRecallF1Score(
         float den = precisionRecallF1Score.at<float>(realIdx, PRECISION) +
                     precisionRecallF1Score.at<float>(realIdx, RECALL);
         if (den == 0)
-            precisionRecallF1Score.at<float>(realIdx, F1_SCORE) =
-                    NAN_VALUE;
+            precisionRecallF1Score.at<float>(realIdx, F1_SCORE) = NAN_VALUE;
         else
             precisionRecallF1Score.at<float>(realIdx, F1_SCORE) =
                     2 * precisionRecallF1Score.at<float>(realIdx, PRECISION) *

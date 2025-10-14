@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef ECV_COMMAND_LINE_INTERFACE_HEADER
 #define ECV_COMMAND_LINE_INTERFACE_HEADER
 
@@ -307,7 +314,7 @@ public:  // Global shift management
     //! 'COMMAND_OPEN_SHIFT_ON_LOAD' keyword and process the following commands
     //! if necessary
     /** \warning This method assumes the 'COMMAND_OPEN_SHIFT_ON_LOAD' argument
-      *has already been removed from the argument stack
+     *has already been removed from the argument stack
      **/
     bool processGlobalShiftCommand(GlobalShiftOptions& options);
 
@@ -332,7 +339,6 @@ protected:  // members
 
     //! File loading parameters
     CLLoadParameters m_loadingParameters;
-
 };
 
 #endif  // ECV_COMMAND_LINE_INTERFACE_HEADER

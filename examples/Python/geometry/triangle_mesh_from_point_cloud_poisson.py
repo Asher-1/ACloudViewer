@@ -22,7 +22,7 @@ if __name__ == "__main__":
         pcd, depth=9)
     print('Displaying reconstructed mesh ...')
     cv3d.visualization.draw([mesh])
-    
+
     print('visualize densities')
     densities = np.asarray(densities)
     density_colors = plt.get_cmap('plasma')(

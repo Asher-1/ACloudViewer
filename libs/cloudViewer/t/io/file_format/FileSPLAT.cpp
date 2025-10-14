@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <FileSystem.h>
+#include <Logging.h>
+#include <ProgressReporters.h>
 #include <oneapi/tbb/parallel_sort.h>
 
 #include <Eigen/Dense>
@@ -17,9 +20,6 @@
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/t/geometry/TensorMap.h"
 #include "cloudViewer/t/io/PointCloudIO.h"
-#include <FileSystem.h>
-#include <Logging.h>
-#include <ProgressReporters.h>
 
 namespace cloudViewer {
 namespace t {
@@ -81,9 +81,10 @@ std::vector<int64_t> SortedSplatIndices(geometry::TensorMap &t_map) {
 
 }  // End of anonymous namespace
 
-bool ReadPointCloudFromSPLAT(const std::string &filename,
-                             geometry::PointCloud &pointcloud,
-                             const cloudViewer::io::ReadPointCloudOption &params) {
+bool ReadPointCloudFromSPLAT(
+        const std::string &filename,
+        geometry::PointCloud &pointcloud,
+        const cloudViewer::io::ReadPointCloudOption &params) {
     try {
         // Open the file
         utility::filesystem::CFile file;
@@ -203,9 +204,10 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
     return false;
 }
 
-bool WritePointCloudToSPLAT(const std::string &filename,
-                            const geometry::PointCloud &pointcloud,
-                            const cloudViewer::io::WritePointCloudOption &params) {
+bool WritePointCloudToSPLAT(
+        const std::string &filename,
+        const geometry::PointCloud &pointcloud,
+        const cloudViewer::io::WritePointCloudOption &params) {
     // Validate Point Cloud
     if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write SPLAT failed: point cloud has 0 points.");

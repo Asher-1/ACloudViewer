@@ -28,6 +28,9 @@
 #include <curl/easy.h>
 // clang-format on
 
+#include <FileSystem.h>
+#include <Logging.h>
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -36,8 +39,6 @@
 #include <unordered_set>
 
 #include "cloudViewer/data/Dataset.h"
-#include <FileSystem.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace utility {

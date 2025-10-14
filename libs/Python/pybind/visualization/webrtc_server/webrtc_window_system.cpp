@@ -7,8 +7,8 @@
 
 #include "pybind/visualization/webrtc_server/webrtc_window_system.h"
 
-#include "visualization/webrtc_server/WebRTCWindowSystem.h"
 #include "pybind/docstring.h"
+#include "visualization/webrtc_server/WebRTCWindowSystem.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -23,7 +23,8 @@ static void pybind_webrtc_server_functions(py::module &m) {
                         entry_point, query_string, data);
             },
             "entry_point"_a, "query_string"_a = "", "data"_a = "",
-            "Emulates CloudViewer WebRTCWindowSystem's HTTP API calls. This is used "
+            "Emulates CloudViewer WebRTCWindowSystem's HTTP API calls. This is "
+            "used "
             "when the HTTP handshake server is disabled (e.g. in Jupyter), and "
             "handshakes are done by this function.");
     m.def(

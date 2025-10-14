@@ -1,5 +1,11 @@
-#ifndef QVTK_CUSTOM_VTKCAPTIONWIDGET_HEADER
-#define QVTK_CUSTOM_VTKCAPTIONWIDGET_HEADER
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "qPCL.h"
 /**
@@ -11,12 +17,9 @@
 
 class QPCL_ENGINE_LIB_API CustomVtkCaptionWidget : public vtkCaptionWidget {
 public:
-	static CustomVtkCaptionWidget *New();
+    static CustomVtkCaptionWidget *New();
 
-	vtkTypeMacro(CustomVtkCaptionWidget, vtkCaptionWidget);
+    vtkTypeMacro(CustomVtkCaptionWidget, vtkCaptionWidget);
 
-
-	void SetHandleEnabled(bool state);
-
+    void SetHandleEnabled(bool state);
 };
-#endif // QVTK_CUSTOM_VTKCAPTIONWIDGET_HEADER

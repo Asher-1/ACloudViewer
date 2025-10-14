@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -527,8 +527,7 @@ protected:
                     geometry::AxisAlignedBoundingBox bbox(
                             Eigen::Vector3d(-5, -5, -5),
                             Eigen::Vector3d(5, 5, 5));
-                    Eigen::Vector3f center =
-                            bbox.GetCenter().cast<float>();
+                    Eigen::Vector3f center = bbox.GetCenter().cast<float>();
                     this->widget3d_->SetupCamera(60, bbox, center);
                     this->widget3d_->LookAt(center,
                                             center - Eigen::Vector3f{0, 1, 3},

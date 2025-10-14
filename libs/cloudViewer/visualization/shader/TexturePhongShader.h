@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <vector>
 #include <Eigen/Core>
+#include <vector>
 
 #include "visualization/shader/ShaderWrapper.h"
 
@@ -20,7 +20,6 @@ namespace glsl {
 
 class TexturePhongShader : public ShaderWrapper {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     ~TexturePhongShader() override { Release(); }
@@ -91,7 +90,6 @@ protected:
 
 class TexturePhongShaderForTriangleMesh : public TexturePhongShader {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     TexturePhongShaderForTriangleMesh()

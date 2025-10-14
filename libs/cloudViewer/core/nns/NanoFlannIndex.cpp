@@ -7,12 +7,13 @@
 
 #include "cloudViewer/core/nns/NanoFlannIndex.h"
 
+#include <Logging.h>
+
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/TensorCheck.h"
 #include "cloudViewer/core/nns/NanoFlannImpl.h"
 #include "cloudViewer/core/nns/NeighborSearchAllocator.h"
 #include "cloudViewer/core/nns/NeighborSearchCommon.h"
-#include <Logging.h>
 #include "cloudViewer/utility/ParallelScan.h"
 
 namespace cloudViewer {

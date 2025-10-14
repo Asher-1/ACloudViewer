@@ -7,15 +7,15 @@
 
 #include "cloudViewer/core/SizeVector.h"
 
+#include <Logging.h>
+#include <Optional.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include <Logging.h>
-#include <Optional.h>
 
 namespace cloudViewer {
 namespace core {

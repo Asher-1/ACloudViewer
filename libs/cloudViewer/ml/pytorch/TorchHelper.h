@@ -156,15 +156,16 @@ inline std::vector<cloudViewer::ml::op_util::DimValue> GetShapeVector(
     return shape;
 }
 
-template <cloudViewer::ml::op_util::CSOpt Opt = cloudViewer::ml::op_util::CSOpt::NONE,
+template <cloudViewer::ml::op_util::CSOpt Opt =
+                  cloudViewer::ml::op_util::CSOpt::NONE,
           class TDimX,
           class... TArgs>
 std::tuple<bool, std::string> CheckShape(torch::Tensor tensor,
                                          TDimX&& dimex,
                                          TArgs&&... args) {
-    return cloudViewer::ml::op_util::CheckShape<Opt>(GetShapeVector(tensor),
-                                                std::forward<TDimX>(dimex),
-                                                std::forward<TArgs>(args)...);
+    return cloudViewer::ml::op_util::CheckShape<Opt>(
+            GetShapeVector(tensor), std::forward<TDimX>(dimex),
+            std::forward<TArgs>(args)...);
 }
 
 //

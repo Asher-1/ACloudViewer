@@ -147,10 +147,11 @@ public:
                      std::vector<int> &indices,
                      std::vector<double> &distance2) const {
         // This is optimized code for heavily repeated search.
-        // Since max_nn is not given, we let flann to do its own memory management.
-        // Other flann::Index::radiusSearch() implementations lose performance due
-        // to memory management and CPU caching.
-        if (data_.empty() || dataset_size_ <= 0 || size_t(query.rows()) != dimension_) {
+        // Since max_nn is not given, we let flann to do its own memory
+        // management. Other flann::Index::radiusSearch() implementations lose
+        // performance due to memory management and CPU caching.
+        if (data_.empty() || dataset_size_ <= 0 ||
+            size_t(query.rows()) != dimension_) {
             return -1;
         }
         std::vector<nanoflann::ResultItem<Eigen::Index, double>> indices_dists;

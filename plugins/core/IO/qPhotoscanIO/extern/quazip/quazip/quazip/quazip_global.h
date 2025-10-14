@@ -41,11 +41,11 @@ see quazip/(un)zip.h files for details. Basically it's the zlib license.
  * qglobal.h takes care of defining Q_DECL_* correctly for msvc/gcc.
  */
 #if defined(QUAZIP_BUILD)
-	#define QUAZIP_EXPORT Q_DECL_EXPORT
+#define QUAZIP_EXPORT Q_DECL_EXPORT
 #else
-	#define QUAZIP_EXPORT Q_DECL_IMPORT
+#define QUAZIP_EXPORT Q_DECL_IMPORT
 #endif
-#endif // QUAZIP_STATIC
+#endif  // QUAZIP_STATIC
 
 #ifdef __GNUC__
 #define UNUSED __attribute__((__unused__))
@@ -56,4 +56,4 @@ see quazip/(un)zip.h files for details. Basically it's the zlib license.
 #define QUAZIP_EXTRA_NTFS_MAGIC 0x000Au
 #define QUAZIP_EXTRA_NTFS_TIME_MAGIC 0x0001u
 
-#endif // QUAZIP_GLOBAL_H
+#endif  // QUAZIP_GLOBAL_H

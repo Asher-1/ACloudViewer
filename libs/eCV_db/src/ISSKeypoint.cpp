@@ -9,6 +9,11 @@
 // Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
 // ----------------------------------------------------------------------------
 
+#include "ISSKeypoint.h"
+
+#include <Eigen.h>
+#include <Logging.h>
+
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 #include <cmath>
@@ -16,12 +21,8 @@
 #include <tuple>
 #include <vector>
 
-#include <Eigen.h>
-#include <Logging.h>
-
-#include "ecvPointCloud.h"
 #include "ecvKDTreeFlann.h"
-#include "ISSKeypoint.h"
+#include "ecvPointCloud.h"
 
 namespace cloudViewer {
 
@@ -66,7 +67,8 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         double gamma_32 /* = 0.975 */,
         int min_neighbors /*= 5 */) {
     if (input.IsEmpty()) {
-        cloudViewer::utility::LogWarning("[ComputeISSKeypoints] Input ccPointCloud is empty!");
+        cloudViewer::utility::LogWarning(
+                "[ComputeISSKeypoints] Input ccPointCloud is empty!");
         return cloudViewer::make_shared<ccPointCloud>();
     }
     const auto& points = input.getEigenPoints();
@@ -93,7 +95,8 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
             continue;
         }
 
-        Eigen::Matrix3d cov = cloudViewer::utility::ComputeCovariance(points, indices);
+        Eigen::Matrix3d cov =
+                cloudViewer::utility::ComputeCovariance(points, indices);
         if (cov.isZero()) {
             continue;
         }
@@ -125,7 +128,8 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         }
     }
 
-    cloudViewer::utility::LogDebug("[ComputeISSKeypoints] Extracted {} keypoints", kp_indices.size());
+    cloudViewer::utility::LogDebug(
+            "[ComputeISSKeypoints] Extracted {} keypoints", kp_indices.size());
     return input.SelectByIndex(kp_indices);
 }
 
