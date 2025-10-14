@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_SCENE_CLUSTERING_H_
-#define COLMAP_SRC_BASE_SCENE_CLUSTERING_H_
+#pragma once
 
 #include <list>
 #include <vector>
@@ -73,5 +72,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_SCENE_CLUSTERING_H_

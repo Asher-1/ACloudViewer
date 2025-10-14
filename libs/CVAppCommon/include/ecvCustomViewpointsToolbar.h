@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef pqCustomViewpointsToolbar_h
-#define pqCustomViewpointsToolbar_h
+#pragma once
 
 #include <QPixmap>
 #include <QPointer>
@@ -89,5 +88,3 @@ private:
     QPixmap ConfigPixmap;
     QVector<QPointer<QAction>> ViewpointActions;
 };
-
-#endif

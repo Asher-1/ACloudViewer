@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TEST_DOWNLOADER_H
-#define TEST_DOWNLOADER_H
+#pragma once
 
 #include <QtTest>
 #include <Downloader.h>
@@ -15,5 +14,3 @@ class Test_Downloader : public QObject
 {
    Q_OBJECT
 };
-
-#endif

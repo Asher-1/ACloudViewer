@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_BUNDLER_IMPORT_DIALOG_HEADER
-#define ECV_BUNDLER_IMPORT_DIALOG_HEADER
+#pragma once
 
 #include <QDialog>
 
@@ -88,5 +87,3 @@ protected:
     //! Saves dialog state from persistent settings
     void saveToPersistentSettings();
 };
-
-#endif  // ECV_BUNDLER_IMPORT_DIALOG_HEADER

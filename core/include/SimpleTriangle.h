@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SIMPLE_TRIANGLE_HEADER
-#define SIMPLE_TRIANGLE_HEADER
+#pragma once
 
 // Local
 #include "GenericTriangle.h"
@@ -79,4 +78,3 @@ public:
 };
 
 }  // namespace cloudViewer
-#endif  // SIMPLE_TRIANGLE_HEADER

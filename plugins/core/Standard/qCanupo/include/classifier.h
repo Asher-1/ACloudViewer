@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QCANUPO_CLASSIFIER_HEADER
-#define QCANUPO_CLASSIFIER_HEADER
+#pragma once
 
 // Local
 #include "ccPointDescriptor.h"
@@ -83,5 +82,3 @@ public:  // members
     //! Associated scales
     std::vector<float> scales;
 };
-
-#endif  // QCANUPO_CLASSIFIER_HEADER

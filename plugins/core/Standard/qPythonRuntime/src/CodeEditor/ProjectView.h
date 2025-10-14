@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PROJECT_TREE_VIEW_H
-#define PYTHON_PLUGIN_PROJECT_TREE_VIEW_H
+#pragma once
 
 #include <QFileSystemModel>
 #include <QTreeView>
@@ -60,5 +59,3 @@ class ProjectView final : public QTreeView
     QFileSystemModel *m_fileSystemModel;
     ProjectViewContextMenu *m_contextMenu;
 };
-
-#endif // PYTHON_PLUGIN_PROJECT_TREE_VIEW_H

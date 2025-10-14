@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SNE_HEADER
-#define ECV_SNE_HEADER
+#pragma once
 
 #include <ccMeasurement.h>
 #include <ecvPointCloud.h>
@@ -31,4 +30,3 @@ protected:
     // overidden from ccHObject
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 };
-#endif  // ECV_SNE_HEADER

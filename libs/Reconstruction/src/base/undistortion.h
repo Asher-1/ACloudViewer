@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_UNDISTORTION_H_
-#define COLMAP_SRC_BASE_UNDISTORTION_H_
+#pragma once
 
 #include "base/reconstruction.h"
 #include "util/alignment.h"
@@ -219,5 +218,3 @@ void RectifyAndUndistortStereoImages(const UndistortCameraOptions& options,
                                      Eigen::Matrix4d* Q);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_UNDISTORTION_H_

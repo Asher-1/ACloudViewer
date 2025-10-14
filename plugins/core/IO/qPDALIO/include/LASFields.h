@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PLUBIN_LAS_FIELDS_HEADER
-#define PLUBIN_LAS_FIELDS_HEADER
+#pragma once
 
 // qCC_db
 #include <ecvPointCloud.h>
@@ -338,5 +337,3 @@ struct LasField {
     double defaultValue;
     uint8_t minPointFormat;
 };
-
-#endif  // CC_LAS_FIELDS_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ISOLINES_HEADER
-#define ISOLINES_HEADER
+#pragma once
 
 /**
  *  Transcription of FindIsolines.java for C++
@@ -1003,5 +1002,3 @@ public:
         return (getBBMinY(k) + getBBMaxY(k)) / 2.0;
     }
 };
-
-#endif  // ISOLINES_HEADER

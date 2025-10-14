@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_RASTER_FILTER_HEADER
-#define ECV_RASTER_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -26,5 +25,3 @@ public:
 };
 
 #endif  // CV_GDAL_SUPPORT
-
-#endif  // ECV_RASTER_FILTER_HEADER

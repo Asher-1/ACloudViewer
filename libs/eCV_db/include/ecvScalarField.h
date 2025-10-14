@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DB_SCALAR_FIELD_HEADER
-#define ECV_DB_SCALAR_FIELD_HEADER
+#pragma once
 
 // cloudViewer
 #include <ScalarField.h>
@@ -297,5 +296,3 @@ protected:  // members
     //! Global shift
     double m_globalShift;
 };
-
-#endif  // ECV_DB_SCALAR_FIELD_HEADER

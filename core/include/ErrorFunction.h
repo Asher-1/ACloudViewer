@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ERROR_FUNCTION_HEADER
-#define ERROR_FUNCTION_HEADER
+#pragma once
 
 // Local
 #include "CVCoreLib.h"
@@ -48,5 +47,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // ERROR_FUNCTION_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FBX_IO_HEADER
-#define FBX_IO_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -41,5 +40,3 @@ public:
 
     FilterList getFilters() override;
 };
-
-#endif

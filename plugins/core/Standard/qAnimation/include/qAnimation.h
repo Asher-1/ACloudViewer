@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_ANIMATION_PLUGIN_HEADER
-#define Q_ANIMATION_PLUGIN_HEADER
+#pragma once
 
 // qCC
 #include "ecvStdPluginInterface.h"
@@ -39,5 +38,3 @@ private:
 
     QAction* m_action;
 };
-
-#endif

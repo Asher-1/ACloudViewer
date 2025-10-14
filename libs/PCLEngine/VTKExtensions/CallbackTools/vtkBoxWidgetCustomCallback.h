@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkBoxWidgetCallback_H
-#define vtkBoxWidgetCallback_H
+#pragma once
 
 #include <vtkCommand.h>
 #include <vtkSmartPointer.h>
@@ -34,5 +33,3 @@ private:
     vtkBoxWidgetCustomCallback() {}
     vtkSmartPointer<vtkActor> m_actor;
 };
-
-#endif

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MATCH_SCALES_DIALOG_HEADER
-#define ECV_MATCH_SCALES_DIALOG_HEADER
+#pragma once
 
 #include <ui_matchScalesDlg.h>
 
@@ -33,5 +32,3 @@ public:
     //! Returns the selected matching algorithm
     ccLibAlgorithms::ScaleMatchingAlgorithm getSelectedAlgorithm() const;
 };
-
-#endif  // ECV_ENTITY_PICKER_DIALOG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkCameraManipulatorGUIHelper_h
-#define vtkCameraManipulatorGUIHelper_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkObject.h"
@@ -57,5 +56,3 @@ private:
             delete;
     void operator=(const vtkCameraManipulatorGUIHelper&) = delete;
 };
-
-#endif

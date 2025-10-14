@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_LAS_FWF_FILTER_HEADER
-#define CC_LAS_FWF_FILTER_HEADER
+#pragma once
 
 // qCC_io
 #include <FileIOFilter.h>
@@ -33,5 +32,3 @@ public:
                                      const QString& filename,
                                      const SaveParameters& parameters) override;
 };
-
-#endif  // CC_LAS_FWF_FILTER_HEADER

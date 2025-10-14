@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FAST_MARCHING_PROP_HEADER
-#define FAST_MARCHING_PROP_HEADER
+#pragma once
 
 // local
 #include "DgmOctree.h"
@@ -113,5 +112,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // FAST_MARCHING_PROP_HEADER

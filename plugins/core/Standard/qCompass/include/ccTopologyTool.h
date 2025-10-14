@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TOPOLOGYTOOL_HEADER
-#define ECV_TOPOLOGYTOOL_HEADER
+#pragma once
 
 #include <DistanceComputationTools.h>
 #include <ecvColorTypes.h>
@@ -47,5 +46,3 @@ public:
                               // assigned (possible values are in
                               // ccTopologyRelation)
 };
-
-#endif  // ECV_TOPOLOGYTOOL_HEADER

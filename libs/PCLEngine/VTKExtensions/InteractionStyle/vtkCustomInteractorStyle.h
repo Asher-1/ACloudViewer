@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_VTK_CUSTOM_INTERACTOR_STYLE_H
-#define ECV_VTK_CUSTOM_INTERACTOR_STYLE_H
+#pragma once
 
 #include <pcl/visualization/interactor_style.h>
 #include <vtkInteractorStyleRubberBandPick.h>
@@ -205,5 +204,3 @@ protected:
 };
 
 }  // namespace VTKExtensions
-
-#endif  // ECV_VTK_CUSTOM_INTERACTOR_STYLE_H

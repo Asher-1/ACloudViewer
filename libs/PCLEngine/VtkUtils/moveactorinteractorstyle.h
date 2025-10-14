@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MOVEACTORINTERACTORSTYLE_H
-#define MOVEACTORINTERACTORSTYLE_H
+#pragma once
 
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkSmartPointer.h>
@@ -50,4 +49,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // MOVEACTORINTERACTORSTYLE_H

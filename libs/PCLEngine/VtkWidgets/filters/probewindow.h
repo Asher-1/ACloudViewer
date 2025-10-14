@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PROBEWINDOW_H
-#define PROBEWINDOW_H
+#pragma once
 
 #include "filterwindow.h"
 
@@ -64,5 +63,3 @@ protected:
     double m_planeOrigin[3];
     double m_planeNormal[3];
 };
-
-#endif  // PROBEWINDOW_H

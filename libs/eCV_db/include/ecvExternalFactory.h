@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_EXTERNAL_FACTORY_HEADER
-#define ECV_EXTERNAL_FACTORY_HEADER
+#pragma once
 
 // Local
 #include "ecvHObject.h"
@@ -77,5 +76,3 @@ protected:
     //! Name
     QString m_factoryName;
 };
-
-#endif  // CC_EXTERNAL_FACTORY_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVInformationKeys_h
-#define vtkPVInformationKeys_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 
@@ -30,5 +29,4 @@ public:
 };
 //@}
 
-#endif  // vtkPVInformationKeys_h
 // VTK-HeaderTest-Exclude: vtkPVInformationKeys.h

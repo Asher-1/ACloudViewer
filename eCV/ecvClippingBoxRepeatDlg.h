@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CLIPPING_BOX_REPEAT_DIALOG_HEADER
-#define ECV_CLIPPING_BOX_REPEAT_DIALOG_HEADER
+#pragma once
 
 #include <ui_clippingBoxRepeatDlg.h>
 
@@ -36,5 +35,3 @@ protected slots:
     void onDimYChecked(bool);
     void onDimZChecked(bool);
 };
-
-#endif  // ECV_CLIPPING_BOX_REPEAT_DIALOG_HEADER

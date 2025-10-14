@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_HEADER
-#define Q_PCL_PLUGIN_HEADER
+#pragma once
 
 #include "ecvPclPluginInterface.h"
 
@@ -54,5 +53,3 @@ protected:
     std::vector<BasePclModule*> m_modules;
     QVector<QString> m_moduleNames;
 };
-
-#endif  // END Q_PCL_PLUGIN_HEADER

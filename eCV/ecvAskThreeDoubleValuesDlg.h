@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ASK_THREE_DOUBLE_VALUES_DIALOG_HEADER
-#define ECV_ASK_THREE_DOUBLE_VALUES_DIALOG_HEADER
+#pragma once
 
 #include <ui_askThreeDoubleValuesDlg.h>
 
@@ -40,5 +39,3 @@ public:
     //! Returns
     bool getCheckboxState() const;
 };
-
-#endif  // ECV_ASK_THREE_DOUBLE_VALUES_DIALOG_HEADER

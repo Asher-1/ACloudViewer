@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FITPLANETOOL_HEADER
-#define ECV_FITPLANETOOL_HEADER
+#pragma once
 
 #include <DgmOctreeReferenceCloud.h>
 
@@ -39,5 +38,3 @@ public:
     // mouse circle element used for the selection
     ccMouseCircle* m_mouseCircle = nullptr;
 };
-
-#endif  // ECV_FITPLANETOOL_HEADER

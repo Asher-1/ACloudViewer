@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef POINT_PAIR_REGISTRATION_DIALOG_HEADER
-#define POINT_PAIR_REGISTRATION_DIALOG_HEADER
+#pragma once
 
 // Local
 #include "ecvOverlayDialog.h"
@@ -198,5 +197,3 @@ protected:
     //! Main application interface
     ecvMainAppInterface* m_app;
 };
-
-#endif  // POINT_PAIR_REGISTRATION_DIALOG_HEADER

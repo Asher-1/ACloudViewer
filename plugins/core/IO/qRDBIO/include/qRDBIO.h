@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_RDB_IO_PLUGIN_HEADER
-#define Q_RDB_IO_PLUGIN_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -42,5 +41,3 @@ public:
     // inherited from ccIOPluginInterface
     FilterList getFilters() override;
 };
-
-#endif  // Q_RDB_IO_PLUGIN_HEADER

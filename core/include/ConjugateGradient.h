@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CONJUGATE_GRADIENT_HEADER
-#define CONJUGATE_GRADIENT_HEADER
+#pragma once
 
 // Local
 #include "MathTools.h"
@@ -119,5 +118,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // CONJUGATE_GRADIENT_HEADER

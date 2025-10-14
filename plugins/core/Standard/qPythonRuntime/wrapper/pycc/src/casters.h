@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_CASTERS_H
-#define PYTHON_PLUGIN_CASTERS_H
+#pragma once
 
 #include <QSharedPointer>
 #include <QString>
@@ -265,4 +264,3 @@ template <> struct type_caster<QVariant>
 
 } // namespace detail
 } // namespace pybind11
-#endif // PYTHON_PLUGIN_CASTERS_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef E57_IO_HEADER
-#define E57_IO_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -41,5 +40,3 @@ public:
 
     FilterList getFilters() override;
 };
-
-#endif

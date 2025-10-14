@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_NORMAL_VECTORS_HEADER
-#define ECV_NORMAL_VECTORS_HEADER
+#pragma once
 
 // cloudViewer
 #include <GeometricalAnalysisTools.h>
@@ -282,5 +281,3 @@ protected:
             void** additionalParameters,
             cloudViewer::NormalizedProgress* nProgress = nullptr);
 };
-
-#endif  // CC_NORMAL_VECTORS_HEADER

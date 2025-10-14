@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_VTK_EDITCAMERA_TOOL_HEADER
-#define QPCL_VTK_EDITCAMERA_TOOL_HEADER
+#pragma once
 
 #include <ecvGenericCameraTool.h>
 
@@ -44,5 +43,3 @@ private:
     virtual void adjustCamera(CameraAdjustmentType enType,
                               double value) override;
 };
-
-#endif  // QPCL_VTK_EDITCAMERA_TOOL_HEADER

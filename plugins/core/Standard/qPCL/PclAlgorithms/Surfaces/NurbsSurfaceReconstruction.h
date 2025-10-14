@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_NURBSSURFACE_HEADER
-#define Q_PCL_PLUGIN_NURBSSURFACE_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -48,5 +47,3 @@ protected:
     float m_boundarySmoothness;
     float m_boundaryWeight;
 };
-
-#endif  // Q_PCL_PLUGIN_NURBSSURFACE_HEADER

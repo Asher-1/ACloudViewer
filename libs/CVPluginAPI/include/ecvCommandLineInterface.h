@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COMMAND_LINE_INTERFACE_HEADER
-#define ECV_COMMAND_LINE_INTERFACE_HEADER
+#pragma once
 
 #include "CVPluginAPI.h"
 
@@ -340,5 +339,3 @@ protected:  // members
     //! File loading parameters
     CLLoadParameters m_loadingParameters;
 };
-
-#endif  // ECV_COMMAND_LINE_INTERFACE_HEADER

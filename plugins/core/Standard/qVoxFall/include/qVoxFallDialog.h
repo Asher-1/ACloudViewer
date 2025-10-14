@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_VOXFALL_DIALOG_HEADER
-#define Q_VOXFALL_DIALOG_HEADER
+#pragma once
 
 #include <ui_qVoxFallDialog.h>
 
@@ -61,5 +60,3 @@ protected:  // members
     ccMesh* m_mesh1;
     ccMesh* m_mesh2;
 };
-
-#endif  // Q_VOXFALL_DIALOG_HEADER

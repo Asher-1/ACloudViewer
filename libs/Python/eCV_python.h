@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PYTHON_HEADER
-#define ECV_PYTHON_HEADER
+#pragma once
 
 #include <QtCore/QtGlobal>
 
@@ -15,5 +14,3 @@
 #else
 #define ECV_PYTHON_LIB_API Q_DECL_IMPORT
 #endif
-
-#endif  // ECV_PYTHON_HEADER

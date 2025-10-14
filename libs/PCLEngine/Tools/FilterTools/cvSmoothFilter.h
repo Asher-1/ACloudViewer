@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_SMOOTH_FILTER_H
-#define TOOLS_SMOOTH_FILTER_H
+#pragma once
 
 #include "cvGenericFilter.h"
 
@@ -53,5 +52,3 @@ private:
 
     vtkSmartPointer<vtkSmoothPolyDataFilter> m_smoothFilter;
 };
-
-#endif  // TOOLS_SMOOTH_FILTER_H

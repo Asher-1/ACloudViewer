@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_OBJECT_HEADER
-#define CV_OBJECT_HEADER
+#pragma once
 
 // LOCAL
 #include "CVTypes.h"
@@ -233,5 +232,3 @@ private:
     //! Object unique ID
     unsigned m_uniqueID;
 };
-
-#endif  // CC_OBJECT_HEADER

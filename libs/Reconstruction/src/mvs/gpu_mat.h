@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_GPU_MAT_H_
-#define COLMAP_SRC_MVS_GPU_MAT_H_
+#pragma once
 
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
@@ -419,5 +418,3 @@ void GpuMat<T>::ComputeCudaConfig() {
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_GPU_MAT_H_

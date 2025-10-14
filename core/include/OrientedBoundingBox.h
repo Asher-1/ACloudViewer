@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_ORIENTED_BOUNDING_BOX_HEADER
-#define CV_ORIENTED_BOUNDING_BOX_HEADER
+#pragma once
 
 // Local
 #include "BoundingBox.h"
@@ -121,5 +120,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // CV_ORIENTED_BOUNDING_BOX_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_WIDGET_MAP_H_
-#define QPCL_WIDGET_MAP_H_
+#pragma once
 
 #include <vtkAbstractWidget.h>
 #include <vtkLODActor.h>
@@ -40,5 +39,3 @@ typedef std::shared_ptr<WidgetActorMap> WidgetActorMapPtr;
 typedef std::unordered_map<std::string, vtkSmartPointer<vtkProp>> PropActorMap;
 typedef std::shared_ptr<PropActorMap> PropActorMapPtr;
 }  // namespace PclUtils
-
-#endif  // QPCL_WIDGET_MAP_H_

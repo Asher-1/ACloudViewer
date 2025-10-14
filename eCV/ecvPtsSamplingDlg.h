@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_POINTS_SAMPLING_DLG_HEADER
-#define CC_POINTS_SAMPLING_DLG_HEADER
+#pragma once
 
 #include <ui_ptsSamplingDlg.h>
 
@@ -31,5 +30,3 @@ public:
     void setGenerateNormals(bool state);
     void setUseDensity(bool state);
 };
-
-#endif  // CC_POINTS_SAMPLING_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GRAPHICAL_SEGMENTATION_TOOLS_HEADER
-#define ECV_GRAPHICAL_SEGMENTATION_TOOLS_HEADER
+#pragma once
 
 // LOCAL
 #include <ecvOverlayDialog.h>
@@ -142,5 +141,3 @@ protected:
     //! Whether to delete hidden parts after segmentation
     bool m_deleteHiddenParts;
 };
-
-#endif  // ECV_GRAPHICAL_SEGMENTATION_TOOLS_HEADER

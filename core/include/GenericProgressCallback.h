@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GENERIC_PROGRESS_CALLBACK_HEADER
-#define GENERIC_PROGRESS_CALLBACK_HEADER
+#pragma once
 
 // Local
 #include "CVConst.h"
@@ -126,5 +125,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // GENERIC_PROGRESS_CALLBACK_HEADER

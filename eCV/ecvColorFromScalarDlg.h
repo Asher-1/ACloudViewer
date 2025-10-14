@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FROM_SCALAR_DLG_HEADER
-#define ECV_FROM_SCALAR_DLG_HEADER
+#pragma once
 
 // Qt
 #include <QColor>
@@ -109,5 +108,3 @@ protected:
 private:
     Ui::ColorFromScalarDialog* m_ui;
 };
-
-#endif  // ECV_COLOR_LEVELS_DLG_HEADER

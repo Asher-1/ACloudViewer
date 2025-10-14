@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_CANUPO_CLASSIF_DIALOG_HEADER
-#define Q_CANUPO_CLASSIF_DIALOG_HEADER
+#pragma once
 
 #include <ui_qCanupoClassifDialog.h>
 
@@ -63,5 +62,3 @@ protected:
     //! Associated cloud
     ccPointCloud* m_cloud;
 };
-
-#endif  // Q_CANUPO_CLASSIF_DIALOG_HEADER

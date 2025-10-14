@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef DELAUNAY2D_MESH_HEADER
-#define DELAUNAY2D_MESH_HEADER
+#pragma once
 
 // Local
 #include <cstddef>
@@ -150,5 +149,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // DELAUNAY2D_MESH_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_IMAGE_VIS_HEADER
-#define ECV_IMAGE_VIS_HEADER
+#pragma once
 
 // LOCAL
 #include "PCLCloud.h"
@@ -116,5 +115,3 @@ private:
 
 typedef std::shared_ptr<ImageVis> ImageVisPtr;
 }  // namespace PclUtils
-
-#endif  // ECV_IMAGE_VIS_HEADER

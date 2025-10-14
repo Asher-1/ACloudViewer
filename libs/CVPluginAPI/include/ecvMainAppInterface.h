@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MAIN_APP_INTERFACE_HEADER
-#define ECV_MAIN_APP_INTERFACE_HEADER
+#pragma once
 
 // Qt
 #include <QString>
@@ -220,5 +219,3 @@ public:
     virtual void toggleExclusiveFullScreen(bool state) = 0;
     virtual void toggle3DView(bool state) = 0;
 };
-
-#endif  // ECV_MAIN_APP_INTERFACE_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PCV_CONTEXT_HEADER
-#define PCV_CONTEXT_HEADER
+#pragma once
 
 // cloudViewer
 #include <GenericCloud.h>
@@ -93,5 +92,3 @@ protected:
     //! Whether displayed mesh is closed or not
     bool m_meshIsClosed;
 };
-
-#endif

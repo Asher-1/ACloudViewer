@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_CONTROLLERS_AUTOMATIC_RECONSTRUCTION_H_
-#define COLMAP_SRC_CONTROLLERS_AUTOMATIC_RECONSTRUCTION_H_
+#pragma once
 
 #include <string>
 
@@ -100,5 +99,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_CONTROLLERS_AUTOMATIC_RECONSTRUCTION_H_

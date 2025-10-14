@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_FBX_FILTER_HEADER
-#define CC_FBX_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -33,5 +32,3 @@ public:
     //! saving FBX files)
     static void SetDefaultOutputFormat(QString format);
 };
-
-#endif  // CC_FBX_FILTER_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_CANUPO_TRAINING_DIALOG_HEADER
-#define Q_CANUPO_TRAINING_DIALOG_HEADER
+#pragma once
 
 #include <ui_qCanupoTrainingDialog.h>
 
@@ -55,5 +54,3 @@ protected:
     // Returns whether the current parameters are valid or not
     bool validParameters() const;
 };
-
-#endif  // Q_CANUPO_TRAINING_DIALOG_HEADER

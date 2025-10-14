@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_CORRESPONDENCE_GRAPH_H_
-#define COLMAP_SRC_BASE_CORRESPONDENCE_GRAPH_H_
+#pragma once
 
 #include <unordered_map>
 #include <vector>
@@ -180,5 +179,3 @@ bool CorrespondenceGraph::HasCorrespondences(
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_CORRESPONDENCE_GRAPH_H_

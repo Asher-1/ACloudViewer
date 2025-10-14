@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_CONST_HEADER
-#define CV_CONST_HEADER
+#pragma once
 
 #include "CVTypes.h"
 
@@ -133,5 +132,3 @@ constexpr unsigned CV_LOCAL_MODEL_MIN_SIZE[] = {
         3, /**< for Delaunay triangulation (2.5D) **/
         6, /**< for Quadratic 'height' function **/
 };
-
-#endif  // CV_CONST_HEADER

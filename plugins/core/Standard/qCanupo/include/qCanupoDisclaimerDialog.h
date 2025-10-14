@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CANUPO_DISCLAIMER_DIALOG_HEADER
-#define CANUPO_DISCLAIMER_DIALOG_HEADER
+#pragma once
 
 #include <ui_classifyDisclaimerDlg.h>
 #include <ui_trainDisclaimerDlg.h>
@@ -63,5 +62,3 @@ static bool ShowClassifyDisclaimer(ecvMainAppInterface* app) {
 
     return s_classifyDisclaimerAccepted;
 }
-
-#endif  // CANUPO_DISCLAIMER_DIALOG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_IMAGE_READER_H_
-#define COLMAP_SRC_BASE_IMAGE_READER_H_
+#pragma once
 
 #include <unordered_set>
 
@@ -105,5 +104,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_IMAGE_READER_H_

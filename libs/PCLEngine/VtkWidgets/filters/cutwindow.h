@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CUTWINDOW_H
-#define CUTWINDOW_H
+#pragma once
 
 #include <vtkSmartPointer.h>
 
@@ -90,5 +89,3 @@ protected:
     vtkSmartPointer<vtkPlanes> m_planes;
     vtkSmartPointer<vtkActor> m_contourLinesActor;
 };
-
-#endif  // CUTWINDOW_H

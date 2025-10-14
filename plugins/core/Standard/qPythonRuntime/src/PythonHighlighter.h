@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_HIGHLIGHTER_H
-#define PYTHON_HIGHLIGHTER_H
+#pragma once
 
 #include <QSyntaxHighlighter>
 
@@ -67,5 +66,3 @@ class PythonHighlighter final : public QSyntaxHighlighter
     HighlightingRule m_triSingle;
     HighlightingRule m_triDouble;
 };
-
-#endif // PYTHON_HIGHLIGHTER_H

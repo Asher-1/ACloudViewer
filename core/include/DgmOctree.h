@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef DGM_OCTREE_HEADER
-#define DGM_OCTREE_HEADER
+#pragma once
 
 // Local
 #include "CVPlatform.h"
@@ -1358,5 +1357,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // DGM_OCTREE_HEADER

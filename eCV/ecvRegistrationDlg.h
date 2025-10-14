@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_REGISTRATION_DLG_HEADER
-#define ECV_REGISTRATION_DLG_HEADER
+#pragma once
 
 #include <QDialog>
 
@@ -115,5 +114,3 @@ protected:
     //! 'Data' entity
     ccHObject *dataEntity;
 };
-
-#endif  // ECV_REGISTRATION_DLG_HEADER

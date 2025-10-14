@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_BUNDLER_FILTER_HEADER
-#define ECV_BUNDLER_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -33,5 +32,3 @@ public:
             unsigned coloredDTMVerticesCount = 1000000,
             float scaleFactor = 1.0f);
 };
-
-#endif  // ECV_BUNDLER_FILTER_HEADER

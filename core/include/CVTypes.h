@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_TYPES_HEADER
-#define CV_TYPES_HEADER
+#pragma once
 
 #include <stdint.h>
 
@@ -178,5 +177,3 @@ typedef enum : CV_CLASS_ENUM {
     CUSTOM_LEAF_OBJECT = CUSTOM_H_OBJECT | CC_LEAF_BIT,
 } GeometryType;
 }
-
-#endif  // CV_TYPES_HEADER

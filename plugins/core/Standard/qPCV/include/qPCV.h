@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCV_PLUGIN_HEADER
-#define Q_PCV_PLUGIN_HEADER
+#pragma once
 
 #include "PCVCommand.h"
 #include "ecvStdPluginInterface.h"
@@ -44,5 +43,3 @@ protected:
     //! Associated action
     QAction* m_action;
 };
-
-#endif  // Q_PCV_PLUGIN_HEADER

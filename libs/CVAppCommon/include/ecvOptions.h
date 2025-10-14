@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_OPTIONS_HEADER
-#define ECV_OPTIONS_HEADER
+#pragma once
 
 #include "CVAppCommon.h"
 
@@ -49,5 +48,3 @@ protected:  // methods
     //! Returns the stored values of each parameter.
     static ecvOptions& InstanceNonConst();
 };
-
-#endif  // ECV_OPTIONS_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_CONTROLLERS_BUNDLE_ADJUSTMENT_H_
-#define COLMAP_SRC_CONTROLLERS_BUNDLE_ADJUSTMENT_H_
+#pragma once
 
 #include "base/reconstruction.h"
 #include "util/option_manager.h"
@@ -28,5 +27,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_CONTROLLERS_BUNDLE_ADJUSTMENT_H_

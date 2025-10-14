@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_CONTROLLERS_INCREMENTAL_MAPPER_H_
-#define COLMAP_SRC_CONTROLLERS_INCREMENTAL_MAPPER_H_
+#pragma once
 
 #include "base/reconstruction_manager.h"
 #include "sfm/incremental_mapper.h"
@@ -169,5 +168,3 @@ size_t CompleteAndMergeTracks(const IncrementalMapperOptions& options,
                               IncrementalMapper* mapper);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_CONTROLLERS_INCREMENTAL_MAPPER_H_

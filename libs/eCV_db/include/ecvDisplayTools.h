@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DISPLAY_TOOLS_HEADER
-#define ECV_DISPLAY_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "ecvGLMatrix.h"
@@ -1993,5 +1992,3 @@ signals:
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(ecvDisplayTools::INTERACTION_FLAGS);
-
-#endif  // ECV_DISPLAY_TOOLS_HEADER

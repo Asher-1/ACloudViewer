@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_CSV_MATRIX_IO_PLUGIN_HEADER
-#define Q_CSV_MATRIX_IO_PLUGIN_HEADER
+#pragma once
 
 #include "ecvIOPluginInterface.h"
 
@@ -25,5 +24,3 @@ public:
     // inherited from ccIOPluginInterface
     FilterList getFilters() override;
 };
-
-#endif  // Q_CSV_MATRIX_IO_PLUGIN_HEADER

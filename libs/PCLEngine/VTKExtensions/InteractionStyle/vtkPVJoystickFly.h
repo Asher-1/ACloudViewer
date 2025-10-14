@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVJoystickFly_h
-#define vtkPVJoystickFly_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkCameraManipulator.h"
@@ -68,5 +67,3 @@ protected:
     vtkPVJoystickFly(const vtkPVJoystickFly&) = delete;
     void operator=(const vtkPVJoystickFly&) = delete;
 };
-
-#endif

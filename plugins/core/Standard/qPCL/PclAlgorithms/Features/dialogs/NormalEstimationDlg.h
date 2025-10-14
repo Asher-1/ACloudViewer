@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_NORMAL_ESTIMATION_DIALOG_HEADER
-#define Q_PCL_PLUGIN_NORMAL_ESTIMATION_DIALOG_HEADER
+#pragma once
 
 #include <ui_NormalEstimationDlg.h>
 
@@ -18,5 +17,3 @@ class NormalEstimationDialog : public QDialog,
 public:
     explicit NormalEstimationDialog(QWidget* parent = nullptr);
 };
-
-#endif  // Q_PCL_PLUGIN_NORMAL_ESTIMATION_DIALOG_HEADER

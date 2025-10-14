@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ISOSURFACEWINDOW_H
-#define ISOSURFACEWINDOW_H
+#pragma once
 
 #include "filterwindow.h"
 
@@ -42,5 +41,3 @@ protected:
     int m_numOfContours = 10;
     QString m_currentScalarName;
 };
-
-#endif  // ISOSURFACEWINDOW_H

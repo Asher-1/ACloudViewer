@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_CURVEFITTING_HEADER
-#define QPCL_CURVEFITTING_HEADER
+#pragma once
 
 // LOCAL
 #include "PclUtils/PCLCloud.h"
@@ -66,5 +65,3 @@ private:
     double b_line;
 };
 }  // namespace CurveFittingTool
-
-#endif  // QPCL_CURVEFITTING_HEADER

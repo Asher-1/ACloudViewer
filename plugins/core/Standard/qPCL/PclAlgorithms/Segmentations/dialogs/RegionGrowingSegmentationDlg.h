@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_REGIONGROWING_DLG_HEADER
-#define Q_PCL_PLUGIN_REGIONGROWING_DLG_HEADER
+#pragma once
 
 #include <ui_RegionGrowingSegmentationDlg.h>
 
@@ -21,5 +20,3 @@ class RegionGrowingSegmentationDlg : public QDialog,
 public:
     explicit RegionGrowingSegmentationDlg(QWidget* parent = 0);
 };
-
-#endif  // Q_PCL_PLUGIN_REGIONGROWING_DLG_HEADER

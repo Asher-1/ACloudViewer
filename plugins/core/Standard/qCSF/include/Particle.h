@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef _PARTICLE_H_
-#define _PARTICLE_H_
+#pragma once
 #include <vector>
 
 #include "Vec3.h"
@@ -109,5 +108,3 @@ public:
 
     // inline void resetNormal() { accumulated_normal = Vec3(0, 0, 0); }
 };
-
-#endif

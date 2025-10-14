@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_POLYLINE_HEADER
-#define CV_POLYLINE_HEADER
+#pragma once
 
 // Local
 #include "ReferenceCloud.h"
@@ -38,5 +37,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // CV_POLYLINE_HEADER

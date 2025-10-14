@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef POINTSTOPOLYDATACONVERTER_H
-#define POINTSTOPOLYDATACONVERTER_H
+#pragma once
 
 #include "../qPCL.h"
 
@@ -37,4 +36,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // POINTSTOPOLYDATACONVERTER_H

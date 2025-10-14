@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PICKING_LISTENER_HEADER
-#define ECV_PICKING_LISTENER_HEADER
+#pragma once
 
 #include "CVPluginAPI.h"
 
@@ -40,5 +39,3 @@ public:
     //! Method called whenever an item is picked
     virtual void onItemPicked(const PickedItem& pi) = 0;
 };
-
-#endif  // ECV_PICKING_LISTENER_HEADER

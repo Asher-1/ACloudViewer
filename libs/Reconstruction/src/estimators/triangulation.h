@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_TRIANGULATION_H_
-#define COLMAP_SRC_ESTIMATORS_TRIANGULATION_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <vector>
@@ -132,5 +131,3 @@ EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
         colmap::TriangulationEstimator::PointData)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
         colmap::TriangulationEstimator::PoseData)
-
-#endif  // COLMAP_SRC_ESTIMATORS_TRIANGULATION_H_

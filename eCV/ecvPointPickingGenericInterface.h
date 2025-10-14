@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POINT_PICKING_GENERIC_INTERFACE_HEADER
-#define ECV_POINT_PICKING_GENERIC_INTERFACE_HEADER
+#pragma once
 
 // Local
 #include "ecvCommon.h"
@@ -60,5 +59,3 @@ protected:
     //! Picking hub
     ccPickingHub* m_pickingHub;
 };
-
-#endif  // ECV_POINT_PICKING_GENERIC_INTERFACE_HEADER

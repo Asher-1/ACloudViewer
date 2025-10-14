@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_VIEWPORT_PARAMETERS_HEADER
-#define ECV_VIEWPORT_PARAMETERS_HEADER
+#pragma once
 
 // Local
 #include "eCV_db.h"
@@ -155,5 +154,3 @@ protected:
     //! Camera center
     CCVector3d cameraCenter;
 };
-
-#endif  // ECV_VIEWPORT_PARAMETERS_HEADER

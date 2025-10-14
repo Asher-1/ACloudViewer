@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QSRA_DXF_PROFILE_IMPORT_DLG_HEADER
-#define QSRA_DXF_PROFILE_IMPORT_DLG_HEADER
+#pragma once
 
 #include "ui_dxfProfilesExportDlg.h"
 
@@ -37,5 +36,3 @@ protected:
     //! Inits dialog state from persistent settings
     void initFromPersistentSettings();
 };
-
-#endif  // QSRA_PROFILE_IMPORT_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_WAVEFORM_DIALOG_HEADER
-#define ECV_WAVEFORM_DIALOG_HEADER
+#pragma once
 
 // Local
 #include "ecvPickingListener.h"
@@ -133,4 +132,3 @@ protected:  // members
     //! Maximum wave amplitude (for all points)
     double m_waveMax;
 };
-#endif  // ECV_WAVEFORM_DIALOG_HEADER

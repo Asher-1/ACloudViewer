@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DEPTH_MAP_FILE_FILTER_HEADER
-#define ECV_DEPTH_MAP_FILE_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -33,5 +32,3 @@ public:
     // direct method to save a sensor (depth map)
     CC_FILE_ERROR saveToFile(const QString& filename, ccGBLSensor* sensor);
 };
-
-#endif  // ECV_DEPTH_MAP_FILE_FILTER_HEADER

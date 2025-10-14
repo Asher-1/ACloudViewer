@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ASCII_SAVE_DIALOG_HEADER
-#define ECV_ASCII_SAVE_DIALOG_HEADER
+#pragma once
 
 // local
 #include "eCV_io.h"
@@ -96,5 +95,3 @@ protected:
     //! Whether this dialog should be automatically shown or not
     bool m_autoShow;
 };
-
-#endif  // ECV_ASCII_SAVE_DIALOG_HEADER

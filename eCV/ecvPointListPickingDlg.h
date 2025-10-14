@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POINT_PICKING_LIST_DIALOG_HEADER
-#define ECV_POINT_PICKING_LIST_DIALOG_HEADER
+#pragma once
 
 // GUI
 #include <ui_pointListPickingDlg.h>
@@ -111,5 +110,3 @@ protected:
     //! mechanism)
     ccHObject::Container m_toBeAdded;
 };
-
-#endif

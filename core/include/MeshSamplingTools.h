@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MESH_SAMPLING_TOOLS_HEADER
-#define MESH_SAMPLING_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "CVToolbox.h"
@@ -166,5 +165,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // MESH_SAMPLING_TOOLS_HEADER

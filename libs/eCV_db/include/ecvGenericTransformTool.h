@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GENERIC_TRANSFORM_TOOL_HEADER
-#define ECV_GENERIC_TRANSFORM_TOOL_HEADER
+#pragma once
 
 #include "eCV_db.h"
 #include "ecvGLMatrix.h"
@@ -60,5 +59,3 @@ signals:
 protected:
     ccHObject* m_associatedEntity;
 };
-
-#endif  // ECV_GENERIC_TRANSFORM_TOOL_HEADER

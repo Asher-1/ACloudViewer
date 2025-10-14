@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GENERIC_CAMERAL_TOOL_HEADER
-#define ECV_GENERIC_CAMERAL_TOOL_HEADER
+#pragma once
 
 #include <CVGeom.h>
 
@@ -124,5 +123,3 @@ public:
 public slots:
     void UpdateCamera() { updateCamera(); }
 };
-
-#endif  // ECV_GENERIC_CAMERAL_TOOL_HEADER

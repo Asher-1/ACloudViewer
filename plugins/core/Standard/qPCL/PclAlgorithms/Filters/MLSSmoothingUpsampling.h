@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MLSSMOOTHINGUPSAMPLING_H
-#define MLSSMOOTHINGUPSAMPLING_H
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -32,5 +31,3 @@ protected:
     PCLModules::MLSParameters*
             m_parameters;  // We directly store all the parameters here
 };
-
-#endif  // MLSSMOOTHINGUPSAMPLING_H

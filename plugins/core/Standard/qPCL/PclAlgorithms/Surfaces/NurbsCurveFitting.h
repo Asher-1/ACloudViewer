@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_NURBSCURVE_HEADER
-#define Q_PCL_PLUGIN_NURBSCURVE_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -46,5 +45,3 @@ protected:
     float m_curveSmoothness;
     float m_curveRscale;
 };
-
-#endif  // Q_PCL_PLUGIN_NURBSCURVE_HEADER

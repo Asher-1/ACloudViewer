@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TEST_QSIMPLEUPDATER_H
-#define TEST_QSIMPLEUPDATER_H
+#pragma once
 
 #include <QtTest>
 #include <QSimpleUpdater.h>
@@ -15,5 +14,3 @@ class Test_QSimpleUpdater : public QObject
 {
    Q_OBJECT
 };
-
-#endif

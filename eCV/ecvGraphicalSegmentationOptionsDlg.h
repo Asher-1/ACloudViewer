@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_GRAPHICAL_SEGMENTATION_OPTIONS_DLG_HEADER
-#define CC_GRAPHICAL_SEGMENTATION_OPTIONS_DLG_HEADER
+#pragma once
 
 // Qt
 #include <QString>
@@ -35,5 +34,3 @@ public:
     //! Returns the QSettings key to store the 'segmented entity' suffix
     static QString SegmentedSuffixKey() { return "Segmented"; }
 };
-
-#endif  // CC_GRAPHICAL_SEGMENTATION_OPTIONS_DLG_HEADER

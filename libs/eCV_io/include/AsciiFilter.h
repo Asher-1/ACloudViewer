@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ASCII_FILTER_HEADER
-#define ECV_ASCII_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -94,5 +93,3 @@ protected:
             LoadParameters& parameters,
             bool showLabelsIn2D = false);
 };
-
-#endif  // ECV_ASCII_FILTER_HEADER

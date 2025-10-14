@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_PCLTOOLS_HEADER
-#define QPCL_PCLTOOLS_HEADER
+#pragma once
 
 // LOCAL
 #include "PclUtils/PCLCloud.h"
@@ -169,5 +168,3 @@ vtkSmartPointer<vtkPropAssembly> CreateCoordinate(
         const std::string& zPlus = "I",
         const std::string& zMinus = "S");
 };  // namespace PclTools
-
-#endif  // QPCL_PCLTOOLS_HEADER

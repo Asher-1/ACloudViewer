@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CANUPO_PLUGIN_COMMANDS_HEADER
-#define CANUPO_PLUGIN_COMMANDS_HEADER
+#pragma once
 
 // CLOUDVIEWER
 #include "ecvCommandLineInterface.h"
@@ -114,5 +113,3 @@ struct CommandCanupoClassif : public ccCommandLineInterface::Command {
         return true;
     }
 };
-
-#endif  // CANUPO_PLUGIN_COMMANDS_HEADER

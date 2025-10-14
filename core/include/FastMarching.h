@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FAST_MARCHING_HEADER
-#define FAST_MARCHING_HEADER
+#pragma once
 
 // Local
 #include "CVConst.h"
@@ -253,5 +252,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // FAST_MARCHING_HEADER

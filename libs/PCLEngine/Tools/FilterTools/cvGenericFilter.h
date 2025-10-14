@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_GENERIC_FILTER_H
-#define TOOLS_GENERIC_FILTER_H
+#pragma once
 
 #include "ui_cvGenericFilterDlg.h"
 
@@ -174,5 +173,3 @@ protected:
     double m_scalarMax = 1.0;
     static const int MAX_PREVIEW_NUMBER = 20e4;
 };
-
-#endif  // TOOLS_GENERIC_FILTER_H

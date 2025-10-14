@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CONTOURWIDGETWINDOW_H
-#define CONTOURWIDGETWINDOW_H
+#pragma once
 
 #include "basewidgetwindow.h"
 
@@ -37,5 +36,3 @@ private:
 
     vtkSmartPointer<vtkContourWidget> m_contour;
 };
-
-#endif  // CONTOURWIDGETWINDOW_H

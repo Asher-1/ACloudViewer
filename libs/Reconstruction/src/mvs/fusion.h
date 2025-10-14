@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_FUSION_H_
-#define COLMAP_SRC_MVS_FUSION_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <cfloat>
@@ -163,5 +162,3 @@ void WritePointsVisibility(
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_FUSION_H_

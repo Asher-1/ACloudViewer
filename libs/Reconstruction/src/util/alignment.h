@@ -5,10 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_ALIGNMENT_H_
-#define COLMAP_SRC_UTIL_ALIGNMENT_H_
+#pragma once
 
 // CV_CORE_LIB
 #include <Eigen.h>
-
-#endif  // COLMAP_SRC_UTIL_ALIGNMENT_H_

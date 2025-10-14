@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_STD_PLUGIN_INTERFACE_HEADER
-#define ECV_STD_PLUGIN_INTERFACE_HEADER
+#pragma once
 
 // QT
 #include <QActionGroup>
@@ -90,5 +89,3 @@ Q_DECLARE_METATYPE(const ccStdPluginInterface*);
 
 Q_DECLARE_INTERFACE(ccStdPluginInterface,
                     "edf.rd.cloudviewer.ccStdPluginInterface/1.5")
-
-#endif  // ECV_STD_PLUGIN_INTERFACE_HEADER

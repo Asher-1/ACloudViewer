@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_2D_VIEWPORT_OBJECT_HEADER
-#define ECV_2D_VIEWPORT_OBJECT_HEADER
+#pragma once
 
 // Local
 #include "ecvHObject.h"
@@ -43,5 +42,3 @@ protected:
     //! Viewport parameters
     ecvViewportParameters m_params;
 };
-
-#endif  // CC_2D_VIEWPORT_OBJECT_HEADER

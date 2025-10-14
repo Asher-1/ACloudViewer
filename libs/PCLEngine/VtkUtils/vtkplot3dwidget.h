@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef VTKPLOT3DWIDGET_H
-#define VTKPLOT3DWIDGET_H
+#pragma once
 
 #include "qPCL.h"
 #include "vtkplotwidget.h"
@@ -27,4 +26,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // VTKPLOT3DWIDGET_H

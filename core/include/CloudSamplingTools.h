@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CLOUD_SAMPLING_TOOLS_HEADER
-#define CLOUD_SAMPLING_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "CVToolbox.h"
@@ -275,5 +274,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // CLOUD_SAMPLING_TOOLS_HEADER

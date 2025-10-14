@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef WEIBULL_DISTRIBUTION_HEADER
-#define WEIBULL_DISTRIBUTION_HEADER
+#pragma once
 
 // Local
 #include "GenericDistribution.h"
@@ -117,5 +116,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // WEIBULL_DISTRIBUTION_HEADER

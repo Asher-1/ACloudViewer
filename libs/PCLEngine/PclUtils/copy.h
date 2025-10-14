@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef qPCL_COPY_H
-#define qPCL_COPY_H
+#pragma once
 
 // Local
 #include "../qPCL.h"
@@ -35,7 +34,5 @@ void QPCL_ENGINE_LIB_API copyRGBColors(const ccPointCloud *inCloud,
                                        ccPointCloud *outCloud,
                                        pcl::PointIndicesPtr &in2outMapping,
                                        bool overwrite = true);
-
-#endif  // qPCL_COPY_H
 
 // #endif // LP_PCL_PATCH_ENABLED

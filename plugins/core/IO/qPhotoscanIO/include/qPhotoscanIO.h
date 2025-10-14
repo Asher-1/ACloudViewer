@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PHOTOSCAN_IO_PLUGIN_HEADER
-#define Q_PHOTOSCAN_IO_PLUGIN_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -43,5 +42,3 @@ public:
     // inherited from ccIOPluginInterface
     FilterList getFilters() override;
 };
-
-#endif  // Q_PHOTOSCAN_IO_PLUGIN_HEADER

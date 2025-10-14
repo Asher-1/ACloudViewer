@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef VOXFALL_DISCLAIMER_DIALOG_HEADER
-#define VOXFALL_DISCLAIMER_DIALOG_HEADER
+#pragma once
 
 #include <QDialog>
 
@@ -30,5 +29,3 @@ private:
 
     Ui::DisclaimerDialog* m_ui;
 };
-
-#endif  // VOXFALL_DISCLAIMER_DIALOG_HEADER

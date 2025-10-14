@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GLYPHWINDOW_H
-#define GLYPHWINDOW_H
+#pragma once
 
 #include "filterwindow.h"
 
@@ -51,5 +50,3 @@ private:
     vtkActor2D* m_labelActor = nullptr;
     bool m_labelVisible = false;
 };
-
-#endif  // GLYPHWINDOW_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_ANNOTATION_TOOL_HEADER
-#define QPCL_ANNOTATION_TOOL_HEADER
+#pragma once
 
 // LOCAL
 #include "PclUtils/PCLCloud.h"
@@ -154,5 +153,3 @@ private:
 
     std::vector<Annotation*> m_lastSelectedAnnotations;
 };
-
-#endif  // QPCL_ANNOTATION_TOOL_HEADER

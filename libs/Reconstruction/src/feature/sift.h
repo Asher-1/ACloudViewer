@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_FEATURE_SIFT_H_
-#define COLMAP_SRC_FEATURE_SIFT_H_
+#pragma once
 
 #include "estimators/two_view_geometry.h"
 #include "feature/types.h"
@@ -241,5 +240,3 @@ void MatchGuidedSiftFeaturesGPU(const SiftMatchingOptions& match_options,
                                 TwoViewGeometry* two_view_geometry);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_FEATURE_SIFT_H_

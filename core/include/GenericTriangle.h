@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GENERIC_TRIANGLE_HEADER
-#define GENERIC_TRIANGLE_HEADER
+#pragma once
 
 // Local
 #include "CVGeom.h"
@@ -32,5 +31,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // GENERIC_TRIANGLE_HEADER

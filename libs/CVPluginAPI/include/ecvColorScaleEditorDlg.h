@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COLOR_SCALE_EDITOR_DLG_HEADER
-#define ECV_COLOR_SCALE_EDITOR_DLG_HEADER
+#pragma once
 
 #include "CVPluginAPI.h"
 
@@ -136,5 +135,3 @@ protected:
 
     Ui::ColorScaleEditorDlg* m_ui;
 };
-
-#endif  // CC_COLOR_SCALE_EDITOR_DLG_HEADER

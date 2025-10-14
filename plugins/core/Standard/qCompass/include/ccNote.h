@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_NOTE_HEADER
-#define ECV_NOTE_HEADER
+#pragma once
 
 #include <ecvPointCloud.h>
 
@@ -26,5 +25,3 @@ public:
 
     static bool isNote(ccHObject* obj);
 };
-
-#endif  // ECV_NOTE_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SF_SCATTERING_DLG_HEADER
-#define ECV_SF_SCATTERING_DLG_HEADER
+#pragma once
 
 #include <ui_sensorComputeScatteringAnglesDlg.h>
 
@@ -23,5 +22,3 @@ public:
     //! Returns whether angles should be converted to degrees
     bool anglesInDegrees() const;
 };
-
-#endif  // ECV_SF_SCATTERING_DLG_HEADER

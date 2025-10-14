@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef RAY_AND_BOX_HEADER
-#define RAY_AND_BOX_HEADER
+#pragma once
 
 #include "CVGeom.h"
 
@@ -92,5 +91,3 @@ struct AABB {
 
     Vector3Tpl<T> corners[2];
 };
-
-#endif  // RAY_AND_BOX_HEADER

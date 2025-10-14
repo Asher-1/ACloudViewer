@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef POINTSREADER_H
-#define POINTSREADER_H
+#pragma once
 
 #include <QRunnable>
 
@@ -32,4 +31,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // POINTSREADER_H

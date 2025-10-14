@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TRANSLATIONMANAGER_H
-#define ECV_TRANSLATIONMANAGER_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -84,5 +83,3 @@ private:
 
     TranslatorFileList mTranslatorFileInfo;
 };
-
-#endif  // ECV_TRANSLATIONMANAGER_H

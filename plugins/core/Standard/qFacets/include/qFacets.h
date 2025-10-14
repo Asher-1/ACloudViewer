@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QFACET_PLUGIN_HEADER
-#define QFACET_PLUGIN_HEADER
+#pragma once
 
 // Local
 #include "cellsFusionDlg.h"
@@ -107,5 +106,3 @@ protected:
     //! Associated action
     QAction* m_doShowStereogram;
 };
-
-#endif  // QFACET_PLUGIN_HEADER

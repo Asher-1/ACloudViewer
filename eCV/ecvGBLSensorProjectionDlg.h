@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GBL_SENSOR_PROJECTION_DIALOG_HEADER
-#define ECV_GBL_SENSOR_PROJECTION_DIALOG_HEADER
+#pragma once
 
 #include <ui_gblSensorProjectDlg.h>
 
@@ -24,5 +23,3 @@ public:
     void initWithGBLSensor(const ccGBLSensor* sensor);
     void updateGBLSensor(ccGBLSensor* sensor);
 };
-
-#endif  // ECV_GBL_SENSOR_PROJECTION_DIALOG_HEADER

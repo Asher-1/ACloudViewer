@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_ESSENTIAL_MATRIX_H_
-#define COLMAP_SRC_ESTIMATORS_ESSENTIAL_MATRIX_H_
+#pragma once
 
 #include <ceres/ceres.h>
 
@@ -100,5 +99,3 @@ public:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_ESTIMATORS_ESSENTIAL_MATRIX_H_

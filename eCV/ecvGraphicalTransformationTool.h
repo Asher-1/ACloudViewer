@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GRAPHICAL_TRANSFORMATION_TOOL_HEADER
-#define ECV_GRAPHICAL_TRANSFORMATION_TOOL_HEADER
+#pragma once
 
 // Local
 #include <ecvOverlayDialog.h>
@@ -91,5 +90,3 @@ protected:
 
     ecvGenericTransformTool* m_tool;
 };
-
-#endif  // ECV_GRAPHICAL_TRANSFORMATION_TOOL_HEADER

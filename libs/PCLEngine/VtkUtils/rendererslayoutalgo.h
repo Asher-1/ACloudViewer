@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef RENDERERSLAYOUTALGO_H
-#define RENDERERSLAYOUTALGO_H
+#pragma once
 
 #include <vtkRenderer.h>
 
@@ -256,5 +255,3 @@ template <>
 inline void layoutRenderers<12>(const QList<vtkRenderer*>& renderers) {}
 
 }  // namespace VtkUtils
-
-#endif  // RENDERERSLAYOUTALGO_H

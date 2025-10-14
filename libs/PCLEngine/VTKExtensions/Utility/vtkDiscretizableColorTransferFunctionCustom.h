@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkDiscretizableColorTransferFunctionCustom_h
-#define vtkDiscretizableColorTransferFunctionCustom_h
+#pragma once
 
 #include "qPCL.h"
 #include "vtkDiscretizableColorTransferFunction.h"
@@ -120,5 +119,3 @@ private:
      */
     vtkTimeStamp BuildTime;
 };
-
-#endif  // vtkDiscretizableColorTransferFunctionCustom_h

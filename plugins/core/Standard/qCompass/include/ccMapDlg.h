@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MAP_DIALOG_HEADER
-#define ECV_MAP_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <ecvOverlayDialog.h>
@@ -35,5 +34,3 @@ public:
     QAction *m_create_geoObject;    // create a normal GeoObject
     QAction *m_create_geoObjectSS;  // create a single surface GeoObject
 };
-
-#endif  // ECV_MAP_DIALOG_HEADER

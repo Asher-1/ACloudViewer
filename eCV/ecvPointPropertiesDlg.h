@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POINT_PROPERTIES_DIALOG_HEADER
-#define ECV_POINT_PROPERTIES_DIALOG_HEADER
+#pragma once
 
 #include "ecvPointPickingGenericInterface.h"
 
@@ -70,5 +69,3 @@ protected:
     //! Associated 2D label
     cc2DViewportLabel* m_rect2DLabel;
 };
-
-#endif  // ECV_POINT_PROPERTIES_DIALOG_HEADER

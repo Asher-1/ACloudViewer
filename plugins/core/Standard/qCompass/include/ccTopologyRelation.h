@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TOPOLOGY_HEADER
-#define ECV_TOPOLOGY_HEADER
+#pragma once
 
 #include <ecvPointCloud.h>
 
@@ -77,5 +76,3 @@ public:
 
     static const int UNKNOWN = 2048;  // unknown...
 };
-
-#endif  // ECV_TOPOLOGY_HEADER

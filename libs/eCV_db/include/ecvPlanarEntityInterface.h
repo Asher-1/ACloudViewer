@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PLANAR_ENTITY_INTERFACE_HEADER
-#define PLANAR_ENTITY_INTERFACE_HEADER
+#pragma once
 
 // CV_CORE_LIB
 #include <CVGeom.h>
@@ -46,5 +45,3 @@ protected:  // members
     QString m_bodyId;
     QString m_headId;
 };
-
-#endif  // PLANAR_ENTITY_INTERFACE_HEADER

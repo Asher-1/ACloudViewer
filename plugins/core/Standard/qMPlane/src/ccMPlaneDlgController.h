@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_MPLANE_DIALOG_CONTROLLER
-#define Q_MPLANE_DIALOG_CONTROLLER
+#pragma once
 
 // Std
 #include <memory>
@@ -67,5 +66,3 @@ private:
     bool m_signedMeasurement = false;
     bool m_showNormal = false;
 };
-
-#endif

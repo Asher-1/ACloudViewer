@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SF_EDIT_DIALOG_HEADER
-#define ECV_SF_EDIT_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <QWidget>
@@ -66,5 +65,3 @@ protected:
 
     Ui::SFEditDlg* m_ui;
 };
-
-#endif  // ECV_SF_EDIT_DIALOG_HEADER

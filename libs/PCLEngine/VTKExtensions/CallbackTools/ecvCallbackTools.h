@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_CALLBACK_TOOLS_HEADER
-#define QPCL_CALLBACK_TOOLS_HEADER
+#pragma once
 
 #include "qPCL.h"
 
@@ -89,5 +88,3 @@ public:
 };
 
 }  // namespace CallbackTools
-
-#endif  // QPCL_CALLBACK_TOOLS_HEADER

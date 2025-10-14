@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_HOMOGRAPHY_MATRIX_H_
-#define COLMAP_SRC_ESTIMATORS_HOMOGRAPHY_MATRIX_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <vector>
@@ -55,5 +54,3 @@ public:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_ESTIMATORS_HOMOGRAPHY_MATRIX_H_

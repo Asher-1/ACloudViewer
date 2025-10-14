@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UI_POINT_PAINTER_H_
-#define COLMAP_SRC_UI_POINT_PAINTER_H_
+#pragma once
 
 #include <QtCore>
 #include <QtOpenGL>
@@ -46,5 +45,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UI_POINT_PAINTER_H_

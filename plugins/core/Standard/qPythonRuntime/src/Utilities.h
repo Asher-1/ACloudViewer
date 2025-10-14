@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_UTILITIES_H
-#define PYTHON_PLUGIN_UTILITIES_H
+#pragma once
 
 #include <QString>
 
@@ -154,5 +153,3 @@ inline void LogPythonHome()
         CVLog::Print("[PythonRuntime] PythonHome is not set");
     }
 }
-
-#endif // PYTHON_PLUGIN_UTILITIES_H

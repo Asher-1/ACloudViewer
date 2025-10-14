@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QFACET_CELLS_FUSION_DLG_HEADER
-#define QFACET_CELLS_FUSION_DLG_HEADER
+#pragma once
 
 #include "ui_cellsFusionDlg.h"
 
@@ -38,5 +37,3 @@ public:
         }
     }
 };
-
-#endif  // QFACET_CELLS_FUSION_DLG_HEADER

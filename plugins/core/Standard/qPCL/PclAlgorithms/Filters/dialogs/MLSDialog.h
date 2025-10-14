@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MLSDIALOG_H
-#define MLSDIALOG_H
+#pragma once
 
 #include <ui_MLSDialog.h>
 
@@ -28,5 +27,3 @@ protected:
     void updateCombo();
     void deactivateAllMethods();
 };
-
-#endif  // MLSDIALOG_H

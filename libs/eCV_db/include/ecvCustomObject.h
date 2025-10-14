@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CUSTOM_OBJECT_HEADER
-#define ECV_CUSTOM_OBJECT_HEADER
+#pragma once
 
 // Local
 #include "ecvHObject.h"
@@ -56,5 +55,3 @@ public:
         return CV_TYPES::CUSTOM_LEAF_OBJECT;
     }
 };
-
-#endif  // CC_CUSTOM_OBJECT_HEADER

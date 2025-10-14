@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COLOR_SCALE_HEADER
-#define ECV_COLOR_SCALE_HEADER
+#pragma once
 
 // Local
 #include "ecvColorTypes.h"
@@ -334,5 +333,3 @@ protected:
     //! List of custom labels
     LabelSet m_customLabels;
 };
-
-#endif  // ECV_COLOR_SCALE_HEADER

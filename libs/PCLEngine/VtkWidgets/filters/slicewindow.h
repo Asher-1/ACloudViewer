@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SLICEWINDOW_H
-#define SLICEWINDOW_H
+#pragma once
 
 #include "cutwindow.h"
 
@@ -27,5 +26,3 @@ private:
 
     vtkSmartPointer<vtkStripper> m_cutStrips;
 };
-
-#endif  // SLICEWINDOW_H

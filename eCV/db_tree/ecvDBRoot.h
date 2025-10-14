@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DB_ROOT_HEADER
-#define ECV_DB_ROOT_HEADER
+#pragma once
 
 // Qt
 #include <QAbstractItemModel>
@@ -331,5 +330,3 @@ protected:
     //! Last context menu pos
     QPoint m_contextMenuPos;
 };
-
-#endif  // ECV_DB_ROOT_HEADER

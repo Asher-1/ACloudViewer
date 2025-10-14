@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef LOCAL_MODEL_HEADER
-#define LOCAL_MODEL_HEADER
+#pragma once
 
 #include "Neighbourhood.h"
 
@@ -64,5 +63,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // LOCAL_MODEL_HEADER

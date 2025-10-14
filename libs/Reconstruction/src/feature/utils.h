@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_FEATURE_UTILS_H_
-#define COLMAP_SRC_FEATURE_UTILS_H_
+#pragma once
 
 #include "feature/types.h"
 
@@ -39,5 +38,3 @@ void ExtractTopScaleFeatures(FeatureKeypoints* keypoints,
                              const size_t num_features);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_FEATURE_UTILS_H_

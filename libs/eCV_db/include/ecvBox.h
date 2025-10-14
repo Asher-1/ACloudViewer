@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_BOX_PRIMITIVE_HEADER
-#define ECV_BOX_PRIMITIVE_HEADER
+#pragma once
 
 // Local
 #include "ecvGenericPrimitive.h"
@@ -59,5 +58,3 @@ protected:
     //! Box dimensions
     CCVector3 m_dims;
 };
-
-#endif  // ECV_BOX_PRIMITIVE_HEADER

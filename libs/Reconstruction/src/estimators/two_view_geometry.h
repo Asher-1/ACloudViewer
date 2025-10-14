@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_TWO_VIEW_GEOMETRY_H_
-#define COLMAP_SRC_ESTIMATORS_TWO_VIEW_GEOMETRY_H_
+#pragma once
 
 #include "base/camera.h"
 #include "feature/types.h"
@@ -226,5 +225,3 @@ struct TwoViewGeometry {
 }  // namespace colmap
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::TwoViewGeometry)
-
-#endif  // COLMAP_SRC_ESTIMATORS_TWO_VIEW_GEOMETRY_H_

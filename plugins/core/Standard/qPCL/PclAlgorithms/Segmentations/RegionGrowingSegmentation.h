@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_REGIONGROWING_HEADER
-#define Q_PCL_PLUGIN_REGIONGROWING_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -50,5 +49,3 @@ protected:
     float m_point_color_diff;
     float m_region_color_diff;
 };
-
-#endif  // Q_PCL_PLUGIN_REGIONGROWING_HEADER

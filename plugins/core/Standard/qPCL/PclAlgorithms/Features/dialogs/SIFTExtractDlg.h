@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_SIFT_DLG_HEADER
-#define Q_PCL_PLUGIN_SIFT_DLG_HEADER
+#pragma once
 
 #include <ui_SIFTExtractDlg.h>
 
@@ -22,5 +21,3 @@ public:
 
     void updateComboBox(const std::vector<std::string>& fields);
 };
-
-#endif  // Q_PCL_PLUGIN_SIFT_DLG_HEADER

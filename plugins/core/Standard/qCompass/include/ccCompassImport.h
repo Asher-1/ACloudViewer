@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CCCOMPASSIMPORT_H
-#define CCCOMPASSIMPORT_H
+#pragma once
 
 class QString;
 
@@ -16,5 +15,3 @@ namespace ccCompassImport {
 void importFoliations(ecvMainAppInterface *app);  // import foliation data
 void importLineations(ecvMainAppInterface *app);  // import lineation data
 };  // namespace ccCompassImport
-
-#endif  // CCCOMPASSIMPORT_H

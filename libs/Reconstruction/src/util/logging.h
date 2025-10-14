@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_LOGGING_H_
-#define COLMAP_SRC_UTIL_LOGGING_H_
+#pragma once
 
 #include <glog/logging.h>
 
@@ -73,5 +72,3 @@ bool __CheckOptionOpImpl(const char* file,
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_LOGGING_H_

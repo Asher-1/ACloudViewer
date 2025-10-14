@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PLANE_EDIT_DLG_HEADER
-#define ECV_PLANE_EDIT_DLG_HEADER
+#pragma once
 
 // Local
 #include <ui_planeEditDlg.h>
@@ -63,5 +62,3 @@ protected:  // members
     //! Picking hub
     ccPickingHub* m_pickingHub;
 };
-
-#endif  // ECV_PLANE_EDIT_DLG_HEADER

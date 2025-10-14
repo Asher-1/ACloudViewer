@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_BOUNDING_BOX_EDITOR_DLG_HEADER
-#define ECV_BOUNDING_BOX_EDITOR_DLG_HEADER
+#pragma once
 
 #include <ui_boundingBoxEditorDlg.h>
 
@@ -103,5 +102,3 @@ protected:
     //! Whether to show 'inclusion' warning or not
     bool m_showInclusionWarning;
 };
-
-#endif  // ECV_BOUNDING_BOX_EDITOR_DLG_HEADER

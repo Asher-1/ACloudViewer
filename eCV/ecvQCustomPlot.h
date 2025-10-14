@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_QCUSTOMPLOT_HEADER
-#define ECV_QCUSTOMPLOT_HEADER
+#pragma once
 
 // QCustomPlot
 #include <qcustomplot.h>
@@ -396,5 +395,3 @@ protected:
         }
     }
 };
-
-#endif  // ECV_QCUSTOMPLOT_HEADER

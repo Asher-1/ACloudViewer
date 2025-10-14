@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef EXAMPLE_PLUGIN_HEADER
-#define EXAMPLE_PLUGIN_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -75,5 +74,3 @@ private:
     **/
     QAction *m_action;
 };
-
-#endif

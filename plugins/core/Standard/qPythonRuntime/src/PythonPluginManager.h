@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PYTHON_PLUGIN_MANAGER_H
-#define PYTHON_PLUGIN_PYTHON_PLUGIN_MANAGER_H
+#pragma once
 
 #include <vector>
 
@@ -47,5 +46,3 @@ class PythonPluginManager final
   private:
     std::vector<Runtime::RegisteredPlugin> m_plugins;
 };
-
-#endif // PYTHON_PLUGIN_PYTHON_PLUGIN_MANAGER_H

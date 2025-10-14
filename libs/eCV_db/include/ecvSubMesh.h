@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SUB_MESH_HEADER
-#define ECV_SUB_MESH_HEADER
+#pragma once
 
 // Local
 #include "ecvBBox.h"
@@ -228,5 +227,3 @@ protected:
     //! Bounding-box
     ccBBox m_bBox;
 };
-
-#endif  // ECV_SUB_MESH_HEADER

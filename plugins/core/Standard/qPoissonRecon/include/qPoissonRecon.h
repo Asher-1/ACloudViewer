@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_POISSON_RECON_PLUGIN_HEADER
-#define Q_POISSON_RECON_PLUGIN_HEADER
+#pragma once
 
 #include "ecvStdPluginInterface.h"
 
@@ -41,5 +40,3 @@ protected:
     //! Associated action
     QAction* m_action;
 };
-
-#endif

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVCompositeDataPipeline_h
-#define vtkPVCompositeDataPipeline_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkCompositeDataPipeline.h"
@@ -35,5 +34,3 @@ private:
     vtkPVCompositeDataPipeline(const vtkPVCompositeDataPipeline&) = delete;
     void operator=(const vtkPVCompositeDataPipeline&) = delete;
 };
-
-#endif

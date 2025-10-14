@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_TEMPLATEALIGNMENT_HEADER
-#define Q_PCL_PLUGIN_TEMPLATEALIGNMENT_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -58,5 +57,3 @@ protected:
     std::vector<float> m_scales;
     std::vector<ccPointCloud*> m_templateClouds;
 };
-
-#endif  // Q_PCL_PLUGIN_TEMPLATEALIGNMENT_HEADER

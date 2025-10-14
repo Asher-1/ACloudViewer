@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef REFERENCE_CLOUD_HEADER
-#define REFERENCE_CLOUD_HEADER
+#pragma once
 
 // Local
 #include "BoundingBox.h"
@@ -252,5 +251,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // REFERENCE_CLOUD_HEADER

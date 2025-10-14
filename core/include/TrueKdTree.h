@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TRUE_KD_TREE_HEADER
-#define TRUE_KD_TREE_HEADER
+#pragma once
 
 // Local
 #include "DistanceComputationTools.h"
@@ -174,5 +173,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // TRUE_KD_TREE_HEADER

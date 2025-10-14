@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CAMERA_SENSOR_PROJECTION_DIALOG_HEADER
-#define ECV_CAMERA_SENSOR_PROJECTION_DIALOG_HEADER
+#pragma once
 
 #include <ui_camSensorProjectDlg.h>
 
@@ -24,5 +23,3 @@ public:
     void initWithCamSensor(const ccCameraSensor* sensor);
     void updateCamSensor(ccCameraSensor* sensor);
 };
-
-#endif  // ECV_CAMERA_SENSOR_PROJECTION_DIALOG_HEADER`

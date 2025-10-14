@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_VTK2CC_H
-#define Q_PCL_VTK2CC_H
+#pragma once
 
 // Local
 #include "../qPCL.h"
@@ -35,5 +34,3 @@ public:
             QString baseName = "Slice",
             const ecvColor::Rgb& color = ecvColor::green);
 };
-
-#endif  // Q_PCL_VTK2CC_H

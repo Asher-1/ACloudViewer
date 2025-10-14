@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef __vtkUnstructuredGridRelevantPointsFilter_h
-#define __vtkUnstructuredGridRelevantPointsFilter_h
+#pragma once
 
 #include "vtkUnstructuredGridAlgorithm.h"
 
@@ -32,5 +31,3 @@ private:
             const vtkUnstructuredGridRelevantPointsFilter &);
     void operator=(const vtkUnstructuredGridRelevantPointsFilter &);
 };
-
-#endif

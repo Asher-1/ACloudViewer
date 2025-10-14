@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_MINIMUMCUT_DLG_HEADER
-#define Q_PCL_PLUGIN_MINIMUMCUT_DLG_HEADER
+#pragma once
 
 #include <ui_MinimumCutSegmentationDlg.h>
 
@@ -40,5 +39,3 @@ protected:
 
     cc2DLabel* get2DLabelFromCombo(QComboBox* comboBox, ccHObject* dbRoot);
 };
-
-#endif  // Q_PCL_PLUGIN_MINIMUMCUT_DLG_HEADER

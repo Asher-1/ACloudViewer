@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_RETRIEVAL_INVERTED_INDEX_H_
-#define COLMAP_SRC_RETRIEVAL_INVERTED_INDEX_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -434,5 +433,3 @@ void InvertedIndex<kDescType, kDescDim, kEmbeddingDim>::
 
 }  // namespace retrieval
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_RETRIEVAL_INVERTED_INDEX_H_

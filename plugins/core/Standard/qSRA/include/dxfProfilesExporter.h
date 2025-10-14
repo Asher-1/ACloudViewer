@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QSRA_DXF_PROFILES_EXPORTER_HEADER
-#define QSRA_DXF_PROFILES_EXPORTER_HEADER
+#pragma once
 
 // Local
 #include "distanceMapGenerationTool.h"
@@ -62,5 +61,3 @@ public:
             const Parameters& params,
             ecvMainAppInterface* app = 0);
 };
-
-#endif  // QSRA_DXF_PROFILES_EXPORTER_HEADER

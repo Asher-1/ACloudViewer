@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_SINGLETON_HEADER
-#define QPCL_SINGLETON_HEADER
+#pragma once
 
 #include <memory>
 template <class T>
@@ -19,5 +18,3 @@ struct ecvBoostSingleton {
     ~ecvBoostSingleton() = default;
     //! Releases the current instance
 };
-
-#endif  // QPCL_SINGLETON_HEADER

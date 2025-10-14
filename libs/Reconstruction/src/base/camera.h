@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_CAMERA_H_
-#define COLMAP_SRC_BASE_CAMERA_H_
+#pragma once
 
 #include <vector>
 
@@ -186,5 +185,3 @@ double* Camera::ParamsData() { return params_.data(); }
 void Camera::SetParams(const std::vector<double>& params) { params_ = params; }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_CAMERA_H_

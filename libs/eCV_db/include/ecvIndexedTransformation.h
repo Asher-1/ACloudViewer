@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_INDEXED_TRANSFORMATION_HEADER
-#define ECV_INDEXED_TRANSFORMATION_HEADER
+#pragma once
 
 // Local
 #include "ecvGLMatrix.h"
@@ -96,5 +95,3 @@ protected:
     //! Associated index (e.g. timestamp)
     double m_index;
 };
-
-#endif  // ECV_INDEXED_TRANSFORMATION_HEADER

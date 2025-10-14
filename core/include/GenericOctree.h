@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GENERIC_OCTREE_HEADER
-#define GENERIC_OCTREE_HEADER
+#pragma once
 
 // Local
 #include "CVGeom.h"
@@ -22,5 +21,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // GENERIC_OCTREE_HEADER

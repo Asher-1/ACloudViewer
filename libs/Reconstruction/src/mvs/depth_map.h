@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_DEPTH_MAP_H_
-#define COLMAP_SRC_MVS_DEPTH_MAP_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -58,5 +57,3 @@ float DepthMap::Get(const size_t row, const size_t col) const {
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_DEPTH_MAP_H_

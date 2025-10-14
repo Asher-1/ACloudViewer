@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_AUTOSEG_HEADER
-#define Q_AUTOSEG_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -48,5 +47,3 @@ private:
 
     QAction *m_action;
 };
-
-#endif  // Q_AUTOSEG_HEADER

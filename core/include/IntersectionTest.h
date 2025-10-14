@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_INTERSECTION_TEST_HEADER
-#define CV_INTERSECTION_TEST_HEADER
+#pragma once
 
 #include <Eigen/Dense>
 
@@ -65,5 +64,3 @@ public:
 
 }  // namespace utility
 }  // namespace cloudViewer
-
-#endif  // CV_INTERSECTION_TEST_HEADER

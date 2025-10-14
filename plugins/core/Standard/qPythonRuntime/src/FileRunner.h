@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_FILE_RUNNER_H
-#define PYTHON_PLUGIN_FILE_RUNNER_H
+#pragma once
 
 #include <QDialog>
 
@@ -48,5 +47,3 @@ class FileRunner final : public QDialog
     Ui::FileRunner *m_ui;
     QString m_filePath;
 };
-
-#endif // PYTHON_PLUGIN_FILE_RUNNER_H

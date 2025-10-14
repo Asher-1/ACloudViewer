@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GENERIC_DISTRIBUTION_HEADER
-#define GENERIC_DISTRIBUTION_HEADER
+#pragma once
 
 // Local
 #include "CVCoreLib.h"
@@ -98,5 +97,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // GENERIC_DISTRIBUTION_HEADER

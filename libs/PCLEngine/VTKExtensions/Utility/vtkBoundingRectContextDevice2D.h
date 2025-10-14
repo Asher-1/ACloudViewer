@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkBoundingRectContextDevice2D_h
-#define vtkBoundingRectContextDevice2D_h
+#pragma once
 
 #include "qPCL.h"
 #include "vtkContextDevice2D.h"
@@ -305,5 +304,3 @@ private:
             delete;
     void operator=(const vtkBoundingRectContextDevice2D&) = delete;
 };
-
-#endif  // vtkBoundingRectContextDevice2D

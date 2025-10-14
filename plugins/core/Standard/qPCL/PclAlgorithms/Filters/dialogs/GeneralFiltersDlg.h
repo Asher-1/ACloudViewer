@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_GENERALFILTERS_DIALOG_HEADER
-#define Q_PCL_PLUGIN_GENERALFILTERS_DIALOG_HEADER
+#pragma once
 
 #include <CVGeom.h>
 #include <ui_GeneralFiltersDlg.h>
@@ -37,5 +36,3 @@ private:
 
     ccPolyline* getPolylineFromCombo(QComboBox* comboBox, ccHObject* dbRoot);
 };
-
-#endif  // Q_PCL_PLUGIN_GENERALFILTERS_DIALOG_HEADER

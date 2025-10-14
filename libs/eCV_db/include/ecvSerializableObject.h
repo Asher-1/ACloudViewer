@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_SERIALIZABLE_OBJECT_HEADER
-#define CV_SERIALIZABLE_OBJECT_HEADER
+#pragma once
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -310,5 +309,3 @@ protected:
         return true;
     }
 };
-
-#endif  // CV_SERIALIZABLE_OBJECT_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_THREADING_
-#define COLMAP_SRC_UTIL_THREADING_
+#pragma once
 
 #include <atomic>
 #include <climits>
@@ -394,5 +393,3 @@ void JobQueue<T>::Clear() {
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_THREADING_

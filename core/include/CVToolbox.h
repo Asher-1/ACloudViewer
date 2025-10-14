@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_TOOLBOX_HEADER
-#define CV_TOOLBOX_HEADER
+#pragma once
 
 // Local
 #include "CVCoreLib.h"
@@ -16,5 +15,3 @@ namespace cloudViewer {
 class CV_CORE_LIB_API CVToolbox {};
 
 }  // namespace cloudViewer
-
-#endif  // CV_TOOLBOX_HEADER

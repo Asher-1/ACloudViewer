@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_NURBSCURVE_DLG_HEADER
-#define Q_PCL_PLUGIN_NURBSCURVE_DLG_HEADER
+#pragma once
 
 #include <ui_NurbsCurveFittingDlg.h>
 
@@ -20,5 +19,3 @@ class NurbsCurveFittingDlg : public QDialog, public Ui::NurbsCurveFittingDlg {
 public:
     explicit NurbsCurveFittingDlg(QWidget* parent = 0);
 };
-
-#endif  // Q_PCL_PLUGIN_NURBSCURVE_DLG_HEADER

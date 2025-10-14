@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_TYPES_H_
-#define COLMAP_SRC_UTIL_TYPES_H_
+#pragma once
 
 #include "util/alignment.h"
 
@@ -93,5 +92,3 @@ struct hash<std::pair<uint32_t, uint32_t>> {
 };
 
 }  // namespace std
-
-#endif  // COLMAP_SRC_UTIL_TYPES_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkStringList_h
-#define vtkStringList_h
+#pragma once
 
 #include <memory>  // for std::unique_ptr
 
@@ -73,5 +72,3 @@ private:
     vtkStringList(const vtkStringList&) = delete;
     void operator=(const vtkStringList&) = delete;
 };
-
-#endif

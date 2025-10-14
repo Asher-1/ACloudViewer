@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ORTHO_SECTION_GENERATION_DIALOG_HEADER
-#define ECV_ORTHO_SECTION_GENERATION_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <ui_orthoSectionGenerationDlg.h>
@@ -48,5 +47,3 @@ protected:
     //! Path length
     double m_pathLength;
 };
-
-#endif  // ECV_ORTHO_SECTION_GENERATION_DIALOG_HEADER

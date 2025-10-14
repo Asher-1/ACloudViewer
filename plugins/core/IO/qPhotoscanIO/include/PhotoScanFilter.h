@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_PHOTOSCAN_FILTER_HEADER
-#define CC_PHOTOSCAN_FILTER_HEADER
+#pragma once
 
 // qCC_io
 #include <FileIOFilter.h>
@@ -21,5 +20,3 @@ public:
                                    ccHObject& container,
                                    LoadParameters& parameters);
 };
-
-#endif  // CC_PHOTOSCAN_FILTER_HEADER

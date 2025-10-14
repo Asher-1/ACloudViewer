@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_CUDA_TEXTURE_H_
-#define COLMAP_SRC_MVS_CUDA_TEXTURE_H_
+#pragma once
 
 #include <cuda_runtime.h>
 
@@ -159,5 +158,3 @@ size_t CudaArrayLayeredTexture<T>::GetDepth() const {
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_CUDA_TEXTURE_H_

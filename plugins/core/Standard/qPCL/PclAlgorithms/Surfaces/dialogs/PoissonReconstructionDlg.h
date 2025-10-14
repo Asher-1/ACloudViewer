@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_POISSONRECONSTRUCTION_DLG_HEADER
-#define Q_PCL_PLUGIN_POISSONRECONSTRUCTION_DLG_HEADER
+#pragma once
 
 #include <ui_PoissonReconstructionDlg.h>
 
@@ -21,5 +20,3 @@ class PoissonReconstructionDlg : public QDialog,
 public:
     explicit PoissonReconstructionDlg(QWidget* parent = 0);
 };
-
-#endif  // Q_PCL_PLUGIN_POISSONRECONSTRUCTION_DLG_HEADER

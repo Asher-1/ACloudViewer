@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_FEATURE_EXTRACTION_H_
-#define COLMAP_SRC_FEATURE_EXTRACTION_H_
+#pragma once
 
 #include "base/database.h"
 #include "base/image_reader.h"
@@ -129,5 +128,3 @@ private:
 }  // namespace internal
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_FEATURE_EXTRACTION_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_CC2SM_H
-#define Q_PCL_CC2SM_H
+#pragma once
 
 // Local
 #include "../qPCL.h"
@@ -102,5 +101,3 @@ protected:
     bool m_partialVisibility;
     unsigned m_visibilityNum;
 };
-
-#endif  // Q_PCL_CC2SM_H

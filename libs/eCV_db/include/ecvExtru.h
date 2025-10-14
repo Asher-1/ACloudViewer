@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_EXTRU_PRIMITIVE_HEADER
-#define ECV_EXTRU_PRIMITIVE_HEADER
+#pragma once
 
 // Local
 #include "ecvGenericPrimitive.h"
@@ -65,5 +64,3 @@ protected:
     //! Profile
     std::vector<CCVector2> m_profile;
 };
-
-#endif  // ECV_EXTRU_PRIMITIVE_HEADER

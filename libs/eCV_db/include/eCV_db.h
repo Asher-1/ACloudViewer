@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DB_HEADER
-#define ECV_DB_HEADER
+#pragma once
 
 #include <QtCore/QtGlobal>
 
@@ -15,5 +14,3 @@
 #else
 #define ECV_DB_LIB_API Q_DECL_IMPORT
 #endif
-
-#endif  // ECV_DB_HEADER

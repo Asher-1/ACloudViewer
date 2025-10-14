@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QHOUGH_NORMALS_PLUGIN_HEADER
-#define QHOUGH_NORMALS_PLUGIN_HEADER
+#pragma once
 
 #include "ecvStdPluginInterface.h"
 
@@ -42,5 +41,3 @@ protected:
     //! Associated action
     QAction* m_action;
 };
-
-#endif  // QHOUGH_NORMALS_PLUGIN_HEADER

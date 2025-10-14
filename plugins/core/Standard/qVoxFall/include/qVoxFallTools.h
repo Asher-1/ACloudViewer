@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_VOXFALL_TOOLS_HEADER
-#define Q_VOXFALL_TOOLS_HEADER
+#pragma once
 
 // cloudViewer
 #include <GenericProgressCallback.h>
@@ -63,5 +62,3 @@ public:
 
     static Tuple3i Index2Grid(unsigned index, CCVector3 steps);
 };
-
-#endif  // Q_VOXFALL_PROCESS_HEADER

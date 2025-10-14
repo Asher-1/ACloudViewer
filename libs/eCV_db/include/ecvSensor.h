@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SENSOR_HEADER
-#define ECV_SENSOR_HEADER
+#pragma once
 
 // Local
 #include "ecvColorTypes.h"
@@ -168,5 +167,3 @@ protected:
     //! Sensor graphic representation scale
     PointCoordinateType m_scale;
 };
-
-#endif  // CC_SENSOR_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_OPTIM_COMBINATION_SAMPLER_H_
-#define COLMAP_SRC_OPTIM_COMBINATION_SAMPLER_H_
+#pragma once
 
 #include "optim/sampler.h"
 
@@ -32,5 +31,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_OPTIM_COMBINATION_SAMPLER_H_

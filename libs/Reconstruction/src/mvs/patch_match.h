@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_PATCH_MATCH_H_
-#define COLMAP_SRC_MVS_PATCH_MATCH_H_
+#pragma once
 
 #include <iostream>
 #include <memory>
@@ -259,5 +258,3 @@ private:
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_PATCH_MATCH_H_

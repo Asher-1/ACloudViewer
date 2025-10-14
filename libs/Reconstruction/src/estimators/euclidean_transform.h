@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_EUCLIDEAN_TRANSFORM_H_
-#define COLMAP_SRC_ESTIMATORS_EUCLIDEAN_TRANSFORM_H_
+#pragma once
 
 #include "base/similarity_transform.h"
 #include "util/alignment.h"
@@ -28,5 +27,3 @@ template <int kDim>
 using EuclideanTransformEstimator = SimilarityTransformEstimator<kDim, false>;
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_ESTIMATORS_EUCLIDEAN_TRANSFORM_H_

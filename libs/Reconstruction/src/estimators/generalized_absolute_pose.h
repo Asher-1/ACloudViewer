@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_GENERALIZED_ABSOLUTE_POSE_H_
-#define COLMAP_SRC_ESTIMATORS_GENERALIZED_ABSOLUTE_POSE_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <vector>
@@ -74,5 +73,3 @@ public:
 }  // namespace colmap
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::GP3PEstimator::X_t)
-
-#endif  // COLMAP_SRC_ESTIMATORS_GENERALIZED_ABSOLUTE_POSE_H_

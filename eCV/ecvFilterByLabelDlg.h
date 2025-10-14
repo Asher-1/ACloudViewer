@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FILTER_BY_LABEL_DIALOG_HEADER
-#define ECV_FILTER_BY_LABEL_DIALOG_HEADER
+#pragma once
 
 // Local
 #include <ecvOverlayDialog.h>
@@ -81,5 +80,3 @@ protected:
 
     std::vector<size_t> m_labels;
 };
-
-#endif  // ECV_FILTER_BY_LABEL_DIALOG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FILTERS_INTERFACE_H
-#define FILTERS_INTERFACE_H
+#pragma once
 
 #include <ecvWidgetsInterface.h>
 
@@ -49,5 +48,3 @@ protected:
     QMap<DBLib::VTK_WIDGETS_TYPE, QWidget*> m_widgetsMap;
     QMap<DBLib::VTK_WIDGETS_TYPE, QString> m_NamesMap;
 };
-
-#endif  // FILTERS_INTERFACE_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PCL_ENGINE_HEADER
-#define ECV_PCL_ENGINE_HEADER
+#pragma once
 
 #include <QtCore/QtGlobal>
 
@@ -15,5 +14,3 @@
 #else
 #define QPCL_ENGINE_LIB_API Q_DECL_IMPORT
 #endif
-
-#endif  // ECV_PCL_ENGINE_HEADER

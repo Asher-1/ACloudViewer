@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_VTK_TRANSFORM_TOOL_HEADER
-#define QPCL_VTK_TRANSFORM_TOOL_HEADER
+#pragma once
 
 // LOCAL
 #include "../../qPCL.h"
@@ -62,5 +61,3 @@ private:
     vtkSmartPointer<vtkTransform> m_originTrans;
     PclUtils::PCLVis* m_viewer;
 };
-
-#endif  // QPCL_VTK_TRANSFORM_TOOL_HEADER

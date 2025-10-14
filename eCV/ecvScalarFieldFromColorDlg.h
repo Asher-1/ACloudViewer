@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SF_FROM_COLOR_DLG_HEADER
-#define ECV_SF_FROM_COLOR_DLG_HEADER
+#pragma once
 
 #include <ui_scalarFieldFromColorDlg.h>
 
@@ -34,5 +33,3 @@ public:
     //! Returns if to export Composite channel as SF
     bool getCompositeStatus();
 };
-
-#endif  // ECV_SF_FROM_COLOR_DLG_HEADER

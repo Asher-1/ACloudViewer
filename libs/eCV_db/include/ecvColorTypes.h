@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COLOR_TYPES_HEADER
-#define ECV_COLOR_TYPES_HEADER
+#pragma once
 
 // Local
 #include <Eigen/Core>
@@ -453,5 +452,3 @@ inline Rgbaf FromQColoraf(QColor qColor) {
 }
 
 };  // namespace ecvColor
-
-#endif  // CC_COLOR_TYPES_HEADER

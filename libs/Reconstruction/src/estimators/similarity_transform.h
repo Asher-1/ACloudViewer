@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_SIMILARITY_TRANSFORM_H_
-#define COLMAP_SRC_ESTIMATORS_SIMILARITY_TRANSFORM_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -112,5 +111,3 @@ void SimilarityTransformEstimator<kDim, kEstimateScale>::Residuals(
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_ESTIMATORS_SIMILARITY_TRANSFORM_H_

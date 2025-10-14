@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SHAPEFILE_FILTER_HEADER
-#define ECV_SHAPEFILE_FILTER_HEADER
+#pragma once
 
 #ifdef CV_SHP_SUPPORT
 
@@ -75,5 +74,3 @@ protected:
 };
 
 #endif  // CV_SHP_SUPPORT
-
-#endif  // ECV_SHAPEFILE_FILTER_HEADER

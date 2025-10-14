@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CCPLUGINUIMANAGER_H
-#define CCPLUGINUIMANAGER_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -108,5 +107,3 @@ private:
     QToolBar *m_pclAlgorithmsToolbar;
     QAction *m_showPCLAlgorithmToolbar;
 };
-
-#endif

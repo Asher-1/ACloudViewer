@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkCommunicationErrorCatcher_h
-#define vtkCommunicationErrorCatcher_h
+#pragma once
 
 #include <string>
 
@@ -49,5 +48,4 @@ private:
     unsigned long CommunicatorObserverId;
 };
 
-#endif
 // VTK-HeaderTest-Exclude: vtkCommunicationErrorCatcher.h

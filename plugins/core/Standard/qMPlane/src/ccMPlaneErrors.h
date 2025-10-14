@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_MPLANE_ERRORS
-#define CC_MPLANE_ERRORS
+#pragma once
 
 // std
 #include <stdexcept>
@@ -18,5 +17,3 @@ class MplaneInvalidArgument : public std::invalid_argument {
 class MplaneFittingError : public std::logic_error {
     using std::logic_error::logic_error;
 };
-
-#endif

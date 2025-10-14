@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PEN_STYLE_BOX_H
-#define PEN_STYLE_BOX_H
+#pragma once
 
 #include <QComboBox>
 
@@ -30,4 +29,3 @@ private:
 };
 
 }  // namespace Widgets
-#endif

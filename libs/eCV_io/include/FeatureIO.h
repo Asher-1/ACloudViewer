@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FEATURE_IO_HEADER
-#define ECV_FEATURE_IO_HEADER
+#pragma once
 
 #include <ecvFeature.h>
 
@@ -33,5 +32,3 @@ bool ECV_IO_LIB_API WriteFeatureToBIN(const std::string &filename,
 
 }  // namespace io
 }  // namespace cloudViewer
-
-#endif  // ECV_FEATURE_IO_HEADER

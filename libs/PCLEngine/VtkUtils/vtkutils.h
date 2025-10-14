@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef VTKUTILS_H
-#define VTKUTILS_H
+#pragma once
 
 #include <vtkActor.h>
 #include <vtkConeSource.h>
@@ -147,4 +146,3 @@ void QPCL_ENGINE_LIB_API exportActorToFile(vtkActor* actor,
                                            const QString& outfile);
 
 }  // namespace VtkUtils
-#endif  // VTKUTILS_H

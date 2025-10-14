@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_CAMERA_SPECS_H_
-#define COLMAP_SRC_UTIL_CAMERA_SPECS_H_
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -21,5 +20,3 @@ typedef std::unordered_map<std::string, camera_make_specs_t> camera_specs_t;
 camera_specs_t InitializeCameraSpecs();
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_CAMERA_SPECS_H_

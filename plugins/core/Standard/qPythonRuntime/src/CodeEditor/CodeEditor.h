@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_CODE_EDITOR_H
-#define PYTHON_PLUGIN_CODE_EDITOR_H
+#pragma once
 
 #include "EditorSettings.h"
 #include <QObject>
@@ -100,5 +99,3 @@ class LineNumberArea final : public QWidget
   private:
     CodeEditor *m_codeEditor;
 };
-
-#endif // PYTHON_PLUGIN_CODE_EDITOR_H

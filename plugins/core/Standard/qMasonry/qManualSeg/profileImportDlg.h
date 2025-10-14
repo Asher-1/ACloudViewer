@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QMANUAL_SEG_PROFILE_IMPORT_DLG_HEADER
-#define QMANUAL_SEG_PROFILE_IMPORT_DLG_HEADER
+#pragma once
 
 #include "ui_profileImportDlg.h"
 
@@ -34,5 +33,3 @@ protected slots:
     //! Called when the 'browse' tool button is pressed
     void browseFile();
 };
-
-#endif

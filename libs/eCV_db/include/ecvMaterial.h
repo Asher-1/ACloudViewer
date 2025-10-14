@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MATERIAL_HEADER
-#define ECV_MATERIAL_HEADER
+#pragma once
 
 // Local
 #include "ecvColorTypes.h"
@@ -177,5 +176,3 @@ protected:
     float m_shininessFront;
     float m_shininessBack;
 };
-
-#endif  // ECV_MATERIAL_HEADER

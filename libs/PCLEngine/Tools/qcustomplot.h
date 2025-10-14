@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QCUSTOMPLOT_H
-#define QCUSTOMPLOT_H
+#pragma once
 
 #include <qmath.h>
 
@@ -4414,5 +4413,3 @@ protected:
     // non-virtual methods:
     QPen mainPen() const;
 };
-
-#endif  // QCUSTOMPLOT_H

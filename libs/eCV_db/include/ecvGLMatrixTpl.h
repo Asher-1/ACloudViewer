@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GL_MATRIX_TPL_HEADER
-#define ECV_GL_MATRIX_TPL_HEADER
+#pragma once
 
 // Local
 #include "ecvSerializableObject.h"
@@ -1422,5 +1421,3 @@ protected:
     //! Internal 4x4 GL-style matrix data
     T m_mat[OPENGL_MATRIX_SIZE];
 };
-
-#endif  // ECV_GL_MATRIX_TPL_HEADER

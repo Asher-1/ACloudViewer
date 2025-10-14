@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_POLYNOMIAL_H_
-#define COLMAP_SRC_BASE_POLYNOMIAL_H_
+#pragma once
 
 #include <Eigen/Core>
 
@@ -75,5 +74,3 @@ T EvaluatePolynomial(const Eigen::VectorXd& coeffs, const T& x) {
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_POLYNOMIAL_H_

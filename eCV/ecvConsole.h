@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CONSOLE_HEADER
-#define ECV_CONSOLE_HEADER
+#pragma once
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -124,5 +123,3 @@ protected:
     static bool s_showQtMessagesInConsole;
     static bool s_redirectToStdOut;
 };
-
-#endif

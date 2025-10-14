@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PCL_CLOUD_H
-#define PCL_CLOUD_H
+#pragma once
 
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/PolygonMesh.h>
@@ -35,5 +34,3 @@ typedef pcl::TextureMesh PCLTextureMesh;
 typedef pcl::PCLPointCloud2 PCLCloud;
 typedef pcl::PointCloud<PointT> PCLPolyLine;
 typedef pcl::PlanarPolygon<PointT> PCLPolygon;
-
-#endif  // PCL_CLOUD_H

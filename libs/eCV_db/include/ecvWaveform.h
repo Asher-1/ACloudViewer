@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_WAVEFORM_HEADER
-#define ECV_WAVEFORM_HEADER
+#pragma once
 
 // Local
 #include "eCV_db.h"
@@ -262,5 +261,3 @@ protected:  // members
     //! Associated storage data
     const uint8_t* m_storage;
 };
-
-#endif  // ECV_WAVEFORM_HEADER

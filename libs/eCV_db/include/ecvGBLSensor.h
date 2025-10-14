@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GROUND_LIDAR_SENSOR_HEADER
-#define ECV_GROUND_LIDAR_SENSOR_HEADER
+#pragma once
 
 // Local
 #include "LineSet.h"
@@ -291,5 +290,3 @@ protected:
     cloudViewer::geometry::LineSet m_leg;
     cloudViewer::geometry::LineSet m_axis;
 };
-
-#endif  // ECV_GROUND_LIDAR_SENSOR_HEADER

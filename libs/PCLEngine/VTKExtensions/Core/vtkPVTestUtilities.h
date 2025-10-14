@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVTestUtilities_h
-#define vtkPVTestUtilities_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkObject.h"
@@ -67,5 +66,3 @@ private:
     char* DataRoot;
     char* TempRoot;
 };
-
-#endif

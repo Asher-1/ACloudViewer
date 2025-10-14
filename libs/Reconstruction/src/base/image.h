@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_IMAGE_H_
-#define COLMAP_SRC_BASE_IMAGE_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <string>
@@ -339,5 +338,3 @@ bool Image::IsPoint3DVisible(const point2D_t point2D_idx) const {
 }  // namespace colmap
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::Image)
-
-#endif  // COLMAP_SRC_BASE_IMAGE_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MEASUREMENT_HEADER
-#define ECV_MEASUREMENT_HEADER
+#pragma once
 
 #include <ecvHObject.h>
 #include <ecvMainAppInterface.h>
@@ -65,5 +64,3 @@ protected:
     ecvColor::Rgb m_alternate_colour = ecvColor::cyan;
     ecvColor::Rgb m_normal_colour = ecvColor::blue;
 };
-
-#endif  // ECV_MEASUREMENT_HEADER

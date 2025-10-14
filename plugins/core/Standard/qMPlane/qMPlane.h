@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_MPLANE_PLUGIN_HEADER
-#define Q_MPLANE_PLUGIN_HEADER
+#pragma once
 
 // std
 #include <memory>
@@ -44,4 +43,3 @@ private:
     ccPointCloud *m_selectedCloud = nullptr;
     std::unique_ptr<ccMPlaneDlgController> m_controller;
 };
-#endif

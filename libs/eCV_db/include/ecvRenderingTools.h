@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_RENDERING_TOOLS_HEADER
-#define ECV_RENDERING_TOOLS_HEADER
+#pragma once
 
 #include "ecvDrawableObject.h"
 
@@ -39,5 +38,3 @@ public:
                               int glH,
                               float renderZoom = 1.0f);
 };
-
-#endif  // ECV_RENDERING_TOOLS_HEADER

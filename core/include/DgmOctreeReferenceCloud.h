@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef DGM_OCTREE_REFERENCE_CLOUD_HEADER
-#define DGM_OCTREE_REFERENCE_CLOUD_HEADER
+#pragma once
 
 // Local
 #include "DgmOctree.h"
@@ -97,5 +96,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // DGM_OCTREE_REFERENCE_CLOUD_HEADER

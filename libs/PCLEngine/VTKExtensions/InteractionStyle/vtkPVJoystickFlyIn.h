@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVJoystickFlyIn_h
-#define vtkPVJoystickFlyIn_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkPVJoystickFly.h"
@@ -25,5 +24,3 @@ private:
     vtkPVJoystickFlyIn(const vtkPVJoystickFlyIn&) = delete;
     void operator=(const vtkPVJoystickFlyIn&) = delete;
 };
-
-#endif

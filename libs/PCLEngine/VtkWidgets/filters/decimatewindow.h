@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef DECIMATEWINDOW_H
-#define DECIMATEWINDOW_H
+#pragma once
 
 #include "filterwindow.h"
 
@@ -55,5 +54,3 @@ private:
     int m_outputPointsPrecision;
     int m_degree;
 };
-
-#endif  // DECIMATEWINDOW_H

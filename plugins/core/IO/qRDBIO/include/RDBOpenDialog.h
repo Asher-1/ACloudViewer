@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef RDB_OPEN_DIALOG_HEADER
-#define RDB_OPEN_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <QDialog>
@@ -34,5 +33,3 @@ public:
     //! Default constructor
     explicit RDBOpenDialog(QWidget* parent = nullptr);
 };
-
-#endif

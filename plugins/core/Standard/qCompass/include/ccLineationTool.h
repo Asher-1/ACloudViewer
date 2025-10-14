@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_LINEATIONTOOL_HEADER
-#define ECV_LINEATIONTOOL_HEADER
+#pragma once
 
 #include "ccLineation.h"
 #include "ccTool.h"
@@ -38,5 +37,3 @@ public:
 protected:
     int m_lineation_id = -1;  // ID of the lineation object being written to
 };
-
-#endif  // ECV_LINEATIONTOOL_HEADER

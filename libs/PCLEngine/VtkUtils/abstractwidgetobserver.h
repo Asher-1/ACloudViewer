@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ABSTRACTWIDGETOBSERVER_H
-#define ABSTRACTWIDGETOBSERVER_H
+#pragma once
 
 #include <vtkCommand.h>
 
@@ -36,5 +35,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-
-#endif  // ABSTRACTWIDGETOBSERVER_H

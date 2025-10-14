@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_IMAGE_FILE_FILTER_HEADER
-#define ECV_IMAGE_FILE_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -38,5 +37,3 @@ public:
                                    const QString& imageSavePath,
                                    QWidget* parentWidget = nullptr);
 };
-
-#endif  // ECV_IMAGE_FILE_FILTER_HEADER

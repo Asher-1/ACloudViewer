@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FBXCOMMAND_H
-#define FBXCOMMAND_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -35,5 +34,3 @@ public:
 
     bool process(ccCommandLineInterface& cmd) override;
 };
-
-#endif

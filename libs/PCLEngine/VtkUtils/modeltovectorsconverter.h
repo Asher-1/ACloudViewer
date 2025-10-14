@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MODELTOVECTORSCONVERTER_H
-#define MODELTOVECTORSCONVERTER_H
+#pragma once
 
 #include "signalledrunable.h"
 #include "utils.h"
@@ -29,4 +28,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // MODELTOVECTORSCONVERTER_H

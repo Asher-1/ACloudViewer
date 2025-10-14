@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QCORE_IO_HEADER
-#define QCORE_IO_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -41,5 +40,3 @@ public:
 
     FilterList getFilters() override;
 };
-
-#endif  // QCORE_IO_HEADER

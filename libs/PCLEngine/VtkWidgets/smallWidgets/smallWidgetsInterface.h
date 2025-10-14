@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SMALLWIDGETS_INTERFACE_H
-#define SMALLWIDGETS_INTERFACE_H
+#pragma once
 
 #include <ecvWidgetsInterface.h>
 
@@ -49,5 +48,3 @@ protected:
     QMap<DBLib::VTK_WIDGETS_TYPE, QWidget*> m_widgetsMap;
     QMap<DBLib::VTK_WIDGETS_TYPE, QString> m_NamesMap;
 };
-
-#endif  // SMALLWIDGETS_INTERFACE_H

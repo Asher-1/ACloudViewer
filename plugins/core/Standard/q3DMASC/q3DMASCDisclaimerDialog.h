@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q3DMASC_DISCLAIMER_DIALOG_HEADER
-#define Q3DMASC_DISCLAIMER_DIALOG_HEADER
+#pragma once
 
 #include <ui_classifyDisclaimerDlg.h>
 #include <ui_trainDisclaimerDlg.h>
@@ -99,5 +98,3 @@ static bool ShowClassifyDisclaimer(ecvMainAppInterface* app) {
 
     return s_classifyDisclaimerAccepted;
 }
-
-#endif  // Q3DMASC_DISCLAIMER_DIALOG_HEADER

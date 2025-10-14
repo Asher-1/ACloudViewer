@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef _CSF_H_
-#define _CSF_H_
+#pragma once
 
 #include "Cloth.h"
 #include "wlPointCloud.h"
@@ -63,5 +62,3 @@ public:
 
     Parameters params;
 };
-
-#endif

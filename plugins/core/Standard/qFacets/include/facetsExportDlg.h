@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QFACET_FACETS_EXPORT_DLG_HEADER
-#define QFACET_FACETS_EXPORT_DLG_HEADER
+#pragma once
 
 #include <QDialog>
 
@@ -32,5 +31,3 @@ protected:
     //! Current I/O mode
     IOMode m_mode;
 };
-
-#endif  // QFACET_FACETS_EXPORT_DLG_HEADER

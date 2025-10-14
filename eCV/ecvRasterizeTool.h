@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_RASTERIZE_TOOL_HEADER
-#define ECV_RASTERIZE_TOOL_HEADER
+#pragma once
 
 #include <ui_rasterizeDlg.h>
 
@@ -184,5 +183,3 @@ protected:  // members
     //! Contour lines
     std::vector<ccPolyline*> m_contourLines;
 };
-
-#endif  // ECV_RASTERIZE_TOOL_HEADER

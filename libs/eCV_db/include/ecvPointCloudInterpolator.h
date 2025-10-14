@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POINT_CLOUD_INTERPOLATOR
-#define ECV_POINT_CLOUD_INTERPOLATOR
+#pragma once
 
 class ccPointCloud;
 
@@ -43,5 +42,3 @@ public:
             cloudViewer::GenericProgressCallback* progressCb = 0,
             unsigned char octreeLevel = 0);
 };
-
-#endif  // ECV_POINT_CLOUD_INTERPOLATOR

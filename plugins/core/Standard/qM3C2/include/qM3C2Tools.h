@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_M3C2_TOOLS_HEADER
-#define Q_M3C2_TOOLS_HEADER
+#pragma once
 
 // CV_CORE_LIB
 #include <DgmOctree.h>
@@ -92,5 +91,3 @@ public:
                                 ecvMainAppInterface* app = nullptr,
                                 unsigned probingCount = 1000);
 };
-
-#endif  // Q_M3C2_TOOLS_HEADER

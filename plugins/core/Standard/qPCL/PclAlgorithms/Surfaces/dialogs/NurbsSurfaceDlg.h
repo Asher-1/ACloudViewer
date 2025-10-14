@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_NURBSSURFACE_DLG_HEADER
-#define Q_PCL_PLUGIN_NURBSSURFACE_DLG_HEADER
+#pragma once
 
 #include <ui_NurbsSurfaceDlg.h>
 
@@ -20,5 +19,3 @@ class NurbsSurfaceDlg : public QDialog, public Ui::NurbsSurfaceDlg {
 public:
     explicit NurbsSurfaceDlg(QWidget* parent = 0);
 };
-
-#endif  // Q_PCL_PLUGIN_NURBSSURFACE_DLG_HEADER

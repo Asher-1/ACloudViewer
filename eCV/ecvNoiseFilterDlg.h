@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_NOISE_FILTER_DLG_HEADER
-#define ECV_NOISE_FILTER_DLG_HEADER
+#pragma once
 
 #include <ui_noiseFilterDlg.h>
 
@@ -19,5 +18,3 @@ public:
     //! Default constructor
     explicit ecvNoiseFilterDlg(QWidget* parent = 0);
 };
-
-#endif  // ECV_NOISE_FILTER_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_MPLANE_DIALOG_HEADER
-#define CC_MPLANE_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <qcheckbox.h>
@@ -85,5 +84,3 @@ private:
     QRadioButton *m_radioButtonUnsignedMeasurement = nullptr;
     QCheckBox *m_checkBoxShowNormal = nullptr;
 };
-
-#endif

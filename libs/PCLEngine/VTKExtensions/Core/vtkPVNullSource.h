@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVNullSource_h
-#define vtkPVNullSource_h
+#pragma once
 
 #include "qPCL.h"  //needed for exports
 #include "vtkPolyDataAlgorithm.h"
@@ -25,5 +24,3 @@ private:
     vtkPVNullSource(const vtkPVNullSource&) = delete;
     void operator=(const vtkPVNullSource&) = delete;
 };
-
-#endif

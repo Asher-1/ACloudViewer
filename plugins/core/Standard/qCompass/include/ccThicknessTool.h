@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_THICKNESSTOOL_HEADER
-#define ECV_THICKNESSTOOL_HEADER
+#pragma once
 
 #include <DistanceComputationTools.h>
 #include <ecvColorTypes.h>
@@ -81,5 +80,3 @@ public:
                                  // point-to-plane distance is calculated for
                                  // each point
 };
-
-#endif  // ECV_THICKNESSTOOL_HEADER

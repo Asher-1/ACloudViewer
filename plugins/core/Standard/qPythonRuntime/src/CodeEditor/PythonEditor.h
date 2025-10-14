@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_CODE_EDITOR_MAIN_WINDOW
-#define PYTHON_PLUGIN_CODE_EDITOR_MAIN_WINDOW
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -136,5 +135,3 @@ class PythonEditor final : public QMainWindow, public Ui::PythonEditor
     QAction *m_previousAct{nullptr};
     QAction *m_windowMenuSeparatorAct{nullptr};
 };
-
-#endif // PYTHON_PLUGIN_CODE_EDITOR_MAIN_WINDOW

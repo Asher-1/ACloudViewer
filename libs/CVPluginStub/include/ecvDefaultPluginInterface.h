@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DEFAULT_PLUGIN_INTERFACE_HEADER
-#define ECV_DEFAULT_PLUGIN_INTERFACE_HEADER
+#pragma once
 
 #include <QString>
 
@@ -38,5 +37,3 @@ private:
 
     ccDefaultPluginData* m_data;
 };
-
-#endif  // ECV_DEFAULT_PLUGIN_INTERFACE_HEADER

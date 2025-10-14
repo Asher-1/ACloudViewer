@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_GPU_MAT_PRNG_H_
-#define COLMAP_SRC_MVS_GPU_MAT_PRNG_H_
+#pragma once
 
 #include "mvs/gpu_mat.h"
 
@@ -23,5 +22,3 @@ private:
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_GPU_MAT_PRNG_H_

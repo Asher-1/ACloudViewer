@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Annotaions_H
-#define Annotaions_H
+#pragma once
 
 #include <PclUtils/PCLCloud.h>
 #include <vtkSmartPointer.h>
@@ -287,5 +286,3 @@ protected:
     int* m_labeledCloudIndex = nullptr;
     size_t m_capacity = 0;
 };
-
-#endif  // Annotaions_H

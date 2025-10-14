@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GL_DRAW_CONTEXT_HEADER
-#define ECV_GL_DRAW_CONTEXT_HEADER
+#pragma once
 
 #include <CVGeom.h>
 
@@ -587,5 +586,3 @@ public:
 
     void setLineWidget(const LineWidget& line) { lineWidget = line; }
 };
-
-#endif  // ECV_GL_DRAW_CONTEXT_HEADER

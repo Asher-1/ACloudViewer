@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_QHULL_HEADER
-#define ECV_QHULL_HEADER
+#pragma once
 
 #include <Eigen/Core>
 #include <memory>
@@ -37,5 +36,3 @@ public:
 
 }  // namespace geometry
 }  // namespace cloudViewer
-
-#endif  // ECV_QHULL_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UI_OPTIONS_WIDGET_H_
-#define COLMAP_SRC_UI_OPTIONS_WIDGET_H_
+#pragma once
 
 #include <QtCore>
 #include <QtWidgets>
@@ -83,5 +82,3 @@ protected:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UI_OPTIONS_WIDGET_H_

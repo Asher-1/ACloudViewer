@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_WRAPPERS_H
-#define PYTHON_PLUGIN_WRAPPERS_H
+#pragma once
 
 #include <CVShareable.h>
 #include <CVTypes.h>
@@ -283,5 +282,3 @@ static const constexpr char SIZE_SCALAR_FIELD_DOCSTRING[] = R"doc(
     Value error if xs,ys,zs do not have the same length                                                      \
 )doc")                                                                                                       \
         .def("__len__", &cloudViewer::PointCloudTpl<T>::size);
-
-#endif // PYTHON_PLUGIN_WRAPPERS_H

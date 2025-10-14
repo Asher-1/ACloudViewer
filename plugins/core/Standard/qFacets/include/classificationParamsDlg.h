@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QFACET_CLASSIFICATION_PARAMS_DLG_HEADER
-#define QFACET_CLASSIFICATION_PARAMS_DLG_HEADER
+#pragma once
 
 #include <QDialog>
 
@@ -22,5 +21,3 @@ public:
         setupUi(this);
     }
 };
-
-#endif  // QFACET_CLASSIFICATION_PARAMS_DLG_HEADER

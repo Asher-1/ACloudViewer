@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_CLIP_FILTER_H
-#define TOOLS_CLIP_FILTER_H
+#pragma once
 
 #include "cvCutFilter.h"
 
@@ -28,5 +27,3 @@ protected:
     vtkSmartPointer<vtkClipPolyData> m_PolyClip;
     vtkSmartPointer<vtkClipDataSet> m_DataSetClip;
 };
-
-#endif  // TOOLS_CLIP_FILTER_H

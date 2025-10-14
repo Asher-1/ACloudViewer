@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_LIB_POINT_CLOUD_TPL_HEADER
-#define CV_LIB_POINT_CLOUD_TPL_HEADER
+#pragma once
 
 // Local
 #include "BoundingBox.h"
@@ -597,5 +596,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // CV_LIB_POINT_CLOUD_TPL_HEADER

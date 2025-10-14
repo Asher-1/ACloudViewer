@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POINT_DESCRIPTOR_HEADER
-#define ECV_POINT_DESCRIPTOR_HEADER
+#pragma once
 
 // Qt
 #include <QByteArray>
@@ -154,5 +153,3 @@ protected:
     //! Dimensions per scale
     unsigned m_dimPerScale;
 };
-
-#endif  // ECV_POINT_DESCRIPTOR_HEADER

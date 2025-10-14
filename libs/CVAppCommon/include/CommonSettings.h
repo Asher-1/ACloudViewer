@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COMMON_SETTINGS_HEADER
-#define COMMON_SETTINGS_HEADER
+#pragma once
 
 // core
 #include <CloudViewerConfig.h>
@@ -75,5 +74,3 @@ static const QString APP_TITLE =
 static bool UI_WRAPPER = false;
 static const QString DEFAULT_STYLE = Themes::THEME_DEFAULT;
 }  // namespace Settings
-
-#endif  // COMMON_SETTINGS_HEADER

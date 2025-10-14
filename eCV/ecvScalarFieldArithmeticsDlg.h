@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SF_ARITMETHIC_DLG_HEADER
-#define ECV_SF_ARITMETHIC_DLG_HEADER
+#pragma once
 
 #include <ui_sfArithmeticsDlg.h>
 
@@ -108,5 +107,3 @@ protected:
     //! Returns selected operation name
     QString getOperationName(QString sf1, QString sf2 = QString()) const;
 };
-
-#endif  // ECV_SF_ARITMETHIC_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CAMERA_SENSOR_HEADER
-#define ECV_CAMERA_SENSOR_HEADER
+#pragma once
 
 // local
 #include "LineSet.h"
@@ -733,5 +732,3 @@ protected:
             m_cellsIntersectFrustum[cloudViewer::DgmOctree::MAX_OCTREE_LEVEL +
                                     1];
 };
-
-#endif  // ECV_CAMERA_SENSOR_HEADER

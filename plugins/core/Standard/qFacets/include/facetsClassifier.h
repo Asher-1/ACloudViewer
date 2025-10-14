@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QFACET_FACETS_CLASSIFIER_HEADER
-#define QFACET_FACETS_CLASSIFIER_HEADER
+#pragma once
 
 // Qt
 #include <QApplication>
@@ -471,5 +470,3 @@ public:
         return !error;
     }
 };
-
-#endif  // QFACET_FACETS_CLASSIFIER_HEADER

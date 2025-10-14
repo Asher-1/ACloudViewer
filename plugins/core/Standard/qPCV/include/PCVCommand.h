@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PCVCOMMAND_H
-#define PCVCOMMAND_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -48,5 +47,3 @@ public:
 
     bool process(ccCommandLineInterface& cmd) override;
 };
-
-#endif

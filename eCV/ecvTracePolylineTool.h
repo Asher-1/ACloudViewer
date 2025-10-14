@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TRACE_POLY_LINE_TOOL_HEADER
-#define ECV_TRACE_POLY_LINE_TOOL_HEADER
+#pragma once
 
 // LOCAL
 #include "ecvOverlayDialog.h"
@@ -105,5 +104,3 @@ protected:
     //! Picking hub
     ccPickingHub* m_pickingHub;
 };
-
-#endif  // ECV_TRACE_POLY_LINE_TOOL_HEADER

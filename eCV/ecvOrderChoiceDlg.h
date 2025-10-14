@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ORDER_CHOICE_DIALOG_HEADER
-#define ECV_ORDER_CHOICE_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <QDialog>
@@ -50,5 +49,3 @@ protected:
     ccHObject* m_secondEnt;
     bool m_useInputOrder;
 };
-
-#endif  // ECV_ORDER_CHOICE_DIALOG_HEADER

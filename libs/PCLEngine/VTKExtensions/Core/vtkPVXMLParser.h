@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVXMLParser_h
-#define vtkPVXMLParser_h
+#pragma once
 
 #include "qPCL.h"             // needed for export macro
 #include "vtkSmartPointer.h"  // needed for vtkSmartPointer.
@@ -86,5 +85,3 @@ private:
     vtkPVXMLParser(const vtkPVXMLParser&) = delete;
     void operator=(const vtkPVXMLParser&) = delete;
 };
-
-#endif

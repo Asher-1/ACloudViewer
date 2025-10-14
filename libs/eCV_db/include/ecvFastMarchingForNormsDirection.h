@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FAST_MARCHING_DIRECTION_HEADER
-#define ECV_FAST_MARCHING_DIRECTION_HEADER
+#pragma once
 
 // cloudViewer
 #include <DgmOctree.h>
@@ -114,5 +113,3 @@ protected:
     //! Resolves the direction of a given cell (once and for all)
     void resolveCellOrientation(unsigned index);
 };
-
-#endif

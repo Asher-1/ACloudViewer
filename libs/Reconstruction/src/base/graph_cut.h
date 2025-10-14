@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_GRAPH_CUT_H_
-#define COLMAP_SRC_BASE_GRAPH_CUT_H_
+#pragma once
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/boykov_kolmogorov_max_flow.hpp>
@@ -190,5 +189,3 @@ bool MinSTGraphCut<node_t, value_t>::IsConnectedToSink(
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_GRAPH_CUT_H_

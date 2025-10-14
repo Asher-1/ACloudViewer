@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UI_MOVIE_GRABBER_WIDGET_H_
-#define COLMAP_SRC_UI_MOVIE_GRABBER_WIDGET_H_
+#pragma once
 
 #include <QtCore>
 #include <QtGui>
@@ -71,5 +70,3 @@ private:
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
         colmap::MovieGrabberWidget::ViewData)
-
-#endif  // COLMAP_SRC_UI_MOVIE_GRABBER_WIDGET_H_

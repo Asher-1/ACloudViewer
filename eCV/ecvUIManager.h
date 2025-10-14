@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef UI_MANAGER_H
-#define UI_MANAGER_H
+#pragma once
 
 #ifdef Q_OS_WIN
 #define NEWLINE "\r\n"
@@ -665,5 +664,3 @@ public:
     static void NewConfig();    // 以初始值新建配置文件
     static bool CheckConfig();  // 校验配置文件
 };
-
-#endif  // UI_MANAGER_H

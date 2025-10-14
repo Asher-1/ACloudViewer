@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_APPLY_TRANSFORMATION_DLG_HEADER
-#define ECV_APPLY_TRANSFORMATION_DLG_HEADER
+#pragma once
 
 #include <ui_applyTransformationDlg.h>
 
@@ -56,5 +55,3 @@ protected:
                    bool axisAngleForm = true,
                    bool eulerForm = true);
 };
-
-#endif  // ECV_APPLY_TRANSFORMATION_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FILEREADERUTILS_H
-#define FILEREADERUTILS_H
+#pragma once
 
 #include <vtkDataObject.h>
 #include <vtkFLUENTReader.h>
@@ -171,5 +170,3 @@ public:
 };
 
 }  // namespace VtkUtils
-
-#endif  // FILEREADERUTILS_H

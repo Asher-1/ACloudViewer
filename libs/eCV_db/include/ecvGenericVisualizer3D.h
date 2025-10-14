@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GENERIC_VISUALIZER_3D_HEADER
-#define ECV_GENERIC_VISUALIZER_3D_HEADER
+#pragma once
 
 #include <CVGeom.h>
 
@@ -32,5 +31,3 @@ signals:
                                     const std::string& id);
     void interactorAreaPickedEvent(const std::vector<int>& selected_slice);
 };
-
-#endif  // ECV_GENERIC_VISUALIZER_3D_HEADER

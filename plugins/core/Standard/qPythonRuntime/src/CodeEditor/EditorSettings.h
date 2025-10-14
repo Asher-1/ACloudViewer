@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_EDITOR_SETTINGS_H
-#define PYTHON_PLUGIN_EDITOR_SETTINGS_H
+#pragma once
 
 #include <ui_EditorSettings.h>
 
@@ -39,5 +38,3 @@ class EditorSettings final : public QDialog, public Ui::EditorSettings
     ColorScheme m_colorScheme = ColorScheme::Default();
     bool m_shouldHighlightCurrentLine = true;
 };
-
-#endif // PYTHON_PLUGIN_EDITOR_SETTINGS_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COMPUTE_OCTREE_DLG_HEADER
-#define ECV_COMPUTE_OCTREE_DLG_HEADER
+#pragma once
 
 #include <ui_computeOctreeDlg.h>
 
@@ -41,5 +40,3 @@ protected:
     //! Associated dialog
     ccBoundingBoxEditorDlg* m_bbEditorDlg;
 };
-
-#endif  // CC_COMPUTE_OCTREE_DLG_HEADER

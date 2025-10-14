@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DISPLAY_OPTIONS_DIALOG_HEADER
-#define ECV_DISPLAY_OPTIONS_DIALOG_HEADER
+#pragma once
 
 // LOCAL
 #include "CVAppCommon.h"
@@ -103,5 +102,3 @@ protected:
 private:
     Ui::DisplayOptionsDlg* m_ui;
 };
-
-#endif

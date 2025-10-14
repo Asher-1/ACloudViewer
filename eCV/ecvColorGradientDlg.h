@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COLOR_GRADIENT_DLG_HEADER
-#define ECV_COLOR_GRADIENT_DLG_HEADER
+#pragma once
 
 // Qt
 #include <ui_colorGradientDlg.h>
@@ -43,5 +42,3 @@ protected slots:
     void changeFirstColor();
     void changeSecondColor();
 };
-
-#endif  // ECV_COLOR_GRADIENT_DLG_HEADER

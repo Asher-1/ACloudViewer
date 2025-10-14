@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POINT_CLOUD_HEADER
-#define ECV_POINT_CLOUD_HEADER
+#pragma once
 
 #ifdef _MSC_VER
 // To get rid of the warnings about dominant inheritance
@@ -1395,5 +1394,3 @@ protected:  // waveform (e.g. from airborne scanners)
     //! Waveforms raw data storage
     SharedFWFDataContainer m_fwfData;
 };
-
-#endif  // ECV_POINT_CLOUD_HEADER

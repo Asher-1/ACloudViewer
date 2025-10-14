@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_SQLITE3_UTILS_
-#define COLMAP_SRC_UTIL_SQLITE3_UTILS_
+#pragma once
 
 #include <cstdio>
 #include <cstdlib>
@@ -46,5 +45,3 @@ inline int SQLite3CallHelper(const int result_code,
     }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_SQLITE3_UTILS_

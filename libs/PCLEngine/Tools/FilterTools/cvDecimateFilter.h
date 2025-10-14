@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_DECIMATE_FILTER_H
-#define TOOLS_DECIMATE_FILTER_H
+#pragma once
 
 #include "cvGenericFilter.h"
 
@@ -65,5 +64,3 @@ private:
 
     vtkSmartPointer<vtkDecimatePro> m_decimate;
 };
-
-#endif  // TOOLS_DECIMATE_FILTER_H

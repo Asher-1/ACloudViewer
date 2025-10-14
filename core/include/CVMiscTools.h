@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_MISC_TOOLS_HEADER
-#define CV_MISC_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "CVGeom.h"
@@ -77,5 +76,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // CV_MISC_TOOLS_HEADER

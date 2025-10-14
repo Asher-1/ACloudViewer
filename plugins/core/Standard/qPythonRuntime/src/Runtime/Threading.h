@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_THREADING_H
-#define PYTHON_PLUGIN_THREADING_H
+#pragma once
 
 #include <QException>
 
@@ -89,4 +88,3 @@ call_fn(PyThreadState *main_state, py::object callable, py::args args, py::kwarg
         throw ThreadException(e);
     }
 }
-#endif // PYTHON_PLUGIN_THREADING_H

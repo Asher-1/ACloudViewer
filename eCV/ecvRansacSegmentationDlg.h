@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_RANSAC_SEGMENTATION_DLG_HEADER
-#define ECV_RANSAC_SEGMENTATION_DLG_HEADER
+#pragma once
 
 #include <ui_ransacSegmentationDlg.h>
 
@@ -21,5 +20,3 @@ class ecvRansacSegmentationDlg : public QDialog,
 public:
     explicit ecvRansacSegmentationDlg(QWidget* parent = 0);
 };
-
-#endif  // ECV_RANSAC_SEGMENTATION_DLG_HEADER

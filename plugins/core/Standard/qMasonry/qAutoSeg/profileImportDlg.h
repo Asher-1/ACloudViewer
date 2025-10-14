@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QAUTOSEG_PROFILE_IMPORT_DLG_HEADER
-#define QAUTOSEG_PROFILE_IMPORT_DLG_HEADER
+#pragma once
 
 #include "ui_profileImportDlg.h"
 
@@ -24,5 +23,3 @@ protected slots:
     //! Save settings
     void saveSettings();
 };
-
-#endif

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_STATISTICAL_TEST_DLG_HEADER
-#define ECV_STATISTICAL_TEST_DLG_HEADER
+#pragma once
 
 #include <ui_statisticalTestDlg.h>
 
@@ -32,5 +31,3 @@ public:
     //! Returns the associated probability
     double getProba() const;
 };
-
-#endif  // ECV_STATISTICAL_TEST_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SHIFTED_INTERFACE_HEADER
-#define ECV_SHIFTED_INTERFACE_HEADER
+#pragma once
 
 // Local
 #include "ecvHObject.h"
@@ -97,5 +96,3 @@ protected:
     //! Global scale (typically applied at loading time)
     double m_globalScale;
 };
-
-#endif  // ECV_SHIFTED_INTERFACE_HEADER

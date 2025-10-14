@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_FEATURE_MATCHING_H_
-#define COLMAP_SRC_FEATURE_MATCHING_H_
+#pragma once
 
 #include <array>
 #include <string>
@@ -543,5 +542,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_FEATURE_MATCHING_H_

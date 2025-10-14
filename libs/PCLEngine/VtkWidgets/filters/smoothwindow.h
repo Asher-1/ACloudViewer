@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SMOOTHWINDOW_H
-#define SMOOTHWINDOW_H
+#pragma once
 
 #include "filterwindow.h"
 
@@ -45,5 +44,3 @@ private:
     double m_featureAngle;
     double m_edgeAngle;
 };
-
-#endif  // SMOOTHWINDOW_H

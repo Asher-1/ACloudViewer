@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_BASEPCLMODULE_HEADER
-#define Q_PCL_PLUGIN_BASEPCLMODULE_HEADER
+#pragma once
 
 // Qt
 #include <QIcon>
@@ -302,5 +301,3 @@ protected:
     //! Do we want to show a progress bar when the filter works?
     bool m_show_progress;
 };
-
-#endif  // Q_PCL_PLUGIN_BASEPCLMODULE_HEADER

@@ -20,8 +20,7 @@
  * \file dlpack.h
  * \brief The common header of DLPack.
  */
-#ifndef DLPACK_DLPACK_H_
-#define DLPACK_DLPACK_H_
+#pragma once
 
 #ifdef __cplusplus
 #define DLPACK_EXTERN_C extern "C"
@@ -239,5 +238,3 @@ struct formatter<DLDeviceType> {
 };
 
 }  // namespace fmt
-
-#endif  // DLPACK_DLPACK_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TRACETOOL_HEADER
-#define ECV_TRACETOOL_HEADER
+#pragma once
 
 #include "ccTool.h"
 #include "ccTrace.h"
@@ -72,5 +71,3 @@ protected:
     bool m_precompute_curvature =
             true;  // do we want to precompute curvature for cost functions?
 };
-
-#endif  // ECV_TRACETOOL_HEADER

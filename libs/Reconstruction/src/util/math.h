@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_MATH_H_
-#define COLMAP_SRC_UTIL_MATH_H_
+#pragma once
 
 #include <algorithm>
 #include <cmath>
@@ -296,5 +295,3 @@ T2 TruncateCast(const T1 value) {
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_MATH_H_

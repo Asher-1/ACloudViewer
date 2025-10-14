@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COMMAND_CROSS_SECTION_HEADER
-#define COMMAND_CROSS_SECTION_HEADER
+#pragma once
 
 #include "ecvCommandLineInterface.h"
 
@@ -24,5 +23,3 @@ private:
                     QString element,
                     const ccCommandLineInterface& cmd);
 };
-
-#endif  // COMMAND_CROSS_SECTION_HEADER

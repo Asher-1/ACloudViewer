@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FLAGS_HEADER
-#define ECV_FLAGS_HEADER
+#pragma once
 
 // System
 #include <cstring>
@@ -40,5 +39,3 @@ public:
     //! Table of 8 booleans (one per bit)
     bool table[8];
 };
-
-#endif  // ECV_FLAGS_HEADER

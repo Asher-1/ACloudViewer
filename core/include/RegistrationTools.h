@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef REGISTRATION_TOOLS_HEADER
-#define REGISTRATION_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "PointProjectionTools.h"
@@ -379,5 +378,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // REGISTRATION_TOOLS_HEADER

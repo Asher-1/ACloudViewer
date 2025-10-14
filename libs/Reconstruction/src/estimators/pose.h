@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_POSE_H_
-#define COLMAP_SRC_ESTIMATORS_POSE_H_
+#pragma once
 
 #include <ceres/ceres.h>
 
@@ -174,5 +173,3 @@ bool RefineRelativePose(const ceres::Solver::Options& options,
                         Eigen::Vector3d* tvec);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_ESTIMATORS_POSE_H_

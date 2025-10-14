@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_QT_HELPERS_HEADER
-#define ECV_QT_HELPERS_HEADER
+#pragma once
 
 // Qt
 #include <QAbstractButton>
@@ -24,5 +23,3 @@ public:
                             .arg(col.blue()));
     }
 };
-
-#endif  // ECV_QT_HELPERS_HEADER

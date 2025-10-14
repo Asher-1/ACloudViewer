@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_MPLANE_POINT
-#define CC_MPLANE_POINT
+#pragma once
 
 // ECV_DB_LIB
 #include "ecv2DLabel.h"
@@ -28,5 +27,3 @@ private:
     cc2DLabel* m_label;
     float m_distance;
 };
-
-#endif

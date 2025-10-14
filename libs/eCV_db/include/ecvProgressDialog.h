@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PROGRESS_DIALOG_HEADER
-#define ECV_PROGRESS_DIALOG_HEADER
+#pragma once
 
 // Local
 #include "eCV_db.h"
@@ -83,5 +82,3 @@ protected:
     //! Last displayed progress value (percent)
     QAtomicInt m_lastRefreshValue;
 };
-
-#endif  // ECV_PROGRESS_DIALOG_HEADER

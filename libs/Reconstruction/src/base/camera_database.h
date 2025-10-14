@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_CAMERA_DATABASE_H_
-#define COLMAP_SRC_BASE_CAMERA_DATABASE_H_
+#pragma once
 
 #include <string>
 
@@ -31,5 +30,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_CAMERA_DATABASE_H_

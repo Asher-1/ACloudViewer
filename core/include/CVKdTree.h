@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef KD_TREE_HEADER
-#define KD_TREE_HEADER
+#pragma once
 
 // Local
 #include "PointProjectionTools.h"
@@ -279,5 +278,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // KD_TREE_HEADER

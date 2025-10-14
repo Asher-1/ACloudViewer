@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PARALLEL_SORT_HEADER
-#define PARALLEL_SORT_HEADER
+#pragma once
 
 #ifdef ParallelSort
 #undef ParallelSort
@@ -32,7 +31,5 @@
 #include <algorithm>
 
 #define ParallelSort std::sort
-
-#endif
 
 #endif

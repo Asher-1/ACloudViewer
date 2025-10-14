@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QFACET_DISCLAIMER_DIALOG_HEADER
-#define QFACET_DISCLAIMER_DIALOG_HEADER
+#pragma once
 
 #include <ui_disclaimerDlg.h>
 
@@ -38,5 +37,3 @@ static bool ShowDisclaimer(ecvMainAppInterface* app) {
 
     return s_disclaimerAccepted;
 }
-
-#endif  // QFACET_DISCLAIMER_DIALOG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DEPTH_BUFFER_HEADER
-#define ECV_DEPTH_BUFFER_HEADER
+#pragma once
 
 // local
 #include "eCV_db.h"
@@ -52,5 +51,3 @@ public:
     **/
     int fillHoles();
 };
-
-#endif  // ECV_DEPTH_BUFFER_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TABLEMODEL_H
-#define TABLEMODEL_H
+#pragma once
 
 #include <QAbstractTableModel>
 
@@ -72,4 +71,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // TABLEMODEL_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVTrivialProducer_h
-#define vtkPVTrivialProducer_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkTrivialProducer.h"
@@ -54,5 +53,3 @@ private:
     vtkPVTrivialProducer(const vtkPVTrivialProducer&) = delete;
     void operator=(const vtkPVTrivialProducer&) = delete;
 };
-
-#endif

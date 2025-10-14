@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef BOXWIDGETOBSERVER_H
-#define BOXWIDGETOBSERVER_H
+#pragma once
 
 #include <vtkSmartPointer.h>
 
@@ -30,4 +29,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // BOXWIDGETOBSERVER_H

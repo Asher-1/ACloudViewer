@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_PROJECTIONFILTER_HEADER
-#define Q_PCL_PLUGIN_PROJECTIONFILTER_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -47,5 +46,3 @@ protected:
     float m_boundarySearchRadius;
     float m_boundaryAngleThreshold;
 };
-
-#endif  // Q_PCL_PLUGIN_PROJECTIONFILTER_HEADER

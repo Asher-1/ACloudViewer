@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_M3C2_DIALOG_HEADER
-#define Q_M3C2_DIALOG_HEADER
+#pragma once
 
 #include <ui_qM3C2Dialog.h>
 
@@ -118,5 +117,3 @@ protected:  // members
     ccPointCloud* m_cloud2;
     ccPointCloud* m_corePointsCloud;
 };
-
-#endif  // Q_M3C2_DIALOG_HEADER

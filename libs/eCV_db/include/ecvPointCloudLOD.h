@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POINT_CLOUD_LOD
-#define ECV_POINT_CLOUD_LOD
+#pragma once
 
 // ECV_DB_LIB
 #include "ecvFrustum.h"
@@ -315,5 +314,3 @@ public:
     ccPointCloudLOD& m_lod;
     unsigned char m_maxLevel;
 };
-
-#endif  // ECV_POINT_CLOUD_LOD

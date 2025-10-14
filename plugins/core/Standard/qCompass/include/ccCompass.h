@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COMPASS_HEADER
-#define ECV_COMPASS_HEADER
+#pragma once
 
 #include <QObject>
 #include <QXmlStreamWriter>
@@ -269,5 +268,3 @@ public:
     static int mapTo;  // see flags in ccGeoObject.h for definition of different
                        // mapping locations
 };
-
-#endif  // ECV_COMPASS_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_LOG_HEADER
-#define CV_LOG_HEADER
+#pragma once
 
 // Local
 #include "CVCoreLib.h"
@@ -133,5 +132,3 @@ public:
         return false;
     }
 };
-
-#endif  // CC_LOG_HEADER

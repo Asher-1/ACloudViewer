@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_COORDINATE_AXES_H_
-#define COLMAP_SRC_ESTIMATORS_COORDINATE_AXES_H_
+#pragma once
 
 #include <Eigen/Core>
 
@@ -62,5 +61,3 @@ void AlignToENUPlane(Reconstruction* recon,
                      bool unscaled);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_ESTIMATORS_COORDINATE_AXES_H_

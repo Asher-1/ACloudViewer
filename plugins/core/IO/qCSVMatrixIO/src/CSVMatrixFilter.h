@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CSV_MATRIX_FILTER_HEADER
-#define ECV_CSV_MATRIX_FILTER_HEADER
+#pragma once
 
 // qCC_io
 #include <FileIOFilter.h>
@@ -21,5 +20,3 @@ public:
                                    ccHObject& container,
                                    LoadParameters& parameters);
 };
-
-#endif  // ECV_CSV_MATRIX_FILTER_HEADER

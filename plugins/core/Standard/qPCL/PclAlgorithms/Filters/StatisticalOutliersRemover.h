@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef STATISTICALOUTLIERSREMOVER_H
-#define STATISTICALOUTLIERSREMOVER_H
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -26,5 +25,3 @@ protected:
     int m_k;
     float m_std;
 };
-
-#endif  // STATISTICALOUTLIERREMOVER_H

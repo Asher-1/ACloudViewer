@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TAGWIDGET_H
-#define TAGWIDGET_H
+#pragma once
 
 #include <QWidget>
 
@@ -31,5 +30,3 @@ private:
 };
 
 }  // namespace Widgets
-
-#endif  // TAGWIDGET_H

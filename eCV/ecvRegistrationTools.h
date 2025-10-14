@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_REGISTRATION_TOOLS_HEADER
-#define ECV_REGISTRATION_TOOLS_HEADER
+#pragma once
 
 // cloudViewer
 #include <RegistrationTools.h>
@@ -37,5 +36,3 @@ public:
         bool useModelSFAsWeights = false,
         QWidget* parent = nullptr);
 };
-
-#endif  // ECV_REGISTRATION_TOOLS_HEADER

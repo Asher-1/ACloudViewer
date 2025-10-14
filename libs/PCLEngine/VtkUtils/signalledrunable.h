@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SIGNALLEDRUNNABLE_H
-#define SIGNALLEDRUNNABLE_H
+#pragma once
 
 #include <QObject>
 #include <QRunnable>
@@ -25,4 +24,3 @@ signals:
 };
 
 }  // namespace VtkUtils
-#endif  // SIGNALLEDRUNABLE_H

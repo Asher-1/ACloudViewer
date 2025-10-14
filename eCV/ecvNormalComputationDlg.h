@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_NORMAL_COMPUTATION_DLG_HEADER
-#define ECV_NORMAL_COMPUTATION_DLG_HEADER
+#pragma once
 
 #include <ui_normalComputationDlg.h>
 
@@ -94,5 +93,3 @@ protected:
     //! Selected cloud
     ccPointCloud* m_cloud;
 };
-
-#endif  // ECV_NORMAL_COMPUTATION_DLG_HEADER

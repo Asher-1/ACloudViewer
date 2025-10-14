@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_OPTIM_RANSAC_H_
-#define COLMAP_SRC_OPTIM_RANSAC_H_
+#pragma once
 
 #include <cfloat>
 #include <random>
@@ -258,5 +257,3 @@ RANSAC<Estimator, SupportMeasurer, Sampler>::Estimate(
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_OPTIM_RANSAC_H_

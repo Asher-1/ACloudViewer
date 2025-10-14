@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_SFM_INCREMENTAL_MAPPER_H_
-#define COLMAP_SRC_SFM_INCREMENTAL_MAPPER_H_
+#pragma once
 
 #include "base/database.h"
 #include "base/database_cache.h"
@@ -294,5 +293,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_SFM_INCREMENTAL_MAPPER_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_HIERARCHY_OBJECT_HEADER
-#define ECV_HIERARCHY_OBJECT_HEADER
+#pragma once
 
 // CV_CORE_LIB
 #include "BoundingBox.h"
@@ -746,5 +745,3 @@ inline void ConvertToGroup(const ccHObject::Container& origin,
         }
     }
 }
-
-#endif  // ECV_HIERARCHY_OBJECT_HEADER

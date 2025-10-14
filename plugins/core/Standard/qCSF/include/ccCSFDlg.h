@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CSF_DLG_HEADER
-#define ECV_CSF_DLG_HEADER
+#pragma once
 
 #include "ui_CSFDlg.h"
 
@@ -23,5 +22,3 @@ protected slots:
     //! Saves (temporarily) the dialog parameters on acceptation
     void saveSettings();
 };
-
-#endif  // ECV_CSF_DLG_HEADER

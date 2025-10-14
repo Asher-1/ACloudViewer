@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECVAPPLICATION_H
-#define ECVAPPLICATION_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -37,5 +36,3 @@ public:
 protected:
     bool event(QEvent *inEvent) override;
 };
-
-#endif  // ECVAPPLICATION_H

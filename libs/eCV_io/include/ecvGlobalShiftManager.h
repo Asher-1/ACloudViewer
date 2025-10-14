@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GLOBAL_SHIFT_MANAGER_HEADER
-#define ECV_GLOBAL_SHIFT_MANAGER_HEADER
+#pragma once
 
 // CV_CORE_LIB
 #include <CVGeom.h>
@@ -103,5 +102,3 @@ protected:
     // Max acceptable diagonal length
     static double MAX_DIAGONAL_LENGTH;
 };
-
-#endif  // ECV_GLOBAL_SHIFT_MANAGER_HEADER

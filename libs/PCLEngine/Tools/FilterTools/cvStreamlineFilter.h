@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_STREAMLINE_FILTER_H
-#define TOOLS_STREAMLINE_FILTER_H
+#pragma once
 
 #include <vtkStreamTracer.h>
 
@@ -122,5 +121,3 @@ private:
     vtkSmartPointer<vtkPointWidget> m_pointWidget;
     vtkSmartPointer<vtkStreamTracer> m_streamline;
 };
-
-#endif  // TOOLS_STREAMLINE_FILTER_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CORK_DLG_HEADER
-#define ECV_CORK_DLG_HEADER
+#pragma once
 
 #include "ui_corkDlg.h"
 
@@ -42,5 +41,3 @@ protected:
     CSG_OPERATION m_selectedOperation;
     bool m_isSwapped;
 };
-
-#endif  // ECV_CORK_DLG_HEADER

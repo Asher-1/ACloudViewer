@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GENERIC_FILTERS_TOOL_HEADER
-#define ECV_GENERIC_FILTERS_TOOL_HEADER
+#pragma once
 
 #include "eCV_db.h"
 #include "ecvBBox.h"
@@ -108,5 +107,3 @@ protected:
     FilterType m_filterType;
     ccHObject* m_associatedEntity;
 };
-
-#endif  // ECV_GENERIC_FILTERS_TOOL_HEADER

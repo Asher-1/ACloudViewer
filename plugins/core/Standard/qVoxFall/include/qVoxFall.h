@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_VOXFALL_PLUGIN_HEADER
-#define Q_VOXFALL_PLUGIN_HEADER
+#pragma once
 
 #include "ecvStdPluginInterface.h"
 
@@ -36,5 +35,3 @@ private:
     //! Currently selected entities
     ccHObject::Container m_selectedEntities;
 };
-
-#endif  // Q_VOXFALL_PLUGIN_HEADER
