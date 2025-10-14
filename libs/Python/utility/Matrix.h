@@ -51,14 +51,14 @@ public:
             m_strides.push_back(1);
         }
 
-        for (int i = 0; i < shape.size(); i++) m_shape[i] = shape[i];
+        for (std::size_t i = 0; i < shape.size(); i++) m_shape[i] = shape[i];
 
         m_strides[0] = m_shape[2] * m_shape[1];
         m_strides[1] = m_shape[2];
         m_strides[2] = 1;
 
-        size_t size = m_shape[0] * m_shape[1] * m_shape[2];
-        for (int i = 0; i < m_data.size(); i++) m_data[i] = (T)0;
+        std::size_t size = m_shape[0] * m_shape[1] * m_shape[2];
+        for (std::size_t i = 0; i < m_data.size(); i++) m_data[i] = (T)0;
 
         while (m_data.size() < size) m_data.push_back((T)0);
     }

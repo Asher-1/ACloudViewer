@@ -1,6 +1,20 @@
 ACloudViewer Version History
 ============================
 
+- New features:
+    -   Add code style check support
+
+- Bug fixes:
+    -   Fix code style
+
+- Enhancements:
+    -   
+
+### supported platform:
+- Windows `x86/64`
+- Linux `x86/64`
+- MacOS `X64 && arm64 (M1-4)`
+
 v3.9.3 (Asher) - 10/14/2025
 ----------------------
 
