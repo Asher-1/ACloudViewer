@@ -11,8 +11,9 @@ namespace cloudViewer {
 namespace visualization {
 namespace app {
 
-/// Runs CloudViewer Viewer. This function is called when the standalone viewer app
-/// is run or when the draw command is called from the command line interface.
+/// Runs CloudViewer Viewer. This function is called when the standalone viewer
+/// app is run or when the draw command is called from the command line
+/// interface.
 
 /// \param argc (argument count) is the number of arguments in \p argv .
 /// \param argv (argument vector) is the array of arguments stored as character

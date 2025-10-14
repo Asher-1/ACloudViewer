@@ -8,12 +8,12 @@
 #pragma once
 #define EIGEN_USE_GPU
 
+#include <Helper.h>
 #include <cutlass/gemm/gemm.h>
 #include <cutlass/gemm/sgemm_traits.h>
 
 #include "ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include "ml/impl/misc/MemoryAllocation.h"
-#include <Helper.h>
 
 using cloudViewer::utility::DivUp;
 

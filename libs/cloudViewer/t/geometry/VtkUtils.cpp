@@ -471,7 +471,7 @@ TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
 }
 
 CLOUDVIEWER_LOCAL LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata,
-                                                  bool copy) {
+                                                       bool copy) {
     if (!polydata->GetPoints()) {
         return LineSet();
     }
@@ -525,23 +525,24 @@ static vtkSmartPointer<vtkPolyData> ExtrudeRotationPolyData(
     return swept_polydata;
 }
 
-CLOUDVIEWER_LOCAL TriangleMesh ExtrudeRotationTriangleMesh(const Geometry& geometry,
-                                                      const double angle,
-                                                      const core::Tensor& axis,
-                                                      int resolution,
-                                                      double translation,
-                                                      bool capping) {
+CLOUDVIEWER_LOCAL TriangleMesh
+ExtrudeRotationTriangleMesh(const Geometry& geometry,
+                            const double angle,
+                            const core::Tensor& axis,
+                            int resolution,
+                            double translation,
+                            bool capping) {
     auto polydata = ExtrudeRotationPolyData(geometry, angle, axis, resolution,
                                             translation, capping);
     return CreateTriangleMeshFromVtkPolyData(polydata);
 }
 
 CLOUDVIEWER_LOCAL LineSet ExtrudeRotationLineSet(const PointCloud& pointcloud,
-                                            const double angle,
-                                            const core::Tensor& axis,
-                                            int resolution,
-                                            double translation,
-                                            bool capping) {
+                                                 const double angle,
+                                                 const core::Tensor& axis,
+                                                 int resolution,
+                                                 double translation,
+                                                 bool capping) {
     auto polydata = ExtrudeRotationPolyData(pointcloud, angle, axis, resolution,
                                             translation, capping);
     return CreateLineSetFromVtkPolyData(polydata);
@@ -575,29 +576,30 @@ static vtkSmartPointer<vtkPolyData> ExtrudeLinearPolyData(
     return swept_polydata;
 }
 
-CLOUDVIEWER_LOCAL TriangleMesh ExtrudeLinearTriangleMesh(const Geometry& geometry,
-                                                    const core::Tensor& vector,
-                                                    double scale,
-                                                    bool capping) {
+CLOUDVIEWER_LOCAL TriangleMesh
+ExtrudeLinearTriangleMesh(const Geometry& geometry,
+                          const core::Tensor& vector,
+                          double scale,
+                          bool capping) {
     auto polydata = ExtrudeLinearPolyData(geometry, vector, scale, capping);
     return CreateTriangleMeshFromVtkPolyData(polydata);
 }
 
 CLOUDVIEWER_LOCAL LineSet ExtrudeLinearLineSet(const PointCloud& pointcloud,
-                                          const core::Tensor& vector,
-                                          double scale,
-                                          bool capping) {
+                                               const core::Tensor& vector,
+                                               double scale,
+                                               bool capping) {
     auto polydata = ExtrudeLinearPolyData(pointcloud, vector, scale, capping);
     return CreateLineSetFromVtkPolyData(polydata);
 }
 
 CLOUDVIEWER_LOCAL TriangleMesh ComputeNormals(const TriangleMesh& mesh,
-                                         bool vertex_normals,
-                                         bool face_normals,
-                                         bool consistency,
-                                         bool auto_orient_normals,
-                                         bool splitting,
-                                         double feature_angle_deg) {
+                                              bool vertex_normals,
+                                              bool face_normals,
+                                              bool consistency,
+                                              bool auto_orient_normals,
+                                              bool splitting,
+                                              double feature_angle_deg) {
     auto polydata = CreateVtkPolyDataFromGeometry(
             mesh, mesh.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
 

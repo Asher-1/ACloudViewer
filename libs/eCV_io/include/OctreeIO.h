@@ -7,16 +7,14 @@
 
 #pragma once
 
-#include "eCV_io.h"
+#include <Octree.h>
 
 #include <string>
 
-#include <Octree.h>
+#include "eCV_io.h"
 
 namespace cloudViewer {
-    namespace geometry {
-
-    }
+namespace geometry {}
 namespace io {
 /// Factory function to create a octree from a file.
 /// \return return an empty octree if fail to read the file.
@@ -35,9 +33,11 @@ bool ECV_IO_LIB_API ReadOctree(const std::string &filename,
 /// If the write function supports binary encoding and compression, the later
 /// two parameters will be used. Otherwise they will be ignored.
 /// \return return true if the write function is successful, false otherwise.
-bool ECV_IO_LIB_API WriteOctree(const std::string &filename, const geometry::Octree &octree);
+bool ECV_IO_LIB_API WriteOctree(const std::string &filename,
+                                const geometry::Octree &octree);
 
-bool ECV_IO_LIB_API ReadOctreeFromJson(const std::string &filename, geometry::Octree &octree);
+bool ECV_IO_LIB_API ReadOctreeFromJson(const std::string &filename,
+                                       geometry::Octree &octree);
 
 bool ECV_IO_LIB_API WriteOctreeToJson(const std::string &filename,
                                       const geometry::Octree &octree);

@@ -7,9 +7,8 @@
 
 #include "pipelines/color_map/ImageWarpingField.h"
 
-#include <json/json.h>
-
 #include <Logging.h>
+#include <json/json.h>
 
 namespace cloudViewer {
 namespace pipelines {

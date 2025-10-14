@@ -1,92 +1,77 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkStringList.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/**
- * @class vtkStringList
- * @brief Manages allocation and freeing for a string list.
- *
- * A vtkStringList holds a list of strings.
- * We might be able to replace it in the future.
- */
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef vtkStringList_h
 #define vtkStringList_h
 
+#include <memory>  // for std::unique_ptr
+
+#include "qPCL.h"  // needed for export macro
 #include "vtkObject.h"
-#include "qPCL.h" // needed for export macro
-#include <memory>                         // for std::unique_ptr
 
-class QPCL_ENGINE_LIB_API vtkStringList : public vtkObject
-{
+class QPCL_ENGINE_LIB_API vtkStringList : public vtkObject {
 public:
-  static vtkStringList* New();
-  vtkTypeMacro(vtkStringList, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent) override;
+    static vtkStringList* New();
+    vtkTypeMacro(vtkStringList, vtkObject);
+    void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
-  /**
-   * Add a simple string.
-   */
-  void AddString(const char* str);
-  void AddUniqueString(const char* str);
-  //@}
+    //@{
+    /**
+     * Add a simple string.
+     */
+    void AddString(const char* str);
+    void AddUniqueString(const char* str);
+    //@}
 
-  /**
-   * Add a command and format it any way you like.
-   */
-  void AddFormattedString(const char* EventString, ...);
+    /**
+     * Add a command and format it any way you like.
+     */
+    void AddFormattedString(const char* EventString, ...);
 
-  /**
-   * Initialize to empty.
-   */
-  void RemoveAllItems();
+    /**
+     * Initialize to empty.
+     */
+    void RemoveAllItems();
 
-  /**
-   * Random access.
-   */
-  void SetString(int idx, const char* str);
+    /**
+     * Random access.
+     */
+    void SetString(int idx, const char* str);
 
-  /**
-   * Get the length of the list.
-   */
-  int GetLength() { return this->GetNumberOfStrings(); }
+    /**
+     * Get the length of the list.
+     */
+    int GetLength() { return this->GetNumberOfStrings(); }
 
-  /**
-   * Get the index of a string.
-   */
-  int GetIndex(const char* str);
+    /**
+     * Get the index of a string.
+     */
+    int GetIndex(const char* str);
 
-  /**
-   * Get a command from its index.
-   */
-  const char* GetString(int idx);
+    /**
+     * Get a command from its index.
+     */
+    const char* GetString(int idx);
 
-  /**
-   * Returns the number of strings.
-   */
-  int GetNumberOfStrings();
+    /**
+     * Returns the number of strings.
+     */
+    int GetNumberOfStrings();
 
 protected:
-  vtkStringList();
-  ~vtkStringList() override;
+    vtkStringList();
+    ~vtkStringList() override;
 
 private:
-  class vtkInternals;
-  std::unique_ptr<vtkInternals> Internals;
+    class vtkInternals;
+    std::unique_ptr<vtkInternals> Internals;
 
-  vtkStringList(const vtkStringList&) = delete;
-  void operator=(const vtkStringList&) = delete;
+    vtkStringList(const vtkStringList&) = delete;
+    void operator=(const vtkStringList&) = delete;
 };
 
 #endif

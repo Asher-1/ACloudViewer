@@ -18,8 +18,8 @@ namespace gui {
 class Window;
 }  // namespace gui
 
-/// MessageProcessor implementation which interfaces with the CloudViewerScene and a
-/// Window.
+/// MessageProcessor implementation which interfaces with the CloudViewerScene
+/// and a Window.
 class MessageProcessor : public io::rpc::MessageProcessorBase {
 public:
     using OnGeometryFunc =

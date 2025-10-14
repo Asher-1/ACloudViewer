@@ -7,9 +7,9 @@
 
 #include "core/kernel/Kernel.h"
 
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
-#include "pybind/cloudViewer_pybind.h"
 
 namespace cloudViewer {
 namespace core {

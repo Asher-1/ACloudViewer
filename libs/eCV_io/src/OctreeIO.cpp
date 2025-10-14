@@ -6,12 +6,13 @@
 // ----------------------------------------------------------------------------
 
 #include "OctreeIO.h"
-#include "IJsonConvertibleIO.h"
 
-#include <Logging.h>
 #include <FileSystem.h>
+#include <Logging.h>
 
 #include <unordered_map>
+
+#include "IJsonConvertibleIO.h"
 
 namespace cloudViewer {
 namespace io {

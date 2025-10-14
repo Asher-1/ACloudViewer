@@ -7,9 +7,10 @@
 
 #include "visualization/shader/ImageMaskShader.h"
 
+#include <Image.h>
+
 #include <algorithm>
 
-#include <Image.h>
 #include "visualization/shader/Shader.h"
 #include "visualization/visualizer/RenderOptionWithEditing.h"
 
@@ -130,10 +131,9 @@ void ImageMaskShader::UnbindGeometry() {
     }
 }
 
-bool ImageMaskShaderForImage::PrepareRendering(
-        const ccHObject &geometry,
-        const RenderOption &option,
-        const ViewControl &view) {
+bool ImageMaskShaderForImage::PrepareRendering(const ccHObject &geometry,
+                                               const RenderOption &option,
+                                               const ViewControl &view) {
     if (!geometry.isKindOf(CV_TYPES::IMAGE2)) {
         PrintShaderWarning("Rendering type is not geometry::Image.");
         return false;

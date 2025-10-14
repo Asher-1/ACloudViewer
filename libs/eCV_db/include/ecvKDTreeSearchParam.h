@@ -98,4 +98,4 @@ public:
 }  // namespace geometry
 }  // namespace cloudViewer
 
-#endif // CV_KDTREE_SEARCH_PARAM_HEADER
+#endif  // CV_KDTREE_SEARCH_PARAM_HEADER

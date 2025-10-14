@@ -71,4 +71,4 @@ private:
 }  // namespace utility
 }  // namespace cloudViewer
 
-#endif // CV_TIMER_HEADER
+#endif  // CV_TIMER_HEADER

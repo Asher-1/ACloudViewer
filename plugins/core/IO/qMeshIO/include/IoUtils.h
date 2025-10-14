@@ -1,11 +1,18 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 // MeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <QMap>
 
-#include "assimp/matrix4x4.h"
 #include "assimp/material.h"
+#include "assimp/matrix4x4.h"
 #include "assimp/mesh.h"
 #include "assimp/metadata.h"
 #include "assimp/scene.h"

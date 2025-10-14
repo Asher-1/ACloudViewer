@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+// clang-format off
 #include <sstream>
 #include <unordered_map>
 
@@ -16,6 +17,7 @@
 #include "pybind/geometry/octree.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
+// clang-format on
 
 namespace cloudViewer {
 namespace geometry {

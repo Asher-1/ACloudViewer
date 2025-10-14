@@ -7,21 +7,21 @@
 
 #pragma once
 
-#include "eCV_io.h"
+#include <LineSet.h>
 
 #include <string>
 
-#include <LineSet.h>
+#include "eCV_io.h"
 
 namespace cloudViewer {
 namespace io {
 
 /// Factory function to create a lineset from a file.
 /// \return return an empty lineset if fail to read the file.
-std::shared_ptr<geometry::LineSet> ECV_IO_LIB_API CreateLineSetFromFile(
-                                const std::string &filename,
-                                const std::string &format = "auto",
-                                bool print_progress = false);
+std::shared_ptr<geometry::LineSet> ECV_IO_LIB_API
+CreateLineSetFromFile(const std::string &filename,
+                      const std::string &format = "auto",
+                      bool print_progress = false);
 
 /// The general entrance for reading a LineSet from a file
 /// The function calls read functions based on the extension name of filename.

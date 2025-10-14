@@ -47,8 +47,8 @@ __device__ double atomicAdd(double *address, double val) {
 namespace cloudViewer {
 template <typename scalar_t, typename T>
 CLOUDVIEWER_HOST_DEVICE bool IsClose(const scalar_t &x,
-                                const T &y,
-                                const double rtol = 1e-4) {
+                                     const T &y,
+                                     const double rtol = 1e-4) {
     return ((x > (1.0 - rtol) * y) && (x < (1.0 + rtol) * y));
 }
 

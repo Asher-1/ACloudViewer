@@ -58,15 +58,18 @@ def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
             Rt[:3, 3] = t
             if n < n_0:
                 theta = n * (2 * np.pi) / n_0
-                Rt[:3, :3] = cv3d.geometry.ccHObject.get_rotation_matrix_from_zyx(
-                    [np.pi, theta, 0])
+                Rt[:3, :
+                   3] = cv3d.geometry.ccHObject.get_rotation_matrix_from_zyx(
+                       [np.pi, theta, 0])
             elif n < n_images - 1:
                 theta = (n - n_0) * (2 * np.pi) / n_1
-                Rt[:3, :3] = cv3d.geometry.ccHObject.get_rotation_matrix_from_xyz(
-                    [np.pi / 4, theta, np.pi])
+                Rt[:3, :
+                   3] = cv3d.geometry.ccHObject.get_rotation_matrix_from_xyz(
+                       [np.pi / 4, theta, np.pi])
             else:  # one image from the top
-                Rt[:3, :3] = cv3d.geometry.ccHObject.get_rotation_matrix_from_zyx(
-                    [np.pi, 0, -np.pi / 2])
+                Rt[:3, :
+                   3] = cv3d.geometry.ccHObject.get_rotation_matrix_from_zyx(
+                       [np.pi, 0, -np.pi / 2])
             Rts.append(Rt)
             cv3dvis.setup_camera(K, Rt, width, height)
             # Vary IBL intensity as a poxy for exposure value. IBL ranges from
@@ -92,7 +95,7 @@ def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
                 "ffmpeg", "-framerate", f"{n_images / 6}", "-pattern_type",
                 "glob", "-i", "render-*.jpg", "-y", meshfile.stem + ".mp4"
             ],
-                check=True)
+                   check=True)
         cv3dvis.close()
         print("\nDone.")
 
@@ -103,10 +106,10 @@ def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
         'name': meshfile.name,
         'material': unlit
     }],
-        show_ui=False,
-        width=int(width / SCALING),
-        height=int(height / SCALING),
-        actions=[("Save Images", rotate_camera_and_shoot)])
+                            show_ui=False,
+                            width=int(width / SCALING),
+                            height=int(height / SCALING),
+                            actions=[("Save Images", rotate_camera_and_shoot)])
 
 
 def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
@@ -129,12 +132,12 @@ def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
     cv3d.t.io.write_image("albedo.png", albedo)
     cv3d.t.io.write_triangle_mesh(meshfile.stem + "_albedo.glb", tmeshes[0])
     cam_vis = list({
-                       "name":
-                           f"camera-{i:02}",
-                       "geometry":
-                           cv3d.geometry.LineSet.create_camera_visualization(
-                               images[0].columns, images[0].rows, K.numpy(), Rt.numpy(), 0.1)
-                   } for i, (K, Rt) in enumerate(zip(Ks, Rts)))
+        "name":
+            f"camera-{i:02}",
+        "geometry":
+            cv3d.geometry.LineSet.create_camera_visualization(
+                images[0].columns, images[0].rows, K.numpy(), Rt.numpy(), 0.1)
+    } for i, (K, Rt) in enumerate(zip(Ks, Rts)))
     cv3d.visualization.draw(cam_vis + [{
         "name": meshfile.name,
         "geometry": tmeshes[0]
@@ -168,7 +171,9 @@ if __name__ == "__main__":
 
     if args.action == "create_dataset":
         if args.download_sample_model:
-            cv3d.data.set_custom_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+            cv3d.data.set_custom_downloads_prefix(
+                "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+            )
             args.meshfile = Path(cv3d.data.BalusterVase().path)
         if args.meshfile == Path("."):
             parser.error("Please provide a path to a mesh file, or use "
@@ -180,6 +185,8 @@ if __name__ == "__main__":
                        movie=args.movie,
                        vary_exposure=True)
     else:
-        cv3d.data.set_custom_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+        cv3d.data.set_custom_downloads_prefix(
+            "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        )
         args.meshfile = Path(cv3d.data.BalusterVase().path)
         albedo_from_images(args.meshfile, "cameras.npz")

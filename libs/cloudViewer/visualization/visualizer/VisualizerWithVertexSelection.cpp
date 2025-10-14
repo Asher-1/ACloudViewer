@@ -8,12 +8,12 @@
 #include "visualization/visualizer/VisualizerWithVertexSelection.h"
 
 #include <FileSystem.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <IJsonConvertibleIO.h>
 #include <Image.h>
 #include <LineSet.h>
 #include <Logging.h>
 #include <ecvHObjectCaster.h>
-#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvTetraMesh.h>
@@ -790,9 +790,9 @@ void VisualizerWithVertexSelection::DragSelectedPoints(
     }
 }
 
-const std::vector<Eigen::Vector3d>
-        *VisualizerWithVertexSelection::GetGeometryEigenPoints(
-                std::shared_ptr<const ccHObject> geometry) {
+const std::vector<Eigen::Vector3d> *
+VisualizerWithVertexSelection::GetGeometryEigenPoints(
+        std::shared_ptr<const ccHObject> geometry) {
     const std::vector<Eigen::Vector3d> *points = nullptr;
     switch (geometry->getClassID()) {
         case CV_TYPES::LINESET: {

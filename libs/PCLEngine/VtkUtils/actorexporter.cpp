@@ -1,23 +1,28 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "actorexporter.h"
-#include "vtkutils.h"
 
 #include <vtkActor.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkVRMLExporter.h>
 
-namespace VtkUtils
-{
+#include "vtkutils.h"
 
-ActorExporter::ActorExporter(vtkActor* actor, const QString& file) : m_actor(actor), m_exportFile(file)
-{
+namespace VtkUtils {
+
+ActorExporter::ActorExporter(vtkActor* actor, const QString& file)
+    : m_actor(actor), m_exportFile(file) {
     setAutoDelete(true);
 }
 
-void ActorExporter::run()
-{
-    if (!m_actor || m_exportFile.isEmpty())
-        return;
+void ActorExporter::run() {
+    if (!m_actor || m_exportFile.isEmpty()) return;
 
     VTK_CREATE(vtkRenderWindow, renderWindow);
     VTK_CREATE(vtkRenderer, renderer);
@@ -30,4 +35,4 @@ void ActorExporter::run()
     exporter->Write();
 }
 
-} // namespace VtkUtils
+}  // namespace VtkUtils

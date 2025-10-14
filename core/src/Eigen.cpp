@@ -366,7 +366,7 @@ template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
         const std::vector<Eigen::Vector3d>& points,
         const std::vector<int>& indices);
 
-Eigen::Matrix3d SkewMatrix(const Eigen::Vector3d &vec) {
+Eigen::Matrix3d SkewMatrix(const Eigen::Vector3d& vec) {
     Eigen::Matrix3d skew;
     // clang-format off
     skew << 0,      -vec.z(),  vec.y(),

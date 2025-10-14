@@ -1,57 +1,42 @@
-//##########################################################################
-//#                                                                        #
-//#                               CVCoreLib                                #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef CV_POLYLINE_HEADER
 #define CV_POLYLINE_HEADER
 
-//Local
+// Local
 #include "ReferenceCloud.h"
 
-namespace cloudViewer
-{
+namespace cloudViewer {
 
 //! A simple polyline class
 /** The polyline is considered as a cloud of points
-	(in a specific order) with a open/closed state
-	information.
+        (in a specific order) with a open/closed state
+        information.
 **/
-class CV_CORE_LIB_API Polyline : public ReferenceCloud
-{
-	public:
+class CV_CORE_LIB_API Polyline : public ReferenceCloud {
+public:
+    //! Polyline constructor
+    explicit Polyline(GenericIndexedCloudPersist* associatedCloud);
 
-		//! Polyline constructor
-		explicit Polyline(GenericIndexedCloudPersist* associatedCloud);
+    //! Returns whether the polyline is closed or not
+    inline bool isClosed() const { return m_isClosed; }
 
-		//! Returns whether the polyline is closed or not
-		inline bool isClosed() const { return m_isClosed; }
+    //! Sets whether the polyline is closed or not
+    inline void setClosed(bool state) { m_isClosed = state; }
 
-		//! Sets whether the polyline is closed or not
-		inline void setClosed(bool state) { m_isClosed = state; }
+    // inherited from ReferenceCloud
+    void clear(bool unusedParam = true) override;
 
-		// inherited from ReferenceCloud
-		void clear(bool unusedParam = true) override;
-
-	protected:
-
-		//! Closing state
-		bool m_isClosed;
+protected:
+    //! Closing state
+    bool m_isClosed;
 };
 
-}
+}  // namespace cloudViewer
 
-#endif // CV_POLYLINE_HEADER
+#endif  // CV_POLYLINE_HEADER

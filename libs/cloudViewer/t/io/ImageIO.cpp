@@ -7,6 +7,10 @@
 
 #include "cloudViewer/t/io/ImageIO.h"
 
+#include <FileSystem.h>
+#include <ImageIO.h>
+#include <Logging.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -15,10 +19,7 @@
 #include <vector>
 
 #include "cloudViewer/core/ParallelFor.h"
-#include <ImageIO.h>
 #include "cloudViewer/t/geometry/kernel/GeometryIndexer.h"
-#include <FileSystem.h>
-#include <Logging.h>
 #include "cloudViewer/utility/Random.h"
 
 namespace cloudViewer {

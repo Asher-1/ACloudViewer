@@ -9,10 +9,10 @@
 
 #include <vector>
 
+#include "cloudViewer/Macro.h"
 #include "cloudViewer/core/Indexer.h"
 #include "cloudViewer/core/SizeVector.h"
 #include "cloudViewer/core/Tensor.h"
-#include "cloudViewer/Macro.h"
 
 namespace cloudViewer {
 namespace core {
@@ -164,14 +164,16 @@ public:
         element_byte_size_ = src.GetDtype().ByteSize();
     }
 
-    inline CLOUDVIEWER_HOST_DEVICE char* GetInputPtr(int64_t workload_idx) const {
+    inline CLOUDVIEWER_HOST_DEVICE char* GetInputPtr(
+            int64_t workload_idx) const {
         char* ptr = indexer_.GetInputPtr(0, workload_idx);
         ptr += GetIndexedOffset(workload_idx) * element_byte_size_ *
                (mode_ == AdvancedIndexerMode::GET);
         return ptr;
     }
 
-    inline CLOUDVIEWER_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
+    inline CLOUDVIEWER_HOST_DEVICE char* GetOutputPtr(
+            int64_t workload_idx) const {
         char* ptr = indexer_.GetOutputPtr(workload_idx);
         ptr += GetIndexedOffset(workload_idx) * element_byte_size_ *
                (mode_ == AdvancedIndexerMode::SET);
@@ -185,7 +187,8 @@ public:
             int64_t index = *(reinterpret_cast<int64_t*>(
                     indexer_.GetInputPtr(i + 1, workload_idx)));
             CLOUDVIEWER_ASSERT(index >= -indexed_shape_[i] &&
-                          index < indexed_shape_[i] && "Index out of bounds.");
+                               index < indexed_shape_[i] &&
+                               "Index out of bounds.");
             index += indexed_shape_[i] * (index < 0);
             offset += index * indexed_strides_[i];
         }

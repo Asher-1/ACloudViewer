@@ -5,15 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <FileSystem.h>
+#include <Logging.h>
+#include <ProgressReporters.h>
+
 #include <cstdio>
 
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/io/FileFormatIO.h"
 #include "cloudViewer/t/io/PointCloudIO.h"
-#include <FileSystem.h>
-#include <Logging.h>
-#include <ProgressReporters.h>
 
 namespace cloudViewer {
 namespace t {
@@ -23,9 +24,10 @@ cloudViewer::io::FileGeometry ReadFileGeometryTypeTXT(const std::string &path) {
     return cloudViewer::io::CONTAINS_POINTS;
 }
 
-bool ReadPointCloudFromTXT(const std::string &filename,
-                           geometry::PointCloud &pointcloud,
-                           const cloudViewer::io::ReadPointCloudOption &params) {
+bool ReadPointCloudFromTXT(
+        const std::string &filename,
+        geometry::PointCloud &pointcloud,
+        const cloudViewer::io::ReadPointCloudOption &params) {
     try {
         pointcloud.Clear();
 
@@ -127,9 +129,10 @@ bool ReadPointCloudFromTXT(const std::string &filename,
     }
 }
 
-bool WritePointCloudToTXT(const std::string &filename,
-                          const geometry::PointCloud &pointcloud,
-                          const cloudViewer::io::WritePointCloudOption &params) {
+bool WritePointCloudToTXT(
+        const std::string &filename,
+        const geometry::PointCloud &pointcloud,
+        const cloudViewer::io::WritePointCloudOption &params) {
     try {
         utility::filesystem::CFile file;
         if (!file.Open(filename, "w")) {

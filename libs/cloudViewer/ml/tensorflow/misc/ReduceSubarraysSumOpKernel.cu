@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -33,10 +33,10 @@ public:
     }
 };
 
-#define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerReduceSubarraysSum")    \
-                                    .Device(DEVICE_GPU)         \
-                                    .TypeConstraint<type>("T"), \
+#define REG_KB(type)                                              \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerReduceSubarraysSum") \
+                                    .Device(DEVICE_GPU)           \
+                                    .TypeConstraint<type>("T"),   \
                             ReduceSubarraysSumOpKernelCUDA<type>);
 REG_KB(int32_t)
 REG_KB(int64)

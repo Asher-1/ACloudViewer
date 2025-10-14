@@ -45,7 +45,7 @@ void _CConvBackropFilterCPU(TOut* filter_backprop,
                             const TFeat* out_features_gradient,
                             bool normalize) {
     const bool NEIGHBORS_IMPORTANCE = neighbors_importance;
-    //const int VECSIZE = 32;
+    // const int VECSIZE = 32;
 #define VECSIZE 32
     typedef Eigen::Array<TReal, VECSIZE, 1> Vec_t;
     typedef InterpolationVec<TReal, VECSIZE, INTERPOLATION> InterpolationVec_t;

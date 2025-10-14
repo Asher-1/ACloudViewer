@@ -5,8 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "cloudViewer/core/hashmap/HashBackendBuffer.h"
 #include <Parallel.h>
+
+#include "cloudViewer/core/hashmap/HashBackendBuffer.h"
 
 namespace cloudViewer {
 namespace core {

@@ -1,28 +1,18 @@
-// ##########################################################################
-// #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                       #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                   COPYRIGHT: Thomas Montaigu                           #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
 
 #include <CloudSamplingTools.h>
 
 #include <BoundingBox.h>
+#include <CVPointCloud.h>
 #include <GenericProgressCallback.h>
 #include <GeometricalAnalysisTools.h>
-#include <CVPointCloud.h>
 #include <ReferenceCloud.h>
 
 namespace py = pybind11;
@@ -33,14 +23,14 @@ void define_CloudSamplingTools(py::module &cccorelib)
     py::class_<cloudViewer::CloudSamplingTools> CloudSamplingTools(cccorelib, "CloudSamplingTools");
 
     py::enum_<cloudViewer::CloudSamplingTools::RESAMPLING_CELL_METHOD>(CloudSamplingTools,
-                                                                     "RESAMPLING_CELL_METHOD")
+                                                                       "RESAMPLING_CELL_METHOD")
         .value("CELL_CENTER", cloudViewer::CloudSamplingTools::RESAMPLING_CELL_METHOD::CELL_CENTER)
         .value("CELL_GRAVITY_CENTER",
                cloudViewer::CloudSamplingTools::RESAMPLING_CELL_METHOD::CELL_GRAVITY_CENTER)
         .export_values();
 
     py::enum_<cloudViewer::CloudSamplingTools::SUBSAMPLING_CELL_METHOD>(CloudSamplingTools,
-                                                                      "SUBSAMPLING_CELL_METHODS")
+                                                                        "SUBSAMPLING_CELL_METHODS")
         .value("RANDOM_POINT", cloudViewer::CloudSamplingTools::SUBSAMPLING_CELL_METHOD::RANDOM_POINT)
         .value("NEAREST_POINT_TO_CELL_CENTER",
                cloudViewer::CloudSamplingTools::SUBSAMPLING_CELL_METHOD::NEAREST_POINT_TO_CELL_CENTER)

@@ -65,9 +65,9 @@ void ContinuousConvBackpropFilterCPU(
             const torch::Tensor& neighbors_row_splits,                         \
             const torch::Tensor& out_features_gradient,                        \
             const bool align_corners,                                          \
-            const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,      \
+            const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping, \
             const bool normalize,                                              \
-            const cloudViewer::ml::impl::InterpolationMode interpolation,           \
+            const cloudViewer::ml::impl::InterpolationMode interpolation,      \
             const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
 
 INSTANTIATE(float, float, float, int32_t)

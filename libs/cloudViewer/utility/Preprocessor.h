@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                  -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -38,8 +38,8 @@
 /// Note: Only works for 1-10 arguments.
 #define CLOUDVIEWER_GET_NTH_ARG_(...) \
     CLOUDVIEWER_FIX_MSVC_(CLOUDVIEWER_GET_NTH_ARG_IMPL_(__VA_ARGS__))
-#define CLOUDVIEWER_GET_NTH_ARG_IMPL_(arg1, arg2, arg3, arg4, arg5, arg6, arg7, \
-                                 arg8, arg9, arg10, N, ...)                \
+#define CLOUDVIEWER_GET_NTH_ARG_IMPL_(arg1, arg2, arg3, arg4, arg5, arg6, \
+                                      arg7, arg8, arg9, arg10, N, ...)    \
     N
 #define CLOUDVIEWER_REVERSE_NUM_SEQUENCE_() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 #define CLOUDVIEWER_NUM_ARGS(...) \
@@ -56,7 +56,8 @@
 /// #define FOO_1(x1) foo(x1)
 /// #define FOO_2(x1, x2) bar(x1, x2)
 /// #define FOO(...) '\'
-///     CLOUDVIEWER_FIX_MSVC_(CLOUDVIEWER_OVERLOAD(FOO_, __VA_ARGS__)(__VA_ARGS__))
+///     CLOUDVIEWER_FIX_MSVC_(CLOUDVIEWER_OVERLOAD(FOO_,
+///     __VA_ARGS__)(__VA_ARGS__))
 ///
 /// FOO(1)    -> foo(1)
 /// FOO(2, 3) -> bar(2, 3)

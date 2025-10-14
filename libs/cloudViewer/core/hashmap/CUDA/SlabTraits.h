@@ -47,7 +47,7 @@ struct Pair {
 
 template <typename First, typename Second>
 CLOUDVIEWER_HOST_DEVICE Pair<First, Second> make_pair(const First& _first,
-                                                 const Second& _second) {
+                                                      const Second& _second) {
     return Pair<First, Second>(_first, _second);
 }
 

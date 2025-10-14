@@ -7,14 +7,15 @@
 
 #pragma once
 
+#include <Helper.h>
+#include <Logging.h>
+#include <Timer.h>
+
 #include <unordered_map>
 
 #include "cloudViewer/core/CUDAUtils.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/TensorCheck.h"
-#include <Helper.h>
-#include <Logging.h>
-#include <Timer.h>
 
 namespace cloudViewer {
 namespace t {
@@ -60,11 +61,11 @@ public:
 
     /// Transform a 3D coordinate in camera coordinate to world coordinate
     CLOUDVIEWER_HOST_DEVICE void RigidTransform(float x_in,
-                                           float y_in,
-                                           float z_in,
-                                           float* x_out,
-                                           float* y_out,
-                                           float* z_out) const {
+                                                float y_in,
+                                                float z_in,
+                                                float* x_out,
+                                                float* y_out,
+                                                float* z_out) const {
         x_in *= scale_;
         y_in *= scale_;
         z_in *= scale_;
@@ -79,11 +80,11 @@ public:
 
     /// Transform a 3D coordinate in camera coordinate to world coordinate
     CLOUDVIEWER_HOST_DEVICE void Rotate(float x_in,
-                                   float y_in,
-                                   float z_in,
-                                   float* x_out,
-                                   float* y_out,
-                                   float* z_out) const {
+                                        float y_in,
+                                        float z_in,
+                                        float* x_out,
+                                        float* y_out,
+                                        float* z_out) const {
         x_in *= scale_;
         y_in *= scale_;
         z_in *= scale_;
@@ -98,10 +99,10 @@ public:
 
     /// Project a 3D coordinate in camera coordinate to a 2D uv coordinate
     CLOUDVIEWER_HOST_DEVICE void Project(float x_in,
-                                    float y_in,
-                                    float z_in,
-                                    float* u_out,
-                                    float* v_out) const {
+                                         float y_in,
+                                         float z_in,
+                                         float* u_out,
+                                         float* v_out) const {
         float inv_z = 1.0f / z_in;
         *u_out = fx_ * x_in * inv_z + cx_;
         *v_out = fy_ * y_in * inv_z + cy_;
@@ -109,11 +110,11 @@ public:
 
     /// Unproject a 2D uv coordinate with depth to 3D in camera coordinate
     CLOUDVIEWER_HOST_DEVICE void Unproject(float u_in,
-                                      float v_in,
-                                      float d_in,
-                                      float* x_out,
-                                      float* y_out,
-                                      float* z_out) const {
+                                           float v_in,
+                                           float d_in,
+                                           float* x_out,
+                                           float* y_out,
+                                           float* z_out) const {
         *x_out = (u_in - cx_) * d_in / fx_;
         *y_out = (v_in - cy_) * d_in / fy_;
         *z_out = d_in;
@@ -125,8 +126,8 @@ public:
     }
 
     CLOUDVIEWER_HOST_DEVICE void GetCameraPosition(float* x,
-                                              float* y,
-                                              float* z) const {
+                                                   float* y,
+                                                   float* z) const {
         *x = extrinsic_[0][3];
         *y = extrinsic_[1][3];
         *z = extrinsic_[2][3];
@@ -223,7 +224,9 @@ public:
         ptr_ = nullptr;
     }
 
-    CLOUDVIEWER_HOST_DEVICE index_t ElementByteSize() { return element_byte_size_; }
+    CLOUDVIEWER_HOST_DEVICE index_t ElementByteSize() {
+        return element_byte_size_;
+    }
 
     CLOUDVIEWER_HOST_DEVICE index_t NumElements() {
         index_t num_elems = 1;
@@ -234,43 +237,41 @@ public:
     }
 
     /// 2D coordinate => workload
-    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(index_t x_in,
-                                                   index_t y_in,
-                                                   index_t* workload) const {
+    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(
+            index_t x_in, index_t y_in, index_t* workload) const {
         *workload = y_in * shape_[1] + x_in;
     }
 
     /// 3D coordinate => workload
-    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(index_t x_in,
-                                                   index_t y_in,
-                                                   index_t z_in,
-                                                   index_t* workload) const {
+    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(
+            index_t x_in, index_t y_in, index_t z_in, index_t* workload) const {
         *workload = (z_in * shape_[1] + y_in) * shape_[2] + x_in;
     }
 
     /// 4D coordinate => workload
-    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(index_t x_in,
-                                                   index_t y_in,
-                                                   index_t z_in,
-                                                   index_t t_in,
-                                                   index_t* workload) const {
+    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(
+            index_t x_in,
+            index_t y_in,
+            index_t z_in,
+            index_t t_in,
+            index_t* workload) const {
         *workload = ((t_in * shape_[1] + z_in) * shape_[2] + y_in) * shape_[3] +
                     x_in;
     }
 
     /// Workload => 2D coordinate
     inline CLOUDVIEWER_HOST_DEVICE void WorkloadToCoord(index_t workload,
-                                                   index_t* x_out,
-                                                   index_t* y_out) const {
+                                                        index_t* x_out,
+                                                        index_t* y_out) const {
         *x_out = workload % shape_[1];
         *y_out = workload / shape_[1];
     }
 
     /// Workload => 3D coordinate
     inline CLOUDVIEWER_HOST_DEVICE void WorkloadToCoord(index_t workload,
-                                                   index_t* x_out,
-                                                   index_t* y_out,
-                                                   index_t* z_out) const {
+                                                        index_t* x_out,
+                                                        index_t* y_out,
+                                                        index_t* z_out) const {
         *x_out = workload % shape_[2];
         workload = (workload - *x_out) / shape_[2];
         *y_out = workload % shape_[1];
@@ -279,10 +280,10 @@ public:
 
     /// Workload => 4D coordinate
     inline CLOUDVIEWER_HOST_DEVICE void WorkloadToCoord(index_t workload,
-                                                   index_t* x_out,
-                                                   index_t* y_out,
-                                                   index_t* z_out,
-                                                   index_t* t_out) const {
+                                                        index_t* x_out,
+                                                        index_t* y_out,
+                                                        index_t* z_out,
+                                                        index_t* t_out) const {
         *x_out = workload % shape_[3];
         workload = (workload - *x_out) / shape_[3];
         *y_out = workload % shape_[2];
@@ -295,14 +296,16 @@ public:
         return y >= 0 && x >= 0 && y <= shape_[0] - 1.0f &&
                x <= shape_[1] - 1.0f;
     }
-    inline CLOUDVIEWER_HOST_DEVICE bool InBoundary(float x, float y, float z) const {
+    inline CLOUDVIEWER_HOST_DEVICE bool InBoundary(float x,
+                                                   float y,
+                                                   float z) const {
         return z >= 0 && y >= 0 && x >= 0 && z <= shape_[0] - 1.0f &&
                y <= shape_[1] - 1.0f && x <= shape_[2] - 1.0f;
     }
     inline CLOUDVIEWER_HOST_DEVICE bool InBoundary(float x,
-                                              float y,
-                                              float z,
-                                              float t) const {
+                                                   float y,
+                                                   float z,
+                                                   float t) const {
         return t >= 0 && z >= 0 && y >= 0 && x >= 0 && t <= shape_[0] - 1.0f &&
                z <= shape_[1] - 1.0f && y <= shape_[2] - 1.0f &&
                x <= shape_[3] - 1.0f;
@@ -330,8 +333,8 @@ public:
 
     template <typename T>
     inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtr(index_t x,
-                                            index_t y,
-                                            index_t z) const {
+                                                 index_t y,
+                                                 index_t z) const {
         index_t workload;
         CoordToWorkload(x, y, z, &workload);
         return static_cast<T*>(static_cast<void*>(
@@ -340,9 +343,9 @@ public:
 
     template <typename T>
     inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtr(index_t x,
-                                            index_t y,
-                                            index_t z,
-                                            index_t t) const {
+                                                 index_t y,
+                                                 index_t z,
+                                                 index_t t) const {
         index_t workload;
         CoordToWorkload(x, y, z, t, &workload);
         return static_cast<T*>(static_cast<void*>(

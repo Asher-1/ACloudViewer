@@ -1,20 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                               cloudViewer                              #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef CV_TYPES_HEADER
 #define CV_TYPES_HEADER
@@ -78,19 +67,20 @@ enum CV_OBJECT_FLAG {  // CC_UNUSED			= 1, //DGM: not used
 #define CC_TEX_COORDS_BIT 0x00000080000000         // Texture coordinates (u,v)
 #define CC_CAMERA_BIT \
     0x00000100000000  // For camera sensors (projective sensors)
-#define CC_QUADRIC_BIT 0x00000200000000           // Quadric (primitive)
-#define CC_RGBA_COLOR_BIT 0x00000400000000        // Color (R,G,B,A)
-#define CC_COORDINATESYSTEM_BIT 0x00000800000000  // CoordinateSystem
-                                                  // (primitive)
-//#define CC_FREE_BIT					0x00001000000000
-//#define CC_FREE_BIT					0x00002000000000
-//#define CC_FREE_BIT					0x00004000000000
-//#define CC_FREE_BIT					0x00008000000000
-//#define CC_FREE_BIT					0x00010000000000
-//#define CC_FREE_BIT					0x00020000000000
-//#define CC_FREE_BIT					0x00040000000000
-//#define CC_FREE_BIT					0x00080000000000
-//#define CC_FREE_BIT					0x00100000000000
+#define CC_QUADRIC_BIT 0x00000200000000     // Quadric (primitive)
+#define CC_RGBA_COLOR_BIT 0x00000400000000  // Color (R,G,B,A)
+#define CC_COORDINATESYSTEM_BIT \
+    0x00000800000000  // CoordinateSystem
+                      // (primitive)
+// #define CC_FREE_BIT					0x00001000000000
+// #define CC_FREE_BIT					0x00002000000000
+// #define CC_FREE_BIT					0x00004000000000
+// #define CC_FREE_BIT					0x00008000000000
+// #define CC_FREE_BIT					0x00010000000000
+// #define CC_FREE_BIT					0x00020000000000
+// #define CC_FREE_BIT					0x00040000000000
+// #define CC_FREE_BIT					0x00080000000000
+// #define CC_FREE_BIT					0x00100000000000
 #define CC_BBOX_BIT 0x00200000000000           // Axis BoundingBox
 #define CC_ORIENTED_BBOX_BIT 0x00400000000000  // Oriented BoundingBox
 #define CC_OCTREE2_BIT 0x00800000000000        // OCTREE for python

@@ -7,9 +7,10 @@
 
 #include "cloudViewer/core/nns/FixedRadiusIndex.h"
 
+#include <Logging.h>
+
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/TensorCheck.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

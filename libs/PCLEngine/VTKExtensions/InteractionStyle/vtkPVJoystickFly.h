@@ -1,76 +1,72 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkPVJoystickFly.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/**
- * @class   vtkPVJoystickFly
- * @brief   Fly camera towards or away from the object
- *
- * vtkPVJoystickFly allows the user to interactively manipulate the
- * camera, the viewpoint of the scene.
-*/
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef vtkPVJoystickFly_h
 #define vtkPVJoystickFly_h
 
+#include "qPCL.h"  // needed for export macro
 #include "vtkCameraManipulator.h"
-#include "qPCL.h" // needed for export macro
 
 class vtkRenderer;
 
-class QPCL_ENGINE_LIB_API vtkPVJoystickFly : public vtkCameraManipulator
-{
+class QPCL_ENGINE_LIB_API vtkPVJoystickFly : public vtkCameraManipulator {
 public:
-  vtkTypeMacro(vtkPVJoystickFly, vtkCameraManipulator);
-  void PrintSelf(ostream& os, vtkIndent indent) override;
+    vtkTypeMacro(vtkPVJoystickFly, vtkCameraManipulator);
+    void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
-  /**
-   * Event bindings controlling the effects of pressing mouse buttons
-   * or moving the mouse.
-   */
-  void OnMouseMove(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi) override;
-  void OnButtonDown(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi) override;
-  void OnButtonUp(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi) override;
-  //@}
+    //@{
+    /**
+     * Event bindings controlling the effects of pressing mouse buttons
+     * or moving the mouse.
+     */
+    void OnMouseMove(int x,
+                     int y,
+                     vtkRenderer* ren,
+                     vtkRenderWindowInteractor* rwi) override;
+    void OnButtonDown(int x,
+                      int y,
+                      vtkRenderer* ren,
+                      vtkRenderWindowInteractor* rwi) override;
+    void OnButtonUp(int x,
+                    int y,
+                    vtkRenderer* ren,
+                    vtkRenderWindowInteractor* rwi) override;
+    //@}
 
-  //@{
-  /**
-   * Set and get the speed of flying.
-   */
-  vtkSetClampMacro(FlySpeed, double, 1, 30);
-  vtkGetMacro(FlySpeed, double);
-  //@}
+    //@{
+    /**
+     * Set and get the speed of flying.
+     */
+    vtkSetClampMacro(FlySpeed, double, 1, 30);
+    vtkGetMacro(FlySpeed, double);
+    //@}
 
 protected:
-  vtkPVJoystickFly();
-  ~vtkPVJoystickFly() override;
+    vtkPVJoystickFly();
+    ~vtkPVJoystickFly() override;
 
-  int In;
-  int FlyFlag;
+    int In;
+    int FlyFlag;
 
-  double FlySpeed;
-  double Scale;
-  double LastRenderTime;
-  double CameraXAxis[3];
-  double CameraYAxis[3];
-  double CameraZAxis[3];
+    double FlySpeed;
+    double Scale;
+    double LastRenderTime;
+    double CameraXAxis[3];
+    double CameraYAxis[3];
+    double CameraZAxis[3];
 
-  void Fly(vtkRenderer* ren, vtkRenderWindowInteractor* rwi, double scale, double speed);
-  void ComputeCameraAxes(vtkRenderer*);
+    void Fly(vtkRenderer* ren,
+             vtkRenderWindowInteractor* rwi,
+             double scale,
+             double speed);
+    void ComputeCameraAxes(vtkRenderer*);
 
-  vtkPVJoystickFly(const vtkPVJoystickFly&) = delete;
-  void operator=(const vtkPVJoystickFly&) = delete;
+    vtkPVJoystickFly(const vtkPVJoystickFly&) = delete;
+    void operator=(const vtkPVJoystickFly&) = delete;
 };
 
 #endif

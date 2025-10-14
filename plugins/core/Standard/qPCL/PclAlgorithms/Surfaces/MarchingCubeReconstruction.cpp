@@ -1,27 +1,16 @@
-//##########################################################################
-//#                                                                        #
-//#                       CLOUDVIEWER PLUGIN: qPCL                         #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                         COPYRIGHT: Asher                               #
-//#                                                                        #
-//##########################################################################
-//
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-// LOCAL
 #include "MarchingCubeReconstruction.h"
-#include "dialogs/MarchingCubeDlg.h"
+
 #include "PclUtils/PCLModules.h"
 #include "PclUtils/cc2sm.h"
 #include "PclUtils/sm2cc.h"
+#include "dialogs/MarchingCubeDlg.h"
 
 // ECV_DB_LIB
 #include <ecvMesh.h>
@@ -37,170 +26,162 @@
 #include <iostream>
 
 MarchingCubeReconstruction::MarchingCubeReconstruction()
-	: BasePclModule(PclModuleDescription(tr("Marching Cube"),
-										 tr("Marching Cube Reconstruction"),
-										 tr("Marching Cube Reconstruction from clouds"),
-									     ":/toolbar/PclAlgorithms/icons/MarchingCubeReconstruction.png"))
-	, m_dialog(nullptr)
-	, m_normalSearchRadius(0)
-	, m_knn_radius(20)
-	, m_useKnn(true)
-	, m_marchingMethod(0)
-	, m_epsilon(0.01f)
-	, m_isoLevel(0.0f)
-	, m_gridResolution(50)
-	, m_percentageExtendGrid(0.0f)
-{
+    : BasePclModule(PclModuleDescription(
+              tr("Marching Cube"),
+              tr("Marching Cube Reconstruction"),
+              tr("Marching Cube Reconstruction from clouds"),
+              ":/toolbar/PclAlgorithms/icons/MarchingCubeReconstruction.png")),
+      m_dialog(nullptr),
+      m_normalSearchRadius(0),
+      m_knn_radius(20),
+      m_useKnn(true),
+      m_marchingMethod(0),
+      m_epsilon(0.01f),
+      m_isoLevel(0.0f),
+      m_gridResolution(50),
+      m_percentageExtendGrid(0.0f) {}
+
+MarchingCubeReconstruction::~MarchingCubeReconstruction() {
+    // we must delete parent-less dialogs ourselves!
+    if (m_dialog && m_dialog->parent() == nullptr) delete m_dialog;
 }
 
-MarchingCubeReconstruction::~MarchingCubeReconstruction()
-{
-	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == nullptr)
-		delete m_dialog;
+int MarchingCubeReconstruction::checkSelected() {
+    // do we have a selected cloud?
+    int have_cloud = isFirstSelectedCcPointCloud();
+    if (have_cloud != 1) return -11;
+
+    return 1;
 }
 
-int MarchingCubeReconstruction::checkSelected()
-{
-	//do we have a selected cloud?
-	int have_cloud = isFirstSelectedCcPointCloud();
-	if (have_cloud != 1)
-		return -11;
+int MarchingCubeReconstruction::openInputDialog() {
+    // initialize the dialog object
+    if (!m_dialog)
+        m_dialog = new MarchingCubeDlg(m_app ? m_app->getActiveWindow() : 0);
 
-	return 1;
+    ccPointCloud* cloud = getSelectedEntityAsCCPointCloud();
+    if (cloud) {
+        ccBBox bBox = cloud->getOwnBB();
+        if (bBox.isValid())
+            m_dialog->normalSearchRadius->setValue(bBox.getDiagNorm() * 0.005);
+    }
+
+    if (!m_dialog->exec()) return 0;
+
+    return 1;
 }
 
-int MarchingCubeReconstruction::openInputDialog()
-{
-	//initialize the dialog object
-	if (!m_dialog)
-		m_dialog = new MarchingCubeDlg(m_app ? m_app->getActiveWindow() : 0);
+void MarchingCubeReconstruction::getParametersFromDialog() {
+    if (!m_dialog) return;
 
-	ccPointCloud* cloud = getSelectedEntityAsCCPointCloud();
-	if (cloud)
-	{
-		ccBBox bBox = cloud->getOwnBB();
-		if (bBox.isValid())
-			m_dialog->normalSearchRadius->setValue(bBox.getDiagNorm() * 0.005);
-	}
+    // get the parameters from the dialog
+    m_useKnn = m_dialog->useKnnCheckBoxForTriangulation->isChecked();
+    m_knn_radius = m_dialog->knnSpinBoxForTriangulation->value();
+    m_normalSearchRadius =
+            static_cast<float>(m_dialog->normalSearchRadius->value());
 
-	if (!m_dialog->exec())
-		return 0;
-
-	return 1;
+    m_marchingMethod = m_dialog->MarchingMethodsCombo->currentIndex();
+    m_epsilon = static_cast<float>(m_dialog->epsilonSpinBox->value());
+    m_isoLevel = static_cast<float>(m_dialog->isoLevelSpinBox->value());
+    m_gridResolution =
+            static_cast<float>(m_dialog->gridResolutionSpinBox->value());
+    m_percentageExtendGrid =
+            static_cast<float>(m_dialog->percentageExtendedSpinBox->value());
 }
 
-void MarchingCubeReconstruction::getParametersFromDialog()
-{
-	if (!m_dialog)
-		return;
+int MarchingCubeReconstruction::checkParameters() { return 1; }
 
-	//get the parameters from the dialog
-	m_useKnn = m_dialog->useKnnCheckBoxForTriangulation->isChecked();
-	m_knn_radius = m_dialog->knnSpinBoxForTriangulation->value();
-	m_normalSearchRadius = static_cast<float>(m_dialog->normalSearchRadius->value());
+int MarchingCubeReconstruction::compute() {
+    ccPointCloud* cloud = getSelectedEntityAsCCPointCloud();
+    if (!cloud) return -1;
 
-	m_marchingMethod = m_dialog->MarchingMethodsCombo->currentIndex();
-	m_epsilon = static_cast<float>(m_dialog->epsilonSpinBox->value());
-	m_isoLevel = static_cast<float>(m_dialog->isoLevelSpinBox->value());
-	m_gridResolution = static_cast<float>(m_dialog->gridResolutionSpinBox->value());
-	m_percentageExtendGrid = static_cast<float>(m_dialog->percentageExtendedSpinBox->value());
-}
+    // create storage for normals
+    PointCloudNormal::Ptr cloudWithNormals(new PointCloudNormal);
 
-int MarchingCubeReconstruction::checkParameters()
-{
-	return 1;
-}
+    if (!cloud->hasNormals()) {
+        // get xyz as pcl point cloud
+        PointCloudT::Ptr xyzCloud = cc2smReader(cloud).getXYZ2();
+        if (!xyzCloud) return -1;
 
-int MarchingCubeReconstruction::compute()
-{
-	ccPointCloud* cloud = getSelectedEntityAsCCPointCloud();
-	if (!cloud)
-		return -1;
+        // now compute
+        CloudNormal::Ptr normals(new CloudNormal);
+        int result = PCLModules::ComputeNormals<PointT, NormalT>(
+                xyzCloud, normals,
+                m_useKnn ? m_knn_radius : m_normalSearchRadius, m_useKnn);
+        if (result < 0) return -1;
 
-	// create storage for normals
-	PointCloudNormal::Ptr cloudWithNormals(new PointCloudNormal);
+        // concat points and normals
+        pcl::concatenateFields(*xyzCloud, *normals, *cloudWithNormals);
+        CVLog::Print(tr(
+                "[MarchingCubeReconstruction::compute] generate new normals"));
+    } else {
+        PCLCloud::Ptr sm_cloud = cc2smReader(cloud).getAsSM();
+        FROM_PCL_CLOUD(*sm_cloud, *cloudWithNormals);
+        CVLog::Print(
+                tr("[MarchingCubeReconstruction::compute] find normals and use "
+                   "the normals"));
+    }
 
-	if (!cloud->hasNormals())
-	{
-		// get xyz as pcl point cloud
-		PointCloudT::Ptr xyzCloud = cc2smReader(cloud).getXYZ2();
-		if (!xyzCloud)
-			return -1;
-
-		// now compute
-		CloudNormal::Ptr normals(new CloudNormal);
-		int result = PCLModules::ComputeNormals<PointT, NormalT>(
-			xyzCloud, normals, m_useKnn ? m_knn_radius : m_normalSearchRadius, m_useKnn);
-		if (result < 0) return -1;
-
-		// concat points and normals
-		pcl::concatenateFields(*xyzCloud, *normals, *cloudWithNormals);
-		CVLog::Print(tr("[MarchingCubeReconstruction::compute] generate new normals"));
-	} 
-	else
-	{
-		PCLCloud::Ptr sm_cloud = cc2smReader(cloud).getAsSM();
-		FROM_PCL_CLOUD(*sm_cloud, *cloudWithNormals);
-		CVLog::Print(tr("[MarchingCubeReconstruction::compute] find normals and use the normals"));
-	}
-
-	// Marching Cube
-	PCLMesh mesh;
-	PCLModules::MarchingMethod marchingMethod = (PCLModules::MarchingMethod) m_marchingMethod;
-	if (!PCLModules::GetMarchingCubes<PointNT>(cloudWithNormals, marchingMethod, mesh, 
-		m_epsilon, m_isoLevel, m_gridResolution, m_percentageExtendGrid))
-	{
-		return -1;
-	}
+    // Marching Cube
+    PCLMesh mesh;
+    PCLModules::MarchingMethod marchingMethod =
+            (PCLModules::MarchingMethod)m_marchingMethod;
+    if (!PCLModules::GetMarchingCubes<PointNT>(
+                cloudWithNormals, marchingMethod, mesh, m_epsilon, m_isoLevel,
+                m_gridResolution, m_percentageExtendGrid)) {
+        return -1;
+    }
 
     PCLCloud out_cloud_sm(mesh.cloud);
-    if ( out_cloud_sm.height * out_cloud_sm.width == 0)
-	{
-		//cloud is empty
-		return -53;
-	}
+    if (out_cloud_sm.height * out_cloud_sm.width == 0) {
+        // cloud is empty
+        return -53;
+    }
 
     ccMesh* out_mesh = pcl2cc::Convert(out_cloud_sm, mesh.polygons);
-	if (!out_mesh)
-	{
-		//conversion failed (not enough memory?)
-		return -1;
-	}
+    if (!out_mesh) {
+        // conversion failed (not enough memory?)
+        return -1;
+    }
 
-	unsigned vertCount = out_mesh->getAssociatedCloud()->size();
-	unsigned faceCount = out_mesh->size();
-	CVLog::Print(tr("[MarchingCube-Reconstruction] %1 points, %2 face(s)").arg(vertCount).arg(faceCount));
+    unsigned vertCount = out_mesh->getAssociatedCloud()->size();
+    unsigned faceCount = out_mesh->size();
+    CVLog::Print(tr("[MarchingCube-Reconstruction] %1 points, %2 face(s)")
+                         .arg(vertCount)
+                         .arg(faceCount));
 
-	out_mesh->setName(tr("Marching Cube"));
-	//copy global shift & scale
-	out_mesh->getAssociatedCloud()->setGlobalScale(cloud->getGlobalScale());
-	out_mesh->getAssociatedCloud()->setGlobalShift(cloud->getGlobalShift());
+    out_mesh->setName(tr("Marching Cube"));
+    // copy global shift & scale
+    out_mesh->getAssociatedCloud()->setGlobalScale(cloud->getGlobalScale());
+    out_mesh->getAssociatedCloud()->setGlobalShift(cloud->getGlobalShift());
 
-	if (cloud->getParent())
-		cloud->getParent()->addChild(out_mesh);
+    if (cloud->getParent()) cloud->getParent()->addChild(out_mesh);
 
-	emit newEntity(out_mesh);
+    emit newEntity(out_mesh);
 
-	return 1;
+    return 1;
 }
 
-QString MarchingCubeReconstruction::getErrorMessage(int errorCode)
-{
-	switch(errorCode)
-	{
-		//THESE CASES CAN BE USED TO OVERRIDE OR ADD FILTER-SPECIFIC ERRORS CODES
-		//ALSO IN DERIVED CLASSES DEFULAT MUST BE ""
+QString MarchingCubeReconstruction::getErrorMessage(int errorCode) {
+    switch (errorCode) {
+            // THESE CASES CAN BE USED TO OVERRIDE OR ADD FILTER-SPECIFIC ERRORS
+            // CODES ALSO IN DERIVED CLASSES DEFULAT MUST BE ""
 
-	case -51:
-		return tr("Selected entity does not have any suitable scalar field or RGB.");
-	case -52:
-		return tr("Wrong Parameters. One or more parameters cannot be accepted");
-	case -53:
-		return tr("Marching Cube Reconstruction does not returned any point. Try relaxing your parameters");
-    default:
-        break;
-	}
+        case -51:
+            return tr(
+                    "Selected entity does not have any suitable scalar field "
+                    "or RGB.");
+        case -52:
+            return tr(
+                    "Wrong Parameters. One or more parameters cannot be "
+                    "accepted");
+        case -53:
+            return tr(
+                    "Marching Cube Reconstruction does not returned any point. "
+                    "Try relaxing your parameters");
+        default:
+            break;
+    }
 
-	return BasePclModule::getErrorMessage(errorCode);
+    return BasePclModule::getErrorMessage(errorCode);
 }

@@ -23,8 +23,7 @@ ModelInteractorLogic::ModelInteractorLogic(CloudViewerScene* scene,
 
 ModelInteractorLogic::~ModelInteractorLogic() {}
 
-void ModelInteractorLogic::SetBoundingBox(
-        const ccBBox& bounds) {
+void ModelInteractorLogic::SetBoundingBox(const ccBBox& bounds) {
     Super::SetBoundingBox(bounds);
     // Initialize parent's matrix_ (in case we do a mouse wheel, which
     // doesn't involve a mouse down) and the center of rotation.

@@ -21,8 +21,7 @@ def pointcloud_generator():
     mesh = cv3d.geometry.ccMesh.create_arrow()
     arrow = mesh.sample_points_uniformly(int(1e4))
     yield "arrow", arrow, 0.001, 12.0
-    
-    
+
     ply_data = cv3d.data.PLYPointCloud()
     pcd = cv3d.io.read_point_cloud(ply_data.path)
     yield "fragment", pcd, 0.01, 6.0

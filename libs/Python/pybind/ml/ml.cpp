@@ -7,8 +7,8 @@
 
 #include "pybind/ml/ml.h"
 
-#include "pybind/ml/contrib/contrib.h"
 #include "pybind/cloudViewer_pybind.h"
+#include "pybind/ml/contrib/contrib.h"
 
 namespace cloudViewer {
 namespace ml {

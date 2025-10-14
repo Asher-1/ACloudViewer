@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <ecvMesh.h>
+
 #include "io/TriangleMeshIO.h"
 #include "tests/UnitTest.h"
 

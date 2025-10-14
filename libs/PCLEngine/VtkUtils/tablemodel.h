@@ -1,23 +1,30 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef TABLEMODEL_H
 #define TABLEMODEL_H
 
-#include "../qPCL.h"
 #include <QAbstractTableModel>
+
+#include "../qPCL.h"
 #include "point3f.h"
 
 // CV_CORE_LIB
 #include <CVGeom.h>
 
 class ccHObject;
-namespace VtkUtils
-{
-class QPCL_ENGINE_LIB_API TableModel : public QAbstractTableModel
-{
+namespace VtkUtils {
+class QPCL_ENGINE_LIB_API TableModel : public QAbstractTableModel {
     Q_OBJECT
 public:
-    explicit TableModel(int column, int row, QObject* parent = nullptr);
-    explicit TableModel(const ccHObject * objContainer, QObject* parent = nullptr);
-	void updateData(const ccHObject * objContainer);
+    explicit TableModel(int column, int row, QObject *parent = nullptr);
+    explicit TableModel(const ccHObject *objContainer,
+                        QObject *parent = nullptr);
+    void updateData(const ccHObject *objContainer);
     virtual ~TableModel();
 
     void random(int min = -5, int max = 5);
@@ -28,20 +35,24 @@ public:
     int randomMin();
     int randomMax();
 
-    void setHorizontalHeaderData(const QVariantList& data);
+    void setHorizontalHeaderData(const QVariantList &data);
     QVariantList horizontalHeaderData() const;
 
-    void setVerticalHeaderData(const QVariantList& data);
+    void setVerticalHeaderData(const QVariantList &data);
     QVariantList verticalHeaderData() const;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     int columnCount(const QModelIndex &parent = QModelIndex()) const;
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+    QVariant headerData(int section,
+                        Qt::Orientation orientation,
+                        int role = Qt::DisplayRole) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
     qreal data(int row, int col) const;
-	QVector<Tuple3ui> verticesData() const;
-    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
-    bool setData(int row, int column, const QVariant& value);
+    QVector<Tuple3ui> verticesData() const;
+    bool setData(const QModelIndex &index,
+                 const QVariant &value,
+                 int role = Qt::EditRole);
+    bool setData(int row, int column, const QVariant &value);
     Qt::ItemFlags flags(const QModelIndex &index) const;
 
 signals:
@@ -49,8 +60,8 @@ signals:
     void columnsChanged(int oldCols, int newCols);
 
 private:
-    QVector<QVector<qreal> * > m_data;
-	QVector<Tuple3ui> m_vertices;
+    QVector<QVector<qreal> *> m_data;
+    QVector<Tuple3ui> m_vertices;
 
     QVariantList m_horHeaderData;
     QVariantList m_verHeaderData;
@@ -60,5 +71,5 @@ private:
     int m_randomMax = 1;
 };
 
-} // namespace Utils
-#endif // TABLEMODEL_H
+}  // namespace VtkUtils
+#endif  // TABLEMODEL_H

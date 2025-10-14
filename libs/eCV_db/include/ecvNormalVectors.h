@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_NORMAL_VECTORS_HEADER
 #define ECV_NORMAL_VECTORS_HEADER
@@ -243,7 +233,7 @@ public:
 
     //! Helper: computes the normal (with Delaunay 2.5D)
     /** The normal is computed at the first point (assuming the others are its
-      *neighbors).
+     *neighbors).
      **/
     static bool ComputeNormalWithTri(
             cloudViewer::GenericIndexedCloudPersist* pointAndNeighbors,
@@ -251,7 +241,7 @@ public:
 
     //! Helper: computes the normal (with Delaunay 2.5D)
     /** The normal is computed at the first point (assuming the others are its
-      *neighbors).
+     *neighbors).
      **/
     static bool ComputeNormalWithQuadric(
             cloudViewer::GenericIndexedCloudPersist* points,
@@ -272,7 +262,7 @@ protected:
 
     //! 'HSV' colors corresponding to each compressed normal index
     /** In fact, HSV color has already been converted to RGB here for faster
-      *display.
+     *display.
      **/
     std::vector<ecvColor::Rgb> m_theNormalHSVColors;
 

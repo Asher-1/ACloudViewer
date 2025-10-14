@@ -1,63 +1,68 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef ECVPLUGINMANAGER_H
 #define ECVPLUGINMANAGER_H
 
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: CLOUDVIEWER  project                               #
-//#                                                                        #
-//##########################################################################
-
-#include "CVAppCommon.h"
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: CLOUDVIEWER  project                               #
+// #                                                                        #
+// ##########################################################################
 
 #include <QObject>
 #include <QVector>
 
+#include "CVAppCommon.h"
+
 class ccPluginInterface;
 
 //! Simply a list of \see ccPluginInterface
-using ccPluginInterfaceList = QVector<ccPluginInterface *>;
+using ccPluginInterfaceList = QVector<ccPluginInterface*>;
 
+class CVAPPCOMMON_LIB_API ccPluginManager : public QObject {
+    Q_OBJECT
 
-class CVAPPCOMMON_LIB_API ccPluginManager : public QObject
-{
-	Q_OBJECT
-	
 public:
-	~ccPluginManager() override = default;
-	
-	static ccPluginManager& get();
+    ~ccPluginManager() override = default;
 
-	void setPaths(const QStringList& paths);
-	QStringList pluginPaths();
+    static ccPluginManager& get();
 
-	void loadPlugins();
+    void setPaths(const QStringList& paths);
+    QStringList pluginPaths();
 
-	ccPluginInterfaceList& pluginList();
+    void loadPlugins();
 
-	bool isEnabled(const ccPluginInterface* plugin) const;
-	void setPluginEnabled(const ccPluginInterface* plugin, bool enabled);
+    ccPluginInterfaceList& pluginList();
+
+    bool isEnabled(const ccPluginInterface* plugin) const;
+    void setPluginEnabled(const ccPluginInterface* plugin, bool enabled);
 
 protected:
-	explicit ccPluginManager(QObject *parent = nullptr);
-	
-private:	
-	void loadFromPathsAndAddToList();
+    explicit ccPluginManager(QObject* parent = nullptr);
 
-	QStringList disabledPluginIIDs() const;
+private:
+    void loadFromPathsAndAddToList();
 
-	QStringList m_pluginPaths;
-	ccPluginInterfaceList m_pluginList;
+    QStringList disabledPluginIIDs() const;
+
+    QStringList m_pluginPaths;
+    ccPluginInterfaceList m_pluginList;
 };
 
-#endif // ECVPLUGINMANAGER_H
+#endif  // ECVPLUGINMANAGER_H

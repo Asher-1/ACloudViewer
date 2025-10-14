@@ -1,42 +1,32 @@
-//##########################################################################
-//#                                                                        #
-//#                    CLOUDVIEWER  PLUGIN: ccCompass                      #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 of the License.               #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                     COPYRIGHT: Sam Thiele  2017                        #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_THICKNESS_HEADER
 #define ECV_THICKNESS_HEADER
 
-#include "ccPointPair.h"
-
 #include <ecvPointCloud.h>
+
+#include "ccPointPair.h"
 
 /*
 Objects representing thickness measurements
 */
-class ccThickness : public ccPointPair
-{
+class ccThickness : public ccPointPair {
 public:
-	//ctors
-	ccThickness(ccPointCloud* associatedCloud);
-	ccThickness(ccPolyline* obj);
+    // ctors
+    ccThickness(ccPointCloud* associatedCloud);
+    ccThickness(ccPolyline* obj);
 
-	//write metadata specific to this object
-	void updateMetadata() override;
+    // write metadata specific to this object
+    void updateMetadata() override;
 
-	//returns true if obj was/is a thickness measurement (as defined by the objects metadata)
-	static bool isThickness(ccHObject* obj);
+    // returns true if obj was/is a thickness measurement (as defined by the
+    // objects metadata)
+    static bool isThickness(ccHObject* obj);
 };
 
-#endif // ECV_THICKNESS_HEADER
+#endif  // ECV_THICKNESS_HEADER

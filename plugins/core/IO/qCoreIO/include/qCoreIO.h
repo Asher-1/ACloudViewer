@@ -1,38 +1,45 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef QCORE_IO_HEADER
 #define QCORE_IO_HEADER
 
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: ACloudViewer project                               #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: ACloudViewer project                               #
+// #                                                                        #
+// ##########################################################################
 
 #include <ecvIOPluginInterface.h>
 
-class qCoreIO : public QObject, public ccIOPluginInterface
-{
-	Q_OBJECT
-	Q_INTERFACES( ccPluginInterface ccIOPluginInterface )
+class qCoreIO : public QObject, public ccIOPluginInterface {
+    Q_OBJECT
+    Q_INTERFACES(ccPluginInterface ccIOPluginInterface)
 
-    Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.qCoreIO" FILE "../info.json" )
+    Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qCoreIO" FILE
+                          "../info.json")
 
 public:
-	explicit qCoreIO( QObject *parent = nullptr );
+    explicit qCoreIO(QObject *parent = nullptr);
 
-	void registerCommands( ccCommandLineInterface *inCmdLine ) override;
+    void registerCommands(ccCommandLineInterface *inCmdLine) override;
 
-	FilterList getFilters() override;
+    FilterList getFilters() override;
 };
 
-#endif //QCORE_IO_HEADER
+#endif  // QCORE_IO_HEADER

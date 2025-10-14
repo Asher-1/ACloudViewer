@@ -8,6 +8,7 @@
 #pragma once
 
 #include <ecvBBox.h>
+
 #include "visualization/rendering/Camera.h"
 
 namespace cloudViewer {
@@ -34,7 +35,6 @@ public:
 
     void SetMouseDownInfo(const Camera::Transform& matrix,
                           const Eigen::Vector3f& center_of_rotation);
-
 
     const Camera::Transform& GetMatrix() const;
 
@@ -80,10 +80,10 @@ protected:
     float CalcRotateRadians(int dx, int dy);
     float CalcRotateZRadians(int dx, int dy);
     float CalcDollyDist(float dy,
-                    DragType drag_type,
-                    const Camera::Transform& matrix);
+                        DragType drag_type,
+                        const Camera::Transform& matrix);
 };
 
 }  // namespace rendering
 }  // namespace visualization
-}  // namespace CloudViewer
+}  // namespace cloudViewer

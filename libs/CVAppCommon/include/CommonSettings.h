@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef COMMON_SETTINGS_HEADER
 #define COMMON_SETTINGS_HEADER
 
@@ -39,7 +46,9 @@ static QString CONFIG_PATH = "configuration.ini";
 static QString LOGFILE = "log.log";
 
 // Define the URL of the Update Definitions file
-static const QString UPDATE_RUL = "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/updates.json";
+static const QString UPDATE_RUL =
+        "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/"
+        "updates.json";
 //    static const QString UPDATE_RUL     =
 //    "https://github.com/Asher-1/Asher-1.github.io/blob/main/files/ACloudViewer/updates.json?raw=true";
 
@@ -56,7 +65,8 @@ static const QString CLOSE_LOGO = ":/Resources/images/close.png";
 static const char* CODING = "UTF8";
 
 // application information
-static const QString APP_VERSION =  QString::fromStdString(cloudViewer::GetCloudViewerVersion());
+static const QString APP_VERSION =
+        QString::fromStdString(cloudViewer::GetCloudViewerVersion());
 static const QString TITLE = QObject::tr("ACloudViewer");
 static const QString APP_TITLE =
         TITLE + " " + versionLongStr(true, APP_VERSION);

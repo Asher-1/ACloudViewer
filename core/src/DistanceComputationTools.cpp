@@ -1,20 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                               CVCoreLib                                #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <DistanceComputationTools.h>
 
@@ -844,7 +833,7 @@ int DistanceComputationTools::intersectMeshWithOctree(
 
             // we deduce the smallest bounding 'octree' cell
             //(not a real octree cell in fact as its starting position is
-            //anywhere in the grid and it can even 'outbounds' the grid, i.e.
+            // anywhere in the grid and it can even 'outbounds' the grid, i.e.
             // currentCell.pos.u[k]+currentCell.cellSize > octreeLength)
             static const double LOG_2 = log(2.0);
             _currentCell->level =

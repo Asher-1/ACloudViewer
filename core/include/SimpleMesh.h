@@ -1,125 +1,124 @@
-//##########################################################################
-//#                                                                        #
-//#                               cloudViewer                              #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef SIMPLE_MESH_HEADER
 #define SIMPLE_MESH_HEADER
 
-//Local
+// Local
 #include "BoundingBox.h"
 #include "GenericIndexedMesh.h"
 #include "SimpleTriangle.h"
 
-//System
+// System
 #include <vector>
 
-namespace cloudViewer
-{
+namespace cloudViewer {
 
 class GenericIndexedCloud;
 
 //! A simple mesh structure, with index-based vertex access
 /** Implements the GenericIndexedMesh interface. This mesh is always associated
-	to a (index based) point cloud that stores the mesh vertexes.
+        to a (index based) point cloud that stores the mesh vertexes.
 **/
-class CV_CORE_LIB_API SimpleMesh : public GenericIndexedMesh
-{
-public: //constructors
+class CV_CORE_LIB_API SimpleMesh : public GenericIndexedMesh {
+public:  // constructors
+    //! SimpleMesh Constructor
+    /** \param _theVertices the point cloud containing the vertices
+            \param linkVerticesWithMesh specifies if the vertex cloud should be
+    deleted when the SimpleMesh object is destructed
+    **/
+    SimpleMesh(GenericIndexedCloud* _theVertices,
+               bool linkVerticesWithMesh = false);
 
-	//! SimpleMesh Constructor
-	/** \param _theVertices the point cloud containing the vertices
-		\param linkVerticesWithMesh specifies if the vertex cloud should be deleted when the SimpleMesh object is destructed
-	**/
-	SimpleMesh(GenericIndexedCloud* _theVertices, bool linkVerticesWithMesh = false);
+    //! SimpleMesh destructor
+    ~SimpleMesh() override;
 
-	//! SimpleMesh destructor
-	~SimpleMesh() override;
+public:  // inherited methods
+    void forEach(genericTriangleAction action) override;
+    void placeIteratorAtBeginning() override;
+    GenericTriangle* _getNextTriangle() override;  // temporary
+    GenericTriangle* _getTriangle(
+            unsigned triangleIndex) override;  // temporary
+    VerticesIndexes* getNextTriangleVertIndexes() override;
+    VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override;
+    virtual unsigned size() const override {
+        return static_cast<unsigned>(m_triIndexes.size());
+    }
+    void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override;
+    void getTriangleVertices(unsigned triangleIndex,
+                             CCVector3& A,
+                             CCVector3& B,
+                             CCVector3& C) const override;
+    virtual void getTriangleVertices(unsigned triangleIndex,
+                                     double A[3],
+                                     double B[3],
+                                     double C[3]) const override;
 
-public: //inherited methods
+public:  // specific methods
+    //! Returns the mesh capacity
+    inline unsigned capacity() const {
+        return static_cast<unsigned>(m_triIndexes.capacity());
+    }
 
-	void forEach(genericTriangleAction action) override;
-	void placeIteratorAtBeginning() override;
-	GenericTriangle* _getNextTriangle() override; //temporary
-	GenericTriangle* _getTriangle(unsigned triangleIndex) override; //temporary
-	VerticesIndexes* getNextTriangleVertIndexes() override;
-	VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override;
-	virtual unsigned size() const override { return static_cast<unsigned>(m_triIndexes.size()); }
-	void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override;
-	void getTriangleVertices(unsigned triangleIndex, CCVector3& A, CCVector3& B, CCVector3& C) const override;
-	virtual void getTriangleVertices(unsigned triangleIndex, double A[3], double B[3], double C[3]) const override;
+    //! Returns the vertices
+    inline const GenericIndexedCloud* vertices() const { return theVertices; }
 
-public: //specific methods
+    //! Clears the mesh
+    inline void clear() { m_triIndexes.resize(0); }
 
-	//! Returns the mesh capacity
-	inline unsigned capacity() const { return static_cast<unsigned>(m_triIndexes.capacity()); }
+    //! Adds a triangle to the mesh
+    /** Vertex indexes are expresesed relatively to the vertex cloud.
+            \param i1 first vertex index
+            \param i2 second vertex index
+            \param i3 third vertex index
+    **/
+    virtual void addTriangle(unsigned i1, unsigned i2, unsigned i3);
 
-	//! Returns the vertices
-	inline const GenericIndexedCloud* vertices() const { return theVertices; }
+    //! Reserves the memory to store the triangles (as 3 indexes each)
+    /** \param n the number of triangles to reserve
+            \return true if the method succeeds, false otherwise
+    **/
+    virtual bool reserve(unsigned n);
 
-	//! Clears the mesh
-	inline void clear() { m_triIndexes.resize(0); }
+    //! Resizes the mesh database
+    /** If the new number of elements is smaller than the actual size,
+            the overflooding elements will be deleted.
+            \param n the new number of triangles
+            \return true if the method succeeds, false otherwise
+    **/
+    virtual bool resize(unsigned n);
 
-	//! Adds a triangle to the mesh
-	/** Vertex indexes are expresesed relatively to the vertex cloud.
-		\param i1 first vertex index
-		\param i2 second vertex index
-		\param i3 third vertex index
-	**/
-	virtual void addTriangle(unsigned i1, unsigned i2, unsigned i3);
-
-	//! Reserves the memory to store the triangles (as 3 indexes each)
-	/** \param n the number of triangles to reserve
-		\return true if the method succeeds, false otherwise
-	**/
-	virtual bool reserve(unsigned n);
-
-	//! Resizes the mesh database
-	/** If the new number of elements is smaller than the actual size,
-		the overflooding elements will be deleted.
-		\param n the new number of triangles
-		\return true if the method succeeds, false otherwise
-	**/
-	virtual bool resize(unsigned n);
-
-        //inherited from GenericIndexedMesh
-        bool normalsAvailable() const override;
-        bool interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3& N) override;
+    // inherited from GenericIndexedMesh
+    bool normalsAvailable() const override;
+    bool interpolateNormals(unsigned triIndex,
+                            const CCVector3& P,
+                            CCVector3& N) override;
 
 protected:
+    //! A triangle vertices indexes container
+    using TriangleIndexesContainer = std::vector<VerticesIndexes>;
+    //! The triangles indexes
+    TriangleIndexesContainer m_triIndexes;
 
-	//! A triangle vertices indexes container
-	using TriangleIndexesContainer = std::vector<VerticesIndexes>;
-	//! The triangles indexes
-	TriangleIndexesContainer m_triIndexes;
+    //! Iterator on the list of triangles
+    unsigned globalIterator;
+    //! Dump triangle structure to transmit temporary data
+    SimpleTriangle dummyTriangle;
 
-	//! Iterator on the list of triangles
-	unsigned globalIterator;
-	//! Dump triangle structure to transmit temporary data
-	SimpleTriangle dummyTriangle;
+    //! The associated point cloud (vertices)
+    GenericIndexedCloud* theVertices;
+    //! Specifies if the associated cloud should be deleted when the mesh is
+    //! deleted
+    bool verticesLinked;
 
-	//! The associated point cloud (vertices)
-	GenericIndexedCloud* theVertices;
-	//! Specifies if the associated cloud should be deleted when the mesh is deleted
-	bool verticesLinked;
-
-	//! Bounding-box
-	BoundingBox m_bbox;
+    //! Bounding-box
+    BoundingBox m_bbox;
 };
 
-}
+}  // namespace cloudViewer
 
-#endif // SIMPLE_MESH_HEADER
+#endif  // SIMPLE_MESH_HEADER

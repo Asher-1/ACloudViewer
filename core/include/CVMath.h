@@ -1,5 +1,9 @@
-// SPDX-License-Identifier: LGPL-2.0-or-later
-// Copyright © ACloudViewer Project
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
 

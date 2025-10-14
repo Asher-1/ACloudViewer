@@ -1,30 +1,20 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                       COPYRIGHT: CNRS / OSUR                           #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_WAVEFORM_DIALOG_HEADER
 #define ECV_WAVEFORM_DIALOG_HEADER
 
-//Local
+// Local
 #include "ecvPickingListener.h"
 
-//Qt
+// Qt
 #include <QDialog>
 
-//QCustomPlot
+// QCustomPlot
 #include <qcustomplot.h>
 
 class QCPArrow;
@@ -38,111 +28,109 @@ class ccPointCloud;
 class ccPickingHub;
 
 //! Waveform widget
-class ccWaveWidget : public QCustomPlot
-{
-	Q_OBJECT
+class ccWaveWidget : public QCustomPlot {
+    Q_OBJECT
 
 public:
+    //! Default constructor
+    explicit ccWaveWidget(QWidget* parent = nullptr);
 
-	//! Default constructor
-	explicit ccWaveWidget(QWidget *parent = nullptr);
+    //! Destructor
+    ~ccWaveWidget() override;
 
-	//! Destructor
-	~ccWaveWidget() override;
+    //! Sets title
+    void setTitle(const QString& str);
+    //! Sets axis labels
+    void setAxisLabels(const QString& xLabel, const QString& yLabel);
 
-	//! Sets title
-	void setTitle(const QString& str);
-	//! Sets axis labels
-	void setAxisLabels(const QString& xLabel, const QString& yLabel);
+    //! Computes the wave (curve) from a given point waveform
+    void init(ccPointCloud* cloud,
+              unsigned pointIndex,
+              bool logScale,
+              double maxValue = 0.0);
 
-	//! Computes the wave (curve) from a given point waveform
-	void init(ccPointCloud* cloud, unsigned pointIndex, bool logScale, double maxValue = 0.0);
+    //! Clears the display
+    void clear();
+    //! Updates the display
+    void refresh();
 
-	//! Clears the display
-	void clear();
-	//! Updates the display
-	void refresh();
+protected:  // methods
+    // mouse events handling
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
-protected: //methods
+    //! Clears internal structures
+    void clearInternal();
 
-	//mouse events handling
-	void mousePressEvent(QMouseEvent *event) override;
-	void mouseMoveEvent(QMouseEvent *event) override;
-	void resizeEvent(QResizeEvent * event) override;
+    //! Updates overlay curve width depending on the widget display size
+    void updateCurveWidth(int w, int h);
 
-	//! Clears internal structures
-	void clearInternal();
+protected:  // attributes
+    // Title
+    QString m_titleStr;
+    QCPTextElement* m_titlePlot;
 
-	//! Updates overlay curve width depending on the widget display size
-	void updateCurveWidth(int w, int h);
+    //! Wave curve
+    QCPGraph* m_curve;
+    std::vector<double> m_curveValues;
+    double m_dt;
+    double m_minA, m_maxA;
+    double m_echoPos;
 
-protected: //attributes
+    // vertical indicator
+    QCPBarsWithText* m_vertBar;
+    bool m_drawVerticalIndicator;
+    double m_verticalIndicatorPositionPercent;
 
-	//Title
-	QString m_titleStr;
-	QCPTextElement* m_titlePlot;
+    // Peak marker
+    QCPBarsWithText* m_peakBar;
 
-	//! Wave curve
-	QCPGraph* m_curve;
-	std::vector<double> m_curveValues;
-	double m_dt;
-	double m_minA, m_maxA;
-	double m_echoPos;
+    //! Rendering font
+    QFont m_renderingFont;
 
-	//vertical indicator
-	QCPBarsWithText* m_vertBar;
-	bool m_drawVerticalIndicator;
-	double m_verticalIndicatorPositionPercent;
-
-	//Peak marker
-	QCPBarsWithText* m_peakBar;
-
-	//! Rendering font
-	QFont m_renderingFont;
-
-	//! Last mouse click
-	QPoint m_lastMouseClick;
+    //! Last mouse click
+    QPoint m_lastMouseClick;
 };
 
 //! Waveform dialog
-class ccWaveDialog : public QDialog, public ccPickingListener
-{
-	Q_OBJECT
+class ccWaveDialog : public QDialog, public ccPickingListener {
+    Q_OBJECT
 
 public:
-	//! Default constructor
-	explicit ccWaveDialog(ccPointCloud* cloud, ccPickingHub* pickingHub, QWidget* parent = nullptr);
-	//! Destructor
-	~ccWaveDialog() override;
+    //! Default constructor
+    explicit ccWaveDialog(ccPointCloud* cloud,
+                          ccPickingHub* pickingHub,
+                          QWidget* parent = nullptr);
+    //! Destructor
+    ~ccWaveDialog() override;
 
-	//! Returns the encapsulated widget
-	inline ccWaveWidget* waveWidget() { return m_widget; }
+    //! Returns the encapsulated widget
+    inline ccWaveWidget* waveWidget() { return m_widget; }
 
-	//inherited from ccPickingListener
-	virtual void onItemPicked(const PickedItem& pi) override;
+    // inherited from ccPickingListener
+    virtual void onItemPicked(const PickedItem& pi) override;
 
 protected:
+    void onPointIndexChanged(int);
+    void updateCurrentWaveform();
+    void onPointPickingButtonToggled(bool);
+    void onExportWaveAsCSV();
 
-	void onPointIndexChanged(int);
-	void updateCurrentWaveform();
-	void onPointPickingButtonToggled(bool);
-	void onExportWaveAsCSV();
+protected:  // members
+    //! Associated point cloud
+    ccPointCloud* m_cloud;
 
-protected: //members
+    //! Wave widget
+    ccWaveWidget* m_widget;
 
-	//! Associated point cloud
-	ccPointCloud* m_cloud;
+    //! Picking hub
+    ccPickingHub* m_pickingHub;
 
-	//! Wave widget
-	ccWaveWidget* m_widget;
+    //! GUI
+    Ui_WaveDialog* m_gui;
 
-	//! Picking hub
-	ccPickingHub* m_pickingHub;
-
-	//! GUI
-	Ui_WaveDialog* m_gui;
-
-	//! Maximum wave amplitude (for all points)
-	double m_waveMax;
+    //! Maximum wave amplitude (for all points)
+    double m_waveMax;
 };
-#endif // ECV_WAVEFORM_DIALOG_HEADER
+#endif  // ECV_WAVEFORM_DIALOG_HEADER

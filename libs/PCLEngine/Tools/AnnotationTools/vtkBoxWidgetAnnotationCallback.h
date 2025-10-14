@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef vtkBoxWidgetCallback_H
 #define vtkBoxWidgetCallback_H
 
@@ -5,11 +12,10 @@
 
 class Annotation;
 
-class vtkBoxWidgetCallback0 : public vtkCommand
-{
+class vtkBoxWidgetCallback0 : public vtkCommand {
 public:
     static vtkBoxWidgetCallback0 *New();
-    virtual void Execute( vtkObject *caller, unsigned long, void* );
+    virtual void Execute(vtkObject *caller, unsigned long, void *);
 
     /**
      * @brief setAnno set the current annotation in which theb actor is picked
@@ -18,15 +24,13 @@ public:
     void setAnno(Annotation *value);
 
 private:
-    Annotation* anno;
+    Annotation *anno;
 };
 
-
-class vtkBoxWidgetCallback1 : public vtkCommand
-{
+class vtkBoxWidgetCallback1 : public vtkCommand {
 public:
     static vtkBoxWidgetCallback1 *New();
-    virtual void Execute( vtkObject *caller, unsigned long, void* );
+    virtual void Execute(vtkObject *caller, unsigned long, void *);
 
     /**
      * @brief setAnno set the current annotation in which the actor is picked
@@ -35,7 +39,7 @@ public:
     void setAnno(Annotation *value);
 
 private:
-    Annotation* anno;
+    Annotation *anno;
 };
 
 #endif

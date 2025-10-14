@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                CloudViewer PLUGIN: LAS-IO Plugin                      #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 of the License.               #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                   COPYRIGHT: Thomas Montaigu                           #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "LasSaveDialog.h"
 
@@ -124,12 +114,12 @@ LasSaveDialog::LasSaveDialog(ccPointCloud* cloud, QWidget* parent)
 	versionComboBox->setCurrentIndex(0);
 
 	connect(versionComboBox,
-	        (void (QComboBox::*)(const QString&))(&QComboBox::currentIndexChanged),
+	        (void(QComboBox::*)(const QString&))(&QComboBox::currentIndexChanged),
 	        this,
 	        &LasSaveDialog::handleSelectedVersionChange);
 
 	connect(pointFormatComboBox,
-	        (void (QComboBox::*)(int))(&QComboBox::currentIndexChanged),
+	        (void(QComboBox::*)(int))(&QComboBox::currentIndexChanged),
 	        this,
 	        &LasSaveDialog::handleSelectedPointFormatChange);
 
@@ -190,7 +180,8 @@ void LasSaveDialog::handleComboBoxChange(int index)
 	size_t   senderIndex  = std::distance(m_scalarFieldMapping.begin(),
                                        std::find_if(m_scalarFieldMapping.begin(),
                                                     m_scalarFieldMapping.end(),
-                                                    [senderObject](const std::pair<MappingLabel*, QComboBox*>& pair) { return pair.second == senderObject; }));
+                                                    [senderObject](const std::pair<MappingLabel*, QComboBox*>& pair)
+                                                    { return pair.second == senderObject; }));
 
 	if (qobject_cast<QComboBox*>(senderObject)->itemText(index).isEmpty())
 	{
@@ -227,7 +218,8 @@ void LasSaveDialog::handleComboBoxChange(int index)
 
 	size_t numWarnings = std::count_if(m_scalarFieldMapping.begin(),
 	                                   m_scalarFieldMapping.end(),
-	                                   [](const std::pair<MappingLabel*, QComboBox*>& pair) { return pair.first->hasWarning(); });
+	                                   [](const std::pair<MappingLabel*, QComboBox*>& pair)
+	                                   { return pair.first->hasWarning(); });
 
 	if (numWarnings > 0)
 	{
@@ -444,7 +436,7 @@ void LasSaveDialog::setOriginalScale(const CCVector3d& scale, bool canUseScale, 
 	originalScaleRadioButton->setEnabled(canUseScale);
 	if (!canUseScale)
 	{
-		labelOriginal->setText(QObject::tr("Original scale is too small for this cloud  ")); //add two whitespaces to avoid issues with italic characters justification
+		labelOriginal->setText(QObject::tr("Original scale is too small for this cloud  ")); // add two whitespaces to avoid issues with italic characters justification
 		labelOriginal->setStyleSheet("color: red;");
 		originalScaleRadioButton->setChecked(false);
 	}

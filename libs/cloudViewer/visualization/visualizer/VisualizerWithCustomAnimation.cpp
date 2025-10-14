@@ -7,12 +7,13 @@
 
 #include "visualization/visualizer/VisualizerWithCustomAnimation.h"
 
+#include <FileSystem.h>
+#include <IJsonConvertibleIO.h>
+#include <Logging.h>
+
 #include <thread>
 
 #include "camera/PinholeCameraTrajectory.h"
-#include <Logging.h>
-#include <FileSystem.h>
-#include <IJsonConvertibleIO.h>
 #include "visualization/visualizer/ViewControlWithCustomAnimation.h"
 
 namespace cloudViewer {
@@ -79,7 +80,8 @@ void VisualizerWithCustomAnimation::Play(
     recording_file_index_ = 0;
     utility::ConsoleProgressBar progress_bar(view_control.NumOfFrames(),
                                              "Play animation: ");
-    auto trajectory_ptr = cloudViewer::make_shared<camera::PinholeCameraTrajectory>();
+    auto trajectory_ptr =
+            cloudViewer::make_shared<camera::PinholeCameraTrajectory>();
     bool recording_trajectory = view_control.IsValidPinholeCameraTrajectory();
     if (recording) {
         if (recording_depth) {
@@ -91,9 +93,9 @@ void VisualizerWithCustomAnimation::Play(
         }
     }
     RegisterAnimationCallback([this, recording, recording_depth,
-                              close_window_when_animation_ends,
-                              recording_trajectory, trajectory_ptr,
-                              &progress_bar](Visualizer *vis) {
+                               close_window_when_animation_ends,
+                               recording_trajectory, trajectory_ptr,
+                               &progress_bar](Visualizer *vis) {
         // The lambda function captures no references to avoid dangling
         // references
         auto &view_control =

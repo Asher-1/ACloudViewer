@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_CC_LABELING_DLG_HEADER
 #define ECV_CC_LABELING_DLG_HEADER
@@ -21,23 +11,21 @@
 #include <ui_labelingDlg.h>
 
 //! Dialog to define connected components labelinng parameters
-class ccLabelingDlg : public QDialog, public Ui::LabelingDialog
-{
-	Q_OBJECT
+class ccLabelingDlg : public QDialog, public Ui::LabelingDialog {
+    Q_OBJECT
 
 public:
+    //! Default constructor
+    explicit ccLabelingDlg(QWidget* parent = 0);
 
-	//! Default constructor
-	explicit ccLabelingDlg(QWidget* parent = 0);
+    //! Returns octree level (defines grid step)
+    int getOctreeLevel();
 
-	//! Returns octree level (defines grid step)
-	int getOctreeLevel();
+    //! Returns min number of points per extracted CC
+    int getMinPointsNb();
 
-	//! Returns min number of points per extracted CC
-	int getMinPointsNb();
-
-	//! Specifies whether each extracted CC should get a random color
-	bool randomColors();
+    //! Specifies whether each extracted CC should get a random color
+    bool randomColors();
 };
 
-#endif // ECV_CC_LABELING_DLG_HEADER
+#endif  // ECV_CC_LABELING_DLG_HEADER

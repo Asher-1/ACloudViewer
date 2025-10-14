@@ -7,9 +7,10 @@
 
 #include "visualization/shader/RGBDImageShader.h"
 
+#include <RGBDImage.h>
+
 #include <algorithm>
 
-#include <RGBDImage.h>
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
 
@@ -108,7 +109,8 @@ bool RGBDImageShader::BindGeometry(const ccHObject &geometry,
     /* https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
      * In OpenGL, texture of GL_UNSIGNED_SHORT are converted to [0, 1] (float),
      * while texture of GL_FLOAT seems not converted. */
-    depth_max_data_ = (depth_type == GL_UNSIGNED_SHORT)
+    depth_max_data_ =
+            (depth_type == GL_UNSIGNED_SHORT)
                     ? static_cast<float>(option.image_max_depth_) / 65535.0f
                     : static_cast<float>(option.image_max_depth_) / 1000.0f;
     glGenTextures(1, &depth_texture_buffer_);
@@ -184,10 +186,9 @@ void RGBDImageShader::UnbindGeometry() {
     }
 }
 
-bool RGBDImageShaderForImage::PrepareRendering(
-        const ccHObject &geometry,
-        const RenderOption &option,
-        const ViewControl &view) {
+bool RGBDImageShaderForImage::PrepareRendering(const ccHObject &geometry,
+                                               const RenderOption &option,
+                                               const ViewControl &view) {
     if (!geometry.isKindOf(CV_TYPES::RGBD_IMAGE)) {
         PrintShaderWarning("Rendering type is not geometry::RGBDImage.");
         return false;

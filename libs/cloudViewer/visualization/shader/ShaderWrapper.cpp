@@ -7,8 +7,8 @@
 
 #include "visualization/shader/ShaderWrapper.h"
 
-#include <ecvHObject.h>
 #include <Logging.h>
+#include <ecvHObject.h>
 
 namespace cloudViewer {
 namespace visualization {
@@ -62,7 +62,8 @@ bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
     if (geometry_shader_code != nullptr) {
         geometry_shader_ = glCreateShader(GL_GEOMETRY_SHADER);
         const GLchar *geometry_shader_code_buffer = geometry_shader_code;
-        glShaderSource(geometry_shader_, 1, &geometry_shader_code_buffer, nullptr);
+        glShaderSource(geometry_shader_, 1, &geometry_shader_code_buffer,
+                       nullptr);
         glCompileShader(geometry_shader_);
         if (!ValidateShader(geometry_shader_)) {
             return false;
@@ -72,7 +73,8 @@ bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
     if (fragment_shader_code != nullptr) {
         fragment_shader_ = glCreateShader(GL_FRAGMENT_SHADER);
         const GLchar *fragment_shader_code_buffer = fragment_shader_code;
-        glShaderSource(fragment_shader_, 1, &fragment_shader_code_buffer, nullptr);
+        glShaderSource(fragment_shader_, 1, &fragment_shader_code_buffer,
+                       nullptr);
         glCompileShader(fragment_shader_);
         if (!ValidateShader(fragment_shader_)) {
             return false;

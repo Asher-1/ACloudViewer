@@ -219,14 +219,12 @@ if __name__ == '__main__':
     albedo, envmap = run_estimation(mesh, cam_info, input_image, args.env_width,
                                     args.iterations, args.total_variation)
 
-
     # Save maps
     def save_image(img, name, output_dir):
         # scale to 0-255
         texture = cv3d.core.Tensor(img * 255.0).to(cv3d.core.Dtype.UInt8)
         texture = cv3d.t.geometry.Image(texture)
         cv3d.t.io.write_image(str(output_dir / name), texture)
-
 
     print('Saving final results...')
     save_image(albedo, 'estimated_albedo.png', datadir)

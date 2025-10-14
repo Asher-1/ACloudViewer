@@ -42,8 +42,7 @@ public:
     /// the renderer.
     /// 3. If an added geometry is changed, programmer must call
     /// UpdateGeometry() to notify the renderer.
-    virtual bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) = 0;
+    virtual bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) = 0;
 
     /// Function to update geometry
     /// Programmer must call this function to notify a change of the geometry
@@ -54,8 +53,7 @@ public:
         return geometry_ptr_;
     }
 
-    bool HasGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) const {
+    bool HasGeometry(std::shared_ptr<const ccHObject> geometry_ptr) const {
         return geometry_ptr_ == geometry_ptr;
     }
 
@@ -73,8 +71,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -90,8 +87,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -113,32 +109,31 @@ protected:
 
 class PolylineRenderer : public GeometryRenderer {
 public:
-	~PolylineRenderer() override {}
+    ~PolylineRenderer() override {}
 
 public:
-	bool Render(const RenderOption &option, const ViewControl &view) override;
-	bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
-	bool UpdateGeometry() override;
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool UpdateGeometry() override;
 
 protected:
-	SimpleShaderForPolyline simple_polyline_shader_;
+    SimpleShaderForPolyline simple_polyline_shader_;
 };
 
 class FacetRenderer : public GeometryRenderer {
 public:
-	~FacetRenderer() override {}
+    ~FacetRenderer() override {}
 
 public:
-	bool Render(const RenderOption &option, const ViewControl &view) override;
-	bool AddGeometry(
-		std::shared_ptr<const ccHObject> geometry_ptr) override;
-	bool UpdateGeometry() override;
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool UpdateGeometry() override;
 
 protected:
-	SimpleShaderForTriangleMesh simple_shader_for_normal_;
-	PhongShaderForTriangleMesh phong_shader_for_polygon_;
-	SimpleShaderForTriangleMesh simple_shader_for_polygon_;
-	SimpleShaderForPolyline simple_polyline_shader_;
+    SimpleShaderForTriangleMesh simple_shader_for_normal_;
+    PhongShaderForTriangleMesh phong_shader_for_polygon_;
+    SimpleShaderForTriangleMesh simple_shader_for_polygon_;
+    SimpleShaderForPolyline simple_polyline_shader_;
 };
 
 class OrientedBoundingBoxRenderer : public GeometryRenderer {
@@ -147,7 +142,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-	bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -160,7 +155,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-	bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr);
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr);
     bool UpdateGeometry() override;
 
 protected:
@@ -174,8 +169,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -222,8 +216,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -237,8 +230,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -252,8 +244,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -266,8 +257,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -280,8 +270,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -294,8 +283,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -309,8 +297,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:

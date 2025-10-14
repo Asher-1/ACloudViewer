@@ -5,10 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include "cloudViewer/core/linalg/BlasWrapper.h"
 #include "cloudViewer/core/linalg/LinalgUtils.h"
 #include "cloudViewer/core/linalg/Matmul.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

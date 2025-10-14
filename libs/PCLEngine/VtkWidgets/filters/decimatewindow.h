@@ -1,15 +1,20 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef DECIMATEWINDOW_H
 #define DECIMATEWINDOW_H
 
 #include "filterwindow.h"
 
-namespace Ui
-{
-    class DecimateConfig;
+namespace Ui {
+class DecimateConfig;
 }
 
-class DecimateWindow : public FilterWindow
-{
+class DecimateWindow : public FilterWindow {
     Q_OBJECT
 public:
     explicit DecimateWindow(QWidget* parent = nullptr);
@@ -51,4 +56,4 @@ private:
     int m_degree;
 };
 
-#endif // DECIMATEWINDOW_H
+#endif  // DECIMATEWINDOW_H

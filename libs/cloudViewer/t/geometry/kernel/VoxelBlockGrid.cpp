@@ -7,13 +7,14 @@
 
 #include "cloudViewer/t/geometry/kernel/VoxelBlockGrid.h"
 
+#include <Logging.h>
+
 #include <vector>
 
 #include "cloudViewer/core/CUDAUtils.h"
 #include "cloudViewer/core/ShapeUtil.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/hashmap/HashMap.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -83,13 +84,13 @@ void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
 
 #define DISPATCH_VALUE_DTYPE_TO_TEMPLATE(WEIGHT_DTYPE, COLOR_DTYPE, ...)    \
     [&] {                                                                   \
-        if (WEIGHT_DTYPE == cloudViewer::core::Float32 &&                        \
-            COLOR_DTYPE == cloudViewer::core::Float32) {                         \
+        if (WEIGHT_DTYPE == cloudViewer::core::Float32 &&                   \
+            COLOR_DTYPE == cloudViewer::core::Float32) {                    \
             using weight_t = float;                                         \
             using color_t = float;                                          \
             return __VA_ARGS__();                                           \
-        } else if (WEIGHT_DTYPE == cloudViewer::core::UInt16 &&                  \
-                   COLOR_DTYPE == cloudViewer::core::UInt16) {                   \
+        } else if (WEIGHT_DTYPE == cloudViewer::core::UInt16 &&             \
+                   COLOR_DTYPE == cloudViewer::core::UInt16) {              \
             using weight_t = uint16_t;                                      \
             using color_t = uint16_t;                                       \
             return __VA_ARGS__();                                           \
@@ -104,13 +105,13 @@ void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
 
 #define DISPATCH_INPUT_DTYPE_TO_TEMPLATE(DEPTH_DTYPE, COLOR_DTYPE, ...)        \
     [&] {                                                                      \
-        if (DEPTH_DTYPE == cloudViewer::core::Float32 &&                            \
-            COLOR_DTYPE == cloudViewer::core::Float32) {                            \
+        if (DEPTH_DTYPE == cloudViewer::core::Float32 &&                       \
+            COLOR_DTYPE == cloudViewer::core::Float32) {                       \
             using input_depth_t = float;                                       \
             using input_color_t = float;                                       \
             return __VA_ARGS__();                                              \
-        } else if (DEPTH_DTYPE == cloudViewer::core::UInt16 &&                      \
-                   COLOR_DTYPE == cloudViewer::core::UInt8) {                       \
+        } else if (DEPTH_DTYPE == cloudViewer::core::UInt16 &&                 \
+                   COLOR_DTYPE == cloudViewer::core::UInt8) {                  \
             using input_depth_t = uint16_t;                                    \
             using input_color_t = uint8_t;                                     \
             return __VA_ARGS__();                                              \
@@ -260,7 +261,8 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
                             range_map_down_factor);
                 });
 
-    } else if (hashmap->GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    } else if (hashmap->GetDevice().GetType() ==
+               core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {

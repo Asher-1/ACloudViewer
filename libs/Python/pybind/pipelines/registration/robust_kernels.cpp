@@ -1,20 +1,15 @@
-
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-// @author Ignacio Vizzo     [ivizzo@uni-bonn.de]
-//
-// Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
-// ----------------------------------------------------------------------------
 
 #include <Logging.h>
+
 #include <memory>
 
 #include "pipelines/registration/RobustKernel.h"
-
 #include "pybind/docstring.h"
 #include "pybind/pipelines/registration/registration.h"
 
@@ -187,8 +182,9 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
   \end{equation}
 )");
     py::detail::bind_copy_functions<HuberLoss>(h_loss);
-    h_loss.def(py::init(
-                       [](double k) { return cloudViewer::make_shared<HuberLoss>(k); }),
+    h_loss.def(py::init([](double k) {
+                   return cloudViewer::make_shared<HuberLoss>(k);
+               }),
                "k"_a)
             .def("__repr__",
                  [](const HuberLoss &rk) {
@@ -251,7 +247,9 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
   \end{equation}
 )");
     py::detail::bind_copy_functions<GMLoss>(gm_loss);
-    gm_loss.def(py::init([](double k) { return cloudViewer::make_shared<GMLoss>(k); }),
+    gm_loss.def(py::init([](double k) {
+                    return cloudViewer::make_shared<GMLoss>(k);
+                }),
                 "k"_a)
             .def("__repr__",
                  [](const GMLoss &rk) {
@@ -287,8 +285,9 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
   \end{equation}
 )");
     py::detail::bind_copy_functions<TukeyLoss>(t_loss);
-    t_loss.def(py::init(
-                       [](double k) { return cloudViewer::make_shared<TukeyLoss>(k); }),
+    t_loss.def(py::init([](double k) {
+                   return cloudViewer::make_shared<TukeyLoss>(k);
+               }),
                "k"_a)
             .def("__repr__",
                  [](const TukeyLoss &tk) {

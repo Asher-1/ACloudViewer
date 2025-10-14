@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/MemoryManager.h"
@@ -19,7 +21,6 @@
 #include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
 #include "cloudViewer/t/geometry/kernel/VoxelBlockGrid.h"
 #include "cloudViewer/t/geometry/kernel/VoxelBlockGridImpl.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -142,51 +143,55 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     index_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        core::ParallelFor(device, n, [=] CLOUDVIEWER_DEVICE(index_t workload_idx) {
-            index_t y = (workload_idx / cols_strided) * stride;
-            index_t x = (workload_idx % cols_strided) * stride;
+        core::ParallelFor(
+                device, n, [=] CLOUDVIEWER_DEVICE(index_t workload_idx) {
+                    index_t y = (workload_idx / cols_strided) * stride;
+                    index_t x = (workload_idx % cols_strided) * stride;
 
-            float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) / depth_scale;
-            if (d > 0 && d < depth_max) {
-                float x_c = 0, y_c = 0, z_c = 0;
-                ti.Unproject(static_cast<float>(x), static_cast<float>(y), 1.0,
-                             &x_c, &y_c, &z_c);
-                float x_g = 0, y_g = 0, z_g = 0;
-                ti.RigidTransform(x_c, y_c, z_c, &x_g, &y_g, &z_g);
+                    float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) /
+                              depth_scale;
+                    if (d > 0 && d < depth_max) {
+                        float x_c = 0, y_c = 0, z_c = 0;
+                        ti.Unproject(static_cast<float>(x),
+                                     static_cast<float>(y), 1.0, &x_c, &y_c,
+                                     &z_c);
+                        float x_g = 0, y_g = 0, z_g = 0;
+                        ti.RigidTransform(x_c, y_c, z_c, &x_g, &y_g, &z_g);
 
-                // Origin
-                float x_o = 0, y_o = 0, z_o = 0;
-                ti.GetCameraPosition(&x_o, &y_o, &z_o);
+                        // Origin
+                        float x_o = 0, y_o = 0, z_o = 0;
+                        ti.GetCameraPosition(&x_o, &y_o, &z_o);
 
-                // Direction
-                float x_d = x_g - x_o;
-                float y_d = y_g - y_o;
-                float z_d = z_g - z_o;
+                        // Direction
+                        float x_d = x_g - x_o;
+                        float y_d = y_g - y_o;
+                        float z_d = z_g - z_o;
 
-                const float t_min = max(d - sdf_trunc, 0.0);
-                const float t_max = min(d + sdf_trunc, depth_max);
-                const float t_step = (t_max - t_min) / step_size;
+                        const float t_min = max(d - sdf_trunc, 0.0);
+                        const float t_max = min(d + sdf_trunc, depth_max);
+                        const float t_step = (t_max - t_min) / step_size;
 
-                float t = t_min;
-                index_t idx = OPEN3D_ATOMIC_ADD(count_ptr, (step_size + 1));
-                for (index_t step = 0; step <= step_size; ++step) {
-                    index_t offset = (step + idx) * 3;
+                        float t = t_min;
+                        index_t idx =
+                                OPEN3D_ATOMIC_ADD(count_ptr, (step_size + 1));
+                        for (index_t step = 0; step <= step_size; ++step) {
+                            index_t offset = (step + idx) * 3;
 
-                    index_t xb = static_cast<index_t>(
-                            floorf((x_o + t * x_d) / block_size));
-                    index_t yb = static_cast<index_t>(
-                            floorf((y_o + t * y_d) / block_size));
-                    index_t zb = static_cast<index_t>(
-                            floorf((z_o + t * z_d) / block_size));
+                            index_t xb = static_cast<index_t>(
+                                    floorf((x_o + t * x_d) / block_size));
+                            index_t yb = static_cast<index_t>(
+                                    floorf((y_o + t * y_d) / block_size));
+                            index_t zb = static_cast<index_t>(
+                                    floorf((z_o + t * z_d) / block_size));
 
-                    block_coordi_ptr[offset + 0] = xb;
-                    block_coordi_ptr[offset + 1] = yb;
-                    block_coordi_ptr[offset + 2] = zb;
+                            block_coordi_ptr[offset + 0] = xb;
+                            block_coordi_ptr[offset + 1] = yb;
+                            block_coordi_ptr[offset + 2] = zb;
 
-                    t += t_step;
-                }
-            }
-        });
+                            t += t_step;
+                        }
+                    }
+                });
     });
 
     index_t total_block_count = static_cast<index_t>(count[0].Item<index_t>());

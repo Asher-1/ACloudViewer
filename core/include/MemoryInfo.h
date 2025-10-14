@@ -8,16 +8,15 @@
 #pragma once
 
 // LOCAL
-#include "CVCoreLib.h"
-
 #include <cstddef>
 #include <ostream>
+
+#include "CVCoreLib.h"
 
 namespace cloudViewer {
 namespace system {
 
-struct CV_CORE_LIB_API MemoryInfo
-{
+struct CV_CORE_LIB_API MemoryInfo {
     std::size_t totalRam{0};
     std::size_t freeRam{0};
     std::size_t availableRam{0};
@@ -32,6 +31,5 @@ MemoryInfo CV_CORE_LIB_API getMemoryInfo();
 
 std::ostream& operator<<(std::ostream& os, const MemoryInfo& infos);
 
-}
-}
-
+}  // namespace system
+}  // namespace cloudViewer

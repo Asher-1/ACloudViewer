@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_DISPLAY_OPTIONS_DIALOG_HEADER
 #define ECV_DISPLAY_OPTIONS_DIALOG_HEADER
@@ -28,93 +18,90 @@
 // ECV_DB_LIB
 #include <ecvGuiParameters.h>
 
-//Qt
+// Qt
 #include <QDialog>
 
-//system
+// system
 #include <cassert>
 
-namespace Ui
-{
-	class DisplayOptionsDlg;
+namespace Ui {
+class DisplayOptionsDlg;
 }
 
 //! Dialog to setup display settings
-class CVAPPCOMMON_LIB_API ccDisplayOptionsDlg : public QDialog
-{
-	Q_OBJECT
+class CVAPPCOMMON_LIB_API ccDisplayOptionsDlg : public QDialog {
+    Q_OBJECT
 
 public:
-	explicit ccDisplayOptionsDlg(QWidget* parent);
-	~ccDisplayOptionsDlg() override;
+    explicit ccDisplayOptionsDlg(QWidget* parent);
+    ~ccDisplayOptionsDlg() override;
 
 signals:
-	void aspectHasChanged();
+    void aspectHasChanged();
 
 public slots:
-	void changeBackgroundColor();
+    void changeBackgroundColor();
 
 protected slots:
-	void changeLightDiffuseColor();
-	void changeLightAmbientColor();
-	void changeLightSpecularColor();
-	void changeMeshFrontDiffuseColor();
-	void changeMeshBackDiffuseColor();
-	void changeMeshSpecularColor();
-	void changePointsColor();
-	void changeTextColor();
-	void changeLabelBackgroundColor();
-	void changeLabelMarkerColor();
-	void changeMaxMeshSize(double);
-	void changeMaxCloudSize(double);
-	void changeVBOUsage();
-	void changeColorScaleRampWidth(int);
-	void changeBBColor();
-	void changeDefaultFontSize(int);
-	void changeLabelFontSize(int);
-	void changeNumberPrecision(int);
-	void changeLabelOpacity(int);
-	void changeLabelMarkerSize(int);
+    void changeLightDiffuseColor();
+    void changeLightAmbientColor();
+    void changeLightSpecularColor();
+    void changeMeshFrontDiffuseColor();
+    void changeMeshBackDiffuseColor();
+    void changeMeshSpecularColor();
+    void changePointsColor();
+    void changeTextColor();
+    void changeLabelBackgroundColor();
+    void changeLabelMarkerColor();
+    void changeMaxMeshSize(double);
+    void changeMaxCloudSize(double);
+    void changeVBOUsage();
+    void changeColorScaleRampWidth(int);
+    void changeBBColor();
+    void changeDefaultFontSize(int);
+    void changeLabelFontSize(int);
+    void changeNumberPrecision(int);
+    void changeLabelOpacity(int);
+    void changeLabelMarkerSize(int);
 
-	void changeZoomSpeed(double);
+    void changeZoomSpeed(double);
 
-	void changeAutoComputeOctreeOption(int);
+    void changeAutoComputeOctreeOption(int);
 
-	void doAccept();
-	void doReject();
-	void apply();
-	void reset();
+    void doAccept();
+    void doReject();
+    void apply();
+    void reset();
 
 protected:
+    //! Refreshes dialog to reflect new parameters values
+    void refresh();
 
-	//! Refreshes dialog to reflect new parameters values
-	void refresh();
+    QColor lightDiffuseColor;
+    QColor lightAmbientColor;
+    QColor lightSpecularColor;
+    QColor meshFrontDiff;
+    QColor meshBackDiff;
+    QColor meshSpecularColor;
+    QColor pointsDefaultCol;
+    QColor textDefaultCol;
+    QColor backgroundCol;
+    QColor labelBackgroundCol;
+    QColor labelMarkerCol;
+    QColor bbDefaultCol;
 
-	QColor lightDiffuseColor;
-	QColor lightAmbientColor;
-	QColor lightSpecularColor;
-	QColor meshFrontDiff;
-	QColor meshBackDiff;
-	QColor meshSpecularColor;
-	QColor pointsDefaultCol;
-	QColor textDefaultCol;
-	QColor backgroundCol;
-	QColor labelBackgroundCol;
-	QColor labelMarkerCol;
-	QColor bbDefaultCol;
+    //! Current GUI parameters
+    ecvGui::ParamStruct parameters;
+    //! Current options
+    ecvOptions options;
 
-	//! Current GUI parameters
-	ecvGui::ParamStruct parameters;
-	//! Current options
-	ecvOptions options;
-
-	//! Old parameters (for restore)
-	ecvGui::ParamStruct oldParameters;
-	//! Old options (for restore)
-	ecvOptions oldOptions;
+    //! Old parameters (for restore)
+    ecvGui::ParamStruct oldParameters;
+    //! Old options (for restore)
+    ecvOptions oldOptions;
 
 private:
-	Ui::DisplayOptionsDlg* m_ui;
+    Ui::DisplayOptionsDlg* m_ui;
 };
 
 #endif

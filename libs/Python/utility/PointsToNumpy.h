@@ -8,10 +8,9 @@
 #ifndef ECV_POINTS_TO_NUMPY_HEADER
 #define ECV_POINTS_TO_NUMPY_HEADER
 
-#include "eCV_python.h"
-
 #include <CVConst.h>
 
+#include "eCV_python.h"
 #include "utility/Matrix.h"
 
 class ccHObject;
@@ -24,23 +23,25 @@ namespace utility {
 /// itself to/from a json::Value.
 class ECV_PYTHON_LIB_API Points2Numpy {
 public:
-	explicit Points2Numpy();
+    explicit Points2Numpy();
 
-	void setInputCloud(const ccPointCloud* cloud);
-	
-	bool getOutputData(Matrix<PointCoordinateType> &out);
+    void setInputCloud(const ccPointCloud* cloud);
 
-	void batchConvertToNumpy(const ccHObject* cloud, std::vector< Matrix<PointCoordinateType> >& numpyContainer);
+    bool getOutputData(Matrix<PointCoordinateType>& out);
+
+    void batchConvertToNumpy(
+            const ccHObject* cloud,
+            std::vector<Matrix<PointCoordinateType>>& numpyContainer);
 
 private:
-	//! Associated cloud
-	const ccPointCloud* m_cc_cloud;
+    //! Associated cloud
+    const ccPointCloud* m_cc_cloud;
 
-	bool m_partialVisibility;
-	unsigned m_visibilityNum;
+    bool m_partialVisibility;
+    unsigned m_visibilityNum;
 };
 
 }  // namespace utility
 }  // namespace cloudViewer
 
-#endif // ECV_POINTS_TO_NUMPY_HEADER
+#endif  // ECV_POINTS_TO_NUMPY_HEADER

@@ -1,42 +1,46 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef BASEWIDGETWINDOW_H
 #define BASEWIDGETWINDOW_H
 
-#include <QWidget>
-
 #include <vtkSmartPointer.h>
+
+#include <QWidget>
 
 #include "ui_basewidgetwindow.h"
 
-//namespace Ui
+// namespace Ui
 //{
-//    class BaseWidgetWindow;
-//}
+//     class BaseWidgetWindow;
+// }
 
-namespace VtkUtils
-{
-    class VtkWidget;
+namespace VtkUtils {
+class VtkWidget;
 }
 
 class vtkActor;
 class vtkAbstractWidget;
 class ccHObject;
-class BaseWidgetWindow : public QWidget
-{
+class BaseWidgetWindow : public QWidget {
     Q_OBJECT
 
 public:
-    explicit BaseWidgetWindow(QWidget *parent = nullptr);
+    explicit BaseWidgetWindow(QWidget* parent = nullptr);
     ~BaseWidgetWindow();
 
     virtual void createWidget() = 0;
 
-	bool setInput(const ccHObject* obj);
-	ccHObject* getOutput() const;
+    bool setInput(const ccHObject* obj);
+    ccHObject* getOutput() const;
 
 protected:
     template <class T>
-    void setupConfigWidget(T* ui)
-    {
+    void setupConfigWidget(T* ui) {
         QWidget* configWidget = new QWidget(this);
         ui->setupUi(configWidget);
         m_ui->setupUi(this);
@@ -51,4 +55,4 @@ protected:
     vtkSmartPointer<vtkActor> m_theActor;
 };
 
-#endif // BASEWIDGETWINDOW_H
+#endif  // BASEWIDGETWINDOW_H

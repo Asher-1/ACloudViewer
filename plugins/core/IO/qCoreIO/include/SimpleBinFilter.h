@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                        COPYRIGHT: CNRS / OSUR                          #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_SIMPLE_BIN_FILTER_HEADER
 #define ECV_SIMPLE_BIN_FILTER_HEADER
@@ -21,19 +11,23 @@
 #include "FileIOFilter.h"
 
 //! Simple binary file (with attached text meta-file)
-class SimpleBinFilter : public FileIOFilter
-{
+class SimpleBinFilter : public FileIOFilter {
 public:
-	SimpleBinFilter();
+    SimpleBinFilter();
 
-	//inherited from FileIOFilter
-	virtual CC_FILE_ERROR loadFile(const QString& filename, ccHObject& container, LoadParameters& parameters) override;
-	
-	virtual bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const override;
-	virtual CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
+    // inherited from FileIOFilter
+    virtual CC_FILE_ERROR loadFile(const QString& filename,
+                                   ccHObject& container,
+                                   LoadParameters& parameters) override;
+
+    virtual bool canSave(CV_CLASS_ENUM type,
+                         bool& multiple,
+                         bool& exclusive) const override;
+    virtual CC_FILE_ERROR saveToFile(ccHObject* entity,
+                                     const QString& filename,
+                                     const SaveParameters& parameters) override;
 
 protected:
-
 };
 
-#endif // ECV_SIMPLE_BIN_FILTER_HEADER
+#endif  // ECV_SIMPLE_BIN_FILTER_HEADER

@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef ACTOREXPORTER_H
 #define ACTOREXPORTER_H
 
@@ -7,11 +14,9 @@
 #include "../qPCL.h"
 
 class vtkActor;
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-class QPCL_ENGINE_LIB_API ActorExporter : public QRunnable
-{
+class QPCL_ENGINE_LIB_API ActorExporter : public QRunnable {
 public:
     ActorExporter(vtkActor* actor, const QString& file);
 
@@ -22,5 +27,5 @@ protected:
     QString m_exportFile;
 };
 
-} // namespace VtkUtils
-#endif // ACTOREXPORTER_H
+}  // namespace VtkUtils
+#endif  // ACTOREXPORTER_H

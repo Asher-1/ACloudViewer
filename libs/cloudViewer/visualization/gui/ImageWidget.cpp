@@ -7,9 +7,9 @@
 
 #include "visualization/gui/ImageWidget.h"
 
+#include <Image.h>
 #include <imgui.h>
 
-#include <Image.h>
 #include "visualization/gui/Theme.h"
 #include "visualization/gui/Util.h"
 
@@ -22,8 +22,8 @@ struct ImageWidget::Impl {
 };
 
 ImageWidget::ImageWidget() : impl_(new ImageWidget::Impl()) {
-    impl_->image_ =
-            cloudViewer::make_shared<UIImage>(cloudViewer::make_shared<geometry::Image>());
+    impl_->image_ = cloudViewer::make_shared<UIImage>(
+            cloudViewer::make_shared<geometry::Image>());
 }
 
 ImageWidget::ImageWidget(const char* image_path)
@@ -47,7 +47,8 @@ ImageWidget::ImageWidget(visualization::rendering::TextureHandle texture_id,
                          float u1 /*= 1.0f*/,
                          float v1 /*= 1.0f*/)
     : impl_(new ImageWidget::Impl()) {
-    impl_->image_ = cloudViewer::make_shared<UIImage>(texture_id, u0, v0, u1, v1);
+    impl_->image_ =
+            cloudViewer::make_shared<UIImage>(texture_id, u0, v0, u1, v1);
 }
 
 ImageWidget::ImageWidget(std::shared_ptr<UIImage> image)

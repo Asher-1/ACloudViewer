@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifdef USE_VLD
 // VLD
@@ -2700,7 +2690,8 @@ void ecvDisplayTools::ShowPivotSymbol(bool state) {
 }
 
 int ecvDisplayTools::GetFontPointSize() {
-    return GetOptimizedFontSize(s_tools.instance->m_captureMode.enabled
+    return GetOptimizedFontSize(
+            s_tools.instance->m_captureMode.enabled
                     ? FontSizeModifier(
                               GetDisplayParameters().defaultFontSize,
                               s_tools.instance->m_captureMode.zoomFactor)
@@ -2708,7 +2699,8 @@ int ecvDisplayTools::GetFontPointSize() {
 }
 
 int ecvDisplayTools::GetLabelFontPointSize() {
-    return GetOptimizedFontSize(s_tools.instance->m_captureMode.enabled
+    return GetOptimizedFontSize(
+            s_tools.instance->m_captureMode.enabled
                     ? FontSizeModifier(
                               GetDisplayParameters().labelFontSize,
                               s_tools.instance->m_captureMode.zoomFactor)
@@ -2892,11 +2884,11 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
             int x = s_tools.instance->m_glViewport.width() / 2 - 100;
             int margin = font_size / 2;
             int y = margin;
-            
 
             // draw black background
             {
-                int height = (s_tools.instance->m_diagStrings.size() + 1) * (fm.height() + margin);
+                int height = (s_tools.instance->m_diagStrings.size() + 1) *
+                             (fm.height() + margin);
                 WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
                                         DEBUG_LAYER_ID);
                 param.color = ecvColor::dark;
@@ -2908,8 +2900,8 @@ void ecvDisplayTools::RedrawDisplay(bool only2D /*=false*/,
             }
             y += margin;
             for (const QString& str : s_tools.instance->m_diagStrings) {
-                RenderText(x + font_size, y + font_size, str, font, ecvColor::yellow,
-                           DEBUG_LAYER_ID);
+                RenderText(x + font_size, y + font_size, str, font,
+                           ecvColor::yellow, DEBUG_LAYER_ID);
                 y += fm.height() + margin;
             }
         }
@@ -3114,7 +3106,8 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
 
     /*** overlay entities ***/
     if (s_tools.instance->m_displayOverlayEntities) {
-        // const ecvColor::Rgbub& textCol = GetDisplayParameters().textDefaultCol;
+        // const ecvColor::Rgbub& textCol =
+        // GetDisplayParameters().textDefaultCol;
 
         if (!s_tools.instance->m_captureMode.enabled ||
             s_tools.instance->m_captureMode.renderOverlayItems) {
@@ -3135,19 +3128,24 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
                 QFont font = s_tools.instance->m_font;
                 QFontMetrics fm(font);
                 int margin = fm.height() / 4;
-                int ll_currentHeight = s_tools.instance->m_glViewport.height() - 10;
+                int ll_currentHeight =
+                        s_tools.instance->m_glViewport.height() - 10;
                 int uc_currentHeight = 10;
 
-                for (const auto& message : s_tools.instance->m_messagesToDisplay) {
+                for (const auto& message :
+                     s_tools.instance->m_messagesToDisplay) {
                     switch (message.position) {
                         case LOWER_LEFT_MESSAGE: {
-                            RenderText(10, ll_currentHeight, message.message, font);
+                            RenderText(10, ll_currentHeight, message.message,
+                                       font);
                             int messageHeight = fm.height();
                             ll_currentHeight -= (messageHeight + margin);
                         } break;
                         case UPPER_CENTER_MESSAGE: {
                             QRect rect = fm.boundingRect(message.message);
-                            int x = (s_tools.instance->m_glViewport.width() - rect.width()) / 2;
+                            int x = (s_tools.instance->m_glViewport.width() -
+                                     rect.width()) /
+                                    2;
                             int y = uc_currentHeight + rect.height();
                             RenderText(x, y, message.message, font);
                             uc_currentHeight += (rect.height() + margin);
@@ -3156,10 +3154,16 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
                             QFont newFont(font);
                             int fontSize = GetOptimizedFontSize(12);
                             newFont.setPointSize(fontSize);
-                            QRect rect = QFontMetrics(newFont).boundingRect(message.message);
-                            RenderText((s_tools.instance->m_glViewport.width() - rect.width()) / 2,
-                                       (s_tools.instance->m_glViewport.height() - rect.height()) / 2,
-                                       message.message, newFont);
+                            QRect rect = QFontMetrics(newFont).boundingRect(
+                                    message.message);
+                            RenderText(
+                                    (s_tools.instance->m_glViewport.width() -
+                                     rect.width()) /
+                                            2,
+                                    (s_tools.instance->m_glViewport.height() -
+                                     rect.height()) /
+                                            2,
+                                    message.message, newFont);
                         } break;
                     }
                 }
@@ -3350,7 +3354,6 @@ void ecvDisplayTools::DisplayText(
         else if (align & ALIGN_VBOTTOM)
             y2 += rect.height();
 
-    
         // background is not totally transparent
         if (bkgAlpha != 0.0f) {
             // inverted color with a bit of transparency
@@ -3384,9 +3387,10 @@ void ecvDisplayTools::DisplayText(
 #ifdef Q_OS_MAC
             // fix name3d background issues on mac
             param.rect.setWidth(param.rect.width() * 2);
-            // Note: should be moved to the top of the screen (equal to move bottom) in GL coordinates.
+            // Note: should be moved to the top of the screen (equal to move
+            // bottom) in GL coordinates.
             param.rect.moveTop(std::min(s_tools.instance->m_glViewport.height(),
-                                param.rect.y() + 2 * margin));
+                                        param.rect.y() + 2 * margin));
 #endif
 
             DrawWidgets(param, true);
@@ -3435,10 +3439,15 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
     if (!s_tools.instance->m_hotZone) {
         s_tools.instance->m_hotZone =
                 new HotZone(ecvDisplayTools::GetCurrentScreen());
-    } else if (GetPlatformAwareDPIScale() != s_tools.instance->m_hotZone->pixelDeviceRatio) // the device pixel ratio has changed (happens when changing screen for instance)
-	{
-		s_tools.instance->m_hotZone->updateInternalVariables(ecvDisplayTools::GetCurrentScreen());
-	}
+    } else if (GetPlatformAwareDPIScale() !=
+               s_tools.instance->m_hotZone
+                       ->pixelDeviceRatio)  // the device pixel ratio has
+                                            // changed (happens when changing
+                                            // screen for instance)
+    {
+        s_tools.instance->m_hotZone->updateInternalVariables(
+                ecvDisplayTools::GetCurrentScreen());
+    }
 
     // remember the last position of the 'top corner'
     s_tools.instance->m_hotZone->topCorner =
@@ -3455,7 +3464,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
         return;
     }
 
-     //"exit" icon
+    //"exit" icon
     // static const QImage c_exitIcon =
     // QImage(":/Resources/images/ecvExit.png").mirrored();
     int fullW = s_tools.instance->m_glViewport.width();
@@ -3494,7 +3503,8 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
 
         // label
         RenderText(xStart,
-                   yStart + offset + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                   yStart + offset +
+                           s_tools.instance->m_hotZone->yTextBottomLineShift,
                    s_tools.instance->m_hotZone->fs_label,
                    s_tools.instance->m_hotZone->font,
                    ecvColor::defaultLabelBkgColor, CLICKED_ITEMS);
@@ -3520,8 +3530,9 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
             WIDGETS_PARAMETER texParam(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS);
             texParam.color = ecvColor::bright;
             texParam.text = "Exit";
-            texParam.rect = QRect(x0, fullH - (yStart + offset / 2 + 3 * iconSize / 4),
-                                  iconSize, iconSize);
+            texParam.rect =
+                    QRect(x0, fullH - (yStart + offset / 2 + 3 * iconSize / 4),
+                          iconSize, iconSize);
             texParam.fontSize = s_tools.instance->m_hotZone->font.pointSize();
             DrawWidgets(texParam, false);
             s_tools.instance->m_clickableItems.emplace_back(
@@ -3539,7 +3550,8 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
 
         // label
         RenderText(xStart,
-                   yStart + offset + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                   yStart + offset +
+                           s_tools.instance->m_hotZone->yTextBottomLineShift,
                    s_tools.instance->m_hotZone->bbv_label,
                    s_tools.instance->m_hotZone->font);
 
@@ -3581,7 +3593,8 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
 
             RenderText(
                     xStart,
-                    yStart + offset + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                    yStart + offset +
+                            s_tools.instance->m_hotZone->yTextBottomLineShift,
                     s_tools.instance->m_hotZone->psi_label,
                     s_tools.instance->m_hotZone->font, textColor,
                     CLICKED_ITEMS);
@@ -3650,7 +3663,8 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
 
             RenderText(
                     xStart,
-                    yStart + offset + s_tools.instance->m_hotZone->yTextBottomLineShift,
+                    yStart + offset +
+                            s_tools.instance->m_hotZone->yTextBottomLineShift,
                     s_tools.instance->m_hotZone->lsi_label,
                     s_tools.instance->m_hotZone->font, textColor,
                     CLICKED_ITEMS);

@@ -1,19 +1,9 @@
-// ##########################################################################
-// #                                                                        #
-// #                              CLOUDVIEWER                               #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_HIERARCHY_OBJECT_HEADER
 #define ECV_HIERARCHY_OBJECT_HEADER
@@ -661,8 +651,7 @@ protected:
 
     //! Draws the entity only (not its children)
     virtual void drawMeOnly(
-            CC_DRAW_CONTEXT& context) { /*does nothing by default*/
-    }
+            CC_DRAW_CONTEXT& context) { /*does nothing by default*/ }
 
     //! Applies a GL transformation to the entity
     /** this = rotMat*(this-rotCenter)+(rotCenter+trans)
@@ -702,8 +691,7 @@ protected:
     //! This method is called when another object (geometry) is updated
     /** For internal use.
      **/
-    virtual void onUpdateOf(ccHObject* obj) { /*does nothing by default*/
-    }
+    virtual void onUpdateOf(ccHObject* obj) { /*does nothing by default*/ }
 
     //! Parent
     ccHObject* m_parent;

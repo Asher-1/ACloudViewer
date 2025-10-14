@@ -9,8 +9,9 @@
 
 #include <LineSet.h>
 #include <ecvMesh.h>
-#include "visualization/utility/DrawGeometry.h"
+
 #include "tests/UnitTest.h"
+#include "visualization/utility/DrawGeometry.h"
 
 namespace cloudViewer {
 namespace tests {

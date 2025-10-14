@@ -1,47 +1,37 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef ECV_MATCH_SCALES_DIALOG_HEADER
 #define ECV_MATCH_SCALES_DIALOG_HEADER
 
 #include <ui_matchScalesDlg.h>
 
-//Local
+// Local
 #include "ecvLibAlgorithms.h"
 
 //! Scales matching tool dialog
-class ccMatchScalesDlg : public QDialog, public Ui::MatchScalesDialog
-{
-	Q_OBJECT
+class ccMatchScalesDlg : public QDialog, public Ui::MatchScalesDialog {
+    Q_OBJECT
 
 public:
-	//! Default constructor
-	ccMatchScalesDlg(	const ccHObject::Container& entities,
-						int defaultSelectedIndex = 0,
-						QWidget* parent = 0);
+    //! Default constructor
+    ccMatchScalesDlg(const ccHObject::Container& entities,
+                     int defaultSelectedIndex = 0,
+                     QWidget* parent = 0);
 
-	//! Returns selected index
-	int getSelectedIndex() const;
+    //! Returns selected index
+    int getSelectedIndex() const;
 
-	//! Sets the selected matching algorithm
-	void setSelectedAlgorithm(ccLibAlgorithms::ScaleMatchingAlgorithm algorithm);
+    //! Sets the selected matching algorithm
+    void setSelectedAlgorithm(
+            ccLibAlgorithms::ScaleMatchingAlgorithm algorithm);
 
-	//! Returns the selected matching algorithm
-	ccLibAlgorithms::ScaleMatchingAlgorithm getSelectedAlgorithm() const;
+    //! Returns the selected matching algorithm
+    ccLibAlgorithms::ScaleMatchingAlgorithm getSelectedAlgorithm() const;
 };
 
-#endif // ECV_ENTITY_PICKER_DIALOG_HEADER
+#endif  // ECV_ENTITY_PICKER_DIALOG_HEADER

@@ -7,12 +7,12 @@
 
 #include "Octree.h"
 
+#include <Logging.h>
 #include <json/json.h>
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <unordered_map>
-
-#include <Logging.h>
 
 #include "VoxelGrid.h"
 #include "ecvBBox.h"
@@ -86,7 +86,6 @@ std::function<void(std::shared_ptr<OctreeInternalNode>)>
 OctreeInternalNode::GetUpdateFunction() {
     return [](std::shared_ptr<geometry::OctreeInternalNode> node) -> void {};
 }
-
 
 bool OctreeInternalNode::ConvertToJsonValue(Json::Value& value) const {
     bool rc = true;
@@ -326,7 +325,7 @@ bool OctreePointColorLeafNode::ConvertFromJsonValue(const Json::Value& value) {
     return true;
 }
 
-Octree::Octree(const Octree& src_octree, const char* name/* = "Octree2"*/)
+Octree::Octree(const Octree& src_octree, const char* name /* = "Octree2"*/)
     : ccHObject(name),
       origin_(src_octree.origin_),
       size_(src_octree.size_),
@@ -341,7 +340,8 @@ Octree::Octree(const Octree& src_octree, const char* name/* = "Octree2"*/)
             -> bool {
         if (auto src_internal_node =
                     std::dynamic_pointer_cast<OctreeInternalNode>(src_node)) {
-            auto dst_internal_node = cloudViewer::make_shared<OctreeInternalNode>();
+            auto dst_internal_node =
+                    cloudViewer::make_shared<OctreeInternalNode>();
             map_src_to_dst_node[src_internal_node] = dst_internal_node;
         } else if (auto src_leaf_node =
                            std::dynamic_pointer_cast<OctreeLeafNode>(
@@ -477,9 +477,8 @@ bool Octree::operator==(const Octree& that) const {
     return rc;
 }
 
-ccBBox Octree::getOwnBB(bool withGLFeatures)
-{
-	return GetAxisAlignedBoundingBox();
+ccBBox Octree::getOwnBB(bool withGLFeatures) {
+    return GetAxisAlignedBoundingBox();
 }
 
 Octree& Octree::Clear() {
@@ -514,12 +513,13 @@ ccBBox Octree::GetAxisAlignedBoundingBox() const {
     ccBBox box;
     box.minCorner() = GetMinBound();
     box.maxCorner() = GetMaxBound();
-	box.setValidity(!box.IsEmpty());
+    box.setValidity(!box.IsEmpty());
     return box;
 }
 
 ecvOrientedBBox Octree::GetOrientedBoundingBox() const {
-    return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(GetAxisAlignedBoundingBox());
+    return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
 }
 
 Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {
@@ -537,7 +537,8 @@ Octree& Octree::Scale(const double s, const Eigen::Vector3d& center) {
     return *this;
 }
 
-Octree& Octree::Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
+Octree& Octree::Rotate(const Eigen::Matrix3d& R,
+                       const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
@@ -565,8 +566,9 @@ void Octree::ConvertFromPointCloud(const ccPointCloud& point_cloud,
     // Insert points
     const bool has_colors = point_cloud.hasColors();
     for (size_t idx = 0; idx < point_cloud.size(); idx++) {
-        const Eigen::Vector3d& color =
-                has_colors ? point_cloud.getEigenColor(idx) : Eigen::Vector3d::Zero();
+        const Eigen::Vector3d& color = has_colors
+                                               ? point_cloud.getEigenColor(idx)
+                                               : Eigen::Vector3d::Zero();
         InsertPoint(point_cloud.getEigenPoint(idx),
                     OctreePointColorLeafNode::GetInitFunction(),
                     OctreePointColorLeafNode::GetUpdateFunction(idx, color),
@@ -671,8 +673,9 @@ void Octree::Traverse(
         const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                  const std::shared_ptr<OctreeNodeInfo>&)>& f) {
     // root_node_'s child index is 0, though it isn't a child node
-    TraverseRecurse(root_node_,
-                    cloudViewer::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0), f);
+    TraverseRecurse(
+            root_node_,
+            cloudViewer::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0), f);
 }
 
 void Octree::Traverse(
@@ -680,8 +683,9 @@ void Octree::Traverse(
                                  const std::shared_ptr<OctreeNodeInfo>&)>& f)
         const {
     // root_node_'s child index is 0, though it isn't a child node
-    TraverseRecurse(root_node_,
-                    cloudViewer::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0), f);
+    TraverseRecurse(
+            root_node_,
+            cloudViewer::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0), f);
 }
 
 void Octree::TraverseRecurse(

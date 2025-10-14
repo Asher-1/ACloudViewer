@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "cloudViewer/core/Tensor.h"
 #include <Logging.h>
+
+#include "cloudViewer/core/Tensor.h"
 
 namespace cloudViewer {
 namespace core {

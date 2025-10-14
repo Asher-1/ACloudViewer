@@ -11,10 +11,9 @@
 
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
-
 #include "visualization/gui/SceneWidget.h"
-#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/CloudViewerScene.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Scene.h"
 
 namespace cloudViewer {

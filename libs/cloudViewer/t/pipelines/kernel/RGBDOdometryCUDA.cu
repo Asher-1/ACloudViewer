@@ -10,15 +10,15 @@
 #include <cub/cub.cuh>
 
 #include "cloudViewer/core/CUDAUtils.h"
-#include "core/Dispatch.h"
-#include "core/ParallelFor.h"
-#include "core/Tensor.h"
 #include "cloudViewer/t/geometry/kernel/GeometryIndexer.h"
 #include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
 #include "cloudViewer/t/pipelines/kernel/RGBDOdometryImpl.h"
 #include "cloudViewer/t/pipelines/kernel/RGBDOdometryJacobianImpl.h"
 #include "cloudViewer/t/pipelines/kernel/TransformationConverter.h"
 #include "cloudViewer/utility/MiniVec.h"
+#include "core/Dispatch.h"
+#include "core/ParallelFor.h"
+#include "core/Tensor.h"
 
 namespace cloudViewer {
 namespace t {

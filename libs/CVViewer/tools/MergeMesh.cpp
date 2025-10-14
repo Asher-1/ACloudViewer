@@ -22,7 +22,7 @@ void PrintHelp() {
     // clang-format on
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     using namespace cloudViewer;
     using namespace cloudViewer::utility::filesystem;
 
@@ -38,31 +38,30 @@ int main(int argc, char **argv) {
     std::vector<std::string> filenames;
     ListFilesInDirectory(directory, filenames);
 
-	ccPointCloud* merged_baseVertex = new ccPointCloud("vertices");
-	assert(merged_baseVertex);
-	merged_baseVertex->setEnabled(false);
-	merged_baseVertex->setLocked(false);
+    ccPointCloud* merged_baseVertex = new ccPointCloud("vertices");
+    assert(merged_baseVertex);
+    merged_baseVertex->setEnabled(false);
+    merged_baseVertex->setLocked(false);
     auto merged_mesh_ptr = cloudViewer::make_shared<ccMesh>(merged_baseVertex);
-	merged_mesh_ptr->addChild(merged_baseVertex);
-    for (const auto &filename : filenames) {
-		ccPointCloud* baseVertices = new ccPointCloud("vertices");
-		assert(baseVertices);
-		baseVertices->setEnabled(false);
-		// DGM: no need to lock it as it is only used by one mesh!
-		baseVertices->setLocked(false);
+    merged_mesh_ptr->addChild(merged_baseVertex);
+    for (const auto& filename : filenames) {
+        ccPointCloud* baseVertices = new ccPointCloud("vertices");
+        assert(baseVertices);
+        baseVertices->setEnabled(false);
+        // DGM: no need to lock it as it is only used by one mesh!
+        baseVertices->setLocked(false);
         auto mesh_ptr = cloudViewer::make_shared<ccMesh>(baseVertices);
-		mesh_ptr->addChild(baseVertices);
+        mesh_ptr->addChild(baseVertices);
         if (cloudViewer::io::ReadTriangleMesh(filename, *mesh_ptr)) {
-			//do some cleaning
-			{
-				baseVertices->shrinkToFit();
-				mesh_ptr->shrinkToFit();
-				NormsIndexesTableType* normals = mesh_ptr->getTriNormsTable();
-				if (normals)
-				{
-					normals->shrink_to_fit();
-				}
-			}
+            // do some cleaning
+            {
+                baseVertices->shrinkToFit();
+                mesh_ptr->shrinkToFit();
+                NormsIndexesTableType* normals = mesh_ptr->getTriNormsTable();
+                if (normals) {
+                    normals->shrink_to_fit();
+                }
+            }
 
             *merged_mesh_ptr += *mesh_ptr;
         }

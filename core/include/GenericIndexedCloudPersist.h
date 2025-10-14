@@ -1,50 +1,37 @@
-//##########################################################################
-//#                                                                        #
-//#                               cloudViewer                              #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef GENERIC_INDEXED_PERSIST_CLOUD_HEADER
 #define GENERIC_INDEXED_PERSIST_CLOUD_HEADER
 
-//Local
+// Local
 #include "GenericIndexedCloud.h"
 
-namespace cloudViewer
-{
+namespace cloudViewer {
 
 //! A generic 3D point cloud with index-based and presistent access to points
 /** Implements the GenericIndexedCloud interface.
-**/
-class CV_CORE_LIB_API GenericIndexedCloudPersist : virtual public GenericIndexedCloud
-{
-
+ **/
+class CV_CORE_LIB_API GenericIndexedCloudPersist
+    : virtual public GenericIndexedCloud {
 public:
-	//! Default destructor
-	 ~GenericIndexedCloudPersist() override = default;
+    //! Default destructor
+    ~GenericIndexedCloudPersist() override = default;
 
-	//! Returns the ith point as a persistent pointer
-	/**	Virtual method to request a point with a specific index.
-		WARNING: the returned object MUST be persistent in order
-		to be compatible with parallel strategies!
-		\param index of the requested point (between 0 and the cloud size minus 1)
-		\return the requested point (or 0 if index is invalid)
-	**/
-	virtual const CCVector3* getPointPersistentPtr(unsigned index) = 0;
+    //! Returns the ith point as a persistent pointer
+    /**	Virtual method to request a point with a specific index.
+            WARNING: the returned object MUST be persistent in order
+            to be compatible with parallel strategies!
+            \param index of the requested point (between 0 and the cloud size
+    minus 1) \return the requested point (or 0 if index is invalid)
+    **/
+    virtual const CCVector3* getPointPersistentPtr(unsigned index) = 0;
 };
 
-}
+}  // namespace cloudViewer
 
-#endif //GENERIC_INDEXED_PERSIST_CLOUD_HEADER
+#endif  // GENERIC_INDEXED_PERSIST_CLOUD_HEADER

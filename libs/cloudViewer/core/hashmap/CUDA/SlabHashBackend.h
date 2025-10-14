@@ -171,7 +171,7 @@ void SlabHashBackend<Key, Hash, Eq>::Clear() {
 
     // Clear the linked list heads
     CLOUDVIEWER_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
-                                 sizeof(Slab) * this->bucket_count_));
+                                      sizeof(Slab) * this->bucket_count_));
     cuda::Synchronize();
     CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
 
@@ -280,7 +280,7 @@ void SlabHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     impl_.bucket_list_head_ = static_cast<Slab*>(MemoryManager::Malloc(
             sizeof(Slab) * this->bucket_count_, this->device_));
     CLOUDVIEWER_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
-                                 sizeof(Slab) * this->bucket_count_));
+                                      sizeof(Slab) * this->bucket_count_));
     cuda::Synchronize();
     CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
 

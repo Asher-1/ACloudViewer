@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <msgpack.hpp>
-
 #include <io/rpc/MessageProcessorBase.h>
 #include <io/rpc/MessageUtils.h>
+
+#include <msgpack.hpp>
 
 namespace cloudViewer {
 namespace io {

@@ -7,10 +7,10 @@
 
 #include "visualization/visualizer/ViewParameters.h"
 
-#include <json/json.h>
-#include <Eigen/Dense>
-
 #include <Logging.h>
+#include <json/json.h>
+
+#include <Eigen/Dense>
 
 namespace cloudViewer {
 namespace visualization {

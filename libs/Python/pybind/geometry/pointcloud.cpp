@@ -203,13 +203,13 @@ void pybind_pointcloud(py::module& m) {
                  "input pointcloud.",
                  "start_index"_a = 0)
             .def("crop",
-                 (std::shared_ptr<ccPointCloud> (ccPointCloud::*)(const ccBBox&)
+                 (std::shared_ptr<ccPointCloud>(ccPointCloud::*)(const ccBBox&)
                           const) &
                          ccPointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
             .def("crop",
-                 (std::shared_ptr<ccPointCloud> (ccPointCloud::*)(
+                 (std::shared_ptr<ccPointCloud>(ccPointCloud::*)(
                          const ecvOrientedBBox&) const) &
                          ccPointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",

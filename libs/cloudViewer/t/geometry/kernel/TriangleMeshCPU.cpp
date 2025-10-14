@@ -5,12 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Parallel.h>
+
 #include <cstddef>
 
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/t/geometry/TriangleMesh.h"
 #include "cloudViewer/t/geometry/kernel/TriangleMeshImpl.h"
-#include <Parallel.h>
 #include "cloudViewer/utility/Random.h"
 
 namespace cloudViewer {

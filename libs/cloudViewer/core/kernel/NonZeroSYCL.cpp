@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <numeric>
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
@@ -12,7 +14,6 @@
 #include "cloudViewer/core/Indexer.h"
 #include "cloudViewer/core/SYCLContext.h"
 #include "cloudViewer/core/kernel/NonZero.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
@@ -61,7 +62,8 @@ Tensor NonZeroSYCL(const Tensor& src) {
              auto non_zero_index = non_zero_indices_ptr[i];
              auto this_result_ptr =
                      result_ptr + i + (num_dims - 1) * num_non_zeros;
-             CLOUDVIEWER_ASSERT(this_result_ptr != nullptr && "Internal error.");
+             CLOUDVIEWER_ASSERT(this_result_ptr != nullptr &&
+                                "Internal error.");
              for (auto dim = num_dims - 1; dim >= 0;
                   dim--, this_result_ptr -= num_non_zeros) {
                  *this_result_ptr = non_zero_index % shape_vec[dim];

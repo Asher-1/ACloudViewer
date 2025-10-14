@@ -2852,12 +2852,12 @@ std::shared_ptr<ccMesh> ccMesh::CreateCoordinateFrame(
 }
 
 std::shared_ptr<ccMesh> ccMesh::CreateMobius(int length_split /* = 70 */,
-                                              int width_split /* = 15 */,
-                                              int twists /* = 1 */,
-                                              double radius /* = 1 */,
-                                              double flatness /* = 1 */,
-                                              double width /* = 1 */,
-                                              double scale /* = 1 */) {
+                                             int width_split /* = 15 */,
+                                             int twists /* = 1 */,
+                                             double radius /* = 1 */,
+                                             double flatness /* = 1 */,
+                                             double width /* = 1 */,
+                                             double scale /* = 1 */) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
     auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);

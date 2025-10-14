@@ -1,30 +1,20 @@
-//##########################################################################
-//#                                                                        #
-//#                     CLOUDVIEWER  PLUGIN: qCANUPO                       #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#      COPYRIGHT: UEB (UNIVERSITE EUROPEENNE DE BRETAGNE) / CNRS         #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #ifndef Q_CANUPO_PROCESS_HEADER
 #define Q_CANUPO_PROCESS_HEADER
 
-//Local
+// Local
 #include "ccPointDescriptor.h"
 
-//cloudViewer
+// cloudViewer
 #include <GenericIndexedCloudPersist.h>
 
-//Qt
+// Qt
 #include <QString>
 
 class ecvMainAppInterface;
@@ -32,31 +22,28 @@ class ccPointCloud;
 class QWidget;
 
 //! CANUPO process (classify)
-class qCanupoProcess
-{
+class qCanupoProcess {
 public:
+    //! Classify parameters
+    struct ClassifyParams {
+        double samplingDist = 0.0;
+        int maxThreadCount = 0;
+        double confidenceThreshold = 0.0;
+        bool useActiveSFForConfidence = true;
+        bool generateAdditionalSF = false;
+        bool generateRoughnessSF = false;
+    };
 
-	//! Classify parameters
-	struct ClassifyParams
-	{
-		double samplingDist = 0.0;
-		int maxThreadCount = 0;
-		double confidenceThreshold = 0.0;
-		bool useActiveSFForConfidence = true;
-		bool generateAdditionalSF = false;
-		bool generateRoughnessSF = false;
-	};
-
-	//! Classify a point cloud
-	static bool Classify(	QString classifierFilename,
-							const ClassifyParams& params,
-							ccPointCloud* cloud,
-							cloudViewer::GenericIndexedCloudPersist* corePoints,
-							CorePointDescSet& corePointsDescriptors,
-							ccPointCloud* realCorePoints = nullptr,
-							ecvMainAppInterface* app = nullptr,
-							QWidget* parentWidget = nullptr,
-							bool silent = false);
+    //! Classify a point cloud
+    static bool Classify(QString classifierFilename,
+                         const ClassifyParams& params,
+                         ccPointCloud* cloud,
+                         cloudViewer::GenericIndexedCloudPersist* corePoints,
+                         CorePointDescSet& corePointsDescriptors,
+                         ccPointCloud* realCorePoints = nullptr,
+                         ecvMainAppInterface* app = nullptr,
+                         QWidget* parentWidget = nullptr,
+                         bool silent = false);
 };
 
-#endif //Q_CANUPO_PROCESS_HEADER
+#endif  // Q_CANUPO_PROCESS_HEADER

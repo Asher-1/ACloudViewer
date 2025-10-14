@@ -7,11 +7,11 @@
 
 #include <sycl/sycl.hpp>
 
-#include "oneapi/mkl.hpp"
 #include "cloudViewer/core/Blob.h"
 #include "cloudViewer/core/SYCLContext.h"
 #include "cloudViewer/core/linalg/LUImpl.h"
 #include "cloudViewer/core/linalg/LinalgUtils.h"
+#include "oneapi/mkl.hpp"
 
 namespace cloudViewer {
 namespace core {

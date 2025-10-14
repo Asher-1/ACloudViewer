@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
 #include <IJsonConvertible.h>
+
+#include <Eigen/Core>
 
 namespace cloudViewer {
 namespace visualization {
@@ -19,7 +19,6 @@ namespace visualization {
 /// \brief Defines rendering options for visualizer.
 class RenderOption : public cloudViewer::utility::IJsonConvertible {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     // Global options

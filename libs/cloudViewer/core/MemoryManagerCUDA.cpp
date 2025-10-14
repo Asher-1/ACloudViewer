@@ -21,13 +21,15 @@ void* MemoryManagerCUDA::Malloc(size_t byte_size, const Device& device) {
     if (device.IsCUDA()) {
 #if CUDART_VERSION >= 11020
         if (cuda::SupportsMemoryPools(device)) {
-            CLOUDVIEWER_CUDA_CHECK(cudaMallocAsync(static_cast<void**>(&ptr),
-                                              byte_size, cuda::GetStream()));
+            CLOUDVIEWER_CUDA_CHECK(cudaMallocAsync(
+                    static_cast<void**>(&ptr), byte_size, cuda::GetStream()));
         } else {
-            CLOUDVIEWER_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+            CLOUDVIEWER_CUDA_CHECK(
+                    cudaMalloc(static_cast<void**>(&ptr), byte_size));
         }
 #else
-        CLOUDVIEWER_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+        CLOUDVIEWER_CUDA_CHECK(
+                cudaMalloc(static_cast<void**>(&ptr), byte_size));
 #endif
     } else {
         utility::LogError("Internal error: Unimplemented device {}.",
@@ -68,16 +70,16 @@ void MemoryManagerCUDA::Memcpy(void* dst_ptr,
         }
         CUDAScopedDevice scoped_device(dst_device);
         CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
-                                          cudaMemcpyHostToDevice,
-                                          cuda::GetStream()));
+                                               cudaMemcpyHostToDevice,
+                                               cuda::GetStream()));
     } else if (dst_device.IsCPU() && src_device.IsCUDA()) {
         if (!IsCUDAPointer(src_ptr, src_device)) {
             utility::LogError("src_ptr is not a CUDA pointer.");
         }
         CUDAScopedDevice scoped_device(src_device);
         CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
-                                          cudaMemcpyDeviceToHost,
-                                          cuda::GetStream()));
+                                               cudaMemcpyDeviceToHost,
+                                               cuda::GetStream()));
     } else if (dst_device.IsCUDA() && src_device.IsCUDA()) {
         if (!IsCUDAPointer(dst_ptr, dst_device)) {
             utility::LogError("dst_ptr is not a CUDA pointer.");
@@ -89,8 +91,8 @@ void MemoryManagerCUDA::Memcpy(void* dst_ptr,
         if (dst_device == src_device) {
             CUDAScopedDevice scoped_device(src_device);
             CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
-                                              cudaMemcpyDeviceToDevice,
-                                              cuda::GetStream()));
+                                                   cudaMemcpyDeviceToDevice,
+                                                   cuda::GetStream()));
         } else if (CUDAState::GetInstance().IsP2PEnabled(src_device.GetID(),
                                                          dst_device.GetID())) {
             CLOUDVIEWER_CUDA_CHECK(cudaMemcpyPeerAsync(
@@ -100,15 +102,15 @@ void MemoryManagerCUDA::Memcpy(void* dst_ptr,
             void* cpu_buf = MemoryManager::Malloc(num_bytes, Device("CPU:0"));
             {
                 CUDAScopedDevice scoped_device(src_device);
-                CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(cpu_buf, src_ptr, num_bytes,
-                                                  cudaMemcpyDeviceToHost,
-                                                  cuda::GetStream()));
+                CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(
+                        cpu_buf, src_ptr, num_bytes, cudaMemcpyDeviceToHost,
+                        cuda::GetStream()));
             }
             {
                 CUDAScopedDevice scoped_device(dst_device);
-                CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, cpu_buf, num_bytes,
-                                                  cudaMemcpyHostToDevice,
-                                                  cuda::GetStream()));
+                CLOUDVIEWER_CUDA_CHECK(cudaMemcpyAsync(
+                        dst_ptr, cpu_buf, num_bytes, cudaMemcpyHostToDevice,
+                        cuda::GetStream()));
             }
             MemoryManager::Free(cpu_buf, Device("CPU:0"));
         }

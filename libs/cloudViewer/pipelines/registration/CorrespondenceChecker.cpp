@@ -7,10 +7,10 @@
 
 #include "pipelines/registration/CorrespondenceChecker.h"
 
-#include <Eigen/Dense>
 #include <Logging.h>
-
 #include <ecvPointCloud.h>
+
+#include <Eigen/Dense>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -49,7 +49,8 @@ bool CorrespondenceCheckerBasedOnDistance::Check(
         Eigen::Vector3d pt_trans =
                 (transformation * Eigen::Vector4d(pt(0), pt(1), pt(2), 1.0))
                         .block<3, 1>(0, 0);
-        if ((target.getEigenPoint(c(1)) - pt_trans).norm() > distance_threshold_) {
+        if ((target.getEigenPoint(c(1)) - pt_trans).norm() >
+            distance_threshold_) {
             return false;
         }
     }

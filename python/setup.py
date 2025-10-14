@@ -14,8 +14,10 @@ from setuptools.command.install import install as _install
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
 data_files_spec = [
-    ('share/jupyter/nbextensions/cloudViewer', 'cloudViewer/nbextension', '*.*'),
-    ('share/jupyter/labextensions/cloudViewer', 'cloudViewer/labextension', '**'),
+    ('share/jupyter/nbextensions/cloudViewer', 'cloudViewer/nbextension',
+     '*.*'),
+    ('share/jupyter/labextensions/cloudViewer', 'cloudViewer/labextension',
+     '**'),
     ('share/jupyter/labextensions/cloudViewer', '.', 'install.json'),
     ('etc/jupyter/nbconfig/notebook.d', '.', 'cloudViewer.json'),
 ]
@@ -52,7 +54,6 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
     )
 else:
     cmdclass = dict()
-
 
 # Force platform specific wheel.
 # https://stackoverflow.com/a/45150383/1255535

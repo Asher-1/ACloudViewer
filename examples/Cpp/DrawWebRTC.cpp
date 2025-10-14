@@ -89,9 +89,9 @@ void BoxWithObjects() {
     sphere_colored_lit->ComputeVertexNormals();
     sphere_colored_lit->PaintUniformColor({0.0, 1.0, 0.0});
     sphere_colored_lit->Translate({6, 1, 0});
-    auto big_bbox =
-            cloudViewer::make_shared<ccBBox>(Eigen::Vector3d{-pc_rad, -3, -pc_rad},
-                                     Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
+    auto big_bbox = cloudViewer::make_shared<ccBBox>(
+            Eigen::Vector3d{-pc_rad, -3, -pc_rad},
+            Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
     auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
     auto sphere_bbox = cloudViewer::make_shared<ccBBox>(bbox.GetMinBound(),
                                                         bbox.GetMaxBound());

@@ -1,21 +1,25 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "contour.h"
 
+#include <VtkUtils/vtkutils.h>
+#include <vtkActor.h>
 #include <vtkContourFilter.h>
 #include <vtkDelaunay2D.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkPolyData.h>
-#include <vtkPoints.h>
-#include <vtkActor.h>
 #include <vtkDoubleArray.h>
-#include <vtkRenderer.h>
 #include <vtkLookupTable.h>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkRenderer.h>
 
-#include <VtkUtils/vtkutils.h>
-
-namespace VtkUtils
-{
-class ContourPrivate
-{
+namespace VtkUtils {
+class ContourPrivate {
 public:
     QList<Vector4F> vectors;
 
@@ -25,62 +29,40 @@ public:
     vtkContourFilter* contour = nullptr;
 };
 
-Contour::Contour(QWidget* parent) : Surface(parent)
-{
+Contour::Contour(QWidget* parent) : Surface(parent) {
     d_ptr = new ContourPrivate;
 }
 
-Contour::~Contour()
-{
-    delete d_ptr;
-}
+Contour::~Contour() { delete d_ptr; }
 
-void Contour::setVectors(const QList<Vector4F>& vectors)
-{
-    if (vectors.isEmpty())
-        return;
+void Contour::setVectors(const QList<Vector4F>& vectors) {
+    if (vectors.isEmpty()) return;
 
     d_ptr->vectors = vectors;
     renderSurface();
 }
 
-void Contour::setNumberOfContours(int num)
-{
+void Contour::setNumberOfContours(int num) {
     if (d_ptr->numberOfContours != num) {
         d_ptr->numberOfContours = num;
 
         if (d_ptr->contour)
-            d_ptr->contour->GenerateValues(d_ptr->numberOfContours, zMin(), zMax());
+            d_ptr->contour->GenerateValues(d_ptr->numberOfContours, zMin(),
+                                           zMax());
     }
 }
 
-int Contour::numberOfContours() const
-{
-    return d_ptr->numberOfContours;
-}
+int Contour::numberOfContours() const { return d_ptr->numberOfContours; }
 
-void Contour::setPlaneVisible(bool visible)
-{
+void Contour::setPlaneVisible(bool visible) {}
 
-}
+bool Contour::planeVisible() const { return false; }
 
-bool Contour::planeVisible() const
-{
-    return false;
-}
+void Contour::setPlaneDistance(qreal distance) {}
 
-void Contour::setPlaneDistance(qreal distance)
-{
+bool Contour::planeDistance() const { return .0; }
 
-}
-
-bool Contour::planeDistance() const
-{
-    return .0;
-}
-
-void Contour::renderSurface()
-{
+void Contour::renderSurface() {
     VTK_CREATE(vtkPoints, vtkpoints);
     VTK_CREATE(vtkDoubleArray, scalars);
 
@@ -101,9 +83,9 @@ void Contour::renderSurface()
     del->SetInputData(polydata);
     del->Update();
 
-//    VTK_CREATE(vtkContourFilter, contour);
-//    contour->SetInputConnection(del->GetOutputPort());
-//    contour->GenerateValues(10, bounds[4], bounds[5]);
+    //    VTK_CREATE(vtkContourFilter, contour);
+    //    contour->SetInputConnection(del->GetOutputPort());
+    //    contour->GenerateValues(10, bounds[4], bounds[5]);
 
     vtkLookupTable* lookupTable = vtkLookupTable::New();
     lookupTable->SetTableRange(bounds[4], bounds[5]);
@@ -120,4 +102,4 @@ void Contour::renderSurface()
     update();
 }
 
-} // namespace VtkUtils
+}  // namespace VtkUtils

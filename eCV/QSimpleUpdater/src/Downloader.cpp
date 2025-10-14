@@ -1,32 +1,9 @@
-/*
- * Copyright (c) 2014-2016 Alex Spataru <alex_spataru@outlook.com>
- * Copyright (c) 2017 Gilmanov Ildar <https://github.com/gilmanov-ildar>
- *
- * This file is part of the QSimpleUpdater library, which is released under
- * the DBAD license, you can read a copy of it below:
- *
- * DON'T BE A DICK PUBLIC LICENSE TERMS AND CONDITIONS FOR COPYING,
- * DISTRIBUTION AND MODIFICATION:
- *
- * Do whatever you like with the original work, just don't be a dick.
- * Being a dick includes - but is not limited to - the following instances:
- *
- * 1a. Outright copyright infringement - Don't just copy this and change the
- *     name.
- * 1b. Selling the unmodified original with no work done what-so-ever, that's
- *     REALLY being a dick.
- * 1c. Modifying the original work to contain hidden harmful content.
- *     That would make you a PROPER dick.
- *
- * If you become rich through modifications, related works/services, or
- * supporting the original work, share the love.
- * Only a dick would make loads off this work and not buy the original works
- * creator(s) a pint.
- *
- * Code is provided with no warranty. Using somebody else's code and bitching
- * when it goes wrong makes you a DONKEY dick.
- * Fix the problem yourself. A non-dick would submit the fix back.
- */
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <QDir>
 #include <QFile>
@@ -181,7 +158,7 @@ void Downloader::finished()
  */
 void Downloader::openDownload()
 {
-   if (!m_fileName.isEmpty()) 
+   if (!m_fileName.isEmpty())
    {
       QDesktopServices::openUrl(QUrl::fromLocalFile(m_downloadDir.filePath(m_fileName)));
    }
@@ -234,12 +211,12 @@ void Downloader::installUpdate()
    /* Wait */
    else
    {
-       if (m_mandatoryUpdate) 
-       {
-          QString installerFile = m_downloadDir.filePath(m_fileName);
-          QMessageBox::information(this, "", tr("Please install from <i>%1</i> mannually!").arg(installerFile));
-          QApplication::quit();
-       }
+      if (m_mandatoryUpdate)
+      {
+         QString installerFile = m_downloadDir.filePath(m_fileName);
+         QMessageBox::information(this, "", tr("Please install from <i>%1</i> mannually!").arg(installerFile));
+         QApplication::quit();
+      }
 
       m_ui->openButton->setEnabled(true);
       m_ui->openButton->setVisible(true);

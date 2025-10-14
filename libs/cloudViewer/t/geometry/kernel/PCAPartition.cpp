@@ -7,11 +7,12 @@
 
 #include "cloudViewer/t/geometry/kernel/PCAPartition.h"
 
+#include <Eigen.h>
+
 #include <Eigen/Eigenvalues>
 #include <numeric>
 
 #include "cloudViewer/core/TensorCheck.h"
-#include <Eigen.h>
 
 namespace cloudViewer {
 namespace t {

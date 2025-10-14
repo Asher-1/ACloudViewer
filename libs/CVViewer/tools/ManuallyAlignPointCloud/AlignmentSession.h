@@ -5,16 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <thread>
-
-#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertible.h>
-
+#include <Logging.h>
 #include <ecvBBox.h>
-#include <ecvPointCloud.h>
 #include <ecvKDTreeFlann.h>
 #include <ecvOrientedBBox.h>
+#include <ecvPointCloud.h>
+
+#include <thread>
+
 #include "io/PointCloudIO.h"
 
 namespace cloudViewer {

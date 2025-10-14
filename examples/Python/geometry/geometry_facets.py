@@ -26,7 +26,8 @@ def generate_from_point_cloud():
 
 def generate_from_file():
     print("Load a facets data, print it, and render it")
-    cv3d.data.set_custom_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+    cv3d.data.set_custom_downloads_prefix(
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
     facets_data = cv3d.data.FacetsModel()
     entity = cv3d.io.read_entity(facets_data.path)
     facets = entity.filter_children(recursive=False,

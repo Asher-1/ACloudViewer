@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef SIGNALBLOCKER_H
 #define SIGNALBLOCKER_H
 
@@ -5,11 +12,9 @@
 
 #include "../qPCL.h"
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-class QPCL_ENGINE_LIB_API SignalBlocker
-{
+class QPCL_ENGINE_LIB_API SignalBlocker {
 public:
     explicit SignalBlocker(QObject* object = nullptr);
     ~SignalBlocker();
@@ -20,5 +25,5 @@ private:
     QObjectList m_objectList;
 };
 
-} // namespace Utils
-#endif // SIGNALBLOCKER_H
+}  // namespace VtkUtils
+#endif  // SIGNALBLOCKER_H

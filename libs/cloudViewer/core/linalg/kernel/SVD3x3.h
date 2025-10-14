@@ -33,8 +33,8 @@
 #include <cuda.h>
 #endif
 
-#include "math.h"
 #include "cloudViewer/core/linalg/kernel/Matrix.h"
+#include "math.h"
 
 #define gone 1065353216
 #define gsine_pi_over_eight 1053028117
@@ -85,15 +85,13 @@ union un {
 
 template <typename scalar_t>
 CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3(const scalar_t *A_3x3,
-                                              scalar_t *U_3x3,
-                                              scalar_t *S_3x1,
-                                              scalar_t *V_3x3);
+                                                        scalar_t *U_3x3,
+                                                        scalar_t *S_3x1,
+                                                        scalar_t *V_3x3);
 
 template <>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
-                                                      double *U_3x3,
-                                                      double *S_3x1,
-                                                      double *V_3x3) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(
+        const double *A_3x3, double *U_3x3, double *S_3x1, double *V_3x3) {
     double gsmall_number = 1.e-12;
 
     un<double> Sa11, Sa21, Sa31, Sa12, Sa22, Sa32, Sa13, Sa23, Sa33;
@@ -1129,10 +1127,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
 }
 
 template <>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
-                                                     float *U_3x3,
-                                                     float *S_3x1,
-                                                     float *V_3x3) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(
+        const float *A_3x3, float *U_3x3, float *S_3x1, float *V_3x3) {
     float gsmall_number = 1.e-12;
 
     un<float> Sa11, Sa21, Sa31, Sa12, Sa22, Sa32, Sa13, Sa23, Sa33;

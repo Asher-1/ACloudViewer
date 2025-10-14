@@ -1,18 +1,22 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #ifndef SURFACE_H
 #define SURFACE_H
 
 #include "../qPCL.h"
-
-#include "vtkwidget.h"
 #include "point3f.h"
+#include "vtkwidget.h"
 
 class vtkActor;
-namespace VtkUtils
-{
+namespace VtkUtils {
 
 class SurfacePrivate;
-class QPCL_ENGINE_LIB_API Surface : public VtkWidget
-{
+class QPCL_ENGINE_LIB_API Surface : public VtkWidget {
     Q_OBJECT
 public:
     explicit Surface(QWidget* parent = nullptr);
@@ -29,5 +33,5 @@ private:
     Q_DISABLE_COPY(Surface)
 };
 
-} // namespace VtkUtils
-#endif // SURFACE_H
+}  // namespace VtkUtils
+#endif  // SURFACE_H
