@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PDMS_TOOLS_HEADER
-#define PDMS_TOOLS_HEADER
+#pragma once
 
 // cloudViewer
 #include <CVConst.h>
@@ -663,5 +662,3 @@ public:
 };  // namespace PdmsCommands
 
 };  // namespace PdmsTools
-
-#endif  // PDMS_TOOLS_HEADER

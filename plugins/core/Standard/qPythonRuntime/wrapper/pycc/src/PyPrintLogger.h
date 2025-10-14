@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CLOUDCOMPAREPROJECTS_PYPRINTLOGGER_H
-#define CLOUDCOMPAREPROJECTS_PYPRINTLOGGER_H
+#pragma once
 #include <CVLog.h>
 
 #include <pybind11/pybind11.h>
@@ -34,4 +33,3 @@ class PyPrintLogger : public CVLog
   private:
     std::mutex m_lock;
 };
-#endif // CLOUDCOMPAREPROJECTS_PYPRINTLOGGER_H

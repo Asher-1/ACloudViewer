@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_ABSOLUTE_POSE_H_
-#define COLMAP_SRC_ESTIMATORS_ABSOLUTE_POSE_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <array>
@@ -156,5 +155,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_ESTIMATORS_ABSOLUTE_POSE_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MOVEPOINTINTERACTORSTYLE_H
-#define MOVEPOINTINTERACTORSTYLE_H
+#pragma once
 
 #include <QObject>
 
@@ -25,4 +24,3 @@ public slots:
 };
 
 }  // namespace VtkUtils
-#endif  // MOVEPOINTINTERACTORSTYLE_H

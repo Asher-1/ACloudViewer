@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_FEATURE_TYPES_H_
-#define COLMAP_SRC_FEATURE_TYPES_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <vector>
@@ -81,5 +80,3 @@ typedef Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 typedef std::vector<FeatureMatch> FeatureMatches;
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_FEATURE_TYPES_H_

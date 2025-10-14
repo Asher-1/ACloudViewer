@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SLIDERWIDGETOBSERVER_H
-#define SLIDERWIDGETOBSERVER_H
+#pragma once
 
 #include "abstractwidgetobserver.h"
 
@@ -25,4 +24,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // SLIDERWIDGETOBSERVER_H

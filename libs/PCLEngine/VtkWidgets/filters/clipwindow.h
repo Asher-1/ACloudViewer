@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CLIPWINDOW_H
-#define CLIPWINDOW_H
+#pragma once
 
 #include "cutwindow.h"
 
@@ -23,5 +22,3 @@ public:
 
     void apply();
 };
-
-#endif  // CLIPWINDOW_H

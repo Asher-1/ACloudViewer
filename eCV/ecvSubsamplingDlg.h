@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SAMPLE_DLG_HEADER
-#define ECV_SAMPLE_DLG_HEADER
+#pragma once
 
 // Qt
 #include <QDialog>
@@ -71,5 +70,3 @@ protected:  // members
     //! Scalar modulation (max SF value)
     ScalarType m_sfMax;
 };
-
-#endif  // ECV_SAMPLE_DLG_HEADER

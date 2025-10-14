@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_SETTINGS_H
-#define PYTHON_PLUGIN_SETTINGS_H
+#pragma once
 
 #include <PythonConfig.h>
 
@@ -37,5 +36,3 @@ class PythonRuntimeSettings final : public QDialog
     Ui_PythonRuntimeSettings *m_ui;
     QStringList m_pluginsPaths;
 };
-
-#endif // PYTHON_PLUGIN_SETTINGS_H

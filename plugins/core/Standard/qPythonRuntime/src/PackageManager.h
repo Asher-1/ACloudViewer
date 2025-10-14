@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PACKAGE_MANAGER_H
-#define PYTHON_PLUGIN_PACKAGE_MANAGER_H
+#pragma once
 
 #include <ui_PackageManager.h>
 
@@ -43,5 +42,3 @@ class PackageManager final : public QWidget
     CommandOutputDialog *m_outputDialog;
     bool m_shouldUseUserOption;
 };
-
-#endif // PYTHON_PLUGIN_PACKAGE_MANAGER_H

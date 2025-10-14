@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UI_MATCH_MATRIX_WIDGET_H_
-#define COLMAP_SRC_UI_MATCH_MATRIX_WIDGET_H_
+#pragma once
 
 #include "ui/image_viewer_widget.h"
 #include "util/option_manager.h"
@@ -25,5 +24,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UI_MATCH_MATRIX_WIDGET_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QTCOLORPICKER_H
-#define QTCOLORPICKER_H
+#pragma once
 #include <QColor>
 #include <QEvent>
 #include <QFocusEvent>
@@ -70,4 +69,3 @@ private:
 };
 
 }  // namespace Widgets
-#endif

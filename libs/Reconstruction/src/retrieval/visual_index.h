@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_RETRIEVAL_VISUAL_INDEX_H_
-#define COLMAP_SRC_RETRIEVAL_VISUAL_INDEX_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <boost/heap/fibonacci_heap.hpp>
@@ -752,5 +751,3 @@ Eigen::MatrixXi VisualIndex<kDescType, kDescDim, kEmbeddingDim>::FindWordIds(
 
 }  // namespace retrieval
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_RETRIEVAL_VISUAL_INDEX_H_

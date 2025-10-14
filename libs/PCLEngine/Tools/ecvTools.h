@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ECV_TOOLS_H
-#define ECV_ECV_TOOLS_H
+#pragma once
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)
@@ -292,5 +291,3 @@ static ccHObject* GetSegmentationGroup(
 }
 
 };  // namespace ecvTools
-
-#endif  // ECV_ECV_TOOLS_H

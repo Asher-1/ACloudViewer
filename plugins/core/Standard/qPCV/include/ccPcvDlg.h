@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PCV_DLG_HEADER
-#define ECV_PCV_DLG_HEADER
+#pragma once
 
 #include <ui_pcvDlg.h>
 
@@ -15,5 +14,3 @@ class ccPcvDlg : public QDialog, public Ui::PCVDialog {
 public:
     explicit ccPcvDlg(QWidget* parent = 0);
 };
-
-#endif  // ECV_PCV_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_QUADRIC_PRIMITIVE_HEADER
-#define ECV_QUADRIC_PRIMITIVE_HEADER
+#pragma once
 
 // Local
 #include "ecvGenericPrimitive.h"
@@ -114,5 +113,3 @@ protected:
     //! Max height
     PointCoordinateType m_maxZ;
 };
-
-#endif  // ECV_QUADRIC_PRIMITIVE_HEADER

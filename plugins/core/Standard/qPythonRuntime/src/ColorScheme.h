@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_COLOR_SCHEME_H
-#define PYTHON_PLUGIN_COLOR_SCHEME_H
+#pragma once
 
 #include "PythonHighlighter.h"
 
@@ -54,5 +53,3 @@ class ColorScheme final
     QColor m_backgroundColor;
     QColor m_currentLineHighlightColor;
 };
-
-#endif

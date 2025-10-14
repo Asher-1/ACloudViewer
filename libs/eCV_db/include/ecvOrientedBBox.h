@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ORIENTED_BBOX_HEADER
-#define ECV_ORIENTED_BBOX_HEADER
+#pragma once
 
 // LOCAL
 #include "eCV_db.h"
@@ -101,5 +100,3 @@ public:
     static ecvOrientedBBox CreateFromAxisAlignedBoundingBox(
             const ccBBox& aabox);
 };
-
-#endif  // ECV_ORIENTED_BBOX_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_NORMALESTIMATION_HEADER
-#define Q_PCL_PLUGIN_NORMALESTIMATION_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -31,5 +30,3 @@ protected:
     bool m_useKnn;
     bool m_overwrite_curvature;
 };
-
-#endif  // Q_PCL_PLUGIN_NORMALESTIMATION_HEADER

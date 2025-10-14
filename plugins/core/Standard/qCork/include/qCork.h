@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_CORK_PLUGIN_HEADER
-#define Q_CORK_PLUGIN_HEADER
+#pragma once
 
 // Qt
 #include <QObject>
@@ -43,5 +42,3 @@ protected:
     //! Associated action
     QAction* m_action;
 };
-
-#endif  // Q_CORK_PLUGIN_HEADER

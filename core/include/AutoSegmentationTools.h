@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef AUTO_SEGMENTATION_TOOLS_HEADER
-#define AUTO_SEGMENTATION_TOOLS_HEADER
+#pragma once
 
 #include <vector>
 
@@ -111,5 +110,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // AUTO_SEGMENTATION_TOOLS_HEADER

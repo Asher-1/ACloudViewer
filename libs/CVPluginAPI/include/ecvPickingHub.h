@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PICKING_HUB_HEADER
-#define ECV_PICKING_HUB_HEADER
+#pragma once
 
 #include "CVPluginAPI.h"
 
@@ -105,5 +104,3 @@ protected:
     //! Exclusive mode
     bool m_exclusive;
 };
-
-#endif  // ECV_PICKING_HUB_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_MESHING_H_
-#define COLMAP_SRC_MVS_MESHING_H_
+#pragma once
 
 #include <string>
 
@@ -108,5 +107,3 @@ void DenseDelaunayMeshing(const DelaunayMeshingOptions& options,
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_MESHING_H_

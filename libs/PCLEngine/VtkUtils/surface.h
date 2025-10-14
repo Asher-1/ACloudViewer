@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SURFACE_H
-#define SURFACE_H
+#pragma once
 
 #include "../qPCL.h"
 #include "point3f.h"
@@ -34,4 +33,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // SURFACE_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QSRA_DISTANCE_MAP_GENERATION_DIALOG
-#define QSRA_DISTANCE_MAP_GENERATION_DIALOG
+#pragma once
 
 // Local
 #include "distanceMapGenerationTool.h"
@@ -201,5 +200,3 @@ protected:
     //! Symbols color
     QColor m_symbolColor;
 };
-
-#endif  // QSRA_DISTANCE_MAP_GENERATION_DIALOG

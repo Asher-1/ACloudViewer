@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GEOMETRICAL_ANALYSIS_TOOLS_HEADER
-#define GEOMETRICAL_ANALYSIS_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "DgmOctree.h"
@@ -261,5 +260,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // GEOMETRICAL_ANALYSIS_TOOLS_HEADER

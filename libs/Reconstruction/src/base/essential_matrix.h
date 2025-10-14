@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_ESSENTIAL_MATRIX_H_
-#define COLMAP_SRC_BASE_ESSENTIAL_MATRIX_H_
+#pragma once
 
 #include <ceres/ceres.h>
 
@@ -134,5 +133,3 @@ bool RefineEssentialMatrix(const ceres::Solver::Options& options,
                            Eigen::Matrix3d* E);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_ESSENTIAL_MATRIX_H_

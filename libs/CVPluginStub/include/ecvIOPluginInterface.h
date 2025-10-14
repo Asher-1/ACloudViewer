@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_IO_PLUGIN_INTERFACE_HEADER
-#define ECV_IO_PLUGIN_INTERFACE_HEADER
+#pragma once
 
 #include <QVector>
 
@@ -39,5 +38,3 @@ public:
 
 Q_DECLARE_INTERFACE(ccIOPluginInterface,
                     "edf.rd.cloudviewer.ccIOFilterPluginInterface/1.3")
-
-#endif  // ECV_IO_PLUGIN_INTERFACE_HEADER

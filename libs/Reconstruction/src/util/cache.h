@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_CACHE_H_
-#define COLMAP_SRC_UTIL_CACHE_H_
+#pragma once
 
 #include <iostream>
 #include <list>
@@ -247,5 +246,3 @@ void MemoryConstrainedLRUCache<key_t, value_t>::Clear() {
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_CACHE_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COLOR_LEVELS_DLG_HEADER
-#define ECV_COLOR_LEVELS_DLG_HEADER
+#pragma once
 
 // Qt
 #include <ui_colorLevelsDlg.h>
@@ -42,5 +41,3 @@ protected:
     //! Associated point cloud (color source)
     ccGenericPointCloud* m_cloud;
 };
-
-#endif  // ECV_COLOR_LEVELS_DLG_HEADER

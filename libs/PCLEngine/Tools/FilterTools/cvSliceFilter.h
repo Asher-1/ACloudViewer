@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_SLICE_FILTER_H
-#define TOOLS_SLICE_FILTER_H
+#pragma once
 
 #include "cvCutFilter.h"
 
@@ -29,5 +28,3 @@ private:
     vtkSmartPointer<vtkStripper> m_cutStrips;
     vtkSmartPointer<vtkCutter> m_cutter;
 };
-
-#endif  // TOOLS_SLICE_FILTER_H

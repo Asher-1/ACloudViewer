@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_CUDA_ROTATE_H_
-#define COLMAP_SRC_MVS_CUDA_ROTATE_H_
+#pragma once
 
 #include <cuda_runtime.h>
 
@@ -77,5 +76,3 @@ void CudaRotate(const T* input,
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_CUDA_ROTATE_H_

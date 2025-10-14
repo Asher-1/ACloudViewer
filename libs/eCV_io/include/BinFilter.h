@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_BIN_FILTER_HEADER
-#define ECV_BIN_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -45,5 +44,3 @@ public:
     //! new style BIN saving
     static CC_FILE_ERROR SaveFileV2(QFile& out, ccHObject* object);
 };
-
-#endif  // CC_BIN_FILTER_HEADER

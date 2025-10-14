@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkCommandOptionsXMLParser_h
-#define vtkCommandOptionsXMLParser_h
+#pragma once
 
 #include "qPCL.h"               // needed for export macro
 #include "vtkCommandOptions.h"  // for enum
@@ -69,5 +68,3 @@ private:
     vtkCommandOptions* PVOptions;
     vtkCommandOptionsXMLParserInternal* Internals;
 };
-
-#endif  // #ifndef vtkCommandOptionsXMLParser_h

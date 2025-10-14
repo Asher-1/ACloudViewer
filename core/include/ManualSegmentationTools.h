@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MANUAL_SEGMENTATION_TOOLS_HEADER
-#define MANUAL_SEGMENTATION_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "Neighbourhood.h"
@@ -160,5 +159,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // MANUAL_SEGMENTATION_TOOLS_HEADER

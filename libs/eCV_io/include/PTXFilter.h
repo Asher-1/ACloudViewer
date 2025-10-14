@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PTX_FILTER_HEADER
-#define ECV_PTX_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -20,5 +19,3 @@ public:
                                    ccHObject& container,
                                    LoadParameters& parameters) override;
 };
-
-#endif  // CC_PTX_FILTER_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COLOR_SCALE_EDITOR_WIDGET_HEADER
-#define ECV_COLOR_SCALE_EDITOR_WIDGET_HEADER
+#pragma once
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
@@ -310,5 +309,3 @@ protected:
     //! Associated (sliders) labels widget
     SliderLabelWidget* m_labelsWidget;
 };
-
-#endif  // ECV_COLOR_SCALE_EDITOR_WIDGET_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_RECONSTRUCTION_H_
-#define COLMAP_SRC_BASE_RECONSTRUCTION_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <tuple>
@@ -634,5 +633,3 @@ bool Reconstruction::AlignRobust(const std::vector<std::string>& image_names,
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_RECONSTRUCTION_H_

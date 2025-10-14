@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_SM2CC_H
-#define Q_PCL_PLUGIN_SM2CC_H
+#pragma once
 
 // Local
 #include "../qPCL.h"
@@ -48,5 +47,3 @@ public:  // other related utility functions
     static void FromPCLMaterial(const PCLMaterial& inMaterial,
                                 ccMaterial::Shared& outMaterial);
 };
-
-#endif  // Q_PCL_PLUGIN_SM2CC_H

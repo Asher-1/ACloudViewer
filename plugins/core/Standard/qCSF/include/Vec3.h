@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef _VEC3_H_
-#define _VEC3_H_
+#pragma once
 
 // system
 #include <cmath>
@@ -66,5 +65,3 @@ public:
         return x * v.x + y * v.y + z * v.z;
     }
 };
-
-#endif  //_VEC3_H_

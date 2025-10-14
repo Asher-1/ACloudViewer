@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_EXPORT_COORD_TO_SF_DLG_HEADER
-#define ECV_EXPORT_COORD_TO_SF_DLG_HEADER
+#pragma once
 
 #include <ui_exportCoordToSFDlg.h>
 
@@ -25,5 +24,3 @@ public:
     //! Returns whether Z dimension should be exported
     bool exportZ() const;
 };
-
-#endif  // ECV_EXPORT_COORD_TO_SF_DLG_HEADER

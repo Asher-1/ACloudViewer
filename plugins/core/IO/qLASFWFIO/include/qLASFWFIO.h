@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_LAS_FWF_IO_PLUGIN_HEADER
-#define Q_LAS_FWF_IO_PLUGIN_HEADER
+#pragma once
 
 #include "ecvIOPluginInterface.h"
 
@@ -26,5 +25,3 @@ public:
     // inherited from ccIOPluginInterface
     FilterList getFilters() override;
 };
-
-#endif  // Q_LAS_FWF_IO_PLUGIN_HEADER

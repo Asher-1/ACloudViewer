@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_M3C2_PLUGIN_HEADER
-#define Q_M3C2_PLUGIN_HEADER
+#pragma once
 
 // qCC
 #include "ecvStdPluginInterface.h"
@@ -46,5 +45,3 @@ private:
     //! Currently selected entities
     ccHObject::Container m_selectedEntities;
 };
-
-#endif  // Q_M3C2_PLUGIN_HEADER

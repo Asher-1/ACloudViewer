@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_OPTION_MANAGER_H_
-#define COLMAP_SRC_UTIL_OPTION_MANAGER_H_
+#pragma once
 
 #include <boost/program_options.hpp>
 #include <memory>
@@ -222,5 +221,3 @@ void OptionManager::RegisterOption(const std::string& name, const T* option) {
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_OPTION_MANAGER_H_

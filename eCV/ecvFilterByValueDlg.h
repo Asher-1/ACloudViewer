@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FILTER_BY_VALUE_DIALOG_HEADER
-#define ECV_FILTER_BY_VALUE_DIALOG_HEADER
+#pragma once
 
 #include <ui_filterByValueDlg.h>
 
@@ -46,5 +45,3 @@ protected slots:
 protected:
     Mode m_mode;
 };
-
-#endif  // ECV_FILTER_BY_VALUE_DIALOG_HEADER

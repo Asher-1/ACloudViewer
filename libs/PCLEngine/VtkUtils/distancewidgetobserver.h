@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef DISTANCEWIDGETOBSERVER_H
-#define DISTANCEWIDGETOBSERVER_H
+#pragma once
 
 #include "abstractwidgetobserver.h"
 
@@ -30,4 +29,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // DISTANCEWIDGETOBSERVER_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_MODEL_H_
-#define COLMAP_SRC_MVS_MODEL_H_
+#pragma once
 
 #include <cstdint>
 #include <fstream>
@@ -85,5 +84,3 @@ private:
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_MODEL_H_

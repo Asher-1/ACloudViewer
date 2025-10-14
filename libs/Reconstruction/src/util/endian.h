@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_ENDIAN_H_
-#define COLMAP_SRC_UTIL_ENDIAN_H_
+#pragma once
 
 #include <algorithm>
 
@@ -137,5 +136,3 @@ void WriteBinaryLittleEndian(std::ostream* stream, const std::vector<T>& data) {
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_ENDIAN_H_

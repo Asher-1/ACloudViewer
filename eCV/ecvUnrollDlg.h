@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_UNROLL_DLG_HEADER
-#define ECV_UNROLL_DLG_HEADER
+#pragma once
 
 #include <ui_unrollDlg.h>
 
@@ -44,5 +43,3 @@ protected slots:
 protected:
     bool coneMode;
 };
-
-#endif  // ECV_UNROLL_DLG_HEADER

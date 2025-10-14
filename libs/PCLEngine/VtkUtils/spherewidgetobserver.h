@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SPHEREWIDGETOBSERVER_H
-#define SPHEREWIDGETOBSERVER_H
+#pragma once
 
 #include "abstractwidgetobserver.h"
 
@@ -26,5 +25,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-
-#endif  // SPHEREWIDGETOBSERVER_H

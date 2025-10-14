@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MATH_TOOLS_HEADER
-#define MATH_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "CVTypes.h"
@@ -15,5 +14,3 @@ namespace cloudViewer {
 //! Empty class - for classification purpose only
 class MathTools {};
 }  // namespace cloudViewer
-
-#endif  // MATH_TOOLS_HEADER

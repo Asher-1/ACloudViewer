@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_PLATFORM_HEADER
-#define CV_PLATFORM_HEADER
+#pragma once
 
 // Defines the following macros (depending on the compilation platform/settings)
 //	- CV_WINDOWS / CV_MAC_OS / CV_LINUX
@@ -30,5 +29,3 @@
 #define CV_ENV_32
 #endif
 #endif
-
-#endif  // CV_PLATFORM_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PYTHON_ACTION_LAUNCHER_H
-#define PYTHON_PLUGIN_PYTHON_ACTION_LAUNCHER_H
+#pragma once
 
 #include <QListWidget>
 #include <QWidget>
@@ -39,5 +38,3 @@ class PythonActionLauncher : public QWidget
     const PythonPluginManager *m_pluginManager;
     PythonInterpreter *m_interpreter;
 };
-
-#endif // PYTHON_PLUGIN_PYTHON_ACTION_LAUNCHER_H

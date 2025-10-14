@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_MEASUREMENT_DEVICE
-#define CC_MEASUREMENT_DEVICE
+#pragma once
 
 // CC
 #include "ecvMainAppInterface.h"
@@ -41,5 +40,3 @@ private:
                                         const PointCoordinateType *equation,
                                         bool signedMeasurement) const;
 };
-
-#endif

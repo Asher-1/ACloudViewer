@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_RENDER_TO_FILE_DLG_HEADER
-#define CC_RENDER_TO_FILE_DLG_HEADER
+#pragma once
 
 #include <QDialog>
 
@@ -56,5 +55,3 @@ protected:
 
     Ui::RenderToFileDialog* m_ui;
 };
-
-#endif  // CC_RENDER_TO_FILE_DLG_HEADER

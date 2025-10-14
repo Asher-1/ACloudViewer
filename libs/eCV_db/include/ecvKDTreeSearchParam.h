@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_KDTREE_SEARCH_PARAM_HEADER
-#define CV_KDTREE_SEARCH_PARAM_HEADER
+#pragma once
 
 #include "eCV_db.h"
 
@@ -97,5 +96,3 @@ public:
 
 }  // namespace geometry
 }  // namespace cloudViewer
-
-#endif  // CV_KDTREE_SEARCH_PARAM_HEADER

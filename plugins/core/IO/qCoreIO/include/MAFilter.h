@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MA_FILTER_HEADER
-#define ECV_MA_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -23,5 +22,3 @@ public:
                                      const QString& filename,
                                      const SaveParameters& parameters) override;
 };
-
-#endif  // ECV_MA_FILTER_HEADER

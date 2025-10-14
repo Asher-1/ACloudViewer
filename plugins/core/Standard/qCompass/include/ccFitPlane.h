@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FITPLANE_HEADER
-#define ECV_FITPLANE_HEADER
+#pragma once
 
 #include <ecvNormalVectors.h>
 #include <ecvPlane.h>
@@ -33,5 +32,3 @@ public:
     // associated data)
     static bool isFitPlane(ccHObject* object);
 };
-
-#endif  // ECV_FITPLANE_HEADER

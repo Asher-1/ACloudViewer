@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef LINEWIDGETOBSERVER_H
-#define LINEWIDGETOBSERVER_H
+#pragma once
 
 #include "abstractwidgetobserver.h"
 
@@ -27,4 +26,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // LINEWIDGETOBSERVER_H

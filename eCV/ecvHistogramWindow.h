@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_HISTOGRAM_WINDOW_HEADER
-#define ECV_HISTOGRAM_WINDOW_HEADER
+#pragma once
 
 // Qt
 #include <QDialog>
@@ -276,5 +275,3 @@ protected:
     //! Associated widgets
     Ui_HistogramDialog* m_gui;
 };
-
-#endif

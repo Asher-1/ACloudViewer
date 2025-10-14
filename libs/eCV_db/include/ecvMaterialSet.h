@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MATERIAL_SET_HEADER
-#define ECV_MATERIAL_SET_HEADER
+#pragma once
 
 // Local
 #include "CVShareable.h"
@@ -77,5 +76,3 @@ protected:
                                  int flags,
                                  LoadedIDMap& oldToNewIDMap) override;
 };
-
-#endif  // ECV_MATERIAL_SET_HEADER

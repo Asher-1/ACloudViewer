@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TOOL_HEADER
-#define ECV_TOOL_HEADER
+#pragma once
 
 #include <ecvDisplayTools.h>
 #include <ecvHObject.h>
@@ -70,5 +69,3 @@ protected:
     // link to the active openGLWindow
     QWidget* m_window;
 };
-
-#endif  // ECV_TOOL_HEADER

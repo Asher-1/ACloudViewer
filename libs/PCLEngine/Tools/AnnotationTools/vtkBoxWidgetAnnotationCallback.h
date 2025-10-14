@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkBoxWidgetCallback_H
-#define vtkBoxWidgetCallback_H
+#pragma once
 
 #include <vtkCommand.h>
 
@@ -41,5 +40,3 @@ public:
 private:
     Annotation *anno;
 };
-
-#endif

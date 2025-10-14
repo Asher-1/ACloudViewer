@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef LAS_FWF_IO_PLUGIN_COMMANDS_HEADER
-#define LAS_FWF_IO_PLUGIN_COMMANDS_HEADER
+#pragma once
 
 #include "ecvCommandLineInterface.h"
 
@@ -104,5 +103,3 @@ struct CommandSaveLASFWF : public ccCommandLineInterface::Command {
         return success;
     }
 };
-
-#endif  // LAS_FWF_IO_PLUGIN_COMMANDS_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QSRA_SYMBOL_CLOUD_HEADER
-#define QSRA_SYMBOL_CLOUD_HEADER
+#pragma once
 
 // Qt
 #include <QString>
@@ -102,5 +101,3 @@ protected:
     //! Last 3D rendering parameters
     ccGLCameraParameters m_lastCameraParams;
 };
-
-#endif  // QSRA_SYMBOL_CLOUD_HEADER

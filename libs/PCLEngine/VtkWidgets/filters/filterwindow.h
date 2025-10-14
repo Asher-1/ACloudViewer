@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FILTERWINDOW_H
-#define FILTERWINDOW_H
+#pragma once
 
 #include <vtkSmartPointer.h>
 
@@ -132,5 +131,3 @@ protected:
 
     bool meshMode = true;
 };
-
-#endif  // FILTERWINDOW_H

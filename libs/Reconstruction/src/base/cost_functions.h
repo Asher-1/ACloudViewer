@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_COST_FUNCTIONS_H_
-#define COLMAP_SRC_BASE_COST_FUNCTIONS_H_
+#pragma once
 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
@@ -254,5 +253,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_COST_FUNCTIONS_H_

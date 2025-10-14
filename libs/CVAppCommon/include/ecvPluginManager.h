@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECVPLUGINMANAGER_H
-#define ECVPLUGINMANAGER_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -64,5 +63,3 @@ private:
     QStringList m_pluginPaths;
     ccPluginInterfaceList m_pluginList;
 };
-
-#endif  // ECVPLUGINMANAGER_H

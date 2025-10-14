@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GENERIC_VISUALIZER_HEADER
-#define ECV_GENERIC_VISUALIZER_HEADER
+#pragma once
 
 // LOCAL
 #include "eCV_db.h"
@@ -27,5 +26,3 @@ public:
     //! Destructor
     virtual ~ecvGenericVisualizer() = default;
 };
-
-#endif  // ECV_GENERIC_VISUALIZER_HEADER

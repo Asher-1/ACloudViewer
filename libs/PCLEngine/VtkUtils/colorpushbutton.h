@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLORBUTTON_H
-#define COLORBUTTON_H
+#pragma once
 
 #include "../qPCL.h"
 #include "qtcolorpicker.h"
@@ -30,4 +29,3 @@ private:
 };
 
 }  // namespace Widgets
-#endif

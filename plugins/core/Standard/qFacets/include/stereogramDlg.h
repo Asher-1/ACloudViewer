@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QFACET_STEREOGRAM_DIALOG_HEADER
-#define QFACET_STEREOGRAM_DIALOG_HEADER
+#pragma once
 
 #include "ui_stereogramDlg.h"
 #include "ui_stereogramParamsDlg.h"
@@ -196,5 +195,3 @@ protected:
     //! Associated set of facets (unique ID)
     int m_facetGroupUniqueID;
 };
-
-#endif  // QFACET_STEREOGRAM_DIALOG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkScalarBarRepresentationCustom_h
-#define vtkScalarBarRepresentationCustom_h
+#pragma once
 
 #include "qPCL.h"
 #include "vtkScalarBarRepresentation.h"
@@ -63,5 +62,3 @@ private:
             delete;
     void operator=(const vtkScalarBarRepresentationCustom&) = delete;
 };
-
-#endif  // vtkScalarBarRepresentationCustom

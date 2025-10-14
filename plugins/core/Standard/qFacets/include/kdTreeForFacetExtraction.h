@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QFACET_KD_TREE_BASED_FACET_EXTRACTION_HEADER
-#define QFACET_KD_TREE_BASED_FACET_EXTRACTION_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <ecvKdTree.h>
@@ -35,5 +34,3 @@ public:
             bool closestFirst = true,
             cloudViewer::GenericProgressCallback* progressCb = 0);
 };
-
-#endif  // QFACET_KD_TREE_BASED_FACET_EXTRACTION_HEADER

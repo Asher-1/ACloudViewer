@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef DATAFILTER_H
-#define DATAFILTER_H
+#pragma once
 
 #include <vtkApproximatingSubdivisionFilter.h>
 #include <vtkCleanPolyData.h>
@@ -113,4 +112,3 @@ class QPCL_ENGINE_LIB_API VertexGlyphFilter
     : public DataFilter<vtkVertexGlyphFilter> {};
 
 }  // namespace VtkUtils
-#endif  // DATAFILTER_H

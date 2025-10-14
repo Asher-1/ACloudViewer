@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_RECONSTRUCTION_MANAGER_H_
-#define COLMAP_SRC_BASE_RECONSTRUCTION_MANAGER_H_
+#pragma once
 
 #include "base/reconstruction.h"
 
@@ -53,5 +52,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_RECONSTRUCTION_MANAGER_H_

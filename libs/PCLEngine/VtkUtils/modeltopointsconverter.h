@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MODELTOPOINTSCONVERTER_H
-#define MODELTOPOINTSCONVERTER_H
+#pragma once
 
 #include "point3f.h"
 #include "signalledrunable.h"
@@ -31,5 +30,3 @@ private:
 };
 
 }  // namespace VtkUtils
-
-#endif  // MODELTOPOINTSCONVERTER_H

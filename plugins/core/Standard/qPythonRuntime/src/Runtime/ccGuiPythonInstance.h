@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_CC_GUI_PYTHON_INSTANCE_H
-#define PYTHON_PLUGIN_CC_GUI_PYTHON_INSTANCE_H
+#pragma once
 
 #include <FileIOFilter.h>
 
@@ -68,5 +67,3 @@ class Q_DECL_EXPORT ccGuiPythonInstance final
   private:
     ecvMainAppInterface *m_app;
 };
-
-#endif // PYTHON_PLUGIN_CC_GUI_PYTHON_INSTANCE_H

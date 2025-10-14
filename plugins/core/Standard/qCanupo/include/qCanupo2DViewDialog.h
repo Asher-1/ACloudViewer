@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_CANUPO_2DVIEW_DIALOG_HEADER
-#define Q_CANUPO_2DVIEW_DIALOG_HEADER
+#pragma once
 
 #include <ui_qCanupo2DViewDialog.h>
 
@@ -123,5 +122,3 @@ protected:
     //! Picking radius
     int m_pickingRadius;
 };
-
-#endif  // Q_CANUPO_2DVIEW_DIALOG_HEADER

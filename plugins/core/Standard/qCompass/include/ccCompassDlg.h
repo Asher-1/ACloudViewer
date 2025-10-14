@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COMPASS_DIALOG_HEADER
-#define ECV_COMPASS_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <ecvOverlayDialog.h>
@@ -143,5 +142,3 @@ private:
         m_scalar_inv->setChecked(false);
     }
 };
-
-#endif  // ECV_COMPASS_DIALOG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVPostFilter_h
-#define vtkPVPostFilter_h
+#pragma once
 
 #include <string>  // for std::string
 
@@ -59,5 +58,3 @@ private:
     vtkPVPostFilter(const vtkPVPostFilter&) = delete;
     void operator=(const vtkPVPostFilter&) = delete;
 };
-
-#endif

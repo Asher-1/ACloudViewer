@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SPHERE_PRIMITIVE_HEADER
-#define ECV_SPHERE_PRIMITIVE_HEADER
+#pragma once
 
 // Local
 #include "ecvGenericPrimitive.h"
@@ -65,5 +64,3 @@ protected:
     //! Radius
     PointCoordinateType m_radius;
 };
-
-#endif  // CC_SPHERE_PRIMITIVE_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GEOOBJECT_HEADER
-#define ECV_GEOOBJECT_HEADER
+#pragma once
 
 #include <ecvHObject.h>
 #include <ecvMainAppInterface.h>
@@ -125,5 +124,3 @@ public:
     // ccGeoObject::UPPER_BOUNDARY or ccGeoObject::LOWER_BOUNDARY
     static int getGeoObjectRegion(ccHObject* object);
 };
-
-#endif  // ECV_GEOOBJECT_HEADER

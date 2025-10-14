@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef DOUBLESPINBOXDELEGATE_H
-#define DOUBLESPINBOXDELEGATE_H
+#pragma once
 
 #include <QStyledItemDelegate>
 
@@ -36,4 +35,3 @@ public:
 };
 
 }  // namespace VtkUtils
-#endif

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_CORRESPONDENCEMATCHING_HEADER
-#define Q_PCL_PLUGIN_CORRESPONDENCEMATCHING_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -73,5 +72,3 @@ protected:
     std::vector<float> m_scales;
     std::vector<ccPointCloud*> m_modelClouds;
 };
-
-#endif  // Q_PCL_PLUGIN_CORRESPONDENCEMATCHING_HEADER

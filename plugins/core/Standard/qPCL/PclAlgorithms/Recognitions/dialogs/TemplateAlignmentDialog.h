@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_TEMPLATEALIGNMENT_DIALOG_HEADER
-#define Q_PCL_TEMPLATEALIGNMENT_DIALOG_HEADER
+#pragma once
 
 #include <ui_TemplateAlignmentDialog.h>
 
@@ -73,5 +72,3 @@ protected:
 
     ccPointCloud* getCloudFromCombo(QComboBox* comboBox, ccHObject* dbRoot);
 };
-
-#endif  // Q_PCL_TEMPLATEALIGNMENT_DIALOG_HEADER

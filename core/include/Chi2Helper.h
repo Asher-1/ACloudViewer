@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CHI2_HELPER_HEADER
-#define CHI2_HELPER_HEADER
+#pragma once
 
 // system
 #include <cmath>
@@ -171,5 +170,3 @@ public:
         return chisqval;
     }
 };
-
-#endif  // CHI2_HELPER_HEADER

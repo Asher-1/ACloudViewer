@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GRIDDED_CLOUD_TOOLS_HEADER
-#define ECV_GRIDDED_CLOUD_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "ecvPointCloud.h"
@@ -60,5 +59,3 @@ public:
                                           ccPointCloud::Grid::Shared grid,
                                           ccGLMatrix* cloudToSensorTrans = 0);
 };
-
-#endif

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_2D_LABEL_HEADER
-#define ECV_2D_LABEL_HEADER
+#pragma once
 
 // Local
 #include "ecvGenericDisplayTools.h"
@@ -358,5 +357,3 @@ protected:
     QString m_contourIdfix;
     QString m_lineID;
 };
-
-#endif  // ECV_2D_LABEL_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SOR_FILTER_DLG_HEADER
-#define ECV_SOR_FILTER_DLG_HEADER
+#pragma once
 
 #include <ui_sorFilterDlg.h>
 
@@ -18,5 +17,3 @@ public:
     //! Default constructor
     explicit ecvSORFilterDlg(QWidget* parent = 0);
 };
-
-#endif  // ECV_SOR_FILTER_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GUI_PARAMETERS_HEADER
-#define GUI_PARAMETERS_HEADER
+#pragma once
 
 /***************************************************
                                 GUI parameters
@@ -139,5 +138,3 @@ protected:
     //! Parameters set
     ParamStruct params;
 };
-
-#endif  // GUI_PARAMETERS_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CCCOMPASSEXPORT_H
-#define CCCOMPASSEXPORT_H
+#pragma once
 
 class QString;
 
@@ -17,5 +16,3 @@ void saveCSV(ecvMainAppInterface *app, const QString &filename);
 void saveSVG(ecvMainAppInterface *app, const QString &filename, float zoom);
 void saveXML(ecvMainAppInterface *app, const QString &filename);
 };  // namespace ccCompassExport
-
-#endif  // CCCOMPASSEXPORT_H

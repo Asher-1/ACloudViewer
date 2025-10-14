@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_MINIMUMCUT_HEADER
-#define Q_PCL_PLUGIN_MINIMUMCUT_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -45,5 +44,3 @@ protected:
     float m_cy;
     float m_cz;
 };
-
-#endif  // Q_PCL_PLUGIN_MINIMUMCUT_HEADER

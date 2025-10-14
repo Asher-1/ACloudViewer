@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_SACSEGMENTATION_DLG_HEADER
-#define Q_PCL_PLUGIN_SACSEGMENTATION_DLG_HEADER
+#pragma once
 
 #include <ui_SACSegmentationDlg.h>
 
@@ -28,5 +27,3 @@ private:
     void updateModelTypeComboBox(const QStringList& fields);
     void updateMethodTypeComboBox(const QStringList& fields);
 };
-
-#endif  // Q_PCL_PLUGIN_SACSEGMENTATION_DLG_HEADER

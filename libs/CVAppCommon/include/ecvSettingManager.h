@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SETTING_MANAGER_H
-#define SETTING_MANAGER_H
+#pragma once
 
 #include <QCoreApplication>
 #include <QSettings>
@@ -126,5 +125,3 @@ private:
 signals:
     void modified();
 };
-
-#endif

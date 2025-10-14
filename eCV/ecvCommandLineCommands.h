@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COMMAND_LINE_COMMANDS_HEADER
-#define COMMAND_LINE_COMMANDS_HEADER
+#pragma once
 
 #include <QStringList>
 
@@ -414,5 +413,3 @@ struct CommandFeature : public ccCommandLineInterface::Command {
 
     bool process(ccCommandLineInterface& cmd) override;
 };
-
-#endif  // COMMAND_LINE_COMMANDS_HEADER

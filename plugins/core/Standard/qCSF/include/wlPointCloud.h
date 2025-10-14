@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef WL_PCL_POINT_CLOUD_H_
-#define WL_PCL_POINT_CLOUD_H_
+#pragma once
 
 // system
 #include <vector>
@@ -48,5 +47,3 @@ public:
     }
 };
 }  // namespace wl
-
-#endif  // WL_POINT_CLOUD_H_

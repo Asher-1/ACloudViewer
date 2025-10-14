@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ABSTRACTIMAGEPROCESSOR_H
-#define ABSTRACTIMAGEPROCESSOR_H
+#pragma once
 
 #include <vtkImageGradient.h>
 #include <vtkImageLaplacian.h>
@@ -51,4 +50,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // ABSTRACTIMAGEPROCESSOR_H

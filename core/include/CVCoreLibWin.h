@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_CORE_LIB_API_H
-#define CV_CORE_LIB_API_H
+#pragma once
 
 #include <QtCore/QtGlobal>
 
@@ -15,5 +14,3 @@
 #else
 #define CV_CORE_LIB_API Q_DECL_IMPORT
 #endif
-
-#endif  // CV_CORE_LIB_API_H

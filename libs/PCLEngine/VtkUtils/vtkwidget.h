@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef VTKWIDGET_H
-#define VTKWIDGET_H
+#pragma once
 
 // #define vtkRenderingCore_AUTOINIT
 // 3(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingOpenGL) // ogl2
@@ -84,4 +83,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // VTKWIDGET_H

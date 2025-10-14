@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef POV_FILTER_HEADER
-#define POV_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -27,5 +26,3 @@ public:
                                      const QString& filename,
                                      const SaveParameters& parameters) override;
 };
-
-#endif  // POV_FILTER_HEADER

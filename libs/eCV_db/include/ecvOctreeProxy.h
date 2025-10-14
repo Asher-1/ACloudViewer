@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_OCTREE_PROXY_HEADER
-#define ECV_OCTREE_PROXY_HEADER
+#pragma once
 
 // Local
 #include "ecvHObject.h"
@@ -47,5 +46,3 @@ protected:  // members
     //! Associated octree
     ccOctree::Shared m_octree;
 };
-
-#endif  // ECV_OCTREE_PROXY_HEADER

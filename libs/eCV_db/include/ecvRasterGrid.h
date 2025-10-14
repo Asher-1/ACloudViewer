@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_RASTER_GRID_HEADER
-#define ECV_RASTER_GRID_HEADER
+#pragma once
 
 // local
 #include "eCV_db.h"
@@ -225,5 +224,3 @@ struct ECV_DB_LIB_API ccRasterGrid {
     //! Whether the grid is valid/up-to-date
     bool valid;
 };
-
-#endif  // ECV_RASTER_GRID_HEADER

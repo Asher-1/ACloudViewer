@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_CANUPO_PROCESS_HEADER
-#define Q_CANUPO_PROCESS_HEADER
+#pragma once
 
 // Local
 #include "ccPointDescriptor.h"
@@ -45,5 +44,3 @@ public:
                          QWidget* parentWidget = nullptr,
                          bool silent = false);
 };
-
-#endif  // Q_CANUPO_PROCESS_HEADER

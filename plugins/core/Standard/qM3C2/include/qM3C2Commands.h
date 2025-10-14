@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef M3C2_PLUGIN_COMMANDS_HEADER
-#define M3C2_PLUGIN_COMMANDS_HEADER
+#pragma once
 
 // CLOUDVIEWER
 #include "ecvCommandLineInterface.h"
@@ -80,5 +79,3 @@ struct CommandM3C2 : public ccCommandLineInterface::Command {
         return true;
     }
 };
-
-#endif  // M3C2_PLUGIN_COMMANDS_HEADER

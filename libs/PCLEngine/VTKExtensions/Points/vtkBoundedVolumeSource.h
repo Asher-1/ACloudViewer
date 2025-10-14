@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkBoundedVolumeSource_h
-#define vtkBoundedVolumeSource_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkImageAlgorithm.h"
@@ -107,5 +106,3 @@ private:
     vtkBoundedVolumeSource(const vtkBoundedVolumeSource&) = delete;
     void operator=(const vtkBoundedVolumeSource&) = delete;
 };
-
-#endif

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_WIDGETS_INTERFACE_H
-#define ECV_WIDGETS_INTERFACE_H
+#pragma once
 
 #include "eCV_db.h"
 
@@ -105,5 +104,3 @@ public:  // public interface (to be reimplemented by each widgets interface)
 };
 
 }  // namespace DBLib
-
-#endif  // ECV_WIDGETS_INTERFACE_H

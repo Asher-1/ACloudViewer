@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GRADIENTCOMBOBOX_H
-#define GRADIENTCOMBOBOX_H
+#pragma once
 
 #include <QComboBox>
 
@@ -53,4 +52,3 @@ private:
 };
 
 }  // namespace Widgets
-#endif  // GRADIENTCOMBOBOX_H

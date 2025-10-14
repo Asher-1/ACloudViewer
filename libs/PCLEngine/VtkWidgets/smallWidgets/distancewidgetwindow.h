@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef DISTANCEWIDGETWINDOW_H
-#define DISTANCEWIDGETWINDOW_H
+#pragma once
 
 #include "basewidgetwindow.h"
 
@@ -51,5 +50,3 @@ private:
     vtkSmartPointer<vtkDistanceRepresentation2D> m_2dRep;
     vtkSmartPointer<vtkDistanceRepresentation3D> m_3dRep;
 };
-
-#endif  // DISTANCEWIDGETWINDOW_H

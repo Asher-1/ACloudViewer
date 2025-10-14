@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_ICM_FILTER_HEADER
-#define CC_ICM_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -26,5 +25,3 @@ protected:
                                     const QString& imageDescFilename,
                                     const ccBBox& globalBBox);
 };
-
-#endif  // CC_ICM_FILTER_HEADER

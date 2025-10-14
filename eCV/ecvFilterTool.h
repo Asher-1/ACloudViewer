@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FILTER_TOOL_HEADER
-#define ECV_FILTER_TOOL_HEADER
+#pragma once
 
 // LOCAL
 #include <ecvOverlayDialog.h>
@@ -104,5 +103,3 @@ protected:
 
     ccHObject::Container m_out_entities;
 };
-
-#endif  // ECV_FILTER_TOOL_HEADER

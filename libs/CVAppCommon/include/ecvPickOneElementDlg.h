@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PICK_ONE_ELEMENT_DLG_HEADER
-#define ECV_PICK_ONE_ELEMENT_DLG_HEADER
+#pragma once
 
 #include "CVAppCommon.h"
 
@@ -39,5 +38,3 @@ protected:
     //! Associated UI
     Ui_PickOneElementDialog *m_ui;
 };
-
-#endif  // ECV_PICK_ONE_ELEMENT_DLG_HEADER

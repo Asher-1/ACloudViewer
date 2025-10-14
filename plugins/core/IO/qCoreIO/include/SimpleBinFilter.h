@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SIMPLE_BIN_FILTER_HEADER
-#define ECV_SIMPLE_BIN_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -29,5 +28,3 @@ public:
 
 protected:
 };
-
-#endif  // ECV_SIMPLE_BIN_FILTER_HEADER

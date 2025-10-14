@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MESH_GROUP_HEADER
-#define ECV_MESH_GROUP_HEADER
+#pragma once
 
 // Local
 #include "ecvGenericMesh.h"
@@ -143,5 +142,3 @@ protected:
     // inherited from ccHObject
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 };
-
-#endif  // ECV_MESH_GROUP_HEADER

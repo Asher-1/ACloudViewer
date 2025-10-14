@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TRACE_HEADER
-#define ECV_TRACE_HEADER
+#pragma once
 
 // #define DEBUG_PATH   //n.b. uncomment this to write point-costs to a scalar
 // field for debug purposes
@@ -308,5 +307,3 @@ public:
             ccHObject* object);  // return true if object is a valid trace
                                  // [regardless of it's class type]
 };
-
-#endif  // ECV_TRACE_HEADER

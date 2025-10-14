@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TETRA_MESH_HEADER
-#define ECV_TETRA_MESH_HEADER
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/StdVector>
@@ -113,5 +112,3 @@ public:
 
 }  // namespace geometry
 }  // namespace cloudViewer
-
-#endif  // ECV_TETRA_MESH_HEADER

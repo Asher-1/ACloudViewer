@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ITEM_DELEGATE_HEADER
-#define ECV_ITEM_DELEGATE_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <ecvArray.h>
@@ -216,5 +215,3 @@ protected:
     QStandardItemModel* m_model;
     QAbstractItemView* m_view;
 };
-
-#endif  // ECV_ITEM_DELEGATE_HEADER

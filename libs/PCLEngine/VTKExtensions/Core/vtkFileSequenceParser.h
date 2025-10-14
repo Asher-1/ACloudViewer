@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkFileSequenceParser_h
-#define vtkFileSequenceParser_h
+#pragma once
 
 #include "qPCL.h"  //needed for exports
 #include "vtkObject.h"
@@ -52,5 +51,3 @@ private:
     vtkFileSequenceParser(const vtkFileSequenceParser&) = delete;
     void operator=(const vtkFileSequenceParser&) = delete;
 };
-
-#endif

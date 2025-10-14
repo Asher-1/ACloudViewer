@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_OVERLAY_DIALOG_HEADER
-#define ECV_OVERLAY_DIALOG_HEADER
+#pragma once
 
 #include "CVPluginAPI.h"
 
@@ -90,5 +89,3 @@ protected:
     //! Overridden keys
     QList<int> m_overriddenKeys;
 };
-
-#endif  // ECV_OVERLAY_DIALOG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_INNER_RECT_2D_FINDER_HEADER
-#define ECV_INNER_RECT_2D_FINDER_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <ecvBox.h>
@@ -57,5 +56,3 @@ protected:
     //! Y dimension
     unsigned char m_Y;
 };
-
-#endif  // ECV_INNER_RECT_2D_FINDER_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_APPLICATION_BASE_H
-#define ECV_APPLICATION_BASE_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -62,5 +61,3 @@ private:
 
     const bool c_CommandLine;
 };
-
-#endif  // ECV_APPLICATION_BASE_H

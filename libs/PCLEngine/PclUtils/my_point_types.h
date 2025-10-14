@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_MY_POINT_TYPES_H
-#define Q_PCL_PLUGIN_MY_POINT_TYPES_H
+#pragma once
 
 // CV_CORE_LIB
 #include <Eigen.h>
@@ -192,5 +191,3 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
                                                                   normal_y,
                                                                   normal_y)(
                 float, normal_z, normal_z)(float, curvature, curvature))
-
-#endif  // Q_PCL_PLUGIN_MY_POINT_TYPES_H

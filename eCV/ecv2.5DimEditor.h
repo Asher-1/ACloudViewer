@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_2_5D_EDITOR_HEADER
-#define CC_2_5D_EDITOR_HEADER
+#pragma once
 
 #include <ui_rasterizeDlg.h>
 
@@ -94,5 +93,3 @@ protected:  // members
     //! 'Raster' cloud
     ccPointCloud* m_rasterCloud;
 };
-
-#endif  // CC_2_5D_EDITOR_HEADER

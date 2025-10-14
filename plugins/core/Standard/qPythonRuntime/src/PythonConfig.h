@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PYTHON_CONFIG_H
-#define PYTHON_PLUGIN_PYTHON_CONFIG_H
+#pragma once
 
 #include <QString>
 #include <QtGlobal>
@@ -202,4 +201,3 @@ class PythonConfigPaths final
     /// m_pythonPath can however be freed after Py_SetPath was used
     std::unique_ptr<wchar_t[]> m_pythonPath{};
 };
-#endif // PYTHON_PLUGIN_PYTHON_CONFIG_H

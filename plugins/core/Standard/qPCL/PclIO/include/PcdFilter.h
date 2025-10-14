@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PCD_FILTER_HEADER
-#define ECV_PCD_FILTER_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <FileIOFilter.h>
@@ -41,5 +40,3 @@ public:
      **/
     static void SetOutputFileFormat(PCDOutputFileFormat format);
 };
-
-#endif  // ECV_PCD_FILTER_HEADER

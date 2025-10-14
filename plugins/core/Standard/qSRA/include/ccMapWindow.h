@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QSRA_MAP_GL_WINDOW_HEADER
-#define QSRA_MAP_GL_WINDOW_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -64,5 +63,3 @@ protected:
     //! Whether to show or not the associated SF
     bool m_showSF;
 };
-
-#endif  // QSRA_MAP_GL_WINDOW_HEADER

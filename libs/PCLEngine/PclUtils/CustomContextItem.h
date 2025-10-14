@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef qPCL_CUSTOM_CONTEXT_ITEM_H
-#define qPCL_CUSTOM_CONTEXT_ITEM_H
+#pragma once
 
 // Local
 #include <vtkSmartPointer.h>
@@ -88,5 +87,3 @@ struct QPCL_ENGINE_LIB_API Markers : public Points {
 }  // namespace context_items
 
 }  // namespace PclUtils
-
-#endif  // qPCL_CUSTOM_CONTEXT_ITEM_H

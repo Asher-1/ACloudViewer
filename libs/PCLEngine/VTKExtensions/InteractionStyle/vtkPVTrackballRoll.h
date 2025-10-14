@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVTrackballRoll_h
-#define vtkPVTrackballRoll_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkCameraManipulator.h"
@@ -43,5 +42,3 @@ protected:
     vtkPVTrackballRoll(const vtkPVTrackballRoll&) = delete;
     void operator=(const vtkPVTrackballRoll&) = delete;
 };
-
-#endif

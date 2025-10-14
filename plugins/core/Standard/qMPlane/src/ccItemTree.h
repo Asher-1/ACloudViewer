@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_MPLANE_ITEM_TREE
-#define CC_MPLANE_ITEM_TREE
+#pragma once
 
 // std
 #include <array>
@@ -70,5 +69,3 @@ cc2DLabel *createPointLabel2D(QString labelText,
                               QPoint clickPoint,
                               unsigned int pointIdx);
 }  // namespace CC_ITEM_TREE
-
-#endif

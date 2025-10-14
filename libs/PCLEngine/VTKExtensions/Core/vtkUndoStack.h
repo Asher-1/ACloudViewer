@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkUndoStack_h
-#define vtkUndoStack_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkObject.h"
@@ -149,5 +148,3 @@ private:
     bool InUndo;
     bool InRedo;
 };
-
-#endif

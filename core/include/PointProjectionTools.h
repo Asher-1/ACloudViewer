@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef POINT_PROJECTION_TOOLS_HEADER
-#define POINT_PROJECTION_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "CVConst.h"
@@ -213,5 +212,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // POINT_PROJECTION_TOOLS_HEADER

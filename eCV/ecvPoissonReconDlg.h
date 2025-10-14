@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POISSON_RECONSTRUCTION_DLG_HEADER
-#define ECV_POISSON_RECONSTRUCTION_DLG_HEADER
+#pragma once
 
 // dialog
 #include "ecvHObject.h"
@@ -41,5 +40,3 @@ private:
     ccHObject::Container m_result;
     std::vector<bool> m_normalsMask;
 };
-
-#endif  // ECV_POISSON_RECONSTRUCTION_DLG_HEADER

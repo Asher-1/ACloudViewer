@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GENERIC_CLOUD_HEADER
-#define GENERIC_CLOUD_HEADER
+#pragma once
 
 #include <functional>
 
@@ -104,5 +103,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // GENERIC_CLOUD_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MAIN_WINDOW_HEADER
-#define ECV_MAIN_WINDOW_HEADER
+#pragma once
 
 // LOCAL
 #include "ecvEntityAction.h"
@@ -724,5 +723,3 @@ signals:
      **/
     void rotation(const ccGLMatrixd& rotMat);
 };
-
-#endif  // ECV_MAIN_WINDOW_HEADER

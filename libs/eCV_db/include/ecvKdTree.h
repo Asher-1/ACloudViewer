@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_KD_TREE_HEADER
-#define ECV_KD_TREE_HEADER
+#pragma once
 
 // cloudViewer
 #include <TrueKdTree.h>
@@ -81,5 +80,3 @@ protected:
     //! Associated cloud
     ccGenericPointCloud* m_associatedGenericCloud;
 };
-
-#endif  // CC_KD_TREE_HEADER

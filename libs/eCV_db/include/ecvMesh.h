@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MESH_HEADER
-#define ECV_MESH_HEADER
+#pragma once
 
 // cloudViewer
 #include <Helper.h>
@@ -1513,5 +1512,3 @@ protected:
     //! Mesh normals indexes (per-triangle)
     triangleNormalsIndexesSet* m_triNormalIndexes;
 };
-
-#endif  // ECV_MESH_HEADER

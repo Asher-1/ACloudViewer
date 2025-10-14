@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_CUT_FILTER_H
-#define TOOLS_CUT_FILTER_H
+#pragma once
 
 #include <vtkSmartPointer.h>
 
@@ -100,5 +99,3 @@ protected:
     vtkSmartPointer<vtkPlanes> m_planes;
     vtkSmartPointer<vtkActor> m_contourLinesActor;
 };
-
-#endif  // TOOLS_CUT_FILTER_H

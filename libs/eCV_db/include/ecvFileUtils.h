@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECVFILEUTILS_H
-#define ECVFILEUTILS_H
+#pragma once
 // ##########################################################################
 // #                                                                        #
 // #                              CLOUDVIEWER                             #
@@ -35,4 +34,3 @@ inline QString defaultDocPath() {
             .first();
 }
 }  // namespace ecvFileUtils
-#endif  // ECVFILEUTILS_H

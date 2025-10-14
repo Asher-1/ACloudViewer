@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_CORRESPONDENCEMATCHING_DIALOG_HEADER
-#define Q_PCL_CORRESPONDENCEMATCHING_DIALOG_HEADER
+#pragma once
 
 #include <ui_CorrespondenceMatchingDialog.h>
 
@@ -84,5 +83,3 @@ protected:
 
     ccPointCloud* getCloudFromCombo(QComboBox* comboBox, ccHObject* dbRoot);
 };
-
-#endif  // Q_PCL_CORRESPONDENCEMATCHING_DIALOG_HEADER

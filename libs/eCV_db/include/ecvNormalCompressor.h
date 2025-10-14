@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_NORMAL_COMPRESSOR_HEADER
-#define ECV_NORMAL_COMPRESSOR_HEADER
+#pragma once
 
 #include "eCV_db.h"
 
@@ -39,5 +38,3 @@ public:
     //! Inverts a (compressed) normal
     static void InvertNormal(CompressedNormType &code);
 };
-
-#endif  // ECV_NORMAL_COMPRESSOR_HEADER

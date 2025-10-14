@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ACTOREXPORTER_H
-#define ACTOREXPORTER_H
+#pragma once
 
 #include <QRunnable>
 #include <QString>
@@ -28,4 +27,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // ACTOREXPORTER_H

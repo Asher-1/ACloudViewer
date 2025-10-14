@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_GPS_H_
-#define COLMAP_SRC_BASE_GPS_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <vector>
@@ -42,5 +41,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_GPS_H_

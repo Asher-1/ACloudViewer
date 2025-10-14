@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef _C2CDIST_H_
-#define _C2CDIST_H_
+#pragma once
 
 #include "Cloth.h"
 #include "wlPointCloud.h"
@@ -21,5 +20,3 @@ public:
                         std::vector<int>& offGroundIndexes,
                         unsigned N = 3);
 };
-
-#endif

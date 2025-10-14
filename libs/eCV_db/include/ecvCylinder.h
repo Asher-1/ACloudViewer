@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CYLINDER_PRIMITIVE_HEADER
-#define ECV_CYLINDER_PRIMITIVE_HEADER
+#pragma once
 
 // Local
 #include "ecvCone.h"
@@ -56,5 +55,3 @@ public:
         return setBottomRadius(radius);
     }
 };
-
-#endif  // ECV_CYLINDER_PRIMITIVE_HEADER

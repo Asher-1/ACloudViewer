@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_PATCH_MATCH_CUDA_H_
-#define COLMAP_SRC_MVS_PATCH_MATCH_CUDA_H_
+#pragma once
 
 #include <cuda_runtime.h>
 
@@ -116,5 +115,3 @@ private:
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_PATCH_MATCH_CUDA_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FILTER_WINDOW_TOOL_HEADER
-#define ECV_FILTER_WINDOW_TOOL_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -167,5 +166,3 @@ protected:
                             const PointCoordinateType* preferredNormDim = 0,
                             bool enableVisualDebugMode = false);
 };
-
-#endif  // ECV_FILTER_WINDOW_TOOL_HEADER

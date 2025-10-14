@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GENERIC_INDEXED_PERSIST_CLOUD_HEADER
-#define GENERIC_INDEXED_PERSIST_CLOUD_HEADER
+#pragma once
 
 // Local
 #include "GenericIndexedCloud.h"
@@ -33,5 +32,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // GENERIC_INDEXED_PERSIST_CLOUD_HEADER

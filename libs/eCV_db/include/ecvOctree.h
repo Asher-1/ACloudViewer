@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_OCTREE_HEADER
-#define ECV_OCTREE_HEADER
+#pragma once
 
 // Local
 #include "ecvHObject.h"
@@ -192,5 +191,3 @@ protected:  // MEMBERS
     //! For Octree Display
     bool m_visible;
 };
-
-#endif  // ECV_OCTREE_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ADVANCED_TYPES_HEADER
-#define ECV_ADVANCED_TYPES_HEADER
+#pragma once
 
 // Local
 #include "ecvArray.h"
@@ -175,5 +174,3 @@ public:
         return cloneArray;
     }
 };
-
-#endif  // ECV_ADVANCED_TYPES_HEADER

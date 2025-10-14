@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_DISPLAY_TOOLS_HEADER
-#define QPCL_DISPLAY_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "ImageVis.h"
@@ -438,5 +437,3 @@ protected:
     virtual void registerVisualizer(QMainWindow* widget,
                                     bool stereoMode = false) override;
 };
-
-#endif  // QPCL_DISPLAY_TOOLS_HEADER

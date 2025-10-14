@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef _RASTERIZATION_H_
-#define _RASTERIZATION_H_
+#pragma once
 
 #include "Cloth.h"
 #include "wlPointCloud.h"
@@ -27,5 +26,3 @@ public:
                               std::vector<double> &heightVal,
                               unsigned KNN = 1);
 };
-
-#endif  //_RASTERIZATION_H_

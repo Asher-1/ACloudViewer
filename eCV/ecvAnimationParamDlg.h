@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ANIMATION_PARAM_DLG_HEADER
-#define ECV_ANIMATION_PARAM_DLG_HEADER
+#pragma once
 
 // Local
 #include "ecvOverlayDialog.h"
@@ -90,5 +89,3 @@ protected:
 private:
     AnimationDialogInternal* Internal;
 };
-
-#endif  // ECV_ANIMATION_PARAM_DLG_HEADER

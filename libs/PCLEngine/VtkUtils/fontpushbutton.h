@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FONTPUSHBUTTON_H
-#define FONTPUSHBUTTON_H
+#pragma once
 
 #include <QPushButton>
 
@@ -31,4 +30,3 @@ private:
 };
 
 }  // namespace Widgets
-#endif  // FONTPUSHBUTTON_H

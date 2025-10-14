@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_RDB_FILTER_HEADER
-#define CC_RDB_FILTER_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -40,5 +39,3 @@ public:
                  bool &multiple,
                  bool &exclusive) const override;
 };
-
-#endif  // CV_RDB_FILTER_HEADER

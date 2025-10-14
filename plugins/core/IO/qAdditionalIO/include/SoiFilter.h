@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SOI_FILTER_HEADER
-#define ECV_SOI_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -20,5 +19,3 @@ public:
                                    ccHObject& container,
                                    LoadParameters& parameters) override;
 };
-
-#endif  // ECV_SOI_FILTER_HEADER

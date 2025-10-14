@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLORSERIES_H
-#define COLORSERIES_H
+#pragma once
 
 #include <QColor>
 
@@ -34,4 +33,3 @@ private:
 };
 
 }  // namespace Utils
-#endif  // COLORSERIES_H

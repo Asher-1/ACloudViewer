@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FILEIO_H
-#define FILEIO_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -154,5 +153,3 @@ struct ECV_IO_LIB_API WritePointCloudOption {
 };
 }  // namespace io
 }  // namespace cloudViewer
-
-#endif

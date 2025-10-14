@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_H
-#define PYTHON_PLUGIN_H
+#pragma once
 
 #include "PythonConfig.h"
 #include "PythonInterpreter.h"
@@ -110,5 +109,3 @@ class PythonPlugin final : public QObject, public ccStdPluginInterface
     QStringList m_savedPath;
     QString m_saveFilePath;
 };
-
-#endif // PYTHON_PLUGIN_H

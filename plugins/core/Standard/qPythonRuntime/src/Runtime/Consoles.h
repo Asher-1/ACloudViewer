@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_CONSOLES_H
-#define PYTHON_PLUGIN_CONSOLES_H
+#pragma once
 
 #include <QListWidget>
 #include <QString>
@@ -173,4 +172,3 @@ class ListWidgetConsole
                                 }
                             }};
 };
-#endif // PYTHON_PLUGIN_CONSOLES_H

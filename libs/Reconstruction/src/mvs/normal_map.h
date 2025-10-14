@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_NORMAL_MAP_H_
-#define COLMAP_SRC_MVS_NORMAL_MAP_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -32,5 +31,3 @@ public:
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_NORMAL_MAP_H_

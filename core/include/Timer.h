@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_TIMER_HEADER
-#define CV_TIMER_HEADER
+#pragma once
 
 // LOCAL
 #include "CVCoreLib.h"
@@ -70,5 +69,3 @@ private:
 
 }  // namespace utility
 }  // namespace cloudViewer
-
-#endif  // CV_TIMER_HEADER

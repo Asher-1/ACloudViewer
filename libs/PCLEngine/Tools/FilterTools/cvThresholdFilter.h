@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_THRESHOLD_FILTER_H
-#define TOOLS_THRESHOLD_FILTER_H
+#pragma once
 
 #include "cvIsoSurfaceFilter.h"
 
@@ -28,5 +27,3 @@ public:
 protected:
     vtkSmartPointer<vtkDataSetSurfaceFilter> m_dssFilter;
 };
-
-#endif  // TOOLS_THRESHOLD_FILTER_H

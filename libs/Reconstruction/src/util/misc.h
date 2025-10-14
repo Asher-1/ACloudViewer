@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_MISC_H_
-#define COLMAP_SRC_UTIL_MISC_H_
+#pragma once
 
 #include <boost/filesystem.hpp>
 #include <fstream>
@@ -176,5 +175,3 @@ void WriteBinaryBlob(const std::string& path, const std::vector<T>& data) {
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_MISC_H_

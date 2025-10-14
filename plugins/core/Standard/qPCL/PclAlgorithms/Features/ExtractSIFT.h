@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_EXTRACTSIFT_HEADER
-#define Q_PCL_PLUGIN_EXTRACTSIFT_HEADER
+#pragma once
 
 #include "../BasePclModule.h"
 
@@ -44,5 +43,3 @@ protected:
     enum Modes { RGB, SCALAR_FIELD };
     Modes m_mode;
 };
-
-#endif

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GENERIC_PRIMITIVE_HEADER
-#define ECV_GENERIC_PRIMITIVE_HEADER
+#pragma once
 
 // Local
 #include "ecvMesh.h"
@@ -142,5 +141,3 @@ protected:
     //! Drawing precision (for primitives that support this feature)
     unsigned m_drawPrecision;
 };
-
-#endif  // ECV_GENERIC_PRIMITIVE_HEADER

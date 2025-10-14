@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SQUARE_MATRIX_HEADER
-#define SQUARE_MATRIX_HEADER
+#pragma once
 
 // local
 #include "CVGeom.h"
@@ -1027,5 +1026,3 @@ using SquareMatrixf = SquareMatrixTpl<float>;
 using SquareMatrixd = SquareMatrixTpl<double>;
 
 }  // namespace cloudViewer
-
-#endif  // SQUARE_MATRIX_HEADER

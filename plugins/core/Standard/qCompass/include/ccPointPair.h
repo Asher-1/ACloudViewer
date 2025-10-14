@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POINTPAIR_HEADER
-#define ECV_POINTPAIR_HEADER
+#pragma once
 
 #include <GenericIndexedCloudPersist.h>
 #include <ecvCone.h>
@@ -46,5 +45,3 @@ public:
     // returns true if object is/was a ccPointPair (as defined by its MetaData)
     static bool isPointPair(ccHObject* object);
 };
-
-#endif  // ECV_POINTPAIR_HEADER

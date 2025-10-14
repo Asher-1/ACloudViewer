@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_CUDACC_H_
-#define COLMAP_SRC_UTIL_CUDACC_H_
+#pragma once
 
 #include <cuda_runtime.h>
 
@@ -39,5 +38,3 @@ void CudaCheck(const char* file, const int line);
 void CudaSyncAndCheck(const char* file, const int line);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_CUDACC_H_

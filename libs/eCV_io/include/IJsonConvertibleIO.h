@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_IJSONCONVERTIBLE_IO_HEADER
-#define ECV_IJSONCONVERTIBLE_IO_HEADER
+#pragma once
 
 // LOCAL
 #include "eCV_io.h"
@@ -97,5 +96,3 @@ bool ECV_IO_LIB_API WriteIJsonConvertibleToJSONString(
 
 }  // namespace io
 }  // namespace cloudViewer
-
-#endif  // ECV_IJSONCONVERTIBLE_IO_HEADER

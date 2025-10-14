@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_INDEXED_TRANSFORMATION_BUFFER_HEADER
-#define ECV_INDEXED_TRANSFORMATION_BUFFER_HEADER
+#pragma once
 
 // Local
 #include "ecvBBox.h"
@@ -120,5 +119,3 @@ protected:
     //! Trihedrons display scale
     float m_trihedronsScale;
 };
-
-#endif  // ECV_INDEXED_TRANSFORMATION_BUFFER_HEADER

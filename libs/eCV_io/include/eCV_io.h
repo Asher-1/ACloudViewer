@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_IO_HEADER
-#define ECV_IO_HEADER
+#pragma once
 
 #include <QtCore/QtGlobal>
 
@@ -15,4 +14,3 @@
 #else
 #define ECV_IO_LIB_API Q_DECL_IMPORT
 #endif
-#endif  // ECV_IO_HEADER

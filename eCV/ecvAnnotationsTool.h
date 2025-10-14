@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ANNOTATION_TOOL_HEADER
-#define ECV_ANNOTATION_TOOL_HEADER
+#pragma once
 
 // LOCAL
 #include <ecvOverlayDialog.h>
@@ -115,5 +114,3 @@ protected:
 
     bool m_editMode;
 };
-
-#endif  // ECV_ANNOTATION_TOOL_HEADER

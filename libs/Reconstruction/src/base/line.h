@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_LINE_H_
-#define COLMAP_SRC_BASE_LINE_H_
+#pragma once
 
 #include <Eigen/Core>
 
@@ -39,5 +38,3 @@ std::vector<LineSegmentOrientation> ClassifyLineSegmentOrientations(
 }  // namespace colmap
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::LineSegment)
-
-#endif  // COLMAP_SRC_BASE_LINE_H_

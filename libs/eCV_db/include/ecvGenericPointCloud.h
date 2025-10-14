@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GENERIC_POINT_CLOUD_HEADER
-#define ECV_GENERIC_POINT_CLOUD_HEADER
+#pragma once
 
 // Local
 #include "ecvAdvancedTypes.h"
@@ -320,5 +319,3 @@ protected:
     //! Point size (won't be applied if 0)
     unsigned char m_pointSize;
 };
-
-#endif  // ECV_GENERIC_POINT_CLOUD_HEADER

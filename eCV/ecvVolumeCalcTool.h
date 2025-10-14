@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_VOLUME_CALC_TOOL_HEADER
-#define ECV_VOLUME_CALC_TOOL_HEADER
+#pragma once
 
 #include <ui_volumeCalcDlg.h>
 
@@ -164,5 +163,3 @@ protected:  // members
      **/
     ReportInfo m_lastReport;
 };
-
-#endif  // ECV_VOLUME_CALC_TOOL_HEADER

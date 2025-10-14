@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PROFILE_LOADER_HEADER
-#define PROFILE_LOADER_HEADER
+#pragma once
 
 class ccPolyline;
 class ecvMainAppInterface;
@@ -32,5 +31,3 @@ public:
                             CCVector3& origin,
                             ecvMainAppInterface* app = 0);
 };
-
-#endif  // PROFILE_LOADER_HEADER

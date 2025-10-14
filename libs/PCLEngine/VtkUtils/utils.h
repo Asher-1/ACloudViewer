@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef UTILS_H
-#define UTILS_H
+#pragma once
 
 #include <QColor>
 #include <QImage>
@@ -127,4 +126,3 @@ static inline void normal(T* inPot1, T* inPot2, T* outPot) {
 }
 
 }  // namespace Utils
-#endif

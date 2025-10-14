@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_DATABASE_CACHE_H_
-#define COLMAP_SRC_BASE_DATABASE_CACHE_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <string>
@@ -124,5 +123,3 @@ inline const class CorrespondenceGraph& DatabaseCache::CorrespondenceGraph()
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_DATABASE_CACHE_H_

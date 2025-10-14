@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QFACET_FAST_MARCHING_FOR_FACET_EXTRACTION_HEADER
-#define QFACET_FAST_MARCHING_FOR_FACET_EXTRACTION_HEADER
+#pragma once
 
 // cloudViewer
 #include <DistanceComputationTools.h>
@@ -134,5 +133,3 @@ protected:
     //! Propagation progress
     unsigned m_propagateProgress;
 };
-
-#endif  // QFACET_FAST_MARCHING_FOR_FACET_EXTRACTION_HEADER

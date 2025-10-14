@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef VTK_WIDGETS_FACTORY_H
-#define VTK_WIDGETS_FACTORY_H
+#pragma once
 
 #include <ecvWidgetsInterface.h>
 
@@ -22,5 +21,3 @@ public:
 
 private:
 };
-
-#endif  // VTK_WIDGETS_FACTORY_H

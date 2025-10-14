@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkMinkowskiFilter_h
-#define vtkMinkowskiFilter_h
+#pragma once
 
 #include "qPCL.h"  // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
@@ -65,5 +64,3 @@ private:
     double compute_edge_length(vtkCell* edge);
     double compute_face_angle(vtkCell* f1, vtkCell* f2);
 };
-
-#endif  //  vtkMinkowskiFilter_h

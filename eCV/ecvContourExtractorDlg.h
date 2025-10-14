@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CONTOUR_EXTRACTOR_DIALOG_HEADER
-#define ECV_CONTOUR_EXTRACTOR_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <QDialog>
@@ -67,5 +66,3 @@ protected:
     //! Local event loop
     QEventLoop m_loop;
 };
-
-#endif  // ECV_CONTOUR_EXTRACTOR_DIALOG_HEADER

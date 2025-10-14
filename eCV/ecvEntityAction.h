@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CCENTITYACTION_H
-#define CCENTITYACTION_H
+#pragma once
 // ##########################################################################
 // #                                                                        #
 // #                              CLOUDVIEWER                               #
@@ -160,5 +159,3 @@ bool VoxelSampling(const ccHObject::Container &selectedEntities,
                    QWidget *parent);
 
 }  // namespace ccEntityAction
-
-#endif

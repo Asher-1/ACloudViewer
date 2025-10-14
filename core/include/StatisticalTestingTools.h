@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef STATISTICAL_TESTING_TOOLS_HEADER
-#define STATISTICAL_TESTING_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "CVToolbox.h"
@@ -128,5 +127,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // STATISTICAL_TESTING_TOOLS_HEADER

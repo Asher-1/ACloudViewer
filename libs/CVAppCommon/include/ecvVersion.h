@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_VERSION_HEADER
-#define CV_VERSION_HEADER
+#pragma once
 
 // LOCAL
 #include <CVPlatform.h>
@@ -44,5 +43,3 @@ static QString versionLongStr(bool includeOS, QString verStr) {
 
     return verStr;
 };
-
-#endif  // CV_VERSION_HEADER

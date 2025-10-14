@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QHOUGH_NORMALS_HEADER
-#define QHOUGH_NORMALS_HEADER
+#pragma once
 
 #include <QDialog>
 
@@ -38,5 +37,3 @@ public:
 private:
     Ui::HoughNormalsDialog* m_ui;
 };
-
-#endif  // QHOUGH_NORMALS_HEADER

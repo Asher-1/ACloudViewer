@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_EIGEN_HEADER
-#define CV_EIGEN_HEADER
+#pragma once
 
 #include "CVCoreLib.h"
 
@@ -312,5 +311,3 @@ inline std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
 
 }  // namespace utility
 }  // namespace cloudViewer
-
-#endif  // CV_EIGEN_HEADER

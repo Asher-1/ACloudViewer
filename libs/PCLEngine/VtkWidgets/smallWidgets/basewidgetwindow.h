@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef BASEWIDGETWINDOW_H
-#define BASEWIDGETWINDOW_H
+#pragma once
 
 #include <vtkSmartPointer.h>
 
@@ -54,5 +53,3 @@ protected:
     VtkUtils::VtkWidget* m_vtkWidget = nullptr;
     vtkSmartPointer<vtkActor> m_theActor;
 };
-
-#endif  // BASEWIDGETWINDOW_H

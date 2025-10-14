@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_BASIC_TYPES_HEADER
-#define ECV_BASIC_TYPES_HEADER
+#pragma once
 
 // CVCoreLib
 #include <CVTypes.h>
@@ -15,5 +14,3 @@
 /** Should be set accordingly to ccNormalCompressor::QUANTIZE_LEVEL
  **/
 using CompressedNormType = unsigned int;
-
-#endif  // ECV_BASIC_TYPES_HEADER

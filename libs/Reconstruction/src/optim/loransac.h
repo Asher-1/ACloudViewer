@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_OPTIM_LORANSAC_H_
-#define COLMAP_SRC_OPTIM_LORANSAC_H_
+#pragma once
 
 #include <cfloat>
 #include <random>
@@ -241,5 +240,3 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_OPTIM_LORANSAC_H_

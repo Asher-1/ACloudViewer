@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UI_MODEL_VIEWER_WIDGET_H_
-#define COLMAP_SRC_UI_MODEL_VIEWER_WIDGET_H_
+#pragma once
 
 #include <QOpenGLFunctions_3_2_Core>
 #include <QtCore>
@@ -190,5 +189,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UI_MODEL_VIEWER_WIDGET_H_

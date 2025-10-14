@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef BUNDLERCOMMAND_H
-#define BUNDLERCOMMAND_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -34,5 +33,3 @@ public:
 
     virtual bool process(ccCommandLineInterface &cmd) override;
 };
-
-#endif

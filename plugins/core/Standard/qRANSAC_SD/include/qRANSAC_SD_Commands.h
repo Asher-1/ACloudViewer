@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef RANSAC_PLUGIN_COMMANDS_HEADER
-#define RANSAC_PLUGIN_COMMANDS_HEADER
+#pragma once
 
 // ACloudViewer
 #include <ecvGenericMesh.h>
@@ -479,5 +478,3 @@ struct CommandRANSAC : public ccCommandLineInterface::Command {
         return true;
     }
 };
-
-#endif  // RANSAC_PLUGIN_COMMANDS_HEADER

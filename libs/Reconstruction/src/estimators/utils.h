@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_ESTIMATORS_UTILS_H_
-#define COLMAP_SRC_ESTIMATORS_UTILS_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <vector>
@@ -64,5 +63,3 @@ void ComputeSquaredReprojectionError(
         std::vector<double>* residuals);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_ESTIMATORS_UTILS_H_

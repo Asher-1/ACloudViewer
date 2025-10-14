@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_GENERALFILTERS_HEADER
-#define Q_PCL_PLUGIN_GENERALFILTERS_HEADER
+#pragma once
 
 #include <CVGeom.h>
 
@@ -70,5 +69,3 @@ protected:
     std::vector<CCVector3> m_boundary;
     int m_dimension;
 };
-
-#endif  // Q_PCL_PLUGIN_GENERALFILTERS_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_OCTREE_SPIN_BOX_HEADER
-#define ECV_OCTREE_SPIN_BOX_HEADER
+#pragma once
 
 // Local
 #include "eCV_db.h"
@@ -47,5 +46,3 @@ protected:
     //! Corresponding octree base size
     double m_octreeBoxWidth;
 };
-
-#endif  // ECV_OCTREE_SPIN_BOX_HEADER

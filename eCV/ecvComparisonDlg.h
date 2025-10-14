@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_COMPARISON_DIALOG_HEADER
-#define CC_COMPARISON_DIALOG_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <ecvOctree.h>
@@ -109,5 +108,3 @@ protected:
     //! Best octree level (or 0 if none has been guessed already)
     int m_bestOctreeLevel;
 };
-
-#endif

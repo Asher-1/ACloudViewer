@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_MVS_WORKSPACE_H_
-#define COLMAP_SRC_MVS_WORKSPACE_H_
+#pragma once
 
 #include "mvs/consistency_graph.h"
 #include "mvs/depth_map.h"
@@ -117,5 +116,3 @@ void ImportPMVSWorkspace(const Workspace& workspace,
 
 }  // namespace mvs
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_MVS_WORKSPACE_H_

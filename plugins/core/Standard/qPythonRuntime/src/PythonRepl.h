@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_QPYTHON_REPL_H
-#define PYTHON_PLUGIN_QPYTHON_REPL_H
+#pragma once
 
 #include <QMainWindow>
 
@@ -87,5 +86,3 @@ class PythonRepl final : public QMainWindow
     PythonInterpreter *m_interpreter{nullptr};
     PythonInterpreter::State m_state;
 };
-
-#endif // PYTHON_PLUGIN_QPYTHON_REPL_H

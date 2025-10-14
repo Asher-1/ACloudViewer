@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SF_DISTANCES_DLG_HEADER
-#define ECV_SF_DISTANCES_DLG_HEADER
+#pragma once
 
 #include <ui_sensorComputeDistancesDlg.h>
 
@@ -22,5 +21,3 @@ public:
     //! Returns whether computed distances should be squared or not
     bool computeSquaredDistances() const;
 };
-
-#endif  // ECV_SF_DISTANCES_DLG_HEADER

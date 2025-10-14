@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_TEST_SHAPEFILE_HEADER
-#define CC_TEST_SHAPEFILE_HEADER
+#pragma once
 
 #include <QObject>
 #include <QtTest/QtTest>
@@ -66,5 +65,3 @@ private:
 
     void testWritePolygonZFile() const;
 };
-
-#endif  // CC_TEST_SHAPEFILE_HEADER

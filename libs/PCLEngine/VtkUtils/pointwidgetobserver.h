@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef POINTWIDGETOBSERVER_H
-#define POINTWIDGETOBSERVER_H
+#pragma once
 
 #include "abstractwidgetobserver.h"
 
@@ -25,4 +24,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // POINTWIDGETOBSERVER_H

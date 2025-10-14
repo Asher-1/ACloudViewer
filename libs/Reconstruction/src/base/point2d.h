@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_POINT2D_H_
-#define COLMAP_SRC_BASE_POINT2D_H_
+#pragma once
 
 #include <Eigen/Core>
 
@@ -70,5 +69,3 @@ void Point2D::SetPoint3DId(const point3D_t point3D_id) {
 }  // namespace colmap
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::Point2D)
-
-#endif  // COLMAP_SRC_BASE_POINT2D_H_

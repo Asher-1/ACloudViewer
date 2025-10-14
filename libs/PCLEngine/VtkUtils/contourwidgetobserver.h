@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CONTOURWIDGETOBSERVER_H
-#define CONTOURWIDGETOBSERVER_H
+#pragma once
 
 #include <vtkSmartPointer.h>
 
@@ -31,4 +30,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // CONTOURWIDGETOBSERVER_H

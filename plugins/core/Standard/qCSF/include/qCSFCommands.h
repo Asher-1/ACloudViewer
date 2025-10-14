@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QCSF_PLUGIN_COMMANDS_HEADER
-#define QCSF_PLUGIN_COMMANDS_HEADER
+#pragma once
 
 // CloudViewer
 #include "ecvCommandLineInterface.h"
@@ -244,5 +243,3 @@ struct CommandCSF : public ccCommandLineInterface::Command {
         return true;
     }
 };
-
-#endif  // QCSF_PLUGIN_COMMANDS_HEADER

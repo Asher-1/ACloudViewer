@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PDMS_PARSER_HEADER
-#define PDMS_PARSER_HEADER
+#pragma once
 
 #include "PdmsTools.h"
 
@@ -110,5 +109,3 @@ protected:
     PdmsObjects::GenericItem *currentItem;
     PdmsObjects::GenericItem *root;
 };
-
-#endif  // PDMS_PARSER_HEADER

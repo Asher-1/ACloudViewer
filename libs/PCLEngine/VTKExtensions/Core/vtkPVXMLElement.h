@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVXMLElement_h
-#define vtkPVXMLElement_h
+#pragma once
 
 #include <string>  // for std::string
 
@@ -281,5 +280,3 @@ private:
     vtkPVXMLElement(const vtkPVXMLElement&) = delete;
     void operator=(const vtkPVXMLElement&) = delete;
 };
-
-#endif

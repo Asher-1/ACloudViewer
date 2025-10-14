@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_RESOURCES_H
-#define PYTHON_PLUGIN_RESOURCES_H
+#pragma once
 
 #include <QStringLiteral>
 
@@ -31,5 +30,3 @@
 #define REMOVE_PYSCRIPT_ICON_PATH                                                                  \
     QStringLiteral(":/CC/plugin/PythonRuntime/images/remove-scripts-icon.png")
 #define PYSCRIPT_ICON_PATH QStringLiteral(":/CC/plugin/PythonRuntime/images/python-script-icon.png")
-
-#endif // PYTHON_PLUGIN_RESOURCES_H

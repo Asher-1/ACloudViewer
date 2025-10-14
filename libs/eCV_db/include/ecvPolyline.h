@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POLYLINE_HEADER
-#define ECV_POLYLINE_HEADER
+#pragma once
 
 // CV_CORE_LIB
 #include <Polyline.h>
@@ -278,5 +277,3 @@ protected:
     //! Arrow index
     unsigned m_arrowIndex;
 };
-
-#endif  // ECV_POLYLINE_HEADER

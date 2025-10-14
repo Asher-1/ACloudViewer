@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SAITO_SQUARED_DISTANCE_TRANSFORM_HEADER
-#define SAITO_SQUARED_DISTANCE_TRANSFORM_HEADER
+#pragma once
 
 // Inspired from bil_edt.cxx (VXL) by Ricardo Fabbri (rfabbri), Brown University
 // (rfabbri@lems.brown.edu)
@@ -89,5 +88,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // SIGNED_SAITO_DISTANCE_TRANSFORM_HEADER

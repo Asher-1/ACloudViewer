@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QCANUPO_TRAINER_HEADER
-#define QCANUPO_TRAINER_HEADER
+#pragma once
 
 // system
 #include <vector>
@@ -382,5 +381,3 @@ static bool DilateClassifier(
 
     return true;
 }
-
-#endif  // QCANUPO_CLASSIFIER_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_DONSEGMENTATION_DLG_HEADER
-#define Q_PCL_PLUGIN_DONSEGMENTATION_DLG_HEADER
+#pragma once
 
 #include <ui_DONSegmentationDlg.h>
 
@@ -23,5 +22,3 @@ public:
     const QString getComparisonField();
     void getComparisonTypes(QStringList& types);
 };
-
-#endif  // Q_PCL_PLUGIN_DONSEGMENTATION_DLG_HEADER

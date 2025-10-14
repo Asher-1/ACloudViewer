@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkAnnotationBoxSource_h
-#define vtkAnnotationBoxSource_h
+#pragma once
 
 #include "qPCL.h"
 #include "vtkFiltersSourcesModule.h"  // For export macro
@@ -28,5 +27,3 @@ private:
     vtkAnnotationBoxSource(const vtkAnnotationBoxSource &) = delete;
     void operator=(const vtkAnnotationBoxSource &) = delete;
 };
-
-#endif

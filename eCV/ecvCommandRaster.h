@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COMMAND_LINE_RASTER_HEADER
-#define COMMAND_LINE_RASTER_HEADER
+#pragma once
 
 #include "ecvCommandLineInterface.h"
 
@@ -21,5 +20,3 @@ struct CommandVolume25D : public ccCommandLineInterface::Command {
 
     bool process(ccCommandLineInterface& cmd) override;
 };
-
-#endif  // COMMAND_LINE_RASTER_HEADER

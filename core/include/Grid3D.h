@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GRID_3D_HEADER
-#define GRID_3D_HEADER
+#pragma once
 
 // Local
 #include "CVMath.h"
@@ -561,5 +560,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // GRID_3D_HEADER

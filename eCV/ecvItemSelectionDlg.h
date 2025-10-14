@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ITEM_SELECTION_DIALOG_HEADER
-#define ECV_ITEM_SELECTION_DIALOG_HEADER
+#pragma once
 
 #include <ui_itemSelectionDlg.h>
 
@@ -46,5 +45,3 @@ public:
     //! Returns selected indexes (multi-selection mode)
     void getSelectedIndexes(std::vector<int>& indexes) const;
 };
-
-#endif  // ECV_ITEM_SELECTION_DIALOG_HEADER

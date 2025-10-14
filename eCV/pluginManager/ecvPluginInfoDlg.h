@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CCPLUGININFODLG_H
-#define CCPLUGININFODLG_H
+#pragma once
 // ##########################################################################
 // #                                                                        #
 // #                              CLOUDVIEWER                               #
@@ -65,5 +64,3 @@ private:
     QStandardItemModel *m_ItemModel;
     QSortFilterProxyModel *m_ProxyModel;
 };
-
-#endif

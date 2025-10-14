@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SCALE_DLG_HEADER
-#define ECV_SCALE_DLG_HEADER
+#pragma once
 
 // CC_Lib
 #include <CVGeom.h>
@@ -43,5 +42,3 @@ protected slots:
 
 protected:
 };
-
-#endif  // ECV_SCALE_DLG_HEADER

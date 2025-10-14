@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MATRIX_H
-#define MATRIX_H
+#pragma once
 
 #include <cstdlib>
 #include <iostream>
@@ -161,5 +160,3 @@ private:
 }  // namespace utility
 
 }  // namespace cloudViewer
-
-#endif

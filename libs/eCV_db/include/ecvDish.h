@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DISH_PRIMITIVE_HEADER
-#define ECV_DISH_PRIMITIVE_HEADER
+#pragma once
 
 // Local
 #include "ecvGenericPrimitive.h"
@@ -75,5 +74,3 @@ protected:
     //! Height
     PointCoordinateType m_height;
 };
-
-#endif  // ECV_DISH_PRIMITIVE_HEADER

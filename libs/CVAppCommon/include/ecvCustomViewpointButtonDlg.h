@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef pqCustomViewpointDialog_h
-#define pqCustomViewpointDialog_h
+#pragma once
 
 #include <QDialog>
 #include <QLineEdit>
@@ -116,4 +115,3 @@ private:
 
     friend class pqCustomViewpointButtonDialogUI;
 };
-#endif

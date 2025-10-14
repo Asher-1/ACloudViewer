@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MESH_ILLUMINATION_HEADER
-#define MESH_ILLUMINATION_HEADER
+#pragma once
 
 // cloudViewer
 #include <GenericCloud.h>
@@ -79,5 +78,3 @@ public:
                              std::vector<CCVector3>& rays,
                              bool mode360 = true);
 };
-
-#endif

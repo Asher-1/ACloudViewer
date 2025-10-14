@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ARRAY_HEADER
-#define ECV_ARRAY_HEADER
+#pragma once
 
 // Local
 #include "ecvHObject.h"
@@ -144,5 +143,3 @@ protected:
                 *this, in, dataVersion);
     }
 };
-
-#endif  // ECV_ARRAY_HEADER

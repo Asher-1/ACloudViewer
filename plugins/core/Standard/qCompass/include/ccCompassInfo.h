@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COMPASS_INFO_HEADER
-#define ECV_COMPASS_INFO_HEADER
+#pragma once
 
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -20,5 +19,3 @@ class ccCompassInfo : public QDialog {
 public:
     explicit ccCompassInfo(QWidget *parent = nullptr);
 };
-
-#endif  // ECV_COMPASS_INFO_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_GARBAGE_HEADER
-#define CV_GARBAGE_HEADER
+#pragma once
 
 // STL
 #include <unordered_set>
@@ -47,5 +46,3 @@ public:
     //! Items to delete
     std::unordered_set<C*> m_items;
 };
-
-#endif  // CV_GARBAGE_HEADER

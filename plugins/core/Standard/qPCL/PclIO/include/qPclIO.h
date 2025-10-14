@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_IO_PLUGIN_HEADER
-#define Q_PCL_IO_PLUGIN_HEADER
+#pragma once
 
 #include "ecvIOPluginInterface.h"
 
@@ -29,5 +28,3 @@ public:
     // inherited from ccDefaultPluginInterface
     void registerCommands(ccCommandLineInterface* cmd) override;
 };
-
-#endif  // Q_PCL_IO_PLUGIN_HEADER

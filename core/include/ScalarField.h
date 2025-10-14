@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_SCALAR_FIELD_HEADER
-#define CV_SCALAR_FIELD_HEADER
+#pragma once
 
 // Local
 #include "CVConst.h"
@@ -152,5 +151,3 @@ inline void ScalarField::computeMinAndMax() {
 }
 
 }  // namespace cloudViewer
-
-#endif  // CV_SCALAR_FIELD_HEADER

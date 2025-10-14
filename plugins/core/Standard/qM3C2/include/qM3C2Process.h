@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_M3C2_PROCESS_HEADER
-#define Q_M3C2_PROCESS_HEADER
+#pragma once
 
 // Local
 #include "qM3C2Dialog.h"
@@ -27,5 +26,3 @@ public:
                         QWidget* parentWidget = nullptr,
                         ecvMainAppInterface* app = nullptr);
 };
-
-#endif  // Q_M3C2_PROCESS_HEADER

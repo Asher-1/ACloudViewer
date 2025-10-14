@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GEOM_FEATURES_DIALOG_HEADER
-#define ECV_GEOM_FEATURES_DIALOG_HEADER
+#pragma once
 
 // Local
 #include "ecvLibAlgorithms.h"
@@ -53,5 +52,3 @@ protected:
 
     std::vector<Option> m_options;
 };
-
-#endif  // ECV_GEOM_FEATURES_DIALOG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_SIMILARITY_TRANSFORM_H_
-#define COLMAP_SRC_BASE_SIMILARITY_TRANSFORM_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -94,5 +93,3 @@ void TranslationTransformEstimator<kDim>::Residuals(
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_SIMILARITY_TRANSFORM_H_

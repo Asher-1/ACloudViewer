@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_NEIGHBOURHOOD_HEADER
-#define CV_NEIGHBOURHOOD_HEADER
+#pragma once
 
 // Local
 #include "CVMiscTools.h"
@@ -321,5 +320,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // CV_NEIGHBOURHOOD_HEADER

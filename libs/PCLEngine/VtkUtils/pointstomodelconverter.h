@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef POINTSTOMODELCONVERTER_H
-#define POINTSTOMODELCONVERTER_H
+#pragma once
 
 #include <QObject>
 #include <QRunnable>
@@ -32,5 +31,3 @@ private:
 };
 
 }  // namespace VtkUtils
-
-#endif  // POINTSTOMODELCONVERTER_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_CANUPO_TOOLS_HEADER
-#define Q_CANUPO_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "classifier.h"
@@ -151,5 +150,3 @@ public:
                                    const std::vector<float>& scales,
                                    EvalParameters& params);
 };
-
-#endif  // Q_CANUPO_TOOLS_HEADER

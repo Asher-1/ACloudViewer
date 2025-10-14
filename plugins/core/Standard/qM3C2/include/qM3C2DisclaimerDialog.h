@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef M3C2_DISCLAIMER_DIALOG_HEADER
-#define M3C2_DISCLAIMER_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <QDialog>
@@ -32,5 +31,3 @@ private:
 
     Ui::DisclaimerDialog* m_ui;
 };
-
-#endif  // M3C2_DISCLAIMER_DIALOG_HEADER

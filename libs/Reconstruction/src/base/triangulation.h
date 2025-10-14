@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_TRIANGULATION_H_
-#define COLMAP_SRC_BASE_TRIANGULATION_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <vector>
@@ -90,5 +89,3 @@ std::vector<double> CalculateTriangulationAngles(
         const std::vector<Eigen::Vector3d>& points3D);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_TRIANGULATION_H_

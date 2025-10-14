@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkCommandOptions_h
-#define vtkCommandOptions_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkObject.h"
@@ -199,5 +198,3 @@ private:
                                          const char* value,
                                          void* call_data);
 };
-
-#endif

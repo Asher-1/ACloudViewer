@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FRUSTUM_HEADER
-#define ECV_FRUSTUM_HEADER
+#pragma once
 
 // cloudViewer
 #include <RayAndBox.h>
@@ -187,5 +186,3 @@ protected:  // protected methods
 protected:  // members
     Plane pl[6];
 };
-
-#endif  // ECV_FRUSTUM_HEADER

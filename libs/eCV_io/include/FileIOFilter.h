@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_FILE_IO_FILTER_HEADER
-#define CC_FILE_IO_FILTER_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <ecvHObject.h>
@@ -361,5 +360,3 @@ private:
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(FileIOFilter::FilterFeatures)
-
-#endif

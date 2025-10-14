@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_FILESYSTEM_HEADER
-#define CV_FILESYSTEM_HEADER
+#pragma once
 
 #include <functional>
 #include <string>
@@ -273,5 +272,3 @@ private:
 }  // namespace filesystem
 }  // namespace utility
 }  // namespace cloudViewer
-
-#endif  // CV_FILESYSTEM_HEADER

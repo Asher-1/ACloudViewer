@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef THRESHOLDWINDOW_H
-#define THRESHOLDWINDOW_H
+#pragma once
 
 #include "isosurfacewindow.h"
 
@@ -18,5 +17,3 @@ public:
 
     void apply();
 };
-
-#endif  // THRESHOLDWINDOW_H

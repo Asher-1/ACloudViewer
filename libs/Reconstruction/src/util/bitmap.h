@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_BITMAP_H_
-#define COLMAP_SRC_UTIL_BITMAP_H_
+#pragma once
 
 #include <algorithm>
 #include <cmath>
@@ -264,5 +263,3 @@ bool Bitmap::IsRGB() const { return channels_ == 3; }
 bool Bitmap::IsGrey() const { return channels_ == 1; }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_BITMAP_H_

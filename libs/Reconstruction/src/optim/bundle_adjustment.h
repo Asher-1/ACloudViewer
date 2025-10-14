@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_OPTIM_BUNDLE_ADJUSTMENT_H_
-#define COLMAP_SRC_OPTIM_BUNDLE_ADJUSTMENT_H_
+#pragma once
 
 #include <ceres/ceres.h>
 
@@ -335,5 +334,3 @@ private:
 void PrintSolverSummary(const ceres::Solver::Summary& summary);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_OPTIM_BUNDLE_ADJUSTMENT_H_

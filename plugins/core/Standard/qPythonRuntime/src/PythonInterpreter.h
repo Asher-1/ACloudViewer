@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PYTHON_INTERPRETER_H
-#define PYTHON_PLUGIN_PYTHON_INTERPRETER_H
+#pragma once
 
 #include "PythonConfig.h"
 #include <QObject>
@@ -82,5 +81,3 @@ class PythonInterpreter final : public QObject
     void *m_libPythonHandle{nullptr};
 #endif
 };
-
-#endif // PYTHON_PLUGIN_PYTHON_INTERPRETER_H

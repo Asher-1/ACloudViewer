@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_INTERPOLATION_DLG_HEADER
-#define ECV_INTERPOLATION_DLG_HEADER
+#pragma once
 
 #include <ui_interpolationDlg.h>
 
@@ -34,5 +33,3 @@ protected slots:
 
     void onRadiusUpdated(double);
 };
-
-#endif  // ECV_INTERPOLATION_DLG_HEADER

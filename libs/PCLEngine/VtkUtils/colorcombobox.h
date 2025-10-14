@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLORCOMBOBOX_H
-#define COLORCOMBOBOX_H
+#pragma once
 
 #include <QComboBox>
 
@@ -41,4 +40,3 @@ private:
 };
 
 }  // namespace Widgets
-#endif  // COLORCOMBOBOX_H

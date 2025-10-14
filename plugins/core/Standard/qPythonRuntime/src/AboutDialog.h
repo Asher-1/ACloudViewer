@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PROJECTS_ABOUT_DIALOG_H
-#define PYTHON_PLUGIN_PROJECTS_ABOUT_DIALOG_H
+#pragma once
 
 #include <QDialog>
 
@@ -22,5 +21,3 @@ class AboutDialog final : public QDialog
   private:
     Ui_AboutDialog *m_dlg;
 };
-
-#endif // PYTHON_PLUGIN_PROJECTS_ABOUT_DIALOG_H

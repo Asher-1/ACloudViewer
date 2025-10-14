@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_PCLMODULES_HEADER
-#define QPCL_PCLMODULES_HEADER
+#pragma once
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)
@@ -1576,5 +1575,3 @@ private:
 };
 
 }  // namespace PCLModules
-
-#endif  // QPCL_PCLMODULES_HEADER

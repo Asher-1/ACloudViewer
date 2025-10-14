@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_PLY_H_
-#define COLMAP_SRC_UTIL_PLY_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -74,5 +73,3 @@ void WriteTextPlyMesh(const std::string& path, const PlyMesh& mesh);
 void WriteBinaryPlyMesh(const std::string& path, const PlyMesh& mesh);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_PLY_H_

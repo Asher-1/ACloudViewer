@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_RECENTER_CLOUD_DIALOG
-#define CC_RECENTER_CLOUD_DIALOG
+#pragma once
 
 // LOCAL
 #include "eCV_io.h"
@@ -185,5 +184,3 @@ protected:
     //! Whether the reverse mode is active or not
     bool m_reversedMode;
 };
-
-#endif

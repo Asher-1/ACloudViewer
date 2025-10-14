@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CC_LABELING_DLG_HEADER
-#define ECV_CC_LABELING_DLG_HEADER
+#pragma once
 
 #include <ui_labelingDlg.h>
 
@@ -27,5 +26,3 @@ public:
     //! Specifies whether each extracted CC should get a random color
     bool randomColors();
 };
-
-#endif  // ECV_CC_LABELING_DLG_HEADER

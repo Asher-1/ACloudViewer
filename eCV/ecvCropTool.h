@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CROP_TOOL_HEADER
-#define ECV_CROP_TOOL_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <ecvBBox.h>
@@ -31,5 +30,3 @@ public:
                            bool inside = true,
                            const ccGLMatrix* meshRotation = 0);
 };
-
-#endif  // ECV_CROP_TOOL_HEADER

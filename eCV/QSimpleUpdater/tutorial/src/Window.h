@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef _WINDOW_H
-#define _WINDOW_H
+#pragma once
 
 #include <QMainWindow>
 #include <QApplication>
@@ -36,5 +35,3 @@ private:
    Ui::Window *m_ui;
    QSimpleUpdater *m_updater;
 };
-
-#endif

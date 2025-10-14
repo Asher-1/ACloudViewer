@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MST_FOR_NORMS_DIRECTION_HEADER
-#define ECV_MST_FOR_NORMS_DIRECTION_HEADER
+#pragma once
 
 class ccPointCloud;
 class ecvProgressDialog;
@@ -21,5 +20,3 @@ public:
                               unsigned kNN = 6,
                               ecvProgressDialog* progressDlg = 0);
 };
-
-#endif  // CC_MST_FOR_NORMS_DIRECTION_HEADER

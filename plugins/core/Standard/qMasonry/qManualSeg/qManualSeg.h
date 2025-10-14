@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_MANUALSEG_HEADER
-#define Q_MANUALSEG_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -60,5 +59,3 @@ protected:
     //! Segmentation polyline vertices
     ccPointCloud* m_polyVertices;
 };
-
-#endif  // Q_MANUALSEG_HEADER

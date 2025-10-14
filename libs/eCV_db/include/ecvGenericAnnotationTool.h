@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GENERICANNOTATION_TOOL_HEADER
-#define ECV_GENERICANNOTATION_TOOL_HEADER
+#pragma once
 
 #include <QFile>
 
@@ -81,5 +80,3 @@ protected:
     AnnotationMode m_annotationMode;
     ccPointCloud* m_associatedCloud;
 };
-
-#endif  // ECV_GENERICANNOTATION_TOOL_HEADER

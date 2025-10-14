@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef VECTOR4F_H
-#define VECTOR4F_H
+#pragma once
 
 #include "../qPCL.h"
 
@@ -20,4 +19,3 @@ struct QPCL_ENGINE_LIB_API Vector4F {
 };
 
 }  // namespace VtkUtils
-#endif  // VECTOR4F_H

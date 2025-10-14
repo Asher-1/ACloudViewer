@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PLANE_PRIMITIVE_HEADER
-#define ECV_PLANE_PRIMITIVE_HEADER
+#pragma once
 
 // Local
 #include "ecvGenericPrimitive.h"
@@ -130,5 +129,3 @@ protected:
     // Array [a,b,c,d] such that ax+by+cz = d
     PointCoordinateType m_PlaneEquation[4];
 };
-
-#endif  // ECV_PLANE_PRIMITIVE_HEADER

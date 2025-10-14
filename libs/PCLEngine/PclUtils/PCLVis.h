@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PCLVIS_HEADER
-#define ECV_PCLVIS_HEADER
+#pragma once
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
@@ -523,5 +522,3 @@ protected:
 
 typedef std::shared_ptr<PCLVis> PCLVisPtr;
 }  // namespace PclUtils
-
-#endif  // ECV_PCLVIS_HEADER

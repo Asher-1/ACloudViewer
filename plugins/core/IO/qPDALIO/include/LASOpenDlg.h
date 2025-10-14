@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_LAS_OPEN_DIALOG
-#define CC_LAS_OPEN_DIALOG
+#pragma once
 
 // Local
 #include "LASFields.h"
@@ -70,5 +69,3 @@ protected:
 protected:
     bool m_autoSkip;
 };
-
-#endif  // CC_LAS_OPEN_DIALOG

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_WARP_H_
-#define COLMAP_SRC_BASE_WARP_H_
+#pragma once
 
 #include "base/camera.h"
 #include "util/alignment.h"
@@ -64,5 +63,3 @@ void DownsampleImage(const float* data,
                      float* downsampled);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_WARP_H_

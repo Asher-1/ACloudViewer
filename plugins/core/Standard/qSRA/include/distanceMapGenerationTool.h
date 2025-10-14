@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QSRA_DISTANCE_MAP_GENERATION_TOOL_HEADER
-#define QSRA_DISTANCE_MAP_GENERATION_TOOL_HEADER
+#pragma once
 
 // Qt
 #include <QImage>
@@ -319,5 +318,3 @@ public:
                                           Measures& surfaces,
                                           Measures& volumes);
 };
-
-#endif  // QSRA_DISTANCE_MAP_GENERATION_TOOL_HEADER

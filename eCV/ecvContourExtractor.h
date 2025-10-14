@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CONTOUR_EXTRACTOR_HEADER
-#define ECV_CONTOUR_EXTRACTOR_HEADER
+#pragma once
 
 // ECV_DB_LIB
 #include <ecvPolyline.h>
@@ -101,5 +100,3 @@ protected:
             bool enableVisualDebugMode = false,
             double maxAngleDeg = 90.0);
 };
-
-#endif  // ECV_CONTOUR_EXTRACTOR_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_2D_VIEWPORT_LABEL_HEADER
-#define ECV_2D_VIEWPORT_LABEL_HEADER
+#pragma once
 
 // Local
 #include "ecv2DViewportObject.h"
@@ -51,5 +50,3 @@ protected:
      **/
     float m_roi[4];
 };
-
-#endif  // ECV_2D_VIEWPORT_LABEL_HEADER

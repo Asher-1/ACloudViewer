@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVInteractorStyle_h
-#define vtkPVInteractorStyle_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkInteractorStyleTrackballCamera.h"
@@ -138,5 +137,3 @@ protected:
     vtkPVInteractorStyle(const vtkPVInteractorStyle&) = delete;
     void operator=(const vtkPVInteractorStyle&) = delete;
 };
-
-#endif

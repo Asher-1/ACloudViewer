@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MATRIX_DISPLAY_DIALOG_HEADER
-#define ECV_MATRIX_DISPLAY_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <ecvGLMatrix.h>
@@ -49,5 +48,3 @@ protected:
     //! Matrix
     ccGLMatrixd m_mat;
 };
-
-#endif  // CC_MATRIX_DISPLAY_DIALOG_HEADER

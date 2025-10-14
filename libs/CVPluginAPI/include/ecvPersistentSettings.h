@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PERSISTENT_SETTINGS_HEADER
-#define ECV_PERSISTENT_SETTINGS_HEADER
+#pragma once
 
 #include "CVPluginAPI.h"
 
@@ -67,5 +66,3 @@ public:
         return "ReconstructionToolBar";
     }
 };
-
-#endif  // ECV_PERSISTENT_SETTINGS_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_NOTETOOL_HEADER
-#define ECV_NOTETOOL_HEADER
+#pragma once
 
 #include <qinputdialog.h>
 #include <qmainwindow.h>
@@ -35,5 +34,3 @@ public:
                      ccPointCloud* cloud,
                      const CCVector3& P) override;
 };
-
-#endif  // ECV_NOTETOOL_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_CANUPO_PLUGIN_HEADER
-#define Q_CANUPO_PLUGIN_HEADER
+#pragma once
 
 // qCC
 #include <ecvStdPluginInterface.h>
@@ -48,5 +47,3 @@ protected:
     //! Currently selected entities
     ccHObject::Container m_selectedEntities;
 };
-
-#endif  // Q_CANUPO_HEADER

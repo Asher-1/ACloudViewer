@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef NORMAL_DISTRIBUTION_HEADER
-#define NORMAL_DISTRIBUTION_HEADER
+#pragma once
 
 // Local
 #include "GenericDistribution.h"
@@ -103,5 +102,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // NORMAL_DISTRIBUTION_HEADER

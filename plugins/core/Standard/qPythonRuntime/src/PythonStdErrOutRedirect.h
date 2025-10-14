@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PYTHON_STDERR_OUT_REDIRECT_H
-#define PYTHON_PLUGIN_PYTHON_STDERR_OUT_REDIRECT_H
+#pragma once
 
 #include <pybind11/pybind11.h>
 
@@ -81,5 +80,3 @@ class PyStdErrOutStreamRedirect
         }
     }
 };
-
-#endif // PYTHON_PLUGIN_PYTHON_STDERR_OUT_REDIRECT_H

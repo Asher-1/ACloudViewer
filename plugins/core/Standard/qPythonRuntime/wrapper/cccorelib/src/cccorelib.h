@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_CCCORELIB_H
-#define PYTHON_PLUGIN_CCCORELIB_H
+#pragma once
 
 #include <pybind11/pybind11.h>
 
@@ -23,5 +22,3 @@ PYBIND11_MAKE_OPAQUE(cloudViewer::DgmOctree::NeighboursSet)
 PYBIND11_MAKE_OPAQUE(cloudViewer::GenericDistribution::ScalarContainer)
 
 PYBIND11_MAKE_OPAQUE(cloudViewer::TrueKdTree::LeafVector)
-
-#endif // PYTHON_PLUGIN_CCCORELIB_H

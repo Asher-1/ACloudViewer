@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_HIERARCHY_OBJECT_CASTER_HEADER
-#define ECV_HIERARCHY_OBJECT_CASTER_HEADER
+#pragma once
 
 // Local
 #include "eCV_db.h"
@@ -199,5 +198,3 @@ public:
             const ccHObject* sourceEntityProxy = nullptr,
             ccHObject* destEntityProxy = nullptr);
 };
-
-#endif  // ECV_HIERARCHY_OBJECT_CASTER_HEADER

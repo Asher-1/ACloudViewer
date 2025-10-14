@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_E57_HEADER_HEADER
-#define CC_E57_HEADER_HEADER
+#pragma once
 
 #include <cstdint>
 
@@ -270,5 +269,3 @@ public:
                              //!< point (in pixels). This is the intersection of
                              //!< the z = 0 plane with the image
 };
-
-#endif

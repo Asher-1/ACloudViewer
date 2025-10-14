@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CLIP_BOX_HEADER
-#define ECV_CLIP_BOX_HEADER
+#pragma once
 
 // Local
 #include "ecvBBox.h"
@@ -157,5 +156,3 @@ protected:  // members
     //! View matrix
     ccGLMatrixd m_viewMatrix;
 };
-
-#endif  // ECV_CLIP_BOX_HEADER

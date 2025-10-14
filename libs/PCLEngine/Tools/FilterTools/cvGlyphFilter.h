@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_GLYPH_FILTER_H
-#define TOOLS_GLYPH_FILTER_H
+#pragma once
 
 #include "cvGenericFilter.h"
 
@@ -60,5 +59,3 @@ private:
     vtkSmartPointer<vtkGlyph3D> m_glyph3d;
     bool m_labelVisible = false;
 };
-
-#endif  // TOOLS_GLYPH_FILTER_H

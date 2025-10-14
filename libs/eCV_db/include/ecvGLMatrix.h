@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GL_MATRIX_HEADER
-#define ECV_GL_MATRIX_HEADER
+#pragma once
 
 // Local
 #include "eCV_db.h"
@@ -156,5 +155,3 @@ ccGLMatrixTpl<Tout> FromCCLibMatrix(const cloudViewer::SquareMatrixTpl<Tin>& R,
 
     return outputMat;
 }
-
-#endif  // ECV_GL_MATRIX_HEADER

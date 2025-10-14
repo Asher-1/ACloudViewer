@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_LIB_POINT_CLOUD_HEADER
-#define CV_LIB_POINT_CLOUD_HEADER
+#pragma once
 
 // Local
 #include "GenericIndexedCloudPersist.h"
@@ -84,5 +83,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // CC_LIB_POINT_CLOUD_HEADER

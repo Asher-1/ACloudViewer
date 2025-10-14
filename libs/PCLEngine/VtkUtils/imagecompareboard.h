@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef IMAGECOMPAREBOARD_H
-#define IMAGECOMPAREBOARD_H
+#pragma once
 
 #include <QWidget>
 
@@ -34,4 +33,3 @@ private:
 };
 
 }  // namespace Widgets
-#endif  // IMAGECOMPAREBOARD_H

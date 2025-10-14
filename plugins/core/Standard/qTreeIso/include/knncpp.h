@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef KNNCPP_H_
-#define KNNCPP_H_
+#pragma once
 
 #include <Eigen/Geometry>
 #include <map>
@@ -1467,5 +1466,3 @@ typedef KDTreeFlann<float> KDTreeFlannf;
 
 #endif
 }  // namespace knncpp
-
-#endif

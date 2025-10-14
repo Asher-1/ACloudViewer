@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef GENERIC_INDEXED_MESH_HEADER
-#define GENERIC_INDEXED_MESH_HEADER
+#pragma once
 
 // Local
 #include "GenericMesh.h"
@@ -98,5 +97,3 @@ public:
 };
 
 }  // namespace cloudViewer
-
-#endif  // GENERIC_INDEXED_MESH_HEADER

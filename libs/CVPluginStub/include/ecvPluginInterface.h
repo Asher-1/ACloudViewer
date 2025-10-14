@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PLUGIN_INTERFACE_HEADER
-#define ECV_PLUGIN_INTERFACE_HEADER
+#pragma once
 
 // Qt
 #include <QIcon>
@@ -138,5 +137,3 @@ Q_DECLARE_METATYPE(const ccPluginInterface*);
 
 Q_DECLARE_INTERFACE(ccPluginInterface,
                     "edf.rd.cloudviewer.ccPluginInterface/3.2")
-
-#endif  // ECV_PLUGIN_INTERFACE_HEADER

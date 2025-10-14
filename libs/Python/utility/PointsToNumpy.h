@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_POINTS_TO_NUMPY_HEADER
-#define ECV_POINTS_TO_NUMPY_HEADER
+#pragma once
 
 #include <CVConst.h>
 
@@ -43,5 +42,3 @@ private:
 
 }  // namespace utility
 }  // namespace cloudViewer
-
-#endif  // ECV_POINTS_TO_NUMPY_HEADER

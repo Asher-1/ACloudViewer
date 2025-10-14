@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECVRECENTFILES_H
-#define ECVRECENTFILES_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -68,5 +67,3 @@ private:
 
     QAction *m_actionClearMenu;
 };
-
-#endif

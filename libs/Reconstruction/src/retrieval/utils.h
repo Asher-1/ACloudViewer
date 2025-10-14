@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_RETRIEVAL_UTILS_H_
-#define COLMAP_SRC_RETRIEVAL_UTILS_H_
+#pragma once
 
 #include <array>
 #include <cmath>
@@ -60,5 +59,3 @@ private:
 
 }  // namespace retrieval
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_RETRIEVAL_UTILS_H_

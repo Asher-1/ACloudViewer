@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECVABOUTDIALOG_H
-#define ECVABOUTDIALOG_H
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -41,5 +40,3 @@ public:
 private:
     Ui::AboutDialog *mUI;
 };
-
-#endif  // ECVABOUTDIALOG_H

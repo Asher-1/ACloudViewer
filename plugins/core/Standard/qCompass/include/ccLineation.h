@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_LINEATION_HEADER
-#define ECV_LINEATION_HEADER
+#pragma once
 
 #include <ecvPointCloud.h>
 
@@ -28,4 +27,3 @@ public:
     // the objects metadata)
     static bool isLineation(ccHObject* obj);
 };
-#endif  // ECV_LINEATION_HEADER

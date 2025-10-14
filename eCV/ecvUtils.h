@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_UTILS_H
-#define ECV_UTILS_H
+#pragma once
 
 class QString;
 
@@ -14,5 +13,3 @@ namespace ecvUtils {
 //! Display a warning or error for locked verts
 void DisplayLockedVerticesWarning(const QString &meshName, bool displayAsError);
 }  // namespace ecvUtils
-
-#endif  // ECV_UTILS_H

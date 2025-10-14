@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkTrackballPan_h
-#define vtkTrackballPan_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkCameraManipulator.h"
@@ -43,5 +42,3 @@ protected:
     vtkTrackballPan(const vtkTrackballPan&) = delete;
     void operator=(const vtkTrackballPan&) = delete;
 };
-
-#endif

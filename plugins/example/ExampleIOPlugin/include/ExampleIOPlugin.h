@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef EXAMPLE_IO_PLUGIN_HEADER
-#define EXAMPLE_IO_PLUGIN_HEADER
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -54,5 +53,3 @@ public:
     // inherited from ccIOPluginInterface
     ccIOPluginInterface::FilterList getFilters() override;
 };
-
-#endif

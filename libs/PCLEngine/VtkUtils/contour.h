@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CONTOUR_H
-#define CONTOUR_H
+#pragma once
 
 #include "surface.h"
 #include "vector4f.h"
@@ -39,4 +38,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // CONTOUR_H

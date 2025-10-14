@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DEEP_SEMANTICE_SEGMENTATION_HEADER
-#define ECV_DEEP_SEMANTICE_SEGMENTATION_HEADER
+#pragma once
 
 // Local
 #include <ecvOverlayDialog.h>
@@ -82,5 +81,3 @@ private:
 };
 
 #endif
-
-#endif  // ECV_DEEP_SEMANTICE_SEGMENTATION_HEADER

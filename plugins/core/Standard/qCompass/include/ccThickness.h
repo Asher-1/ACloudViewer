@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_THICKNESS_HEADER
-#define ECV_THICKNESS_HEADER
+#pragma once
 
 #include <ecvPointCloud.h>
 
@@ -28,5 +27,3 @@ public:
     // objects metadata)
     static bool isThickness(ccHObject* obj);
 };
-
-#endif  // ECV_THICKNESS_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CSV_MATRIX_OPEN_DIALOG_HEADER
-#define CSV_MATRIX_OPEN_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <QDialog>
@@ -27,5 +26,3 @@ protected slots:
     //! Bowse texture file
     void browseTextureFile();
 };
-
-#endif  // CSV_MATRIX_OPEN_DIALOG_HEADER

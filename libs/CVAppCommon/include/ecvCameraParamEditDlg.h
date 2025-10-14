@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CAMERA_PARAM_EDIT_DLG_HEADER
-#define ECV_CAMERA_PARAM_EDIT_DLG_HEADER
+#pragma once
 
 #include "CVAppCommon.h"
 
@@ -168,5 +167,3 @@ private:
     enum CameraAdjustmentType { Roll = 0, Elevation, Azimuth, Zoom };
     void adjustCamera(CameraAdjustmentType enType, double value);
 };
-
-#endif  // ECV_CAMERA_PARAM_EDIT_DLG_HEADER

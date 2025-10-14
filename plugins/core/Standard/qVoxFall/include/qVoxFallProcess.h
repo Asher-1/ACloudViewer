@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_VOXFALL_PROCESS_HEADER
-#define Q_VOXFALL_PROCESS_HEADER
+#pragma once
 
 // Local
 #include "qVoxFallDialog.h"
@@ -29,5 +28,3 @@ public:
                         QWidget* parentWidget = nullptr,
                         ecvMainAppInterface* app = nullptr);
 };
-
-#endif  // Q_VOXFALL_PROCESS_HEADER

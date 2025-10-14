@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_SIMILARITY_TRANSFORM_H_
-#define COLMAP_SRC_BASE_SIMILARITY_TRANSFORM_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -95,5 +94,3 @@ bool SimilarityTransform3::Estimate(const std::vector<Eigen::Vector3d>& src,
 }  // namespace colmap
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::SimilarityTransform3)
-
-#endif  // COLMAP_SRC_BASE_SIMILARITY_TRANSFORM_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_VTK_CENTER_AXES_ACTOR_H
-#define ECV_VTK_CENTER_AXES_ACTOR_H
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkOpenGLActor.h"
@@ -44,5 +43,3 @@ private:
 };
 
 }  // namespace VTKExtensions
-
-#endif  // ECV_VTK_CENTER_AXES_ACTOR_H

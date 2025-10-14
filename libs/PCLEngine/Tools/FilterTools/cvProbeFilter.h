@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_PROBE_FILTER_H
-#define TOOLS_PROBE_FILTER_H
+#pragma once
 
 #include "cvGenericFilter.h"
 
@@ -81,5 +80,3 @@ protected:
     double m_planeOrigin[3];
     double m_planeNormal[3];
 };
-
-#endif  // TOOLS_PROBE_FILTER_H

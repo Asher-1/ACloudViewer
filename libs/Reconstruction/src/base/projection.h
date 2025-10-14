@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_PROJECTION_H_
-#define COLMAP_SRC_BASE_PROJECTION_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -140,5 +139,3 @@ bool HasPointPositiveDepth(const Eigen::Matrix3x4d& proj_matrix,
                            const Eigen::Vector3d& point3D);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_PROJECTION_H_

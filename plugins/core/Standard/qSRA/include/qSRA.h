@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_SRA_PLUGIN_HEADER
-#define Q_SRA_PLUGIN_HEADER
+#pragma once
 
 #include "ecvStdPluginInterface.h"
 
@@ -57,5 +56,3 @@ protected:
     //! Associated action
     QAction* m_doProjectCloudDists;
 };
-
-#endif  // Q_SRA_PLUGIN_HEADER

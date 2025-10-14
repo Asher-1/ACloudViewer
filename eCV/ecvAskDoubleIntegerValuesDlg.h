@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ASK_DOUBLE_INTEGER_VALUES_DIALOG_HEADER
-#define ECV_ASK_DOUBLE_INTEGER_VALUES_DIALOG_HEADER
+#pragma once
 
 #include <ui_askDoubleIntegerValuesDlg.h>
 
@@ -29,5 +28,3 @@ public:
                                  const char* windowTitle = 0,
                                  QWidget* parent = 0);
 };
-
-#endif  // ECV_ASK_DOUBLE_INTEGER_VALUES_DIALOG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SELECT_CHILDREN_DLG_HEADER
-#define ECV_SELECT_CHILDREN_DLG_HEADER
+#pragma once
 
 // Qt
 #include <QDialog>
@@ -54,5 +53,3 @@ protected slots:
 private:
     Ui::SelectChildrenDialog* mUI;
 };
-
-#endif  // ECV_SELECT_CHILDREN_DLG_HEADER

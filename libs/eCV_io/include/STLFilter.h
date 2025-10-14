@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_STL_FILTER_HEADER
-#define ECV_STL_FILTER_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -54,5 +53,3 @@ protected:
                                  ccPointCloud* vertices,
                                  LoadParameters& parameters);
 };
-
-#endif  // ECV_STL_FILTER_HEADER

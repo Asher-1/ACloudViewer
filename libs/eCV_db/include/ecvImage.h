@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_IMAGE_HEADER
-#define ECV_IMAGE_HEADER
+#pragma once
 
 // Local
 #include "ecvHObject.h"
@@ -110,5 +109,3 @@ protected:
     //! Associated sensor
     ccCameraSensor* m_associatedSensor;
 };
-
-#endif  // CC_IMAGE_HEADER

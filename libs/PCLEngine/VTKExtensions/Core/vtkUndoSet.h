@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkUndoSet_h
-#define vtkUndoSet_h
+#pragma once
 
 #include "qPCL.h"  // needed for export macro
 #include "vtkObject.h"
@@ -72,5 +71,3 @@ private:
     vtkUndoSet(const vtkUndoSet&) = delete;
     void operator=(const vtkUndoSet&) = delete;
 };
-
-#endif

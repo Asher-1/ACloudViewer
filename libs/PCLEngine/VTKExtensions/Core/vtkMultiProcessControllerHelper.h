@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkMultiProcessControllerHelper_h
-#define vtkMultiProcessControllerHelper_h
+#pragma once
 
 #include <vector>  // needed for std::vector
 
@@ -60,5 +59,4 @@ private:
     void operator=(const vtkMultiProcessControllerHelper&) = delete;
 };
 
-#endif
 // VTK-HeaderTest-Exclude: vtkMultiProcessControllerHelper.h

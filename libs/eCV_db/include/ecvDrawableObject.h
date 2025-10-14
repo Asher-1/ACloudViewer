@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_DRAWABLE_OBJECT_HEADER
-#define ECV_DRAWABLE_OBJECT_HEADER
+#pragma once
 
 // LOCAL
 #include "ecvDrawContext.h"
@@ -303,5 +302,3 @@ protected:  // members
     //! The stack of pushed display states
     std::vector<DisplayState::Shared> m_displayStateStack;
 };
-
-#endif  // ECV_DRAWABLE_OBJECT_HEADER

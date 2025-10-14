@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_MOUSE_CIRCLE_HEADER
-#define ECV_MOUSE_CIRCLE_HEADER
+#pragma once
 
 /**
 This is a custom 2DViewportLabel which takes up the entire viewport but is
@@ -57,5 +56,3 @@ public:
     int RADIUS_STEP = 4;
     float UNIT_CIRCLE[RESOLUTION][2];
 };
-
-#endif  // ECV_MOUSE_CIRCLE_HEADER

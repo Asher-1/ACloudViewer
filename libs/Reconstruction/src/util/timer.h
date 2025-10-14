@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_TIMER_H_
-#define COLMAP_SRC_UTIL_TIMER_H_
+#pragma once
 
 #include <chrono>
 
@@ -39,5 +38,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_TIMER_H_

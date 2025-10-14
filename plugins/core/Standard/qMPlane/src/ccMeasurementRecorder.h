@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_MPLANE_MEASUREMENT
-#define CC_MPLANE_MEASUREMENT
+#pragma once
 
 // CC
 #include "ecv2DLabel.h"
@@ -63,5 +62,3 @@ private:
     void loadMeasurementPoints();
     void loadAndDeleteFittingPlane();
 };
-
-#endif

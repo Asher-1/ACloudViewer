@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PROJECT_VIEW_CONTEXT_MENU_H
-#define PYTHON_PLUGIN_PROJECT_VIEW_CONTEXT_MENU_H
+#pragma once
 
 #include <QMenu>
 #include <QModelIndex>
@@ -41,5 +40,3 @@ class ProjectViewContextMenu final : public QMenu
     QAction m_createFileAction;
     QAction m_createFolderAction;
 };
-
-#endif // PYTHON_PLUGIN_PROJECT_VIEW_CONTEXT_MENU_H

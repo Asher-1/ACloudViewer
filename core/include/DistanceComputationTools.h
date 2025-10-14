@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef DISTANCE_COMPUTATION_TOOLS_HEADER
-#define DISTANCE_COMPUTATION_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "CVConst.h"
@@ -630,5 +629,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // DISTANCE_COMPUTATION_TOOLS_HEADER

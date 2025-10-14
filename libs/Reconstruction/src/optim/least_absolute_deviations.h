@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_OPTIM_LEAST_ABSOLUTE_DEVIATIONS_H_
-#define COLMAP_SRC_OPTIM_LEAST_ABSOLUTE_DEVIATIONS_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
@@ -45,5 +44,3 @@ bool SolveLeastAbsoluteDeviations(const LeastAbsoluteDeviationsOptions& options,
                                   Eigen::VectorXd* x);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_OPTIM_LEAST_ABSOLUTE_DEVIATIONS_H_

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CC_CHUNK_HEADER
-#define CC_CHUNK_HEADER
+#pragma once
 
 // System
 #include <vector>
@@ -53,5 +52,3 @@ public:
         return Size(chunkIndex, buffer.size());
     }
 };
-
-#endif  // CC_CHUNK_HEADER

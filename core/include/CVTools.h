@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef __TOOLS_H__
-#define __TOOLS_H__
+#pragma once
 
 // local
 #include "CVCoreLib.h"
@@ -65,5 +64,3 @@ private:
 
     static QElapsedTimer s_time;
 };
-
-#endif  // __TOOLS_H__

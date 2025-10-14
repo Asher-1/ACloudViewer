@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_GREEDYTRIANGULATION_DLG_HEADER
-#define Q_PCL_PLUGIN_GREEDYTRIANGULATION_DLG_HEADER
+#pragma once
 
 #include <ui_GreedyTriangulationDlg.h>
 
@@ -21,5 +20,3 @@ class GreedyTriangulationDlg : public QDialog,
 public:
     explicit GreedyTriangulationDlg(QWidget* parent = 0);
 };
-
-#endif  // Q_PCL_PLUGIN_GREEDYTRIANGULATION_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_CONVEXCONCAVERECONSTRUCTION_HEADER
-#define Q_PCL_PLUGIN_CONVEXCONCAVERECONSTRUCTION_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -36,5 +35,3 @@ protected:
     int m_dimension;
     float m_alpha;
 };
-
-#endif  // Q_PCL_PLUGIN_CONVEXCONCAVERECONSTRUCTION_HEADER

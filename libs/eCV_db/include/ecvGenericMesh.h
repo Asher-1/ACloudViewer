@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_GENERIC_MESH_HEADER
-#define ECV_GENERIC_MESH_HEADER
+#pragma once
 
 // CV_CORE_LIB
 #include <GenericIndexedMesh.h>
@@ -312,5 +311,3 @@ protected:
     //! Polygon stippling state
     bool m_stippling;
 };
-
-#endif  // ECV_GENERIC_MESH_HEADER

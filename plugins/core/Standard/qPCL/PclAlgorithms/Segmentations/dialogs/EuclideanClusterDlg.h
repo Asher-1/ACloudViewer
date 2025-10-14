@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_EUCLIDEANCLUSTER_DLG_HEADER
-#define Q_PCL_PLUGIN_EUCLIDEANCLUSTER_DLG_HEADER
+#pragma once
 
 #include <ui_EuclideanClusterDlg.h>
 
@@ -20,5 +19,3 @@ class EuclideanClusterDlg : public QDialog, public Ui::EuclideanClusterDlg {
 public:
     explicit EuclideanClusterDlg(QWidget* parent = 0);
 };
-
-#endif  // Q_PCL_PLUGIN_EUCLIDEANCLUSTER_DLG_HEADER

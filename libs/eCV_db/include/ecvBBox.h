@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_BBOX_HEADER
-#define ECV_BBOX_HEADER
+#pragma once
 
 // LOCAL
 #include "eCV_db.h"
@@ -149,5 +148,3 @@ public:
     /// Returns the eight points that define the bounding box.
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 };
-
-#endif  // ECV_BBOX_HEADER

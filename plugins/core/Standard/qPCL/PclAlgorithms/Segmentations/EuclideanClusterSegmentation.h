@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_EUCLIDEANCLUSTER_HEADER
-#define Q_PCL_PLUGIN_EUCLIDEANCLUSTER_HEADER
+#pragma once
 
 #include "BasePclModule.h"
 
@@ -39,5 +38,3 @@ protected:
     float m_clusterTolerance;
     bool m_randomClusterColor;
 };
-
-#endif  // Q_PCL_PLUGIN_EUCLIDEANCLUSTER_HEADER

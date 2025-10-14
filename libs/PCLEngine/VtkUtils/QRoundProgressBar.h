@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QROUNDPROGRESSBAR_H
-#define QROUNDPROGRESSBAR_H
+#pragma once
 
 #include <QWidget>
 
@@ -262,5 +261,3 @@ protected:
     static const int UF_MAX = 4;
     int m_updateFlags;
 };
-
-#endif  // QROUNDPROGRESSBAR_H

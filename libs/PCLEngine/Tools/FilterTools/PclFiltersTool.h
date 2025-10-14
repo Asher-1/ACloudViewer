@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef QPCL_FILTER_TOOL_HEADER
-#define QPCL_FILTER_TOOL_HEADER
+#pragma once
 
 // LOCAL
 #include "../../qPCL.h"
@@ -101,5 +100,3 @@ private:
     int* m_cloudLabel;
     std::vector<int> m_last_selected_slice;
 };
-
-#endif  // QPCL_ANNOTATION_TOOL_HEADER

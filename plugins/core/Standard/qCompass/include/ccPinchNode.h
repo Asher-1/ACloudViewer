@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_NODE_HEADER
-#define ECV_NODE_HEADER
+#pragma once
 
 #include <ecvPointCloud.h>
 
@@ -27,5 +26,3 @@ public:
     // returns true if obj is/was a pinchNode (as recorded by its metadata)
     static bool isPinchNode(ccHObject* obj);
 };
-
-#endif  // ECV_NODE_HEADER

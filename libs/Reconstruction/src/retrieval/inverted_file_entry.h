@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_RETRIEVAL_INVERTED_FILE_ENTRY_H_
-#define COLMAP_SRC_RETRIEVAL_INVERTED_FILE_ENTRY_H_
+#pragma once
 
 #include <bitset>
 #include <fstream>
@@ -88,5 +87,3 @@ void InvertedFileEntry<N>::Write(std::ostream* ofs) const {
 
 }  // namespace retrieval
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_RETRIEVAL_INVERTED_FILE_ENTRY_H_

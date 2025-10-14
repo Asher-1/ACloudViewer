@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPVPostFilterExecutive_h
-#define vtkPVPostFilterExecutive_h
+#pragma once
 
 #include "qPCL.h"
 #include "vtkPVCompositeDataPipeline.h"
@@ -51,5 +50,3 @@ private:
     vtkPVPostFilterExecutive(const vtkPVPostFilterExecutive&) = delete;
     void operator=(const vtkPVPostFilterExecutive&) = delete;
 };
-
-#endif

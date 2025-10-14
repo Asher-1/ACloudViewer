@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_DATABASE_H_
-#define COLMAP_SRC_BASE_DATABASE_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <mutex>
@@ -369,5 +368,3 @@ bool Database::SwapImagePair(const image_t image_id1, const image_t image_id2) {
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_DATABASE_H_

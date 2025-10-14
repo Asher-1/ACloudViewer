@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef VIEWINTERPOLATE_H
-#define VIEWINTERPOLATE_H
+#pragma once
 
 // CV_DB_LIB
 #include <ecvViewportParameters.h>
@@ -68,5 +67,3 @@ private:
     unsigned smoothTrajStartIndex, smoothTrajStopIndex, smoothTrajCurrentIndex;
     PointCoordinateType smoothSegmentLength, smoothCurrentLength;
 };
-
-#endif  // VIEWINTERPOLATE_H

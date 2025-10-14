@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ASCII_OPEN_DIALOG_HEADER
-#define ECV_ASCII_OPEN_DIALOG_HEADER
+#pragma once
 
 // local
 #include "eCV_io.h"
@@ -217,5 +216,3 @@ protected:
 
     unsigned m_columnsCount;
 };
-
-#endif  // ECV_ASCII_OPEN_DIALOG_HEADER

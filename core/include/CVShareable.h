@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_SHAREABLE_HEADER
-#define CV_SHAREABLE_HEADER
+#pragma once
 
 // Local
 #include "CVCoreLib.h"
@@ -54,5 +53,3 @@ protected:
     //! Links counter
     unsigned m_linkCount;
 };
-
-#endif  // CV_SHAREABLE_HEADER

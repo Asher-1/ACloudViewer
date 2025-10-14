@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_INTERACTOR_HEADER
-#define ECV_INTERACTOR_HEADER
+#pragma once
 
 // Local
 #include "eCV_db.h"
@@ -40,5 +39,3 @@ public:
      **/
     virtual bool move3D(const CCVector3d& u) { return false; }
 };
-
-#endif  // ECV_INTERACTOR_HEADER

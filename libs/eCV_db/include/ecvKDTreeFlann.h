@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_KDTREE_FLANN_HEADER
-#define CV_KDTREE_FLANN_HEADER
+#pragma once
 
 #include <Eigen/Core>
 #include <memory>
@@ -218,5 +217,3 @@ protected:
 
 }  // namespace geometry
 }  // namespace cloudViewer
-
-#endif  // CV_KDTREE_FLANN_HEADER

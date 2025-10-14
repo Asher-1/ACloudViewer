@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_ALIGN_DLG_HEADER
-#define ECV_ALIGN_DLG_HEADER
+#pragma once
 
 #include <ui_alignDlg.h>
 
@@ -66,5 +65,3 @@ protected:
 
     Ui::AlignDialog *m_ui;
 };
-
-#endif  // CC_ALIGN_DLG_HEADER

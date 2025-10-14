@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef POINT3F_H
-#define POINT3F_H
+#pragma once
 
 #include "../qPCL.h"
 
@@ -19,4 +18,3 @@ struct QPCL_ENGINE_LIB_API Point3F {
 };
 
 }  // namespace VtkUtils
-#endif  // POINT3F_H

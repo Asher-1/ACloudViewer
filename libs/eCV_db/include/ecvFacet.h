@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FACET_HEADER
-#define ECV_FACET_HEADER
+#pragma once
 
 // Local
 #include "ecvHObject.h"
@@ -198,5 +197,3 @@ protected:
     // ccHObject interface
     virtual void applyGLTransformation(const ccGLMatrix& trans) override;
 };
-
-#endif  // ECV_FACET_PRIMITIVE_HEADER

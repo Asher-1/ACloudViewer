@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkPMergeConnected_h
-#define vtkPMergeConnected_h
+#pragma once
 
 #include "qPCL.h"  // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
@@ -62,5 +61,3 @@ private:
     void delete_key(FaceWithKey* key);
     FaceWithKey* IdsToKey(vtkIdList* ids);
 };
-
-#endif

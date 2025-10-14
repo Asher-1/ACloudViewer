@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TORUS_PRIMITIVE_HEADER
-#define ECV_TORUS_PRIMITIVE_HEADER
+#pragma once
 
 // Local
 #include "ecvGenericPrimitive.h"
@@ -100,5 +99,3 @@ protected:
     //! Subtended angle (in radians)
     double m_angle_rad;
 };
-
-#endif  // ECV_TORUS_PRIMITIVE_HEADER

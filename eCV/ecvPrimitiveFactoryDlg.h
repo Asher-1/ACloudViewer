@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PRIMITIVE_FACTORY_DLG_HEADER
-#define ECV_PRIMITIVE_FACTORY_DLG_HEADER
+#pragma once
 
 #include "ui_primitiveFactoryDlg.h"
 
@@ -48,5 +47,3 @@ protected:
     //! Associated main window
     MainWindow* m_win;
 };
-
-#endif  // ECV_PRIMITIVE_FACTORY_DLG_HEADER

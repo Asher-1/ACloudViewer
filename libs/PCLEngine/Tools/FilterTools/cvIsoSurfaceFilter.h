@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef TOOLS_ISOSURFACE_FILTER_H
-#define TOOLS_ISOSURFACE_FILTER_H
+#pragma once
 
 #include "cvGenericFilter.h"
 
@@ -51,5 +50,3 @@ protected:
 
     vtkSmartPointer<vtkContourFilter> m_contourFilter;
 };
-
-#endif  // TOOLS_ISOSURFACE_FILTER_H

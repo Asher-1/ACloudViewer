@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ANGLEWIDGETOBSERVER_H
-#define ANGLEWIDGETOBSERVER_H
+#pragma once
 
 #include "abstractwidgetobserver.h"
 
@@ -31,4 +30,3 @@ protected:
 };
 
 }  // namespace VtkUtils
-#endif  // ANGLEWIDGETOBSERVER_H

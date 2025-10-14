@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef SIGNALBLOCKER_H
-#define SIGNALBLOCKER_H
+#pragma once
 
 #include <QObject>
 
@@ -26,4 +25,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // SIGNALBLOCKER_H

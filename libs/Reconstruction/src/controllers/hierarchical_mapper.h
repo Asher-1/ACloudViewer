@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_CONTROLLERS_HIERARCHICAL_MAPPER_H_
-#define COLMAP_SRC_CONTROLLERS_HIERARCHICAL_MAPPER_H_
+#pragma once
 
 #include "base/reconstruction_manager.h"
 #include "base/scene_clustering.h"
@@ -54,5 +53,3 @@ private:
 };
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_CONTROLLERS_HIERARCHICAL_MAPPER_H_

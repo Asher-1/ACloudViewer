@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkScalarBarActorCustom_h
-#define vtkScalarBarActorCustom_h
+#pragma once
 
 #include <vector>  // For ivars
 
@@ -227,5 +226,3 @@ private:
     vtkScalarBarActorCustom(const vtkScalarBarActorCustom&) = delete;
     void operator=(const vtkScalarBarActorCustom&) = delete;
 };
-
-#endif  // vtkScalarBarActorCustom_h

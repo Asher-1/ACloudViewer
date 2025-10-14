@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef vtkContext2DScalarBarActor_h
-#define vtkContext2DScalarBarActor_h
+#pragma once
 
 #include "qPCL.h"
 #include "vtkCoordinate.h"  // for Position and Position 2
@@ -397,5 +396,3 @@ private:
                                       double size[2],
                                       const vtkAnnotationMap& map);
 };
-
-#endif  // vtkContext2DScalarBarActor_h

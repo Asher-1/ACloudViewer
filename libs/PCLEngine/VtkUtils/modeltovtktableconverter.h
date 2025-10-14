@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef MODELTOVTKTABLECONVERTER_H
-#define MODELTOVTKTABLECONVERTER_H
+#pragma once
 
 #include "../qPCL.h"
 #include "signalledrunable.h"
@@ -33,4 +32,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // MODELTOVTKTABLECONVERTER_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef STREAMLINEWINDOW_H
-#define STREAMLINEWINDOW_H
+#pragma once
 
 #include <vtkStreamTracer.h>
 
@@ -108,5 +107,3 @@ private:
     vtkLineWidget* m_lineWidget = nullptr;
     vtkPointWidget* m_pointWidget = nullptr;
 };
-
-#endif  // STREAMLINEWINDOW_H

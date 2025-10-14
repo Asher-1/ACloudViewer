@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ANGLEWIDGETWINDOW_H
-#define ANGLEWIDGETWINDOW_H
+#pragma once
 
 #include "basewidgetwindow.h"
 
@@ -37,5 +36,3 @@ private:
     vtkSmartPointer<vtkAngleRepresentation2D> m_2dRep;
     vtkSmartPointer<vtkAngleRepresentation3D> m_3dRep;
 };
-
-#endif  // ANGLEWIDGETWINDOW_H

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef VTKPLOTPIEWIDGET_H
-#define VTKPLOTPIEWIDGET_H
+#pragma once
 
 #include "vtkplotwidget.h"
 
@@ -26,4 +25,3 @@ private:
 };
 
 }  // namespace VtkUtils
-#endif  // VTKPLOTPIEWIDGET_H

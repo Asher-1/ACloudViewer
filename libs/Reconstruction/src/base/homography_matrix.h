@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_BASE_HOMOGRAPHY_MATRIX_UTILS_H_
-#define COLMAP_SRC_BASE_HOMOGRAPHY_MATRIX_UTILS_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <vector>
@@ -83,5 +82,3 @@ Eigen::Matrix3d HomographyMatrixFromPose(const Eigen::Matrix3d& K1,
                                          const double d);
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_BASE_HOMOGRAPHY_MATRIX_UTILS_H_

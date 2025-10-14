@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_PRIMITIVE_DISTANCE_DIALOG_HEADER
-#define ECV_PRIMITIVE_DISTANCE_DIALOG_HEADER
+#pragma once
 
 // Qt
 #include <ui_primitiveDistanceDlg.h>
@@ -43,5 +42,3 @@ public slots:
 protected slots:
     void toggleSigned(bool);
 };
-
-#endif  // ECV_PRIMITIVE_DISTANCE_DIALOG_HEADER

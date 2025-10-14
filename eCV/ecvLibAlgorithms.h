@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_LIBALGORITHMS_H
-#define ECV_LIBALGORITHMS_H
+#pragma once
 // ##########################################################################
 // #                                                                        #
 // #                              CLOUDVIEWER                               #
@@ -101,5 +100,3 @@ bool ApplyScaleMatchingAlgorithm(ScaleMatchingAlgorithm algo,
                                  unsigned refEntityIndex = 0,
                                  QWidget* parent = 0);
 }  // namespace ccLibAlgorithms
-
-#endif  // ECV_LIBALGORITHMS_H

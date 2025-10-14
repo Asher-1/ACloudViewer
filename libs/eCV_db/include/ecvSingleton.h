@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SINGLETON_HEADER
-#define ECV_SINGLETON_HEADER
+#pragma once
 
 //! Generic singleton encapsulation structure
 template <class T>
@@ -26,4 +25,3 @@ struct ecvSingleton {
     //! Current instance
     T* instance;
 };
-#endif  // ECV_SINGLETON_HEADER

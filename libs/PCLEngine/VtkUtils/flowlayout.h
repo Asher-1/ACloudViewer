@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FLOWLAYOUT_H
-#define FLOWLAYOUT_H
+#pragma once
 
 #include <QLayout>
 #include <QRect>
@@ -45,5 +44,3 @@ private:
     int m_hSpace;
     int m_vSpace;
 };
-
-#endif  // FLOWLAYOUT_H

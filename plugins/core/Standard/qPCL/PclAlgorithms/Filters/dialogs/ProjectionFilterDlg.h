@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_PROJECTIONFILTER_DIALOG_HEADER
-#define Q_PCL_PLUGIN_PROJECTIONFILTER_DIALOG_HEADER
+#pragma once
 
 #include <ui_ProjectionFilterDlg.h>
 
@@ -17,5 +16,3 @@ class ProjectionFilterDlg : public QDialog, public Ui::ProjectionFilterDlg {
 public:
     explicit ProjectionFilterDlg(QWidget* parent = nullptr);
 };
-
-#endif  // Q_PCL_PLUGIN_PROJECTIONFILTER_DIALOG_HEADER

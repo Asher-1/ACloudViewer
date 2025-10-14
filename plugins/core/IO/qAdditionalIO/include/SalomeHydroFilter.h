@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_SALOME_HYDRO_HEADER
-#define ECV_SALOME_HYDRO_HEADER
+#pragma once
 
 #include "FileIOFilter.h"
 
@@ -29,5 +28,3 @@ public:
                                      const QString& filename,
                                      const SaveParameters& parameters) override;
 };
-
-#endif  // ECV_SALOME_HYDRO_HEADER

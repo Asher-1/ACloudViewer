@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_CUSTOM_DOUBLE_VALIDATOR_HEADER
-#define ECV_CUSTOM_DOUBLE_VALIDATOR_HEADER
+#pragma once
 
 // Qt
 #include <QString>
@@ -38,5 +37,3 @@ public:
         return Acceptable;
     }
 };
-
-#endif  // ECV_CUSTOM_DOUBLE_VALIDATOR_HEADER

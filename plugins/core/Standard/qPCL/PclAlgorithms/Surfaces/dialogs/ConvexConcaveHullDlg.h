@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_CONVEXCONCAVE_DLG_HEADER
-#define Q_PCL_PLUGIN_CONVEXCONCAVE_DLG_HEADER
+#pragma once
 
 #include <ui_ConvexConcaveHullDlg.h>
 
@@ -20,5 +19,3 @@ class ConvexConcaveHullDlg : public QDialog, public Ui::ConvexConcaveHullDlg {
 public:
     explicit ConvexConcaveHullDlg(QWidget* parent = 0);
 };
-
-#endif  // Q_PCL_PLUGIN_CONVEXCONCAVE_DLG_HEADER

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_COLOR_SCALES_MANAGER_HEADER
-#define ECV_COLOR_SCALES_MANAGER_HEADER
+#pragma once
 
 // Local
 #include "ecvColorScale.h"
@@ -106,5 +105,3 @@ protected:
     //! Color scales
     ScalesMap m_scales;
 };
-
-#endif  // ECV_COLOR_SCALES_MANAGER_HEADER

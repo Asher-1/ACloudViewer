@@ -23,8 +23,7 @@
 // Finding the max height value in nearest N points aroud every particles, as
 // the lowest position where the particles can get.
 
-#ifndef _CLOTH_H_
-#define _CLOTH_H_
+#pragma once
 
 // local
 #include "Particle.h"
@@ -147,5 +146,3 @@ public:
     //! Converts the cloth to a CC mesh structure
     ccMesh* toMesh() const;
 };
-
-#endif
