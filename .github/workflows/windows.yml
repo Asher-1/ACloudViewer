@@ -21,6 +21,14 @@ on:
       - main
     tags:
       - 'v*.*.*'
+
+  create:
+    tags:
+      - 'v*.*.*'
+
+  release:
+    types: [published]
+
   pull_request:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
