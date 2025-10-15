@@ -40,7 +40,7 @@ env:
   SRC_DIR: "D:\\a\\ACloudViewer\\ACloudViewer"
   BUILD_DIR: "C:\\ACloudViewer\\build"
   INSTALL_DIR: "C:\\dev\\cloudViewer_install"
-  NPROC: 2
+  NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
