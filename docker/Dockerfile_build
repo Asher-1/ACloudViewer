@@ -43,7 +43,9 @@ RUN curl https://pyenv.run | bash \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
-RUN python --version && pip --version 
+RUN python --version && pip --version
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV CMAKE_VERSION=cmake-3.29.2-linux-x86_64
 ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
@@ -51,9 +53,6 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
-
-# Miniconda requires bash as the default shell.
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
