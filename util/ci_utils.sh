@@ -11,6 +11,7 @@ if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA inpu
 fi
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
+NPROC=$((NPROC + 2))                         # run nproc+2 jobs to speed up the build
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         BUILD_CUDA_MODULE=ON
@@ -25,7 +26,7 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 # Warning: CONDA_PREFIX variable should be set before
 # CONDA_PREFIX=${CONDA_PREFIX:="/root/miniconda3/envs/cloudViewer"}
 if [ -z "${CONDA_PREFIX:-}" ] ; then
-	echo "Conda env is not activated and CONDA_PREFIX variable should be set before!"
+	echo "Conda env is not activated."
     CONDA_PREFIX=/root/miniconda3/envs/cloudViewer
 else
     echo "Conda env: $CONDA_PREFIX is activated."
@@ -34,9 +35,12 @@ fi
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
 # ML
-TENSORFLOW_VER="2.16.2"
-TORCH_VER="2.2.2"
+TENSORFLOW_VER="2.19.0"
+TORCH_VER="2.7.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
+# Python
+PIP_VER="24.3.1"
+PROTOBUF_VER="4.24.0"
 
 DISTRIB_ID=""
 DISTRIB_RELEASE=""
@@ -75,12 +79,6 @@ else # do not support windows
     exit -1
 fi
 
-# Python
-PIP_VER="23.2.1"
-WHEEL_VER="0.38.4"
-STOOLS_VER="67.3.2"
-YAPF_VER="0.30.0"
-PROTOBUF_VER="4.24.0"
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 install_python_dependencies() {
@@ -93,8 +91,8 @@ install_python_dependencies() {
         SPEED_CMD=""
     fi
 
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
-        setuptools=="$STOOLS_VER" $SPEED_CMD
+    python -m pip install -U pip=="$PIP_VER" $SPEED_CMD
+    python -m pip install -U -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt" $SPEED_CMD
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
         python -m pip install -U -r python/requirements_test.txt $SPEED_CMD
     fi
@@ -115,7 +113,6 @@ install_python_dependencies() {
         TORCH_GLNX="torch==${TORCH_VER}+cpu"
     fi
 
-    # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" $SPEED_CMD
     if [[ "with-jupyter" =~ ^($options)$ ]]; then
         python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" $SPEED_CMD
@@ -129,7 +126,8 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" tensorboard $SPEED_CMD
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" $SPEED_CMD
+            python -m pip install tensorboard $SPEED_CMD
         elif [[ "$OSTYPE" == "darwin"* ]]; then
             python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard $SPEED_CMD
         else
@@ -138,7 +136,7 @@ install_python_dependencies() {
         fi
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
-        python -m pip install -U yapf=="$YAPF_VER" $SPEED_CMD
+        python -m pip install -U -c "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt" yapf $SPEED_CMD
         # Fix Protobuf compatibility issue
         # https://stackoverflow.com/a/72493690/1255535
         # https://github.com/protocolbuffers/protobuf/issues/10051
@@ -164,7 +162,7 @@ build_mac_wheel() {
     if [ -f "${CLOUDVIEWER_ML_ROOT}/set_cloudViewer_ml_root.sh" ]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
-        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b main || true
+        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b torch271 || true
         BUNDLE_CLOUDVIEWER_ML=ON
     else
         echo "CloudViewer-ML not available."
@@ -209,8 +207,6 @@ build_mac_wheel() {
         "-DBUILD_FILAMENT_FROM_SOURCE=ON"
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
         "-DBUILD_COMMON_CUDA_ARCHS=ON"
-        # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
-        "-DGLIBCXX_USE_CXX11_ABI=OFF"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
@@ -309,7 +305,6 @@ build_gui_app() {
                 "-DBUILD_RECONSTRUCTION=ON"
                 "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
                 "-DBUILD_COMMON_CUDA_ARCHS=ON"
-                "-DGLIBCXX_USE_CXX11_ABI=ON"
                 "-DCVCORELIB_USE_CGAL=ON"
                 "-DCVCORELIB_SHARED=ON"
                 "-DCVCORELIB_USE_QT_CONCURRENT=ON"
@@ -388,7 +383,7 @@ build_pip_package() {
     if [ -f "${CLOUDVIEWER_ML_ROOT}/set_cloudViewer_ml_root.sh" ]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
-        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b main || true
+        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b torch271 || true
         BUNDLE_CLOUDVIEWER_ML=ON
     else
         echo "CloudViewer-ML not available."
@@ -418,13 +413,6 @@ build_pip_package() {
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
     fi
-    CXX11_ABI=ON
-    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
-        CXX11_ABI=$(python -c "import tensorflow as tf; print('ON' if tf.__cxx11_abi_flag__ else 'OFF')")
-    elif [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
-        CXX11_ABI=$(python -c "import torch; print('ON' if torch._C._GLIBCXX_USE_CXX11_ABI else 'OFF')")
-    fi
-    echo Building with GLIBCXX_USE_CXX11_ABI="$CXX11_ABI"
     if [[ "with_conda" =~ ^($options)$ ]]; then
         BUILD_WITH_CONDA=ON
         echo "BUILD_WITH_CONDA is on"
@@ -455,7 +443,6 @@ build_pip_package() {
         "-DCVCORELIB_USE_QT_CONCURRENT=ON" # for parallel processing
         "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
         "-DBUILD_RECONSTRUCTION=ON"
-        "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
@@ -509,8 +496,8 @@ test_wheel() {
     python -m venv cloudViewer_test.venv
     # shellcheck disable=SC1091
     source cloudViewer_test.venv/bin/activate
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
-        setuptools=="$STOOLS_VER"
+    python -m pip install -U pip=="$PIP_VER"
+    python -m pip install -U -c "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt" wheel setuptools
     echo -n "Using python: $(command -v python)"
     python --version
     echo -n "Using pip: "

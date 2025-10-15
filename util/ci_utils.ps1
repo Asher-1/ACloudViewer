@@ -36,9 +36,6 @@ $TENSORFLOW_VER="2.19.0"
 $TORCH_VER="2.7.1"
 $TORCH_REPO_URL = "https://download.pytorch.org/whl/torch/"
 $PIP_VER = "24.3.1"
-$WHEEL_VER = "0.38.4"   
-$STOOLS_VER = "67.3.2"
-$YAPF_VER = "0.30.0"
 $PROTOBUF_VER = "4.24.0"
 
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
@@ -101,8 +98,8 @@ function Install-PythonDependencies {
 
     Write-Host "Installing Python dependencies"
 
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" setuptools=="$STOOLS_VER"
-
+    python -m pip install -U pip=="$PIP_VER"
+    python -m pip install -U -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt"
     if ($options -contains "with-unit-test") {
         Install-Requirements -ForceUpdate "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt"
     }
@@ -124,7 +121,6 @@ function Install-PythonDependencies {
     }
 
     Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt"
-
     if ($options -contains "with-jupyter") {
         Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     }
@@ -139,7 +135,7 @@ function Install-PythonDependencies {
     }
 
     if ($options -contains "with-torch" -or $options -contains "with-tensorflow") {
-        python -m pip install -U yapf=="$YAPF_VER"
+        python -m pip install -U -c "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt" yapf
         # python -m pip install -U protobuf=="$PROTOBUF_VER"
         $output = & { 
             $ErrorActionPreference = 'Continue'
@@ -250,7 +246,6 @@ function Build-GuiApp {
         "-DBUILD_RECONSTRUCTION=ON",
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE",
         "-DBUILD_COMMON_CUDA_ARCHS=ON",
-        "-DGLIBCXX_USE_CXX11_ABI=ON",
         "-DCVCORELIB_SHARED=ON",
         "-DCVCORELIB_USE_CGAL=ON", # for delaunay triangulation such as facet
         "-DCVCORELIB_USE_QT_CONCURRENT=ON", # for parallel processing
@@ -327,12 +322,12 @@ function Build-PipPackage {
         Write-Host "CloudViewer-ML available at $env:CLOUDVIEWER_ML_ROOT. Bundling CloudViewer-ML in wheel."
         Push-Location $env:CLOUDVIEWER_ML_ROOT
         $currentBranch = git rev-parse --abbrev-ref HEAD
-        if ($currentBranch -ne "main") {
-            $mainExists = git show-ref --verify --quiet refs/heads/main
+        if ($currentBranch -ne "torch271") {
+            $BranchExists = git show-ref --verify --quiet refs/heads/torch271
             if ($?) {
-                git checkout main 2>$null
+                git checkout torch271 2>$null
             } else {
-                git checkout -b main 2>$null
+                git checkout -b torch271 2>$null
             }
         }
         Pop-Location
@@ -493,7 +488,8 @@ function Test-Wheel {
     python -m venv cloudViewer_test.venv
     & .\cloudViewer_test.venv\Scripts\Activate.ps1
 
-    python -m pip install --upgrade pip==$env:PIP_VER wheel==$env:WHEEL_VER setuptools==$env:STOOLS_VER
+    python -m pip install -U pip==$env:PIP_VER
+    python -m pip install -U -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt" wheel setuptools
 
     Write-Host "Using python: $(Get-Command python | Select-Object -ExpandProperty Source)"
     python --version

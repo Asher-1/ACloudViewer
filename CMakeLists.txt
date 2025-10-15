@@ -122,7 +122,7 @@ option(WITH_IPP "Use Intel Integrated Performance Primitives"                   
 option(WITH_MINIZIP               "Enable MiniZIP"                              OFF)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"            OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"             OFF)
-option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=0"                   OFF)
+option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1"                   ON )
 if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                     ON )
 else()
@@ -564,6 +564,7 @@ if (BUILD_CUDA_MODULE)
     # https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12
     if (MSVC AND MSVC_VERSION VERSION_LESS_EQUAL "1949")
         # Set this before any CUDA checks
+        add_compile_definitions(_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH)
         set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
         message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022. "
                         "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
@@ -593,6 +594,10 @@ endif ()
 
 # OS specific settings
 if (WIN32)
+    # Set oldest supported Windows version to Windows 10 (10.0, 0x0A00)
+    # https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
+    add_compile_definitions(WINVER=0x0A00 _WIN32_WINNT=0x0A00)
+    
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explicitly export symbols.
     # Then, we could use -fvisibility=hidden for Linux as well
