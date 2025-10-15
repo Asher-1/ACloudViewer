@@ -21,7 +21,7 @@ on:
       - main
 
   release:
-    types: [published]
+    types: [released]
 
   pull_request:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.12']
+        python_version: ['3.11']
         BUILD_SHARED_LIBS: [ON, OFF]
         STATIC_RUNTIME: [ON, OFF]
         BUILD_CUDA_MODULE: [ON, OFF]
@@ -293,7 +293,8 @@ jobs:
             python_version: '3.11'
 
     env:
-      BUILD_PYTORCH_OPS: ON
+      BUILD_TORCH_OPS: ON
+      # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF
       BUILD_JUPYTER_EXTENSION: ON
       BUILD_AZURE_KINECT: ON
@@ -343,7 +344,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
-          ref: torch271
+          ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       # DGM: without caching, using conda on Windows takes a long time...
@@ -429,7 +430,7 @@ jobs:
 
     env:
       BUILD_CUDA_MODULE: ON
-      BUILD_PYTORCH_OPS: ON
+      BUILD_TORCH_OPS: ON
       # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF
       CONDA_DEP_FILE: ".ci/conda_windows.yml"
@@ -443,7 +444,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
-          ref: torch271
+          ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       - name: Download wheels
@@ -486,5 +487,6 @@ jobs:
       #     cloudViewer_test_venv\Scripts\Activate.ps1
       #     echo "Running ACloudViewer python tests..."
       #     echo "Add --randomly-seed=SEED to the test command to reproduce test order."
-      #     python -m pytest python/test/
+      #     echo "Testing ML and ML Ops disabled"
+      #     python -m pytest python/test/ --ignore python/test/ml_ops/
       #     deactivate

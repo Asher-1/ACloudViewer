@@ -14,7 +14,7 @@ on:
       - main
 
   release:
-    types: [published]
+    types: [released]
 
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
