@@ -529,7 +529,7 @@ int Execute( int argc , char* argv[] )
 
 int PoissonRecon( int argc , char* argv[] )
 {
-#if defined(WIN32) && defined(MAX_MEMORY_GB)
+#if defined(_WIN32) && defined(MAX_MEMORY_GB)
 	if( MAX_MEMORY_GB>0 )
 	{
 		SIZE_T peakMemory = 1;

@@ -18,7 +18,7 @@ export BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 export BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
 export PYTHON_VERSION=$1
-export NPROC=$(nproc)
+export NPROC=${NPROC:-$(($(nproc) + 2))} # run nproc+2 jobs to speed up the build
 export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 

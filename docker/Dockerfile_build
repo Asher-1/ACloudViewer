@@ -61,7 +61,7 @@ ENV ACloudViewer_DEV=/root \
     ACloudViewer_INSTALL=/root/install
 
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b torch271 ${CLOUDVIEWER_ML_ROOT}
 
 COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer

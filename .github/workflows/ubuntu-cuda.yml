@@ -64,7 +64,6 @@ jobs:
       BUILD_PACKAGE      : true
       GCE_INSTANCE_PREFIX: cloudviewer-ci-${{ matrix.CI_CONFIG }}
       DOCKER_TAG         : cloudviewer-ci:${{ matrix.CI_CONFIG }}
-      CCACHE_TAR_NAME    : cloudviewer-ci-${{ matrix.CI_CONFIG }}
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |

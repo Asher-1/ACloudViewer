@@ -18,7 +18,7 @@ export BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 export BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
 export PYTHON_VERSION=$1
-export NPROC=$(nproc)
+export NPROC=${NPROC:-$(($(nproc) + 2))} # run nproc+2 jobs to speed up the build
 echo "PYTHON_VERSION: " python${PYTHON_VERSION}
 
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"

@@ -12,7 +12,7 @@ import torch as _torch
 from cloudViewer import _build_config
 
 if not _build_config["Pytorch_VERSION"]:
-    raise Exception('CloudViewer was not built with PyTorch support!')
+    raise ImportError('CloudViewer was not built with PyTorch support!')
 
 _cv3d_torch_version = _verp(_build_config["Pytorch_VERSION"])
 # Check match with PyTorch version, any patch level is OK

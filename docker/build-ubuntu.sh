@@ -73,7 +73,7 @@ export DEPENDENCY_IMAGE_TAG=${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubun
 if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]]; 
 	then
 
-		if [ "${UBUNTU_VERSION}" = "22.04" ]; then
+		if [ "${UBUNTU_VERSION}" = "22.04" || "${UBUNTU_VERSION}" = "24.04"]; then
         QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
     else 
         QT_BASE_DIR="/opt/qt515"
@@ -112,16 +112,14 @@ wheel_release_export_env() {
 release_build() {
     options="$(echo "$@" | tr ' ' '|')"
     echo "[release_build()] options: ${options} on ${UBUNTU_VERSION}"
-    if [[ "py38" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.8
-    elif [[ "py39" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.9
-    elif [[ "py310" =~ ^($options)$ ]]; then
+    if [[ "py310" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
     elif [[ "py312" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.12
+		elif [[ "py313" =~ ^($options)$ ]]; then
+        PYTHON_VERSION=3.13
     else
         echo "Invalid python version."
     fi
@@ -192,17 +190,17 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 	# Start building...
 	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "ACloudViewer-*${UBUNTU_VERSION}*.run" | grep -q .; then
     gui_release_export_env
-		release_build py311 gui
+		release_build py312 gui
 	else
 		echo "Ignore ACloudViewer GUI app building due to have builded before..."
 	fi
 
-	PYTHON_VERSIONS=("38" "39" "310" "311" "312")
+	PYTHON_VERSIONS=("310" "311" "312" "313")
 
 	for version in "${PYTHON_VERSIONS[@]}"; do
     if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp${version}-*.whl" | grep -q .; then
-		    if [ "$version" == "312" ] && [ "$UBUNTU_VERSION" == "18.04" ]; then
-					echo "Ubuntu18.04 does not support python3.12 as default!"
+		    if [ "$version" == "312" || "$version" == "313" ] && [ "$UBUNTU_VERSION" == "18.04" ]; then
+					echo "Ubuntu18.04 does not support python3.12 or python3.13 as default!"
 					continue
     		fi
 				echo "Start building cloudViewer wheel with python${version}..."

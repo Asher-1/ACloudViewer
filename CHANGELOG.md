@@ -8,7 +8,7 @@ ACloudViewer Version History
     -   Fix code style
 
 - Enhancements:
-    -   
+    - Use GLIBCXX_USE_CXX11_ABI=ON by default
 
 ### supported platform:
 - Windows `x86/64`

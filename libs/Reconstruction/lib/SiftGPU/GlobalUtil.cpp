@@ -416,7 +416,7 @@ void GlobalUtil::InitGLParam(int NotTargetGL)
 
 void GlobalUtil::SelectDisplay()
 {
-#ifdef WIN32
+#ifdef _WIN32
 	if(_WindowDisplay == NULL) return;
 
 	HDC hdc = CreateDC(_WindowDisplay, _WindowDisplay, NULL, NULL);
