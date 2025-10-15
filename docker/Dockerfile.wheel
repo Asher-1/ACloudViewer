@@ -125,6 +125,9 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         fontconfig \
         # libgdal-dev \
         libcgal-dev \
+        libeigen3-dev \
+        libboost-all-dev \
+        libglew-dev \
         # for QT
         libxcb-xkb1 \
         libxcb-shape0 \

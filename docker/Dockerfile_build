@@ -37,14 +37,6 @@ ENV PIP_RETRIES=5
 ENV PIP_TIMEOUT=1000
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-
-ENV CMAKE_VERSION=cmake-3.29.2-linux-x86_64
-ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
-RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
- && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
- && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
- && cmake --version
-
 RUN curl https://pyenv.run | bash \
         && pyenv update \
         && pyenv install $PYTHON_VERSION \
@@ -52,6 +44,13 @@ RUN curl https://pyenv.run | bash \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 RUN python --version && pip --version 
+
+ENV CMAKE_VERSION=cmake-3.29.2-linux-x86_64
+ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
+ && cmake --version
 
 # Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
