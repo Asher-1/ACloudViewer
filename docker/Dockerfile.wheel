@@ -225,8 +225,8 @@ RUN mkdir -p ${ACloudViewer_INSTALL}
 ENV IGNORE_TEST=ON
 
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
-# Build cloudViewer wheel
-RUN echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." \
+# Build cloudviewer wheel
+RUN echo "Build cloudviewer wheel for ${PYTHON_VERSION}..." \
     && rm -rf ${ACloudViewer_BUILD}/* \
     && ./docker/build_cloudviewer_whl.sh ${PYTHON_VERSION} \
     && rm -rf ${ACloudViewer_BUILD}/*

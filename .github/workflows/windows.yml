@@ -377,8 +377,8 @@ jobs:
           echo "IGNORE_TEST=$env:IGNORE_TEST"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           scripts/build_win_wheel.ps1 "${{ matrix.python_version }}" "${{ env.INSTALL_DIR }}" "${{ env.CLOUDVIEWER_ML_ROOT }}"
 
-          $PIP_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudViewer-*.whl")).Name
-          $PIP_CPU_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudViewer_cpu*.whl")).Name
+          $PIP_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudviewer-*.whl")).Name
+          $PIP_CPU_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudviewer_cpu*.whl")).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
@@ -450,7 +450,7 @@ jobs:
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: cloudViewer*win*.whl
+          pattern: cloudviewer*win*.whl
           merge-multiple: true
 
       - name: Set up Python
@@ -471,9 +471,9 @@ jobs:
           python -m pip install -U -r python/requirements_test.txt
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
-            $PIP_PKG_NAME=(Get-ChildItem pip_package\cloudViewer_cpu*-$py_tag-*.whl).Name
+            $PIP_PKG_NAME=(Get-ChildItem pip_package\cloudviewer_cpu*-$py_tag-*.whl).Name
           } else {
-            $PIP_PKG_NAME=(Get-ChildItem cloudViewer_cpu*-$py_tag-*.whl).Name
+            $PIP_PKG_NAME=(Get-ChildItem cloudviewer_cpu*-$py_tag-*.whl).Name
           }
           echo "Installing ACloudViewer wheel $PIP_PKG_NAME in virtual environment..."
           python -m pip install "$PIP_PKG_NAME"

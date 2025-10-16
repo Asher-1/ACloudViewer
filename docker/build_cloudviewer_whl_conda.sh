@@ -94,16 +94,16 @@ elif [ "$IGNORE_TEST" == "ON" ]; then
     echo "Ignore test in internal docker when github action running!"
 else
     pushd build # PWD=ACloudViewer/build
-    echo "Try importing cloudViewer Python package"
+    echo "Try importing cloudviewer Python package"
     if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
-        test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer-*whl
+        test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudviewer-*whl
     else
-        test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer_cpu-*whl
+        test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudviewer_cpu-*whl
     fi
     popd # PWD=ACloudViewer
 fi
 
-echo "Finish building cloudViewer wheel based on ${PYTHON_VERSION}!"
+echo "Finish building cloudviewer wheel based on ${PYTHON_VERSION}!"
 echo "mv ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl ${ACloudViewer_INSTALL}"
 mv ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl ${ACloudViewer_INSTALL}
 

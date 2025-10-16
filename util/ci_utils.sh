@@ -463,7 +463,7 @@ build_pip_package() {
     echo "Packaging CloudViewer CPU pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
     echo "Finish make pip-package for cpu"
-    mv lib/python_package/pip_package/cloudViewer*.whl . # save CPU wheel
+    mv lib/python_package/pip_package/cloudviewer*.whl . # save CPU wheel
 
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
@@ -487,7 +487,7 @@ build_pip_package() {
     echo "Packaging CloudViewer full pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
     echo "Finish make CloudViewer full pip package"
-    mv cloudViewer*.whl lib/python_package/pip_package/ # restore CPU wheel
+    mv cloudviewer*.whl lib/python_package/pip_package/ # restore CPU wheel
     popd                                           # PWD=ACloudViewer
 }
 

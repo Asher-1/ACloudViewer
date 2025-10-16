@@ -114,8 +114,8 @@ cuda_wheel_build() {
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm cloudviewer-ci:wheel \
-        bash -c "cp /root/install/cloudViewer*.whl /opt/mount \
-            && chown $(id -u):$(id -g) /opt/mount/cloudViewer*.whl"
+        bash -c "cp /root/install/cloudviewer*.whl /opt/mount \
+            && chown $(id -u):$(id -g) /opt/mount/cloudviewer*.whl"
 }
 
 ci_build() {

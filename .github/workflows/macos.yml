@@ -305,7 +305,7 @@ jobs:
           build_mac_wheel with_conda build_realsense
           ccache -s
 
-          PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudViewer*.whl)"
+          PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudviewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload Wheel to GitHub artifacts
@@ -364,14 +364,14 @@ jobs:
       - name: Download X64 wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: cloudViewer-*macosx*_x86_64.whl
+          pattern: cloudviewer-*macosx*_x86_64.whl
           path: x64_wheels
           merge-multiple: true
 
       - name: Download ARM64 wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: cloudViewer-*macosx*_arm64.whl
+          pattern: cloudviewer-*macosx*_arm64.whl
           path: arm64_wheels
           merge-multiple: true
 
@@ -382,8 +382,8 @@ jobs:
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           mkdir universal_wheels
           pip install delocate
-          delocate-merge -v -w universal_wheels x64_wheels/cloudViewer-*${PYTAG}*.whl arm64_wheels/cloudViewer-*${PYTAG}*.whl
-          NEW_WHL_NAME=$(basename universal_wheels/cloudViewer-*${PYTAG}*.whl)
+          delocate-merge -v -w universal_wheels x64_wheels/cloudviewer-*${PYTAG}*.whl arm64_wheels/cloudviewer-*${PYTAG}*.whl
+          NEW_WHL_NAME=$(basename universal_wheels/cloudviewer-*${PYTAG}*.whl)
           echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
 
       - name: Upload merged wheels to GitHub artifacts
@@ -450,7 +450,7 @@ jobs:
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: cloudViewer-*macosx*.whl
+          pattern: cloudviewer-*macosx*.whl
           merge-multiple: true
 
       - name: Set up Python
@@ -463,7 +463,7 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel cloudViewer*-"$pi_tag"-*_$(uname -m).whl
+          test_wheel cloudviewer*-"$pi_tag"-*_$(uname -m).whl
 
       # - name: Run Python unit tests
       #   run: |
