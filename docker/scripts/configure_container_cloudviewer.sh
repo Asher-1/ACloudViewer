@@ -34,6 +34,34 @@ docker run -dit --name=test_cloudviewer_dep \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
   cloudviewer-deps:develop-ubuntu20.04-cuda11.8.0-cudnn8
 
+
+docker run -dit --name=test_cloudviewer_dep \
+  --shm-size="16g" \
+  --cap-add=SYS_PTRACE \
+  --security-opt seccomp=unconfined --privileged \
+  --net=host \
+  --ipc=host \
+  --gpus=all \
+  --env NVIDIA_DISABLE_REQUIRE=1 \
+  --env ALL_PROXY=socks5://127.0.0.1:7890 \
+	--env HTTP_PROXY=http://127.0.0.1:7890 \
+	--env HTTPS_PROXY=http://127.0.0.1:7890 \
+  --env PIP_DEFAULT_TIMEOUT=1000 \
+  --env PIP_RETRIES=5 \
+  --env PIP_TIMEOUT=1000 \
+  -e GDK_SCALE \
+  -e GDK_DPI_SCALE \
+  -p 10022:22 \
+  -p 14000:4000 \
+  -e "QT_X11_NO_MITSHM=1" \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/root/ACloudViewer \
+  -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
+  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
+  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
+  cloudviewer-deps:develop-ubuntu22.04-cuda12.6.3-cudnn
+
 # attach into container instance
 docker exec -it test_cloudviewer_dep /bin/bash
 
@@ -78,7 +106,7 @@ export LD_LIBRARY_PATH=${QT_BASE_DIR}/lib:$LD_LIBRARY_PATH
 export PKG_CONFIG_PATH=${QT_BASE_DIR}/lib/pkgconfig:$PKG_CONFIG_PATH
 
 # create python env
-export PYTHON_VERSION=3.8
+export PYTHON_VERSION=3.10
 export PIP_DEFAULT_TIMEOUT=1000
 export PIP_RETRIES=5
 export PIP_TIMEOUT=1000
@@ -92,6 +120,8 @@ curl https://pyenv.run | bash \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION}
 python --version && pip --version
+
+./docker/scripts/configure_pip_timeout.sh
 
 # build ACloudViewer app installer
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh $PYTHON_VERSION ON

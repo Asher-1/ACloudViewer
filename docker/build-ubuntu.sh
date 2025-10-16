@@ -70,10 +70,8 @@ export CLOUDVIEWER_IMAGE_TAG=${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${
 # DEPENDENCIES IMAGE
 export DEPENDENCY_IMAGE_TAG=${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
 
-if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]]; 
-	then
-
-		if [ "${UBUNTU_VERSION}" = "22.04" || "${UBUNTU_VERSION}" = "24.04"]; then
+if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]]; then
+		if [[ "${UBUNTU_VERSION}" = "22.04" || "${UBUNTU_VERSION}" = "24.04" ]]; then
         QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
     else 
         QT_BASE_DIR="/opt/qt515"

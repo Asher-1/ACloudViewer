@@ -57,6 +57,7 @@ jobs:
         include:
           - CI_CONFIG: cpu-focal
           - CI_CONFIG: cpu-jammy
+          - CI_CONFIG: cpu-noble
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh

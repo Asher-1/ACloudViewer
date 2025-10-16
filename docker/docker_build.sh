@@ -161,7 +161,8 @@ ci_build() {
 cuda-focal_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-focal
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_FOCAL}
+    export UBUNTU_VERSION=${UBUNTU_FOCAL}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -173,7 +174,8 @@ cuda-focal_export_env() {
 cuda-jammy_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-jammy
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_JAMMY}
+    export UBUNTU_VERSION=${UBUNTU_JAMMY}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -185,7 +187,8 @@ cuda-jammy_export_env() {
 cuda-noble_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-noble
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_NOBLE}
+    export UBUNTU_VERSION=${UBUNTU_NOBLE}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -197,7 +200,8 @@ cuda-noble_export_env() {
 cuda-focal-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-focal
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_FOCAL}
+    export UBUNTU_VERSION=${UBUNTU_FOCAL}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -209,7 +213,8 @@ cuda-focal-release_export_env() {
 cuda-jammy-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-jammy
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_JAMMY}
+    export UBUNTU_VERSION=${UBUNTU_JAMMY}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -221,7 +226,8 @@ cuda-jammy-release_export_env() {
 cuda-noble-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-noble
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_NOBLE}
+    export UBUNTU_VERSION=${UBUNTU_NOBLE}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -233,7 +239,8 @@ cuda-noble-release_export_env() {
 cpu-focal_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-focal
 
-    export BASE_IMAGE=ubuntu:${UBUNTU_FOCAL}
+    export UBUNTU_VERSION=${UBUNTU_FOCAL}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -244,7 +251,9 @@ cpu-focal_export_env() {
 
 cpu-jammy_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-jammy
-    export BASE_IMAGE=ubuntu:${UBUNTU_JAMMY}
+
+    export UBUNTU_VERSION=${UBUNTU_JAMMY}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -255,7 +264,9 @@ cpu-jammy_export_env() {
 
 cpu-noble_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-noble
-    export BASE_IMAGE=ubuntu:${UBUNTU_NOBLE}
+
+    export UBUNTU_VERSION=${UBUNTU_NOBLE}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -267,7 +278,8 @@ cpu-noble_export_env() {
 cpu-focal-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-focal
 
-    export BASE_IMAGE=ubuntu:${UBUNTU_FOCAL}
+    export UBUNTU_VERSION=${UBUNTU_FOCAL}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -278,7 +290,9 @@ cpu-focal-release_export_env() {
 
 cpu-jammy-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-jammy
-    export BASE_IMAGE=ubuntu:${UBUNTU_JAMMY}
+
+    export UBUNTU_VERSION=${UBUNTU_JAMMY}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
@@ -289,7 +303,9 @@ cpu-jammy-release_export_env() {
 
 cpu-noble-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-noble
-    export BASE_IMAGE=ubuntu:${UBUNTU_NOBLE}
+
+    export UBUNTU_VERSION=${UBUNTU_NOBLE}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF

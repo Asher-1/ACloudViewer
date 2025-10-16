@@ -36,7 +36,7 @@ $TENSORFLOW_VER="2.19.0"
 $TORCH_VER="2.7.1"
 $TORCH_REPO_URL = "https://download.pytorch.org/whl/torch/"
 $PIP_VER = "24.3.1"
-$PROTOBUF_VER = "4.24.0"
+$PROTOBUF_VER = "4.25.3"  # Changed from 4.24.0 due to tensorboard 2.19.0 incompatibility
 
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
@@ -318,7 +318,7 @@ function Build-PipPackage {
     
     $BUILD_FILAMENT_FROM_SOURCE = "OFF"
     $REAL_ML_SHELL_PATH = Join-Path $env:CLOUDVIEWER_ML_ROOT "set_cloudViewer_ml_root.sh"
-    if (Test-Path "$REAL_ML_SHELL_PATH") {
+    if (Test-Path "$REAL_ML_SHELL_PATH" -and ($env:BUILD_TENSORFLOW_OPS -eq "ON" -or $env:BUILD_PYTORCH_OPS -eq "ON")) {
         Write-Host "CloudViewer-ML available at $env:CLOUDVIEWER_ML_ROOT. Bundling CloudViewer-ML in wheel."
         Push-Location $env:CLOUDVIEWER_ML_ROOT
         $currentBranch = git rev-parse --abbrev-ref HEAD

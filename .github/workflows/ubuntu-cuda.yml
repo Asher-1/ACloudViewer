@@ -57,6 +57,7 @@ jobs:
         include:
           - CI_CONFIG: cuda-focal
           - CI_CONFIG: cuda-jammy
+          - CI_CONFIG: cuda-noble
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
