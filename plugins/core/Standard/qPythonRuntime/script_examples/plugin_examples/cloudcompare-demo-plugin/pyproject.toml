@@ -17,10 +17,10 @@ authors = [
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = []
@@ -34,7 +34,7 @@ Source = "https://github.com/tmontaigu/CloudCompare-PythonPlugin/tree/master/scr
 path = "src/cloudcompare_demo_plugin/__about__.py"
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11"]
+python = ["3.10", "3.11", "3.12", "3.13"]
 
 
 [tool.hatch.envs.default]
