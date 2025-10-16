@@ -196,7 +196,7 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 	PYTHON_VERSIONS=("310" "311" "312" "313")
 
 	for version in "${PYTHON_VERSIONS[@]}"; do
-    if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp${version}-*.whl" | grep -q .; then
+    if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudviewer*-cp${version}-*.whl" | grep -q .; then
 		    if [ "$version" == "312" || "$version" == "313" ] && [ "$UBUNTU_VERSION" == "18.04" ]; then
 					echo "Ubuntu18.04 does not support python3.12 or python3.13 as default!"
 					continue

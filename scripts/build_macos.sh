@@ -26,21 +26,21 @@ export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
 
 MACOS_APP_BUILD_SHELL=${CLOUDVIEWER_SOURCE_ROOT}/scripts/build_macos_app.sh
 if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "ACloudViewer*.dmg" | grep -q .; then
-    echo "Start building ACloudViewer app with python3.11"
-    rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_APP_BUILD_SHELL} 3.11
+    echo "Start building ACloudViewer app with python3.12"
+    rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_APP_BUILD_SHELL} 3.12
 else
     echo "Ignore ACloudViewer GUI app building due to have builded before..."
 fi
 echo
 
-echo "Start to build wheel with python3.8-3.12 On MacOS..."
+echo "Start to build wheel with python3.10-3.12 On MacOS..."
 echo
 
-PYTHON_VERSIONS=("3.8" "3.9" "3.10" "3.11" "3.12")
+PYTHON_VERSIONS=("3.10" "3.11" "3.12")
 MACOS_WHL_BUILD_SHELL=${CLOUDVIEWER_SOURCE_ROOT}/scripts/build_macos_whl.sh
 
 for version in "${PYTHON_VERSIONS[@]}"; do
-    if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "cloudViewer*cp${version//./}*.whl" | grep -q .; then
+    if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "cloudviewer*cp${version//./}*.whl" | grep -q .; then
         echo "Start building cloudviewer wheel with python${version}..."
         rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} ${version}
     else
