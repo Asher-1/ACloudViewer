@@ -183,10 +183,10 @@ def build_gui_app(python_version):
 
 def build_python_wheel(python_version):
     cp_version = f"cp{python_version.replace('.', '')}"
-    pattern = re.compile(f"cloudViewer-.*-{cp_version}-{cp_version}-win_amd64\.whl$")
+    pattern = re.compile(f"cloudviewer-.*-{cp_version}-{cp_version}-win_amd64\.whl$")
     wheel_exists = any(pattern.match(file) for file in os.listdir(ACLOUDVIEWER_INSTALL))
     if not wheel_exists:
-        logging.info(f"Start building cloudViewer wheel for python{python_version}...")
+        logging.info(f"Start building cloudviewer wheel for python{python_version}...")
         if (os.path.exists(CLOUDVIEWER_BUILD_DIR)):
             if subprocess.call(
                     ["powershell", "-File", REMOVE_FOLDERS_SHELL, "-FolderPath", CLOUDVIEWER_BUILD_DIR, "-y"]) == 0:
@@ -206,7 +206,7 @@ def build_python_wheel(python_version):
             logging.error("Build failed")
             return False
     else:
-        logging.info(f"Ignore cloudViewer wheel for python{python_version}...")
+        logging.info(f"Ignore cloudviewer wheel for python{python_version}...")
     return True
 
 def build():
@@ -227,7 +227,7 @@ def build():
         logging.info("#" * 80)
         success = build_python_wheel(version)
         if success:
-            logging.info(f"Successfully building cloudViewer on python{version}")
+            logging.info(f"Successfully building cloudviewer on python{version}")
         else:
             exit(1)
 

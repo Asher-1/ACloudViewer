@@ -438,8 +438,8 @@ function Build-PipPackage {
     cmake --build . --target pip-package --config Release --parallel $env:NPROC
     Write-Host "Finish make pip-package for cpu"
 
-    Write-Host "Backup lib/python_package/pip_package/cloudViewer*.whl to build path"
-    Move-Item lib/python_package/pip_package/cloudViewer*.whl . -Force
+    Write-Host "Backup lib/python_package/pip_package/cloudviewer*.whl to build path"
+    Move-Item lib/python_package/pip_package/cloudviewer*.whl . -Force
 
     if ($BUILD_CUDA_MODULE -eq "ON") {
         Write-Host "`nInstalling CUDA versions of TensorFlow and PyTorch..."
@@ -469,8 +469,8 @@ function Build-PipPackage {
         Write-Host "Finish cmake --build with cuda"
     }
 
-    Write-Host "Restore cloudViewer*.whl from build path"
-    Move-Item cloudViewer*.whl lib/python_package/pip_package/ -Force
+    Write-Host "Restore cloudviewer*.whl from build path"
+    Move-Item cloudviewer*.whl lib/python_package/pip_package/ -Force
 
     Pop-Location
 }

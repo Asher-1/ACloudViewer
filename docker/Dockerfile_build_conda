@@ -62,7 +62,7 @@ RUN if [ "${BUILD_GUI}" = "ON" ]; then                              \
     fi
 
 RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                            \
-        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&  \
+        echo "Build cloudviewer wheel for ${PYTHON_VERSION}..." &&  \
         rm -rf ${ACloudViewer_BUILD}/* &&                           \
         ./docker/build_cloudviewer_whl_conda.sh ${PYTHON_VERSION};  \
     fi

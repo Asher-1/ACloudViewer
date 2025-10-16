@@ -164,14 +164,16 @@ classifiers = [
 name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
-# cloudViewer-cpu wheel for Linux OR Windows x86_64
+# cloudviewer-cpu wheel for Linux OR Windows x86_64
 if (sys.platform.startswith("linux") or
         sys.platform.startswith("win32")) and platform.machine() in (
             'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
     name += "-cpu"
     long_description += ("\n\nThis wheel only contains CPU functionality. "
-                         "Use the cloudViewer wheel for full functionality.")
+                         "Use the cloudviewer wheel for full functionality.")
     classifiers.remove("Environment :: GPU :: NVIDIA CUDA")
+
+print(f'PYPI Package name: {name}')
 
 setup_args = dict(
     name=name,
@@ -197,9 +199,10 @@ setup_args = dict(
     description="@PROJECT_DESCRIPTION@",
     long_description=long_description,
     long_description_content_type='text/x-rst',
-    # Metadata below is valid but currently ignored by pip (<=v23)
-    obsoletes=["cloudViewer_python"],
-    provides=["cloudViewer", "cloudViewer_cpu"],  # For cloudViewer-cpu
+    # Lowercase "cloudviewer" is PEP 503 standard behavior
+    # This normalization is enforced by pip 24.x and later
+    obsoletes=["cloudviewer_python"],
+    provides=["cloudviewer", "cloudviewer_cpu"],  # For cloudviewer-cpu
 )
 
 setup(**setup_args)

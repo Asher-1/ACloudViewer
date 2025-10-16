@@ -201,11 +201,11 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 					echo "Ubuntu18.04 does not support python3.12 or python3.13 as default!"
 					continue
     		fi
-				echo "Start building cloudViewer wheel with python${version}..."
+				echo "Start building cloudviewer wheel with python${version}..."
         wheel_release_export_env
         release_build "py${version}" wheel
     else
-        echo "Ignore cloudViewer wheel building based on python${version} due to have built before..."
+        echo "Ignore cloudviewer wheel building based on python${version} due to have built before..."
     fi
 	done
 else

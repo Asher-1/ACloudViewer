@@ -41,10 +41,10 @@ MACOS_WHL_BUILD_SHELL=${CLOUDVIEWER_SOURCE_ROOT}/scripts/build_macos_whl.sh
 
 for version in "${PYTHON_VERSIONS[@]}"; do
     if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "cloudViewer*cp${version//./}*.whl" | grep -q .; then
-        echo "Start building cloudViewer wheel with python${version}..."
+        echo "Start building cloudviewer wheel with python${version}..."
         rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} ${version}
     else
-        echo "Ignore cloudViewer wheel with python${version}..."
+        echo "Ignore cloudviewer wheel with python${version}..."
     fi
 done
 
