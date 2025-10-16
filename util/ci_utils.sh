@@ -40,7 +40,7 @@ TORCH_VER="2.7.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="24.3.1"
-PROTOBUF_VER="4.24.0"
+PROTOBUF_VER="4.25.3"  # Changed from 4.24.0 due to tensorboard 2.19.0 incompatibility
 
 DISTRIB_ID=""
 DISTRIB_RELEASE=""
@@ -159,7 +159,8 @@ build_mac_wheel() {
     if [[ "$DEVELOPER_BUILD" == "OFF" ]]; then
         echo "Building for a new cloudViewer Release"
     fi
-    if [ -f "${CLOUDVIEWER_ML_ROOT}/set_cloudViewer_ml_root.sh" ]; then
+    if [[ -f "${CLOUDVIEWER_ML_ROOT}/set_cloudViewer_ml_root.sh" ]] &&
+        [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
         git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b torch271 || true
@@ -380,7 +381,8 @@ build_pip_package() {
     fi
 
     set +u
-    if [ -f "${CLOUDVIEWER_ML_ROOT}/set_cloudViewer_ml_root.sh" ]; then
+    if [[ -f "${CLOUDVIEWER_ML_ROOT}/set_cloudViewer_ml_root.sh" ]] &&
+        [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
         git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b torch271 || true
