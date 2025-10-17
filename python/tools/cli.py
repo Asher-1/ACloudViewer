@@ -53,6 +53,7 @@ def _get_runnable_examples_dict():
     examples_dict = _get_all_examples_dict()
     categories_to_remove = [
         "benchmark",
+        "jupyter",
         "reconstruction_system",
         "t_reconstruction_system",
     ]
