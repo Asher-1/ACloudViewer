@@ -103,6 +103,9 @@ if os.path.exists(MAIN_LIB_PATH):
         try_load_cdll('libicudata*')
         try_load_cdll('libicuuc*')
         try_load_cdll('libicui18n*')
+        add_lib_list = list(MAIN_LIB_PATH.glob('libdouble-conversion*'))
+        if len(add_lib_list) > 0:
+            try_load_cdll('libdouble-conversion*')
         try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Gui*')
         try_load_cdll('libQt5Widgets*')
@@ -126,6 +129,7 @@ if os.path.exists(MAIN_LIB_PATH):
             try_load_cdll('libceres*')
         # for libcurl and libssl dep
         try_load_cdll('libcrypto*')
+        try_load_cdll('libssl*')
         load_cdll(str(next(MAIN_LIB_PATH.glob('lib*'))))
 
 __DEVICE_API__ = 'cpu'

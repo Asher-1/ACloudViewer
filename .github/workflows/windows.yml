@@ -293,7 +293,7 @@ jobs:
             python_version: '3.11'
 
     env:
-      BUILD_TORCH_OPS: ON
+      BUILD_PYTORCH_OPS: ON
       # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF
       BUILD_JUPYTER_EXTENSION: ON
@@ -430,7 +430,7 @@ jobs:
 
     env:
       BUILD_CUDA_MODULE: ON
-      BUILD_TORCH_OPS: ON
+      BUILD_PYTORCH_OPS: ON
       # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF
       CONDA_DEP_FILE: ".ci/conda_windows.yml"

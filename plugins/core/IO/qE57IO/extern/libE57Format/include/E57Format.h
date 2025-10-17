@@ -32,6 +32,7 @@
 //! @file  E57Format.h header file for the E57 API
 
 #include <cfloat>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
