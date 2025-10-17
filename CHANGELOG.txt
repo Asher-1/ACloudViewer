@@ -1,6 +1,9 @@
 ACloudViewer Version History
 ============================
 
+v3.9.4-Beta (Asher) - 10/17/2025
+----------------------
+
 - New features:
     -   Add code style check support
 
@@ -8,7 +11,10 @@ ACloudViewer Version History
     -   Fix code style
 
 - Enhancements:
-    -   
+    -   Use GLIBCXX_USE_CXX11_ABI=ON by default
+    -   Remove `setuptools` and `wheel` from requirements for end users
+    -   CUDA support 11.8 -> 12.6.3 Tensorflow 2.16.2 -> 2.19.0. PyTorch 2.2.2 -> 2.7.1
+    -   Replace `#ifndef` with `#pragma once`
 
 ### supported platform:
 - Windows `x86/64`
