@@ -318,16 +318,16 @@ function Build-PipPackage {
     
     $BUILD_FILAMENT_FROM_SOURCE = "OFF"
     $REAL_ML_SHELL_PATH = Join-Path $env:CLOUDVIEWER_ML_ROOT "set_cloudViewer_ml_root.sh"
-    if (Test-Path "$REAL_ML_SHELL_PATH" -and ($env:BUILD_TENSORFLOW_OPS -eq "ON" -or $env:BUILD_PYTORCH_OPS -eq "ON")) {
+    if ((Test-Path "$REAL_ML_SHELL_PATH") -and ($env:BUILD_TENSORFLOW_OPS -eq "ON" -or $env:BUILD_PYTORCH_OPS -eq "ON")) {
         Write-Host "CloudViewer-ML available at $env:CLOUDVIEWER_ML_ROOT. Bundling CloudViewer-ML in wheel."
         Push-Location $env:CLOUDVIEWER_ML_ROOT
         $currentBranch = git rev-parse --abbrev-ref HEAD
         if ($currentBranch -ne "torch271") {
-            $BranchExists = git show-ref --verify --quiet refs/heads/torch271
-            if ($?) {
-                git checkout torch271 2>$null
+            git show-ref --verify --quiet refs/heads/torch271
+            if ($LASTEXITCODE -eq 0) {
+                git checkout torch271 2>&1 | Out-Null
             } else {
-                git checkout -b torch271 2>$null
+                git checkout -b torch271 2>&1 | Out-Null
             }
         }
         Pop-Location
