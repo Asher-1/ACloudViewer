@@ -103,9 +103,12 @@ if os.path.exists(MAIN_LIB_PATH):
         try_load_cdll('libicudata*')
         try_load_cdll('libicuuc*')
         try_load_cdll('libicui18n*')
-        add_lib_list = list(MAIN_LIB_PATH.glob('libdouble-conversion*'))
-        if len(add_lib_list) > 0:
+        if len(list(MAIN_LIB_PATH.glob('libdouble-conversion*'))) > 0:
             try_load_cdll('libdouble-conversion*')
+        if len(list(MAIN_LIB_PATH.glob('libmd4c*'))) > 0:
+            try_load_cdll('libmd4c*')
+        
+        try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Gui*')
         try_load_cdll('libQt5Widgets*')
