@@ -667,8 +667,12 @@ if (USE_SIMD)
     endif ()
 
     if (UNIX AND NOT APPLE)
-        # disable avx512f for linux for fix Illegal instruction issues with cloudViewer python package
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx512f")
+        # Disable AVX512 and AVX2 for Linux to fix "Illegal instruction" issues
+        # when binaries are compiled on newer CPUs but run on older ones
+        # This ensures better compatibility across different CPU generations
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx512f -mno-avx512cd -mno-avx512vl -mno-avx512bw -mno-avx512dq")
+        # Uncomment the line below if you need to disable AVX2 as well for very old CPUs
+        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx2")
     endif()
 
     message(STATUS "Enabling SIMD support")
