@@ -1,3 +1,9 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 // local
 #include "ecvRasterizeTool.h"
@@ -286,10 +292,10 @@ bool CommandRasterize::process(ccCommandLineInterface& cmd) {
                 pDlg.reset(new ecvProgressDialog(true, cmd.widgetParent()));
             }
 
-            if (grid.fillWith(
-                        cloudDesc.pc, vertDir, projectionType,
-                        emptyCellFillStrategy == ccRasterGrid::INTERPOLATE_DELAUNAY,
-                        sfProjectionType, pDlg.data())) {
+            if (grid.fillWith(cloudDesc.pc, vertDir, projectionType,
+                              emptyCellFillStrategy ==
+                                      ccRasterGrid::INTERPOLATE_DELAUNAY,
+                              sfProjectionType, pDlg.data())) {
                 grid.fillEmptyCells(emptyCellFillStrategy, customHeight);
                 cmd.print(QString("[Rasterize] Raster grid: size: %1 x %2 / "
                                   "heights: [%3 ; %4]")

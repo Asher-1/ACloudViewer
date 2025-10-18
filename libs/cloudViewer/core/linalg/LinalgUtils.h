@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include <string>
 
 #include "cloudViewer/core/Device.h"
@@ -14,22 +16,21 @@
 #include "cloudViewer/core/MemoryManager.h"
 #include "cloudViewer/core/linalg/LinalgHeadersCPU.h"
 #include "cloudViewer/core/linalg/LinalgHeadersCUDA.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
 
-#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)    \
-    [&] {                                                \
-        if (DTYPE == cloudViewer::core::Float32) {            \
-            using scalar_t = float;                      \
-            return __VA_ARGS__();                        \
-        } else if (DTYPE == cloudViewer::core::Float64) {     \
-            using scalar_t = double;                     \
-            return __VA_ARGS__();                        \
-        } else {                                         \
-            utility::LogError("Unsupported data type."); \
-        }                                                \
+#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)     \
+    [&] {                                                 \
+        if (DTYPE == cloudViewer::core::Float32) {        \
+            using scalar_t = float;                       \
+            return __VA_ARGS__();                         \
+        } else if (DTYPE == cloudViewer::core::Float64) { \
+            using scalar_t = double;                      \
+            return __VA_ARGS__();                         \
+        } else {                                          \
+            utility::LogError("Unsupported data type.");  \
+        }                                                 \
     }()
 
 inline void OPEN3D_LAPACK_CHECK(OPEN3D_CPU_LINALG_INT info,

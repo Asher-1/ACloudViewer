@@ -15,8 +15,7 @@ if __name__ == "__main__":
     cube = cv3d.t.geometry.TriangleMesh.from_legacy(cube)
     torus = cv3d.geometry.ccMesh.create_torus().translate([0, 0, 2])
     torus = cv3d.t.geometry.TriangleMesh.from_legacy(torus)
-    sphere = cv3d.geometry.ccMesh.create_sphere(radius=0.5).translate(
-        [1, 2, 3])
+    sphere = cv3d.geometry.ccMesh.create_sphere(radius=0.5).translate([1, 2, 3])
     sphere = cv3d.t.geometry.TriangleMesh.from_legacy(sphere)
 
     scene = cv3d.t.geometry.RaycastingScene()

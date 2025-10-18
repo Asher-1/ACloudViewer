@@ -5,12 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include "cloudViewer/core/AdvancedIndexing.h"
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/ParallelFor.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/kernel/IndexGetSet.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

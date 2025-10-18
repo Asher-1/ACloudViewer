@@ -1,105 +1,95 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                              #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_ASCII_OPEN_DIALOG_HEADER
-#define ECV_ASCII_OPEN_DIALOG_HEADER
+#pragma once
 
-//local
+// local
 #include "eCV_io.h"
 
-//Qt
+// Qt
 #include <QDialog>
 #include <QString>
 
-//system
+// system
 #include <vector>
 
 const unsigned ASCII_OPEN_DLG_TYPES_COUNT = 20;
 
-enum CC_ASCII_OPEN_DLG_TYPES {	ASCII_OPEN_DLG_None			= 0,
-                                ASCII_OPEN_DLG_X			= 1,
-                                ASCII_OPEN_DLG_Y			= 2,
-                                ASCII_OPEN_DLG_Z			= 3,
-                                ASCII_OPEN_DLG_NX			= 4,
-                                ASCII_OPEN_DLG_NY			= 5,
-                                ASCII_OPEN_DLG_NZ			= 6,
-                                ASCII_OPEN_DLG_R			= 7,
-                                ASCII_OPEN_DLG_G			= 8,
-                                ASCII_OPEN_DLG_B			= 9,
-                                ASCII_OPEN_DLG_A			= 10,
-                                ASCII_OPEN_DLG_Rf			= 11,
-                                ASCII_OPEN_DLG_Gf			= 12,
-                                ASCII_OPEN_DLG_Bf			= 13,
-                                ASCII_OPEN_DLG_Af			= 14,
-                                ASCII_OPEN_DLG_Grey			= 15,
-                                ASCII_OPEN_DLG_RGB32i		= 16, //RGBA as a single 32 bits integer (PCL style)
-                                ASCII_OPEN_DLG_RGB32f		= 17, //RGBA as a single 32 bits float (PCL style)
-                                ASCII_OPEN_DLG_Label		= 18,
-                                ASCII_OPEN_DLG_Scalar		= ASCII_OPEN_DLG_TYPES_COUNT - 1, //should always be the last one! (see AsciiOpenDlg::CheckOpenSequence)
+enum CC_ASCII_OPEN_DLG_TYPES {
+    ASCII_OPEN_DLG_None = 0,
+    ASCII_OPEN_DLG_X = 1,
+    ASCII_OPEN_DLG_Y = 2,
+    ASCII_OPEN_DLG_Z = 3,
+    ASCII_OPEN_DLG_NX = 4,
+    ASCII_OPEN_DLG_NY = 5,
+    ASCII_OPEN_DLG_NZ = 6,
+    ASCII_OPEN_DLG_R = 7,
+    ASCII_OPEN_DLG_G = 8,
+    ASCII_OPEN_DLG_B = 9,
+    ASCII_OPEN_DLG_A = 10,
+    ASCII_OPEN_DLG_Rf = 11,
+    ASCII_OPEN_DLG_Gf = 12,
+    ASCII_OPEN_DLG_Bf = 13,
+    ASCII_OPEN_DLG_Af = 14,
+    ASCII_OPEN_DLG_Grey = 15,
+    ASCII_OPEN_DLG_RGB32i = 16,  // RGBA as a single 32 bits integer (PCL style)
+    ASCII_OPEN_DLG_RGB32f = 17,  // RGBA as a single 32 bits float (PCL style)
+    ASCII_OPEN_DLG_Label = 18,
+    ASCII_OPEN_DLG_Scalar = ASCII_OPEN_DLG_TYPES_COUNT -
+                            1,  // should always be the last one! (see
+                                // AsciiOpenDlg::CheckOpenSequence)
 };
 
 //! Default ASCII header columns
-class AsciiHeaderColumns
-{
+class AsciiHeaderColumns {
 public:
-    static QString X()  { return "X";  }
-    static QString Y()  { return "Y";  }
-    static QString Z()  { return "Z";  }
+    static QString X() { return "X"; }
+    static QString Y() { return "Y"; }
+    static QString Z() { return "Z"; }
     static QString Nx() { return "Nx"; }
     static QString Ny() { return "Ny"; }
     static QString Nz() { return "Nz"; }
-    static QString R()  { return "R";  }
-    static QString G()  { return "G";  }
-    static QString B()  { return "B";  }
-    static QString A()  { return "A";  }
+    static QString R() { return "R"; }
+    static QString G() { return "G"; }
+    static QString B() { return "B"; }
+    static QString A() { return "A"; }
     static QString Rf() { return "Rf"; }
     static QString Gf() { return "Gf"; }
     static QString Bf() { return "Bf"; }
     static QString Af() { return "Af"; }
 
-    static QString Grey()   { return "Intensity"; }
+    static QString Grey() { return "Intensity"; }
     static QString Scalar() { return "SF"; }
     static QString RGB32i() { return "RGB32i"; }
     static QString RGB32f() { return "RGB32f"; }
-    static QString Label()	{ return "Label"; }
+    static QString Label() { return "Label"; }
 };
 
-const char ASCII_OPEN_DLG_TYPES_NAMES[ASCII_OPEN_DLG_TYPES_COUNT][20] = {	"Ignore",
-                                                                            "coord. X",
-                                                                            "coord. Y",
-                                                                            "coord. Z",
-                                                                            "Nx",
-                                                                            "Ny",
-                                                                            "Nz",
-                                                                            "Red (0-255)",
-                                                                            "Green (0-255)",
-                                                                            "Blue (0-255)",
-                                                                            "Alpha (0-255)",
-                                                                            "Red.float (0-1)",
-                                                                            "Green.float (0-1)",
-                                                                            "Blue.float (0-1)",
-                                                                            "Alpha.float (0-1)",
-                                                                            "Grey",
-                                                                            "RGBAi",
-                                                                            "RGBAf",
-                                                                            "Label",
-                                                                            "Scalar"
-                                                                            };
-
+const char ASCII_OPEN_DLG_TYPES_NAMES[ASCII_OPEN_DLG_TYPES_COUNT][20] = {
+        "Ignore",
+        "coord. X",
+        "coord. Y",
+        "coord. Z",
+        "Nx",
+        "Ny",
+        "Nz",
+        "Red (0-255)",
+        "Green (0-255)",
+        "Blue (0-255)",
+        "Alpha (0-255)",
+        "Red.float (0-1)",
+        "Green.float (0-1)",
+        "Blue.float (0-1)",
+        "Alpha.float (0-1)",
+        "Grey",
+        "RGBAi",
+        "RGBAf",
+        "Label",
+        "Scalar"};
 
 class QComboBox;
 class QPushButton;
@@ -107,15 +97,13 @@ class QTextStream;
 class Ui_AsciiOpenDialog;
 
 //! Dialog for configuration of ASCII files opening sequence
-class ECV_IO_LIB_API AsciiOpenDlg : public QDialog
-{
-	Q_OBJECT
+class ECV_IO_LIB_API AsciiOpenDlg : public QDialog {
+    Q_OBJECT
 
 public:
-
     //! Default constructor
     /** \param parent parent widget
-    **/
+     **/
     explicit AsciiOpenDlg(QWidget* parent = nullptr);
 
     //! Default destructor
@@ -125,30 +113,24 @@ public:
     /** \param filename filename
         \param stream text stream
     **/
-    void setInput(const QString &filename, QTextStream* stream = nullptr);
+    void setInput(const QString& filename, QTextStream* stream = nullptr);
 
     //! Restores the previous context ('Apply all' button)
     /** \return whether a context was saved or not
-    **/
+     **/
     bool restorePreviousContext();
 
     //! ASCII open sequence item
-    struct SequenceItem
-    {
+    struct SequenceItem {
         CC_ASCII_OPEN_DLG_TYPES type;
         QString header;
 
         //! Default constructor
-        SequenceItem()
-            : type(ASCII_OPEN_DLG_None)
-            , header()
-        {}
+        SequenceItem() : type(ASCII_OPEN_DLG_None), header() {}
 
         //! Constructor from parameters
         SequenceItem(CC_ASCII_OPEN_DLG_TYPES _type, const QString& _header)
-            : type(_type)
-            , header(_header)
-        {}
+            : type(_type), header(_header) {}
     };
 
     //! ASCII open sequence
@@ -186,8 +168,9 @@ public:
 
     //! Checks the "opening" sequence as set by the user
     /** \return validity (+ error message if not)
-    **/
-    static bool CheckOpenSequence(const Sequence& sequence, QString& errorMessage);
+     **/
+    static bool CheckOpenSequence(const Sequence& sequence,
+                                  QString& errorMessage);
 
     //! Resets the "apply all" flag (if set)
     static void ResetApplyAll();
@@ -210,14 +193,13 @@ protected:
     void checkSelectedColumnsValidity();
 
 protected:
-
     //! Tries to guess the best separator automagically
     void autoFindBestSeparator();
 
     //! Sets the current separator
     void setSeparator(QChar);
 
-    //associated UI
+    // associated UI
     Ui_AsciiOpenDialog* m_ui;
 
     unsigned m_skippedLines;
@@ -234,5 +216,3 @@ protected:
 
     unsigned m_columnsCount;
 };
-
-#endif // ECV_ASCII_OPEN_DIALOG_HEADER

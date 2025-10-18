@@ -1,19 +1,23 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "doublespinboxdelegate.h"
 
 #include <QDoubleSpinBox>
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
 DoubleSpinBoxDelegate::DoubleSpinBoxDelegate(QObject *parent)
-    : QStyledItemDelegate(parent)
-{
-}
+    : QStyledItemDelegate(parent) {}
 
-QWidget *DoubleSpinBoxDelegate::createEditor(QWidget *parent,
-    const QStyleOptionViewItem &/* option */,
-    const QModelIndex &/* index */) const
-{
+QWidget *DoubleSpinBoxDelegate::createEditor(
+        QWidget *parent,
+        const QStyleOptionViewItem & /* option */,
+        const QModelIndex & /* index */) const {
     QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
     editor->setSingleStep(0.1);
     editor->setFrame(false);
@@ -25,27 +29,27 @@ QWidget *DoubleSpinBoxDelegate::createEditor(QWidget *parent,
 }
 
 void DoubleSpinBoxDelegate::setEditorData(QWidget *editor,
-                                    const QModelIndex &index) const
-{
+                                          const QModelIndex &index) const {
     qreal value = index.model()->data(index, Qt::EditRole).toDouble();
-    QDoubleSpinBox *spinBox = static_cast<QDoubleSpinBox*>(editor);
+    QDoubleSpinBox *spinBox = static_cast<QDoubleSpinBox *>(editor);
     spinBox->setValue(value);
 }
 
-void DoubleSpinBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
-                                   const QModelIndex &index) const
-{
-    QDoubleSpinBox *spinBox = static_cast<QDoubleSpinBox*>(editor);
+void DoubleSpinBoxDelegate::setModelData(QWidget *editor,
+                                         QAbstractItemModel *model,
+                                         const QModelIndex &index) const {
+    QDoubleSpinBox *spinBox = static_cast<QDoubleSpinBox *>(editor);
     spinBox->interpretText();
     qreal value = spinBox->value();
 
     model->setData(index, value, Qt::EditRole);
 }
 
-void DoubleSpinBoxDelegate::updateEditorGeometry(QWidget *editor,
-    const QStyleOptionViewItem &option, const QModelIndex &/* index */) const
-{
+void DoubleSpinBoxDelegate::updateEditorGeometry(
+        QWidget *editor,
+        const QStyleOptionViewItem &option,
+        const QModelIndex & /* index */) const {
     editor->setGeometry(option.rect);
 }
 
-} // namespace VtkUtils
+}  // namespace VtkUtils

@@ -22,7 +22,6 @@ void ColorGradingParams::SetToneMapping(ToneMapping algorithm) {
     tonemapping_ = algorithm;
 }
 
-
 void ColorGradingParams::SetTemperature(float temperature) {
     temperature_ = temperature;
 }

@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include "core/Dispatch.h"
 #include "core/Dtype.h"
 #include "core/MemoryManager.h"
@@ -15,7 +17,6 @@
 #include "t/geometry/kernel/GeometryMacros.h"
 #include "t/geometry/kernel/PointCloud.h"
 #include "t/geometry/kernel/PointCloudImpl.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

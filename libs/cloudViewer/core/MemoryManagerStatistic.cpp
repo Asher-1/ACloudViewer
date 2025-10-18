@@ -7,11 +7,11 @@
 
 #include "cloudViewer/core/MemoryManagerStatistic.h"
 
+#include <Logging.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <numeric>
-
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

@@ -1,17 +1,15 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                  -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "core/TensorFunction.h"
-
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
-#include "pybind/cloudViewer_pybind.h"
 #include "pybind/pybind_utils.h"
-
 
 namespace cloudViewer {
 namespace core {

@@ -7,10 +7,11 @@
 
 #pragma once
 
+#include <Helper.h>
+
 #include <cub/cub.cuh>
 
 #include "ml/impl/misc/MemoryAllocation.h"
-#include <Helper.h>
 
 namespace cloudViewer {
 namespace ml {

@@ -1,36 +1,38 @@
-#ifndef ANGLEWIDGETWINDOW_H
-#define ANGLEWIDGETWINDOW_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "basewidgetwindow.h"
 
-namespace Ui
-{
-	class AngleWidgetConfig;
+namespace Ui {
+class AngleWidgetConfig;
 }
 
 class vtkAngleWidget;
 class vtkAngleRepresentation2D;
 class vtkAngleRepresentation3D;
-class AngleWidgetWindow : public BaseWidgetWindow
-{
-	Q_OBJECT
+class AngleWidgetWindow : public BaseWidgetWindow {
+    Q_OBJECT
 public:
-	explicit AngleWidgetWindow(QWidget* parent = nullptr);
-	~AngleWidgetWindow();
+    explicit AngleWidgetWindow(QWidget* parent = nullptr);
+    ~AngleWidgetWindow();
 
 protected:
-	void createWidget();
-	void createUi();
+    void createWidget();
+    void createUi();
 
 private slots:
-	void on_typeCombo_currentIndexChanged(int index);
+    void on_typeCombo_currentIndexChanged(int index);
 
 private:
-	Ui::AngleWidgetConfig* m_configUi = nullptr;
-	vtkSmartPointer<vtkAngleWidget> m_2dWidget;
-	vtkSmartPointer<vtkAngleWidget> m_3dWidget;
-	vtkSmartPointer<vtkAngleRepresentation2D> m_2dRep;
-	vtkSmartPointer<vtkAngleRepresentation3D> m_3dRep;
+    Ui::AngleWidgetConfig* m_configUi = nullptr;
+    vtkSmartPointer<vtkAngleWidget> m_2dWidget;
+    vtkSmartPointer<vtkAngleWidget> m_3dWidget;
+    vtkSmartPointer<vtkAngleRepresentation2D> m_2dRep;
+    vtkSmartPointer<vtkAngleRepresentation3D> m_3dRep;
 };
-
-#endif // ANGLEWIDGETWINDOW_H

@@ -1,18 +1,23 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "surface.h"
+
+#include <vtkDelaunay2D.h>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkRenderer.h>
 
 #include "vtkutils.h"
 
-#include <vtkDelaunay2D.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkPolyData.h>
-#include <vtkPoints.h>
-#include <vtkRenderer.h>
+namespace VtkUtils {
 
-namespace VtkUtils
-{
-
-class SurfacePrivate
-{
+class SurfacePrivate {
 public:
     SurfacePrivate(Surface* q) : q_ptr(q) {}
 
@@ -21,26 +26,19 @@ public:
     QList<Point3F> points;
 };
 
-Surface::Surface(QWidget* parent) : VtkWidget(parent)
-{
+Surface::Surface(QWidget* parent) : VtkWidget(parent) {
     d_ptr = new SurfacePrivate(this);
 }
 
-Surface::~Surface()
-{
-    delete d_ptr;
-}
+Surface::~Surface() { delete d_ptr; }
 
-void Surface::setPoints(const QList<Point3F> &points)
-{
+void Surface::setPoints(const QList<Point3F>& points) {
     d_ptr->points = points;
     renderSurface();
 }
 
-void Surface::renderSurface()
-{
-    if (d_ptr->points.isEmpty())
-        return;
+void Surface::renderSurface() {
+    if (d_ptr->points.isEmpty()) return;
 
     VTK_CREATE(vtkPoints, vtkpoints);
 
@@ -64,11 +62,9 @@ void Surface::renderSurface()
     update();
 }
 
-vtkActor* Surface::surfaceActor() const
-{
+vtkActor* Surface::surfaceActor() const {
     VtkUtils::vtkInitOnce(&d_ptr->surfaceActor);
     return d_ptr->surfaceActor;
 }
 
-
-} // namespace VtkUtils
+}  // namespace VtkUtils

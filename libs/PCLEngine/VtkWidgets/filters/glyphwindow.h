@@ -1,16 +1,20 @@
-#ifndef GLYPHWINDOW_H
-#define GLYPHWINDOW_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "filterwindow.h"
 
-namespace Ui
-{
-    class GlyphConfig;
+namespace Ui {
+class GlyphConfig;
 }
 
 class vtkActor2D;
-class GlyphWindow : public FilterWindow
-{
+class GlyphWindow : public FilterWindow {
     Q_OBJECT
 public:
     explicit GlyphWindow(QWidget* parent = nullptr);
@@ -35,16 +39,14 @@ private slots:
     void on_randomButton_clicked();
 
 private:
-    enum Shape { Arrow, Cone, Line, Cylinder, Sphere, Point};
+    enum Shape { Arrow, Cone, Line, Cylinder, Sphere, Point };
 
     Ui::GlyphConfig* m_configUi = nullptr;
     QColor m_glyphColor = Qt::white;
     QColor m_labelColor = Qt::white;
     double m_size = 3;
-    int m_labelMode = 1; // VTK_LABEL_SCALARS
+    int m_labelMode = 1;  // VTK_LABEL_SCALARS
     Shape m_shape = Arrow;
     vtkActor2D* m_labelActor = nullptr;
     bool m_labelVisible = false;
 };
-
-#endif // GLYPHWINDOW_H

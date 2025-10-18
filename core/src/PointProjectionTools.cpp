@@ -1,20 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                               CVCoreLib                                #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <PointProjectionTools.h>
 
@@ -144,7 +133,7 @@ PointCloud* PointProjectionTools::developCloudOnCone(
         PointCoordinateType z2 = (P.u[dim] + u * tan_alpha) * q;
         PointCoordinateType x2 = z2 * tan_alpha;
 // ordonnee
-//#define ORTHO_CONIC_PROJECTION
+// #define ORTHO_CONIC_PROJECTION
 #ifdef ORTHO_CONIC_PROJECTION
         PointCoordinateType lat = sqrt(x2 * x2 + z2 * z2) * cos_alpha;
         if (lat * z2 < 0.0) lat = -lat;

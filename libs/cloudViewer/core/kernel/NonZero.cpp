@@ -7,9 +7,10 @@
 
 #include "cloudViewer/core/kernel/NonZero.h"
 
+#include <Logging.h>
+
 #include "cloudViewer/core/Device.h"
 #include "cloudViewer/core/Tensor.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

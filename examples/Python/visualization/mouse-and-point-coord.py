@@ -24,7 +24,8 @@ class ExampleApp:
         # a label in the lower left on top of the SceneWidget to display the
         # coordinate.
         app = gui.Application.instance
-        self.window = app.create_window("CloudViewer - GetCoord Example", 1024, 768)
+        self.window = app.create_window("CloudViewer - GetCoord Example", 1024,
+                                        768)
         # Since we want the label on top of the scene, we cannot use a layout,
         # so we need to manually layout the window's children.
         self.window.set_on_layout(self._on_layout)

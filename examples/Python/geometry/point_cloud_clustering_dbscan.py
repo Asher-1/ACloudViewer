@@ -9,6 +9,7 @@ import cloudViewer as cv3d
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def pointcloud_generator():
     yield "sphere", cv3d.geometry.ccMesh.create_sphere().\
         sample_points_uniformly(int(1e4)), 0.4
@@ -34,6 +35,7 @@ def pointcloud_generator():
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     yield "fragment", pcd, 0.02
 
+
 if __name__ == "__main__":
 
     for pcl_name, pcl, eps in pointcloud_generator():
@@ -44,7 +46,8 @@ if __name__ == "__main__":
 
         max_label = labels.max()
         print("%s has %d clusters" % (pcl_name, max_label + 1))
-        colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
+        colors = plt.get_cmap("tab20")(labels /
+                                       (max_label if max_label > 0 else 1))
         colors[labels < 0] = 0
         pcl.set_colors(cv3d.utility.Vector3dVector(colors[:, :3]))
         cv3d.visualization.draw([pcl])

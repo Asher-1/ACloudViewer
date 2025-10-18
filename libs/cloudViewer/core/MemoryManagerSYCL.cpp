@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <cstdlib>
 #include <sycl/sycl.hpp>
 #include <unordered_map>
@@ -13,7 +15,6 @@
 #include "cloudViewer/core/MemoryManager.h"
 #include "cloudViewer/core/SYCLContext.h"
 #include "cloudViewer/core/SYCLUtils.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

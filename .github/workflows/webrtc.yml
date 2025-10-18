@@ -30,13 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-13]
-        GLIBCXX_USE_CXX11_ABI: [0, 1]
-        exclude:
-          - os: macos-13
-            GLIBCXX_USE_CXX11_ABI: 0
-    env:
-      GLIBCXX_USE_CXX11_ABI: ${{ matrix.GLIBCXX_USE_CXX11_ABI }}
+        os: [ubuntu-22.04, macos-13]
 
     steps:
       - name: Checkout source code
@@ -45,10 +39,10 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.10
 
       - name: Install dependencies
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space_simple
@@ -93,7 +87,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.10'
 
       - name: Disk space
         run: |

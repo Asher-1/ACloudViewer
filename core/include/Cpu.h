@@ -26,7 +26,5 @@ CV_CORE_LIB_API int cpu_clock_by_os();
  */
 CV_CORE_LIB_API int get_total_cpus();
 
-}
-}
-
-
+}  // namespace system
+}  // namespace cloudViewer

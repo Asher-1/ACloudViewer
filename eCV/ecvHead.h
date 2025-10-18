@@ -1,8 +1,15 @@
-﻿#include <QtCore>
-#include <QtGui>
-//#include <QtNetwork>
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#if (QT_VERSION > QT_VERSION_CHECK(5,0,0))
+#include <QtCore>
+#include <QtGui>
+// #include <QtNetwork>
+
+#if (QT_VERSION > QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #endif
 
@@ -10,13 +17,18 @@
 #pragma execution_character_set("utf-8")
 #endif
 
-#define TIMEMS qPrintable (QTime::currentTime().toString("HH:mm:ss zzz"))
-#define TIME qPrintable (QTime::currentTime().toString("HH:mm:ss"))
-#define QDATE qPrintable (QDate::currentDate().toString("yyyy-MM-dd"))
-#define QTIME qPrintable (QTime::currentTime().toString("HH-mm-ss"))
-#define DATETIME qPrintable (QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
-#define STRDATETIME qPrintable (QDateTime::currentDateTime().toString("yyyy-MM-dd-HH-mm-ss"))
-#define STRDATETIMEMS qPrintable (QDateTime::currentDateTime().toString("yyyy-MM-dd-HH-mm-ss-zzz"))
+#define TIMEMS qPrintable(QTime::currentTime().toString("HH:mm:ss zzz"))
+#define TIME qPrintable(QTime::currentTime().toString("HH:mm:ss"))
+#define QDATE qPrintable(QDate::currentDate().toString("yyyy-MM-dd"))
+#define QTIME qPrintable(QTime::currentTime().toString("HH-mm-ss"))
+#define DATETIME \
+    qPrintable(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
+#define STRDATETIME \
+    qPrintable(QDateTime::currentDateTime().toString("yyyy-MM-dd-HH-mm-ss"))
+#define STRDATETIMEMS                                                    \
+    qPrintable(                                                          \
+            QDateTime::currentDateTime().toString("yyyy-MM-dd-HH-mm-ss-" \
+                                                  "zzz"))
 
 #define AppName "QUI"
 #define AppPath qApp->applicationDirPath()

@@ -131,7 +131,8 @@ void pybind_model_methods(py::module &m) {
     docstring::FunctionDocInject(m, "split_model",
                                  map_shared_argument_docstrings);
 
-    m.def("transform_model", &TransformModel, py::call_guard<py::gil_scoped_release>(),
+    m.def("transform_model", &TransformModel,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for the transformation of model", "input_path"_a,
           "output_path"_a, "transform_path"_a, "is_inverse"_a = false);
     docstring::FunctionDocInject(m, "transform_model",

@@ -1,22 +1,11 @@
-// ##########################################################################
-// #                                                                        #
-// #                            CLOUDVIEWER                                 #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_MAIN_APP_INTERFACE_HEADER
-#define ECV_MAIN_APP_INTERFACE_HEADER
+#pragma once
 
 // Qt
 #include <QString>
@@ -230,5 +219,3 @@ public:
     virtual void toggleExclusiveFullScreen(bool state) = 0;
     virtual void toggle3DView(bool state) = 0;
 };
-
-#endif  // ECV_MAIN_APP_INTERFACE_HEADER

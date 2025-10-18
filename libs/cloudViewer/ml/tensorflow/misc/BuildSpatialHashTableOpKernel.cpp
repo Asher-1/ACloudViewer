@@ -1,3 +1,9 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "BuildSpatialHashTableOpKernel.h"
 
@@ -30,10 +36,10 @@ public:
     }
 };
 
-#define REG_KB(type)                                            \
+#define REG_KB(type)                                                 \
     REGISTER_KERNEL_BUILDER(Name("CloudViewerBuildSpatialHashTable") \
-                                    .Device(DEVICE_CPU)         \
-                                    .TypeConstraint<type>("T"), \
+                                    .Device(DEVICE_CPU)              \
+                                    .TypeConstraint<type>("T"),      \
                             BuildSpatialHashTableOpKernelCPU<type>);
 REG_KB(float)
 REG_KB(double)

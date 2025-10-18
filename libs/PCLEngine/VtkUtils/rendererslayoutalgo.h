@@ -1,21 +1,23 @@
-#ifndef RENDERERSLAYOUTALGO_H
-#define RENDERERSLAYOUTALGO_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include <vtkRenderer.h>
+
 #include <QList>
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
 template <int count>
-inline void layoutRenderers(const QList<vtkRenderer*>& renderers)
-{
-
-}
+inline void layoutRenderers(const QList<vtkRenderer*>& renderers) {}
 // |X|
 template <>
-inline void layoutRenderers<1>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<1>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 1);
 
     vtkRenderer* renderer = renderers.first();
@@ -25,8 +27,7 @@ inline void layoutRenderers<1>(const QList<vtkRenderer*>& renderers)
 
 // |X|X|
 template <>
-inline void layoutRenderers<2>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<2>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 2);
 
     vtkRenderer* renderer1 = renderers.at(0);
@@ -39,8 +40,7 @@ inline void layoutRenderers<2>(const QList<vtkRenderer*>& renderers)
 // |X|X|
 // | X |
 template <>
-inline void layoutRenderers<3>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<3>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 3);
 
     vtkRenderer* renderer1 = renderers.at(0);
@@ -51,14 +51,12 @@ inline void layoutRenderers<3>(const QList<vtkRenderer*>& renderers)
     renderer2->SetViewport(0.5, 0.0, 1.0, 0.5);
 
     renderer3->SetViewport(0.0, 0.5, 1.0, 1.0);
-
 }
 
 // |X|X|
 // |X|X|
 template <>
-inline void layoutRenderers<4>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<4>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 4);
 
     vtkRenderer* renderer1 = renderers.at(0);
@@ -77,10 +75,9 @@ inline void layoutRenderers<4>(const QList<vtkRenderer*>& renderers)
 // |X|X|
 // | X |
 template <>
-inline void layoutRenderers<5>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<5>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 5);
-    qreal dy = (qreal) 1 / 3;
+    qreal dy = (qreal)1 / 3;
 
     vtkRenderer* renderer1 = renderers.at(0);
     vtkRenderer* renderer2 = renderers.at(1);
@@ -100,11 +97,10 @@ inline void layoutRenderers<5>(const QList<vtkRenderer*>& renderers)
 // |X|X|X|
 // |X|X|X|
 template <>
-inline void layoutRenderers<6>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<6>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 6);
 
-    qreal dx = (qreal) 1 / 3;
+    qreal dx = (qreal)1 / 3;
 
     vtkRenderer* renderer1 = renderers.at(0);
     vtkRenderer* renderer2 = renderers.at(1);
@@ -126,12 +122,11 @@ inline void layoutRenderers<6>(const QList<vtkRenderer*>& renderers)
 // |X|X|X|
 // |  X  |
 template <>
-inline void layoutRenderers<7>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<7>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 7);
 
-    qreal dx = (qreal) 1 / 3;
-    qreal dy = (qreal) 1 / 3;
+    qreal dx = (qreal)1 / 3;
+    qreal dy = (qreal)1 / 3;
 
     vtkRenderer* renderer1 = renderers.at(0);
     vtkRenderer* renderer2 = renderers.at(1);
@@ -155,12 +150,11 @@ inline void layoutRenderers<7>(const QList<vtkRenderer*>& renderers)
 // |X|X|X|X|
 // |X|X|X|X|
 template <>
-inline void layoutRenderers<8>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<8>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 8);
 
-    qreal dx = (qreal) 1 / 4;
-    qreal dy = (qreal) 1 / 2;
+    qreal dx = (qreal)1 / 4;
+    qreal dy = (qreal)1 / 2;
 
     vtkRenderer* renderer1 = renderers.at(0);
     vtkRenderer* renderer2 = renderers.at(1);
@@ -186,12 +180,11 @@ inline void layoutRenderers<8>(const QList<vtkRenderer*>& renderers)
 // |X|X|X|
 // |X|X|X|
 template <>
-inline void layoutRenderers<9>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<9>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 9);
 
-    qreal dx = (qreal) 1 / 3;
-    qreal dy = (qreal) 1 / 3;
+    qreal dx = (qreal)1 / 3;
+    qreal dy = (qreal)1 / 3;
 
     vtkRenderer* renderer1 = renderers.at(0);
     vtkRenderer* renderer2 = renderers.at(1);
@@ -207,7 +200,7 @@ inline void layoutRenderers<9>(const QList<vtkRenderer*>& renderers)
     renderer2->SetViewport(dx, 0.0, 2 * dx, dy);
     renderer3->SetViewport(2 * dx, 0.0, 1.0, dy);
 
-    renderer4->SetViewport(0.0, dy, dx,2 * dy);
+    renderer4->SetViewport(0.0, dy, dx, 2 * dy);
     renderer5->SetViewport(dx, dy, 2 * dx, 2 * dy);
     renderer6->SetViewport(2 * dx, dy, 1.0, 2 * dy);
 
@@ -219,12 +212,11 @@ inline void layoutRenderers<9>(const QList<vtkRenderer*>& renderers)
 // |X|X|X|X|X|
 // |X|X|X|X|X|
 template <>
-inline void layoutRenderers<10>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<10>(const QList<vtkRenderer*>& renderers) {
     Q_ASSERT(renderers.size() == 10);
 
-    qreal dx = (qreal) 1 / 5;
-    qreal dy = (qreal) 1 / 2;
+    qreal dx = (qreal)1 / 5;
+    qreal dy = (qreal)1 / 2;
 
     vtkRenderer* renderer1 = renderers.at(0);
     vtkRenderer* renderer2 = renderers.at(1);
@@ -254,20 +246,12 @@ inline void layoutRenderers<10>(const QList<vtkRenderer*>& renderers)
 // |X|X|X|X|
 // |X|X| X |
 template <>
-inline void layoutRenderers<11>(const QList<vtkRenderer*>& renderers)
-{
-
-}
+inline void layoutRenderers<11>(const QList<vtkRenderer*>& renderers) {}
 
 // |X|X|X|X|
 // |X|X|X|X|
 // |X|X|X|X|
 template <>
-inline void layoutRenderers<12>(const QList<vtkRenderer*>& renderers)
-{
+inline void layoutRenderers<12>(const QList<vtkRenderer*>& renderers) {}
 
-}
-
-} // namespace VtkUtils
-
-#endif // RENDERERSLAYOUTALGO_H
+}  // namespace VtkUtils

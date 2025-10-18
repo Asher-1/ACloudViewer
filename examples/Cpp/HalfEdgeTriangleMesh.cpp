@@ -48,8 +48,8 @@ int main(int argc, char *argv[]) {
     ccBBox bbox =
             ccBBox(CCVector3(-1.f, -1.f, -1.f), CCVector3(1.f, 0.6f, 1.f));
     auto croppedMesh = mesh->Crop(bbox);
-    auto halfEdgeMesh =
-            geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(*croppedMesh);
+    auto halfEdgeMesh = geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(
+            *croppedMesh);
     DrawGeometriesWithBackFace({halfEdgeMesh});
 
     ColorizeBoundaryVertices(*halfEdgeMesh, {1, 0, 0});

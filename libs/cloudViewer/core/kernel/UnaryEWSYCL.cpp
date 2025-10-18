@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <cmath>
 #include <cstring>
 
@@ -17,7 +19,6 @@
 #include "cloudViewer/core/SizeVector.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/kernel/UnaryEW.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

@@ -114,7 +114,8 @@ Non-Linear Least Squares Problems"**, by Nived Chebrolu et al.
                                              shape_parameter);
                  }),
                  py::arg_v("type", RobustKernelMethod::L2Loss,
-                           "cloudViewer.t.pipelines.registration.RobustKernelMethod."
+                           "cloudViewer.t.pipelines.registration."
+                           "RobustKernelMethod."
                            "L2Loss"),
                  "scaling_parameter"_a = 1.0, "shape_parameter"_a = 1.0)
             .def_readwrite("type", &RobustKernel::type_, "Loss type.")

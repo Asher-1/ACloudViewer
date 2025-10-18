@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.cloudViewer.org
+# Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Run the GUI event loop in a non-main thread. This allows using the

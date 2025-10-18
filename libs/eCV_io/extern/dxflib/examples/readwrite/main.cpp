@@ -22,19 +22,18 @@
 **  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ******************************************************************************/
 
-#include <iostream>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-#include "dl_dxf.h"
+#include <iostream>
+
 #include "dl_creationadapter.h"
-
+#include "dl_dxf.h"
 #include "test_creationclass.h"
 
 void usage();
 void testReading(char* file);
 void testWriting();
-
 
 /*
  * @brief Main function for DXFLib test program.
@@ -48,9 +47,8 @@ void testWriting();
  * @retval 1 if file opened
  */
 int main(int argc, char** argv) {
-
     // Check given arguments:
-    if (argc<2) {
+    if (argc < 2) {
         usage();
         return 0;
     }
@@ -62,23 +60,18 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-
-
 /*
  * @brief Prints error message if file name not specified as command
  * line argument.
  */
-void usage() {
-    std::cout << "\nUsage: test <DXF file>\n\n";
-}
-
+void usage() { std::cout << "\nUsage: test <DXF file>\n\n"; }
 
 void testReading(char* file) {
     // Load DXF file into memory:
     std::cout << "Reading file " << file << "...\n";
     Test_CreationClass* creationClass = new Test_CreationClass();
     DL_Dxf* dxf = new DL_Dxf();
-    if (!dxf->in(file, creationClass)) { // if file open failed
+    if (!dxf->in(file, creationClass)) {  // if file open failed
         std::cerr << file << " could not be opened.\n";
         return;
     }
@@ -86,13 +79,11 @@ void testReading(char* file) {
     delete creationClass;
 }
 
-
-
 void testWriting() {
     DL_Dxf* dxf = new DL_Dxf();
     DL_Codes::version exportVersion = DL_Codes::AC1015;
     DL_WriterA* dw = dxf->out("myfile.dxf", exportVersion);
-    if (dw==NULL) {
+    if (dw == NULL) {
         printf("Cannot open file 'myfile.dxf' \
                for writing.");
         // abort function e.g. with return
@@ -121,40 +112,32 @@ void testWriting() {
     dw->tableLinetypes(3);
     dxf->writeLinetype(*dw, DL_LinetypeData("BYBLOCK", "BYBLOCK", 0, 0, 0.0));
     dxf->writeLinetype(*dw, DL_LinetypeData("BYLAYER", "BYLAYER", 0, 0, 0.0));
-    dxf->writeLinetype(*dw, DL_LinetypeData("CONTINUOUS", "Continuous", 0, 0, 0.0));
+    dxf->writeLinetype(*dw,
+                       DL_LinetypeData("CONTINUOUS", "Continuous", 0, 0, 0.0));
     dw->tableEnd();
 
     int numberOfLayers = 3;
     dw->tableLayers(numberOfLayers);
 
-    dxf->writeLayer(*dw,
-                   DL_LayerData("0", 0),
-                   DL_Attributes(
-                       std::string(""),      // leave empty
-                       DL_Codes::black,        // default color
-                       100,                  // default width
-                       "CONTINUOUS", 1.0));       // default line style
+    dxf->writeLayer(*dw, DL_LayerData("0", 0),
+                    DL_Attributes(std::string(""),      // leave empty
+                                  DL_Codes::black,      // default color
+                                  100,                  // default width
+                                  "CONTINUOUS", 1.0));  // default line style
 
-    dxf->writeLayer(*dw,
-                   DL_LayerData("mainlayer", 0),
-                   DL_Attributes(
-                       std::string(""),
-                       DL_Codes::red,
-                       100,
-                       "CONTINUOUS", 1.0));
+    dxf->writeLayer(*dw, DL_LayerData("mainlayer", 0),
+                    DL_Attributes(std::string(""), DL_Codes::red, 100,
+                                  "CONTINUOUS", 1.0));
 
-    dxf->writeLayer(*dw,
-                   DL_LayerData("anotherlayer", 0),
-                   DL_Attributes(
-                       std::string(""),
-                       DL_Codes::black,
-                       100,
-                       "CONTINUOUS", 1.0));
+    dxf->writeLayer(*dw, DL_LayerData("anotherlayer", 0),
+                    DL_Attributes(std::string(""), DL_Codes::black, 100,
+                                  "CONTINUOUS", 1.0));
 
     dw->tableEnd();
 
     dw->tableStyle(1);
-    dxf->writeStyle(*dw, DL_StyleData("standard", 0, 2.5, 1.0, 0.0, 0, 2.5, "txt", ""));
+    dxf->writeStyle(
+            *dw, DL_StyleData("standard", 0, 2.5, 1.0, 0.0, 0, 2.5, "txt", ""));
     dw->tableEnd();
 
     dxf->writeView(*dw);
@@ -197,22 +180,15 @@ void testWriting() {
     dw->sectionEntities();
 
     // write all entities in model space:
-    dxf->writePoint(
-        *dw,
-        DL_PointData(10.0,
-                     45.0,
-                     0.0),
-        DL_Attributes("mainlayer", 256, -1, "BYLAYER", 1.0));
+    dxf->writePoint(*dw, DL_PointData(10.0, 45.0, 0.0),
+                    DL_Attributes("mainlayer", 256, -1, "BYLAYER", 1.0));
 
-    dxf->writeLine(
-        *dw,
-        DL_LineData(25.0,   // start point
-                    30.0,
-                    0.0,
-                    100.0,   // end point
-                    120.0,
-                    0.0),
-        DL_Attributes("mainlayer", 256, -1, "BYLAYER", 1.0));
+    dxf->writeLine(*dw,
+                   DL_LineData(25.0,  // start point
+                               30.0, 0.0,
+                               100.0,  // end point
+                               120.0, 0.0),
+                   DL_Attributes("mainlayer", 256, -1, "BYLAYER", 1.0));
 
     dw->sectionEnd();
 
@@ -224,4 +200,3 @@ void testWriting() {
     delete dw;
     delete dxf;
 }
-

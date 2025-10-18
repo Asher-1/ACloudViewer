@@ -1,26 +1,11 @@
-// ##########################################################################
-// #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                       #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                   COPYRIGHT: Thomas Montaigu                           #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-// Original Author: "JeroenDierckx"
-// from https://forum.qt.io/topic/96285/c-highlighter-for-python
-// "The license is "don't make money off this without giving back to the community" ;-)"
-
-#ifndef PYTHON_HIGHLIGHTER_H
-#define PYTHON_HIGHLIGHTER_H
+#pragma once
 
 #include <QSyntaxHighlighter>
 
@@ -81,5 +66,3 @@ class PythonHighlighter final : public QSyntaxHighlighter
     HighlightingRule m_triSingle;
     HighlightingRule m_triDouble;
 };
-
-#endif // PYTHON_HIGHLIGHTER_H

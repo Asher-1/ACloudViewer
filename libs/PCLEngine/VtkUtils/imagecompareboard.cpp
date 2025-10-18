@@ -1,16 +1,21 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "imagecompareboard.h"
 
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QScrollArea>
-#include <QSplitter>
-#include <QHBoxLayout>
 #include <QScrollBar>
+#include <QSplitter>
 
-namespace Widgets
-{
+namespace Widgets {
 
-class ImageCompareBoardPrivate
-{
+class ImageCompareBoardPrivate {
 public:
     QLabel* originalImgLabel;
     QLabel* comparedImgLabel;
@@ -19,8 +24,7 @@ public:
     QImage comparedImg;
 };
 
-ImageCompareBoard::ImageCompareBoard(QWidget *parent) : QWidget(parent)
-{
+ImageCompareBoard::ImageCompareBoard(QWidget* parent) : QWidget(parent) {
     d_ptr = new ImageCompareBoardPrivate;
 
     d_ptr->originalImgLabel = new QLabel(this);
@@ -43,41 +47,34 @@ ImageCompareBoard::ImageCompareBoard(QWidget *parent) : QWidget(parent)
     setLayout(layout);
 
     // sync with each other
-    connect(originScrollArea->horizontalScrollBar(), SIGNAL(valueChanged(int)), compareScrollArea->horizontalScrollBar(), SLOT(setValue(int)));
-    connect(compareScrollArea->horizontalScrollBar(), SIGNAL(valueChanged(int)), originScrollArea->horizontalScrollBar(), SLOT(setValue(int)));
-    connect(compareScrollArea->verticalScrollBar(), SIGNAL(valueChanged(int)), originScrollArea->verticalScrollBar(), SLOT(setValue(int)));
-    connect(originScrollArea->verticalScrollBar(), SIGNAL(valueChanged(int)), compareScrollArea->verticalScrollBar(), SLOT(setValue(int)));
+    connect(originScrollArea->horizontalScrollBar(), SIGNAL(valueChanged(int)),
+            compareScrollArea->horizontalScrollBar(), SLOT(setValue(int)));
+    connect(compareScrollArea->horizontalScrollBar(), SIGNAL(valueChanged(int)),
+            originScrollArea->horizontalScrollBar(), SLOT(setValue(int)));
+    connect(compareScrollArea->verticalScrollBar(), SIGNAL(valueChanged(int)),
+            originScrollArea->verticalScrollBar(), SLOT(setValue(int)));
+    connect(originScrollArea->verticalScrollBar(), SIGNAL(valueChanged(int)),
+            compareScrollArea->verticalScrollBar(), SLOT(setValue(int)));
 
     // hide them initially
     d_ptr->originalImgLabel->hide();
     d_ptr->comparedImgLabel->hide();
 }
 
-ImageCompareBoard::~ImageCompareBoard()
-{
-    delete d_ptr;
-}
+ImageCompareBoard::~ImageCompareBoard() { delete d_ptr; }
 
-void ImageCompareBoard::setOriginalImage(const QImage& img)
-{
+void ImageCompareBoard::setOriginalImage(const QImage& img) {
     d_ptr->originalImgLabel->setPixmap(QPixmap::fromImage(img));
     d_ptr->originalImgLabel->show();
 }
 
-QImage ImageCompareBoard::originalImage() const
-{
-    return d_ptr->originalImg;
-}
+QImage ImageCompareBoard::originalImage() const { return d_ptr->originalImg; }
 
-void ImageCompareBoard::setComparedImage(const QImage& img)
-{
+void ImageCompareBoard::setComparedImage(const QImage& img) {
     d_ptr->comparedImgLabel->setPixmap(QPixmap::fromImage(img));
     d_ptr->comparedImgLabel->show();
 }
 
-QImage ImageCompareBoard::comparedImage() const
-{
-    return d_ptr->comparedImg;
-}
+QImage ImageCompareBoard::comparedImage() const { return d_ptr->comparedImg; }
 
-} // namespace Widgets
+}  // namespace Widgets

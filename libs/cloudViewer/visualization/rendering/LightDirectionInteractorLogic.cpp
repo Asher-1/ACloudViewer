@@ -10,6 +10,7 @@
 #include <LineSet.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
 #include "visualization/rendering/Camera.h"
 #include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Scene.h"
@@ -38,10 +39,10 @@ void CreateCircle(const Eigen::Vector3d& center,
 }
 
 std::shared_ptr<ccMesh> CreateArrow(const Eigen::Vector3d& dir,
-                                                    double radius,
-                                                    double length,
-                                                    double head_length,
-                                                    int n_segs = 20) {
+                                    double radius,
+                                    double length,
+                                    double head_length,
+                                    int n_segs = 20) {
     Eigen::Vector3d tmp(dir.y(), dir.z(), dir.x());
     Eigen::Vector3d u = dir.cross(tmp).normalized();
     Eigen::Vector3d v = dir.cross(u);
@@ -64,14 +65,16 @@ std::shared_ptr<ccMesh> CreateArrow(const Eigen::Vector3d& dir,
     int n_verts_in_circle = n_segs + 1;
     CreateCircle(head_start, u, v, radius, n_segs, *baseVertices);
     for (int i = 0; i < n_segs; ++i) {
-        arrow->addTriangle(Eigen::Vector3i(i, i + 1, n_verts_in_circle + i + 1));
-        arrow->addTriangle(Eigen::Vector3i(n_verts_in_circle + i + 1, n_verts_in_circle + i, i));
+        arrow->addTriangle(
+                Eigen::Vector3i(i, i + 1, n_verts_in_circle + i + 1));
+        arrow->addTriangle(Eigen::Vector3i(n_verts_in_circle + i + 1,
+                                           n_verts_in_circle + i, i));
     }
 
     // End of cone
     int start_idx = int(baseVertices->size());
     CreateCircle(head_start, u, v, 2.0 * radius, n_segs, *baseVertices);
-    
+
     for (int i = start_idx; i < int(baseVertices->size()); ++i) {
         baseVertices->addEigenNorm(-dir);
     }
@@ -81,7 +84,7 @@ std::shared_ptr<ccMesh> CreateArrow(const Eigen::Vector3d& dir,
     baseVertices->addEigenNorm(-dir);
     for (int i = 0; i < n_segs; ++i) {
         arrow->addTriangle(
-            Eigen::Vector3i(start_idx + i, start_idx + i + 1, center_idx));
+                Eigen::Vector3i(start_idx + i, start_idx + i + 1, center_idx));
     }
 
     // Cone
@@ -90,18 +93,18 @@ std::shared_ptr<ccMesh> CreateArrow(const Eigen::Vector3d& dir,
     for (int i = 0; i < n_segs; ++i) {
         int pointIdx = int(baseVertices->size());
         baseVertices->addEigenPoint(end);
-        baseVertices->addEigenNorm(baseVertices->getEigenNormal(static_cast<size_t>(start_idx + i)));
+        baseVertices->addEigenNorm(baseVertices->getEigenNormal(
+                static_cast<size_t>(start_idx + i)));
         arrow->addTriangle(
-            Eigen::Vector3i(start_idx + i, start_idx + i + 1, pointIdx));
+                Eigen::Vector3i(start_idx + i, start_idx + i + 1, pointIdx));
     }
 
-    //do some cleaning
+    // do some cleaning
     {
         baseVertices->shrinkToFit();
         arrow->shrinkToFit();
         NormsIndexesTableType* normals = arrow->getTriNormsTable();
-        if (normals)
-        {
+        if (normals) {
             normals->shrink_to_fit();
         }
     }
@@ -212,4 +215,4 @@ Eigen::Vector3f LightDirectionInteractorLogic::GetCurrentDirection() const {
 
 }  // namespace rendering
 }  // namespace visualization
-}  // namespace CloudViewer
+}  // namespace cloudViewer

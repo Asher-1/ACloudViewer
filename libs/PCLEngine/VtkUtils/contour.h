@@ -1,15 +1,18 @@
-#ifndef CONTOUR_H
-#define CONTOUR_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "surface.h"
-
 #include "vector4f.h"
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 class ContourPrivate;
-class QPCL_ENGINE_LIB_API Contour : public Surface
-{
+class QPCL_ENGINE_LIB_API Contour : public Surface {
     Q_OBJECT
 public:
     explicit Contour(QWidget* parent = nullptr);
@@ -34,5 +37,4 @@ private:
     Q_DISABLE_COPY(Contour)
 };
 
-} // namespace VtkUtils
-#endif // CONTOUR_H
+}  // namespace VtkUtils

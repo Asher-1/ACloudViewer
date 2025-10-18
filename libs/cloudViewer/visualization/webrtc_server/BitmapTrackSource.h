@@ -16,11 +16,12 @@
 // be found in the AUTHORS file in the root of the source tree.
 // ----------------------------------------------------------------------------
 //
-// This is a private header. It shall be hidden from CloudViewer's public API. Do not
-// put this in CloudViewer.h.in.
+// This is a private header. It shall be hidden from CloudViewer's public API.
+// Do not put this in CloudViewer.h.in.
 
 #pragma once
 
+#include <Logging.h>
 #include <absl/types/optional.h>
 #include <api/notifier.h>
 #include <api/sequence_checker.h>
@@ -31,7 +32,6 @@
 #include <media/base/media_channel.h>
 
 #include "core/Tensor.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {

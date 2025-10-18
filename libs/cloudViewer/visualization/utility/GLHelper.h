@@ -24,11 +24,11 @@ namespace cloudViewer {
 namespace visualization {
 namespace gl_util {
 
-//static std::unordered_map<int, unsigned int> GetTextureFormatMap();
-//static std::unordered_map<int, unsigned int> GetTextureTypeMap();
+// static std::unordered_map<int, unsigned int> GetTextureFormatMap();
+// static std::unordered_map<int, unsigned int> GetTextureTypeMap();
 
-const std::unordered_map<int, unsigned int>& GetTextureFormatMap();
-const std::unordered_map<int, unsigned int>& GetTextureTypeMap();
+const std::unordered_map<int, unsigned int> &GetTextureFormatMap();
+const std::unordered_map<int, unsigned int> &GetTextureTypeMap();
 
 typedef Eigen::Matrix<float, 3, 1, Eigen::ColMajor> GLVector3f;
 typedef Eigen::Matrix<float, 4, 1, Eigen::ColMajor> GLVector4f;

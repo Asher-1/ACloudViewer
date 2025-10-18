@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <vector>
 #include <Eigen/Core>
+#include <vector>
 
 #include "visualization/shader/ShaderWrapper.h"
 

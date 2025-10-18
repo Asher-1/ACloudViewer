@@ -1,62 +1,58 @@
-﻿#include "vtkplotwidget.h"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include "vtkplotwidget.h"
 
 #include <VtkUtils/vtkutils.h>
-
-#include <vtkContextView.h>
+#include <vtkAxis.h>
 #include <vtkChartXY.h>
 #include <vtkChartXYZ.h>
-#include <vtkRenderer.h>
-#include <vtkRenderWindow.h>
 #include <vtkContextScene.h>
-#include <vtkAxis.h>
-#include <vtkTable.h>
-#include <vtkVariant.h>
+#include <vtkContextView.h>
 #include <vtkFloatArray.h>
 #include <vtkPlot.h>
-#include <vtkPlotSurface.h>
-#include <vtkPlotPoints3D.h>
 #include <vtkPlotLine3D.h>
+#include <vtkPlotPoints3D.h>
+#include <vtkPlotSurface.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkTable.h>
+#include <vtkVariant.h>
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-class VtkPlotWidgetPrivate
-{
+class VtkPlotWidgetPrivate {
 public:
     ~VtkPlotWidgetPrivate();
 
     vtkContextView* contextView;
 };
 
-VtkPlotWidgetPrivate::~VtkPlotWidgetPrivate()
-{
+VtkPlotWidgetPrivate::~VtkPlotWidgetPrivate() {
     VtkUtils::vtkSafeDelete(contextView);
 }
 
-VtkPlotWidget::VtkPlotWidget(QWidget* parent) : QVTKOpenGLNativeWidget(parent)
-{
+VtkPlotWidget::VtkPlotWidget(QWidget* parent) : QVTKOpenGLNativeWidget(parent) {
     setWindowTitle(tr("ChartXY"));
     d_ptr = new VtkPlotWidgetPrivate;
     init();
 }
 
-VtkPlotWidget::~VtkPlotWidget()
-{
-    delete d_ptr;
-}
+VtkPlotWidget::~VtkPlotWidget() { delete d_ptr; }
 
-void VtkPlotWidget::init()
-{
+void VtkPlotWidget::init() {
     d_ptr->contextView = vtkContextView::New();
     d_ptr->contextView->SetRenderWindow(this->GetRenderWindow());
     d_ptr->contextView->GetRenderWindow()->SetMultiSamples(0);
     d_ptr->contextView->GetRenderWindow()->Render();
 }
 
-vtkContextView* VtkPlotWidget::contextView() const
-{
+vtkContextView* VtkPlotWidget::contextView() const {
     return d_ptr->contextView;
 }
 
-
-} // namespace VtkUtils
+}  // namespace VtkUtils

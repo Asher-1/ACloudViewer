@@ -23,12 +23,12 @@ function(cloudViewer_show_and_abort_on_warning target)
             /wd4190        # 'identifier1' has C-linkage specified, but returns UDT 'identifier2' which is incompatible with C
             /wd4717        # 'function' : recursive on all control paths, function will cause runtime stack overflow
             /wd4522        # 'class' : multiple assignment operators specified
-            /wd4996        # Your code uses a function, class member, variable, or typedef that's marked deprecated.
             /wd4995        # name was marked as #pragma deprecated
             /wd4286        # symbol 'symbol' defined in 'filename_1.obj' is imported by 'filename_2.obj'
             /wd4101        # The local variable is never used
             /wd4005        # Macro redefinition
             /wd4703        # potentially uninitialized local pointer variable used
+            /wd4996        # torch_ops with CUDA. Deprecated type will be removed in future versions
             )
     # Warnings to disable for both C and C++
     set(DISABLE_GNU_CLANG_INTEL_WARNINGS

@@ -8,6 +8,7 @@
 #include "visualization/shader/Simple2DShader.h"
 
 #include <ecvHObject.h>
+
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/SelectionPolygon.h"
 #include "visualization/visualizer/RenderOptionWithEditing.h"

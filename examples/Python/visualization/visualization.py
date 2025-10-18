@@ -29,8 +29,7 @@ if __name__ == "__main__":
         size=0.6, origin=[-2, -2, -2])
 
     print("We draw a few primitives using collection.")
-    cv3d.visualization.draw(
-        [mesh_box, mesh_sphere, mesh_cylinder, mesh_frame])
+    cv3d.visualization.draw([mesh_box, mesh_sphere, mesh_cylinder, mesh_frame])
 
     print("We draw a few primitives using + operator of mesh.")
     cv3d.visualization.draw(

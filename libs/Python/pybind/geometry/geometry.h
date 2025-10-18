@@ -16,7 +16,7 @@ void pybind_geometry(py::module &m);
 
 void pybind_cloudbase(py::module &m);
 void pybind_pointcloud(py::module &m);
-void pybind_keypoint(py::module& m);
+void pybind_keypoint(py::module &m);
 void pybind_voxelgrid(py::module &m);
 void pybind_lineset(py::module &m);
 void pybind_meshbase(py::module &m);

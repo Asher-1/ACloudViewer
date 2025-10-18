@@ -15,11 +15,11 @@
 
 #include "cloudViewer/core/SYCLUtils.h"
 
+#include <Logging.h>
+
 #include <array>
 #include <cstdlib>
 #include <sstream>
-
-#include <Logging.h>
 
 #ifdef BUILD_SYCL_MODULE
 #include <sycl/sycl.hpp>
@@ -84,7 +84,8 @@ int SYCLDemo() {
 
 #ifdef BUILD_SYCL_MODULE
 
-CLOUDVIEWER_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device) {
+CLOUDVIEWER_DLL_LOCAL std::string GetDeviceTypeName(
+        const sycl::device &device) {
     auto device_type = device.get_info<sycl::info::device::device_type>();
     switch (device_type) {
         case sycl::info::device_type::cpu:

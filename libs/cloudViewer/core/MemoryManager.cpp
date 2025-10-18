@@ -7,14 +7,15 @@
 
 #include "cloudViewer/core/MemoryManager.h"
 
+#include <Helper.h>
+#include <Logging.h>
+
 #include <numeric>
 #include <unordered_map>
 
 #include "cloudViewer/core/Blob.h"
 #include "cloudViewer/core/Device.h"
 #include "cloudViewer/core/MemoryManagerStatistic.h"
-#include <Helper.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

@@ -8,6 +8,7 @@
 import cloudViewer as cv3d
 import numpy as np
 
+
 def prepare_data():
     pcd_data = cv3d.data.DemoICPPointClouds()
     source_raw = cv3d.io.read_point_cloud(pcd_data.paths[0])

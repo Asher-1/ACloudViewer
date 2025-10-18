@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "camera/PinholeCameraIntrinsic.h"
 #include <RGBDImage.h>
-
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
+#include "camera/PinholeCameraIntrinsic.h"
 
 namespace cloudViewer {
 namespace pipelines {

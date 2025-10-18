@@ -24,7 +24,8 @@ def translate():
     }, {
         "name": "Translated (in Y) Geometry",
         "geometry": mesh_ty
-    }], show_ui=True)
+    }],
+                            show_ui=True)
 
 
 def rotate():
@@ -39,7 +40,8 @@ def rotate():
     }, {
         "name": "Rotated Geometry",
         "geometry": mesh_r
-    }], show_ui=True)
+    }],
+                            show_ui=True)
 
 
 def scale():
@@ -53,7 +55,8 @@ def scale():
     }, {
         "name": "Scaled Geometry",
         "geometry": mesh_s
-    }], show_ui=True)
+    }],
+                            show_ui=True)
 
 
 def transform():
@@ -71,7 +74,8 @@ def transform():
     }, {
         "name": "Transformed Geometry",
         "geometry": mesh_t
-    }], show_ui=True)
+    }],
+                            show_ui=True)
 
 
 if __name__ == "__main__":

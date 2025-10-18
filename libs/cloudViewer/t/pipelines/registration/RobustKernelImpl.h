@@ -38,60 +38,64 @@ using cloudViewer::t::pipelines::registration::RobustKernelMethod;
         scalar_t scale = static_cast<scalar_t>(scaling_parameter);           \
         if (METHOD == RobustKernelMethod::L2Loss) {                          \
             auto GetWeightFromRobustKernel =                                 \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t {  \
-                return 1.0;                                                  \
-            };                                                               \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                             \
+                            scalar_t residual) -> scalar_t { return 1.0; };  \
             return __VA_ARGS__();                                            \
         } else if (METHOD == RobustKernelMethod::L1Loss) {                   \
             auto GetWeightFromRobustKernel =                                 \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t {  \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                             \
+                            scalar_t residual) -> scalar_t {                 \
                 return 1.0 / abs(residual);                                  \
             };                                                               \
             return __VA_ARGS__();                                            \
         } else if (METHOD == RobustKernelMethod::HuberLoss) {                \
             auto GetWeightFromRobustKernel =                                 \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t {  \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                             \
+                            scalar_t residual) -> scalar_t {                 \
                 return scale / max(abs(residual), scale);                    \
             };                                                               \
             return __VA_ARGS__();                                            \
         } else if (METHOD == RobustKernelMethod::CauchyLoss) {               \
             auto GetWeightFromRobustKernel =                                 \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t {  \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                             \
+                            scalar_t residual) -> scalar_t {                 \
                 return 1.0 / (1.0 + Square(residual / scale));               \
             };                                                               \
             return __VA_ARGS__();                                            \
         } else if (METHOD == RobustKernelMethod::GMLoss) {                   \
             auto GetWeightFromRobustKernel =                                 \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t {  \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                             \
+                            scalar_t residual) -> scalar_t {                 \
                 return scale / Square(scale + Square(residual));             \
             };                                                               \
             return __VA_ARGS__();                                            \
         } else if (METHOD == RobustKernelMethod::TukeyLoss) {                \
             auto GetWeightFromRobustKernel =                                 \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t {  \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                             \
+                            scalar_t residual) -> scalar_t {                 \
                 return Square(1.0 - Square(min((scalar_t)1.0,                \
                                                abs(residual) / scale)));     \
             };                                                               \
             return __VA_ARGS__();                                            \
         } else if (METHOD == RobustKernelMethod::GeneralizedLoss) {          \
-            if (cloudViewer::IsClose(shape_parameter, 2.0, 1e-3)) {               \
+            if (cloudViewer::IsClose(shape_parameter, 2.0, 1e-3)) {          \
                 auto const_val = 1.0 / Square(scale);                        \
                 auto GetWeightFromRobustKernel =                             \
-                        [=] CLOUDVIEWER_HOST_DEVICE(                              \
+                        [=] CLOUDVIEWER_HOST_DEVICE(                         \
                                 scalar_t residual) -> scalar_t {             \
                     return const_val;                                        \
                 };                                                           \
                 return __VA_ARGS__();                                        \
-            } else if (cloudViewer::IsClose(shape_parameter, 0.0, 1e-3)) {        \
+            } else if (cloudViewer::IsClose(shape_parameter, 0.0, 1e-3)) {   \
                 auto GetWeightFromRobustKernel =                             \
-                        [=] CLOUDVIEWER_HOST_DEVICE(                              \
+                        [=] CLOUDVIEWER_HOST_DEVICE(                         \
                                 scalar_t residual) -> scalar_t {             \
                     return 2.0 / (Square(residual) + 2 * Square(scale));     \
                 };                                                           \
                 return __VA_ARGS__();                                        \
             } else if (shape_parameter < -1e7) {                             \
                 auto GetWeightFromRobustKernel =                             \
-                        [=] CLOUDVIEWER_HOST_DEVICE(                              \
+                        [=] CLOUDVIEWER_HOST_DEVICE(                         \
                                 scalar_t residual) -> scalar_t {             \
                     return exp(Square(residual / scale) / (-2.0)) /          \
                            Square(scale);                                    \
@@ -99,7 +103,7 @@ using cloudViewer::t::pipelines::registration::RobustKernelMethod;
                 return __VA_ARGS__();                                        \
             } else {                                                         \
                 auto GetWeightFromRobustKernel =                             \
-                        [=] CLOUDVIEWER_HOST_DEVICE(                              \
+                        [=] CLOUDVIEWER_HOST_DEVICE(                         \
                                 scalar_t residual) -> scalar_t {             \
                     return pow((Square(residual / scale) /                   \
                                         abs(shape_parameter - 2.0) +         \
@@ -128,22 +132,20 @@ using cloudViewer::t::pipelines::registration::RobustKernelMethod;
         if (METHOD_1 == RobustKernelMethod::L2Loss &&                       \
             METHOD_2 == RobustKernelMethod::L2Loss) {                       \
             auto GetWeightFromRobustKernelFirst =                           \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
-                return 1.0;                                                 \
-            };                                                              \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                            \
+                            scalar_t residual) -> scalar_t { return 1.0; }; \
             auto GetWeightFromRobustKernelSecond =                          \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
-                return 1.0;                                                 \
-            };                                                              \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                            \
+                            scalar_t residual) -> scalar_t { return 1.0; }; \
             return __VA_ARGS__();                                           \
         } else if (METHOD_1 == RobustKernelMethod::L2Loss &&                \
                    METHOD_2 == RobustKernelMethod::TukeyLoss) {             \
             auto GetWeightFromRobustKernelFirst =                           \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
-                return 1.0;                                                 \
-            };                                                              \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                            \
+                            scalar_t residual) -> scalar_t { return 1.0; }; \
             auto GetWeightFromRobustKernelSecond =                          \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                            \
+                            scalar_t residual) -> scalar_t {                \
                 return Square(1.0 - Square(min((scalar_t)1.0,               \
                                                abs(residual) / scale_2)));  \
             };                                                              \
@@ -151,24 +153,26 @@ using cloudViewer::t::pipelines::registration::RobustKernelMethod;
         } else if (METHOD_1 == RobustKernelMethod::TukeyLoss &&             \
                    METHOD_2 == RobustKernelMethod::L2Loss) {                \
             auto GetWeightFromRobustKernelFirst =                           \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                            \
+                            scalar_t residual) -> scalar_t {                \
                 return Square(1.0 - Square(min((scalar_t)1.0,               \
                                                abs(residual) / scale_1)));  \
             };                                                              \
             auto GetWeightFromRobustKernelSecond =                          \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
-                return 1.0;                                                 \
-            };                                                              \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                            \
+                            scalar_t residual) -> scalar_t { return 1.0; }; \
             return __VA_ARGS__();                                           \
         } else if (METHOD_1 == RobustKernelMethod::TukeyLoss &&             \
                    METHOD_2 == RobustKernelMethod::TukeyLoss) {             \
             auto GetWeightFromRobustKernelFirst =                           \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                            \
+                            scalar_t residual) -> scalar_t {                \
                 return Square(1.0 - Square(min((scalar_t)1.0,               \
                                                abs(residual) / scale_1)));  \
             };                                                              \
             auto GetWeightFromRobustKernelSecond =                          \
-                    [=] CLOUDVIEWER_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                    [=] CLOUDVIEWER_HOST_DEVICE(                            \
+                            scalar_t residual) -> scalar_t {                \
                 return Square(1.0 - Square(min((scalar_t)1.0,               \
                                                abs(residual) / scale_2)));  \
             };                                                              \

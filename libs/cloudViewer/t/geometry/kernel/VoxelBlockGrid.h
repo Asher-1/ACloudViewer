@@ -10,8 +10,8 @@
 #include <unordered_map>
 
 #include "cloudViewer/core/Tensor.h"
-#include "cloudViewer/core/hashmap/HashMap.h"
 #include "cloudViewer/core/hashmap/DeviceHashBackend.h"
+#include "cloudViewer/core/hashmap/HashMap.h"
 #include "cloudViewer/t/geometry/TensorMap.h"
 
 namespace cloudViewer {

@@ -1,35 +1,11 @@
-// Copyright (C) 2011 - 2012 Andrzej Krzemienski.
-//
-// Use, modification, and distribution is subject to the Boost Software
-// License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
-//
-// The idea and interface is based on Boost.Optional library
-// authored by Fernando Luis Cacciola Carballal
-//
-// From https://github.com/akrzemi1/Optional
-//
-// C10
-// - Move to `c10` namespace.
-// - Remove macro use in line 478 because the nvcc device compiler cannot handle
-// it.
-// - revise constructor logic so that it is consistent with c++ 17 standard
-// documented here in (8):
-// https://en.cppreference.com/w/cpp/utility/optional/optional, and could be
-// able to support initialization of optionals from convertible type U, also
-// remove two old constructors optional(const T&) and optional(T&&) as it could
-// be handled by the template<U=T> case with default template argument.
-// - `constexpr struct in_place_t {} in_place{}` is moved to
-// `c10/util/in_place.h`, so that it can also be used in `c10/util/variant.h`.
-// - Remove special cases for pre-c++14 compilers to make code simpler
-//
-//
-// CloudViewer
-// - Namespace change: cloudViewer::utility::optional
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
-
-#include "CVCoreLib.h"
 
 #include <cassert>
 #include <functional>
@@ -38,6 +14,8 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+
+#include "CVCoreLib.h"
 
 #define TR2_OPTIONAL_REQUIRES(...) \
     typename std::enable_if<__VA_ARGS__::value, bool>::type = false
@@ -171,7 +149,7 @@ union storage_t {
     unsigned char dummy_;
     T value_;
 
-    constexpr storage_t(trivial_init_t) noexcept : dummy_(){};
+    constexpr storage_t(trivial_init_t) noexcept : dummy_() {};
 
     template <class... Args>
     constexpr storage_t(Args&&... args)
@@ -185,7 +163,7 @@ union constexpr_storage_t {
     unsigned char dummy_;
     T value_;
 
-    constexpr constexpr_storage_t(trivial_init_t) noexcept : dummy_(){};
+    constexpr constexpr_storage_t(trivial_init_t) noexcept : dummy_() {};
 
     template <class... Args>
     constexpr constexpr_storage_t(Args&&... args)
@@ -199,7 +177,8 @@ struct optional_base {
     bool init_;
     storage_t<T> storage_;
 
-    constexpr optional_base() noexcept : init_(false), storage_(trivial_init){};
+    constexpr optional_base() noexcept
+        : init_(false), storage_(trivial_init) {};
 
     explicit constexpr optional_base(const T& v) : init_(true), storage_(v) {}
 
@@ -230,7 +209,7 @@ struct constexpr_optional_base {
     constexpr_storage_t<T> storage_;
 
     constexpr constexpr_optional_base() noexcept
-        : init_(false), storage_(trivial_init){};
+        : init_(false), storage_(trivial_init) {};
 
     explicit constexpr constexpr_optional_base(const T& v)
         : init_(true), storage_(v) {}
@@ -320,8 +299,8 @@ public:
     typedef T value_type;
 
     // 20.5.5.1, constructors
-    constexpr optional() noexcept : OptionalBase<T>(){};
-    constexpr optional(nullopt_t) noexcept : OptionalBase<T>(){};
+    constexpr optional() noexcept : OptionalBase<T>() {};
+    constexpr optional(nullopt_t) noexcept : OptionalBase<T>() {};
 
     optional(const optional& rhs) : OptionalBase<T>() {
         if (rhs.initialized()) {
@@ -397,8 +376,8 @@ public:
     }
 
     optional& operator=(optional&& rhs) noexcept(
-            std::is_nothrow_move_assignable<T>::value&&
-                    std::is_nothrow_move_constructible<T>::value) {
+            std::is_nothrow_move_assignable<T>::value &&
+            std::is_nothrow_move_constructible<T>::value) {
         if (initialized() == true && rhs.initialized() == false)
             clear();
         else if (initialized() == false && rhs.initialized() == true)
@@ -409,14 +388,16 @@ public:
     }
 
     template <class U = T>
-    auto operator=(U&& v) -> typename std::enable_if<
-            std::is_constructible<T, U>::value &&
-                    !std::is_same<typename std::decay<U>::type,
-                                  optional<T>>::value &&
-                    (std::is_scalar<T>::value ||
-                     std::is_same<typename std::decay<U>::type, T>::value) &&
-                    std::is_assignable<T&, U>::value,
-            optional&>::type {
+    auto operator=(U&& v) ->
+            typename std::enable_if<
+                    std::is_constructible<T, U>::value &&
+                            !std::is_same<typename std::decay<U>::type,
+                                          optional<T>>::value &&
+                            (std::is_scalar<T>::value ||
+                             std::is_same<typename std::decay<U>::type,
+                                          T>::value) &&
+                            std::is_assignable<T&, U>::value,
+                    optional&>::type {
         if (initialized()) {
             contained_val() = std::forward<U>(v);
         } else {
@@ -439,8 +420,8 @@ public:
 
     // 20.5.4.4, Swap
     void swap(optional<T>& rhs) noexcept(
-            std::is_nothrow_move_constructible<T>::value&& noexcept(
-                    std::swap(std::declval<T&>(), std::declval<T&>()))) {
+            std::is_nothrow_move_constructible<T>::value &&
+            noexcept(std::swap(std::declval<T&>(), std::declval<T&>()))) {
         if (initialized() == true && rhs.initialized() == false) {
             rhs.initialize(std::move(**this));
             clear();
@@ -575,17 +556,19 @@ public:
     // }
 
     template <typename U>
-    auto operator=(U&& rhs) noexcept -> typename std::enable_if<
-            std::is_same<typename std::decay<U>::type, optional<T&>>::value,
-            optional&>::type {
+    auto operator=(U&& rhs) noexcept ->
+            typename std::enable_if<std::is_same<typename std::decay<U>::type,
+                                                 optional<T&>>::value,
+                                    optional&>::type {
         ref = rhs.ref;
         return *this;
     }
 
     template <typename U>
-    auto operator=(U&& rhs) noexcept -> typename std::enable_if<
-            !std::is_same<typename std::decay<U>::type, optional<T&>>::value,
-            optional&>::type = delete;
+    auto operator=(U&& rhs) noexcept ->
+            typename std::enable_if<!std::is_same<typename std::decay<U>::type,
+                                                  optional<T&>>::value,
+                                    optional&>::type = delete;
 
     void emplace(T& v) noexcept { ref = detail_::static_addressof(v); }
 

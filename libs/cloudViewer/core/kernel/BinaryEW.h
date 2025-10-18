@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include <Helper.h>
+#include <Logging.h>
+
 #include <unordered_set>
 
 #include "cloudViewer/core/Tensor.h"
-#include <Helper.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

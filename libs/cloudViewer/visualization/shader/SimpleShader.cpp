@@ -8,6 +8,7 @@
 #include "visualization/shader/SimpleShader.h"
 
 #include <GenericIndexedMesh.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <LineSet.h>
 #include <Octree.h>
 #include <VoxelGrid.h>
@@ -15,7 +16,6 @@
 #include <ecvBBox.h>
 #include <ecvCone.h>
 #include <ecvHObjectCaster.h>
-#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
@@ -163,7 +163,9 @@ public:  // GLU equivalent methods
         {
             double *matrix = outMatrix.data();
 
-            double ymax = znear * std::tan(cloudViewer::DegreesToRadians(fovyInDegrees / 2));
+            double ymax =
+                    znear *
+                    std::tan(cloudViewer::DegreesToRadians(fovyInDegrees / 2));
             double xmax = ymax * aspectRatio;
 
             double dZ = zfar - znear;
@@ -831,7 +833,8 @@ bool SimpleShaderForPolyline::AdditionalRendering(const ccHObject &geometry,
         if (polyline.is2DMode()) {
             u *= -arrowLength;
             static const PointCoordinateType s_defaultArrowAngle =
-                    static_cast<PointCoordinateType>(cloudViewer::DegreesToRadians(15.));
+                    static_cast<PointCoordinateType>(
+                            cloudViewer::DegreesToRadians(15.));
             static const PointCoordinateType cost = cos(s_defaultArrowAngle);
             static const PointCoordinateType sint = sin(s_defaultArrowAngle);
             CCVector3 A(cost * u.x - sint * u.y, sint * u.x + cost * u.y, 0);

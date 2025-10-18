@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "Visualizer.h"
-
 #include <Logging.h>
+
+#include "Visualizer.h"
 
 namespace cloudViewer {
 namespace visualization {

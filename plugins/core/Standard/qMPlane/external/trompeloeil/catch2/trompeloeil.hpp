@@ -13,8 +13,7 @@
  */
 
 
-#ifndef TROMPELOEIL_CATCH2_HPP_
-#define TROMPELOEIL_CATCH2_HPP_
+#pragma once
 
 #ifndef CATCH_VERSION_MAJOR
 #error "<catch.hpp> must be included before <catch2/trompeloeil.hpp>"
@@ -55,4 +54,3 @@ namespace trompeloeil
 }
 
 
-#endif //TROMPELOEIL_CATCH2_HPP_

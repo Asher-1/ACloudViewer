@@ -13,6 +13,7 @@
 #include <Logging.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
 #include "visualization/utility/SelectionPolygonVolume.h"
 #include "visualization/visualizer/ViewControl.h"
 #include "visualization/visualizer/ViewControlWithEditing.h"
@@ -181,15 +182,15 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
         volume->bounding_polygon_.push_back(point3d);
     }
     const auto &boundingbox = view.GetBoundingBox();
-    double axis_len = boundingbox.GetMaxBound()(idx) - boundingbox.GetMinBound()(idx);
+    double axis_len =
+            boundingbox.GetMaxBound()(idx) - boundingbox.GetMinBound()(idx);
     volume->axis_min_ = boundingbox.GetMinBound()(idx) - axis_len;
     volume->axis_max_ = boundingbox.GetMaxBound()(idx) + axis_len;
     return volume;
 }
 
-std::shared_ptr<ccPointCloud>
-SelectionPolygon::CropPointCloudInRectangle(const ccPointCloud &input,
-                                            const ViewControl &view) {
+std::shared_ptr<ccPointCloud> SelectionPolygon::CropPointCloudInRectangle(
+        const ccPointCloud &input, const ViewControl &view) {
     return input.SelectByIndex(CropInRectangle(input.getPoints(), view));
 }
 
@@ -198,15 +199,13 @@ std::shared_ptr<ccPointCloud> SelectionPolygon::CropPointCloudInPolygon(
     return input.SelectByIndex(CropInPolygon(input.getPoints(), view));
 }
 
-std::shared_ptr<ccMesh>
-SelectionPolygon::CropTriangleMeshInRectangle(
+std::shared_ptr<ccMesh> SelectionPolygon::CropTriangleMeshInRectangle(
         const ccMesh &input, const ViewControl &view) {
     return input.SelectByIndex(CropInRectangle(input.getVertices(), view));
 }
 
-std::shared_ptr<ccMesh>
-SelectionPolygon::CropTriangleMeshInPolygon(const ccMesh &input,
-                                            const ViewControl &view) {
+std::shared_ptr<ccMesh> SelectionPolygon::CropTriangleMeshInPolygon(
+        const ccMesh &input, const ViewControl &view) {
     return input.SelectByIndex(CropInPolygon(input.getVertices(), view));
 }
 

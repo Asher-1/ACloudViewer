@@ -7,12 +7,11 @@
 
 #pragma once
 
+#include <Helper.h>
 #include <tbb/task_group.h>
 
 #include <Eigen/Core>
 #include <unordered_map>
-
-#include <Helper.h>
 
 namespace cloudViewer {
 namespace ml {

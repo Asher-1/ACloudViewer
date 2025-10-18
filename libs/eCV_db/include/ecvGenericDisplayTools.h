@@ -1,20 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                               ECV_DB                                   #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -65,13 +54,11 @@ public:
     }
 
     inline virtual void toWorldPoint(const CCVector3d& input2D,
-                                     CCVector3d& output3D) { /* do nothing */
-    }
+                                     CCVector3d& output3D) { /* do nothing */ }
     // inline static void ToWorldPoint(CCVector3 & p) {
     // s_tools->toWorldPoint(p); }
     inline virtual void toWorldPoint(const CCVector3& input2D,
-                                     CCVector3d& output3D) { /* do nothing */
-    }
+                                     CCVector3d& output3D) { /* do nothing */ }
 
     template <typename iType, typename oType>
     inline static void ToDisplayPoint(const Vector3Tpl<iType>& input3D,

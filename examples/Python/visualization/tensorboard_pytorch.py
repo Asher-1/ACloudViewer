@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.cloudViewer.org
+# Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -89,8 +89,10 @@ def large_scale(n_steps=16,
         resolution = base_resolution * (step + 1)
         cylinder_list = []
         mobius_list = []
-        cylinder = cv3d.geometry.ccMesh.create_cylinder(
-            radius=1.0, height=2.0, resolution=resolution, split=4)
+        cylinder = cv3d.geometry.ccMesh.create_cylinder(radius=1.0,
+                                                        height=2.0,
+                                                        resolution=resolution,
+                                                        split=4)
         cylinder.compute_vertex_normals()
         mobius = cv3d.geometry.ccMesh.create_mobius(
             length_split=int(3.5 * resolution),

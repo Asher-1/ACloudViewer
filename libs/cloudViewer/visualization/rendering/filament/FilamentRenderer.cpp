@@ -34,8 +34,9 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
-#include "core/Tensor.h"
 #include <Logging.h>
+
+#include "core/Tensor.h"
 #include "visualization/rendering/filament/FilamentCamera.h"
 #include "visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "visualization/rendering/filament/FilamentRenderToBuffer.h"

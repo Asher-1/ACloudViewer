@@ -7,9 +7,10 @@
 
 #include "CloudViewerApp.h"
 
+#include <CloudViewer.h>
+
 #include <string>
 
-#include <CloudViewer.h>
 #include "cloudViewer/visualization/app/Viewer.h"
 
 using namespace cloudViewer::visualization::app;

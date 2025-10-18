@@ -1,22 +1,11 @@
-﻿// ##########################################################################
-// #                                                                        #
-// #                              CLOUDVIEWER                               #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_MESH_HEADER
-#define ECV_MESH_HEADER
+#pragma once
 
 // cloudViewer
 #include <Helper.h>
@@ -1407,12 +1396,12 @@ public:  // some cloudViewer interface
     /// \param width controls the width of the Mobius strip.
     /// \param scale is used to scale the entire Mobius strip.
     static std::shared_ptr<ccMesh> CreateMobius(int length_split = 70,
-                                                 int width_split = 15,
-                                                 int twists = 1,
-                                                 double radius = 1,
-                                                 double flatness = 1,
-                                                 double width = 1,
-                                                 double scale = 1);
+                                                int width_split = 15,
+                                                int twists = 1,
+                                                double radius = 1,
+                                                double flatness = 1,
+                                                double width = 1,
+                                                double scale = 1);
 
 protected:
     void FilterSmoothLaplacianHelper(
@@ -1523,5 +1512,3 @@ protected:
     //! Mesh normals indexes (per-triangle)
     triangleNormalsIndexesSet* m_triNormalIndexes;
 };
-
-#endif  // ECV_MESH_HEADER

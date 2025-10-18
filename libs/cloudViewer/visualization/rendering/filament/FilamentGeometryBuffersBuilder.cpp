@@ -296,7 +296,7 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
         default:
             break;
     }
-    
+
     return nullptr;
 }
 

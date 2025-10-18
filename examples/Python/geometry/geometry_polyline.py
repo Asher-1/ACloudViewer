@@ -75,7 +75,8 @@ def wrap_polyline(points, color):
 
 def generate_from_file():
     print("Load a polylines data, print it, and render it")
-    cv3d.data.set_custom_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+    cv3d.data.set_custom_downloads_prefix(
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
     polylines_data = cv3d.data.PolylinesModel()
     entity = cv3d.io.read_entity(polylines_data.path)
     polylines = entity.filter_children(recursive=False,

@@ -1,31 +1,11 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2019 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_TETRA_MESH_HEADER
-#define ECV_TETRA_MESH_HEADER
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/StdVector>
@@ -50,9 +30,9 @@ class ECV_DB_LIB_API TetraMesh : public ecvMeshBase {
 public:
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-	//! Default ccMesh constructor
-	/** \param vertices the vertices cloud
-	**/
+    //! Default ccMesh constructor
+    /** \param vertices the vertices cloud
+     **/
     TetraMesh(const char *name = "TetraMesh") : ecvMeshBase(name) {}
 
     /// \brief Parameterized Constructor.
@@ -60,17 +40,20 @@ public:
     /// \param vertices Vertex coordinates.
     /// \param tetras List of tetras denoted by the index of points forming the
     /// tetra.
-    TetraMesh(const std::vector<Eigen::Vector3d> &vertices,
-              const std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator> &tetras,
-              const char *name = "TetraMesh")
-        : ecvMeshBase(name),
-          tetras_(tetras) {}
+    TetraMesh(
+            const std::vector<Eigen::Vector3d> &vertices,
+            const std::vector<Eigen::Vector4i,
+                              cloudViewer::utility::Vector4i_allocator> &tetras,
+            const char *name = "TetraMesh")
+        : ecvMeshBase(name), tetras_(tetras) {}
 
-	~TetraMesh() override {}
+    ~TetraMesh() override {}
 
-	//inherited methods (ccHObject)
-	virtual bool isSerializable() const override { return true; }
-	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::TETRA_MESH; }
+    // inherited methods (ccHObject)
+    virtual bool isSerializable() const override { return true; }
+    virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::TETRA_MESH;
+    }
 
 public:
     virtual TetraMesh &clear() override;
@@ -100,10 +83,9 @@ public:
     TetraMesh &RemoveDegenerateTetras();
 
     /// Returns `true` if the mesh contains tetras.
-	bool HasTetras() const
-	{
-		return vertices_.size() > 0 && tetras_.size() > 0;
-	}
+    bool HasTetras() const {
+        return vertices_.size() > 0 && tetras_.size() > 0;
+    }
 
     /// \brief Function to extract a triangle mesh of the specified iso-surface
     /// at a level This method applies primal contouring and generates triangles
@@ -123,11 +105,10 @@ public:
     CreateFromPointCloud(const ccPointCloud &point_cloud);
 
 public:
-	/// List of tetras denoted by the index of points forming the tetra.
-	std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator> tetras_;
+    /// List of tetras denoted by the index of points forming the tetra.
+    std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator>
+            tetras_;
 };
 
 }  // namespace geometry
 }  // namespace cloudViewer
-
-#endif // ECV_TETRA_MESH_HEADER

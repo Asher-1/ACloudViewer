@@ -25,8 +25,8 @@ def run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,
         preference_loop_closure=preference_loop_closure,
         reference_node=0)
     pose_graph = cv3d.io.read_pose_graph(pose_graph_name)
-    cv3d.pipelines.registration.global_optimization(pose_graph, method, criteria,
-                                                   option)
+    cv3d.pipelines.registration.global_optimization(pose_graph, method,
+                                                    criteria, option)
     cv3d.io.write_pose_graph(pose_graph_optimized_name, pose_graph)
     cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Error)
 

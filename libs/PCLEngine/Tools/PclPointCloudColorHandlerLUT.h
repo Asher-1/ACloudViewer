@@ -1,5 +1,11 @@
-#ifndef QPCL_PointCloudColorHandlerLUT_H
-#define QPCL_PointCloudColorHandlerLUT_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
@@ -139,4 +145,3 @@ private:
     using PointCloudColorHandler<PointT>::field_idx_;
     using PointCloudColorHandler<PointT>::fields_;
 };
-#endif  // QPCL_PointCloudColorHandlerLUT_H

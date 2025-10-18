@@ -7,10 +7,11 @@
 
 #include "geometry/TetraMesh.h"
 
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
+
 #include <Eigen/Geometry>
 
-#include <ecvPointCloud.h>
-#include <ecvMesh.h>
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

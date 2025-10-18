@@ -7,11 +7,11 @@
 
 #pragma once
 
+#include <AutoIO.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <AutoIO.h>
 
 class ccMesh;
 namespace cloudViewer {

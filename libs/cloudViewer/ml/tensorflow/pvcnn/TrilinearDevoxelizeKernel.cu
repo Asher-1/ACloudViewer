@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #define EIGEN_USE_GPU
 #include "TrilinearDevoxelizeKernel.h"
 #include "ml/Helper.h"
@@ -43,8 +50,9 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudViewerTrilinearDevoxelize").Device(DEVICE_GPU),
-                        TrilinearDevoxelizeOpKernelCUDA)
+REGISTER_KERNEL_BUILDER(
+        Name("CloudViewerTrilinearDevoxelize").Device(DEVICE_GPU),
+        TrilinearDevoxelizeOpKernelCUDA)
 
 class TrilinearDevoxelizeGradOpKernelCUDA
     : public TrilinearDevoxelizeGradOpKernel {

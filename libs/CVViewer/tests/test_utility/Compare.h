@@ -16,7 +16,7 @@
 
 #include "Macro.h"
 
-#define ExpectEQ(arg, ...)                                               \
+#define ExpectEQ(arg, ...)                                                    \
     ExpectEQInternal(::cloudViewer::tests::LineInfo(__FILE__, __LINE__), arg, \
                      __VA_ARGS__)
 

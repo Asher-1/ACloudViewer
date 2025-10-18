@@ -1,24 +1,29 @@
-#ifndef POINTSTOPOLYDATACONVERTER_H
-#define POINTSTOPOLYDATACONVERTER_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "../qPCL.h"
 
 // CV_CORE_LIB
 #include <CVGeom.h>
+#include <vtkSmartPointer.h>
 
 #include "point3f.h"
 #include "signalledrunable.h"
 
-#include <vtkSmartPointer.h>
-
 class vtkPolyData;
-namespace VtkUtils
-{
-class QPCL_ENGINE_LIB_API PointsToPolyDataConverter : public SignalledRunnable
-{
+namespace VtkUtils {
+class QPCL_ENGINE_LIB_API PointsToPolyDataConverter : public SignalledRunnable {
     Q_OBJECT
 public:
-    explicit PointsToPolyDataConverter(const QVector<Point3F>& points, const QVector<Tuple3ui>& vertices = QVector<Tuple3ui>());
+    explicit PointsToPolyDataConverter(
+            const QVector<Point3F>& points,
+            const QVector<Tuple3ui>& vertices = QVector<Tuple3ui>());
 
     void run();
 
@@ -30,5 +35,4 @@ private:
     vtkSmartPointer<vtkPolyData> m_polyData;
 };
 
-} // namespace VtkUtils
-#endif // POINTSTOPOLYDATACONVERTER_H
+}  // namespace VtkUtils

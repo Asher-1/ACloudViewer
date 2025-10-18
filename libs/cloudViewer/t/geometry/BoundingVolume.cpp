@@ -251,7 +251,7 @@ cloudViewer::geometry::AxisAlignedBoundingBox AxisAlignedBoundingBox::ToLegacy()
     cloudViewer::geometry::AxisAlignedBoundingBox legacy_box;
     {
         Eigen::Vector3d e = core::eigen_converter::TensorToEigenVector3dVector(
-                                     GetMinBound().Reshape({1, 3}))[0];
+                GetMinBound().Reshape({1, 3}))[0];
         auto &minc = legacy_box.minCorner();
         using ::PointCoordinateType;
         minc.x = static_cast<PointCoordinateType>(e(0));
@@ -260,7 +260,7 @@ cloudViewer::geometry::AxisAlignedBoundingBox AxisAlignedBoundingBox::ToLegacy()
     }
     {
         Eigen::Vector3d e = core::eigen_converter::TensorToEigenVector3dVector(
-                                     GetMaxBound().Reshape({1, 3}))[0];
+                GetMaxBound().Reshape({1, 3}))[0];
         auto &maxc = legacy_box.maxCorner();
         using ::PointCoordinateType;
         maxc.x = static_cast<PointCoordinateType>(e(0));
@@ -268,7 +268,7 @@ cloudViewer::geometry::AxisAlignedBoundingBox AxisAlignedBoundingBox::ToLegacy()
         maxc.z = static_cast<PointCoordinateType>(e(2));
     }
     legacy_box.SetColor(core::eigen_converter::TensorToEigenVector3dVector(
-                                 GetColor().Reshape({1, 3}))[0]);
+            GetColor().Reshape({1, 3}))[0]);
     return legacy_box;
 }
 
@@ -292,12 +292,10 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::FromLegacy(
     Eigen::Vector3d max_b(box.maxCorner().x, box.maxCorner().y,
                           box.maxCorner().z);
     AxisAlignedBoundingBox t_box(
-            core::eigen_converter::EigenMatrixToTensor(min_b)
-                    .Flatten()
-                    .To(device, dtype),
-            core::eigen_converter::EigenMatrixToTensor(max_b)
-                    .Flatten()
-                    .To(device, dtype));
+            core::eigen_converter::EigenMatrixToTensor(min_b).Flatten().To(
+                    device, dtype),
+            core::eigen_converter::EigenMatrixToTensor(max_b).Flatten().To(
+                    device, dtype));
 
     t_box.SetColor(core::eigen_converter::EigenMatrixToTensor(box.GetColor())
                            .Flatten()
@@ -530,7 +528,8 @@ std::string OrientedBoundingBox::ToString() const {
                        GetDevice().ToString());
 }
 
-cloudViewer::geometry::OrientedBoundingBox OrientedBoundingBox::ToLegacy() const {
+cloudViewer::geometry::OrientedBoundingBox OrientedBoundingBox::ToLegacy()
+        const {
     cloudViewer::geometry::OrientedBoundingBox legacy_box(
             core::eigen_converter::TensorToEigenVector3dVector(
                     GetCenter().Reshape({1, 3}))[0],
@@ -555,7 +554,7 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
     return box;
 }
 
-    OrientedBoundingBox OrientedBoundingBox::FromLegacy(
+OrientedBoundingBox OrientedBoundingBox::FromLegacy(
         const cloudViewer::geometry::OrientedBoundingBox &box,
         const core::Dtype &dtype,
         const core::Device &device) {

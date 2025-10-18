@@ -36,7 +36,7 @@ def mesh_generator():
     mesh_bunny = cv3d.io.read_triangle_mesh(bunny.path)
     mesh_bunny.compute_vertex_normals()
     yield mesh_bunny
-    
+
     armadillo = cv3d.data.ArmadilloMesh()
     mesh_armadillo = cv3d.io.read_triangle_mesh(armadillo.path)
     mesh_armadillo.compute_vertex_normals()
@@ -75,8 +75,7 @@ if __name__ == "__main__":
         print("Element-wise check if points belong to voxel grid")
         queries = np.asarray(pcd.get_points())
         start = time.time()
-        output = voxel.check_if_included(
-            cv3d.utility.Vector3dVector(queries))
+        output = voxel.check_if_included(cv3d.utility.Vector3dVector(queries))
         print("took %.2f milliseconds" % ((time.time() - start) * 1000.0))
         print(output[:10])
         print("")

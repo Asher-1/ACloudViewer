@@ -13,7 +13,7 @@ on:
       - main
 
   release:
-    types: [published]
+    types: [released]
 
   pull_request:
     types: [opened, reopened, synchronize]
@@ -57,6 +57,7 @@ jobs:
         include:
           - CI_CONFIG: cpu-focal
           - CI_CONFIG: cpu-jammy
+          - CI_CONFIG: cpu-noble
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
@@ -64,7 +65,6 @@ jobs:
       BUILD_PACKAGE      : true
       GCE_INSTANCE_PREFIX: cloudviewer-ci-${{ matrix.CI_CONFIG }}
       DOCKER_TAG         : cloudviewer-ci:${{ matrix.CI_CONFIG }}
-      CCACHE_TAR_NAME    : cloudviewer-ci-${{ matrix.CI_CONFIG }}
     steps:
       - name: Setup DEVELOPER_BUILD
         run: |

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <ecvMesh.h>
+
 #include "visualization/rendering/MaterialRecord.h"
 
 namespace cloudViewer {

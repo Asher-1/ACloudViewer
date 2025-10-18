@@ -278,7 +278,8 @@ torch::Tensor ContinuousConv(const torch::Tensor& filters,
 }
 
 static auto registry = torch::RegisterOperators(
-        "cloudViewer::continuous_conv(Tensor filters, Tensor out_positions, Tensor "
+        "cloudViewer::continuous_conv(Tensor filters, Tensor out_positions, "
+        "Tensor "
         "extents, Tensor offset, Tensor inp_positions, Tensor inp_features, "
         "Tensor inp_importance, Tensor neighbors_index, Tensor "
         "neighbors_importance, Tensor neighbors_row_splits, bool "

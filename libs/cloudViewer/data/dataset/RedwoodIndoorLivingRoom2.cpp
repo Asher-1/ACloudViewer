@@ -5,11 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <string>
 #include <vector>
 
 #include "cloudViewer/data/Dataset.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace data {
@@ -17,7 +18,8 @@ namespace data {
 const static std::vector<DataDescriptor> data_descriptors = {
         {CloudViewerDownloadsPrefix() + "augmented-icl-nuim/livingroom.ply.zip",
          "841f32ff6294bb52d5f9574834e0925e"},
-        {CloudViewerDownloadsPrefix() + "augmented-icl-nuim/livingroom2-color.zip",
+        {CloudViewerDownloadsPrefix() +
+                 "augmented-icl-nuim/livingroom2-color.zip",
          "34792f7aa35b6c8b62e394e9372b95d7", "color"},
         {CloudViewerDownloadsPrefix() +
                  "augmented-icl-nuim/livingroom2-depth-clean.zip",
@@ -25,9 +27,11 @@ const static std::vector<DataDescriptor> data_descriptors = {
         {CloudViewerDownloadsPrefix() +
                  "augmented-icl-nuim/livingroom2-depth-simulated.zip",
          "cbb4a36b8488448d79ec93c202c0c90e", "depth_noisy"},
-        {CloudViewerDownloadsPrefix() + "augmented-icl-nuim/livingroom2-traj.txt",
+        {CloudViewerDownloadsPrefix() +
+                 "augmented-icl-nuim/livingroom2-traj.txt",
          "193961c018f4c2a753458d5231544036"},
-        {CloudViewerDownloadsPrefix() + "augmented-icl-nuim/livingroom2.oni.zip",
+        {CloudViewerDownloadsPrefix() +
+                 "augmented-icl-nuim/livingroom2.oni.zip",
          "b827aa33cddffc8131d9b25007930137"},
         {CloudViewerDownloadsPrefix() + "augmented-icl-nuim/dist-model.txt",
          "d8d7b6d29e754c2993a6eba4fd8d89ea"},

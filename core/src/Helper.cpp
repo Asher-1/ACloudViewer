@@ -91,8 +91,8 @@ void StringAppendV(std::string *dst, const char *format, va_list ap) {
 
     // Restore the va_list before we use it again.
     va_copy(backup_ap, ap);
-    result =
-            vsnprintf(variable_buffer.get(), variable_buffer_size, format, backup_ap);
+    result = vsnprintf(variable_buffer.get(), variable_buffer_size, format,
+                       backup_ap);
     va_end(backup_ap);
 
     if (result >= 0 && result < variable_buffer_size) {
@@ -116,7 +116,8 @@ std::string StringPrintf(const char *format, ...) {
     return result;
 }
 
-std::string StringReplace(const std::string &str, const std::string &old_str,
+std::string StringReplace(const std::string &str,
+                          const std::string &old_str,
                           const std::string &new_str) {
     if (old_str.empty()) {
         return str;
@@ -193,9 +194,9 @@ std::vector<std::string> StringSplit(const std::string &str,
     return tokens;
 }
 
-void SplitString(std::vector<std::string>& tokens,
-                 const std::string& str,
-                 const std::string& delimiters /* = " "*/,
+void SplitString(std::vector<std::string> &tokens,
+                 const std::string &str,
+                 const std::string &delimiters /* = " "*/,
                  bool trim_empty_str /* = true*/) {
     std::string::size_type pos = 0, new_pos = 0, last_pos = 0;
     while (pos != std::string::npos) {
@@ -208,8 +209,8 @@ void SplitString(std::vector<std::string>& tokens,
     }
 }
 
-std::vector<std::string> SplitString(const std::string& str,
-                                     const std::string& delimiters /* = " "*/,
+std::vector<std::string> SplitString(const std::string &str,
+                                     const std::string &delimiters /* = " "*/,
                                      bool trim_empty_str /* = true*/) {
     std::vector<std::string> tokens;
     std::string::size_type pos = 0, new_pos = 0, last_pos = 0;
@@ -224,43 +225,43 @@ std::vector<std::string> SplitString(const std::string& str,
     return tokens;
 }
 
-std::string& LeftStripString(std::string& str, const std::string& chars) {
+std::string &LeftStripString(std::string &str, const std::string &chars) {
     str.erase(0, str.find_first_not_of(chars));
     return str;
 }
 
-std::string& RightStripString(std::string& str, const std::string& chars) {
+std::string &RightStripString(std::string &str, const std::string &chars) {
     str.erase(str.find_last_not_of(chars) + 1);
     return str;
 }
 
-std::string& StripString(std::string& str, const std::string& chars) {
+std::string &StripString(std::string &str, const std::string &chars) {
     return LeftStripString(RightStripString(str, chars), chars);
 }
 
-std::string ToLower(const std::string& str) {
+std::string ToLower(const std::string &str) {
     std::string out = str;
     std::transform(str.begin(), str.end(), out.begin(),
-        [](unsigned char c) { return std::tolower(c); });
+                   [](unsigned char c) { return std::tolower(c); });
     return out;
 }
 
-std::string ToUpper(const std::string& str) {
+std::string ToUpper(const std::string &str) {
     std::string out = str;
     std::transform(str.begin(), str.end(), out.begin(),
-        [](unsigned char c) { return std::toupper(c); });
+                   [](unsigned char c) { return std::toupper(c); });
     return out;
 }
 
 // Count the length of current word starting from start_pos
-size_t WordLength(const std::string& doc,
+size_t WordLength(const std::string &doc,
                   size_t start_pos,
-                  const std::string& valid_chars) {
+                  const std::string &valid_chars) {
     std::unordered_set<char> valid_chars_set;
-    for (const char& c : valid_chars) {
+    for (const char &c : valid_chars) {
         valid_chars_set.insert(c);
     }
-    auto is_word_char = [&valid_chars_set](const char& c) {
+    auto is_word_char = [&valid_chars_set](const char &c) {
         return std::isalnum(c) ||
                valid_chars_set.find(c) != valid_chars_set.end();
     };

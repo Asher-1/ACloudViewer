@@ -103,6 +103,12 @@ if os.path.exists(MAIN_LIB_PATH):
         try_load_cdll('libicudata*')
         try_load_cdll('libicuuc*')
         try_load_cdll('libicui18n*')
+        if len(list(MAIN_LIB_PATH.glob('libdouble-conversion*'))) > 0:
+            try_load_cdll('libdouble-conversion*')
+        if len(list(MAIN_LIB_PATH.glob('libmd4c*'))) > 0:
+            try_load_cdll('libmd4c*')
+
+        try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Gui*')
         try_load_cdll('libQt5Widgets*')
@@ -126,6 +132,7 @@ if os.path.exists(MAIN_LIB_PATH):
             try_load_cdll('libceres*')
         # for libcurl and libssl dep
         try_load_cdll('libcrypto*')
+        try_load_cdll('libssl*')
         load_cdll(str(next(MAIN_LIB_PATH.glob('lib*'))))
 
 __DEVICE_API__ = 'cpu'
@@ -284,7 +291,8 @@ if (_build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
 # CLOUDVIEWER_ML_ROOT points to the root of the CloudViewer-ML repo.
 # If set this will override the integrated CloudViewer-ML.
 if 'CLOUDVIEWER_ML_ROOT' in os.environ:
-    print('Using external CloudViewer-ML in {}'.format(os.environ['CLOUDVIEWER_ML_ROOT']))
+    print('Using external CloudViewer-ML in {}'.format(
+        os.environ['CLOUDVIEWER_ML_ROOT']))
     sys.path.append(os.environ['CLOUDVIEWER_ML_ROOT'])
 import cloudViewer.ml
 

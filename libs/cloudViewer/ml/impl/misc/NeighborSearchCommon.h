@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <nanoflann.hpp>
-
 #include <utility/MiniVec.h>
+
+#include <nanoflann.hpp>
 
 namespace cloudViewer {
 namespace ml {

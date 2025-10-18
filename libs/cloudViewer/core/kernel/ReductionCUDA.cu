@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <thrust/pair.h>
@@ -17,8 +18,8 @@
 #include <tuple>
 #include <type_traits>
 
-#include "core/Blob.h"
 #include "cloudViewer/core/CUDAUtils.h"
+#include "core/Blob.h"
 #include "core/Device.h"
 #include "core/Dispatch.h"
 #include "core/FunctionTraits.h"
@@ -28,7 +29,6 @@
 #include "core/SizeVector.h"
 #include "core/Tensor.h"
 #include "core/kernel/Reduction.h"
-#include <Logging.h>
 
 // CUDA reduction is based on PyTorch's CUDA reduction implementation.
 // See: aten/src/ATen/native/cuda/Reduce.cuh
@@ -42,25 +42,27 @@ constexpr uint32_t CUDA_MAX_THREADS_PER_SM = 2048;
 constexpr uint32_t CUDA_MAX_THREADS_PER_BLOCK = 1024;
 constexpr uint32_t CUDA_THREADS_PER_BLOCK_FALLBACK = 256;
 
-#define CLOUDVIEWER_MAX_THREADS_PER_BLOCK(val)          \
+#define CLOUDVIEWER_MAX_THREADS_PER_BLOCK(val)     \
     (((val) <= CUDA_MAX_THREADS_PER_BLOCK) ? (val) \
                                            : CUDA_THREADS_PER_BLOCK_FALLBACK)
-#define CLOUDVIEWER_MIN_BLOCKS_PER_SM(threads_per_block, blocks_per_sm)       \
+#define CLOUDVIEWER_MIN_BLOCKS_PER_SM(threads_per_block, blocks_per_sm)  \
     ((((threads_per_block) * (blocks_per_sm) <= CUDA_MAX_THREADS_PER_SM) \
               ? (blocks_per_sm)                                          \
-              : ((CUDA_MAX_THREADS_PER_SM + (threads_per_block)-1) /     \
+              : ((CUDA_MAX_THREADS_PER_SM + (threads_per_block) - 1) /   \
                  (threads_per_block))))
 
-#define CLOUDVIEWER_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)       \
-    __launch_bounds__((CLOUDVIEWER_MAX_THREADS_PER_BLOCK((max_threads_per_block))), \
-                      (CLOUDVIEWER_MIN_BLOCKS_PER_SM((max_threads_per_block),       \
-                                                (min_blocks_per_sm))))
+#define CLOUDVIEWER_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm) \
+    __launch_bounds__(                                                        \
+            (CLOUDVIEWER_MAX_THREADS_PER_BLOCK((max_threads_per_block))),     \
+            (CLOUDVIEWER_MIN_BLOCKS_PER_SM((max_threads_per_block),           \
+                                           (min_blocks_per_sm))))
 
 template <typename T>
-CLOUDVIEWER_DEVICE __forceinline__ T WARP_SHFL_DOWN(T value,
-                                               unsigned int delta,
-                                               int width = warpSize,
-                                               unsigned int mask = 0xffffffff) {
+CLOUDVIEWER_DEVICE __forceinline__ T
+WARP_SHFL_DOWN(T value,
+               unsigned int delta,
+               int width = warpSize,
+               unsigned int mask = 0xffffffff) {
 #if CUDA_VERSION >= 9000
     return __shfl_down_sync(mask, value, delta, width);
 #else
@@ -76,7 +78,7 @@ static inline int64_t DivUp(int64_t a, int64_t b) { return (a + b - 1) / b; }
 
 // Returns reduced fraction numerator & denominator
 CLOUDVIEWER_HOST_DEVICE static void ReduceFraction(int64_t& numerator,
-                                              int64_t& denominator) {
+                                                   int64_t& denominator) {
     // Get GCD of num and denom using Euclid's algorithm.
     // Can replace this with std::gcd if we ever support c++17.
     int64_t a = denominator;
@@ -210,8 +212,7 @@ public:
         int dim1_pow2 = dim1 < MAX_NUM_THREADS
                                 ? static_cast<int>(LastPow2(dim1))
                                 : MAX_NUM_THREADS;
-        block_width_ =
-                std::min(dim0_pow2, GetCUDACurrentWarpSize());
+        block_width_ = std::min(dim0_pow2, GetCUDACurrentWarpSize());
         block_height_ =
                 std::min(dim1_pow2, int(MAX_NUM_THREADS / block_width_));
         block_width_ =
@@ -370,9 +371,9 @@ static OffsetCalculator<1, index_t> MakeInputCalculator(
 
 template <int vt, typename index_t, typename func_t>
 CLOUDVIEWER_DEVICE void StridedIterate(func_t f,
-                                  index_t begin,
-                                  index_t end,
-                                  index_t stride) {
+                                       index_t begin,
+                                       index_t end,
+                                       index_t stride) {
     if (begin + (vt - 1) * stride < end) {
 #pragma unroll
         for (index_t i = 0; i < vt; i++) {
@@ -412,8 +413,8 @@ public:
 
     /// Idx is ignored for RegularReduceOps.
     CLOUDVIEWER_DEVICE inline arg_t Reduce(arg_t acc,
-                                      scalar_t val,
-                                      int64_t idx) const {
+                                           scalar_t val,
+                                           int64_t idx) const {
         return reduce_func_(acc, val);
     }
 
@@ -453,8 +454,8 @@ public:
     /// Called at the first round of reduction, when values are not yet
     /// associated with indices.
     CLOUDVIEWER_DEVICE inline arg_t Reduce(arg_t arg,
-                                      scalar_t val,
-                                      int64_t idx) const {
+                                           scalar_t val,
+                                           int64_t idx) const {
         return comp_func_(arg.first, val) ? arg : arg_t(val, idx);
     }
 
@@ -610,7 +611,8 @@ public:
         return value_list[0];
     }
 
-    CLOUDVIEWER_DEVICE arg_t BlockXReduce(arg_t value, char* shared_memory) const {
+    CLOUDVIEWER_DEVICE arg_t BlockXReduce(arg_t value,
+                                          char* shared_memory) const {
         int dim_x = blockDim.x;
         arg_t* shared = (arg_t*)shared_memory;
         if (dim_x > warpSize) {
@@ -636,7 +638,8 @@ public:
         return value;
     }
 
-    CLOUDVIEWER_DEVICE arg_t BlockYReduce(arg_t value, char* shared_memory) const {
+    CLOUDVIEWER_DEVICE arg_t BlockYReduce(arg_t value,
+                                          char* shared_memory) const {
         arg_t* shared = (arg_t*)shared_memory;
         shared[config_.SharedMemoryOffset(0)] = value;
         for (int offset = blockDim.y / 2; offset > 0; offset >>= 1) {
@@ -706,20 +709,21 @@ public:
     }
 
     template <class T>
-    CLOUDVIEWER_DEVICE void SetResults(const T x, const index_t base_offset) const {
+    CLOUDVIEWER_DEVICE void SetResults(const T x,
+                                       const index_t base_offset) const {
         auto res = (out_scalar_t*)((char*)dst_ + base_offset);
         *res = x;
     }
 
     CLOUDVIEWER_DEVICE void SetResultsToOutput(arg_t value,
-                                          index_t base_offset) const {
+                                               index_t base_offset) const {
         CLOUDVIEWER_ASSERT(final_output_);
         SetResults(ops_.Project(value), base_offset);
     }
 
     CLOUDVIEWER_DEVICE arg_t GlobalReduce(arg_t value,
-                                     arg_t* acc,
-                                     char* shared_memory) const {
+                                          arg_t* acc,
+                                          char* shared_memory) const {
         arg_t* reduce_buffer = (arg_t*)cta_buf_;
         index_t output_idx = config_.OutputIdx();
         auto base_offsets = output_calc_.get(output_idx);
@@ -1011,18 +1015,24 @@ void ReductionCUDA(const Tensor& src,
                         // E.g. np.sum(np.ones((0, 5)), axis=0).shape == (5,).
                         dst.Fill(0);
                     } else {
-                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a + b; },
-                               static_cast<scalar_t>(0));
+                        re.Run(
+                                [] CLOUDVIEWER_HOST_DEVICE(
+                                        scalar_t a, scalar_t b) -> scalar_t {
+                                    return a + b;
+                                },
+                                static_cast<scalar_t>(0));
                     }
                     break;
                 case ReductionOpCode::Prod:
                     if (indexer.NumWorkloads() == 0) {
                         dst.Fill(1);
                     } else {
-                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a * b; },
-                               static_cast<scalar_t>(1));
+                        re.Run(
+                                [] CLOUDVIEWER_HOST_DEVICE(
+                                        scalar_t a, scalar_t b) -> scalar_t {
+                                    return a * b;
+                                },
+                                static_cast<scalar_t>(1));
                     }
                     break;
                 case ReductionOpCode::Min:
@@ -1030,10 +1040,13 @@ void ReductionCUDA(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport Min.");
                     } else {
-                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a < b ? a : b; },
-                               static_cast<scalar_t>(
-                                       std::numeric_limits<scalar_t>::max()));
+                        re.Run(
+                                [] CLOUDVIEWER_HOST_DEVICE(
+                                        scalar_t a, scalar_t b) -> scalar_t {
+                                    return a < b ? a : b;
+                                },
+                                static_cast<scalar_t>(
+                                        std::numeric_limits<scalar_t>::max()));
                     }
                     break;
                 case ReductionOpCode::Max:
@@ -1041,10 +1054,13 @@ void ReductionCUDA(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport Max.");
                     } else {
-                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a > b ? a : b; },
-                               static_cast<scalar_t>(std::numeric_limits<
-                                                     scalar_t>::lowest()));
+                        re.Run(
+                                [] CLOUDVIEWER_HOST_DEVICE(
+                                        scalar_t a, scalar_t b) -> scalar_t {
+                                    return a > b ? a : b;
+                                },
+                                static_cast<scalar_t>(std::numeric_limits<
+                                                      scalar_t>::lowest()));
                     }
                     break;
                 default:
@@ -1068,8 +1084,9 @@ void ReductionCUDA(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport ArgMin.");
                     } else {
-                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> bool { return a < b; },
+                        re.Run([] CLOUDVIEWER_HOST_DEVICE(
+                                       scalar_t a,
+                                       scalar_t b) -> bool { return a < b; },
                                static_cast<scalar_t>(
                                        std::numeric_limits<scalar_t>::max()));
                     }
@@ -1079,8 +1096,9 @@ void ReductionCUDA(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport ArgMax.");
                     } else {
-                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> bool { return a > b; },
+                        re.Run([] CLOUDVIEWER_HOST_DEVICE(
+                                       scalar_t a,
+                                       scalar_t b) -> bool { return a > b; },
                                static_cast<scalar_t>(std::numeric_limits<
                                                      scalar_t>::lowest()));
                     }

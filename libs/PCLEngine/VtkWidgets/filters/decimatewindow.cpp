@@ -1,26 +1,31 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "decimatewindow.h"
-#include "ui_decimateconfig.h"
-#include "ui_generalfilterwindow.h"
 
 #include <VtkUtils/vtkutils.h>
 #include <VtkUtils/vtkwidget.h>
-
-#include <vtkDecimatePro.h>
-#include <vtkRenderer.h>
-#include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
+#include <vtkDecimatePro.h>
 #include <vtkLODActor.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkRenderer.h>
 
 #include <QDebug>
 
-DecimateWindow::DecimateWindow(QWidget* parent) : FilterWindow(parent)
-{
+#include "ui_decimateconfig.h"
+#include "ui_generalfilterwindow.h"
+
+DecimateWindow::DecimateWindow(QWidget* parent) : FilterWindow(parent) {
     createUi();
     setWindowTitle(tr("Decimate"));
 }
 
-void DecimateWindow::apply()
-{
+void DecimateWindow::apply() {
     if (!m_dataObject) {
         qDebug() << "DecimateWindow::apply: null data object.";
         return;
@@ -42,7 +47,7 @@ void DecimateWindow::apply()
     decimate->SetBoundaryVertexDeletion(m_boundaryVertexDeletion);
     decimate->SetInputData(m_dataObject);
 
-	setResultData(decimate->GetOutput());
+    setResultData(decimate->GetOutput());
 
     VTK_CREATE(vtkPolyDataMapper, mapper);
     mapper->SetInputConnection(decimate->GetOutputPort());
@@ -54,80 +59,67 @@ void DecimateWindow::apply()
     update();
 }
 
-void DecimateWindow::on_targetReductionSpinBox_valueChanged(double arg1)
-{
+void DecimateWindow::on_targetReductionSpinBox_valueChanged(double arg1) {
     m_targetReduction = arg1;
     apply();
 }
 
-void DecimateWindow::on_preserveTopologyCheckBox_toggled(bool checked)
-{
+void DecimateWindow::on_preserveTopologyCheckBox_toggled(bool checked) {
     m_preserveTopology = checked;
     apply();
 }
 
-void DecimateWindow::on_splittingCheckBox_toggled(bool checked)
-{
+void DecimateWindow::on_splittingCheckBox_toggled(bool checked) {
     m_splitting = checked;
     apply();
 }
 
-void DecimateWindow::on_presplitMeshCheckBox_toggled(bool checked)
-{
+void DecimateWindow::on_presplitMeshCheckBox_toggled(bool checked) {
     m_presplitMesh = checked;
     apply();
 }
 
-void DecimateWindow::on_accumulateErrorCheckBox_toggled(bool checked)
-{
+void DecimateWindow::on_accumulateErrorCheckBox_toggled(bool checked) {
     m_accumulateError = checked;
     apply();
 }
 
-void DecimateWindow::on_boundaryVertexDeletionCheckBox_toggled(bool checked)
-{
+void DecimateWindow::on_boundaryVertexDeletionCheckBox_toggled(bool checked) {
     m_boundaryVertexDeletion = checked;
     apply();
 }
 
-void DecimateWindow::on_featureAngleSpinBox_valueChanged(double arg1)
-{
+void DecimateWindow::on_featureAngleSpinBox_valueChanged(double arg1) {
     m_featureAngle = arg1;
     apply();
 }
 
-void DecimateWindow::on_splitAngleSpinBox_valueChanged(double arg1)
-{
+void DecimateWindow::on_splitAngleSpinBox_valueChanged(double arg1) {
     m_splitAngle = arg1;
     apply();
 }
 
-void DecimateWindow::on_outputPointsPrecisionSpinBox_valueChanged(int arg1)
-{
+void DecimateWindow::on_outputPointsPrecisionSpinBox_valueChanged(int arg1) {
     m_outputPointsPrecision = arg1;
     apply();
 }
 
-void DecimateWindow::on_inflectionPointRatioSpinBox_valueChanged(double arg1)
-{
+void DecimateWindow::on_inflectionPointRatioSpinBox_valueChanged(double arg1) {
     m_inflectionPointRatio = arg1;
     apply();
 }
 
-void DecimateWindow::on_degreeSpinBox_valueChanged(int arg1)
-{
+void DecimateWindow::on_degreeSpinBox_valueChanged(int arg1) {
     m_degree = arg1;
     apply();
 }
 
-void DecimateWindow::on_openButton_clicked()
-{
+void DecimateWindow::on_openButton_clicked() {
     browseFile();
     m_configUi->fileEdit->setText(fileName());
 }
 
-void DecimateWindow::createUi()
-{
+void DecimateWindow::createUi() {
     m_configUi = new Ui::DecimateConfig;
     setupConfigWidget(m_configUi);
 

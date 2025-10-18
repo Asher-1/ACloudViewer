@@ -8,11 +8,11 @@
 #include "visualization/visualizer/VisualizerWithEditing.h"
 
 #include <FileSystem.h>
+#include <HalfEdgeTriangleMesh.h>
 #include <IJsonConvertibleIO.h>
 #include <Image.h>
 #include <LineSet.h>
 #include <Logging.h>
-#include <HalfEdgeTriangleMesh.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <tinyfiledialogs/tinyfiledialogs.h>

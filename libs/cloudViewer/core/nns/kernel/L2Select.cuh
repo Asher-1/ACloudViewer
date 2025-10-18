@@ -1,35 +1,13 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                  -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// ----------------------------------------------------------------------------
-// MIT License
-//
-// Copyright (c) Facebook, Inc. and its affiliates.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-// ----------------------------------------------------------------------------
-// original path: faiss/faiss/gpu/impl/L2Select.cu
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <Helper.h>
 
 #include "cloudViewer/core/CUDAUtils.h"
 #include "core/Tensor.h"
@@ -38,7 +16,6 @@
 #include "core/nns/kernel/Reduction.cuh"
 #include "core/nns/kernel/ReductionOps.cuh"
 #include "core/nns/kernel/Select.cuh"
-#include <Helper.h>
 
 namespace cloudViewer {
 namespace core {
@@ -198,10 +175,11 @@ void runL2SelectMin(const cudaStream_t stream,
                     int k,
                     int num_cols,
                     int tile_cols) {
-    CLOUDVIEWER_ASSERT(productDistances.GetShape(0) == outDistances.GetShape(0));
+    CLOUDVIEWER_ASSERT(productDistances.GetShape(0) ==
+                       outDistances.GetShape(0));
     CLOUDVIEWER_ASSERT(productDistances.GetShape(0) == outIndices.GetShape(0));
     CLOUDVIEWER_ASSERT(centroidDistances.GetShape(0) ==
-                  productDistances.GetShape(1));
+                       productDistances.GetShape(1));
     CLOUDVIEWER_ASSERT(outDistances.GetShape(1) == k);
     CLOUDVIEWER_ASSERT(outIndices.GetShape(1) == k);
     CLOUDVIEWER_ASSERT(k <= GPU_MAX_SELECTION_K);

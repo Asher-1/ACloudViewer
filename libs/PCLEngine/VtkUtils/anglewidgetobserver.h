@@ -1,13 +1,17 @@
-#ifndef ANGLEWIDGETOBSERVER_H
-#define ANGLEWIDGETOBSERVER_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "abstractwidgetobserver.h"
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-class QPCL_ENGINE_LIB_API AngleWidgetObserver : public AbstractWidgetObserver
-{
+class QPCL_ENGINE_LIB_API AngleWidgetObserver : public AbstractWidgetObserver {
     Q_OBJECT
 public:
     explicit AngleWidgetObserver(QObject* parent = nullptr);
@@ -22,8 +26,7 @@ signals:
     void displayCenterChanged(double* pos);
 
 protected:
-    void Execute(vtkObject *caller, unsigned long eventId, void* callData);
+    void Execute(vtkObject* caller, unsigned long eventId, void* callData);
 };
 
-} // namespace VtkUtils
-#endif // ANGLEWIDGETOBSERVER_H
+}  // namespace VtkUtils

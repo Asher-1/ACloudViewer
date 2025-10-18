@@ -1,19 +1,23 @@
-#ifndef ISOSURFACEWINDOW_H
-#define ISOSURFACEWINDOW_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "filterwindow.h"
 
-namespace Ui
-{
-    class IsosurfaceConfig;
+namespace Ui {
+class IsosurfaceConfig;
 }
 
-class IsosurfaceWindow : public FilterWindow
-{
+class IsosurfaceWindow : public FilterWindow {
     Q_OBJECT
 
 public:
-    explicit IsosurfaceWindow(QWidget *parent = 0);
+    explicit IsosurfaceWindow(QWidget* parent = 0);
     ~IsosurfaceWindow();
 
     void apply();
@@ -37,5 +41,3 @@ protected:
     int m_numOfContours = 10;
     QString m_currentScalarName;
 };
-
-#endif // ISOSURFACEWINDOW_H

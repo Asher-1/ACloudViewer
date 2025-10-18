@@ -1,19 +1,9 @@
-// ##########################################################################
-// #                                                                        #
-// #                              CLOUDVIEWER                               #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "ecvApplyTransformationDlg.h"
 
@@ -161,7 +151,8 @@ void ccApplyTransformationDlg::onRotAngleValueChanged(double) {
     axis.x = static_cast<PointCoordinateType>(rxAxisDoubleSpinBox->value());
     axis.y = static_cast<PointCoordinateType>(ryAxisDoubleSpinBox->value());
     axis.z = static_cast<PointCoordinateType>(rzAxisDoubleSpinBox->value());
-    alpha = static_cast<PointCoordinateType>(cloudViewer::DegreesToRadians(rAngleDoubleSpinBox->value()));
+    alpha = static_cast<PointCoordinateType>(
+            cloudViewer::DegreesToRadians(rAngleDoubleSpinBox->value()));
     t.x = static_cast<PointCoordinateType>(txAxisDoubleSpinBox->value());
     t.y = static_cast<PointCoordinateType>(tyAxisDoubleSpinBox->value());
     t.z = static_cast<PointCoordinateType>(tzAxisDoubleSpinBox->value());
@@ -176,9 +167,12 @@ void ccApplyTransformationDlg::onEulerValueChanged(double) {
     PointCoordinateType phi, theta, psi = 0;
     CCVector3 t;
 
-    phi = static_cast<PointCoordinateType>(cloudViewer::DegreesToRadians(ePhiDoubleSpinBox->value()));
-    theta = static_cast<PointCoordinateType>(cloudViewer::DegreesToRadians(eThetaDoubleSpinBox->value()));
-    psi = static_cast<PointCoordinateType>(cloudViewer::DegreesToRadians(ePsiDoubleSpinBox->value()));
+    phi = static_cast<PointCoordinateType>(
+            cloudViewer::DegreesToRadians(ePhiDoubleSpinBox->value()));
+    theta = static_cast<PointCoordinateType>(
+            cloudViewer::DegreesToRadians(eThetaDoubleSpinBox->value()));
+    psi = static_cast<PointCoordinateType>(
+            cloudViewer::DegreesToRadians(ePsiDoubleSpinBox->value()));
     t.x = static_cast<PointCoordinateType>(etxAxisDoubleSpinBox->value());
     t.y = static_cast<PointCoordinateType>(etyAxisDoubleSpinBox->value());
     t.z = static_cast<PointCoordinateType>(etzAxisDoubleSpinBox->value());

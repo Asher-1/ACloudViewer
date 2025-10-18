@@ -157,12 +157,12 @@ Build-PipPackage -options $build_options
 
 if ($env:IGNORE_TEST -ne "ON") {
     Push-Location build  # PWD=ACloudViewer/build
-    Write-Host "Try importing cloudViewer Python package"
+    Write-Host "Try importing cloudviewer Python package"
     if ($env:BUILD_CUDA_MODULE -eq "ON") {
-        $wheel_file = (Get-Item "lib/python_package/pip_package/cloudViewer-*.whl").FullName
+        $wheel_file = (Get-Item "lib/python_package/pip_package/cloudviewer-*.whl").FullName
         Write-Host "Test with cuda version: $wheel_file"
     } else {
-        $wheel_file = (Get-Item "lib/python_package/pip_package/cloudViewer_cpu*.whl").FullName
+        $wheel_file = (Get-Item "lib/python_package/pip_package/cloudviewer_cpu*.whl").FullName
         Write-Host "Test with cpu version: $wheel_file"
     }
     $test_options = @()
@@ -183,7 +183,7 @@ if ($env:IGNORE_TEST -ne "ON") {
 
 Write-Host "Move to install path: $env:CLOUDVIEWER_INSTALL_DIR"
 New-Item -ItemType Directory -Force -Path "$env:CLOUDVIEWER_INSTALL_DIR"
-Move-Item -Path "build/lib/python_package/pip_package/cloudViewer*.whl" -Destination $env:CLOUDVIEWER_INSTALL_DIR -Force
+Move-Item -Path "build/lib/python_package/pip_package/cloudviewer*.whl" -Destination $env:CLOUDVIEWER_INSTALL_DIR -Force
 
 Write-Host "Backup whl package to $env:CLOUDVIEWER_INSTALL_DIR"
 Write-Host "LASTEXITCODE: $LASTEXITCODE"

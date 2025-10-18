@@ -241,8 +241,7 @@ void assert_ordreded_edges(
 }
 
 void assert_same_vertices_and_triangles(
-        const ccMesh& mesh,
-        const geometry::HalfEdgeTriangleMesh& het_mesh) {
+        const ccMesh& mesh, const geometry::HalfEdgeTriangleMesh& het_mesh) {
     tests::ExpectEQ(mesh.vertices_, het_mesh.vertices_);
     tests::ExpectEQ(mesh.triangles_, het_mesh.triangles_);
 }

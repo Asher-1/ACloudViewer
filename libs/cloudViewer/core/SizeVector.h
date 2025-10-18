@@ -7,12 +7,13 @@
 
 #pragma once
 
+#include <Optional.h>
+
 #include <cstddef>
 #include <string>
 #include <vector>
 
 #include "cloudViewer/core/SmallVector.h"
-#include <Optional.h>
 
 namespace cloudViewer {
 namespace core {

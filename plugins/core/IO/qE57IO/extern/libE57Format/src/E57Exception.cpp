@@ -110,8 +110,8 @@ namespace e57
    //! documented.
    E57Exception::E57Exception( ErrorCode ecode, const std::string &context, const std::string &srcFileName,
                                int srcLineNumber, const char *srcFunctionName ) :
-      errorCode_( ecode ),
-      context_( context ), sourceFunctionName_( srcFunctionName ), sourceLineNumber_( srcLineNumber )
+      errorCode_( ecode ), context_( context ), sourceFunctionName_( srcFunctionName ),
+      sourceLineNumber_( srcLineNumber )
    {
       sourceFileName_ = srcFileName.substr( srcFileName.find_last_of( "/\\" ) + 1 );
    }

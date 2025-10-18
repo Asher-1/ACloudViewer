@@ -11,9 +11,10 @@
 #include <jpeglib.h>  // Include after cstddef to define size_t
 // clang-format on
 
-#include "cloudViewer/t/io/ImageIO.h"
 #include <FileSystem.h>
 #include <Logging.h>
+
+#include "cloudViewer/t/io/ImageIO.h"
 
 namespace cloudViewer {
 namespace t {

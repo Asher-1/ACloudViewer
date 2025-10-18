@@ -7,6 +7,10 @@
 
 #include "pipelines/registration/GlobalOptimization.h"
 
+#include <Eigen.h>
+#include <Logging.h>
+#include <Timer.h>
+
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <tuple>
@@ -15,9 +19,6 @@
 #include "pipelines/registration/GlobalOptimizationConvergenceCriteria.h"
 #include "pipelines/registration/GlobalOptimizationMethod.h"
 #include "pipelines/registration/PoseGraph.h"
-#include <Eigen.h>
-#include <Logging.h>
-#include <Timer.h>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -681,7 +682,8 @@ void GlobalOptimization(PoseGraph &pose_graph,
                         const GlobalOptimizationOption &option
                         /* = GlobalOptimizationOption() */) {
     if (!ValidatePoseGraph(pose_graph)) return;
-    std::shared_ptr<PoseGraph> pose_graph_pre = cloudViewer::make_shared<PoseGraph>();
+    std::shared_ptr<PoseGraph> pose_graph_pre =
+            cloudViewer::make_shared<PoseGraph>();
     *pose_graph_pre = pose_graph;
     method.OptimizePoseGraph(*pose_graph_pre, criteria, option);
     auto pose_graph_pre_pruned =

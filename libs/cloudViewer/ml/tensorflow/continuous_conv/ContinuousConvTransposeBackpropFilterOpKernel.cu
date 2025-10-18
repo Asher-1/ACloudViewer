@@ -121,15 +121,15 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(feattype, outtype, realtype, indextype)                  \
-    REGISTER_KERNEL_BUILDER(                                            \
-            Name("CloudviewerContinuousConvTransposeBackpropFilter")    \
-                    .Device(DEVICE_GPU)                                 \
-                    .TypeConstraint<feattype>("TFeat")                  \
-                    .TypeConstraint<outtype>("output_type")             \
-                    .TypeConstraint<realtype>("TReal")                  \
-                    .TypeConstraint<indextype>("TIndex"),               \
-            ContinuousConvTransposeBackpropFilterOpKernelCUDA<          \
+#define REG_KB(feattype, outtype, realtype, indextype)               \
+    REGISTER_KERNEL_BUILDER(                                         \
+            Name("CloudviewerContinuousConvTransposeBackpropFilter") \
+                    .Device(DEVICE_GPU)                              \
+                    .TypeConstraint<feattype>("TFeat")               \
+                    .TypeConstraint<outtype>("output_type")          \
+                    .TypeConstraint<realtype>("TReal")               \
+                    .TypeConstraint<indextype>("TIndex"),            \
+            ContinuousConvTransposeBackpropFilterOpKernelCUDA<       \
                     feattype, outtype, realtype, indextype>);
 REG_KB(float, float, float, int32)
 #undef REG_KB

@@ -38,7 +38,8 @@ def test_simple_dataset_base():
         gt_prefix)
 
     data_descriptor = cv3d.data.DataDescriptor(
-        url=cv3d.data.cloudViewer_downloads_prefix + "20220201-data/BunnyMesh.ply",
+        url=cv3d.data.cloudViewer_downloads_prefix +
+        "20220201-data/BunnyMesh.ply",
         md5="568f871d1a221ba6627569f1e6f9a3f2")
     single_download_dataset = cv3d.data.DownloadDataset(
         prefix=gt_prefix,
@@ -225,6 +226,7 @@ def test_ply_point_cloud():
     assert Path(ply_pointcloud.data_root) == gt_data_root
     assert Path(ply_pointcloud.download_dir) == gt_download_dir
     assert Path(ply_pointcloud.extract_dir) == gt_extract_dir
+
 
 def test_sample_nyu_rgbd_image():
     gt_prefix = "SampleNYURGBDImage"
@@ -1012,12 +1014,14 @@ def test_redwood_indoor_office2():
         im_noisy_rgbds.append(im_rgbd)
     assert len(im_noisy_rgbds) == 2538
 
+
 def test_bin_facets_model():
     gt_prefix = "FacetsModel"
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
         gt_prefix)
 
-    cv3d.data.set_custom_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+    cv3d.data.set_custom_downloads_prefix(
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
     facets_data = cv3d.data.FacetsModel()
     assert Path(gt_download_dir).is_dir()
 
@@ -1029,12 +1033,14 @@ def test_bin_facets_model():
     assert Path(facets_data.download_dir) == gt_download_dir
     assert Path(facets_data.extract_dir) == gt_extract_dir
 
+
 def test_bin_polylines_model():
     gt_prefix = "PolylinesModel"
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
         gt_prefix)
 
-    cv3d.data.set_custom_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+    cv3d.data.set_custom_downloads_prefix(
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
     polylines_data = cv3d.data.PolylinesModel()
     assert Path(gt_download_dir).is_dir()
 
@@ -1045,17 +1051,20 @@ def test_bin_polylines_model():
     assert Path(polylines_data.data_root) == gt_data_root
     assert Path(polylines_data.download_dir) == gt_download_dir
     assert Path(polylines_data.extract_dir) == gt_extract_dir
-    
+
+
 def test_bin_baluster_vase():
     gt_prefix = "BalusterVase"
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
         gt_prefix)
 
-    cv3d.data.set_custom_downloads_prefix("https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
+    cv3d.data.set_custom_downloads_prefix(
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/")
     baluster_vase_data = cv3d.data.BalusterVase()
     assert Path(gt_download_dir).is_dir()
 
-    assert Path(baluster_vase_data.path) == gt_extract_dir / "F1980_baluster_vase.glb"
+    assert Path(
+        baluster_vase_data.path) == gt_extract_dir / "F1980_baluster_vase.glb"
     assert Path(baluster_vase_data.path).is_file()
 
     assert baluster_vase_data.prefix == gt_prefix

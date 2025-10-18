@@ -127,4 +127,3 @@ INSTANTIATE(float, int32_t)
 INSTANTIATE(float, int64_t)
 INSTANTIATE(double, int32_t)
 INSTANTIATE(double, int64_t)
-

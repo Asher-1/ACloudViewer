@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include <string>
 
 #include "cloudViewer/core/Tensor.h"
@@ -16,7 +18,6 @@
 #include "cloudViewer/t/geometry/DrawableGeometry.h"
 #include "cloudViewer/t/geometry/Geometry.h"
 #include "cloudViewer/t/geometry/TensorMap.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

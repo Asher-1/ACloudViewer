@@ -16,7 +16,7 @@ if __name__ == '__main__':
     color = cv3d.t.io.read_image(tum_data.color_path).to(device)
 
     intrinsic = cv3d.core.Tensor([[535.4, 0, 320.1], [0, 539.2, 247.6],
-                                 [0, 0, 1]])
+                                  [0, 0, 1]])
     rgbd = cv3d.t.geometry.RGBDImage(color, depth)
 
     pcd = cv3d.t.geometry.PointCloud.create_from_rgbd_image(rgbd,

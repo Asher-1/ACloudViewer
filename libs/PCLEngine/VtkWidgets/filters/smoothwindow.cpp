@@ -1,25 +1,30 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "smoothwindow.h"
-#include "ui_smoothconfig.h"
-#include "ui_generalfilterwindow.h"
 
 #include <VtkUtils/vtkutils.h>
 #include <VtkUtils/vtkwidget.h>
-
-#include <vtkDecimatePro.h>
-#include <vtkRenderer.h>
-#include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
+#include <vtkDecimatePro.h>
 #include <vtkLODActor.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkRenderer.h>
 #include <vtkSmoothPolyDataFilter.h>
 
-SmoothWindow::SmoothWindow(QWidget* parent) : FilterWindow(parent)
-{
+#include "ui_generalfilterwindow.h"
+#include "ui_smoothconfig.h"
+
+SmoothWindow::SmoothWindow(QWidget* parent) : FilterWindow(parent) {
     createUi();
     setWindowTitle(tr("Smooth"));
 }
 
-void SmoothWindow::apply()
-{
+void SmoothWindow::apply() {
     if (!m_dataObject) {
         qDebug() << "SmoothWindow::apply: null data object.";
         return;
@@ -35,7 +40,7 @@ void SmoothWindow::apply()
     smooth->SetEdgeAngle(m_edgeAngle);
     smooth->Update();
 
-	setResultData(smooth->GetOutput());
+    setResultData(smooth->GetOutput());
 
     VTK_CREATE(vtkPolyDataMapper, mapper);
     mapper->SetInputConnection(smooth->GetOutputPort());
@@ -46,50 +51,42 @@ void SmoothWindow::apply()
     update();
 }
 
-void SmoothWindow::on_openButton_clicked()
-{
+void SmoothWindow::on_openButton_clicked() {
     browseFile();
     m_configUi->fileEdit->setText(fileName());
 }
 
-void SmoothWindow::on_convergenceSpinBox_valueChanged(double arg1)
-{
+void SmoothWindow::on_convergenceSpinBox_valueChanged(double arg1) {
     m_convergence = arg1;
     apply();
 }
 
-void SmoothWindow::on_numOfIterationsSpinBox_valueChanged(int arg1)
-{
+void SmoothWindow::on_numOfIterationsSpinBox_valueChanged(int arg1) {
     m_numberOfIterations = arg1;
     apply();
 }
 
-void SmoothWindow::on_featureEdgeSmoothingCheckBox_toggled(bool checked)
-{
+void SmoothWindow::on_featureEdgeSmoothingCheckBox_toggled(bool checked) {
     m_featureEdgeSmoothing = checked;
     apply();
 }
 
-void SmoothWindow::on_boundarySmoothingCheckBox_toggled(bool checked)
-{
+void SmoothWindow::on_boundarySmoothingCheckBox_toggled(bool checked) {
     m_boundarySmoothing = checked;
     apply();
 }
 
-void SmoothWindow::on_featureAngleSpinBox_valueChanged(double arg1)
-{
+void SmoothWindow::on_featureAngleSpinBox_valueChanged(double arg1) {
     m_featureAngle = arg1;
     apply();
 }
 
-void SmoothWindow::on_edgeAngleSpinBox_valueChanged(double arg1)
-{
+void SmoothWindow::on_edgeAngleSpinBox_valueChanged(double arg1) {
     m_edgeAngle = arg1;
     apply();
 }
 
-void SmoothWindow::createUi()
-{
+void SmoothWindow::createUi() {
     m_configUi = new Ui::SmoothConfig;
     setupConfigWidget(m_configUi);
 

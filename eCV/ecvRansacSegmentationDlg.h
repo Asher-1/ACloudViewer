@@ -1,35 +1,22 @@
-//##########################################################################
-//#                                                                        #
-//#                       CLOUDVIEWER PLUGIN: qPCL                         #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                         COPYRIGHT: Asher                               #
-//#                                                                        #
-//##########################################################################
-//
-#ifndef ECV_RANSAC_SEGMENTATION_DLG_HEADER
-#define ECV_RANSAC_SEGMENTATION_DLG_HEADER
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include <ui_ransacSegmentationDlg.h>
 
-//Qt
+// Qt
 #include <QDialog>
 
-//system
+// system
 #include <vector>
 
-class ecvRansacSegmentationDlg : public QDialog, public Ui::RansacSegmentationDlg
-{
+class ecvRansacSegmentationDlg : public QDialog,
+                                 public Ui::RansacSegmentationDlg {
 public:
-	explicit ecvRansacSegmentationDlg(QWidget* parent = 0);
+    explicit ecvRansacSegmentationDlg(QWidget* parent = 0);
 };
-
-#endif // ECV_RANSAC_SEGMENTATION_DLG_HEADER

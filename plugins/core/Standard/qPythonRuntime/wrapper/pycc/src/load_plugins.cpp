@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QDirIterator>
@@ -96,7 +103,8 @@ void load_pluginWrappers(py::module_ &m)
         return;
     }
 
-        py::print("[PythonRuntime] Start load plugin python wrapper from: '", pluginPath.toStdString(), "'");
+    py::print(
+        "[PythonRuntime] Start load plugin python wrapper from: '", pluginPath.toStdString(), "'");
     py::module_::import("sys").attr("path").attr("append")(pluginPath);
     QDirIterator iter(pluginPathDir);
     while (iter.hasNext())

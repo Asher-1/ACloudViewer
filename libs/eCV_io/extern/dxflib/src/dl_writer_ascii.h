@@ -9,7 +9,7 @@
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
 **
-** Licensees holding valid dxflib Professional Edition licenses may use 
+** Licensees holding valid dxflib Professional Edition licenses may use
 ** this file in accordance with the dxflib Commercial License
 ** Agreement provided with the Software.
 **
@@ -30,16 +30,17 @@
 
 #if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+#endif  // _MSC_VER > 1000
 
-#include "dl_writer.h"
 #include <fstream>
 #include <string>
+
+#include "dl_writer.h"
 
 /**
  * Implements functions defined in DL_Writer for writing low
  *   level DXF constructs to an ASCII format DXF file.
- * 
+ *
  * @para fname File name of the file to be created.
  * @para version DXF version. Defaults to DL_VERSION_2002.
  *
@@ -48,8 +49,8 @@
  */
 class DXFLIB_EXPORT DL_WriterA : public DL_Writer {
 public:
-    DL_WriterA(const char* fname, DL_Codes::version version=DL_VERSION_2000)
-            : DL_Writer(version), m_ofile(fname) {}
+    DL_WriterA(const char* fname, DL_Codes::version version = DL_VERSION_2000)
+        : DL_Writer(version), m_ofile(fname) {}
     virtual ~DL_WriterA() {}
 
     bool openFailed() const;
@@ -67,8 +68,6 @@ private:
      * DXF file to be created.
      */
     mutable std::ofstream m_ofile;
-
 };
 
 #endif
-

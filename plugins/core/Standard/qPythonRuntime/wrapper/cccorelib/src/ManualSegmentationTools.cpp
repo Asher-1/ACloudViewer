@@ -1,19 +1,9 @@
-// ##########################################################################
-// #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                       #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                   COPYRIGHT: Thomas Montaigu                           #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
 
@@ -35,15 +25,15 @@ void define_ManualSegmentationTools(py::module &cccorelib)
     py::class_<ManualSegmentationTools::MeshCutterParams> PyMeshCutterParams(PyManualSegmentationTools,
                                                                              "MeshCutterParams");
     PyManualSegmentationTools
-        .def_static(
-            "segment",
-            (cloudViewer::ReferenceCloud *
-             (*)(cloudViewer::GenericIndexedCloudPersist *, const cloudViewer::Polyline *, bool, const float *))(
-                &ManualSegmentationTools::segment),
-            "aCloud"_a,
-            "poly"_a,
-            "keepInside"_a,
-            "viewMat"_a = nullptr)
+        .def_static("segment",
+                    (cloudViewer::ReferenceCloud * (*)(cloudViewer::GenericIndexedCloudPersist *,
+                                                       const cloudViewer::Polyline *,
+                                                       bool,
+                                                       const float *))(&ManualSegmentationTools::segment),
+                    "aCloud"_a,
+                    "poly"_a,
+                    "keepInside"_a,
+                    "viewMat"_a = nullptr)
 
         .def_static("segment",
                     (cloudViewer::ReferenceCloud *

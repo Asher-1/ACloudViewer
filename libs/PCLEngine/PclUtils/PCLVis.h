@@ -1,34 +1,23 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_PCLVIS_HEADER
-#define ECV_PCLVIS_HEADER
+#pragma once
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
 
 // LOCAL
+#include <mutex>
+#include <thread>
+
 #include "PCLCloud.h"
 #include "WidgetMap.h"
 #include "qPCL.h"
-
-#include <mutex>
-#include <thread>
 
 // ECV_DB_LIB
 #include <ecvColorTypes.h>
@@ -533,5 +522,3 @@ protected:
 
 typedef std::shared_ptr<PCLVis> PCLVisPtr;
 }  // namespace PclUtils
-
-#endif  // ECV_PCLVIS_HEADER

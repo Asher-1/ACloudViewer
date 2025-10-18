@@ -1,24 +1,13 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_VIEWPORT_PARAMETERS_HEADER
-#define ECV_VIEWPORT_PARAMETERS_HEADER
+#pragma once
 
-//Local
+// Local
 #include "eCV_db.h"
 #include "ecvGLMatrix.h"
 #include "ecvSerializableObject.h"
@@ -26,20 +15,21 @@
 class QRect;
 
 //! Standard parameters for GL displays/viewports
-class ECV_DB_LIB_API ecvViewportParameters : public ccSerializableObject
-{
-public: //functions
-
+class ECV_DB_LIB_API ecvViewportParameters : public ccSerializableObject {
+public:  // functions
     //! Default constructor
     ecvViewportParameters();
 
     //! Copy constructor
     ecvViewportParameters(const ecvViewportParameters& params);
 
-    //inherited from ccSerializableObject
+    // inherited from ccSerializableObject
     bool isSerializable() const override { return true; }
     bool toFile(QFile& out) const override;
-    bool fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
+    bool fromFile(QFile& in,
+                  short dataVersion,
+                  int flags,
+                  LoadedIDMap& oldToNewIDMap) override;
 
     //! Sets the pivot point (for object-centered view mode)
     void setPivotPoint(const CCVector3d& P, bool autoUpdateFocal = true);
@@ -56,16 +46,18 @@ public: //functions
 
     //! Sets the 'focal' distance
     /** \warning changes the camera cener position in object-centered view mode
-    **/
+     **/
     void setFocalDistance(double distance);
 
     //! Computes the 'focal' distance
     double getFocalDistance() const { return focalDistance; }
 
-    //! Helper: converts an integer (increment) in [0 iMax] to a double (zNear) value in [0.001 1]
+    //! Helper: converts an integer (increment) in [0 iMax] to a double (zNear)
+    //! value in [0.001 1]
     static double IncrementToZNearCoef(int i, int iMax);
 
-    //! Helper: converts a double (zNear) value in ]0 1] to integer increments in [0 iMax]
+    //! Helper: converts a double (zNear) value in ]0 1] to integer increments
+    //! in [0 iMax]
     static int ZNearCoefToIncrement(double coef, int iMax);
 
     //! Computes the view matrix
@@ -95,12 +87,12 @@ public: //functions
 
     //! Computes the ratio 'distance to half width' (based on the current FOV)
     /** Half width = ratio * distance = tan(fov / 2) * distance
-    **/
+     **/
     double computeDistanceToHalfWidthRatio() const;
 
     //! Computes the ratio 'distance to width' (based on the current FOV)
     /** Width = ratio * distance = (2 * tan(fov / 2)) * distance
-    **/
+     **/
     double computeDistanceToWidthRatio() const;
 
     //! Computes the object 'width' at the 'focal' distance
@@ -109,8 +101,7 @@ public: //functions
     //! Computes the pixel size at the 'focal' distance
     double computePixelSize(int glWidth) const;
 
-public: //variables
-
+public:  // variables
     //! Visualization matrix (rotation only)
     ccGLMatrixd viewMat;
 
@@ -131,9 +122,10 @@ public: //variables
 
     //! Perspective view state
     bool perspectiveView;
-    //! Whether view is centered on displayed scene (true) or on the user eye (false)
+    //! Whether view is centered on displayed scene (true) or on the user eye
+    //! (false)
     /** Always true for ortho. mode.
-    **/
+     **/
     bool objectCenteredView;
 
     //! Theoretical perspective 'zNear' relative position
@@ -153,7 +145,6 @@ public: //variables
     float cameraAspectRatio;
 
 protected:
-
     //! Focal distance
     double focalDistance;
 
@@ -163,5 +154,3 @@ protected:
     //! Camera center
     CCVector3d cameraCenter;
 };
-
-#endif // ECV_VIEWPORT_PARAMETERS_HEADER

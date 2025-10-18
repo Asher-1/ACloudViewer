@@ -7,10 +7,11 @@
 
 #include "cloudViewer/visualization/visualizer/MessageProcessor.h"
 
+#include <ecvMesh.h>
+
 #include <zmq.hpp>
 
 #include "cloudViewer/geometry/PointCloud.h"
-#include <ecvMesh.h>
 #include "cloudViewer/io/rpc/MessageUtils.h"
 #include "cloudViewer/io/rpc/Messages.h"
 #include "cloudViewer/visualization/gui/Application.h"

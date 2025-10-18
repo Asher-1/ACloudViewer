@@ -32,7 +32,7 @@ def pointcloud_generator():
     bunny = cv3d.data.BunnyMesh()
     mesh_bunny = cv3d.io.read_triangle_mesh(bunny.path)
     mesh_bunny.compute_vertex_normals()
-    
+
     yield 'bunny', mesh_bunny.scale(10).sample_points_uniformly(int(1e5))
 
 

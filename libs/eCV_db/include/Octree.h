@@ -7,14 +7,14 @@
 
 #pragma once
 
-#include "eCV_db.h"
+#include <IJsonConvertible.h>
 
 #include <cstddef>
 #include <memory>
 #include <vector>
 
+#include "eCV_db.h"
 #include "ecvHObject.h"
-#include <IJsonConvertible.h>
 
 class ccBBox;
 class ccPointCloud;
@@ -73,7 +73,8 @@ public:
 /// Design decision: do not store origin and size of a node
 ///     - Good: better space efficiency.
 ///     - Bad: need to recompute origin and size when traversing.
-class ECV_DB_LIB_API OctreeNode : public cloudViewer::utility::IJsonConvertible {
+class ECV_DB_LIB_API OctreeNode
+    : public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     ///
@@ -81,7 +82,8 @@ public:
     virtual ~OctreeNode() {}
 
     /// Factory function to construct an OctreeNode by parsing the json value.
-    static std::shared_ptr<OctreeNode> ConstructFromJsonValue(const Json::Value& value);
+    static std::shared_ptr<OctreeNode> ConstructFromJsonValue(
+            const Json::Value& value);
 };
 
 /// \class OctreeInternalNode
@@ -247,24 +249,19 @@ public:
 /// \class Octree
 ///
 /// \brief Octree datastructure.
-class ECV_DB_LIB_API Octree : public ccHObject, public cloudViewer::utility::IJsonConvertible {
+class ECV_DB_LIB_API Octree : public ccHObject,
+                              public cloudViewer::utility::IJsonConvertible {
 public:
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     /// \brief Default Constructor.
     Octree(const char* name = "Octree2")
-        : ccHObject(name),
-          origin_(0, 0, 0),
-          size_(0),
-          max_depth_(0) {}
+        : ccHObject(name), origin_(0, 0, 0), size_(0), max_depth_(0) {}
     /// \brief Parameterized Constructor.
     ///
     /// \param max_depth Sets the value of the max depth of the Octree.
     Octree(const size_t& max_depth, const char* name = "Octree2")
-        : ccHObject(name),
-          origin_(0, 0, 0),
-          size_(0),
-          max_depth_(max_depth) {}
+        : ccHObject(name), origin_(0, 0, 0), size_(0), max_depth_(max_depth) {}
     /// \brief Parameterized Constructor.
     ///
     /// \param max_depth Sets the value of the max depth of the Octree.
@@ -272,8 +269,8 @@ public:
     /// \param size Sets the outer bounding box edge size for the whole octree.
     Octree(const size_t& max_depth,
            const Eigen::Vector3d& origin,
-           const double& size, 
-		   const char* name = "Octree2")
+           const double& size,
+           const char* name = "Octree2")
         : ccHObject(name),
           origin_(origin),
           size_(size),
@@ -281,27 +278,33 @@ public:
     Octree(const Octree& src_octree, const char* name = "Octree2");
     ~Octree() override {}
 
+    // inherited methods (ccHObject)
+    virtual bool isSerializable() const override { return true; }
 
-	//inherited methods (ccHObject)
-	virtual bool isSerializable() const override { return true; }
+    //! Returns unique class ID
+    virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::POINT_OCTREE2;
+    }
 
-	//! Returns unique class ID
-	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::POINT_OCTREE2; }
-
-	virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
+    virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
 public:
     Octree& Clear();
-	inline virtual bool IsEmpty() const override { return root_node_ == nullptr; }
-	virtual Eigen::Vector3d GetMinBound() const override;
-	virtual Eigen::Vector3d GetMaxBound() const override;
-	virtual Eigen::Vector3d GetCenter() const override;
-	virtual ccBBox GetAxisAlignedBoundingBox() const override;
-	virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
+    inline virtual bool IsEmpty() const override {
+        return root_node_ == nullptr;
+    }
+    virtual Eigen::Vector3d GetMinBound() const override;
+    virtual Eigen::Vector3d GetMaxBound() const override;
+    virtual Eigen::Vector3d GetCenter() const override;
+    virtual ccBBox GetAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
     virtual Octree& Transform(const Eigen::Matrix4d& transformation) override;
-    virtual Octree& Translate(const Eigen::Vector3d& translation, bool relative = true) override;
-    virtual Octree& Scale(const double s, const Eigen::Vector3d& center) override;
-    virtual Octree& Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) override;
+    virtual Octree& Translate(const Eigen::Vector3d& translation,
+                              bool relative = true) override;
+    virtual Octree& Scale(const double s,
+                          const Eigen::Vector3d& center) override;
+    virtual Octree& Rotate(const Eigen::Matrix3d& R,
+                           const Eigen::Vector3d& center) override;
     bool ConvertToJsonValue(Json::Value& value) const;
     bool ConvertFromJsonValue(const Json::Value& value);
 

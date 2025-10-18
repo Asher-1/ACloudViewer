@@ -2,8 +2,8 @@ include(ExternalProject)
 
 ExternalProject_Add(ext_draco
         PREFIX draco
-        URL https://github.com/google/draco/archive/refs/tags/1.5.2.tar.gz
-        URL_HASH SHA256=a887e311ec04a068ceca0bd6f3865083042334fbff26e65bc809e8978b2ce9cd
+        URL https://github.com/google/draco/archive/refs/tags/1.5.7.tar.gz
+        URL_HASH SHA256=bf6b105b79223eab2b86795363dfe5e5356050006a96521477973aba8f036fe1
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/draco"
         UPDATE_COMMAND ""
         CMAKE_ARGS

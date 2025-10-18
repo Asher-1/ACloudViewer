@@ -1,32 +1,38 @@
-#include "vtkBoxWidgetCustomCallback.h"
-#include <vtkActor.h>
-#include <vtkTransform.h>
-#include <vtkBoxWidget.h>
-#include <vtkBoxRepresentation.h>
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-vtkBoxWidgetCustomCallback *vtkBoxWidgetCustomCallback::New()
-{
+#include "vtkBoxWidgetCustomCallback.h"
+
+#include <vtkActor.h>
+#include <vtkBoxRepresentation.h>
+#include <vtkBoxWidget.h>
+#include <vtkTransform.h>
+
+vtkBoxWidgetCustomCallback *vtkBoxWidgetCustomCallback::New() {
     return new vtkBoxWidgetCustomCallback;
 }
 
-void vtkBoxWidgetCustomCallback::SetActor(vtkSmartPointer<vtkActor> actor)
-{
-	m_actor = actor;
+void vtkBoxWidgetCustomCallback::SetActor(vtkSmartPointer<vtkActor> actor) {
+    m_actor = actor;
 }
 
-void vtkBoxWidgetCustomCallback::Execute(vtkObject *caller, unsigned long, void *)
-{
-	if (m_preview)
-	{
-		//½«µ÷ÓÃ¸Ã»Øµ÷º¯ÊıµÄµ÷ÓÃÕßcallerÖ¸Õë£¬×ª»»ÎªvtkBoxWidget2ÀàĞÍ¶ÔÏóÖ¸Õë
-		vtkSmartPointer<vtkBoxWidget> boxWidget = vtkBoxWidget::SafeDownCast(caller);
-		// vtkSmartPointer<vtkBoxWidget2> boxWidget=reinterpret_cast<vtkBoxWidget2>(caller);ÕâÑù×ª»»²»¿ÉÒÔ£¬vtkBoxWidget¿ÉÒÔ
-		vtkSmartPointer<vtkTransform> t = vtkSmartPointer<vtkTransform>::New();
-		//½«boxWidgetÖĞµÄ±ä»»¾ØÕó±£´æÔÚtÖĞ
-		//vtkBoxRepresentation::SafeDownCast(boxWidget->GetRepresentation())->GetTransform(t);
-		boxWidget->GetTransform(t);
-		//this->m_actor->SetUserTransform(t);
-	}
+void vtkBoxWidgetCustomCallback::Execute(vtkObject *caller,
+                                         unsigned long,
+                                         void *) {
+    if (m_preview) {
+        // å°†è°ƒç”¨è¯¥å›è°ƒå‡½æ•°çš„è°ƒç”¨è€…calleræŒ‡é’ˆï¼Œè½¬æ¢ä¸ºvtkBoxWidget2ç±»å‹å¯¹è±¡æŒ‡é’ˆ
+        vtkSmartPointer<vtkBoxWidget> boxWidget =
+                vtkBoxWidget::SafeDownCast(caller);
+        // vtkSmartPointer<vtkBoxWidget2>
+        // boxWidget=reinterpret_cast<vtkBoxWidget2>(caller);è¿™æ ·è½¬æ¢ä¸å¯ä»¥ï¼ŒvtkBoxWidgetå¯ä»¥
+        vtkSmartPointer<vtkTransform> t = vtkSmartPointer<vtkTransform>::New();
+        // å°†boxWidgetä¸­çš„å˜æ¢çŸ©é˜µä¿å­˜åœ¨tä¸­
+        //  vtkBoxRepresentation::SafeDownCast(boxWidget->GetRepresentation())->GetTransform(t);
+        boxWidget->GetTransform(t);
+        // this->m_actor->SetUserTransform(t);
+    }
 }
-
-

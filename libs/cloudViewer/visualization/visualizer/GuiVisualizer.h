@@ -28,13 +28,13 @@ public:
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     GuiVisualizer(const std::string& title, int width, int height);
-    GuiVisualizer(const std::vector<std::shared_ptr<const ccHObject>>&
-                          geometries,
-                  const std::string& title,
-                  int width,
-                  int height,
-                  int left,
-                  int top);
+    GuiVisualizer(
+            const std::vector<std::shared_ptr<const ccHObject>>& geometries,
+            const std::string& title,
+            int width,
+            int height,
+            int left,
+            int top);
     virtual ~GuiVisualizer();
 
     void SetTitle(const std::string& title);

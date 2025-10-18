@@ -7,9 +7,10 @@
 
 #include "cloudViewer/core/hashmap/DeviceHashBackend.h"
 
-#include "cloudViewer/core/hashmap/HashMap.h"
 #include <Helper.h>
 #include <Logging.h>
+
+#include "cloudViewer/core/hashmap/HashMap.h"
 
 namespace cloudViewer {
 namespace core {

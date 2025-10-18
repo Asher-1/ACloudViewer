@@ -1,69 +1,65 @@
-/*
- * QRoundProgressBar - a circular progress bar Qt widget.
- *
- * Sintegrial Technologies (c) 2015-now
- *
- * The software is freeware and is distributed "as is" with the complete source codes.
- * Anybody is free to use it in any software projects, either commercial or non-commercial.
- * Please do not remove this copyright message and remain the name of the author unchanged.
- *
- * It is very appreciated if you produce some feedback to us case you are going to use
- * the software.
- *
- * Please send your questions, suggestions, and information about found issues to the
- *
- * sintegrial@gmail.com
- *
- */
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef QROUNDPROGRESSBAR_H
-#define QROUNDPROGRESSBAR_H
+#pragma once
 
 #include <QWidget>
 
 #include "../qPCL.h"
 
 /**
- * @brief The QRoundProgressBar class represents a circular progress bar and maintains its API
- * similar to the *QProgressBar*.
+ * @brief The QRoundProgressBar class represents a circular progress bar and
+ * maintains its API similar to the *QProgressBar*.
  *
  * ### Styles
- * QRoundProgressBar currently supports Donut, Pie and Line styles. See setBarStyle() for more details.
+ * QRoundProgressBar currently supports Donut, Pie and Line styles. See
+ * setBarStyle() for more details.
  *
  * ### Colors
- * Generally QRoundProgressBar uses its palette and font attributes to define how it will look.
+ * Generally QRoundProgressBar uses its palette and font attributes to define
+ * how it will look.
  *
  * The following \a QPalette members are considered:
- * - *QPalette::Window*   background of the whole widget (normally should be set to Qt::NoBrush)
- * - *QPalette::Base*     background of the non-filled progress bar area (should be set to Qt::NoBrush to make it transparent)
- * - *QPalette::AlternateBase*  background of the central circle where the text is shown (for \a Donut style)
- * - *QPalette::Shadow*         foreground of the non-filled progress bar area (i.e. border color)
+ * - *QPalette::Window*   background of the whole widget (normally should be set
+ * to Qt::NoBrush)
+ * - *QPalette::Base*     background of the non-filled progress bar area (should
+ * be set to Qt::NoBrush to make it transparent)
+ * - *QPalette::AlternateBase*  background of the central circle where the text
+ * is shown (for \a Donut style)
+ * - *QPalette::Shadow*         foreground of the non-filled progress bar area
+ * (i.e. border color)
  * - *QPalette::Highlight*      background of the filled progress bar area
  * - *QPalette::Text*           color of the text shown in the center
  *
  * Create a \a QPalette with given attributes and apply it via `setPalette()`.
  *
  * ### Color gradient
- * \a Donut and \a Pie styles allow to use color gradient for currernt value area instead of plain brush fill.
- * See setDataColors() for more details.
+ * \a Donut and \a Pie styles allow to use color gradient for currernt value
+ * area instead of plain brush fill. See setDataColors() for more details.
  *
  * ### Value text
- * Value text is generally drawn inside the QRoundProgressBar using its `font()` and \a QPalette::Text role from its `palette()`.
+ * Value text is generally drawn inside the QRoundProgressBar using its `font()`
+ * and \a QPalette::Text role from its `palette()`.
  *
- * To define pattern of the text, use setFormat() function (see Qt's \a QProgressBar for more details).
+ * To define pattern of the text, use setFormat() function (see Qt's \a
+ * QProgressBar for more details).
  *
  * To define number of decimals to be shown, use setDecimals() function.
  *
  * ### Font
  * To use own font for value text, apply it via `setFont()`.
  *
- * By default, font size will be adjusted automatically to fit the inner circle of the widget.
+ * By default, font size will be adjusted automatically to fit the inner circle
+ * of the widget.
  */
-class QPCL_ENGINE_LIB_API QRoundProgressBar : public QWidget
-{
+class QPCL_ENGINE_LIB_API QRoundProgressBar : public QWidget {
     Q_OBJECT
-public:    
-    explicit QRoundProgressBar(QWidget *parent = 0);
+public:
+    explicit QRoundProgressBar(QWidget* parent = 0);
 
     static const int PositionLeft = 180;
     static const int PositionTop = 90;
@@ -85,8 +81,7 @@ public:
     /**
      * @brief The BarStyle enum defines general look of the progress bar.
      */
-    enum BarStyle
-    {
+    enum BarStyle {
         /// Donut style (filled torus around the text)
         StyleDonut,
         /// Pie style (filled pie segment with the text in center)
@@ -126,14 +121,18 @@ public:
     double dataPenWidth() const { return m_dataPenWidth; }
 
     /**
-     * @brief Sets colors of the visible data and makes gradient brush from them.
-     * Gradient colors can be set for \a Donut and \a Pie styles (see setBarStyle() function).
+     * @brief Sets colors of the visible data and makes gradient brush from
+     * them. Gradient colors can be set for \a Donut and \a Pie styles (see
+     * setBarStyle() function).
      *
-     * *Warning*: this function will override widget's `palette()` to set dynamically created gradient brush.
+     * *Warning*: this function will override widget's `palette()` to set
+     * dynamically created gradient brush.
      *
-     * @param stopPoints List of colors (should have at least 2 values, see Qt's \a QGradientStops for more details).
-     * Color value at point 0 corresponds to the minimum() value, while color value at point 1
-     * corresponds to the maximum(). Other colors will be distributed accordingly to the defined ranges (see setRange()).
+     * @param stopPoints List of colors (should have at least 2 values, see Qt's
+     * \a QGradientStops for more details). Color value at point 0 corresponds
+     * to the minimum() value, while color value at point 1 corresponds to the
+     * maximum(). Other colors will be distributed accordingly to the defined
+     * ranges (see setRange()).
      */
     void setDataColors(const QGradientStops& stopPoints);
 
@@ -145,14 +144,14 @@ public:
      */
     void setFormat(const QString& format);
     /**
-     * @brief Sets format string to empty string. No text will be shown therefore.
-     * See setFormat() for more information.
+     * @brief Sets format string to empty string. No text will be shown
+     * therefore. See setFormat() for more information.
      */
     void resetFormat();
     /**
      * @brief Returns the string used to generate the current text.
      */
-    QString	format() const { return m_format; }
+    QString format() const { return m_format; }
 
     /**
      * @brief Sets number of decimals to show after the comma (default is 1).
@@ -177,28 +176,31 @@ public:
     double minimum() const { return m_min; }
     /**
      * @brief Returns maximum of the allowed value range.
-    * \sa setMaximum, setRange
+     * \sa setMaximum, setRange
      */
     double maximum() const { return m_max; }
 
 public Q_SLOTS:
     /**
      * @brief Defines minimum und maximum of the allowed value range.
-     * If the current value does not fit into the range, it will be automatically adjusted.
+     * If the current value does not fit into the range, it will be
+     * automatically adjusted.
      * @param min minimum of the allowed value range
      * @param max maximum of the allowed value range
      */
     void setRange(double min, double max);
     /**
      * @brief Defines minimum of the allowed value range.
-     * If the current value does not fit into the range, it will be automatically adjusted.
+     * If the current value does not fit into the range, it will be
+     * automatically adjusted.
      * @param min minimum of the allowed value range
      * \sa setRange
      */
     void setMinimum(double min);
     /**
      * @brief Defines maximum of the allowed value range.
-     * If the current value does not fit into the range, it will be automatically adjusted.
+     * If the current value does not fit into the range, it will be
+     * automatically adjusted.
      * @param max maximum of the allowed value range
      * \sa setRange
      */
@@ -215,17 +217,26 @@ public Q_SLOTS:
     void setValue(int val);
 
 protected:
-    virtual void paintEvent(QPaintEvent *event);
+    virtual void paintEvent(QPaintEvent* event);
     virtual void drawBackground(QPainter& p, const QRectF& baseRect);
     virtual void drawBase(QPainter& p, const QRectF& baseRect);
-    virtual void drawValue(QPainter& p, const QRectF& baseRect, double value, double arcLength);
-    virtual void calculateInnerRect(const QRectF& baseRect, double outerRadius, QRectF& innerRect, double& innerRadius);
+    virtual void drawValue(QPainter& p,
+                           const QRectF& baseRect,
+                           double value,
+                           double arcLength);
+    virtual void calculateInnerRect(const QRectF& baseRect,
+                                    double outerRadius,
+                                    QRectF& innerRect,
+                                    double& innerRadius);
     virtual void drawInnerBackground(QPainter& p, const QRectF& innerRect);
-    virtual void drawText(QPainter& p, const QRectF& innerRect, double innerRadius, double value);
+    virtual void drawText(QPainter& p,
+                          const QRectF& innerRect,
+                          double innerRadius,
+                          double value);
     virtual QString valueToText(double value) const;
     virtual void valueFormatChanged();
 
-    virtual QSize minimumSizeHint() const { return QSize(32,32); }
+    virtual QSize minimumSizeHint() const { return QSize(32, 32); }
 
     virtual bool hasHeightForWidth() const { return true; }
     virtual int heightForWidth(int w) const { return w; }
@@ -250,5 +261,3 @@ protected:
     static const int UF_MAX = 4;
     int m_updateFlags;
 };
-
-#endif // QROUNDPROGRESSBAR_H

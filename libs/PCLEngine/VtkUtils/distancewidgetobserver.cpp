@@ -1,25 +1,31 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "distancewidgetobserver.h"
 
-#include <vtkDistanceWidget.h>
 #include <vtkDistanceRepresentation.h>
+#include <vtkDistanceWidget.h>
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-DistanceWidgetObserver::DistanceWidgetObserver(QObject* parent) : AbstractWidgetObserver(parent)
-{
+DistanceWidgetObserver::DistanceWidgetObserver(QObject* parent)
+    : AbstractWidgetObserver(parent) {}
 
-}
-
-void DistanceWidgetObserver::Execute(vtkObject *caller, unsigned long eventId, void* callData)
-{
+void DistanceWidgetObserver::Execute(vtkObject* caller,
+                                     unsigned long eventId,
+                                     void* callData) {
     Q_UNUSED(eventId)
     Q_UNUSED(callData)
 
     vtkDistanceWidget* widget = reinterpret_cast<vtkDistanceWidget*>(caller);
     if (widget) {
         vtkWidgetRepresentation* rep = widget->GetRepresentation();
-        vtkDistanceRepresentation* distRep = vtkDistanceRepresentation::SafeDownCast(rep);
+        vtkDistanceRepresentation* distRep =
+                vtkDistanceRepresentation::SafeDownCast(rep);
         if (distRep) {
             double worldPot1[3];
             double worldPot2[3];
@@ -40,4 +46,4 @@ void DistanceWidgetObserver::Execute(vtkObject *caller, unsigned long eventId, v
     }
 }
 
-} // namespace VtkUtils
+}  // namespace VtkUtils

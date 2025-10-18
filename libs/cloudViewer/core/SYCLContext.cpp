@@ -7,13 +7,14 @@
 
 #include "cloudViewer/core/SYCLContext.h"
 
+#include <Logging.h>
+
 #include <array>
 #include <cstdlib>
 #include <sstream>
 #include <sycl/sycl.hpp>
 
 #include "cloudViewer/core/SYCLUtils.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

@@ -5,11 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// This is a private header. It shall be hidden from CloudViewer's public API. Do not
-// put this in CloudViewer.h.in.
+// This is a private header. It shall be hidden from CloudViewer's public API.
+// Do not put this in CloudViewer.h.in.
 
 #pragma once
 
+#include <Logging.h>
 #include <api/video/i420_buffer.h>
 #include <libyuv/convert.h>
 #include <libyuv/video_common.h>
@@ -19,7 +20,6 @@
 #include <memory>
 
 #include "core/Tensor.h"
-#include <Logging.h>
 #include "visualization/webrtc_server/BitmapTrackSource.h"
 
 namespace cloudViewer {

@@ -1,22 +1,11 @@
-// ##########################################################################
-// #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                       #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                   COPYRIGHT: Thomas Montaigu                           #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_EDITOR_SETTINGS_H
-#define PYTHON_PLUGIN_EDITOR_SETTINGS_H
+#pragma once
 
 #include <ui_EditorSettings.h>
 
@@ -49,5 +38,3 @@ class EditorSettings final : public QDialog, public Ui::EditorSettings
     ColorScheme m_colorScheme = ColorScheme::Default();
     bool m_shouldHighlightCurrentLine = true;
 };
-
-#endif // PYTHON_PLUGIN_EDITOR_SETTINGS_H

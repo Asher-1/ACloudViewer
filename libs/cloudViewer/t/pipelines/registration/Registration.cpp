@@ -7,14 +7,15 @@
 
 #include "cloudViewer/t/pipelines/registration/Registration.h"
 
+#include <Helper.h>
+#include <Logging.h>
+
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/TensorCheck.h"
 #include "cloudViewer/core/TensorFunction.h"
 #include "cloudViewer/core/nns/NearestNeighborSearch.h"
 #include "cloudViewer/t/geometry/PointCloud.h"
 #include "cloudViewer/t/pipelines/kernel/Registration.h"
-#include <Helper.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_EIGEN_HEADER
-#define CV_EIGEN_HEADER
+#pragma once
 
 #include "CVCoreLib.h"
 
@@ -180,7 +179,7 @@ using Vector4d_allocator = Eigen::aligned_allocator<Eigen::Vector4d>;
 using Vector6d_allocator = Eigen::aligned_allocator<Eigen::Vector6d>;
 
 /// Genretate a skew-symmetric matrix from a vector 3x1.
-Eigen::Matrix3d CV_CORE_LIB_API SkewMatrix(const Eigen::Vector3d &vec);
+Eigen::Matrix3d CV_CORE_LIB_API SkewMatrix(const Eigen::Vector3d& vec);
 
 /// Function to transform 6D motion vector to 4D motion matrix
 /// Reference:
@@ -258,8 +257,8 @@ Eigen::Vector3d CV_CORE_LIB_API ColorToDouble(const Eigen::Vector3uint8& rgb);
 
 /// Function to compute the covariance matrix of a set of points.
 template <typename IdxType>
-Eigen::Matrix3d
-CV_CORE_LIB_API ComputeCovariance(const std::vector<Eigen::Vector3d>& points,
+Eigen::Matrix3d CV_CORE_LIB_API
+ComputeCovariance(const std::vector<Eigen::Vector3d>& points,
                   const std::vector<IdxType>& indices);
 
 /// Function to compute the mean and covariance matrix of a set of points.
@@ -278,9 +277,12 @@ inline std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
     for (const auto& idx : indices) {
-        const double x = static_cast<double>(points[3 * static_cast<size_t>(idx) + 0]);
-        const double y = static_cast<double>(points[3 * static_cast<size_t>(idx) + 1]);
-        const double z = static_cast<double>(points[3 * static_cast<size_t>(idx) + 2]);
+        const double x =
+                static_cast<double>(points[3 * static_cast<size_t>(idx) + 0]);
+        const double y =
+                static_cast<double>(points[3 * static_cast<size_t>(idx) + 1]);
+        const double z =
+                static_cast<double>(points[3 * static_cast<size_t>(idx) + 2]);
         cumulants(0) += x;
         cumulants(1) += y;
         cumulants(2) += z;
@@ -309,5 +311,3 @@ inline std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
 
 }  // namespace utility
 }  // namespace cloudViewer
-
-#endif  // CV_EIGEN_HEADER

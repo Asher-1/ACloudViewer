@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                     ACLOUDVIEWER PLUGIN: qVoxFall                      #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 of the License.               #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                 COPYRIGHT: THE UNIVERSITY OF NEWCASTLE                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "qVoxFallProcess.h"
 
@@ -30,7 +20,6 @@
 
 #include "Grid3D.h"
 
-
 // qCC_plugins
 #include <ecvMainAppInterface.h>
 #include <ecvQtHelpers.h>
@@ -45,7 +34,6 @@
 #include <ecvProgressDialog.h>
 #include <ecvScalarField.h>
 
-
 // Qt
 #include <QApplication>
 #include <QElapsedTimer>
@@ -53,7 +41,6 @@
 #include <QtConcurrentMap>
 #include <QtCore>
 #include <QtGui>
-
 
 #if defined(_OPENMP)
 // OpenMP

@@ -7,22 +7,23 @@
 
 #pragma once
 
+#include <assert.h>
+#include <zlib.h>  // do not include this in header due to undefined symbols unzReadCurrentFile
+
+#include <algorithm>
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
+
 #include "CVLog.h"
 #include "FileSystem.h"
-#include <zlib.h> // do not include this in header due to undefined symbols unzReadCurrentFile
-#include <algorithm>
-#include <assert.h>
-#include <cstdlib>
-#include <sstream>
-#include <vector>
-#include <iostream>
-#include <stdexcept>
 
 namespace cloudViewer {
 
 template <class T>
-class CV_CORE_LIB_API StaticVector
-{
+class CV_CORE_LIB_API StaticVector {
     std::vector<T> _data;
 
     typedef typename std::vector<T>::iterator Iterator;
@@ -31,26 +32,15 @@ class CV_CORE_LIB_API StaticVector
     typedef typename std::vector<T>::const_reference ConstReference;
 
 public:
-    StaticVector()
-    {}
+    StaticVector() {}
 
-    StaticVector( int n )
-        : _data( n )
-    {}
+    StaticVector(int n) : _data(n) {}
 
-    StaticVector( int n, const T& value )
-        : _data( n, value )
-    {}
+    StaticVector(int n, const T& value) : _data(n, value) {}
 
-    const T& operator[](int index) const
-    {
-        return _data[index];
-    }
+    const T& operator[](int index) const { return _data[index]; }
 
-    T& operator[](int index)
-    {
-        return _data[index];
-    }
+    T& operator[](int index) { return _data[index]; }
 
     void clear() { _data.clear(); }
 
@@ -75,106 +65,78 @@ public:
     void resize(int n) { _data.resize(n); }
     void resize(int n, T value) { _data.resize(n, value); }
     void resize_with(int n, const T& val) { _data.resize(n, val); }
-    void swap( StaticVector& other ) { _data.swap(other._data); }
+    void swap(StaticVector& other) { _data.swap(other._data); }
     void assign(int n, T value) { _data.assign(n, value); }
 
-    void shrink_to_fit()
-    {
-        _data.shrink_to_fit();
-    }
+    void shrink_to_fit() { _data.shrink_to_fit(); }
 
-    void reserveAddIfNeeded(int nplanned, int ntoallocated)
-    {
-        if(size() + nplanned > capacity())
-        {
+    void reserveAddIfNeeded(int nplanned, int ntoallocated) {
+        if (size() + nplanned > capacity()) {
             reserveAdd(nplanned + ntoallocated);
         }
     }
 
-    void reserveAdd(int ntoallocated)
-    {
+    void reserveAdd(int ntoallocated) {
         _data.reserve(capacity() + ntoallocated);
     }
 
-    void push_back(const T& val)
-    {
-        _data.push_back(val);
-    }
+    void push_back(const T& val) { _data.push_back(val); }
 
-    void push_front(const T& val)
-    {
-        _data.insert(_data.begin(), val);
-    }
+    void push_front(const T& val) { _data.insert(_data.begin(), val); }
 
-    void push_back_arr(StaticVector<T>* arr)
-    {
+    void push_back_arr(StaticVector<T>* arr) {
         _data.insert(_data.end(), arr->getData().begin(), arr->getData().end());
     }
 
-    void push_back_arr(StaticVector<T>& arr)
-    {
+    void push_back_arr(StaticVector<T>& arr) {
         _data.insert(_data.end(), arr.getData().begin(), arr.getData().end());
     }
 
-    void remove(int i)
-    {
-        _data.erase(_data.begin() + i);
-    }
+    void remove(int i) { _data.erase(_data.begin() + i); }
 
-    int push_back_distinct(const T& val)
-    {
+    int push_back_distinct(const T& val) {
         int id = indexOf(val);
-        if(id == -1)
-            _data.push_back(val);
+        if (id == -1) _data.push_back(val);
         return id;
     }
 
-    T pop()
-    {
+    T pop() {
         T val = _data.back();
         _data.pop_back();
         return val;
     }
 
-    int indexOf(const T& value) const
-    {
+    int indexOf(const T& value) const {
         const auto it = std::find(_data.begin(), _data.end(), value);
         return it != _data.end() ? std::distance(_data.begin(), it) : -1;
     }
 
-    int indexOfSorted(const T& value) const
-    {
-        return indexOf(value);
-    }
+    int indexOfSorted(const T& value) const { return indexOf(value); }
 
-    int indexOfNearestSorted(const T& value) const
-    {
+    int indexOfNearestSorted(const T& value) const {
         // Retrieve the first element >= value in _data
         auto it = std::lower_bound(_data.begin(), _data.end(), value);
-        if(it == _data.end())
-            return -1;
+        if (it == _data.end()) return -1;
         // If we're between two values...
-        if(it != _data.begin())
-        {
-            // ...select the index of the closest value between it (>= value) and prevIt (< value)
+        if (it != _data.begin()) {
+            // ...select the index of the closest value between it (>= value)
+            // and prevIt (< value)
             auto prevIt = std::prev(it);
             it = (value - *prevIt) < (*it - value) ? prevIt : it;
         }
         return std::distance(_data.begin(), it);
     }
 
-    int minValId() const
-    {
-        if(_data.empty())
-            return -1;
-        return std::distance(_data.begin(), std::min_element(_data.begin(), _data.end()));
+    int minValId() const {
+        if (_data.empty()) return -1;
+        return std::distance(_data.begin(),
+                             std::min_element(_data.begin(), _data.end()));
     }
 
-    int maxValId() const
-    {
-        if (_data.empty())
-            return -1;
-        return std::distance(_data.begin(), std::max_element(_data.begin(), _data.end()));
+    int maxValId() const {
+        if (_data.empty()) return -1;
+        return std::distance(_data.begin(),
+                             std::max_element(_data.begin(), _data.end()));
     }
 };
 
@@ -183,31 +145,24 @@ public:
 using StaticVectorBool = StaticVector<char>;
 
 template <class T>
-int sizeOfStaticVector(const StaticVector<T>* a)
-{
-    if(a == nullptr)
-        return 0;
+int sizeOfStaticVector(const StaticVector<T>* a) {
+    if (a == nullptr) return 0;
     return a->size();
 }
 
 template <class T>
-int sizeOfStaticVector(const StaticVector<T>& a)
-{
-    if(a.empty())
-        return 0;
+int sizeOfStaticVector(const StaticVector<T>& a) {
+    if (a.empty()) return 0;
     return a.size();
 }
 
 template <class T>
-int indexOf(T* arr, int n, const T& what)
-{
+int indexOf(T* arr, int n, const T& what) {
     int isthereindex = -1;
 
     int i = 0;
-    while((i < n) && (isthereindex == -1))
-    {
-        if(arr[i] == what)
-        {
+    while ((i < n) && (isthereindex == -1)) {
+        if (arr[i] == what) {
             isthereindex = i;
         };
         i++;
@@ -217,26 +172,21 @@ int indexOf(T* arr, int n, const T& what)
 }
 
 template <class T>
-void saveArrayOfArraysToFile(std::string fileName, StaticVector<StaticVector<T>*>* aa)
-{
+void saveArrayOfArraysToFile(std::string fileName,
+                             StaticVector<StaticVector<T>*>* aa) {
     CVLog::PrintDebug("[IO] saveArrayOfArraysToFile: ", fileName.c_str());
     FILE* f = fopen(fileName.c_str(), "wb");
     int n = aa->size();
     fwrite(&n, sizeof(int), 1, f);
-    for(int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
         int m = 0;
         StaticVector<T>* a = (*aa)[i];
-        if(a == NULL)
-        {
+        if (a == NULL) {
             fwrite(&m, sizeof(int), 1, f);
-        }
-        else
-        {
+        } else {
             m = a->size();
             fwrite(&m, sizeof(int), 1, f);
-            if(m > 0)
-            {
+            if (m > 0) {
                 fwrite(&(*a)[0], sizeof(T), m, f);
             };
         };
@@ -245,26 +195,21 @@ void saveArrayOfArraysToFile(std::string fileName, StaticVector<StaticVector<T>*
 }
 
 template <class T>
-void saveArrayOfArraysToFile(const std::string fileName, StaticVector<StaticVector<T>>& aa)
-{
+void saveArrayOfArraysToFile(const std::string fileName,
+                             StaticVector<StaticVector<T>>& aa) {
     CVLog::PrintDebug("[IO] saveArrayOfArraysToFile: ", fileName.c_str());
     FILE* f = fopen(fileName.c_str(), "wb");
     int n = aa.size();
     fwrite(&n, sizeof(int), 1, f);
-    for(int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
         int m = 0;
         StaticVector<T>& a = aa[i];
-        if(a.empty())
-        {
+        if (a.empty()) {
             fwrite(&m, sizeof(int), 1, f);
-        }
-        else
-        {
+        } else {
             m = a.size();
             fwrite(&m, sizeof(int), 1, f);
-            if(m > 0)
-            {
+            if (m > 0) {
                 fwrite(&a[0], sizeof(T), m, f);
             };
         };
@@ -273,43 +218,43 @@ void saveArrayOfArraysToFile(const std::string fileName, StaticVector<StaticVect
 }
 
 template <class T>
-StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(const std::string& fileName)
-{
+StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(
+        const std::string& fileName) {
     CVLog::PrintDebug("[IO] loadArrayOfArraysFromFile: ", fileName.c_str());
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == nullptr)
-    {
-        CVLog::Error("[IO] loadArrayOfArraysFromFile: can't open file ", fileName.c_str());
+    if (f == nullptr) {
+        CVLog::Error("[IO] loadArrayOfArraysFromFile: can't open file ",
+                     fileName.c_str());
     }
 
     int n = 0;
     size_t retval = fread(&n, sizeof(int), 1, f);
-    if( retval != 1 )
-    {
+    if (retval != 1) {
         fclose(f);
-        CVLog::Error("[IO] loadArrayOfArraysFromFile: can't read outer array size");
+        CVLog::Error(
+                "[IO] loadArrayOfArraysFromFile: can't read outer array size");
     }
     StaticVector<StaticVector<T>*>* aa = new StaticVector<StaticVector<T>*>();
     aa->reserve(n);
     aa->resize_with(n, NULL);
-    for(int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
         int m = 0;
         retval = fread(&m, sizeof(int), 1, f);
-        if( retval != 1 )
-        {
+        if (retval != 1) {
             fclose(f);
-            CVLog::Error("[IO] loadArrayOfArraysFromFile: can't read inner array size");
+            CVLog::Error(
+                    "[IO] loadArrayOfArraysFromFile: can't read inner array "
+                    "size");
         }
-        if(m > 0)
-        {
+        if (m > 0) {
             StaticVector<T>* a = new StaticVector<T>();
             a->resize(m);
             retval = fread(&(*a)[0], sizeof(T), m, f);
-            if( retval != static_cast<std::size_t>(m) )
-            {
+            if (retval != static_cast<std::size_t>(m)) {
                 fclose(f);
-                CVLog::Error("[IO] loadArrayOfArraysFromFile: can't read vector element");
+                CVLog::Error(
+                        "[IO] loadArrayOfArraysFromFile: can't read vector "
+                        "element");
             }
             (*aa)[i] = a;
         };
@@ -320,192 +265,197 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(const std::string& fil
 }
 
 template <class T>
-void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa, const std::string& fileName)
-{
+void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa,
+                               const std::string& fileName) {
     CVLog::PrintDebug("[IO] loadArrayOfArraysFromFile: ", fileName.c_str());
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == nullptr)
-    {
-        CVLog::Error("[IO] loadArrayOfArraysFromFile: can't open file ", fileName.c_str());
+    if (f == nullptr) {
+        CVLog::Error("[IO] loadArrayOfArraysFromFile: can't open file ",
+                     fileName.c_str());
     }
 
     int n = 0;
     size_t retval = fread(&n, sizeof(int), 1, f);
-    if( retval != 1 )
-    {
+    if (retval != 1) {
         fclose(f);
-        CVLog::Error("[IO] loadArrayOfArraysFromFile: can't read outer array size");
+        CVLog::Error(
+                "[IO] loadArrayOfArraysFromFile: can't read outer array size");
     }
 
     out_aa.reserve(n);
     out_aa.resize(n);
-    for(int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
         int m = 0;
         retval = fread(&m, sizeof(int), 1, f);
-        if( retval != 1 )
-        {
+        if (retval != 1) {
             fclose(f);
-            CVLog::Error("[IO] loadArrayOfArraysFromFile: can't read inner array size");
+            CVLog::Error(
+                    "[IO] loadArrayOfArraysFromFile: can't read inner array "
+                    "size");
         }
-        if(m > 0)
-        {
+        if (m > 0) {
             StaticVector<T>& a = out_aa[i];
             a.resize(m);
             retval = fread(&a[0], sizeof(T), m, f);
-            if( retval != static_cast<std::size_t>(m) )
-            {
+            if (retval != static_cast<std::size_t>(m)) {
                 fclose(f);
-                CVLog::Error("[IO] loadArrayOfArraysFromFile: can't read vector element");
+                CVLog::Error(
+                        "[IO] loadArrayOfArraysFromFile: can't read vector "
+                        "element");
             }
         };
     };
     fclose(f);
 }
 
-
 template <class T>
-void saveArrayToFile(const std::string& fileName, const StaticVector<T>& a, bool docompress = true)
-{
-    saveArrayToFile( fileName, &a, docompress );
+void saveArrayToFile(const std::string& fileName,
+                     const StaticVector<T>& a,
+                     bool docompress = true) {
+    saveArrayToFile(fileName, &a, docompress);
 }
 
 template <class T>
-void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool docompress = true)
-{
+void saveArrayToFile(const std::string& fileName,
+                     const StaticVector<T>* a,
+                     bool docompress = true) {
     CVLog::PrintDebug("[IO] saveArrayToFile: ", fileName.c_str());
 
-    const std::string parent_dir = utility::filesystem::GetFileParentDirectory(fileName);
+    const std::string parent_dir =
+            utility::filesystem::GetFileParentDirectory(fileName);
     if (!utility::filesystem::DirectoryExists(parent_dir)) {
         utility::filesystem::MakeDirectoryHierarchy(parent_dir);
     }
 
-    if( !a )
-    {
-        CVLog::PrintDebug("[IO] saveArrayToFile called with NULL static vector");
+    if (!a) {
+        CVLog::PrintDebug(
+                "[IO] saveArrayToFile called with NULL static vector");
         return;
     }
 
-    if( a->size() == 0 )
-    {
-        CVLog::Warning("[IO] saveArrayToFile called with 0-sized static vector");
+    if (a->size() == 0) {
+        CVLog::Warning(
+                "[IO] saveArrayToFile called with 0-sized static vector");
         return;
     }
 
-    if((docompress == false) || (a->size() < 1000))
-    {
+    if ((docompress == false) || (a->size() < 1000)) {
         FILE* f = fopen(fileName.c_str(), "wb");
-        if( f == nullptr )
-        {
-            CVLog::Error( "[IO] file ", fileName.c_str(), " could not be opened, msg: ", strerror(errno) );
+        if (f == nullptr) {
+            CVLog::Error("[IO] file ", fileName.c_str(),
+                         " could not be opened, msg: ", strerror(errno));
         }
         int n = a->size();
-        if( n == 0 )
-        {
+        if (n == 0) {
             fclose(f);
             return;
         }
         auto items = fwrite(&n, sizeof(int), 1, f);
-        if( items < 1 && ferror(f) != 0 )
-        {
+        if (items < 1 && ferror(f) != 0) {
             fclose(f);
-            CVLog::Error( "[IO] failed to write 1 int to ", fileName.c_str(), ", msg: ", strerror(errno) );
+            CVLog::Error("[IO] failed to write 1 int to ", fileName.c_str(),
+                         ", msg: ", strerror(errno));
         }
         items = fwrite(&(*a)[0], sizeof(T), n, f);
-        if( items < static_cast<std::size_t>(n) && ferror(f) != 0 )
-        {
+        if (items < static_cast<std::size_t>(n) && ferror(f) != 0) {
             fclose(f);
-            CVLog::Error( "[IO] failed to write n items to ", fileName.c_str(),", msg: ", strerror(errno) );
+            CVLog::Error("[IO] failed to write n items to ", fileName.c_str(),
+                         ", msg: ", strerror(errno));
         }
         fclose(f);
-    }
-    else
-    {
-
+    } else {
         /* ===========================================================================
         //from zlib - compress.c
              Compresses the source buffer into the destination buffer. The level
-           parameter has the same meaning as in deflateInit.  sourceLen is the byte
-           length of the source buffer. Upon entry, destLen is the total size of the
-           destination buffer, which must be at least 0.1% larger than sourceLen plus
-           12 bytes. Upon exit, destLen is the actual size of the compressed buffer.
+           parameter has the same meaning as in deflateInit.  sourceLen is the
+        byte length of the source buffer. Upon entry, destLen is the total size
+        of the destination buffer, which must be at least 0.1% larger than
+        sourceLen plus 12 bytes. Upon exit, destLen is the actual size of the
+        compressed buffer.
 
-             compress2 returns Z_OK if success, Z_MEM_ERROR if there was not enough
-           memory, Z_BUF_ERROR if there was not enough room in the output buffer,
-           Z_STREAM_ERROR if the level parameter is invalid.
+             compress2 returns Z_OK if success, Z_MEM_ERROR if there was not
+        enough memory, Z_BUF_ERROR if there was not enough room in the output
+        buffer, Z_STREAM_ERROR if the level parameter is invalid.
         */
         // uLong comprLen = sizeof(T)*a->size();
-        uLong comprLen = uLong(static_cast<double>(sizeof(T) * a->size()) * 1.02) + 12;
-        Byte* compr = static_cast<Byte*>(calloc(static_cast<uInt>(comprLen), 1));
-        int err = compress(compr, &comprLen, static_cast<const Bytef*>(&(*a)[0]), sizeof(T) * a->size());
+        uLong comprLen =
+                uLong(static_cast<double>(sizeof(T) * a->size()) * 1.02) + 12;
+        Byte* compr =
+                static_cast<Byte*>(calloc(static_cast<uInt>(comprLen), 1));
+        int err =
+                compress(compr, &comprLen, static_cast<const Bytef*>(&(*a)[0]),
+                         sizeof(T) * a->size());
 
-        if(err != Z_OK)
-        {
-            CVLog::Error(QString("compress error %1 : 2% -> %3, n %4").arg(err, (sizeof(T) * a->size()), comprLen, a->size()));
+        if (err != Z_OK) {
+            CVLog::Error(QString("compress error %1 : 2% -> %3, n %4")
+                                 .arg(err, (sizeof(T) * a->size()), comprLen,
+                                      a->size()));
 
             FILE* f = fopen(fileName.c_str(), "wb");
-            if( f == nullptr )
-            {
+            if (f == nullptr) {
                 free(compr);
-                CVLog::Error( "[IO] file ", fileName.c_str(), " could not be opened, msg: ", strerror(errno) );
+                CVLog::Error("[IO] file ", fileName.c_str(),
+                             " could not be opened, msg: ", strerror(errno));
             }
             int n = a->size();
-            if( n > 0 )
-            {
+            if (n > 0) {
                 auto items = fwrite(&n, sizeof(int), 1, f);
-                if( items < 1 && ferror(f) != 0 )
-                {
+                if (items < 1 && ferror(f) != 0) {
                     fclose(f);
                     free(compr);
-                    CVLog::Error( "[IO] failed to write 1 int to ", fileName.c_str(), ", msg: ", strerror(errno) );
+                    CVLog::Error("[IO] failed to write 1 int to ",
+                                 fileName.c_str(), ", msg: ", strerror(errno));
                 }
                 items = fwrite(&(*a)[0], sizeof(T), n, f);
-                if( items < 1 && ferror(f) != 0 )
-                {
+                if (items < 1 && ferror(f) != 0) {
                     fclose(f);
                     free(compr);
-                    CVLog::Error(QString("[IO] failed to write %1 items to %2, msg: %3").arg(QString::number(n), fileName.c_str(), strerror(errno)));
+                    CVLog::Error(QString("[IO] failed to write %1 items to %2, "
+                                         "msg: %3")
+                                         .arg(QString::number(n),
+                                              fileName.c_str(),
+                                              strerror(errno)));
                 }
             }
             fclose(f);
-        }
-        else
-        {
+        } else {
             FILE* f = fopen(fileName.c_str(), "wb");
-            if( f == nullptr )
-            {
+            if (f == nullptr) {
                 free(compr);
-                CVLog::Error( "[IO] file ", fileName.c_str(), " could not be opened, msg: ", strerror(errno) );
+                CVLog::Error("[IO] file ", fileName.c_str(),
+                             " could not be opened, msg: ", strerror(errno));
             }
             int n = -1;
             auto items = fwrite(&n, sizeof(int), 1, f);
-            if( items < 1 && ferror(f) != 0 )
-            {
+            if (items < 1 && ferror(f) != 0) {
                 fclose(f);
                 free(compr);
-                CVLog::Error( "[IO] failed to write 1 int to ", fileName.c_str(),", msg: ", strerror(errno) );
+                CVLog::Error("[IO] failed to write 1 int to ", fileName.c_str(),
+                             ", msg: ", strerror(errno));
             }
             n = a->size();
             items = fwrite(&n, sizeof(int), 1, f);
-            if( items < 1 && ferror(f) != 0 )
-            {
+            if (items < 1 && ferror(f) != 0) {
                 fclose(f);
                 free(compr);
-                CVLog::Error( "[IO] failed to write 1 int to ", fileName.c_str(),", msg: ", strerror(errno) );
+                CVLog::Error("[IO] failed to write 1 int to ", fileName.c_str(),
+                             ", msg: ", strerror(errno));
             }
             items = fwrite(&comprLen, sizeof(uLong), 1, f);
-            if( items < 1 && ferror(f) != 0 )
-            {
+            if (items < 1 && ferror(f) != 0) {
                 fclose(f);
                 free(compr);
-                CVLog::Error( "[IO] failed to write 1 uLong to ", fileName.c_str(),", msg: ", strerror(errno) );
+                CVLog::Error("[IO] failed to write 1 uLong to ",
+                             fileName.c_str(), ", msg: ", strerror(errno));
             }
             items = fwrite(compr, sizeof(Byte), comprLen, f);
-            if( items < 1 && ferror(f) != 0 )
-            {
+            if (items < 1 && ferror(f) != 0) {
                 fclose(f);
                 free(compr);
-                CVLog::Error(QString("[IO] failed to write %1 items to %2, msg: %3").arg(QString::number(comprLen), fileName.c_str(), strerror(errno)));
+                CVLog::Error(
+                        QString("[IO] failed to write %1 items to %2, msg: %3")
+                                .arg(QString::number(comprLen),
+                                     fileName.c_str(), strerror(errno)));
             }
             fclose(f);
         };
@@ -515,81 +465,80 @@ void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool
 }
 
 template <class T>
-StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarning = false)
-{
+StaticVector<T>* loadArrayFromFile(const std::string& fileName,
+                                   bool printfWarning = false) {
     Q_UNUSED(printfWarning);
     CVLog::PrintDebug("[IO] loadArrayFromFile: ", fileName.c_str());
 
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == nullptr)
-    {
+    if (f == nullptr) {
         CVLog::Error("loadArrayFromFile : can't open file ", fileName.c_str());
-    }
-    else
-    {
+    } else {
         int n = 0;
         size_t retval = fread(&n, sizeof(int), 1, f);
-        if( retval != 1 )
-        {
+        if (retval != 1) {
             fclose(f);
-            CVLog::Error("[IO] loadArrayFromFile: can't read array size (1) from ", fileName.c_str());
+            CVLog::Error(
+                    "[IO] loadArrayFromFile: can't read array size (1) from ",
+                    fileName.c_str());
         }
         StaticVector<T>* a = NULL;
 
-        if(n == -1)
-        {
+        if (n == -1) {
             retval = fread(&n, sizeof(int), 1, f);
-            if( retval != 1 )
-            {
+            if (retval != 1) {
                 fclose(f);
-                CVLog::Error("[IO] loadArrayFromFile: can't read array size (2)");
+                CVLog::Error(
+                        "[IO] loadArrayFromFile: can't read array size (2)");
             }
             a = new StaticVector<T>();
             a->resize(n);
 
             uLong comprLen;
             retval = fread(&comprLen, sizeof(uLong), 1, f);
-            if( retval != 1 )
-            {
+            if (retval != 1) {
                 delete a;
                 fclose(f);
-                CVLog::Error("[IO] loadArrayFromFile: can't read ulong elem size");
+                CVLog::Error(
+                        "[IO] loadArrayFromFile: can't read ulong elem size");
             }
-            Byte* compr = static_cast<Byte*>(calloc(static_cast<uInt>(comprLen), 1));
+            Byte* compr =
+                    static_cast<Byte*>(calloc(static_cast<uInt>(comprLen), 1));
             retval = fread(compr, sizeof(Byte), comprLen, f);
-            if( retval != comprLen )
-            {
+            if (retval != comprLen) {
                 delete a;
                 fclose(f);
                 CVLog::Error("[IO] loadArrayFromFile: can't read blob");
             }
 
             uLong uncomprLen = sizeof(T) * n;
-            int err = uncompress((Bytef*)(&(*a)[0]), &uncomprLen, compr, comprLen);
+            int err = uncompress((Bytef*)(&(*a)[0]), &uncomprLen, compr,
+                                 comprLen);
 
-            if(err != Z_OK)
-            {
+            if (err != Z_OK) {
                 delete a;
                 fclose(f);
-                CVLog::Error(QString("uncompress error %1 : 2% -> %3, n %4").arg(QString::number(err), QString::number(sizeof(T) * n), QString::number(uncomprLen), QString::number(n)));
+                CVLog::Error(QString("uncompress error %1 : 2% -> %3, n %4")
+                                     .arg(QString::number(err),
+                                          QString::number(sizeof(T) * n),
+                                          QString::number(uncomprLen),
+                                          QString::number(n)));
             }
 
-            if(uncomprLen != sizeof(T) * n)
-            {
+            if (uncomprLen != sizeof(T) * n) {
                 delete a;
                 fclose(f);
-                CVLog::Error("loadArrayFromFile: uncompression failed uncomprLen!=sizeof(T)*n");
+                CVLog::Error(
+                        "loadArrayFromFile: uncompression failed "
+                        "uncomprLen!=sizeof(T)*n");
             }
 
             free(compr);
-        }
-        else
-        {
+        } else {
             a = new StaticVector<T>();
             a->resize(n);
             size_t retval = fread(&(*a)[0], sizeof(T), n, f);
-            if( retval != static_cast<std::size_t>(n) )
-            {
+            if (retval != static_cast<std::size_t>(n)) {
                 delete a;
                 fclose(f);
                 CVLog::Error("[IO] loadArrayFromFile: can't read n elements");
@@ -603,61 +552,69 @@ StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarni
 }
 
 template <class T>
-bool loadArrayFromFile( StaticVector<T>& out, const std::string& fileName, bool printfWarning = false)
-{
+bool loadArrayFromFile(StaticVector<T>& out,
+                       const std::string& fileName,
+                       bool printfWarning = false) {
     Q_UNUSED(printfWarning);
     CVLog::PrintDebug("[IO] loadArrayFromFile: ", fileName.c_str());
 
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == nullptr)
-    {
-        throw std::runtime_error("loadArrayFromFile : can't open file " + fileName);
-    }
-    else
-    {
+    if (f == nullptr) {
+        throw std::runtime_error("loadArrayFromFile : can't open file " +
+                                 fileName);
+    } else {
         int n = 0;
         size_t retval = fread(&n, sizeof(int), 1, f);
-        if( retval != 1 )
-            CVLog::Warning("[IO] loadArrayFromFile: can't read array size (1) from ", fileName.c_str());
+        if (retval != 1)
+            CVLog::Warning(
+                    "[IO] loadArrayFromFile: can't read array size (1) from ",
+                    fileName.c_str());
         out.clear();
 
-        if(n == -1)
-        {
+        if (n == -1) {
             retval = fread(&n, sizeof(int), 1, f);
-            if( retval != 1 )
-                CVLog::Warning("[IO] loadArrayFromFile: can't read array size (2)");
+            if (retval != 1)
+                CVLog::Warning(
+                        "[IO] loadArrayFromFile: can't read array size (2)");
             out.resize(n);
 
             uLong comprLen;
             retval = fread(&comprLen, sizeof(uLong), 1, f);
-            if( retval != 1 )
-                CVLog::Warning("[IO] loadArrayFromFile: can't read ulong elem size");
-            Byte* compr = static_cast<Byte*>(calloc(static_cast<uInt>(comprLen), 1));
+            if (retval != 1)
+                CVLog::Warning(
+                        "[IO] loadArrayFromFile: can't read ulong elem size");
+            Byte* compr =
+                    static_cast<Byte*>(calloc(static_cast<uInt>(comprLen), 1));
             retval = fread(compr, sizeof(Byte), comprLen, f);
-            if( retval != comprLen )
+            if (retval != comprLen)
                 CVLog::Warning("[IO] loadArrayFromFile: can't read blob");
 
             uLong uncomprLen = sizeof(T) * n;
-            int err = uncompress(static_cast<Bytef*>(out.getDataWritable().data()), &uncomprLen, compr, comprLen);
+            int err = uncompress(
+                    static_cast<Bytef*>(out.getDataWritable().data()),
+                    &uncomprLen, compr, comprLen);
 
-            if(err != Z_OK)
-            {
-                CVLog::Error(QString("uncompress error %1 : 2% -> %3, n %4").arg(QString::number(err), QString::number(sizeof(T) * n), QString::number(uncomprLen), QString::number(n)));
+            if (err != Z_OK) {
+                CVLog::Error(QString("uncompress error %1 : 2% -> %3, n %4")
+                                     .arg(QString::number(err),
+                                          QString::number(sizeof(T) * n),
+                                          QString::number(uncomprLen),
+                                          QString::number(n)));
             }
 
-            if(uncomprLen != sizeof(T) * n)
-            {
+            if (uncomprLen != sizeof(T) * n) {
                 fclose(f);
-                throw std::runtime_error("loadArrayFromFile: uncompression failed uncomprLen!=sizeof(T)*n");
+                throw std::runtime_error(
+                        "loadArrayFromFile: uncompression failed "
+                        "uncomprLen!=sizeof(T)*n");
             }
 
             free(compr);
-        }
-        else
-        {
+        } else {
             out.resize(n);
-            size_t retval = fread(out.getDataWritable().data(), sizeof(T), n, f);
-            if( retval != static_cast<std::size_t>(n) )
+            size_t retval =
+                    fread(out.getDataWritable().data(), sizeof(T), n, f);
+            if (retval != static_cast<std::size_t>(n))
                 CVLog::Warning("[IO] loadArrayFromFile: can't read n elements");
         }
 
@@ -668,86 +625,84 @@ bool loadArrayFromFile( StaticVector<T>& out, const std::string& fileName, bool 
 }
 
 template <class T>
-void loadArrayFromFileIntoArray(StaticVector<T>* a, const std::string& fileName, bool printfWarning = false)
-{
+void loadArrayFromFileIntoArray(StaticVector<T>* a,
+                                const std::string& fileName,
+                                bool printfWarning = false) {
     Q_UNUSED(printfWarning);
     CVLog::PrintDebug("[IO] loadArrayFromFileIntoArray: ", fileName.c_str());
 
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == nullptr)
-    {
-        CVLog::Error("loadArrayFromFileIntoArray: can not open file: ", fileName.c_str());
+    if (f == nullptr) {
+        CVLog::Error("loadArrayFromFileIntoArray: can not open file: ",
+                     fileName.c_str());
     }
     int n = 0;
     fread(&n, sizeof(int), 1, f);
- 
-    if(n == -1)
-    {
+
+    if (n == -1) {
         fread(&n, sizeof(int), 1, f);
-        if(a->size() != n)
-        {
+        if (a->size() != n) {
             fclose(f);
-            CVLog::Error("loadArrayFromFileIntoArray: expected length " << a->size() << " loaded length " << n);
+            CVLog::Error("loadArrayFromFileIntoArray: expected length "
+                         << a->size() << " loaded length " << n);
         }
- 
+
         uLong comprLen;
         fread(&comprLen, sizeof(uLong), 1, f);
-        Byte* compr = static_cast<Byte*>(calloc(static_cast<uInt>(comprLen), 1));
+        Byte* compr =
+                static_cast<Byte*>(calloc(static_cast<uInt>(comprLen), 1));
         fread(compr, sizeof(Byte), comprLen, f);
- 
+
         uLong uncomprLen = sizeof(T) * n;
-        int err = uncompress(static_cast<Bytef*>(&(*a)[0]), &uncomprLen, compr, comprLen);
- 
-        if(err != Z_OK)
-        {
+        int err = uncompress(static_cast<Bytef*>(&(*a)[0]), &uncomprLen, compr,
+                             comprLen);
+
+        if (err != Z_OK) {
             fclose(f);
-            CVLog::Error(QString("uncompress error %1 : 2% -> %3, n %4").arg(QString::number(err), QString::number(sizeof(T) * n), QString::number(uncomprLen), QString::number(n)));
+            CVLog::Error(QString("uncompress error %1 : 2% -> %3, n %4")
+                                 .arg(QString::number(err),
+                                      QString::number(sizeof(T) * n),
+                                      QString::number(uncomprLen),
+                                      QString::number(n)));
         }
- 
-        if(uncomprLen != sizeof(T) * n)
-        {
+
+        if (uncomprLen != sizeof(T) * n) {
             fclose(f);
-            CVLog::Error("loadArrayFromFileIntoArray: uncompression failed uncomprLen!=sizeof(T)*n");
+            CVLog::Error(
+                    "loadArrayFromFileIntoArray: uncompression failed "
+                    "uncomprLen!=sizeof(T)*n");
         }
- 
+
         free(compr);
-    }
-    else
-    {
-        if(a->size() != n)
-        {
+    } else {
+        if (a->size() != n) {
             fclose(f);
-            CVLog::Error("loadArrayFromFileIntoArray: expected length " << a->size() << " loaded length " << n);
+            CVLog::Error("loadArrayFromFileIntoArray: expected length "
+                         << a->size() << " loaded length " << n);
         }
         fread(&(*a)[0], sizeof(T), n, f);
     }
- 
+
     fclose(f);
 }
 
 int getArrayLengthFromFile(std::string fileName);
 
 template <class T>
-void deleteArrayOfArrays(StaticVector<StaticVector<T>*>** aa)
-{
-    for(int i = 0; i < (*aa)->size(); i++)
-    {
-        if((*(*aa))[i] != nullptr)
-        {
-            delete(*(*aa))[i];
+void deleteArrayOfArrays(StaticVector<StaticVector<T>*>** aa) {
+    for (int i = 0; i < (*aa)->size(); i++) {
+        if ((*(*aa))[i] != nullptr) {
+            delete (*(*aa))[i];
             (*(*aa))[i] = nullptr;
         };
     };
-    delete(*aa);
+    delete (*aa);
 }
 
 template <class T>
-void deleteArrayOfArrays(StaticVector<StaticVector<T>*>& aa)
-{
-    for(int i = 0; i < aa.size(); i++)
-    {
-        if(aa[i] != nullptr)
-        {
+void deleteArrayOfArrays(StaticVector<StaticVector<T>*>& aa) {
+    for (int i = 0; i < aa.size(); i++) {
+        if (aa[i] != nullptr) {
             delete aa[i];
             aa[i] = nullptr;
         };
@@ -756,19 +711,16 @@ void deleteArrayOfArrays(StaticVector<StaticVector<T>*>& aa)
 }
 
 template <class T>
-StaticVector<StaticVector<T>*>* cloneArrayOfArrays(StaticVector<StaticVector<T>*>* inAOA)
-{
-    StaticVector<StaticVector<T>*>* outAOA = new StaticVector<StaticVector<T>*>();
+StaticVector<StaticVector<T>*>* cloneArrayOfArrays(
+        StaticVector<StaticVector<T>*>* inAOA) {
+    StaticVector<StaticVector<T>*>* outAOA =
+            new StaticVector<StaticVector<T>*>();
     outAOA->reserve(inAOA->size());
     // copy
-    for(int i = 0; i < inAOA->size(); i++)
-    {
-        if((*inAOA)[i] == NULL)
-        {
+    for (int i = 0; i < inAOA->size(); i++) {
+        if ((*inAOA)[i] == NULL) {
             outAOA->push_back(NULL);
-        }
-        else
-        {
+        } else {
             StaticVector<T>* outA = new StaticVector<T>();
             outA->reserve((*inAOA)[i]->size());
             outA->push_back_arr((*inAOA)[i]);
@@ -779,4 +731,4 @@ StaticVector<StaticVector<T>*>* cloneArrayOfArrays(StaticVector<StaticVector<T>*
     return outAOA;
 }
 
-} // namespace cloudViewer
+}  // namespace cloudViewer

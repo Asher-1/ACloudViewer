@@ -6,7 +6,6 @@
 // ----------------------------------------------------------------------------
 
 #include <IJsonConvertible.h>
-
 #include <json/json.h>
 
 #include "tests/UnitTest.h"

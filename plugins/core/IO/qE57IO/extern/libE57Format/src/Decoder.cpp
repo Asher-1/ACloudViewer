@@ -190,8 +190,7 @@ Decoder::Decoder( unsigned bytestreamNumber ) : bytestreamNumber_( bytestreamNum
 
 BitpackDecoder::BitpackDecoder( unsigned bytestreamNumber, SourceDestBuffer &dbuf, unsigned alignmentSize,
                                 uint64_t maxRecordCount ) :
-   Decoder( bytestreamNumber ),
-   maxRecordCount_( maxRecordCount ), destBuffer_( dbuf.impl() ),
+   Decoder( bytestreamNumber ), maxRecordCount_( maxRecordCount ), destBuffer_( dbuf.impl() ),
    inBuffer_( 1024 ), //!!! need to pick smarter channel buffer sizes
    inBufferAlignmentSize_( alignmentSize ), bitsPerWord_( 8 * alignmentSize ), bytesPerWord_( alignmentSize )
 {
@@ -644,8 +643,8 @@ template <typename RegisterT>
 BitpackIntegerDecoder<RegisterT>::BitpackIntegerDecoder( bool isScaledInteger, unsigned bytestreamNumber,
                                                          SourceDestBuffer &dbuf, int64_t minimum, int64_t maximum,
                                                          double scale, double offset, uint64_t maxRecordCount ) :
-   BitpackDecoder( bytestreamNumber, dbuf, sizeof( RegisterT ), maxRecordCount ),
-   isScaledInteger_( isScaledInteger ), minimum_( minimum ), maximum_( maximum ), scale_( scale ), offset_( offset )
+   BitpackDecoder( bytestreamNumber, dbuf, sizeof( RegisterT ), maxRecordCount ), isScaledInteger_( isScaledInteger ),
+   minimum_( minimum ), maximum_( maximum ), scale_( scale ), offset_( offset )
 {
    /// Get pointer to parent ImageFileImpl
    ImageFileImplSharedPtr imf( dbuf.impl()->destImageFile() ); //??? should be function for this,
@@ -819,9 +818,8 @@ template <typename RegisterT> void BitpackIntegerDecoder<RegisterT>::dump( int i
 ConstantIntegerDecoder::ConstantIntegerDecoder( bool isScaledInteger, unsigned bytestreamNumber, SourceDestBuffer &dbuf,
                                                 int64_t minimum, double scale, double offset,
                                                 uint64_t maxRecordCount ) :
-   Decoder( bytestreamNumber ),
-   maxRecordCount_( maxRecordCount ), destBuffer_( dbuf.impl() ), isScaledInteger_( isScaledInteger ),
-   minimum_( minimum ), scale_( scale ), offset_( offset )
+   Decoder( bytestreamNumber ), maxRecordCount_( maxRecordCount ), destBuffer_( dbuf.impl() ),
+   isScaledInteger_( isScaledInteger ), minimum_( minimum ), scale_( scale ), offset_( offset )
 {
 }
 

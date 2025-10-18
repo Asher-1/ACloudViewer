@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "../include/ccCloudLayersDlg.h"
 
 #include "../include/ccColorStyledDelegate.h"
@@ -243,10 +250,10 @@ void ccCloudLayersDlg::deleteClicked() {
     QItemSelectionModel* select = tableView->selectionModel();
     if (!select->hasSelection()) return;
 
-    if (QMessageBox::question(
-                m_associatedWin, "Cloud layers plugin",
-                "Are you sure you want to delete this record(s)?",
-                QMessageBox::Yes, QMessageBox::No) == QMessageBox::No) {
+    if (QMessageBox::question(m_associatedWin, "Cloud layers plugin",
+                              "Are you sure you want to delete this record(s)?",
+                              QMessageBox::Yes,
+                              QMessageBox::No) == QMessageBox::No) {
         return;
     }
 

@@ -1,23 +1,11 @@
-//##########################################################################
-//#                                                                        #
-//#                               cloudViewer                              #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef DISTANCE_COMPUTATION_TOOLS_HEADER
-#define DISTANCE_COMPUTATION_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "CVConst.h"
@@ -47,7 +35,7 @@ public:  // distance to clouds or meshes
         //! Level of subdivision of the octree at witch to apply the distance
         //! computation algorithm
         /** If set to 0 (default) the algorithm will try to guess the best level
-          *automatically.
+         *automatically.
          **/
         unsigned char octreeLevel;
 
@@ -171,7 +159,7 @@ public:  // distance to clouds or meshes
 
         //! Max search distance (acceleration)
         /** Default value: 0. If greater than 0, then the algorithm won't
-          *compute distances over this value
+         *compute distances over this value
          **/
         ScalarType maxSearchDist;
 
@@ -641,5 +629,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // DISTANCE_COMPUTATION_TOOLS_HEADER

@@ -19,6 +19,7 @@ from cloudViewer_example import *
 
 do_visualization = True
 
+
 def preprocess_point_cloud(pcd, voxel_size):
     print(":: Downsample with a voxel size %.3f." % voxel_size)
     pcd_down = pcd.voxel_down_sample(voxel_size)
@@ -32,8 +33,10 @@ def preprocess_point_cloud(pcd, voxel_size):
     print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
     pcd_fpfh = cv3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
-        cv3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100))
+        cv3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature,
+                                              max_nn=100))
     return pcd_down, pcd_fpfh
+
 
 if __name__ == "__main__":
     # data preparation

@@ -7,13 +7,14 @@
 
 #pragma once
 
+#include <Eigen.h>
+
 #include <Eigen/Core>
 #include <iostream>
 #include <tuple>
 #include <vector>
 
 #include "pipelines/odometry/OdometryOption.h"
-#include <Eigen.h>
 
 namespace cloudViewer {
 
@@ -49,7 +50,7 @@ public:
             int row,
             std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            std::vector<double>& w,
+            std::vector<double> &w,
             const geometry::RGBDImage &source,
             const geometry::RGBDImage &target,
             const geometry::Image &source_xyz,

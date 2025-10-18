@@ -7,9 +7,10 @@
 
 #include "visualization/shader/SimpleBlackShader.h"
 
-#include <ecvMesh.h>
 #include <HalfEdgeTriangleMesh.h>
+#include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
 
@@ -20,7 +21,7 @@ namespace glsl {
 
 bool SimpleBlackShader::Compile() {
     if (!CompileShaders(SimpleBlackVertexShader, NULL,
-                       SimpleBlackFragmentShader)) {
+                        SimpleBlackFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }

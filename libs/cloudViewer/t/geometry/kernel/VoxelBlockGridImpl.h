@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+#include <Timer.h>
+
 #include <atomic>
 #include <cmath>
 
@@ -18,8 +21,6 @@
 #include "cloudViewer/t/geometry/kernel/GeometryIndexer.h"
 #include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
 #include "cloudViewer/t/geometry/kernel/VoxelBlockGrid.h"
-#include <Logging.h>
-#include <Timer.h>
 
 namespace cloudViewer {
 namespace t {
@@ -120,7 +121,7 @@ inline CLOUDVIEWER_DEVICE void DeviceGetNormal(
         const ArrayIndexer& nb_block_masks_indexer,
         const ArrayIndexer& nb_block_indices_indexer) {
     auto GetLinearIdx = [&] CLOUDVIEWER_DEVICE(index_t xo, index_t yo,
-                                          index_t zo) -> index_t {
+                                               index_t zo) -> index_t {
         return DeviceGetLinearIdx(xo, yo, zo, curr_block_idx, resolution,
                                   nb_block_masks_indexer,
                                   nb_block_indices_indexer);
@@ -517,14 +518,16 @@ struct MiniVecCache {
     index_t z;
     index_t block_idx;
 
-    inline index_t CLOUDVIEWER_DEVICE Check(index_t xin, index_t yin, index_t zin) {
+    inline index_t CLOUDVIEWER_DEVICE Check(index_t xin,
+                                            index_t yin,
+                                            index_t zin) {
         return (xin == x && yin == y && zin == z) ? block_idx : -1;
     }
 
     inline void CLOUDVIEWER_DEVICE Update(index_t xin,
-                                     index_t yin,
-                                     index_t zin,
-                                     index_t block_idx_in) {
+                                          index_t yin,
+                                          index_t zin,
+                                          index_t block_idx_in) {
         x = xin;
         y = yin;
         z = zin;
@@ -1100,44 +1103,48 @@ void ExtractPointCloudCPU
                 "estimation. Surface extraction could be slow.");
         // This pass determines valid number of points.
 
-        core::ParallelFor(device, n, [=] CLOUDVIEWER_DEVICE(index_t workload_idx) {
-            auto GetLinearIdx = [&] CLOUDVIEWER_DEVICE(
-                                        index_t xo, index_t yo, index_t zo,
-                                        index_t curr_block_idx) -> index_t {
-                return DeviceGetLinearIdx(xo, yo, zo, curr_block_idx,
-                                          resolution, nb_block_masks_indexer,
-                                          nb_block_indices_indexer);
-            };
+        core::ParallelFor(
+                device, n, [=] CLOUDVIEWER_DEVICE(index_t workload_idx) {
+                    auto GetLinearIdx =
+                            [&] CLOUDVIEWER_DEVICE(
+                                    index_t xo, index_t yo, index_t zo,
+                                    index_t curr_block_idx) -> index_t {
+                        return DeviceGetLinearIdx(xo, yo, zo, curr_block_idx,
+                                                  resolution,
+                                                  nb_block_masks_indexer,
+                                                  nb_block_indices_indexer);
+                    };
 
-            // Natural index (0, N) -> (block_idx,
-            // voxel_idx)
-            index_t workload_block_idx = workload_idx / resolution3;
-            index_t block_idx = indices_ptr[workload_block_idx];
-            index_t voxel_idx = workload_idx % resolution3;
+                    // Natural index (0, N) -> (block_idx,
+                    // voxel_idx)
+                    index_t workload_block_idx = workload_idx / resolution3;
+                    index_t block_idx = indices_ptr[workload_block_idx];
+                    index_t voxel_idx = workload_idx % resolution3;
 
-            // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-            index_t xv, yv, zv;
-            voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+                    // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                    index_t xv, yv, zv;
+                    voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-            index_t linear_idx = block_idx * resolution3 + voxel_idx;
-            float tsdf_o = tsdf_base_ptr[linear_idx];
-            float weight_o = weight_base_ptr[linear_idx];
-            if (weight_o <= weight_threshold) return;
+                    index_t linear_idx = block_idx * resolution3 + voxel_idx;
+                    float tsdf_o = tsdf_base_ptr[linear_idx];
+                    float weight_o = weight_base_ptr[linear_idx];
+                    if (weight_o <= weight_threshold) return;
 
-            // Enumerate x-y-z directions
-            for (index_t i = 0; i < 3; ++i) {
-                index_t linear_idx_i =
-                        GetLinearIdx(xv + (i == 0), yv + (i == 1),
-                                     zv + (i == 2), workload_block_idx);
-                if (linear_idx_i < 0) continue;
+                    // Enumerate x-y-z directions
+                    for (index_t i = 0; i < 3; ++i) {
+                        index_t linear_idx_i =
+                                GetLinearIdx(xv + (i == 0), yv + (i == 1),
+                                             zv + (i == 2), workload_block_idx);
+                        if (linear_idx_i < 0) continue;
 
-                float tsdf_i = tsdf_base_ptr[linear_idx_i];
-                float weight_i = weight_base_ptr[linear_idx_i];
-                if (weight_i > weight_threshold && tsdf_i * tsdf_o < 0) {
-                    OPEN3D_ATOMIC_ADD(count_ptr, 1);
-                }
-            }
-        });
+                        float tsdf_i = tsdf_base_ptr[linear_idx_i];
+                        float weight_i = weight_base_ptr[linear_idx_i];
+                        if (weight_i > weight_threshold &&
+                            tsdf_i * tsdf_o < 0) {
+                            OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                        }
+                    }
+                });
 
 #if defined(__CUDACC__)
         valid_size = count[0].Item<index_t>();
@@ -1176,8 +1183,9 @@ void ExtractPointCloudCPU
                                       nb_block_indices_indexer);
         };
 
-        auto GetNormal = [&] CLOUDVIEWER_DEVICE(index_t xo, index_t yo, index_t zo,
-                                           index_t curr_block_idx, float* n) {
+        auto GetNormal = [&] CLOUDVIEWER_DEVICE(
+                                 index_t xo, index_t yo, index_t zo,
+                                 index_t curr_block_idx, float* n) {
             return DeviceGetNormal<tsdf_t>(
                     tsdf_base_ptr, xo, yo, zo, curr_block_idx, n, resolution,
                     nb_block_masks_indexer, nb_block_indices_indexer);
@@ -1513,8 +1521,9 @@ void ExtractTriangleMeshCPU
                                       nb_block_indices_indexer);
         };
 
-        auto GetNormal = [&] CLOUDVIEWER_DEVICE(index_t xo, index_t yo, index_t zo,
-                                           index_t curr_block_idx, float* n) {
+        auto GetNormal = [&] CLOUDVIEWER_DEVICE(
+                                 index_t xo, index_t yo, index_t zo,
+                                 index_t curr_block_idx, float* n) {
             return DeviceGetNormal<tsdf_t>(
                     tsdf_base_ptr, xo, yo, zo, curr_block_idx, n, resolution,
                     nb_block_masks_indexer, nb_block_indices_indexer);
@@ -1569,7 +1578,7 @@ void ExtractTriangleMeshCPU
                     GetLinearIdx(xv + (e == 0), yv + (e == 1), zv + (e == 2),
                                  workload_block_idx);
             CLOUDVIEWER_ASSERT(linear_idx_e > 0 &&
-                          "Internal error: GetVoxelAt returns nullptr.");
+                               "Internal error: GetVoxelAt returns nullptr.");
             float tsdf_e = tsdf_base_ptr[linear_idx_e];
             float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 

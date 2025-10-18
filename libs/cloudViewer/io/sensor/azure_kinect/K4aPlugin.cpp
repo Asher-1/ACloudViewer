@@ -21,10 +21,11 @@
 #include <link.h>
 #endif
 
-#include "io/sensor/azure_kinect/K4aPlugin.h"
-#include "io/sensor/azure_kinect/PluginMacros.h"
 #include <Helper.h>
 #include <Logging.h>
+
+#include "io/sensor/azure_kinect/K4aPlugin.h"
+#include "io/sensor/azure_kinect/PluginMacros.h"
 
 namespace cloudViewer {
 namespace io {

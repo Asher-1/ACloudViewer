@@ -62,8 +62,7 @@ static std::shared_ptr<Feature> ComputeSPFHFeature(
     const bool filter_spfh = indices.has_value();
     const auto spfh_indices = indices.value_or(std::vector<size_t>());
 
-    const size_t n_spfh =
-            filter_spfh ? spfh_indices.size() : input.size();
+    const size_t n_spfh = filter_spfh ? spfh_indices.size() : input.size();
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)n_spfh);
 

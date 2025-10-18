@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include <Image.h>
+
 #include <Eigen/Core>
 #include <string>
 #include <unordered_map>
 
-#include <Image.h>
 #include "visualization/rendering/Gradient.h"
 
 namespace cloudViewer {

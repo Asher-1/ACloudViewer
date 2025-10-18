@@ -1,18 +1,22 @@
-#ifndef TAGWIDGET_H
-#define TAGWIDGET_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include <QWidget>
 
 #include "../qPCL.h"
 
-namespace Widgets
-{
+namespace Widgets {
 class TagWidgetPrivate;
-class QPCL_ENGINE_LIB_API TagWidget : public QWidget
-{
+class QPCL_ENGINE_LIB_API TagWidget : public QWidget {
     Q_OBJECT
 public:
-    explicit TagWidget(QWidget *parent = 0);
+    explicit TagWidget(QWidget* parent = 0);
     ~TagWidget();
 
     void addTag(const QString& tagName);
@@ -25,6 +29,4 @@ private:
     TagWidgetPrivate* d_ptr;
 };
 
-} // namespace Widgets
-
-#endif // TAGWIDGET_H
+}  // namespace Widgets

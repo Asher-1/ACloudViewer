@@ -8,6 +8,7 @@
 #pragma once
 
 #include <RGBDImage.h>
+
 #include "io/sensor/RGBDSensorConfig.h"
 
 namespace cloudViewer {

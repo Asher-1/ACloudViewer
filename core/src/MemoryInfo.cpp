@@ -14,37 +14,38 @@
 
 #if defined(CV_WINDOWS)
 #include <windows.h>
+
 #include <sstream>
 #elif defined(CV_LINUX)
 #include <sys/sysinfo.h>
+
 #include <fstream>
 #include <limits>
 #elif defined(CV_MAC_OS)
-#include <sys/types.h>
-#include <sys/sysctl.h>
-#include <mach/vm_statistics.h>
-#include <mach/mach_types.h>
-#include <mach/mach_init.h>
 #include <mach/mach_host.h>
+#include <mach/mach_init.h>
+#include <mach/mach_types.h>
+#include <mach/vm_statistics.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
+
 #include <sstream>
 #else
 #warning "System unrecognized. Can't found memory infos."
 #include <limits>
 #endif
 
-
 namespace cloudViewer {
 namespace system {
 
 #if defined(CV_LINUX)
-unsigned long linuxGetAvailableRam()
-{
+unsigned long linuxGetAvailableRam() {
     std::string token;
     std::ifstream file("/proc/meminfo");
-    while(file >> token) {
-        if(token == "MemAvailable:") {
+    while (file >> token) {
+        if (token == "MemAvailable:") {
             unsigned long mem;
-            if(file >> mem) {
+            if (file >> mem) {
                 // read in kB and convert to bytes
                 return mem * 1024;
             } else {
@@ -54,12 +55,11 @@ unsigned long linuxGetAvailableRam()
         // ignore rest of the line
         file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
-    return 0; // nothing found
+    return 0;  // nothing found
 }
 #endif
 
-MemoryInfo getMemoryInfo()
-{
+MemoryInfo getMemoryInfo() {
     MemoryInfo infos;
 
 #if defined(CV_WINDOWS)
@@ -81,8 +81,7 @@ MemoryInfo getMemoryInfo()
     infos.freeRam = sys_info.freeram * sys_info.mem_unit;
 
     infos.availableRam = linuxGetAvailableRam();
-    if(infos.availableRam == 0)
-        infos.availableRam = infos.freeRam;
+    if (infos.availableRam == 0) infos.availableRam = infos.freeRam;
 
     // infos.sharedRam = sys_info.sharedram * sys_info.mem_unit;
     // infos.bufferRam = sys_info.bufferram * sys_info.mem_unit;
@@ -95,7 +94,8 @@ MemoryInfo getMemoryInfo()
     size_t miblen = sizeof(mib) / sizeof(mib[0]);
 
     // Total physical memory.
-    if(sysctl(mib, miblen, &physmem, &len, NULL, 0) == 0 && len == sizeof(physmem))
+    if (sysctl(mib, miblen, &physmem, &len, NULL, 0) == 0 &&
+        len == sizeof(physmem))
         infos.totalRam = physmem;
 
     // Virtual memory.
@@ -103,8 +103,7 @@ MemoryInfo getMemoryInfo()
     mib[1] = VM_SWAPUSAGE;
     struct xsw_usage swap;
     len = sizeof(struct xsw_usage);
-    if(sysctl(mib, miblen, &swap, &len, NULL, 0) == 0)
-    {
+    if (sysctl(mib, miblen, &swap, &len, NULL, 0) == 0) {
         infos.totalSwap = swap.xsu_total;
         infos.freeSwap = swap.xsu_avail;
     }
@@ -114,10 +113,11 @@ MemoryInfo getMemoryInfo()
     vm_size_t page_size;
     vm_statistics_data_t vm_stat;
     mach_msg_type_number_t count = sizeof(vm_stat) / sizeof(natural_t);
-    if(KERN_SUCCESS == host_page_size(stat_port, &page_size) &&
-       KERN_SUCCESS == host_statistics(stat_port, HOST_VM_INFO, (host_info_t)&vm_stat, &count))
-    {
-        // uint64_t used = ((int64_t)vm_stat.active_count + (int64_t)vm_stat.inactive_count + (int64_t)vm_stat.wire_count) *
+    if (KERN_SUCCESS == host_page_size(stat_port, &page_size) &&
+        KERN_SUCCESS == host_statistics(stat_port, HOST_VM_INFO,
+                                        (host_info_t)&vm_stat, &count)) {
+        // uint64_t used = ((int64_t)vm_stat.active_count +
+        // (int64_t)vm_stat.inactive_count + (int64_t)vm_stat.wire_count) *
         // (int64_t)page_size;
         // infos.freeRam = infos.totalRam - used;
         infos.freeRam = (int64_t)vm_stat.free_count * (int64_t)page_size;
@@ -126,32 +126,34 @@ MemoryInfo getMemoryInfo()
 #else
     // TODO: could be done on FreeBSD too
     // see https://github.com/xbmc/xbmc/blob/master/xbmc/linux/XMemUtils.cpp
-    infos.totalRam = infos.freeRam = infos.availableRam = infos.totalSwap = infos.freeSwap = std::numeric_limits<std::size_t>::max();
+    infos.totalRam = infos.freeRam = infos.availableRam = infos.totalSwap =
+            infos.freeSwap = std::numeric_limits<std::size_t>::max();
 #endif
 
     return infos;
 }
 
-std::ostream& operator<<(std::ostream& os, const MemoryInfo& infos)
-{
-  const double convertionGb = std::pow(2,30);
-  os << std::setw(5)
-     << "\t- Total RAM:     " << (infos.totalRam  / convertionGb) << " GB" << std::endl
-     << "\t- Free RAM:      " << (infos.freeRam   / convertionGb) << " GB" << std::endl
-     << "\t- Available RAM: " << (infos.availableRam   / convertionGb) << " GB" << std::endl
-     << "\t- Total swap:    " << (infos.totalSwap / convertionGb) << " GB" << std::endl
-     << "\t- Free swap:     " << (infos.freeSwap  / convertionGb) << " GB" << std::endl;
-  return os;
+std::ostream& operator<<(std::ostream& os, const MemoryInfo& infos) {
+    const double convertionGb = std::pow(2, 30);
+    os << std::setw(5)
+       << "\t- Total RAM:     " << (infos.totalRam / convertionGb) << " GB"
+       << std::endl
+       << "\t- Free RAM:      " << (infos.freeRam / convertionGb) << " GB"
+       << std::endl
+       << "\t- Available RAM: " << (infos.availableRam / convertionGb) << " GB"
+       << std::endl
+       << "\t- Total swap:    " << (infos.totalSwap / convertionGb) << " GB"
+       << std::endl
+       << "\t- Free swap:     " << (infos.freeSwap / convertionGb) << " GB"
+       << std::endl;
+    return os;
 }
 
-std::string MemoryInfo::toString()
-{
+std::string MemoryInfo::toString() {
     std::stringstream info;
     info << *this;
     return info.str();
 }
 
-}
-}
-
-
+}  // namespace system
+}  // namespace cloudViewer

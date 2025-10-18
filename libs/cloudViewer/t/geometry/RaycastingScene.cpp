@@ -21,6 +21,8 @@
 #ifdef emit
 #undef emit
 #endif
+#include <Helper.h>
+#include <Logging.h>
 #include <tbb/parallel_for.h>
 
 #include <Eigen/Core>
@@ -30,8 +32,6 @@
 #include <vector>
 
 #include "cloudViewer/core/TensorCheck.h"
-#include <Helper.h>
-#include <Logging.h>
 
 namespace callbacks {
 
@@ -177,18 +177,19 @@ typedef Eigen::Vector3f Vec3f;
 
 // Error function called by embree.
 void ErrorFunction(void* userPtr, enum RTCError error, const char* str) {
-    cloudViewer::utility::LogError("Embree error: {} {}", rtcGetErrorString(error),
-                              str);
+    cloudViewer::utility::LogError("Embree error: {} {}",
+                                   rtcGetErrorString(error), str);
 }
 
 // Checks the last dim, ensures that the number of dims is >= min_ndim, checks
 // the device, and dtype.
 template <class DTYPE>
-void AssertTensorDtypeLastDimDeviceMinNDim(const cloudViewer::core::Tensor& tensor,
-                                           const std::string& tensor_name,
-                                           int64_t last_dim,
-                                           const cloudViewer::core::Device& device,
-                                           int64_t min_ndim = 2) {
+void AssertTensorDtypeLastDimDeviceMinNDim(
+        const cloudViewer::core::Tensor& tensor,
+        const std::string& tensor_name,
+        int64_t last_dim,
+        const cloudViewer::core::Device& device,
+        int64_t min_ndim = 2) {
     cloudViewer::core::AssertTensorDevice(tensor, device);
     if (tensor.NumDims() < min_ndim) {
         cloudViewer::utility::LogError(
@@ -201,8 +202,8 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const cloudViewer::core::Tensor& tens
                 "Tensor with shape {}",
                 tensor_name, last_dim, tensor.GetShape().ToString());
     }
-    cloudViewer::core::AssertTensorDtype(tensor,
-                                    cloudViewer::core::Dtype::FromType<DTYPE>());
+    cloudViewer::core::AssertTensorDtype(
+            tensor, cloudViewer::core::Dtype::FromType<DTYPE>());
 }
 
 // Adapted from common/math/closest_point.h
@@ -1590,8 +1591,8 @@ core::Tensor RaycastingScene::ComputeSignedDistance(
                                                  3, impl_->tensor_device_);
 
     if (nsamples < 1 || (nsamples % 2) != 1) {
-        cloudViewer::utility::LogError("nsamples must be odd and >= 1 but is {}",
-                                  nsamples);
+        cloudViewer::utility::LogError(
+                "nsamples must be odd and >= 1 but is {}", nsamples);
     }
     auto shape = query_points.GetShape();
     shape.pop_back();  // Remove last dim, we want to use this shape for the
@@ -1618,7 +1619,7 @@ core::Tensor RaycastingScene::ComputeOccupancy(const core::Tensor& query_points,
 
     if (nsamples < 1 || (nsamples % 2) != 1) {
         cloudViewer::utility::LogError("samples must be odd and >= 1 but is {}",
-                                  nsamples);
+                                       nsamples);
     }
 
     auto result = VoteInsideOutside(*this, query_points, nthreads, nsamples);

@@ -31,6 +31,8 @@
 
 #include "cloudViewer/t/io/NumpyIO.h"
 
+#include <FileSystem.h>
+#include <Logging.h>
 #include <zlib.h>
 
 #include <memory>
@@ -44,8 +46,6 @@
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/SizeVector.h"
-#include <FileSystem.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

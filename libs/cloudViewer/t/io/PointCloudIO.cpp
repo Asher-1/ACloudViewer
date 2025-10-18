@@ -7,16 +7,17 @@
 
 #include "cloudViewer/t/io/PointCloudIO.h"
 
-#include <iostream>
-#include <unordered_map>
-
-#include "cloudViewer/io/PointCloudIO.h"
-#include "eCV_db/include/ecvPointCloud.h"
-#include "cloudViewer/t/io/NumpyIO.h"
 #include <FileSystem.h>
 #include <Helper.h>
 #include <Logging.h>
 #include <ProgressReporters.h>
+
+#include <iostream>
+#include <unordered_map>
+
+#include "cloudViewer/io/PointCloudIO.h"
+#include "cloudViewer/t/io/NumpyIO.h"
+#include "eCV_db/include/ecvPointCloud.h"
 
 namespace cloudViewer {
 namespace t {
@@ -160,8 +161,10 @@ bool WritePointCloud(const std::string &filename,
                      bool compressed /* = false*/,
                      bool print_progress) {
     cloudViewer::io::WritePointCloudOption p;
-    p.write_ascii = cloudViewer::io::WritePointCloudOption::IsAscii(write_ascii);
-    p.compressed = cloudViewer::io::WritePointCloudOption::Compressed(compressed);
+    p.write_ascii =
+            cloudViewer::io::WritePointCloudOption::IsAscii(write_ascii);
+    p.compressed =
+            cloudViewer::io::WritePointCloudOption::Compressed(compressed);
     std::string format =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     utility::ConsoleProgressUpdater progress_updater(

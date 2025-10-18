@@ -74,7 +74,7 @@ class ExternalVisualizer:
         """
         if connection is None:
             connection = cv3d.io.rpc.Connection(address=self.address,
-                                               timeout=self.timeout)
+                                                timeout=self.timeout)
         result = []
         if isinstance(obj, (tuple, list)):
             # item can be just an object or a tuple with path, time, layer, e.g.,
@@ -96,8 +96,8 @@ class ExternalVisualizer:
                                                  layer=layer,
                                                  connection=connection)
             result.append(status)
-        elif isinstance(
-                obj, (cv3d.t.geometry.TriangleMesh, cv3d.geometry.ccMesh)):
+        elif isinstance(obj,
+                        (cv3d.t.geometry.TriangleMesh, cv3d.geometry.ccMesh)):
             status = cv3d.io.rpc.set_triangle_mesh(obj,
                                                    path=path,
                                                    time=time,
@@ -127,7 +127,7 @@ class ExternalVisualizer:
             time: The time value
         """
         connection = cv3d.io.rpc.Connection(address=self.address,
-                                           timeout=self.timeout)
+                                            timeout=self.timeout)
         return cv3d.io.rpc.set_time(time, connection)
 
     def set_active_camera(self, path):
@@ -140,7 +140,7 @@ class ExternalVisualizer:
             path: A path describing a location in the scene tree.
         """
         connection = cv3d.io.rpc.Connection(address=self.address,
-                                           timeout=self.timeout)
+                                            timeout=self.timeout)
         return cv3d.io.rpc.set_active_camera(path, connection)
 
     def draw(self, geometry=None, *args, **kwargs):

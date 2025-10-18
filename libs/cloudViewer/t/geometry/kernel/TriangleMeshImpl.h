@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include "cloudViewer/core/CUDAUtils.h"
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/Dtype.h"
@@ -13,7 +15,6 @@
 #include "cloudViewer/core/linalg/kernel/Matrix.h"
 #include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
 #include "cloudViewer/t/geometry/kernel/TriangleMesh.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

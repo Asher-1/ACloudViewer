@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <IJsonConvertible.h>
+
 #include <atomic>
 #include <condition_variable>
 #include <string>
@@ -16,7 +18,6 @@
 
 #include "cloudViewer/io/sensor/RGBDSensorConfig.h"
 #include "cloudViewer/t/io/sensor/RGBDVideoReader.h"
-#include <IJsonConvertible.h>
 
 // Forward declarations for librealsense classes
 namespace rs2 {

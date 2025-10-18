@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include <Eigen.h>
 #include <IJsonConvertible.h>
+
+#include <memory>
+#include <vector>
 
 namespace cloudViewer {
 namespace pipelines {

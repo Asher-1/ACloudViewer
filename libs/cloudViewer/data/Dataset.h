@@ -1299,8 +1299,8 @@ private:
 };
 
 /// \class BalusterVase
-/// \brief Data class for `BalusterVase` contains the `F1980_baluster_vase.glb` from
-/// the `CloudViewer` project.
+/// \brief Data class for `BalusterVase` contains the `F1980_baluster_vase.glb`
+/// from the `CloudViewer` project.
 class BalusterVase : public DownloadDataset {
 public:
     BalusterVase(const std::string& data_root = "");

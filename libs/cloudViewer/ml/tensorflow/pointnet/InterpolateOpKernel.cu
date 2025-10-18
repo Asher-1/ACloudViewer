@@ -138,5 +138,6 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudviewerThreeInterpolateGrad").Device(DEVICE_GPU),
-                        ThreeInterpolateGradOpKernelCUDA);
+REGISTER_KERNEL_BUILDER(
+        Name("CloudviewerThreeInterpolateGrad").Device(DEVICE_GPU),
+        ThreeInterpolateGradOpKernelCUDA);

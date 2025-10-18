@@ -83,13 +83,13 @@ df -h
 
 echo
 pushd build # PWD=ACloudViewer/build
-echo "Try test cloudViewer Python package"
-test_wheel lib/python_package/pip_package/cloudViewer*.whl
+echo "Try test cloudviewer Python package"
+test_wheel lib/python_package/pip_package/cloudviewer*.whl
 popd # PWD=ACloudViewer
 
 echo
 echo "Move to install path: ${ACloudViewer_INSTALL}"
-mv build/lib/python_package/pip_package/cloudViewer*.whl ${ACloudViewer_INSTALL}
+mv build/lib/python_package/pip_package/cloudviewer*.whl ${ACloudViewer_INSTALL}
 
 echo "Backup whl package to ${ACloudViewer_INSTALL}"
 set +x # Echo commands off

@@ -14,9 +14,9 @@
 #include "core/linalg/SVD.h"
 #include "core/linalg/Solve.h"
 #include "core/linalg/Tri.h"
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
-#include "pybind/cloudViewer_pybind.h"
 
 namespace cloudViewer {
 namespace core {

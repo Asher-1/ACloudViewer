@@ -36,8 +36,8 @@ if __name__ == "__main__":
         np.array([[0, 1, 2], [0, 2, 3], [0, 4, 1], [1, 4, 2], [2, 4, 3],
                   [3, 4, 0]]))
     mesh_np = cv3d.geometry.ccMesh(vertices, triangles)
-    mesh_np.set_vertex_colors(cv3d.utility.Vector3dVector(
-        np.random.uniform(0, 1, size=(N, 3))))
+    mesh_np.set_vertex_colors(
+        cv3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(N, 3))))
     mesh_np.compute_vertex_normals()
     print(np.asarray(mesh_np.triangle_normals))
     print("Displaying mesh made using numpy ...")

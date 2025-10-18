@@ -7,9 +7,9 @@
 
 #include "io/FileFormatIO.h"
 
-#include <map>
-
 #include <FileSystem.h>
+
+#include <map>
 
 namespace cloudViewer {
 namespace io {
@@ -29,7 +29,8 @@ static std::map<std::string, FileGeometry (*)(const std::string&)> gExt2Func = {
 };
 
 FileGeometry ReadFileGeometryType(const std::string& path) {
-    auto ext = cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(path);
+    auto ext =
+            cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(path);
     auto it = gExt2Func.find(ext);
     if (it != gExt2Func.end()) {
         return it->second(path);

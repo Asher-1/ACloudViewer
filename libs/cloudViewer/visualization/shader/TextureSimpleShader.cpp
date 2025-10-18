@@ -7,8 +7,8 @@
 
 #include "visualization/shader/TextureSimpleShader.h"
 
-#include <ecvMesh.h>
 #include <Logging.h>
+#include <ecvMesh.h>
 
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
@@ -184,8 +184,8 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
 
     // Bind vertices and uvs per material
     for (size_t i = 0; i < mesh.size(); i++) {
-        const cloudViewer::VerticesIndexes *triangle = 
-			mesh.getTriangleVertIndexes(static_cast<unsigned int>(i));
+        const cloudViewer::VerticesIndexes *triangle =
+                mesh.getTriangleVertIndexes(static_cast<unsigned int>(i));
         int mi = mesh.triangle_material_ids_[i];
 
         for (size_t j = 0; j < 3; j++) {

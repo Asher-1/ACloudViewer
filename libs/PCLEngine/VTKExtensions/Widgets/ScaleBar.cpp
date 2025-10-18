@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "ScaleBar.h"
 
 #include <vtkActor2D.h>
@@ -142,7 +149,8 @@ int ScaleBar::getOptimizedFontSize(int baseFontSize) {
     // Platform-specific base font size adjustment
     int platformBaseSize = baseFontSize;
 #ifdef Q_OS_MAC
-    // macOS: Default font is slightly larger, but need to account for Retina display over-scaling
+    // macOS: Default font is slightly larger, but need to account for Retina
+    // display over-scaling
     platformBaseSize = baseFontSize;
     if (dpiScale > 1) {
         // Retina display: Use smaller font to avoid over-scaling
@@ -257,11 +265,13 @@ void ScaleBar::update(vtkRenderer* renderer,
                       vtkRenderWindowInteractor* interactor) {
     if (!visible || !renderer || !renderer->GetRenderWindow()) return;
 
-    // Dynamically update DPI scaling (in case window moves to different DPI monitor)
+    // Dynamically update DPI scaling (in case window moves to different DPI
+    // monitor)
     double currentDPIScale = getPlatformAwareDPIScale();
     if (std::abs(currentDPIScale - dpiScale) > 0.1) {
         dpiScale = currentDPIScale;
-        // Update font size and line width - using cross-platform optimized font size
+        // Update font size and line width - using cross-platform optimized font
+        // size
         if (textActor) {
             int optimizedFontSize = getOptimizedFontSize(18);
             textActor->GetTextProperty()->SetFontSize(optimizedFontSize);
@@ -284,13 +294,14 @@ void ScaleBar::update(vtkRenderer* renderer,
     int winW = size[0];
     int winH = size[1];
     // Scale bar length (pixels), considering DPI scaling
-    int barPixelLen =
-            static_cast<int>((winW / 6.0) * dpiScale);  // Approximately 1/6 of window width
+    int barPixelLen = static_cast<int>(
+            (winW / 6.0) * dpiScale);  // Approximately 1/6 of window width
 
     // Calculate ScaleBar position centered at window bottom
-    double bottomMargin = 25.0 * dpiScale;             // Bottom margin
-    double centerX = static_cast<double>(winW) / 2.0;  // Window center X coordinate
-    double bottomY = bottomMargin;                     // Bottom Y coordinate
+    double bottomMargin = 25.0 * dpiScale;  // Bottom margin
+    double centerX =
+            static_cast<double>(winW) / 2.0;  // Window center X coordinate
+    double bottomY = bottomMargin;            // Bottom Y coordinate
 
     // Calculate ScaleBar start and end positions (centered)
     double p1[3] = {centerX - static_cast<double>(barPixelLen) / 2.0, bottomY,
@@ -381,7 +392,8 @@ void ScaleBar::update(vtkRenderer* renderer,
     textActor->GetTextProperty()->SetVerticalJustificationToTop();
 
     // Calculate text position: centered below the line
-    double textX = centerX;  // Use window center X coordinate to ensure text is centered
+    double textX = centerX;  // Use window center X coordinate to ensure text is
+                             // centered
     double textY = bottomY - 10.0 * dpiScale;  // Below the line
     textActor->SetPosition(textX, textY);
 }

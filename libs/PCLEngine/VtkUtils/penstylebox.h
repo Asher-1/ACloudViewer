@@ -1,36 +1,23 @@
-/*! \file
-*  \brief Picture UI
-*  \author Asher
-*  \date 2013
-*  \version 1.0
-*  \copyright 2013 PERAGlobal Ltd. All rights reserved.
-*
-*  PenStyleBox
-*/
-/****************************************************************************
-**
-** Copyright (c) 2013 PERAGlobal Ltd. All rights reserved.
-** All rights reserved.
-**
-****************************************************************************/
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef PEN_STYLE_BOX_H
-#define PEN_STYLE_BOX_H
-
+#pragma once
 
 #include <QComboBox>
 
 #include "../qPCL.h"
 
-namespace Widgets
-{
+namespace Widgets {
 
-class QPCL_ENGINE_LIB_API PenStyleBox : public QComboBox
-{
+class QPCL_ENGINE_LIB_API PenStyleBox : public QComboBox {
     Q_OBJECT
 
 public:
-    PenStyleBox(QWidget *parent = 0);
+    PenStyleBox(QWidget* parent = 0);
     void setStyle(const Qt::PenStyle& style);
     Qt::PenStyle style() const;
 
@@ -41,5 +28,4 @@ private:
     static const Qt::PenStyle patterns[];
 };
 
-}
-#endif
+}  // namespace Widgets

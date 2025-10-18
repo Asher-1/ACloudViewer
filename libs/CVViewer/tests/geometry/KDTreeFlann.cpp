@@ -6,9 +6,9 @@
 // ----------------------------------------------------------------------------
 
 #include <ecvKDTreeFlann.h>
-
-#include <ecvPointCloud.h>
 #include <ecvMesh.h>
+#include <ecvPointCloud.h>
+
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

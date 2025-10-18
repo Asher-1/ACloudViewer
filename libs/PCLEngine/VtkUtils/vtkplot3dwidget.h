@@ -1,14 +1,18 @@
-#ifndef VTKPLOT3DWIDGET_H
-#define VTKPLOT3DWIDGET_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "vtkplotwidget.h"
+#pragma once
+
 #include "qPCL.h"
+#include "vtkplotwidget.h"
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 class VtkPlot3DWidgetPrivate;
-class QPCL_ENGINE_LIB_API VtkPlot3DWidget : public VtkPlotWidget
-{
+class QPCL_ENGINE_LIB_API VtkPlot3DWidget : public VtkPlotWidget {
     Q_OBJECT
 public:
     explicit VtkPlot3DWidget(QWidget* parent = nullptr);
@@ -21,5 +25,4 @@ private:
     Q_DISABLE_COPY(VtkPlot3DWidget)
 };
 
-} // namespace VtkUtils
-#endif // VTKPLOT3DWIDGET_H
+}  // namespace VtkUtils

@@ -7,11 +7,12 @@
 
 #include "cloudViewer/core/kernel/Kernel.h"
 
+#include <Logging.h>
+
 #include <cmath>
 #include <vector>
 
 #include "cloudViewer/core/linalg/LinalgHeadersCPU.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

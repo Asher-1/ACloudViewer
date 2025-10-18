@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "RGBDImage.h"
+
 #include "ecvBBox.h"
 
 namespace cloudViewer {
@@ -17,9 +18,8 @@ RGBDImage &RGBDImage::Clear() {
     return *this;
 }
 
-ccBBox RGBDImage::getOwnBB(bool withGLFeatures)
-{
-	return GetAxisAlignedBoundingBox();
+ccBBox RGBDImage::getOwnBB(bool withGLFeatures) {
+    return GetAxisAlignedBoundingBox();
 }
 
 Eigen::Vector2d RGBDImage::GetMin2DBound() const {

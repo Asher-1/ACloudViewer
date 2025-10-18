@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include "cloudViewer/core/linalg/LinalgHeadersCPU.h"
 #include "cloudViewer/core/linalg/LinalgHeadersCUDA.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

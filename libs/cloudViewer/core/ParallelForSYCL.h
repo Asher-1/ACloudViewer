@@ -7,13 +7,14 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include <cstdint>
 #include <type_traits>
 
 #include "cloudViewer/core/Device.h"
 #include "cloudViewer/core/Indexer.h"
 #include "cloudViewer/core/SYCLContext.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

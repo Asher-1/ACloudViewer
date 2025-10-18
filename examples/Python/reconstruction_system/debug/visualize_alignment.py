@@ -26,8 +26,8 @@ def list_posegraph_files(folder_posegraph):
         n_nodes = len(pose_graph.nodes)
         n_edges = len(pose_graph.edges)
         print(
-            "Fragment cv3d.registration.PoseGraph %s has %d nodes and %d edges" %
-            (pose_graph_path, n_nodes, n_edges))
+            "Fragment cv3d.registration.PoseGraph %s has %d nodes and %d edges"
+            % (pose_graph_path, n_nodes, n_edges))
 
 
 if __name__ == "__main__":

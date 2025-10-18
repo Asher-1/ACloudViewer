@@ -1,19 +1,9 @@
-// ##########################################################################
-// #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                       #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                   COPYRIGHT: Thomas Montaigu                           #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -31,12 +21,11 @@ using namespace pybind11::literals;
 void define_ccPolyline(py::module &m)
 {
     py::class_<ccPolyline, cloudViewer::Polyline, ccShiftedObject>(m, "ccPolyline")
-        .def(
-            py::init([](cloudViewer::GenericIndexedCloudPersist *cloud)
-                     { return new ccPolyline(cloud); }),
-            "associatedCloud"_a,
-            py::keep_alive<1, 2>() // Keep cloud alive while polyline is
-            )
+        .def(py::init([](cloudViewer::GenericIndexedCloudPersist *cloud)
+                      { return new ccPolyline(cloud); }),
+             "associatedCloud"_a,
+             py::keep_alive<1, 2>() // Keep cloud alive while polyline is
+             )
 
         .def("set2DMode", &ccPolyline::set2DMode, "state"_a)
         .def("is2DMode", &ccPolyline::is2DMode)

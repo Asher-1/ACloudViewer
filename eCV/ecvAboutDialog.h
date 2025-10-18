@@ -1,5 +1,11 @@
-#ifndef ECVABOUTDIALOG_H
-#define ECVABOUTDIALOG_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -34,5 +40,3 @@ public:
 private:
     Ui::AboutDialog *mUI;
 };
-
-#endif  // ECVABOUTDIALOG_H

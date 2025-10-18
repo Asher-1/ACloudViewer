@@ -7,12 +7,12 @@
 
 #pragma once
 
+#include <Image.h>
+#include <ecvHObject.h>
+
 #include <Eigen/Core>
 #include <memory>
 #include <vector>
-
-#include <Image.h>
-#include <ecvHObject.h>
 
 class ccMesh;
 class ccPointCloud;
@@ -28,7 +28,6 @@ class SelectionPolygonVolume;
 /// convention).
 class SelectionPolygon : public ccHObject {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     enum class SectionPolygonType {
@@ -38,15 +37,16 @@ public:
     };
 
 public:
-	SelectionPolygon(const char* name = "SelectionPolygon")
-		: ccHObject(name) {}
-	~SelectionPolygon() override {}
+    SelectionPolygon(const char *name = "SelectionPolygon") : ccHObject(name) {}
+    ~SelectionPolygon() override {}
 
-	//inherited methods (ccHObject)
-	virtual bool isSerializable() const override { return true; }
+    // inherited methods (ccHObject)
+    virtual bool isSerializable() const override { return true; }
 
-	//! Returns unique class ID
-	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::CUSTOM_H_OBJECT; }
+    //! Returns unique class ID
+    virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::CUSTOM_H_OBJECT;
+    }
 
 public:
     SelectionPolygon &Clear();
@@ -54,10 +54,10 @@ public:
     virtual Eigen::Vector2d GetMin2DBound() const override;
     virtual Eigen::Vector2d GetMax2DBound() const override;
     void FillPolygon(int width, int height);
-    std::shared_ptr<ccPointCloud> CropPointCloud(
-            const ccPointCloud &input, const ViewControl &view);
-    std::shared_ptr<ccMesh> CropTriangleMesh(
-            const ccMesh &input, const ViewControl &view);
+    std::shared_ptr<ccPointCloud> CropPointCloud(const ccPointCloud &input,
+                                                 const ViewControl &view);
+    std::shared_ptr<ccMesh> CropTriangleMesh(const ccMesh &input,
+                                             const ViewControl &view);
     std::shared_ptr<SelectionPolygonVolume> CreateSelectionPolygonVolume(
             const ViewControl &view);
 
@@ -68,10 +68,10 @@ private:
             const ccPointCloud &input, const ViewControl &view);
     std::shared_ptr<ccMesh> CropTriangleMeshInRectangle(
             const ccMesh &input, const ViewControl &view);
-    std::shared_ptr<ccMesh> CropTriangleMeshInPolygon(
-            const ccMesh &input, const ViewControl &view);
-    std::vector<size_t> CropInRectangle(
-            const std::vector<CCVector3> &input, const ViewControl &view);
+    std::shared_ptr<ccMesh> CropTriangleMeshInPolygon(const ccMesh &input,
+                                                      const ViewControl &view);
+    std::vector<size_t> CropInRectangle(const std::vector<CCVector3> &input,
+                                        const ViewControl &view);
     std::vector<size_t> CropInPolygon(const std::vector<CCVector3> &input,
                                       const ViewControl &view);
 

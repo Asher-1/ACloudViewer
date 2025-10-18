@@ -1,62 +1,44 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                  COPYRIGHT: Daniel Girardeau-Montaut                   #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_POINT_CLOUD_INTERPOLATOR
-#define ECV_POINT_CLOUD_INTERPOLATOR
+#pragma once
 
 class ccPointCloud;
 
-//Local
+// Local
 #include "eCV_db.h"
 
-//System
+// System
 #include <vector>
 
-namespace cloudViewer
-{
-	class GenericProgressCallback;
+namespace cloudViewer {
+class GenericProgressCallback;
 }
 
-class ECV_DB_LIB_API ccPointCloudInterpolator
-{
+class ECV_DB_LIB_API ccPointCloudInterpolator {
 public:
+    //! Generic interpolation parameters
+    struct Parameters {
+        enum Method { NEAREST_NEIGHBOR, K_NEAREST_NEIGHBORS, RADIUS };
+        enum Algo { AVERAGE, MEDIAN, NORMAL_DIST };
 
-	//! Generic interpolation parameters
-	struct Parameters
-	{
-		enum Method { NEAREST_NEIGHBOR, K_NEAREST_NEIGHBORS, RADIUS };
-		enum Algo { AVERAGE, MEDIAN, NORMAL_DIST };
+        Method method = NEAREST_NEIGHBOR;
+        Algo algo = AVERAGE;
+        unsigned knn = 0;
+        float radius = 0;
+        double sigma = 0;
+    };
 
-		Method method = NEAREST_NEIGHBOR;
-		Algo algo = AVERAGE;
-		unsigned knn = 0;
-		float radius = 0;
-		double sigma = 0;
-	};
-
-	//! Interpolate scalar fields from another cloud
-	static bool InterpolateScalarFieldsFrom(ccPointCloud* destCloud,
-											ccPointCloud* srccloud,
-											const std::vector<int>& sfIndexes,
-											const Parameters& params,
-											cloudViewer::GenericProgressCallback* progressCb = 0,
-											unsigned char octreeLevel = 0);
-
-
+    //! Interpolate scalar fields from another cloud
+    static bool InterpolateScalarFieldsFrom(
+            ccPointCloud* destCloud,
+            ccPointCloud* srccloud,
+            const std::vector<int>& sfIndexes,
+            const Parameters& params,
+            cloudViewer::GenericProgressCallback* progressCb = 0,
+            unsigned char octreeLevel = 0);
 };
-
-#endif // ECV_POINT_CLOUD_INTERPOLATOR

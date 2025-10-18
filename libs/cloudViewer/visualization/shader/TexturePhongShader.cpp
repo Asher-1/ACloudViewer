@@ -7,10 +7,11 @@
 
 #include "visualization/shader/TexturePhongShader.h"
 
-#include <Logging.h>
 #include <Image.h>
+#include <Logging.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
 
@@ -21,7 +22,7 @@ namespace glsl {
 
 bool TexturePhongShader::Compile() {
     if (!CompileShaders(TexturePhongVertexShader, NULL,
-                       TexturePhongFragmentShader)) {
+                        TexturePhongFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -244,14 +245,12 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Rendering type is not ccMesh.");
         return false;
     }
-    const ccMesh &mesh =
-            (const ccMesh &)geometry;
+    const ccMesh &mesh = (const ccMesh &)geometry;
     if (mesh.hasTriangles() == false) {
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    if (!mesh.hasTriNormals() ||
-        !mesh.getAssociatedCloud()->hasNormals()) {
+    if (!mesh.hasTriNormals() || !mesh.getAssociatedCloud()->hasNormals()) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
         PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;
@@ -273,11 +272,12 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
     tmp_uvs.resize(num_materials_);
 
     for (unsigned int i = 0; i < mesh.size(); i++) {
-        const cloudViewer::VerticesIndexes* triangle = mesh.getTriangleVertIndexes(i);
+        const cloudViewer::VerticesIndexes *triangle =
+                mesh.getTriangleVertIndexes(i);
         int mi = mesh.triangle_material_ids_[i];
 
-		std::vector<Eigen::Vector3d> vN(3);
-		mesh.getTriangleNormals(i, vN[0].data(), vN[1].data(), vN[2].data());
+        std::vector<Eigen::Vector3d> vN(3);
+        mesh.getTriangleNormals(i, vN[0].data(), vN[1].data(), vN[2].data());
         for (unsigned int j = 0; j < 3; j++) {
             unsigned int idx = i * 3 + j;
             unsigned int vi = triangle->i[j];
@@ -287,7 +287,8 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
 
             if (option.mesh_shade_option_ ==
                 RenderOption::MeshShadeOption::FlatShade) {
-                tmp_normals[mi].push_back(mesh.getTriangleNorm(i).cast<float>());
+                tmp_normals[mi].push_back(
+                        mesh.getTriangleNorm(i).cast<float>());
             } else {
                 tmp_normals[mi].push_back(vN[j].cast<float>());
             }

@@ -1,21 +1,30 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "vtkBoxWidgetRestricted.h"
-#include <vtkMath.h>
-#include <vtkTransform.h>
+
 #include <vtkDoubleArray.h>
+#include <vtkMath.h>
 #include <vtkPoints.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
+#include <vtkTransform.h>
 
 vtkStandardNewMacro(vtkBoxWidgetRestricted);
 
-void vtkBoxWidgetRestricted::Rotate(int X, int Y, double *p1, double *p2, double *vpn){
-    double *pts =
-            static_cast<vtkDoubleArray *>(this->Points->GetData())->GetPointer(0);
-    double *center =
-            static_cast<vtkDoubleArray *>(this->Points->GetData())->GetPointer(3*14);
-    double v[3]; //vector of motion
+void vtkBoxWidgetRestricted::Rotate(
+        int X, int Y, double *p1, double *p2, double *vpn) {
+    double *pts = static_cast<vtkDoubleArray *>(this->Points->GetData())
+                          ->GetPointer(0);
+    double *center = static_cast<vtkDoubleArray *>(this->Points->GetData())
+                             ->GetPointer(3 * 14);
+    double v[3];  // vector of motion
     // double axis[3]; //axis of rotation
-    double theta; //rotation angle
+    double theta;  // rotation angle
     int i;
 
     v[0] = p2[0] - p1[0];
@@ -24,32 +33,33 @@ void vtkBoxWidgetRestricted::Rotate(int X, int Y, double *p1, double *p2, double
 
     // Create axis of rotation and angle of rotation
     // compute the vector which perpendicular to Y axis in current view
-    double y[3]={0, 1, 0}; //restrict to y rotation
+    double y[3] = {0, 1, 0};  // restrict to y rotation
     double m[3];
     vtkMath::Cross(y, vpn, m);
-    if ( vtkMath::Normalize(m) == 0.0 ||  vtkMath::Normalize(v) == 0.0)
-    {
+    if (vtkMath::Normalize(m) == 0.0 || vtkMath::Normalize(v) == 0.0) {
         return;
     }
     // alpha is the angle between the motion vector and vector m
-    double cos_alpha=vtkMath::Dot(m, v);
+    double cos_alpha = vtkMath::Dot(m, v);
     int *size = this->CurrentRenderer->GetSize();
-    double l2 = (X - this->Interactor->GetLastEventPosition()[0]) *  (X-this->Interactor->GetLastEventPosition()[0]) + 
-		(Y-this->Interactor->GetLastEventPosition()[1]) * (Y-this->Interactor->GetLastEventPosition()[1]);
-    theta = 360.0 * cos_alpha *sqrt(l2/(size[0]*size[0]+size[1]*size[1]));
+    double l2 = (X - this->Interactor->GetLastEventPosition()[0]) *
+                        (X - this->Interactor->GetLastEventPosition()[0]) +
+                (Y - this->Interactor->GetLastEventPosition()[1]) *
+                        (Y - this->Interactor->GetLastEventPosition()[1]);
+    theta = 360.0 * cos_alpha *
+            sqrt(l2 / (size[0] * size[0] + size[1] * size[1]));
 
-    //Manipulate the transform to reflect the rotation
+    // Manipulate the transform to reflect the rotation
     this->Transform->Identity();
-    this->Transform->Translate(center[0],center[1],center[2]);
+    this->Transform->Translate(center[0], center[1], center[2]);
     this->Transform->RotateY(theta);
-    this->Transform->Translate(-center[0],-center[1],-center[2]);
+    this->Transform->Translate(-center[0], -center[1], -center[2]);
 
-    //Set the corners
+    // Set the corners
     vtkPoints *newPts = vtkPoints::New(VTK_DOUBLE);
-    this->Transform->TransformPoints(this->Points,newPts);
+    this->Transform->TransformPoints(this->Points, newPts);
 
-    for (i=0; i<8; i++, pts+=3)
-    {
+    for (i = 0; i < 8; i++, pts += 3) {
         this->Points->SetPoint(i, newPts->GetPoint(i));
     }
 

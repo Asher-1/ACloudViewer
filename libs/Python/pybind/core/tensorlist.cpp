@@ -9,16 +9,16 @@
 
 #include <vector>
 
-#include "core/Blob.h"
 #include "cloudViewer/core/CUDAUtils.h"
+#include "core/Blob.h"
 #include "core/Device.h"
 #include "core/Dispatch.h"
 #include "core/Dtype.h"
 #include "core/SizeVector.h"
 #include "core/Tensor.h"
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
-#include "pybind/cloudViewer_pybind.h"
 #include "pybind/pybind_utils.h"
 
 namespace cloudViewer {

@@ -34,8 +34,8 @@ namespace e57
 {
    ScaledIntegerNodeImpl::ScaledIntegerNodeImpl( ImageFileImplWeakPtr destImageFile, int64_t rawValue, int64_t minimum,
                                                  int64_t maximum, double scale, double offset ) :
-      NodeImpl( destImageFile ),
-      value_( rawValue ), minimum_( minimum ), maximum_( maximum ), scale_( scale ), offset_( offset )
+      NodeImpl( destImageFile ), value_( rawValue ), minimum_( minimum ), maximum_( maximum ), scale_( scale ),
+      offset_( offset )
    {
       // don't checkImageFileOpen, NodeImpl() will do it
 
@@ -51,8 +51,7 @@ namespace e57
    ScaledIntegerNodeImpl::ScaledIntegerNodeImpl( ImageFileImplWeakPtr destImageFile, double scaledValue,
                                                  double scaledMinimum, double scaledMaximum, double scale,
                                                  double offset ) :
-      NodeImpl( destImageFile ),
-      value_( static_cast<int64_t>( std::floor( ( scaledValue - offset ) / scale + .5 ) ) ),
+      NodeImpl( destImageFile ), value_( static_cast<int64_t>( std::floor( ( scaledValue - offset ) / scale + .5 ) ) ),
       minimum_( static_cast<int64_t>( std::floor( ( scaledMinimum - offset ) / scale + .5 ) ) ),
       maximum_( static_cast<int64_t>( std::floor( ( scaledMaximum - offset ) / scale + .5 ) ) ), scale_( scale ),
       offset_( offset )

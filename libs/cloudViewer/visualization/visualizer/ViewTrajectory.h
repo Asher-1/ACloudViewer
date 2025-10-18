@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include <IJsonConvertible.h>
+
 #include <Eigen/Core>
 #include <tuple>
 #include <vector>
 
-#include <IJsonConvertible.h>
 #include "visualization/visualizer/ViewParameters.h"
 
 namespace cloudViewer {
@@ -52,8 +53,11 @@ public:
         if (view_status_.empty()) {
             return 0;
         } else {
-            return is_loop_ ? (static_cast<size_t>(interval_) + 1) * view_status_.size()
-                            : (static_cast<size_t>(interval_) + 1) * (view_status_.size() - 1) + 1;
+            return is_loop_ ? (static_cast<size_t>(interval_) + 1) *
+                                      view_status_.size()
+                            : (static_cast<size_t>(interval_) + 1) *
+                                              (view_status_.size() - 1) +
+                                      1;
         }
     }
 

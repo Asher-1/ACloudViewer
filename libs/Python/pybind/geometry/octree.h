@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Octree.h"
+#include <Octree.h>
 
 namespace cloudViewer {
 namespace geometry {
@@ -37,6 +37,3 @@ public:
 
 }  // namespace geometry
 }  // namespace cloudViewer
-
-
-

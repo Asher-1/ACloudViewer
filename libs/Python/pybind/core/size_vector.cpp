@@ -6,9 +6,9 @@
 // ----------------------------------------------------------------------------
 
 #include "core/SizeVector.h"
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
-#include "pybind/cloudViewer_pybind.h"
 
 namespace cloudViewer {
 namespace core {
@@ -38,9 +38,9 @@ void pybind_core_size_vector(py::module& m) {
     py::implicitly_convertible<py::tuple, SizeVector>();
     py::implicitly_convertible<py::list, SizeVector>();
     auto dsv = py::bind_vector<DynamicSizeVector>(
-                m, "DynamicSizeVector",
-                "A vector of integers for specifying shape, strides, etc. Some "
-                "elements can be None.");
+            m, "DynamicSizeVector",
+            "A vector of integers for specifying shape, strides, etc. Some "
+            "elements can be None.");
     dsv.def("__repr__",
             [](const DynamicSizeVector& dsv) { return dsv.ToString(); });
 }

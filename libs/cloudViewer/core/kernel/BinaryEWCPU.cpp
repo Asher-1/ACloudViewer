@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/Indexer.h"
@@ -13,7 +15,6 @@
 #include "cloudViewer/core/SizeVector.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/kernel/BinaryEW.h"
-#include <Logging.h>
 
 #ifdef BUILD_ISPC_MODULE
 #include "BinaryEWCPU_ispc.h"
@@ -363,22 +364,22 @@ void BinaryEWCPU(const Tensor& lhs,
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUAddElementKernel<scalar_t>,
                             CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
-                                                       CPUAddElementKernel,
-                                                       &ispc_indexer));
+                                                            CPUAddElementKernel,
+                                                            &ispc_indexer));
                     break;
                 case BinaryEWOpCode::Sub:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUSubElementKernel<scalar_t>,
                             CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
-                                                       CPUSubElementKernel,
-                                                       &ispc_indexer));
+                                                            CPUSubElementKernel,
+                                                            &ispc_indexer));
                     break;
                 case BinaryEWOpCode::Mul:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUMulElementKernel<scalar_t>,
                             CLOUDVIEWER_TEMPLATE_VECTORIZED(scalar_t,
-                                                       CPUMulElementKernel,
-                                                       &ispc_indexer));
+                                                            CPUMulElementKernel,
+                                                            &ispc_indexer));
                     break;
                 case BinaryEWOpCode::Div:
                     // The vectorized Div kernel causes a crash in the Python

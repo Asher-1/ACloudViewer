@@ -1,5 +1,11 @@
-#ifndef PYTHON_PLUGIN_CODE_EDITOR_MAIN_WINDOW
-#define PYTHON_PLUGIN_CODE_EDITOR_MAIN_WINDOW
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -22,8 +28,8 @@
 
 // Qt
 #include "EditorSettings.h"
-#include <QMainWindow>
 #include <CVLog.h>
+#include <QMainWindow>
 
 class CodeEditor;
 QT_BEGIN_NAMESPACE
@@ -129,5 +135,3 @@ class PythonEditor final : public QMainWindow, public Ui::PythonEditor
     QAction *m_previousAct{nullptr};
     QAction *m_windowMenuSeparatorAct{nullptr};
 };
-
-#endif // PYTHON_PLUGIN_CODE_EDITOR_MAIN_WINDOW

@@ -255,10 +255,10 @@ struct Array {
 struct MeshData {
     static std::string MsgId() { return "mesh_data"; }
 
-    /// The original CloudViewer geometry type from which the MeshData object has
-    /// been created. This is one of "PointCloud", "LineSet", "TriangleMesh". If
-    /// this field is empty CloudViewer will infer the type based on the presence of
-    /// lines and faces.
+    /// The original CloudViewer geometry type from which the MeshData object
+    /// has been created. This is one of "PointCloud", "LineSet",
+    /// "TriangleMesh". If this field is empty CloudViewer will infer the type
+    /// based on the presence of lines and faces.
     std::string o3d_type;
 
     /// shape must be [num_verts,3]
