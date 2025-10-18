@@ -435,15 +435,15 @@ else ()
 endif ()
 
 # PyPI package name controls specifies the repository name on PyPI. The default
-# name is "cloudviewer". In the past, for historical reasons, we've used the
+# name is "cloudViewer". In the past, for historical reasons, we've used the
 # following names for PyPI, while they are now deprecated:
-# - cloudviewer-python
+# - cloudViewer-python
 # - py3d
-# - cloudviewer-original
-# - cloudviewer-official
+# - cloudViewer-original
+# - cloudViewer-official
 # - cloud-viewer
 if (NOT DEFINED PYPI_PACKAGE_NAME)
-    set(PYPI_PACKAGE_NAME "cloudviewer")
+    set(PYPI_PACKAGE_NAME "cloudViewer")
 endif ()
 
 # Set apps name
