@@ -107,7 +107,7 @@ if os.path.exists(MAIN_LIB_PATH):
             try_load_cdll('libdouble-conversion*')
         if len(list(MAIN_LIB_PATH.glob('libmd4c*'))) > 0:
             try_load_cdll('libmd4c*')
-        
+
         try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Gui*')
