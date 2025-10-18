@@ -439,6 +439,8 @@ function Build-PipPackage {
     Write-Host "Finish make pip-package for cpu"
 
     Write-Host "Backup lib/python_package/pip_package/cloudviewer*.whl to build path"
+    Write-Host "Listing contents of lib/python_package/pip_package/ directory:"
+    Get-ChildItem lib/python_package/pip_package/ -Force | Format-Table -AutoSize
     Move-Item lib/python_package/pip_package/cloudviewer*.whl . -Force
 
     if ($BUILD_CUDA_MODULE -eq "ON") {
@@ -471,6 +473,8 @@ function Build-PipPackage {
 
     Write-Host "Restore cloudviewer*.whl from build path"
     Move-Item cloudviewer*.whl lib/python_package/pip_package/ -Force
+    Write-Host "Listing contents of lib/python_package/pip_package/ directory:"
+    Get-ChildItem lib/python_package/pip_package/ -Force | Format-Table -AutoSize
 
     Pop-Location
 }
