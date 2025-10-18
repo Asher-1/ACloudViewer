@@ -11,10 +11,11 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Fix code style
 
 - Enhancements:
+    -   Replace `#ifndef` with `#pragma once`
     -   Use GLIBCXX_USE_CXX11_ABI=ON by default
     -   Remove `setuptools` and `wheel` from requirements for end users
     -   CUDA support 11.8 -> 12.6.3 Tensorflow 2.16.2 -> 2.19.0. PyTorch 2.2.2 -> 2.7.1
-    -   Replace `#ifndef` with `#pragma once`
+    -   Change python package file name from `cloudViewer*` to `cloudviewer*` due to PEP 503 standard behavior
 
 ### supported platform:
 - Windows `x86/64`
