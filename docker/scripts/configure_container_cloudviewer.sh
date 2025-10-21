@@ -106,7 +106,7 @@ export LD_LIBRARY_PATH=${QT_BASE_DIR}/lib:$LD_LIBRARY_PATH
 export PKG_CONFIG_PATH=${QT_BASE_DIR}/lib/pkgconfig:$PKG_CONFIG_PATH
 
 # create python env
-export PYTHON_VERSION=3.10
+export PYTHON_VERSION=3.12
 export PIP_DEFAULT_TIMEOUT=1000
 export PIP_RETRIES=5
 export PIP_TIMEOUT=1000
@@ -125,6 +125,8 @@ python --version && pip --version
 
 # build ACloudViewer app installer
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh $PYTHON_VERSION ON
+
+git config --global --add safe.directory /root/CloudViewer-ML/.git
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh $PYTHON_VERSION
 
 test cloudViewer
