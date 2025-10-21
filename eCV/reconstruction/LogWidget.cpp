@@ -9,6 +9,9 @@
 
 #include "OptionManager.h"
 
+// CV_CORE_LIB
+#include <CVLog.h>
+
 namespace cloudViewer {
 
 LogWidget::LogWidget(QWidget* parent, const int max_num_blocks) {
@@ -63,6 +66,14 @@ LogWidget::LogWidget(QWidget* parent, const int max_num_blocks) {
 }
 
 LogWidget::~LogWidget() {
+    // Flush any remaining CVLog buffer content
+    if (!cvlog_buffer_.empty()) {
+        QString remaining = QString::fromStdString(cvlog_buffer_).trimmed();
+        if (!remaining.isEmpty()) {
+            CVLog::LogMessage(remaining, CVLog::LOG_STANDARD);
+        }
+    }
+
     if (log_file_.is_open()) {
         log_file_.close();
     }
@@ -76,9 +87,54 @@ void LogWidget::Append(const std::string& text) {
     QMutexLocker locker(&mutex_);
     text_queue_ += text;
 
-    // Dump to log file
+    // Dump to log file and flush immediately to avoid data loss on crash
     if (log_file_.is_open()) {
         log_file_ << text;
+        log_file_.flush();  // Immediate flush for crash safety
+    }
+
+    // Also output to CVLog for unified logging (accumulate by lines)
+    cvlog_buffer_ += text;
+
+    // Process complete lines in buffer
+    size_t pos;
+    while ((pos = cvlog_buffer_.find('\n')) != std::string::npos) {
+        std::string line = cvlog_buffer_.substr(0, pos);
+        cvlog_buffer_.erase(0, pos + 1);
+
+        if (!line.empty()) {
+            QString qline = QString::fromStdString(line);
+            qline = qline.trimmed();
+
+            if (!qline.isEmpty()) {
+                // Determine log level based on content
+                int logLevel = CVLog::LOG_STANDARD;
+                QString lowerLine = qline.toLower();
+
+                if (lowerLine.contains("error") ||
+                    lowerLine.contains("failed") ||
+                    lowerLine.contains("fatal") ||
+                    lowerLine.contains("exception")) {
+                    logLevel = CVLog::LOG_ERROR;
+                } else if (lowerLine.contains("warning") ||
+                           lowerLine.contains("warn")) {
+                    logLevel = CVLog::LOG_WARNING;
+                }
+
+                // Output to CVLog immediately (CVLog handles its own flushing)
+                CVLog::LogMessage(qline, logLevel);
+            }
+        }
+    }
+
+    // Also flush incomplete buffer periodically for crash safety
+    // If buffer is getting large (>1KB) without newline, flush it anyway
+    if (cvlog_buffer_.size() > 1024) {
+        QString remaining = QString::fromStdString(cvlog_buffer_).trimmed();
+        if (!remaining.isEmpty()) {
+            CVLog::LogMessage(remaining, CVLog::LOG_STANDARD);
+        }
+        cvlog_buffer_.clear();
     }
 }
 
@@ -97,6 +153,7 @@ void LogWidget::Flush() {
 void LogWidget::Clear() {
     QMutexLocker locker(&mutex_);
     text_queue_.clear();
+    cvlog_buffer_.clear();
     text_box_->clear();
 }
 

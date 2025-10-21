@@ -65,8 +65,12 @@ public:
     //! Sets auto-refresh state
     void setAutoRefresh(bool state);
 
-    //! Sets log file
-    bool setLogFile(const QString& filename);
+    //! Sets log file with prefix (generates timestamped log file like glog)
+    /** \param logPrefix log file prefix (e.g., "ACloudviewer")
+     *  \return true if successful, false otherwise
+     *  Generates log file name: <prefix>.<timestamp>.<pid>.log
+     **/
+    bool setLogFile(const QString& logPrefix);
 
     //! Whether to show Qt messages (qDebug / qWarning / etc.) in Console
     static void EnableQtMessages(bool state);
@@ -84,6 +88,11 @@ public slots:
     void refresh();
 
 protected:
+    //! Generate log file name with timestamp and pid
+    static QString generateLogFileName(const QString& prefix);
+
+    //! Get appropriate log directory path (handles permissions on Ubuntu)
+    static QString getLogDirectory();
     //! Default constructor
     /** Constructor is protected to avoid using this object as a non static
      *class.
