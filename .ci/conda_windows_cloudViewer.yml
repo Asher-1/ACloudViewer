@@ -6,7 +6,7 @@ dependencies:
   - ninja
   - pkg-config
   - eigen=3.4.*
-  - boost=1.84.* # pcl or vtk
+  - boost=1.84.* # pcl and reconstruction
   - flann=1.9.*
   - qhull=2020.2
   - xerces-c=3.2.* # reconstruction or PLUGIN_IO_QE57

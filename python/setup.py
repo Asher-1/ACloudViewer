@@ -36,7 +36,7 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
         import ipywidgets
         import jupyterlab
     except ImportError as error:
-        print(error.__class__.__name__ + ": " + error.message)
+        print(f"{error.__class__.__name__}: {str(error)}")
         print("Run `pip install -r requirements-jupyter-build.txt`.")
 
     here = os.path.dirname(os.path.abspath(__file__))
