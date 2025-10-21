@@ -64,6 +64,8 @@ private:
 
     QMutex mutex_;
     std::string text_queue_;
+    // Buffer for CVLog output (accumulates until newline)
+    std::string cvlog_buffer_;
     QPlainTextEdit* text_box_;
     std::ofstream log_file_;
     StandardOutputRedirector<char, std::char_traits<char>>* cout_redirector_;

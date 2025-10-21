@@ -42,7 +42,7 @@ static const QString THEME_TEST = ":/qss/test.css";
 namespace Settings {
 // settings
 static QString CONFIG_PATH = "configuration.ini";
-static QString LOGFILE = "log.log";
+static QString LOGFILE_PREFIX = "ACloudViewer";
 
 // Define the URL of the Update Definitions file
 static const QString UPDATE_RUL =
