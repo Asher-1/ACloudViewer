@@ -91,18 +91,6 @@ elseif (WIN32)
     endif()
 endif()
 
-# CMake modules
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
-
-# set build time
-string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
-set(BUILD_TIME  ${COMPILE_TIME})
-
-# set git commit id and git commit date
-include(GenerateVersionDefinitions)
-message(STATUS "GIT_COMMIT_ID: " ${GIT_COMMIT_ID})
-message(STATUS "GIT_COMMIT_DATE : " ${GIT_COMMIT_DATE})
-
 include(CMakeDependentOption)
 
 # ACloudViewer build options
@@ -272,14 +260,6 @@ if (BUILD_WITH_CONDA)
         message(FATAL_ERROR "FAILED TO ENSURE CONDA_PREFIX VARIABLES")
     endif()
     message(STATUS "Building with conda env at ${CONDA_PREFIX}")
-
-    # add Conda's pkgconfig directory to PKG_CONFIG_PATH
-    # if (WIN32)
-    #     set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${CONDA_PREFIX}/Library/pkgconfig")
-    # else()
-    #     set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${CONDA_PREFIX}/lib/pkgconfig")
-    # endif()
-    # message(STATUS "Updated PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
 endif()
 
 # Default build type on single-config generators.
@@ -409,6 +389,23 @@ project(ACloudViewer
     LANGUAGES C CXX)
 message(STATUS "ACloudViewer ${CLOUDVIEWER_VERSION_FULL}")
 
+# CMake modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
+
+include(CMakePolicies)
+include(CMakeSetCompilerOptions)
+# Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
+add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
+
+# set build time
+string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
+set(BUILD_TIME  ${COMPILE_TIME})
+
+# set git commit id and git commit date
+include(GenerateVersionDefinitions)
+message(STATUS "GIT_COMMIT_ID: " ${GIT_COMMIT_ID})
+message(STATUS "GIT_COMMIT_DATE : " ${GIT_COMMIT_DATE})
+
 # Setup Python executable
 # if(NOT DEFINED Python3_FIND_REGISTRY)
 #     # Only consider PATH variable on Windows by default
@@ -464,8 +461,6 @@ set(PROJECT_DOCS "https://asher-1.github.io/docs")
 set(PROJECT_CODE "https://github.com/Asher-1/ACloudViewer")
 set(PROJECT_ISSUES "https://github.com/Asher-1/ACloudViewer/issues")
 
-include(CMakePolicies)
-include(CMakeSetCompilerOptions)
 include(DeployQt)
 # Load advanced scripts
 include(CMakeInclude)
@@ -573,10 +568,6 @@ if (BUILD_CUDA_MODULE)
     if(WIN32 AND NOT (CUDA_VERSION VERSION_LESS "11.2"))
         set(CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS} -Xcudafe --display_error_number --diag-suppress 1394,1388)
     endif()
-
-    # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
-    # add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_ALLOW_UNSUPPORTED_LIBCPP>)
-    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
 
     include(CloudViewerMakeCudaArchitectures)
     cloudViewer_make_cuda_architectures(CUDA_ARCHS)

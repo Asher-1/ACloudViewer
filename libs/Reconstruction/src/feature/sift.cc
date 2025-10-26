@@ -1138,7 +1138,11 @@ bool CreateSiftGPUMatcher(const SiftMatchingOptions& match_options,
     SiftGPU sift_gpu;
     sift_gpu.SetVerbose(0);
 
-    *sift_match_gpu = SiftMatchGPU(match_options.max_num_matches);
+    // CRITICAL FIX: Don't call SetMaxSift() before VerifyContextGL()!
+    // The SiftMatchGPU constructor already set __max_sift correctly.
+    // SetMaxSift() only works AFTER __matcher is created by VerifyContextGL().
+    // Calling it before can cause issues on Ubuntu 22.04 due to stricter memory
+    // management.
 
 #ifdef CUDA_ENABLED
     if (gpu_indices[0] >= 0) {
@@ -1197,18 +1201,41 @@ void MatchSiftFeaturesGPU(const SiftMatchingOptions& match_options,
     CHECK_NOTNULL(sift_match_gpu);
     CHECK_NOTNULL(matches);
 
+    // Verify GPU index exists in mutex map
+    if (sift_matching_mutexes.find(sift_match_gpu->gpu_index) ==
+        sift_matching_mutexes.end()) {
+        std::cerr << "ERROR: GPU index " << sift_match_gpu->gpu_index
+                  << " not found in SIFT matching mutexes" << std::endl;
+        // Don't call matches->clear() - let caller handle it
+        // Just resize to 0 to indicate failure
+        matches->resize(0);
+        return;
+    }
+
     std::unique_lock<std::mutex> lock(
             *sift_matching_mutexes[sift_match_gpu->gpu_index]);
 
     if (descriptors1 != nullptr) {
-        CHECK_EQ(descriptors1->cols(), 128);
+        if (descriptors1->cols() != 128) {
+            std::cerr
+                    << "ERROR: Invalid descriptor dimensions for descriptors1: "
+                    << descriptors1->cols() << " (expected 128)" << std::endl;
+            matches->resize(0);
+            return;
+        }
         WarnIfMaxNumMatchesReachedGPU(*sift_match_gpu, *descriptors1);
         sift_match_gpu->SetDescriptors(0, descriptors1->rows(),
                                        descriptors1->data());
     }
 
     if (descriptors2 != nullptr) {
-        CHECK_EQ(descriptors2->cols(), 128);
+        if (descriptors2->cols() != 128) {
+            std::cerr
+                    << "ERROR: Invalid descriptor dimensions for descriptors2: "
+                    << descriptors2->cols() << " (expected 128)" << std::endl;
+            matches->resize(0);
+            return;
+        }
         WarnIfMaxNumMatchesReachedGPU(*sift_match_gpu, *descriptors2);
         sift_match_gpu->SetDescriptors(1, descriptors2->rows(),
                                        descriptors2->data());
@@ -1229,7 +1256,8 @@ void MatchSiftFeaturesGPU(const SiftMatchingOptions& match_options,
                    "insufficient GPU memory. Consider reducing the maximum "
                    "number of features and/or matches."
                 << std::endl;
-        matches->clear();
+        // Use resize(0) instead of clear() to avoid potential double free
+        matches->resize(0);
     } else {
         CHECK_LE(num_matches, matches->size());
         matches->resize(num_matches);
