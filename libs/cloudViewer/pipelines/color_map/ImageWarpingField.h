@@ -40,5 +40,5 @@ public:
 }  // namespace pipelines
 }  // namespace cloudViewer
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
-        cloudViewer::pipelines::color_map::ImageWarpingField);
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
+//         cloudViewer::pipelines::color_map::ImageWarpingField);

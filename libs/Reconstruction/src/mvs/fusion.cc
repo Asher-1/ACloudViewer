@@ -61,9 +61,15 @@ int FindNextImage(const std::vector<std::vector<int>>& overlapping_images,
                   const int prev_image_idx) {
     CHECK_EQ(used_images.size(), fused_images.size());
 
-    for (const auto image_idx : overlapping_images.at(prev_image_idx)) {
-        if (used_images.at(image_idx) && !fused_images.at(image_idx)) {
-            return image_idx;
+    if (prev_image_idx >= 0 &&
+        static_cast<size_t>(prev_image_idx) < overlapping_images.size()) {
+        for (const auto image_idx : overlapping_images[prev_image_idx]) {
+            if (image_idx >= 0 &&
+                static_cast<size_t>(image_idx) < used_images.size() &&
+                static_cast<size_t>(image_idx) < fused_images.size() &&
+                used_images[image_idx] && !fused_images[image_idx]) {
+                return image_idx;
+            }
         }
     }
 
@@ -420,6 +426,11 @@ void StereoFusion::Fuse(const int thread_id,
             // Project reference point into current view.
             const Eigen::Vector3f proj = P_.at(image_idx) * fused_ref_point;
 
+            // Check for valid projection depth to avoid division by zero
+            if (std::abs(proj(2)) < std::numeric_limits<float>::epsilon()) {
+                continue;
+            }
+
             // Depth error of reference depth with current depth.
             const float depth_error = std::abs((proj(2) - depth) / depth);
             if (depth_error > options_.max_depth_error) {
@@ -503,32 +514,96 @@ void StereoFusion::Fuse(const int thread_id,
             continue;
         }
 
-        for (const auto next_image_idx : overlapping_images_.at(image_idx)) {
-            if (!used_images_.at(next_image_idx) ||
-                fused_images_.at(next_image_idx)) {
-                continue;
-            }
+        if (static_cast<size_t>(image_idx) < overlapping_images_.size()) {
+            for (const auto next_image_idx : overlapping_images_[image_idx]) {
+                if (next_image_idx < 0 ||
+                    static_cast<size_t>(next_image_idx) >=
+                            used_images_.size() ||
+                    static_cast<size_t>(next_image_idx) >=
+                            fused_images_.size() ||
+                    !used_images_[next_image_idx] ||
+                    fused_images_[next_image_idx]) {
+                    continue;
+                }
 
-            const Eigen::Vector3f next_proj =
-                    P_.at(next_image_idx) * xyz.homogeneous();
-            const int next_col =
-                    static_cast<int>(std::round(next_proj(0) / next_proj(2)));
-            const int next_row =
-                    static_cast<int>(std::round(next_proj(1) / next_proj(2)));
+                if (static_cast<size_t>(next_image_idx) >= P_.size()) {
+                    std::cout << "P_ size: " << P_.size() << std::endl;
+                    std::cout << "next_image_idx: " << next_image_idx
+                              << std::endl;
+                    continue;
+                }
 
-            const auto& depth_map_size = depth_map_sizes_.at(next_image_idx);
-            if (next_col < 0 || next_row < 0 ||
-                next_col >= depth_map_size.first ||
-                next_row >= depth_map_size.second) {
-                continue;
+                const Eigen::Vector3f next_proj =
+                        P_[next_image_idx] * xyz.homogeneous();
+
+                // Check for valid projection depth to avoid division by zero
+                if (std::abs(next_proj(2)) <
+                    std::numeric_limits<float>::epsilon()) {
+                    std::cout << "next_proj(2) is zero: " << next_proj(2)
+                              << std::endl;
+                    continue;
+                }
+
+                const int next_col = static_cast<int>(
+                        std::round(next_proj(0) / next_proj(2)));
+                const int next_row = static_cast<int>(
+                        std::round(next_proj(1) / next_proj(2)));
+
+                if (static_cast<size_t>(next_image_idx) >=
+                    depth_map_sizes_.size()) {
+                    std::cout << "depth_map_sizes_ size: "
+                              << depth_map_sizes_.size() << std::endl;
+                    std::cout << "next_image_idx: " << next_image_idx
+                              << std::endl;
+                    continue;
+                }
+
+                const auto& depth_map_size = depth_map_sizes_[next_image_idx];
+                if (next_col < 0 || next_row < 0 ||
+                    next_col >= depth_map_size.first ||
+                    next_row >= depth_map_size.second) {
+                    std::cout << "next_col or next_row is out of bounds"
+                              << std::endl;
+                    std::cout << "next_col: " << next_col << std::endl;
+                    std::cout << "next_row: " << next_row << std::endl;
+                    std::cout
+                            << "depth_map_size.first: " << depth_map_size.first
+                            << std::endl;
+                    std::cout << "depth_map_size.second: "
+                              << depth_map_size.second << std::endl;
+                    continue;
+                }
+                fusion_queue.emplace_back(next_image_idx, next_row, next_col,
+                                          traversal_depth + 1);
             }
-            fusion_queue.emplace_back(next_image_idx, next_row, next_col,
-                                      traversal_depth + 1);
         }
     }
 
     const size_t num_pixels = fused_point_x.size();
     if (num_pixels >= static_cast<size_t>(options_.min_num_pixels)) {
+        // Validate that all required data vectors have the same size
+        if (fused_point_x.empty() || fused_point_y.empty() ||
+            fused_point_z.empty() || fused_point_nx.empty() ||
+            fused_point_ny.empty() || fused_point_nz.empty() ||
+            fused_point_r.empty() || fused_point_g.empty() ||
+            fused_point_b.empty()) {
+            std::cout << "fused_point_x.empty(): " << fused_point_x.empty()
+                      << std::endl;
+            std::cout << "fused_point_y.empty(): " << fused_point_y.empty()
+                      << std::endl;
+            std::cout << "fused_point_z.empty(): " << fused_point_z.empty()
+                      << std::endl;
+            std::cout << "fused_point_nx.empty(): " << fused_point_nx.empty()
+                      << std::endl;
+            std::cout << "fused_point_ny.empty(): " << fused_point_ny.empty()
+                      << std::endl;
+            std::cout << "fused_point_nz.empty(): " << fused_point_nz.empty()
+                      << std::endl;
+            std::cout << "fused_point_r.empty(): " << fused_point_r.empty()
+                      << std::endl;
+            return;
+        }
+
         PlyPoint fused_point;
 
         Eigen::Vector3f fused_normal;
@@ -555,9 +630,14 @@ void StereoFusion::Fuse(const int thread_id,
         fused_point.b = TruncateCast<float, uint8_t>(
                 std::round(internal::Median(&fused_point_b)));
 
-        task_fused_points_[thread_id].push_back(fused_point);
-        task_fused_points_visibility_[thread_id].emplace_back(
-                fused_point_visibility.begin(), fused_point_visibility.end());
+        if (static_cast<size_t>(thread_id) < task_fused_points_.size() &&
+            static_cast<size_t>(thread_id) <
+                    task_fused_points_visibility_.size()) {
+            task_fused_points_[thread_id].push_back(fused_point);
+            task_fused_points_visibility_[thread_id].emplace_back(
+                    fused_point_visibility.begin(),
+                    fused_point_visibility.end());
+        }
     }
 }
 

@@ -98,6 +98,7 @@ private:
         CachedImage& operator=(CachedImage&& other);
         inline size_t NumBytes() const { return num_bytes; }
         size_t num_bytes = 0;
+        std::mutex mutex;
         std::unique_ptr<Bitmap> bitmap;
         std::unique_ptr<DepthMap> depth_map;
         std::unique_ptr<NormalMap> normal_map;

@@ -35,12 +35,13 @@ typedef unsigned __int64 uint64_t;
 #include <Eigen/Core>
 
 namespace Eigen {
-
-typedef Eigen::Matrix<float, 3, 4> Matrix3x4f;
-typedef Eigen::Matrix<double, 3, 4> Matrix3x4d;
-typedef Eigen::Matrix<uint8_t, 3, 1> Vector3ub;
-typedef Eigen::Matrix<uint8_t, 4, 1> Vector4ub;
-typedef Eigen::Matrix<double, 6, 1> Vector6d;
+using Matrix3x4f = Matrix<float, 3, 4>;
+using Matrix3x4d = Matrix<double, 3, 4>;
+using Matrix6d = Matrix<double, 6, 6>;
+using Vector3ub = Matrix<uint8_t, 3, 1>;
+using Vector4ub = Matrix<uint8_t, 4, 1>;
+using Vector6d = Matrix<double, 6, 1>;
+using RowMajorMatrixXi = Matrix<int, Dynamic, Dynamic, RowMajor>;
 
 }  // namespace Eigen
 

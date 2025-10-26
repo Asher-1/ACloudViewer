@@ -8,8 +8,11 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <unordered_map>
 
 #include "base/database.h"
 #include "feature/sift.h"
@@ -158,12 +161,12 @@ public:
 
     void Setup();
 
-    const Camera& GetCamera(const camera_t camera_id) const;
-    const Image& GetImage(const image_t image_id) const;
-    const FeatureKeypoints& GetKeypoints(const image_t image_id);
-    const FeatureDescriptors& GetDescriptors(const image_t image_id);
+    const Camera& GetCamera(const camera_t camera_id);
+    const Image& GetImage(const image_t image_id);
+    std::shared_ptr<FeatureKeypoints> GetKeypoints(const image_t image_id);
+    std::shared_ptr<FeatureDescriptors> GetDescriptors(const image_t image_id);
     FeatureMatches GetMatches(const image_t image_id1, const image_t image_id2);
-    std::vector<image_t> GetImageIds() const;
+    std::vector<image_t> GetImageIds();
 
     bool ExistsKeypoints(const image_t image_id);
     bool ExistsDescriptors(const image_t image_id);
@@ -182,15 +185,18 @@ public:
     void DeleteInlierMatches(const image_t image_id1, const image_t image_id2);
 
 private:
+    void MaybeLoadCameras();
+    void MaybeLoadImages();
+
     const size_t cache_size_;
     const Database* database_;
     std::mutex database_mutex_;
-    EIGEN_STL_UMAP(camera_t, Camera) cameras_cache_;
-    EIGEN_STL_UMAP(image_t, Image) images_cache_;
-    std::unique_ptr<LRUCache<image_t, FeatureKeypoints>> keypoints_cache_;
-    std::unique_ptr<LRUCache<image_t, FeatureDescriptors>> descriptors_cache_;
-    std::unique_ptr<LRUCache<image_t, bool>> keypoints_exists_cache_;
-    std::unique_ptr<LRUCache<image_t, bool>> descriptors_exists_cache_;
+    std::unique_ptr<std::unordered_map<camera_t, Camera>> cameras_cache_;
+    std::unique_ptr<std::unordered_map<image_t, Image>> images_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureKeypoints>> keypoints_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptors>> descriptors_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, bool>> keypoints_exists_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, bool>> descriptors_exists_cache_;
 };
 
 class FeatureMatcherThread : public Thread {
@@ -386,9 +392,9 @@ private:
 
     const ExhaustiveMatchingOptions options_;
     const SiftMatchingOptions match_options_;
-    Database database_;
-    FeatureMatcherCache cache_;
-    SiftFeatureMatcher matcher_;
+    std::shared_ptr<Database> database_;
+    std::shared_ptr<FeatureMatcherCache> cache_;
+    std::shared_ptr<SiftFeatureMatcher> matcher_;
 };
 
 // Sequentially match images within neighborhood:
@@ -425,7 +431,7 @@ private:
     const SequentialMatchingOptions options_;
     const SiftMatchingOptions match_options_;
     Database database_;
-    FeatureMatcherCache cache_;
+    const std::shared_ptr<FeatureMatcherCache> cache_;
     SiftFeatureMatcher matcher_;
 };
 
