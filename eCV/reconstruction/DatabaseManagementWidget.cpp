@@ -521,8 +521,8 @@ void ImageTab::Reload() {
     info += QString("Features: ") + QString::number(database_->NumKeypoints());
     info_label_->setText(info);
 
-    // use temp vector to avoid memory problem when directly assigning to member variable
-    // std::vector<Image> temp_images = database_->ReadAllImages();
+    // use temp vector to avoid memory problem when directly assigning to member
+    // variable std::vector<Image> temp_images = database_->ReadAllImages();
     // images_.clear();
     // images_.swap(temp_images);
     images_ = database_->ReadAllImages();

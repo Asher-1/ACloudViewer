@@ -9,10 +9,10 @@
 
 #include <array>
 #include <memory>
-#include <string>
-#include <vector>
 #include <mutex>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "base/database.h"
 #include "feature/sift.h"
@@ -193,10 +193,13 @@ private:
     std::mutex database_mutex_;
     std::unique_ptr<std::unordered_map<camera_t, Camera>> cameras_cache_;
     std::unique_ptr<std::unordered_map<image_t, Image>> images_cache_;
-    std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureKeypoints>> keypoints_cache_;
-    std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptors>> descriptors_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureKeypoints>>
+            keypoints_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptors>>
+            descriptors_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, bool>> keypoints_exists_cache_;
-    std::unique_ptr<ThreadSafeLRUCache<image_t, bool>> descriptors_exists_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, bool>>
+            descriptors_exists_cache_;
 };
 
 class FeatureMatcherThread : public Thread {
