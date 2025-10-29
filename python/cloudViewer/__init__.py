@@ -177,6 +177,10 @@ if os.path.exists(MAIN_LIB_PATH):
         try_load_cdll('libQt5Concurrent*')
         # fix symbol lookup error: libQt5Svg.so.5: undefined symbol: _ZdlPvm, version Qt_5
         try_load_cdll('libQt5Svg*')
+        
+        # fix symbol lookup error: libQt5XcbQpa.so.5: maybe you should load libxcb-icccm.so.4 first
+        if len(list(MAIN_LIB_PATH.glob('libxcb-icccm*'))) > 0:
+            try_load_cdll('libxcb-icccm*')
 
         try_load_cdll('libCVCoreLib*')
         try_load_cdll('libECV_DB_LIB*')
@@ -191,6 +195,7 @@ if os.path.exists(MAIN_LIB_PATH):
             try_load_cdll('libfreeimage*')
             try_load_cdll('libgflags*')
             try_load_cdll('libglog*')
+            try_load_cdll('libatlas*')
             try_load_cdll('libblas*')
             try_load_cdll('liblapack*')
             try_load_cdll('libceres*')
