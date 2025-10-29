@@ -7,7 +7,6 @@
 
 import cloudViewer as cv3d
 
-
 if __name__ == "__main__":
     sample_ply_data = cv3d.data.PLYPointCloud()
     pcd = cv3d.io.read_point_cloud(sample_ply_data.path)

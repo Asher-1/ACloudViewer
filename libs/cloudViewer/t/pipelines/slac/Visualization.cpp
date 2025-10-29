@@ -58,8 +58,8 @@ void VisualizePointCloudCorrespondences(const t::geometry::PointCloud& tpcd_i,
     pcd_i_corres->PaintUniformColor(kSourceColor);
     pcd_i_corres->Transform(flip);
 
-    auto pcd_j_corres =
-            std::make_shared<cloudViewer::geometry::PointCloud>(tpcd_j.ToLegacy());
+    auto pcd_j_corres = std::make_shared<cloudViewer::geometry::PointCloud>(
+            tpcd_j.ToLegacy());
     pcd_j_corres->PaintUniformColor(kTargetColor);
     pcd_j_corres->Transform(flip);
 
@@ -218,12 +218,12 @@ void VisualizeGridDeformation(ControlGrid& cgrid) {
     }
 
     {
-        auto lineset_init =
-                cloudViewer::geometry::LineSet::CreateFromPointCloudCorrespondences(
-                        *pcd_init_grid, *pcd_init_grid, nb_lines);
-        auto lineset_curr =
-                cloudViewer::geometry::LineSet::CreateFromPointCloudCorrespondences(
-                        *pcd_curr_grid, *pcd_curr_grid, nb_lines);
+        auto lineset_init = cloudViewer::geometry::LineSet::
+                CreateFromPointCloudCorrespondences(*pcd_init_grid,
+                                                    *pcd_init_grid, nb_lines);
+        auto lineset_curr = cloudViewer::geometry::LineSet::
+                CreateFromPointCloudCorrespondences(*pcd_curr_grid,
+                                                    *pcd_curr_grid, nb_lines);
         visualization::DrawGeometries(
                 {pcd_init_grid, pcd_curr_grid, lineset_init, lineset_curr},
                 "Grid Deformation");

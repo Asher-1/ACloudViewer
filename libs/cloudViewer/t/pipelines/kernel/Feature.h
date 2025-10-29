@@ -5,9 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Optional.h>
+
 #include "cloudViewer/core/CUDAUtils.h"
 #include "cloudViewer/core/Tensor.h"
-#include <Optional.h>
 
 namespace cloudViewer {
 namespace t {

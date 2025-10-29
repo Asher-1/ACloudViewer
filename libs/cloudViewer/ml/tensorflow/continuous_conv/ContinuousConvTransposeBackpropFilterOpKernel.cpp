@@ -67,15 +67,15 @@ public:
     }
 };
 
-#define REG_KB(feattype, outtype, realtype, indextype)                  \
-    REGISTER_KERNEL_BUILDER(                                            \
-            Name("CloudviewerContinuousConvTransposeBackpropFilter")    \
-                    .Device(DEVICE_CPU)                                 \
-                    .TypeConstraint<feattype>("TFeat")                  \
-                    .TypeConstraint<outtype>("output_type")             \
-                    .TypeConstraint<realtype>("TReal")                  \
-                    .TypeConstraint<indextype>("TIndex"),               \
-            ContinuousConvTransposeBackpropFilterOpKernelCPU<           \
+#define REG_KB(feattype, outtype, realtype, indextype)               \
+    REGISTER_KERNEL_BUILDER(                                         \
+            Name("CloudviewerContinuousConvTransposeBackpropFilter") \
+                    .Device(DEVICE_CPU)                              \
+                    .TypeConstraint<feattype>("TFeat")               \
+                    .TypeConstraint<outtype>("output_type")          \
+                    .TypeConstraint<realtype>("TReal")               \
+                    .TypeConstraint<indextype>("TIndex"),            \
+            ContinuousConvTransposeBackpropFilterOpKernelCPU<        \
                     feattype, outtype, realtype, indextype>);
 REG_KB(float, float, float, int32)
 REG_KB(bfloat16, float, float, int32)

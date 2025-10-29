@@ -82,6 +82,9 @@ python -c "import cloudViewer as cv3d; \
 
 # CloudViewer CLI
 cloudViewer example visualization/draw
+
+# CloudViewer Reconstruction
+cloudViewer example reconstruction/gui
 ```
 
 ## ACloudViewer System

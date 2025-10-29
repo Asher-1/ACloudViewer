@@ -7,11 +7,12 @@
 
 #include "cloudViewer/core/hashmap/HashSet.h"
 
+#include <Helper.h>
+#include <Logging.h>
+
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/hashmap/DeviceHashBackend.h"
 #include "cloudViewer/t/io/HashMapIO.h"
-#include <Helper.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

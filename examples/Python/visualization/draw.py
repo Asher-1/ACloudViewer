@@ -59,7 +59,7 @@ def multi_objects():
     sphere_colored_lit.translate((6, 1, 0))
     sphere_colored_lit.compute_vertex_normals()
     big_bbox = cv3d.geometry.ccBBox((-pc_rad, -3, -pc_rad),
-                                                   (6.0 + r, 1.0 + r, pc_rad))
+                                    (6.0 + r, 1.0 + r, pc_rad))
     big_bbox.set_color((0.0, 0.0, 0.0))
     sphere_bbox = sphere_unlit.get_axis_aligned_bounding_box()
     sphere_bbox.set_color((1.0, 0.5, 0.0))
@@ -93,8 +93,7 @@ def actions():
 
     def make_mesh(o3dvis):
         # TODO: call o3dvis.get_geometry instead of using bunny_mesh
-        mesh, _ = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(
-            cloud)
+        mesh, _ = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(cloud)
         mesh.paint_uniform_color((1, 1, 1))
         mesh.compute_vertex_normals()
         o3dvis.add_geometry({"name": RESULT_NAME, "geometry": mesh})

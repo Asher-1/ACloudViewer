@@ -8,9 +8,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "visualization/visualizer/VisualizerWithKeyCallback.h"
+// clang-format off
+#include "visualization/visualizer/VisualizerWithKeyCallback.h" // must include first
+// clang-format on
+
 #include "io/sensor/azure_kinect/AzureKinectRecorder.h"
 
+#include <RGBDImage.h>
 #include <assert.h>
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
@@ -21,7 +25,6 @@
 #include <ctime>
 #include <iostream>
 
-#include <RGBDImage.h>
 #include "io/sensor/azure_kinect/K4aPlugin.h"
 #include "io/sensor/azure_kinect/MKVReader.h"
 #include "visualization/utility/ColorMap.h"

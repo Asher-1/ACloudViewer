@@ -1,3 +1,9 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 // LOCAL
 #include "ecvCommandLineCommands.h"
@@ -227,7 +233,8 @@ int GetScalarFieldIndex(ccPointCloud* cloud,
                                 // index
         {
             // check if this cloud has a scalar field with the input name
-            sfIndex = cloud->getScalarFieldIndexByName(sfName.toStdString().c_str());
+            sfIndex = cloud->getScalarFieldIndexByName(
+                    sfName.toStdString().c_str());
             if (sfIndex < 0) {
                 CVLog::Warning(QObject::tr("Cloud %1 has no SF named '%2'")
                                        .arg(cloud->getName())

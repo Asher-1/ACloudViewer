@@ -6,11 +6,12 @@
 // ----------------------------------------------------------------------------
 
 #include "LineSet.h"
-#include "ecvBBox.h"
-#include "ecvOrientedBBox.h"
-#include "ecvDisplayTools.h"
 
 #include <numeric>
+
+#include "ecvBBox.h"
+#include "ecvDisplayTools.h"
+#include "ecvOrientedBBox.h"
 
 namespace cloudViewer {
 namespace geometry {
@@ -22,33 +23,28 @@ LineSet &LineSet::clear() {
     return *this;
 }
 
-ccBBox LineSet::getOwnBB(bool withGLFeatures)
-{
+ccBBox LineSet::getOwnBB(bool withGLFeatures) {
     return GetAxisAlignedBoundingBox();
 }
 
-void LineSet::drawMeOnly(CC_DRAW_CONTEXT &context)
-{
+void LineSet::drawMeOnly(CC_DRAW_CONTEXT &context) {
     bool is_empty = !HasPoints() || !HasLines();
 
-    if (is_empty)
-        return;
+    if (is_empty) return;
 
-    if (MACRO_Draw3D(context) && ecvDisplayTools::GetMainScreen())
-    {
-        if (isColorOverridden())
-        {
+    if (MACRO_Draw3D(context) && ecvDisplayTools::GetMainScreen()) {
+        if (isColorOverridden()) {
             context.defaultPolylineColor = getTempColor();
-        }/*
-        else if (colorsShown() && HasColors())
-        {
-            context.defaultPolylineColor = ecvColor::Rgb::FromEigen(colors_[0]);
-        }*/
+        } /*
+         else if (colorsShown() && HasColors())
+         {
+             context.defaultPolylineColor =
+         ecvColor::Rgb::FromEigen(colors_[0]);
+         }*/
         context.currentLineWidth = 1;
         ecvDisplayTools::Draw(context, this);
     }
 }
-
 
 Eigen::Vector3d LineSet::GetMinBound() const {
     return ComputeMinBound(points_);
@@ -83,7 +79,8 @@ LineSet &LineSet::Scale(const double s, const Eigen::Vector3d &center) {
     return *this;
 }
 
-LineSet &LineSet::Rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) {
+LineSet &LineSet::Rotate(const Eigen::Matrix3d &R,
+                         const Eigen::Vector3d &center) {
     RotatePoints(R, points_, center);
     return *this;
 }

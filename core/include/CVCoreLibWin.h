@@ -1,5 +1,11 @@
-#ifndef CV_CORE_LIB_API_H
-#define CV_CORE_LIB_API_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include <QtCore/QtGlobal>
 
@@ -8,5 +14,3 @@
 #else
 #define CV_CORE_LIB_API Q_DECL_IMPORT
 #endif
-
-#endif  // CV_CORE_LIB_API_H

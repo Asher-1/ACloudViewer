@@ -6,10 +6,11 @@
 // ----------------------------------------------------------------------------
 
 #include "pipelines/odometry/RGBDOdometryJacobian.h"
-#include "pipelines/odometry/Odometry.h"
 
 #include <Image.h>
 #include <RGBDImage.h>
+
+#include "pipelines/odometry/Odometry.h"
 
 namespace cloudViewer {
 

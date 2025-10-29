@@ -8,7 +8,7 @@ dependencies:
   - libcurl=8.14.*
   - openssl
   - pkg-config
-  - boost=1.84.*
+  - boost=1.84.* # reconstruction
   - qt=5.15.* # reconstruction
   - xerces-c=3.2.* # reconstruction
   - cgal=5.* # facets

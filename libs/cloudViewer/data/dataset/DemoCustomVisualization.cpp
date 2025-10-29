@@ -5,17 +5,19 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <string>
 #include <vector>
 
 #include "cloudViewer/data/Dataset.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        CloudViewerDownloadsPrefix() + "20220301-data/DemoCustomVisualization.zip",
+        CloudViewerDownloadsPrefix() +
+                "20220301-data/DemoCustomVisualization.zip",
         "04cb716145c51d0119b59c7876249891"};
 
 DemoCustomVisualization::DemoCustomVisualization(const std::string& data_root)

@@ -1,19 +1,23 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "pointstomodelconverter.h"
-#include "tablemodel.h"
 
 #include <QDebug>
 
-namespace VtkUtils
-{
+#include "tablemodel.h"
 
-PointsToModelConverter::PointsToModelConverter(const QList<Point3F>& points, TableModel* model) :
-    m_points(points), m_model(model)
-{
+namespace VtkUtils {
 
-}
+PointsToModelConverter::PointsToModelConverter(const QList<Point3F>& points,
+                                               TableModel* model)
+    : m_points(points), m_model(model) {}
 
-void PointsToModelConverter::run()
-{
+void PointsToModelConverter::run() {
     if (!m_model) {
         qDebug() << "PointsToModelConverter::run : null model.";
         emit finished();
@@ -34,4 +38,4 @@ void PointsToModelConverter::run()
     emit finished();
 }
 
-} // namespace VtkUtils
+}  // namespace VtkUtils

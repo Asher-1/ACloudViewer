@@ -1,16 +1,19 @@
-#ifndef MODELTOVTKTABLECONVERTER_H
-#define MODELTOVTKTABLECONVERTER_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "signalledrunable.h"
+#pragma once
 
 #include "../qPCL.h"
+#include "signalledrunable.h"
 
 class vtkTable;
-namespace VtkUtils
-{
+namespace VtkUtils {
 class TableModel;
-class QPCL_ENGINE_LIB_API ModelToVtkTableConverter : public SignalledRunnable
-{
+class QPCL_ENGINE_LIB_API ModelToVtkTableConverter : public SignalledRunnable {
     Q_OBJECT
 public:
     explicit ModelToVtkTableConverter(TableModel* model);
@@ -23,10 +26,9 @@ public:
     vtkTable* table() const;
 
 private:
-	TableModel* m_model = nullptr;
+    TableModel* m_model = nullptr;
     vtkTable* m_table = nullptr;
     QStringList m_labels;
 };
 
-} // namespace VtkUtils
-#endif // MODELTOVTKTABLECONVERTER_H
+}  // namespace VtkUtils

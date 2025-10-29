@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <ecvTetraMesh.h>
 #include <ecvPointCloud.h>
+#include <ecvTetraMesh.h>
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
@@ -16,8 +16,8 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_tetramesh(py::module &m) {
-    py::class_<TetraMesh, PyGeometry<TetraMesh>,
-               std::shared_ptr<TetraMesh>, ecvMeshBase>
+    py::class_<TetraMesh, PyGeometry<TetraMesh>, std::shared_ptr<TetraMesh>,
+               ecvMeshBase>
             trianglemesh(m, "TetraMesh",
                          "TetraMesh class. Tetra mesh contains vertices "
                          "and Tetrahedra represented by the indices to the "
@@ -27,7 +27,8 @@ void pybind_tetramesh(py::module &m) {
     trianglemesh
             .def(py::init<const std::vector<Eigen::Vector3d> &,
                           const std::vector<Eigen::Vector4i,
-                                            cloudViewer::utility::Vector4i_allocator> &>(),
+                                            cloudViewer::utility::
+                                                    Vector4i_allocator> &>(),
                  "Create a tetrahedra mesh from vertices and tetra indices",
                  "vertices"_a, "tetras"_a)
             .def("__repr__",
@@ -44,8 +45,7 @@ void pybind_tetramesh(py::module &m) {
                  &TetraMesh::RemoveDuplicatedVertices,
                  "Function that removes duplicated vertices, i.e., vertices "
                  "that have identical coordinates.")
-            .def("remove_duplicated_tetras",
-                 &TetraMesh::RemoveDuplicatedTetras,
+            .def("remove_duplicated_tetras", &TetraMesh::RemoveDuplicatedTetras,
                  "Function that removes duplicated tetras, i.e., removes "
                  "tetras that reference the same four vertices, "
                  "independent of their order.")
@@ -53,8 +53,7 @@ void pybind_tetramesh(py::module &m) {
                  &TetraMesh::RemoveUnreferencedVertices,
                  "This function removes vertices from the tetra mesh that "
                  "are not referenced in any tetra of the mesh.")
-            .def("remove_degenerate_tetras",
-                 &TetraMesh::RemoveDegenerateTetras,
+            .def("remove_degenerate_tetras", &TetraMesh::RemoveDegenerateTetras,
                  "Function that removes degenerate tetras, i.e., tetras "
                  "that references a single vertex multiple times in a single "
                  "tetra. They are usually the product of removing "
@@ -63,20 +62,18 @@ void pybind_tetramesh(py::module &m) {
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_tetras", &TetraMesh::HasTetras,
                  "Returns ``True`` if the mesh contains tetras.")
-            .def("extract_triangle_mesh",
-                 &TetraMesh::ExtractTriangleMesh,
+            .def("extract_triangle_mesh", &TetraMesh::ExtractTriangleMesh,
                  "Function that generates a triangle mesh of the specified "
                  "iso-surface.",
                  "values"_a, "level"_a)
             .def_static(
-                    "create_from_point_cloud",
-                    &TetraMesh::CreateFromPointCloud,
+                    "create_from_point_cloud", &TetraMesh::CreateFromPointCloud,
                     "Function to create a tetrahedral mesh from a point cloud.",
                     "point_cloud"_a)
             .def_readwrite("vertices", &TetraMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
-							"coordinates.")
+                           "coordinates.")
             .def_readwrite("tetras", &TetraMesh::tetras_,
                            "``int64`` array of shape ``(num_tetras, 4)``, use "
                            "``numpy.asarray()`` to access data: List of "

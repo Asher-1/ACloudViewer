@@ -6,11 +6,12 @@
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/ViewControl.h"
-#include "pybind/visualization/visualization_trampoline.h"
-#include "pybind/visualization/visualization.h"
-#include "pybind/docstring.h"
 
 #include <IJsonConvertibleIO.h>
+
+#include "pybind/docstring.h"
+#include "pybind/visualization/visualization.h"
+#include "pybind/visualization/visualization_trampoline.h"
 
 namespace cloudViewer {
 namespace visualization {

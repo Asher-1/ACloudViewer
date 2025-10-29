@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.cloudViewer.org
+# Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -103,8 +103,7 @@ def get_graph_objects(geometry_list,
     for geometry in geometry_list:
         if geometry.is_kind_of(cv3d.geometry.ccObject.POINT_CLOUD):
             pcd = cv3d.geometry.ToPointCloud(geometry)
-            graph_objects.append(get_point_object(pcd,
-                                                  point_sample_factor))
+            graph_objects.append(get_point_object(pcd, point_sample_factor))
 
         if geometry.is_kind_of(cv3d.geometry.ccObject.MESH):
             mesh = cv3d.geometry.ToMesh(geometry)

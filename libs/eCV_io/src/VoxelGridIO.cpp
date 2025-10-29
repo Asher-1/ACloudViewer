@@ -315,7 +315,7 @@ bool WriteVoxelGridToPLY(const std::string &filename,
         ply_write(ply_file, rgb(0));
         ply_write(ply_file, rgb(1));
         ply_write(ply_file, rgb(2));
-				
+
         ++progress_bar;
     }
 

@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <limits>
@@ -15,7 +17,6 @@
 #include <vector>
 
 #include "cloudViewer/core/MemoryManager.h"
-#include <Logging.h>
 
 #ifdef BUILD_CUDA_MODULE
 #include "cloudViewer/core/CUDAUtils.h"

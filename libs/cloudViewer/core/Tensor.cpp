@@ -7,6 +7,8 @@
 
 #include "cloudViewer/core/Tensor.h"
 
+#include <Logging.h>
+
 #include <numeric>
 #include <sstream>
 
@@ -33,7 +35,6 @@
 #include "cloudViewer/core/linalg/Solve.h"
 #include "cloudViewer/core/linalg/Tri.h"
 #include "cloudViewer/t/io/NumpyIO.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

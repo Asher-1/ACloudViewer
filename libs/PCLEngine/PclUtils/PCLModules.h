@@ -1,22 +1,11 @@
-// ##########################################################################
-// #                                                                        #
-// #                              CLOUDVIEWER                               #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                    COPYRIGHT: CLOUDVIEWER  project                     #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef QPCL_PCLMODULES_HEADER
-#define QPCL_PCLMODULES_HEADER
+#pragma once
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)
@@ -30,19 +19,19 @@
 #include "qPCL.h"
 
 // CV_CORE_LIB
-#include <CVMath.h>
 #include <CVLog.h>
+#include <CVMath.h>
 #include <Eigen.h>
 #include <Parallel.h>
 
 // PCL COMMON
-#include <pcl/point_types.h>
-#include <pcl/common/common.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/Vertices.h>
+#include <pcl/common/common.h>
 #include <pcl/common/io.h>  // for getFieldIndex
 #include <pcl/common/transforms.h>
 #include <pcl/correspondence.h>
+#include <pcl/point_types.h>
 
 // PCL KEYPOINTS
 #include <pcl/keypoints/harris_3d.h>
@@ -50,13 +39,13 @@
 // #include <pcl/keypoints/uniform_sampling.h>
 
 // PCL FILTERS
-#include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/conditional_removal.h>
 #include <pcl/filters/crop_hull.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/project_inliers.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/voxel_grid.h>
 
 // PCL RECOGNITION
@@ -568,7 +557,7 @@ int BSplineCurveFitting3D(
         // fit.m_nurbs.Trim(ON_Interval(
         //	fit.m_nurbs.m_knot[0],
         //	fit.m_nurbs.m_knot[fit.m_nurbs.KnotCount() -
-        //fit.m_nurbs.Order()]
+        // fit.m_nurbs.Order()]
         //));
         pcl::on_nurbs::Triangulation::convertCurve2PointCloud(
                 fit.m_nurbs, outCurve, curveResolution);
@@ -1586,5 +1575,3 @@ private:
 };
 
 }  // namespace PCLModules
-
-#endif  // QPCL_PCLMODULES_HEADER

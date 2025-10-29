@@ -5,17 +5,19 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <string>
 #include <vector>
 
 #include "cloudViewer/data/Dataset.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        CloudViewerDownloadsPrefix() + "20220301-data/PaintedPlasterTexture.zip",
+        CloudViewerDownloadsPrefix() +
+                "20220301-data/PaintedPlasterTexture.zip",
         "344096b29b06f14aac58f9ad73851dc2"};
 
 PaintedPlasterTexture::PaintedPlasterTexture(const std::string& data_root)

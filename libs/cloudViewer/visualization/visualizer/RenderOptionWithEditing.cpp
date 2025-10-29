@@ -7,9 +7,8 @@
 
 #include "visualization/visualizer/RenderOptionWithEditing.h"
 
-#include <json/json.h>
-
 #include <Logging.h>
+#include <json/json.h>
 
 namespace cloudViewer {
 namespace visualization {
@@ -23,11 +22,11 @@ bool RenderOptionWithEditing::ConvertToJsonValue(Json::Value &value) const {
         return false;
     }
     if (!EigenVector3dToJsonArray(selection_polygon_boundary_color_,
-                                 value["selection_polygon_boundary_color"])) {
+                                  value["selection_polygon_boundary_color"])) {
         return false;
     }
     if (!EigenVector3dToJsonArray(selection_polygon_mask_color_,
-                                 value["selection_polygon_mask_color"])) {
+                                  value["selection_polygon_mask_color"])) {
         return false;
     }
     value["selection_polygon_mask_alpha"] = selection_polygon_mask_alpha_;
@@ -39,12 +38,13 @@ bool RenderOptionWithEditing::ConvertFromJsonValue(const Json::Value &value) {
     if (!RenderOption::ConvertFromJsonValue(value)) {
         return false;
     }
-    if (!EigenVector3dFromJsonArray(selection_polygon_boundary_color_,
-                                   value["selection_polygon_boundary_color"])) {
+    if (!EigenVector3dFromJsonArray(
+                selection_polygon_boundary_color_,
+                value["selection_polygon_boundary_color"])) {
         return false;
     }
     if (!EigenVector3dFromJsonArray(selection_polygon_mask_color_,
-                                   value["selection_polygon_mask_color"])) {
+                                    value["selection_polygon_mask_color"])) {
         return false;
     }
     selection_polygon_mask_alpha_ = value.get("selection_polygon_mask_alpha",

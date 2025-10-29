@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include <sstream>
 
 #include "cloudViewer/core/CUDAUtils.h"
@@ -14,7 +16,6 @@
 #include "cloudViewer/core/ShapeUtil.h"
 #include "cloudViewer/core/SizeVector.h"
 #include "cloudViewer/core/Tensor.h"
-#include <Logging.h>
 #include "cloudViewer/utility/MiniVec.h"
 
 // The generated "Indexer_ispc.h" header will not be available outside the
@@ -403,7 +404,7 @@ public:
     /// \param workload_idx The index of the compute workload, similar to
     /// thread_id, if a thread only processes one workload.
     CLOUDVIEWER_HOST_DEVICE char* GetInputPtr(int64_t input_idx,
-                                         int64_t workload_idx) const {
+                                              int64_t workload_idx) const {
         if (input_idx < 0 || input_idx >= num_inputs_) {
             return nullptr;
         }
@@ -421,7 +422,7 @@ public:
     /// not check this constraint for performance reasons.
     template <typename T>
     CLOUDVIEWER_HOST_DEVICE T* GetInputPtr(int64_t input_idx,
-                                      int64_t workload_idx) const {
+                                           int64_t workload_idx) const {
         if (input_idx < 0 || input_idx >= num_inputs_) {
             return nullptr;
         }
@@ -458,7 +459,7 @@ public:
     /// \param workload_idx The index of the compute workload, similar to
     /// thread_id, if a thread only processes one workload.
     CLOUDVIEWER_HOST_DEVICE char* GetOutputPtr(int64_t output_idx,
-                                          int64_t workload_idx) const {
+                                               int64_t workload_idx) const {
         return GetWorkloadDataPtr(outputs_[output_idx],
                                   outputs_contiguous_[output_idx],
                                   workload_idx);
@@ -471,7 +472,7 @@ public:
     /// thread_id, if a thread only processes one workload.
     template <typename T>
     CLOUDVIEWER_HOST_DEVICE T* GetOutputPtr(int64_t output_idx,
-                                       int64_t workload_idx) const {
+                                            int64_t workload_idx) const {
         return GetWorkloadDataPtr<T>(outputs_[output_idx],
                                      outputs_contiguous_[output_idx],
                                      workload_idx);
@@ -538,9 +539,10 @@ protected:
     /// Get data pointer from a TensorRef with \p workload_idx.
     /// Note: can be optimized by computing all input ptrs and output ptr
     /// together.
-    CLOUDVIEWER_HOST_DEVICE char* GetWorkloadDataPtr(const TensorRef& tr,
-                                                bool tr_contiguous,
-                                                int64_t workload_idx) const {
+    CLOUDVIEWER_HOST_DEVICE char* GetWorkloadDataPtr(
+            const TensorRef& tr,
+            bool tr_contiguous,
+            int64_t workload_idx) const {
         // For 0-sized input reduction op, the output Tensor
         // workload_idx == 1 > NumWorkloads() == 0.
         if (workload_idx < 0) {
@@ -568,8 +570,8 @@ protected:
     /// not check this constraint for performance reasons.
     template <typename T>
     CLOUDVIEWER_HOST_DEVICE T* GetWorkloadDataPtr(const TensorRef& tr,
-                                             bool tr_contiguous,
-                                             int64_t workload_idx) const {
+                                                  bool tr_contiguous,
+                                                  int64_t workload_idx) const {
         // For 0-sized input reduction op, the output Tensor
         // workload_idx == 1 > NumWorkloads() == 0.
         if (workload_idx < 0) {

@@ -6,10 +6,10 @@
 // ----------------------------------------------------------------------------
 
 #include "ml/contrib/GridSubsampling.h"
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
 #include "pybind/ml/contrib/contrib.h"
-#include "pybind/cloudViewer_pybind.h"
 #include "pybind/pybind_utils.h"
 
 namespace cloudViewer {

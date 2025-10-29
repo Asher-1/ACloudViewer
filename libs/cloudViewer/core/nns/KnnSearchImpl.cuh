@@ -1,16 +1,17 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                  -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include "cub/cub.cuh"
+#include <Helper.h>
+
 #include "cloudViewer/core/CUDAUtils.h"
 #include "core/nns/NeighborSearchCommon.h"
-#include <Helper.h>
+#include "cub/cub.cuh"
 #include "utility/MiniVec.h"
 
 namespace cloudViewer {

@@ -337,7 +337,7 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     for (const auto &voxel_pair : valid_voxels) {
         voxel_grid->voxels_[voxel_pair.first] = voxel_pair.second;
     }
-    
+
     return voxel_grid;
 }
 

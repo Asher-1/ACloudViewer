@@ -1,25 +1,31 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "anglewidgetobserver.h"
 
-#include <vtkAngleWidget.h>
 #include <vtkAngleRepresentation2D.h>
 #include <vtkAngleRepresentation3D.h>
+#include <vtkAngleWidget.h>
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-AngleWidgetObserver::AngleWidgetObserver(QObject* parent) : AbstractWidgetObserver(parent)
-{
+AngleWidgetObserver::AngleWidgetObserver(QObject* parent)
+    : AbstractWidgetObserver(parent) {}
 
-}
-
-void AngleWidgetObserver::Execute(vtkObject *caller, unsigned long eventId, void* callData)
-{
+void AngleWidgetObserver::Execute(vtkObject* caller,
+                                  unsigned long eventId,
+                                  void* callData) {
     Q_UNUSED(eventId)
     Q_UNUSED(callData)
 
     vtkAngleWidget* widget = reinterpret_cast<vtkAngleWidget*>(caller);
     if (widget) {
-        vtkAngleRepresentation* angleRep = vtkAngleRepresentation::SafeDownCast(widget->GetRepresentation());
+        vtkAngleRepresentation* angleRep = vtkAngleRepresentation::SafeDownCast(
+                widget->GetRepresentation());
 
         double worldPot1[3];
         double worldPot2[3];
@@ -45,4 +51,4 @@ void AngleWidgetObserver::Execute(vtkObject *caller, unsigned long eventId, void
     }
 }
 
-} // namespace VtkUtils
+}  // namespace VtkUtils

@@ -27,8 +27,6 @@
 
 #include "dl_creationadapter.h"
 
-
-
 /**
  * This class takes care of the entities read from the file.
  * Usually such a class would probably store the entities.

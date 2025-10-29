@@ -1,4 +1,9 @@
-
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #define EIGEN_USE_GPU
 #include "FixedRadiusSearchOpKernel.h"
@@ -80,7 +85,7 @@ private:
 };
 
 #define REG_KB(type, itype)                                               \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerFixedRadiusSearch")               \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerFixedRadiusSearch")          \
                                     .Device(DEVICE_GPU)                   \
                                     .TypeConstraint<type>("T")            \
                                     .TypeConstraint<itype>("index_dtype") \

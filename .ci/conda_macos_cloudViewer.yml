@@ -8,7 +8,7 @@ dependencies:
   - libcurl=8.14.*
   - openssl
   - pkg-config
-  - boost=1.84.*
+  - boost=1.84.* # pcl and reconstruction
   - pcl=1.14.0 # will auto install required dependencies like vtk-9.2.6 and qt-5.15.8
   - qt=5.15.*
   - cgal=5.*

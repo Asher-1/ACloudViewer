@@ -1,37 +1,39 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "moveactorinteractorstyle.h"
 
-#include "utils.h"
-
 #include <VtkUtils/vtkutils.h>
-
-#include <vtkObjectFactory.h>
-#include <vtkPickingManager.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkPicker.h>
 #include <vtkCellPicker.h>
-#include <vtkPropPicker.h>
-#include <vtkPointPicker.h>
-#include <vtkRenderer.h>
-#include <vtkRenderWindow.h>
 #include <vtkExtractEdges.h>
+#include <vtkObjectFactory.h>
+#include <vtkPicker.h>
+#include <vtkPickingManager.h>
+#include <vtkPointPicker.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkPropPicker.h>
 #include <vtkProperty.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkRenderer.h>
 
 #include <QDebug>
 
+#include "utils.h"
+
 static const QColor HighlightColor = Qt::yellow;
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
 vtkStandardNewMacro(MoveActorInteractorStyle);
-MoveActorInteractorStyle::MoveActorInteractorStyle(QObject *parent) : QObject(parent)
-{
+MoveActorInteractorStyle::MoveActorInteractorStyle(QObject* parent)
+    : QObject(parent) {}
 
-}
-
-void MoveActorInteractorStyle::OnLeftButtonDown()
-{
+void MoveActorInteractorStyle::OnLeftButtonDown() {
     vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
 
     int x = GetInteractor()->GetEventPosition()[0];
@@ -44,31 +46,25 @@ void MoveActorInteractorStyle::OnLeftButtonDown()
     m_pickedActor = picker->GetActor();
 }
 
-void MoveActorInteractorStyle::OnLeftButtonUp()
-{
+void MoveActorInteractorStyle::OnLeftButtonUp() {
     vtkInteractorStyleTrackballCamera::OnLeftButtonUp();
     emit actorMoved(m_pickedActor);
     m_pickedActor = nullptr;
 }
 
-void MoveActorInteractorStyle::Rotate()
-{
-    if (m_pickedActor)
-        return;
+void MoveActorInteractorStyle::Rotate() {
+    if (m_pickedActor) return;
 
     vtkInteractorStyleTrackballCamera::Rotate();
 }
 
-void MoveActorInteractorStyle::Spin()
-{
-    if (m_pickedActor)
-        return;
+void MoveActorInteractorStyle::Spin() {
+    if (m_pickedActor) return;
 
     vtkInteractorStyleTrackballCamera::Spin();
 }
 
-void MoveActorInteractorStyle::OnMouseMove()
-{
+void MoveActorInteractorStyle::OnMouseMove() {
     vtkInteractorStyleTrackballCamera::OnMouseMove();
 
     if (m_useHighlight) {
@@ -94,7 +90,7 @@ void MoveActorInteractorStyle::OnMouseMove()
             mapper->SetInputConnection(edges->GetOutputPort());
 
             double clrArr[3];
-			Utils::vtkColor(HighlightColor, clrArr);
+            Utils::vtkColor(HighlightColor, clrArr);
 
             m_highlightActor->SetMapper(mapper);
             m_highlightActor->SetVisibility(1);
@@ -123,23 +119,16 @@ void MoveActorInteractorStyle::OnMouseMove()
         m_pickedActor->SetPosition(movePos);
         defaultRenderer->GetRenderWindow()->Render();
     }
-
 }
 
-void MoveActorInteractorStyle::OnChar()
-{
+void MoveActorInteractorStyle::OnChar() {
     vtkInteractorStyleTrackballCamera::OnChar();
 }
 
-void MoveActorInteractorStyle::setHighlightActor(bool highlight)
-{
+void MoveActorInteractorStyle::setHighlightActor(bool highlight) {
     m_useHighlight = highlight;
 }
 
-bool MoveActorInteractorStyle::highlightActor() const
-{
-    return m_useHighlight;
-}
+bool MoveActorInteractorStyle::highlightActor() const { return m_useHighlight; }
 
-
-} // namespace VtkUtils
+}  // namespace VtkUtils

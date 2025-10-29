@@ -246,8 +246,7 @@ bool WritePointCloud(unsigned char *&buffer,
     auto map_itr = in_memory_to_pointcloud_write_function.find(format);
     if (map_itr == in_memory_to_pointcloud_write_function.end()) {
         cloudViewer::utility::LogWarning(
-                "Write ccPointCloud failed: unknown format {}.",
-                format);
+                "Write ccPointCloud failed: unknown format {}.", format);
         return false;
     }
 

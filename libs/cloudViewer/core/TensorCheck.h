@@ -18,10 +18,11 @@
 ///
 /// Example: check that the tensor has dtype Float32
 /// core::AssertTensorDtype(tensor, core::Float32);
-#define AssertTensorDtype(tensor, ...)                                     \
-    tensor_check::AssertTensorDtype_(                                      \
-            __FILE__, __LINE__, static_cast<const char*>(CLOUDVIEWER_FUNCTION), \
-            tensor, __VA_ARGS__)
+#define AssertTensorDtype(tensor, ...)                              \
+    tensor_check::AssertTensorDtype_(                               \
+            __FILE__, __LINE__,                                     \
+            static_cast<const char*>(CLOUDVIEWER_FUNCTION), tensor, \
+            __VA_ARGS__)
 
 /// Assert Tensor's dtype is among one of the expected dtypes. When an error
 /// occurs, the corresponding file name, line number and function name will be
@@ -29,10 +30,11 @@
 ///
 /// Example: check that the tensor has dtype Float32 or Float64
 /// core::AssertTensorDtypes(tensor, {core::Float32, core::Float64});
-#define AssertTensorDtypes(tensor, ...)                                    \
-    tensor_check::AssertTensorDtypes_(                                     \
-            __FILE__, __LINE__, static_cast<const char*>(CLOUDVIEWER_FUNCTION), \
-            tensor, __VA_ARGS__)
+#define AssertTensorDtypes(tensor, ...)                             \
+    tensor_check::AssertTensorDtypes_(                              \
+            __FILE__, __LINE__,                                     \
+            static_cast<const char*>(CLOUDVIEWER_FUNCTION), tensor, \
+            __VA_ARGS__)
 
 /// Assert Tensor's device is the same as the expected device. When an error
 /// occurs, the corresponding file name, line number and function name will be
@@ -40,10 +42,11 @@
 ///
 /// Example: check that the tensor has device CUDA:0
 /// core::AssertTensorDevice(tensor, core::Device("CUDA:0"));
-#define AssertTensorDevice(tensor, ...)                                    \
-    tensor_check::AssertTensorDevice_(                                     \
-            __FILE__, __LINE__, static_cast<const char*>(CLOUDVIEWER_FUNCTION), \
-            tensor, __VA_ARGS__)
+#define AssertTensorDevice(tensor, ...)                             \
+    tensor_check::AssertTensorDevice_(                              \
+            __FILE__, __LINE__,                                     \
+            static_cast<const char*>(CLOUDVIEWER_FUNCTION), tensor, \
+            __VA_ARGS__)
 
 /// Assert Tensor's shape is the same as the expected shape. AssertTensorShape
 /// takes a shape (SizeVector) or dynamic shape (DynamicSizeVector). When an
@@ -55,10 +58,11 @@
 ///
 /// Example: check that the tensor has shape {N, 3}
 /// core::AssertTensorShape(tensor, {utility::nullopt, 3});
-#define AssertTensorShape(tensor, ...)                                     \
-    tensor_check::AssertTensorShape_(                                      \
-            __FILE__, __LINE__, static_cast<const char*>(CLOUDVIEWER_FUNCTION), \
-            tensor, __VA_ARGS__)
+#define AssertTensorShape(tensor, ...)                              \
+    tensor_check::AssertTensorShape_(                               \
+            __FILE__, __LINE__,                                     \
+            static_cast<const char*>(CLOUDVIEWER_FUNCTION), tensor, \
+            __VA_ARGS__)
 
 namespace cloudViewer {
 namespace core {

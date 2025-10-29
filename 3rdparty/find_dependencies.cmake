@@ -1265,7 +1265,6 @@ if (NOT USE_SYSTEM_PNG)
             LIBRARIES ${LIBPNG_LIBRARIES}
             DEPENDS ext_libpng
             )
-    add_dependencies(ext_libpng ext_zlib)
     target_link_libraries(3rdparty_png INTERFACE 3rdparty_zlib)
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_png)
 else()
@@ -1991,7 +1990,7 @@ if (BUILD_CUDA_MODULE)
         # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
         # cudatoolkit conda package), or have a mechanism to locate the CUDA
         # toolkit from the system.
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM CUDA::cudart CUDA::cusolver CUDA::cublas)
+        list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else ()
         # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
         # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack

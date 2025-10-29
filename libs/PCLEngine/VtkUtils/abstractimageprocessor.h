@@ -1,19 +1,22 @@
-#ifndef ABSTRACTIMAGEPROCESSOR_H
-#define ABSTRACTIMAGEPROCESSOR_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "../qPCL.h"
-
-#include "signalledrunable.h"
+#pragma once
 
 #include <vtkImageGradient.h>
 #include <vtkImageLaplacian.h>
 #include <vtkJPEGReader.h>
 
-namespace VtkUtils
-{
+#include "../qPCL.h"
+#include "signalledrunable.h"
 
-class QPCL_ENGINE_LIB_API AbstractImageProcessor : public SignalledRunnable
-{
+namespace VtkUtils {
+
+class QPCL_ENGINE_LIB_API AbstractImageProcessor : public SignalledRunnable {
 public:
     AbstractImageProcessor();
 
@@ -25,18 +28,13 @@ protected:
 };
 
 template <class T>
-class ImageProcessorTempl : public AbstractImageProcessor
-{
+class ImageProcessorTempl : public AbstractImageProcessor {
 public:
-    ImageProcessorTempl()
-    {
-        m_algorithm = T::New();
-    }
+    ImageProcessorTempl() { m_algorithm = T::New(); }
 
     T* algorithm() const { return m_algorithm; }
 
-    void run()
-    {
+    void run() {
         if (!m_imageData) {
             emit finished();
             return;
@@ -51,6 +49,4 @@ protected:
     T* m_algorithm = nullptr;
 };
 
-
-} // namespace VtkUtils
-#endif // ABSTRACTIMAGEPROCESSOR_H
+}  // namespace VtkUtils

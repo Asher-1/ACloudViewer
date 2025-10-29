@@ -7,6 +7,7 @@
 
 #include "cloudViewer/t/geometry/kernel/NPPImage.h"
 
+#include <Logging.h>
 #include <npp.h>
 
 #include "cloudViewer/core/CUDAUtils.h"
@@ -14,7 +15,6 @@
 #include "cloudViewer/core/ShapeUtil.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/t/geometry/Image.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -36,15 +36,15 @@ static NppStreamContext MakeNPPContext() {
     context.nSharedMemPerBlock = device_prop.sharedMemPerBlock;
 
     int cc_major;
-    CLOUDVIEWER_CUDA_CHECK(cudaDeviceGetAttribute(&cc_major,
-                                             cudaDevAttrComputeCapabilityMajor,
-                                             core::cuda::GetDevice()));
+    CLOUDVIEWER_CUDA_CHECK(
+            cudaDeviceGetAttribute(&cc_major, cudaDevAttrComputeCapabilityMajor,
+                                   core::cuda::GetDevice()));
     context.nCudaDevAttrComputeCapabilityMajor = cc_major;
 
     int cc_minor;
-    CLOUDVIEWER_CUDA_CHECK(cudaDeviceGetAttribute(&cc_minor,
-                                             cudaDevAttrComputeCapabilityMinor,
-                                             core::cuda::GetDevice()));
+    CLOUDVIEWER_CUDA_CHECK(
+            cudaDeviceGetAttribute(&cc_minor, cudaDevAttrComputeCapabilityMinor,
+                                   core::cuda::GetDevice()));
     context.nCudaDevAttrComputeCapabilityMinor = cc_minor;
 
 // The NPP documentation incorrectly states that nStreamFlags becomes available

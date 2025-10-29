@@ -252,7 +252,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                                     : exit_itr_local;
                 }
             }  // if < exit_itr_local
-        }      // for loop
+        }  // for loop
 
 #ifdef _OPENMP
 #pragma omp critical(RegistrationRANSACBasedOnCorrespondence)

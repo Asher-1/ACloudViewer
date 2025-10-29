@@ -1,31 +1,31 @@
-#include "modeltovtktableconverter.h"
-#include "vtkutils.h"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "tablemodel.h"
-#include "utils.h"
+#include "modeltovtktableconverter.h"
 
 #include <vtkTable.h>
 
 #include <QDebug>
 
-namespace VtkUtils
-{
-ModelToVtkTableConverter::ModelToVtkTableConverter(TableModel* model) : m_model(model)
-{
-}
+#include "tablemodel.h"
+#include "utils.h"
+#include "vtkutils.h"
 
-void ModelToVtkTableConverter::setLabels(const QStringList& labels)
-{
+namespace VtkUtils {
+ModelToVtkTableConverter::ModelToVtkTableConverter(TableModel* model)
+    : m_model(model) {}
+
+void ModelToVtkTableConverter::setLabels(const QStringList& labels) {
     m_labels = labels;
 }
 
-QStringList ModelToVtkTableConverter::labels() const
-{
-    return m_labels;
-}
+QStringList ModelToVtkTableConverter::labels() const { return m_labels; }
 
-void ModelToVtkTableConverter::run()
-{
+void ModelToVtkTableConverter::run() {
     if (!m_model) {
         qDebug() << "ModelToVtkTableConverter::run : null model.";
         emit finished();
@@ -39,14 +39,16 @@ void ModelToVtkTableConverter::run()
     int cols = m_model->columnCount();
 
     QString columnName;
-    for (int col = 0; col < cols ; ++col) {
-        columnName = m_labels.size() > col ? m_labels.at(col) : QString("column#%1").arg(col + 1);
+    for (int col = 0; col < cols; ++col) {
+        columnName = m_labels.size() > col ? m_labels.at(col)
+                                           : QString("column#%1").arg(col + 1);
         vtkSmartPointer<vtkDoubleArray> arr = vtkDoubleArray::New();
         arr->SetName(columnName.toUtf8().data());
         m_table->AddColumn(arr);
     }
-	// the order matters , first you add columns then you set the rows of columns
-    m_table->SetNumberOfRows(rows); 
+    // the order matters , first you add columns then you set the rows of
+    // columns
+    m_table->SetNumberOfRows(rows);
 
     for (int r = 0; r < rows; ++r)
         for (int c = 0; c < cols; ++c)
@@ -55,9 +57,6 @@ void ModelToVtkTableConverter::run()
     emit finished();
 }
 
-vtkTable* ModelToVtkTableConverter::table() const
-{
-    return m_table;
-}
+vtkTable* ModelToVtkTableConverter::table() const { return m_table; }
 
-} // namespace VtkUtils
+}  // namespace VtkUtils

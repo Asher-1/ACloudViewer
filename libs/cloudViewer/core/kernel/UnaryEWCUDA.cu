@@ -32,7 +32,7 @@ void LaunchUnaryEWKernel(const Device& device,
 
 template <typename src_t, typename dst_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDACopyElementKernel(const void* src,
-                                                     void* dst) {
+                                                          void* dst) {
     *static_cast<dst_t*>(dst) =
             static_cast<dst_t>(*static_cast<const src_t*>(src));
 }
@@ -48,97 +48,97 @@ static CLOUDVIEWER_HOST_DEVICE void CUDACopyObjectElementKernel(
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDASqrtElementKernel(const void* src,
-                                                     void* dst) {
+                                                          void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             sqrt(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDASinElementKernel(const void* src,
-                                                    void* dst) {
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             sin(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDACosElementKernel(const void* src,
-                                                    void* dst) {
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             cos(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDANegElementKernel(const void* src,
-                                                    void* dst) {
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = -*static_cast<const scalar_t*>(src);
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAExpElementKernel(const void* src,
-                                                    void* dst) {
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             exp(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAAbsElementKernel(const void* src,
-                                                    void* dst) {
+                                                         void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             abs(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAIsNanElementKernel(const void* src,
-                                                      void* dst) {
+                                                           void* dst) {
     *static_cast<bool*>(dst) =
             isnan(static_cast<float>(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAIsInfElementKernel(const void* src,
-                                                      void* dst) {
+                                                           void* dst) {
     *static_cast<bool*>(dst) =
             isinf(static_cast<float>(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAIsFiniteElementKernel(const void* src,
-                                                         void* dst) {
+                                                              void* dst) {
     *static_cast<bool*>(dst) =
             isfinite(static_cast<float>(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDAFloorElementKernel(const void* src,
-                                                      void* dst) {
+                                                           void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             floor(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDACeilElementKernel(const void* src,
-                                                     void* dst) {
+                                                          void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             ceil(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDARoundElementKernel(const void* src,
-                                                      void* dst) {
+                                                           void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             round(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename scalar_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDATruncElementKernel(const void* src,
-                                                      void* dst) {
+                                                           void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             trunc(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename src_t, typename dst_t>
 static CLOUDVIEWER_HOST_DEVICE void CUDALogicalNotElementKernel(const void* src,
-                                                           void* dst) {
+                                                                void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
             !static_cast<bool>(*static_cast<const src_t*>(src)));
 }
@@ -181,12 +181,12 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
             Indexer indexer({src}, dst, DtypePolicy::NONE);
             if (src.GetDtype().IsObject()) {
                 int64_t object_byte_size = src.GetDtype().ByteSize();
-                LaunchUnaryEWKernel(
-                        src_device, indexer,
-                        [=] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                            CUDACopyObjectElementKernel(src, dst,
-                                                        object_byte_size);
-                        });
+                LaunchUnaryEWKernel(src_device, indexer,
+                                    [=] CLOUDVIEWER_HOST_DEVICE(const void* src,
+                                                                void* dst) {
+                                        CUDACopyObjectElementKernel(
+                                                src, dst, object_byte_size);
+                                    });
 
             } else {
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
@@ -197,7 +197,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
                                 src_device, indexer,
                                 // Need to wrap as extended CUDA lambda function
                                 [] CLOUDVIEWER_HOST_DEVICE(const void* src,
-                                                      void* dst) {
+                                                           void* dst) {
                                     CUDACopyElementKernel<src_t, dst_t>(src,
                                                                         dst);
                                 });
@@ -297,77 +297,87 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
             switch (op_code) {
                 case UnaryEWOpCode::Sqrt:
                     assert_dtype_is_float(src_dtype);
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDASqrtElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDASqrtElementKernel<scalar_t>(
+                                                    src, dst);
+                                        });
                     break;
                 case UnaryEWOpCode::Sin:
                     assert_dtype_is_float(src_dtype);
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDASinElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDASinElementKernel<scalar_t>(src,
+                                                                           dst);
+                                        });
                     break;
                 case UnaryEWOpCode::Cos:
                     assert_dtype_is_float(src_dtype);
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDACosElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDACosElementKernel<scalar_t>(src,
+                                                                           dst);
+                                        });
                     break;
                 case UnaryEWOpCode::Neg:
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDANegElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDANegElementKernel<scalar_t>(src,
+                                                                           dst);
+                                        });
                     break;
                 case UnaryEWOpCode::Exp:
                     assert_dtype_is_float(src_dtype);
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDAExpElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDAExpElementKernel<scalar_t>(src,
+                                                                           dst);
+                                        });
                     break;
                 case UnaryEWOpCode::Abs:
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDAAbsElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDAAbsElementKernel<scalar_t>(src,
+                                                                           dst);
+                                        });
                     break;
                 case UnaryEWOpCode::Floor:
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDAFloorElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDAFloorElementKernel<scalar_t>(
+                                                    src, dst);
+                                        });
                     break;
                 case UnaryEWOpCode::Ceil:
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDACeilElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDACeilElementKernel<scalar_t>(
+                                                    src, dst);
+                                        });
                     break;
                 case UnaryEWOpCode::Round:
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDARoundElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDARoundElementKernel<scalar_t>(
+                                                    src, dst);
+                                        });
                     break;
                 case UnaryEWOpCode::Trunc:
-                    LaunchUnaryEWKernel(
-                            src_device, indexer,
-                            [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
-                                CUDATruncElementKernel<scalar_t>(src, dst);
-                            });
+                    LaunchUnaryEWKernel(src_device, indexer,
+                                        [] CLOUDVIEWER_HOST_DEVICE(
+                                                const void* src, void* dst) {
+                                            CUDATruncElementKernel<scalar_t>(
+                                                    src, dst);
+                                        });
                     break;
                 default:
                     utility::LogError("Unimplemented op_code for UnaryEWCUDA");

@@ -12,13 +12,14 @@
 // see FileDialogNative.cpp
 #else
 
+#include <FileSystem.h>
+#include <Helper.h>
+#include <Logging.h>
+
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
-#include <FileSystem.h>
-#include <Helper.h>
-#include <Logging.h>
 #include "visualization/gui/Button.h"
 #include "visualization/gui/Combobox.h"
 #include "visualization/gui/Label.h"

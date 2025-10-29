@@ -10,15 +10,14 @@
 // Reference:
 // https://github.com/madler/zlib/blob/master/contrib/minizip/miniunz.c
 
+#include <FileSystem.h>
+#include <Logging.h>
 #include <errno.h>
 #include <stdio.h>
 #include <unzip.h>
 
 #include <iostream>
 #include <string>
-
-#include <FileSystem.h>
-#include <Logging.h>
 
 #ifdef __APPLE__
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no

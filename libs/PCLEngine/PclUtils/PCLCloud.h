@@ -1,28 +1,17 @@
-//##########################################################################
-//#                                                                        #
-//#                       CLOUDVIEWER BACKEND : qPCL                       #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                        COPYRIGHT: DAHAI LU                             #
-//#                                                                        #
-//##########################################################################
-//
-#ifndef PCL_CLOUD_H
-#define PCL_CLOUD_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include <pcl/point_types.h>
+#pragma once
+
+#include <pcl/PCLPointCloud2.h>
 #include <pcl/PolygonMesh.h>
 #include <pcl/TextureMesh.h>
-#include <pcl/PCLPointCloud2.h>
 #include <pcl/geometry/planar_polygon.h>
+#include <pcl/point_types.h>
 
 typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
@@ -45,5 +34,3 @@ typedef pcl::TextureMesh PCLTextureMesh;
 typedef pcl::PCLPointCloud2 PCLCloud;
 typedef pcl::PointCloud<PointT> PCLPolyLine;
 typedef pcl::PlanarPolygon<PointT> PCLPolygon;
-
-#endif // PCL_CLOUD_H

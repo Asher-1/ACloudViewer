@@ -7,6 +7,8 @@
 
 #include "cloudViewer/t/io/sensor/realsense/RealSenseSensor.h"
 
+#include <FileSystem.h>
+#include <Logging.h>
 #include <json/json.h>
 
 #include <string>
@@ -14,8 +16,6 @@
 #include <vector>
 
 #include "cloudViewer/t/io/sensor/realsense/RealSensePrivate.h"
-#include <FileSystem.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -36,7 +36,8 @@ bool RealSenseSensor::ListDevices() {
                                  fmt::join(config.second, " | "));
         }
         utility::LogInfo(
-                "CloudViewer only supports synchronized color and depth capture "
+                "CloudViewer only supports synchronized color and depth "
+                "capture "
                 "(color_fps = depth_fps).");
         return true;
     }

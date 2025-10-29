@@ -13,8 +13,7 @@
  * Project home: https://github.com/rollbear/trompeloeil
  */
 
-#ifndef TROMPELOEIL_HPP_
-#define TROMPELOEIL_HPP_
+#pragma once
 
 
 // trompe l'oeil noun    (Concise Encyclopedia)
@@ -5030,4 +5029,3 @@ template <typename T>
 
 #endif // TROMPELOEIL_LONG_MACROS
 
-#endif // include guard

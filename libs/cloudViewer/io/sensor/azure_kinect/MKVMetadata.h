@@ -8,6 +8,7 @@
 #pragma once
 
 #include <IJsonConvertible.h>
+
 #include "camera/PinholeCameraIntrinsic.h"
 
 enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };

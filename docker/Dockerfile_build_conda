@@ -36,7 +36,7 @@ ENV ACloudViewer_DEV=/root \
 ENV PATH="/root/miniconda3/bin:$PATH" \
     CONDA_EXE="/root/miniconda3/bin/conda"
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b torch271 ${CLOUDVIEWER_ML_ROOT}
 
 RUN if [ -n "$CONDA_EXE" ]; then \
         CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE")); \
@@ -62,7 +62,7 @@ RUN if [ "${BUILD_GUI}" = "ON" ]; then                              \
     fi
 
 RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                            \
-        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&  \
+        echo "Build cloudviewer wheel for ${PYTHON_VERSION}..." &&  \
         rm -rf ${ACloudViewer_BUILD}/* &&                           \
         ./docker/build_cloudviewer_whl_conda.sh ${PYTHON_VERSION};  \
     fi

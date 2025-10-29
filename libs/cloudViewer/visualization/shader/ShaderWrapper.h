@@ -12,7 +12,6 @@
 #include "visualization/visualizer/RenderOption.h"
 #include "visualization/visualizer/ViewControl.h"
 
-
 class ccHObject;
 namespace cloudViewer {
 namespace visualization {

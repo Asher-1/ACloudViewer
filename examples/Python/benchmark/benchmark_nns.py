@@ -16,7 +16,7 @@ from collections import OrderedDict
 import numpy as np
 import cloudViewer as cv3d
 from scipy.spatial import cKDTree
-import nvidia_smi # pip install nvidia-ml-py3
+import nvidia_smi  # pip install nvidia-ml-py3
 import matplotlib.pyplot as plt
 
 from benchmark_utils import measure_memory, print_system_info, print_table_memory

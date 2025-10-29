@@ -7,15 +7,15 @@
 
 #include "io/sensor/azure_kinect/AzureKinectSensor.h"
 
+#include <Parallel.h>
+#include <RGBDImage.h>
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
 #include <turbojpeg.h>
 
 #include <memory>
 
-#include <RGBDImage.h>
 #include "io/sensor/azure_kinect/K4aPlugin.h"
-#include <Parallel.h>
 
 namespace cloudViewer {
 namespace io {

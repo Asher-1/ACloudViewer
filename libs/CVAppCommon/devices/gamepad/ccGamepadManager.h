@@ -1,24 +1,31 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: ACloudViewer project                            #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: ACloudViewer project                            #
+// #                                                                        #
+// ##########################################################################
 
 #include "CVAppCommon.h"
 
-//Qt
+// Qt
 #include <QObject>
 
 class QAction;
@@ -29,30 +36,29 @@ class ecvMainAppInterface;
 class GamepadInput;
 
 //! Gamepad manager
-class CVAPPCOMMON_LIB_API ccGamepadManager : public QObject
-{
-	Q_OBJECT
-	
-public:
-	ccGamepadManager( ecvMainAppInterface *appInterface, QObject *parent );
-	~ccGamepadManager();
-	
-	//! Returns the menu associated with gamepads
-	QMenu* menu() { return m_menu; }
-	
-protected:
-	void enableDevice(bool state, bool silent, int deviceID = -1);
-	void releaseDevice();
+class CVAPPCOMMON_LIB_API ccGamepadManager : public QObject {
+    Q_OBJECT
 
-	void showMessage(QString message, bool asWarning);
-	void setupMenu();
-	void setupGamepadInput();
-	
-	void onGamepadInput();
-	
+public:
+    ccGamepadManager(ecvMainAppInterface* appInterface, QObject* parent);
+    ~ccGamepadManager();
+
+    //! Returns the menu associated with gamepads
+    QMenu* menu() { return m_menu; }
+
+protected:
+    void enableDevice(bool state, bool silent, int deviceID = -1);
+    void releaseDevice();
+
+    void showMessage(QString message, bool asWarning);
+    void setupMenu();
+    void setupGamepadInput();
+
+    void onGamepadInput();
+
 private:
-	ecvMainAppInterface* m_appInterface;
-	GamepadInput* m_gamepadInput;
-	QMenu* m_menu;
-	QAction* m_actionEnable;
+    ecvMainAppInterface* m_appInterface;
+    GamepadInput* m_gamepadInput;
+    QMenu* m_menu;
+    QAction* m_actionEnable;
 };

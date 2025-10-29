@@ -1,5 +1,12 @@
-#include <pybind11/pybind11.h>
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include <pybind11/native_enum.h>
+#include <pybind11/pybind11.h>
 
 #include <qM3C2Dialog.h>
 #include <qM3C2Process.h>

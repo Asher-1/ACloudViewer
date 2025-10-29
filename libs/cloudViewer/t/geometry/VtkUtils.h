@@ -1,4 +1,11 @@
 // ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
 // Include guard to avoid multiple inclusion and default argument redefinitions
 #pragma once
 // ----------------------------------------------------------------------------
@@ -8,17 +15,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "cloudViewer/t/geometry/Geometry.h"
-#include "cloudViewer/t/geometry/LineSet.h"
-#include "cloudViewer/t/geometry/PointCloud.h"
-#include "cloudViewer/t/geometry/TriangleMesh.h"
+#include <vtkImageData.h>
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
 
 #include <string>
 #include <unordered_set>
 
-#include <vtkImageData.h>
-#include <vtkPolyData.h>
-#include <vtkSmartPointer.h>
+#include "cloudViewer/t/geometry/Geometry.h"
+#include "cloudViewer/t/geometry/LineSet.h"
+#include "cloudViewer/t/geometry/PointCloud.h"
+#include "cloudViewer/t/geometry/TriangleMesh.h"
 
 namespace cloudViewer {
 namespace t {

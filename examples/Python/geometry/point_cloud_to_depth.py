@@ -13,7 +13,7 @@ if __name__ == '__main__':
     tum_data = cv3d.data.SampleTUMRGBDImage()
     depth = cv3d.t.io.read_image(tum_data.depth_path)
     intrinsic = cv3d.core.Tensor([[535.4, 0, 320.1], [0, 539.2, 247.6],
-                                 [0, 0, 1]])
+                                  [0, 0, 1]])
 
     pcd = cv3d.t.geometry.PointCloud.create_from_depth_image(depth,
                                                              intrinsic,

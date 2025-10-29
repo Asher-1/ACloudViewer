@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ public:
 };
 
 #define REG_KB(type, attrtype)                                          \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerInvertNeighborsList")           \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerInvertNeighborsList")      \
                                     .Device(DEVICE_CPU)                 \
                                     .TypeConstraint<type>("TIndex")     \
                                     .TypeConstraint<attrtype>("TAttr"), \

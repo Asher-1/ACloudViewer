@@ -55,8 +55,12 @@ bool CompareCudaDevice(const cudaDeviceProp& d1, const cudaDeviceProp& d2) {
 }  // namespace
 
 int GetNumCudaDevices() {
-    int num_cuda_devices;
-    cudaGetDeviceCount(&num_cuda_devices);
+    int num_cuda_devices = 0;
+    cudaError_t error = cudaGetDeviceCount(&num_cuda_devices);
+    if (error != cudaSuccess) {
+        // CUDA initialization failed or no devices available
+        return 0;
+    }
     return num_cuda_devices;
 }
 

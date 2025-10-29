@@ -330,7 +330,8 @@ void WebRTCWindowSystem::StartWebRTCServer() {
 
                     // Main loop for Civet server.
                     utility::LogInfo(
-                            "CloudViewer WebVisualizer is serving at http://{}.",
+                            "CloudViewer WebVisualizer is serving at "
+                            "http://{}.",
                             impl_->http_address_);
                     utility::LogInfo(
                             "Set WEBRTC_IP and WEBRTC_PORT environment "

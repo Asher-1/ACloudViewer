@@ -109,10 +109,23 @@ elseif (UNIX)
                         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
     endif()
 
-    execute_process(COMMAND bash ${PACKAGE_TOOL}
-                    ${PYTHON_INSTALL_LIB_DESTINATION}/platforms/libqxcb.so
-                    ${PYTHON_INSTALL_LIB_DESTINATION}
-                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+    set(QXCB_LIB_PATH "${PYTHON_INSTALL_LIB_DESTINATION}/platforms/libqxcb.so")
+    if(EXISTS ${QXCB_LIB_PATH})
+        execute_process(COMMAND bash ${PACKAGE_TOOL}
+                        ${QXCB_LIB_PATH} ${PYTHON_INSTALL_LIB_DESTINATION}
+                        WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+    else()
+        message(WARNING "File ${QXCB_LIB_PATH} does not exist.")
+    endif()
+
+    set(SVGICON_LIB_PATH "${PYTHON_INSTALL_LIB_DESTINATION}/iconengines/libqsvgicon.so")
+    if(EXISTS "${SVGICON_LIB_PATH}")
+        execute_process(COMMAND bash ${PACKAGE_TOOL}
+                        ${SVGICON_LIB_PATH} ${PYTHON_INSTALL_LIB_DESTINATION}
+                        WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+    else()
+        message(WARNING "File ${SVGICON_LIB_PATH} does not exist.")
+    endif()
 
     execute_process(COMMAND bash ${PACKAGE_TOOL}
                     ${PYTHON_INSTALL_LIB_DESTINATION} ${PYTHON_INSTALL_LIB_DESTINATION}

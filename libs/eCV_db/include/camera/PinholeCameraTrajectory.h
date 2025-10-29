@@ -7,12 +7,11 @@
 
 #pragma once
 
-#include "eCV_db.h"
-
 #include <memory>
 #include <vector>
 
 #include "camera/PinholeCameraParameters.h"
+#include "eCV_db.h"
 
 namespace cloudViewer {
 namespace camera {
@@ -20,8 +19,8 @@ namespace camera {
 /// \class PinholeCameraTrajectory
 ///
 /// Contains a list of PinholeCameraParameters, useful to storing trajectories.
-class ECV_DB_LIB_API PinholeCameraTrajectory :
-	public cloudViewer::utility::IJsonConvertible {
+class ECV_DB_LIB_API PinholeCameraTrajectory
+    : public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     PinholeCameraTrajectory();

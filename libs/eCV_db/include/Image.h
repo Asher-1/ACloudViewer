@@ -79,7 +79,7 @@ public:
 
 protected:
     // Inherited from ccHObject
-    virtual void drawMeOnly(CC_DRAW_CONTEXT &context) override{};
+    virtual void drawMeOnly(CC_DRAW_CONTEXT &context) override {};
     virtual void onDeletionOf(const ccHObject *obj) override;
 
 public:

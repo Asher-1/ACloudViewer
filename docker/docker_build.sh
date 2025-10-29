@@ -8,9 +8,9 @@
 # Guidelines:
 # - Use a flat list of options.
 #   We don't want to have a cartesian product of different combinations of
-#   options. E.g., to support Ubuntu {20.04, 24.04} with Python {3.8, 3.9}, we
+#   options. E.g., to support Ubuntu {20.04, 24.04} with Python {3.10, 3.13}, we
 #   don't specify the OS and Python version separately, instead, we have a flat
-#   list of combinations: [u2004_py39, u2004_py310, u2404_py39, u2404_py310].
+#   list of combinations: [u2004_py310, u2004_py313, u2404_py310, u2404_py313].
 # - No external environment variables.
 #   This script should not make assumptions on external environment variables.
 #   This make the Docker image reproducible across different machines.
@@ -31,28 +31,27 @@ OPTION:
     5-ml-jammy                 : CUDA CI, 5-ml-focal, developer mode
 
     # CUDA wheels (Dockerfile.ci)
-    cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
-    cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
     cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, developer mode
-    cuda_wheel_py38            : CUDA Python 3.8 wheel, release mode
-    cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
+    cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, developer mode
+    cuda_wheel_py313_dev       : CUDA Python 3.13 wheel, developer mode
     cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
     cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
     cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
+    cuda_wheel_py313           : CUDA Python 3.13 wheel, release mode
 "
 
 HOST_CLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
-CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.29.2-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
-CUDA_VERSION=11.8.0-cudnn8
-CUDA_VERSION_LATEST=11.8.0-cudnn8
+CUDA_VERSION=12.6.3-cudnn
+CUDA_VERSION_LATEST=12.6.3-cudnn
 UBUNTU_FOCAL=20.04
 UBUNTU_JAMMY=22.04
-UBUNTU_VERSION=$UBUNTU_FOCAL
+UBUNTU_NOBLE=24.04
+UBUNTU_VERSION=$UBUNTU_JAMMY
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -61,27 +60,28 @@ print_usage_and_exit_docker_build() {
 
 cuda_wheel_build() {
     BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
-    CCACHE_TAR_NAME=cloudViewer-ubuntu-2004-cuda-ci-ccache
     export BUILD_SHARED_LIBS=OFF
 
-    if [ "${UBUNTU_VERSION}" = "${UBUNTU_JAMMY}" ]; then
-        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
-    else 
+    if [ "${UBUNTU_VERSION}" = "${UBUNTU_FOCAL}" ]; then
         QT_BASE_DIR="/opt/qt515"
+    else 
+        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
     fi
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
-    if [[ "py38" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.8
-    elif [[ "py39" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.9
-    elif [[ "py310" =~ ^($options)$ ]]; then
+    if [[ "py310" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
+        if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
+            # Disable PyTorch ops for Python 3.11 with CUDA due to pytorch issue
+            export BUILD_PYTORCH_OPS=OFF
+        fi
     elif [[ "py312" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.12
+    elif [[ "py313" =~ ^($options)$ ]]; then
+        PYTHON_VERSION=3.13
     else
         echo "Invalid python version."
         print_usage_and_exit_docker_build
@@ -105,9 +105,7 @@ cuda_wheel_build() {
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg QT_BASE_DIR="${QT_BASE_DIR}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
-        --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
-        --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
@@ -120,24 +118,22 @@ cuda_wheel_build() {
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm cloudviewer-ci:wheel \
-        bash -c "cp /root/install/cloudViewer*.whl /opt/mount \
-            && chown $(id -u):$(id -g) /opt/mount/cloudViewer*.whl"
+        bash -c "cp /root/install/cloudviewer*.whl /opt/mount \
+            && chown $(id -u):$(id -g) /opt/mount/cloudviewer*.whl"
 }
 
 ci_build() {
-    if [ "${UBUNTU_VERSION}" = "${UBUNTU_JAMMY}" ]; then
-        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
-    else 
+    if [ "${UBUNTU_VERSION}" = "${UBUNTU_FOCAL}" ]; then
         QT_BASE_DIR="/opt/qt515"
+    else 
+        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
     fi
 
     echo "[ci_build()] DOCKER_TAG=${DOCKER_TAG}"
     echo "[ci_build()] BASE_IMAGE=${BASE_IMAGE}"
     echo "[ci_build()] QT_BASE_DIR: ${QT_BASE_DIR}"
     echo "[ci_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
-    echo "[ci_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
     echo "[ci_build()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[ci_build()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[ci_build()] PYTHON_VERSION=${PYTHON_VERSION}"
     echo "[ci_build()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
@@ -149,9 +145,7 @@ ci_build() {
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg QT_BASE_DIR="${QT_BASE_DIR}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
-        --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
-        --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}" \
         --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
@@ -171,10 +165,10 @@ ci_build() {
 cuda-focal_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-focal
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_FOCAL}
+    export UBUNTU_VERSION=${UBUNTU_FOCAL}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-focal
-    export PYTHON_VERSION=3.11
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -184,10 +178,23 @@ cuda-focal_export_env() {
 cuda-jammy_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-jammy
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_JAMMY}
+    export UBUNTU_VERSION=${UBUNTU_JAMMY}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-jammy
-    export PYTHON_VERSION=3.11
+    export PYTHON_VERSION=3.12
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=ON
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+}
+
+cuda-noble_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cuda-noble
+
+    export UBUNTU_VERSION=${UBUNTU_NOBLE}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_VERSION}
+    export DEVELOPER_BUILD=ON
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -197,10 +204,10 @@ cuda-jammy_export_env() {
 cuda-focal-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-focal
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_FOCAL}
+    export UBUNTU_VERSION=${UBUNTU_FOCAL}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-focal
-    export PYTHON_VERSION=3.11
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -210,10 +217,23 @@ cuda-focal-release_export_env() {
 cuda-jammy-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cuda-jammy
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_JAMMY}
+    export UBUNTU_VERSION=${UBUNTU_JAMMY}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-jammy
-    export PYTHON_VERSION=3.11
+    export PYTHON_VERSION=3.12
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=ON
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+}
+
+cuda-noble-release_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cuda-noble
+
+    export UBUNTU_VERSION=${UBUNTU_NOBLE}
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu${UBUNTU_VERSION}
+    export DEVELOPER_BUILD=OFF
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -223,10 +243,10 @@ cuda-jammy-release_export_env() {
 cpu-focal_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-focal
 
-    export BASE_IMAGE=ubuntu:${UBUNTU_FOCAL}
+    export UBUNTU_VERSION=${UBUNTU_FOCAL}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-focal
-    export PYTHON_VERSION=3.11
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -235,10 +255,24 @@ cpu-focal_export_env() {
 
 cpu-jammy_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-jammy
-    export BASE_IMAGE=ubuntu:${UBUNTU_JAMMY}
+
+    export UBUNTU_VERSION=${UBUNTU_JAMMY}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-jammy
-    export PYTHON_VERSION=3.11
+    export PYTHON_VERSION=3.12
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+}
+
+cpu-noble_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cpu-noble
+
+    export UBUNTU_VERSION=${UBUNTU_NOBLE}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
+    export DEVELOPER_BUILD=ON
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -248,10 +282,10 @@ cpu-jammy_export_env() {
 cpu-focal-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-focal
 
-    export BASE_IMAGE=ubuntu:${UBUNTU_FOCAL}
+    export UBUNTU_VERSION=${UBUNTU_FOCAL}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-focal
-    export PYTHON_VERSION=3.11
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -260,10 +294,24 @@ cpu-focal-release_export_env() {
 
 cpu-jammy-release_export_env() {
     export DOCKER_TAG=cloudviewer-ci:cpu-jammy
-    export BASE_IMAGE=ubuntu:${UBUNTU_JAMMY}
+
+    export UBUNTU_VERSION=${UBUNTU_JAMMY}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-jammy
-    export PYTHON_VERSION=3.11
+    export PYTHON_VERSION=3.12
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+}
+
+cpu-noble-release_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cpu-noble
+
+    export UBUNTU_VERSION=${UBUNTU_NOBLE}
+    export BASE_IMAGE=ubuntu:${UBUNTU_VERSION}
+    export DEVELOPER_BUILD=OFF
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -287,6 +335,10 @@ function main() {
         cpu-jammy_export_env
         ci_build
         ;;
+    cpu-noble)
+        cpu-noble_export_env
+        ci_build
+        ;;
     cpu-focal-release)
         cpu-focal-release_export_env
         ci_build
@@ -295,7 +347,10 @@ function main() {
         cpu-jammy-release_export_env
         ci_build
         ;;
-
+    cpu-noble-release)
+        cpu-noble-release_export_env
+        ci_build
+        ;;
     # CUDA CIs
     cuda-focal)
         cuda-focal_export_env
@@ -303,6 +358,10 @@ function main() {
         ;;
     cuda-jammy)
         cuda-jammy_export_env
+        ci_build
+        ;;
+    cuda-noble)
+        cuda-noble_export_env
         ci_build
         ;;
     cuda-focal-release)
@@ -313,14 +372,12 @@ function main() {
         cuda-jammy-release_export_env
         ci_build
         ;;
+    cuda-noble-release)
+        cuda-noble-release_export_env
+        ci_build
+        ;;
 
     # CUDA wheels
-    cuda_wheel_py38_dev)
-        cuda_wheel_build py38 dev
-        ;;
-    cuda_wheel_py39_dev)
-        cuda_wheel_build py39 dev
-        ;;
     cuda_wheel_py310_dev)
         cuda_wheel_build py310 dev
         ;;
@@ -330,11 +387,8 @@ function main() {
     cuda_wheel_py312_dev)
         cuda_wheel_build py312 dev
         ;;
-    cuda_wheel_py38)
-        cuda_wheel_build py38
-        ;;
-    cuda_wheel_py39)
-        cuda_wheel_build py39
+    cuda_wheel_py313_dev)
+        cuda_wheel_build py313 dev
         ;;
     cuda_wheel_py310)
         cuda_wheel_build py310
@@ -344,6 +398,9 @@ function main() {
         ;;
     cuda_wheel_py312)
         cuda_wheel_build py312
+        ;;
+    cuda_wheel_py313)
+        cuda_wheel_build py313
         ;;
     *)
         echo "Error: invalid argument: ${1}." >&2

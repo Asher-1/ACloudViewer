@@ -7,12 +7,13 @@
 
 #include "cloudViewer/t/geometry/kernel/PointCloud.h"
 
+#include <Logging.h>
+
 #include <vector>
 
 #include "cloudViewer/core/CUDAUtils.h"
 #include "cloudViewer/core/ShapeUtil.h"
 #include "cloudViewer/core/Tensor.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include <RGBDImage.h>
-#include "io/sensor/azure_kinect/MKVMetadata.h"
 #include <IJsonConvertible.h>
+#include <RGBDImage.h>
+
+#include "io/sensor/azure_kinect/MKVMetadata.h"
 
 struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;

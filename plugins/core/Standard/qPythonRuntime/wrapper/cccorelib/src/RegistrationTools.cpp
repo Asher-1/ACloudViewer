@@ -1,19 +1,9 @@
-// ##########################################################################
-// #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                       #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                   COPYRIGHT: Thomas Montaigu                           #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
 
@@ -29,7 +19,7 @@ void define_RegistrationTools(py::module &cccorelib)
     py::class_<cloudViewer::RegistrationTools> RegistrationTools(cccorelib, "RegistrationTools");
 
     py::enum_<cloudViewer::RegistrationTools::TRANSFORMATION_FILTERS>(RegistrationTools,
-                                                                    "TRANSFORMATION_FILTERS")
+                                                                      "TRANSFORMATION_FILTERS")
         .value("SKIP_NONE", cloudViewer::RegistrationTools::TRANSFORMATION_FILTERS::SKIP_NONE)
         .value("SKIP_RXY", cloudViewer::RegistrationTools::TRANSFORMATION_FILTERS::SKIP_RXY)
         .value("SKIP_RYZ", cloudViewer::RegistrationTools::TRANSFORMATION_FILTERS::SKIP_RYZ)
@@ -52,7 +42,7 @@ void define_RegistrationTools(py::module &cccorelib)
     // HornRegistrationTools
 
     py::class_<cloudViewer::HornRegistrationTools, cloudViewer::RegistrationTools>(cccorelib,
-                                                                               "HornRegistrationTools")
+                                                                                   "HornRegistrationTools")
         .def_static("FindAbsoluteOrientation",
                     &cloudViewer::HornRegistrationTools::FindAbsoluteOrientation,
                     "lCloud"_a,
@@ -67,9 +57,11 @@ void define_RegistrationTools(py::module &cccorelib)
     py::class_<cloudViewer::ICPRegistrationTools, cloudViewer::RegistrationTools> ICPRegistrationTools(
         cccorelib, "ICPRegistrationTools");
     py::enum_<cloudViewer::ICPRegistrationTools::CONVERGENCE_TYPE> PyConvergenceType(ICPRegistrationTools,
-                                                                                   "CONVERGENCE_TYPE");
-    py::enum_<cloudViewer::ICPRegistrationTools::RESULT_TYPE> PyResultType(ICPRegistrationTools, "RESULT_TYPE");
-    py::class_<cloudViewer::ICPRegistrationTools::Parameters> PyParameters(ICPRegistrationTools, "Parameters");
+                                                                                     "CONVERGENCE_TYPE");
+    py::enum_<cloudViewer::ICPRegistrationTools::RESULT_TYPE> PyResultType(ICPRegistrationTools,
+                                                                           "RESULT_TYPE");
+    py::class_<cloudViewer::ICPRegistrationTools::Parameters> PyParameters(ICPRegistrationTools,
+                                                                           "Parameters");
 
     ICPRegistrationTools.def_static("Register",
                                     &cloudViewer::ICPRegistrationTools::Register,
@@ -123,7 +115,7 @@ void define_RegistrationTools(py::module &cccorelib)
     // FPCSRegistrationTools
 
     py::class_<cloudViewer::FPCSRegistrationTools, cloudViewer::RegistrationTools>(cccorelib,
-                                                                               "FPCSRegistrationTools")
+                                                                                   "FPCSRegistrationTools")
         .def_static("RegisterClouds",
                     &cloudViewer::FPCSRegistrationTools::RegisterClouds,
                     "modelCloud"_a,

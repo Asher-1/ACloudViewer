@@ -5,17 +5,19 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <string>
 #include <vector>
 
 #include "cloudViewer/data/Dataset.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        CloudViewerDownloadsPrefix() + "20220201-data/DemoPoseGraphOptimization.zip",
+        CloudViewerDownloadsPrefix() +
+                "20220201-data/DemoPoseGraphOptimization.zip",
         "af085b28d79dea7f0a50aef50c96b62c"};
 
 DemoPoseGraphOptimization::DemoPoseGraphOptimization(

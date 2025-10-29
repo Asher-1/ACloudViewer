@@ -5,11 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <string>
 #include <vector>
 
 #include "cloudViewer/data/Dataset.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace data {
@@ -19,7 +20,8 @@ const static std::vector<DataDescriptor> data_descriptors = {
          "ba3640bba38f19c8f2d5e86e045eeae5"},
         {CloudViewerDownloadsPrefix() + "augmented-icl-nuim/office2-color.zip",
          "487cdfacffc8fc8247a5b21e860a3794", "color"},
-        {CloudViewerDownloadsPrefix() + "augmented-icl-nuim/office2-depth-clean.zip",
+        {CloudViewerDownloadsPrefix() +
+                 "augmented-icl-nuim/office2-depth-clean.zip",
          "386203a7a5dae21db6d8430ae36dcc8b", "depth"},
         {CloudViewerDownloadsPrefix() +
                  "augmented-icl-nuim/office2-depth-simulated.zip",

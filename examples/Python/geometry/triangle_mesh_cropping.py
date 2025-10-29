@@ -20,11 +20,14 @@ if __name__ == "__main__":
 
     print("Displaying mesh of only the first half triangles ...")
     mesh_cropped = copy.deepcopy(mesh)
-    mesh_cropped.set_triangles(cv3d.utility.Vector3iVector(
-        np.asarray(mesh_cropped.triangles())[:len(mesh_cropped.triangles()) //
-                                           2, :]))
-    mesh_cropped.set_triangle_normals(cv3d.utility.Vector3dVector(
-        np.asarray(mesh_cropped.triangle_normals())
-        [:len(mesh_cropped.triangle_normals()) // 2, :]))
+    mesh_cropped.set_triangles(
+        cv3d.utility.Vector3iVector(
+            np.asarray(
+                mesh_cropped.triangles())[:len(mesh_cropped.triangles()) //
+                                          2, :]))
+    mesh_cropped.set_triangle_normals(
+        cv3d.utility.Vector3dVector(
+            np.asarray(mesh_cropped.triangle_normals())
+            [:len(mesh_cropped.triangle_normals()) // 2, :]))
     print(mesh_cropped.triangles())
     cv3d.visualization.draw([mesh_cropped])

@@ -5,8 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ml/impl/sparse_conv/SparseConvCUDAKernels.h"
 #include <Helper.h>
+
+#include "ml/impl/sparse_conv/SparseConvCUDAKernels.h"
 
 using cloudViewer::utility::DivUp;
 

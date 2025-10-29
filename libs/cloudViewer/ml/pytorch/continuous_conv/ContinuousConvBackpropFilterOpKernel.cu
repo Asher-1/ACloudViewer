@@ -89,22 +89,22 @@ void ContinuousConvBackpropFilterCUDA(
             interpolation, coordinate_mapping, align_corners,
             individual_extents, isotropic_extents, normalize);
 }
-#define INSTANTIATE(TFeat, TOut, TReal, TIndex)                               \
-    template void                                                             \
-    ContinuousConvBackpropFilterCUDA<TFeat, TOut, TReal, TIndex>(             \
-            const torch::Tensor& filters, const torch::Tensor& out_positions, \
-            const torch::Tensor& extents, const torch::Tensor& offset,        \
-            const torch::Tensor& inp_positions,                               \
-            const torch::Tensor& inp_features,                                \
-            const torch::Tensor& inp_importance,                              \
-            const torch::Tensor& neighbors_index,                             \
-            const torch::Tensor& neighbors_importance,                        \
-            const torch::Tensor& neighbors_row_splits,                        \
-            const torch::Tensor& out_features_gradient,                       \
-            const bool align_corners,                                         \
-            const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,     \
-            const bool normalize,                                             \
-            const cloudViewer::ml::impl::InterpolationMode interpolation,          \
+#define INSTANTIATE(TFeat, TOut, TReal, TIndex)                                \
+    template void                                                              \
+    ContinuousConvBackpropFilterCUDA<TFeat, TOut, TReal, TIndex>(              \
+            const torch::Tensor& filters, const torch::Tensor& out_positions,  \
+            const torch::Tensor& extents, const torch::Tensor& offset,         \
+            const torch::Tensor& inp_positions,                                \
+            const torch::Tensor& inp_features,                                 \
+            const torch::Tensor& inp_importance,                               \
+            const torch::Tensor& neighbors_index,                              \
+            const torch::Tensor& neighbors_importance,                         \
+            const torch::Tensor& neighbors_row_splits,                         \
+            const torch::Tensor& out_features_gradient,                        \
+            const bool align_corners,                                          \
+            const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping, \
+            const bool normalize,                                              \
+            const cloudViewer::ml::impl::InterpolationMode interpolation,      \
             const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
 
 INSTANTIATE(float, float, float, int32_t)

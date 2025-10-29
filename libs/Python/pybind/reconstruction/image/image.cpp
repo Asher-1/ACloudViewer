@@ -100,9 +100,10 @@ void pybind_image_methods(py::module &m) {
 
     m.def("rectify_image", &RectifyImage,
           py::call_guard<py::gil_scoped_release>(),
-          "Function for the rectification of images", "image_path"_a, "input_path"_a,
-          "output_path"_a, "stereo_pairs_list"_a, "blank_pixels"_a = 0.0,
-          "min_scale"_a = 0.2, "max_scale"_a = 2.0, "max_image_size"_a = -1);
+          "Function for the rectification of images", "image_path"_a,
+          "input_path"_a, "output_path"_a, "stereo_pairs_list"_a,
+          "blank_pixels"_a = 0.0, "min_scale"_a = 0.2, "max_scale"_a = 2.0,
+          "max_image_size"_a = -1);
     docstring::FunctionDocInject(m, "rectify_image",
                                  map_shared_argument_docstrings);
 
@@ -116,21 +117,23 @@ void pybind_image_methods(py::module &m) {
 
     m.def("undistort_image", &UndistortImage,
           py::call_guard<py::gil_scoped_release>(),
-          "Function for the undistortion of images", "image_path"_a, "input_path"_a,
-          "output_path"_a, "image_list_path"_a = "", "output_type"_a = "COLMAP",
-          "copy_policy"_a = "copy", "num_patch_match_src_images"_a = 20,
-          "blank_pixels"_a = 0.0, "min_scale"_a = 0.2, "max_scale"_a = 2.0,
-          "max_image_size"_a = -1, "roi_min_x"_a = 0.0, "roi_min_y"_a = 0.0,
-          "roi_max_x"_a = 1.0, "roi_max_y"_a = 1.0);
+          "Function for the undistortion of images", "image_path"_a,
+          "input_path"_a, "output_path"_a, "image_list_path"_a = "",
+          "output_type"_a = "COLMAP", "copy_policy"_a = "copy",
+          "num_patch_match_src_images"_a = 20, "blank_pixels"_a = 0.0,
+          "min_scale"_a = 0.2, "max_scale"_a = 2.0, "max_image_size"_a = -1,
+          "roi_min_x"_a = 0.0, "roi_min_y"_a = 0.0, "roi_max_x"_a = 1.0,
+          "roi_max_y"_a = 1.0);
     docstring::FunctionDocInject(m, "undistort_image",
                                  map_shared_argument_docstrings);
 
     m.def("undistort_image_standalone", &UndistortImageStandalone,
           py::call_guard<py::gil_scoped_release>(),
-          "Function for the standalone undistortion of images", "image_path"_a, "input_path"_a,
-          "output_path"_a, "blank_pixels"_a = 0.0, "min_scale"_a = 0.2,
-          "max_scale"_a = 2.0, "max_image_size"_a = -1, "roi_min_x"_a = 0.0,
-          "roi_min_y"_a = 0.0, "roi_max_x"_a = 1.0, "roi_max_y"_a = 1.0);
+          "Function for the standalone undistortion of images", "image_path"_a,
+          "input_path"_a, "output_path"_a, "blank_pixels"_a = 0.0,
+          "min_scale"_a = 0.2, "max_scale"_a = 2.0, "max_image_size"_a = -1,
+          "roi_min_x"_a = 0.0, "roi_min_y"_a = 0.0, "roi_max_x"_a = 1.0,
+          "roi_max_y"_a = 1.0);
     docstring::FunctionDocInject(m, "undistort_image_standalone",
                                  map_shared_argument_docstrings);
 }

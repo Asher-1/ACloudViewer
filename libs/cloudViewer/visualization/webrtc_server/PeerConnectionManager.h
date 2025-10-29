@@ -44,7 +44,8 @@ namespace webrtc_server {
 /// https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Connectivity#signaling
 /// for more information. In PeerConnectionManager, a WebRTC client (e.g.
 /// JavaScript video player) calls the following HTTP APIs:
-/// - /api/getMediaList: Returns a list of active CloudViewer visualizer windows.
+/// - /api/getMediaList: Returns a list of active CloudViewer visualizer
+/// windows.
 /// - /api/getIceServers: Returns a list of ICE (STUN/TURN) servers. The ICE
 ///   server is used to forward requests through the remote peer's NAT layer. We
 ///   use publicly available STUN servers. In certain network configurations
@@ -67,7 +68,8 @@ namespace webrtc_server {
 ///
 /// [Stage 3: Hangup]
 /// The client calls /api/hangup to close the WebRTC connection. This does not
-/// close the CloudViewer Window as a Window can be connected to 0 or more peers.
+/// close the CloudViewer Window as a Window can be connected to 0 or more
+/// peers.
 ///
 /// TODO (yixing): Use PImpl.
 class PeerConnectionManager {
@@ -120,7 +122,7 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface* pc,
                 std::promise<const webrtc::SessionDescriptionInterface*>&
                         promise)
-            : pc_(pc), promise_(promise){};
+            : pc_(pc), promise_(promise) {};
 
     private:
         webrtc::PeerConnectionInterface* pc_;
@@ -153,7 +155,7 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface* pc,
                 std::promise<const webrtc::SessionDescriptionInterface*>&
                         promise)
-            : pc_(pc), promise_(promise){};
+            : pc_(pc), promise_(promise) {};
 
     private:
         webrtc::PeerConnectionInterface* pc_;
@@ -313,7 +315,8 @@ class PeerConnectionManager {
         virtual void OnAddStream(
                 rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
             utility::LogDebug("[{}] GetVideoTracks().size(): {}.",
-                              CLOUDVIEWER_FUNCTION, stream->GetVideoTracks().size());
+                              CLOUDVIEWER_FUNCTION,
+                              stream->GetVideoTracks().size());
             webrtc::VideoTrackVector videoTracks = stream->GetVideoTracks();
             if (videoTracks.size() > 0) {
                 video_sink_.reset(new VideoSink(videoTracks.at(0)));

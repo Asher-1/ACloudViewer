@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                     ACLOUDVIEWER PLUGIN: q3DMASC                       #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                 COPYRIGHT: Dimitri Lague / CNRS / UEB                  #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "q3DMASCTools.h"
 
@@ -495,9 +485,9 @@ static bool CreateFeaturesFromCommand(const QString& command,
         //	int ctxLabel = ctxLabelStr.toInt(&ok);
         //	if (!ok)
         //	{
-        //		CVLog::Warning(QString("Malformed file: expecting a valid
-        //integer value after 'CTX' on line #%1").arg(lineNumber)); 		return
-        //false;
+        //		CVLog::Warning(QString("Malformed file: expecting a
+        // valid integer value after 'CTX' on line #%1").arg(lineNumber));
+        // return false;
         //	}
         //	static_cast<ContextBasedFeature*>(feature.data())->ctxClassLabel
         //= ctxLabel; 	continue;
@@ -1606,8 +1596,9 @@ cloudViewer::ScalarField* Tools::GetClassificationSF(
     }
     // look for the classification field
     int classifSFIdx = cloud->getScalarFieldIndexByName(
-            LAS_FIELD_NAMES[LAS_CLASSIFICATION]);  // LAS_FIELD_NAMES[LAS_CLASSIFICATION]
-                                                   // = "Classification"
+            LAS_FIELD_NAMES
+                    [LAS_CLASSIFICATION]);  // LAS_FIELD_NAMES[LAS_CLASSIFICATION]
+                                            // = "Classification"
     if (classifSFIdx < 0) {
         return nullptr;
     }

@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <ecvPointCloud.h>
+
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

@@ -1,18 +1,22 @@
-#ifndef FONTPUSHBUTTON_H
-#define FONTPUSHBUTTON_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include <QPushButton>
 
 #include "../qPCL.h"
 
-namespace Widgets
-{
+namespace Widgets {
 
-class QPCL_ENGINE_LIB_API FontPushButton : public QPushButton
-{
+class QPCL_ENGINE_LIB_API FontPushButton : public QPushButton {
     Q_OBJECT
 public:
-    explicit FontPushButton(QWidget *parent = 0);
+    explicit FontPushButton(QWidget* parent = 0);
     explicit FontPushButton(const QString& text, QWidget* parent = 0);
 
 signals:
@@ -23,8 +27,6 @@ private slots:
 
 private:
     void init();
-
 };
 
-}
-#endif // FONTPUSHBUTTON_H
+}  // namespace Widgets

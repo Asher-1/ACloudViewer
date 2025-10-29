@@ -61,9 +61,9 @@ class MultiWinApp:
                              bounds.get_center() + [0, 0, -3], [0, -1, 0])
         cv3d.visualization.gui.Application.instance.add_window(new_vis)
         new_vis.os_frame = cv3d.visualization.gui.Rect(self.snapshot_pos[0],
-                                                      self.snapshot_pos[1],
-                                                      new_vis.os_frame.width,
-                                                      new_vis.os_frame.height)
+                                                       self.snapshot_pos[1],
+                                                       new_vis.os_frame.width,
+                                                       new_vis.os_frame.height)
 
     def on_main_window_closing(self):
         self.is_done = True

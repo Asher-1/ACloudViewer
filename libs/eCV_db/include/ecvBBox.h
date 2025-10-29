@@ -1,22 +1,11 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_BBOX_HEADER
-#define ECV_BBOX_HEADER
+#pragma once
 
 // LOCAL
 #include "eCV_db.h"
@@ -26,8 +15,8 @@
 #include "ecvHObject.h"
 
 // CV_CORE_LIB
-#include <SquareMatrix.h>
 #include <BoundingBox.h>
+#include <SquareMatrix.h>
 
 //! Bounding box structure
 /** Supports several operators such as addition (to a matrix or a vector) and
@@ -107,7 +96,7 @@ public:  // inherited methods (ccHObject)
 
     // CCVector3: must override to fix candidate template ignored:
     // could not match 'QStringBuilder' against 'Vector3Tpl
-    const ccBBox& operator+=(const CCVector3 & V) override;
+    const ccBBox& operator+=(const CCVector3& V) override;
     const ccBBox& operator-=(const CCVector3& V) override;
     const ccBBox& operator*=(float scaleFactor) override;
     const ccBBox& operator*=(const cloudViewer::SquareMatrix& mat) override;
@@ -159,5 +148,3 @@ public:
     /// Returns the eight points that define the bounding box.
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 };
-
-#endif  // ECV_BBOX_HEADER

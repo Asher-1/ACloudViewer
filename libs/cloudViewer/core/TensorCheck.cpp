@@ -7,13 +7,14 @@
 
 #include "cloudViewer/core/TensorCheck.h"
 
+#include <Helper.h>
+#include <Logging.h>
+
 #include <string>
 
 #include "cloudViewer/core/Device.h"
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/Tensor.h"
-#include <Helper.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

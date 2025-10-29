@@ -7,13 +7,14 @@
 
 #include "cloudViewer/core/Device.h"
 
+#include <Helper.h>
+#include <Logging.h>
+
 #include <string>
 #include <vector>
 
 #include "cloudViewer/core/CUDAUtils.h"
 #include "cloudViewer/core/SYCLUtils.h"
-#include <Helper.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

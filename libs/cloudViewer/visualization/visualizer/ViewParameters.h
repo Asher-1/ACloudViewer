@@ -7,10 +7,10 @@
 
 #pragma once
 
+#include <IJsonConvertible.h>
+
 #include <Eigen/Core>
 #include <Eigen/StdVector>
-
-#include <IJsonConvertible.h>
 
 namespace cloudViewer {
 namespace visualization {

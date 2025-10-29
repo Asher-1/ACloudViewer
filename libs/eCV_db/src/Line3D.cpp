@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "Line3D.h"
 
 #include <cmath>
@@ -32,8 +39,7 @@ void Line3D::Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t) {
     this->Transform(t);
 }
 
-std::pair<double, double> Line3D::SlabAABBBase(
-        const ccBBox& box) const {
+std::pair<double, double> Line3D::SlabAABBBase(const ccBBox& box) const {
     /* This code is based off of Tavian Barnes' branchless implementation of
      * the slab method for determining ray/AABB intersections. It treats the
      * space inside the bounding box as three sets of parallel planes and clips
@@ -46,26 +52,31 @@ std::pair<double, double> Line3D::SlabAABBBase(
      * and t_min distances will invert.
      *
      * https://tavianator.com/2011/ray_box.html */
-    double t_x0 = x_inv_ * (static_cast<double>(box.minCorner().x) - origin().x());
-    double t_x1 = x_inv_ * (static_cast<double>(box.maxCorner().x) - origin().x());
+    double t_x0 =
+            x_inv_ * (static_cast<double>(box.minCorner().x) - origin().x());
+    double t_x1 =
+            x_inv_ * (static_cast<double>(box.maxCorner().x) - origin().x());
     double t_min = std::min(t_x0, t_x1);
     double t_max = std::max(t_x0, t_x1);
 
-    double t_y0 = y_inv_ * (static_cast<double>(box.minCorner().y) - origin().y());
-    double t_y1 = y_inv_ * (static_cast<double>(box.maxCorner().y) - origin().y());
+    double t_y0 =
+            y_inv_ * (static_cast<double>(box.minCorner().y) - origin().y());
+    double t_y1 =
+            y_inv_ * (static_cast<double>(box.maxCorner().y) - origin().y());
     t_min = std::max(t_min, std::min(t_y0, t_y1));
     t_max = std::min(t_max, std::max(t_y0, t_y1));
 
-    double t_z0 = z_inv_ * (static_cast<double>(box.minCorner().z) - origin().z());
-    double t_z1 = z_inv_ * (static_cast<double>(box.maxCorner().z) - origin().z());
+    double t_z0 =
+            z_inv_ * (static_cast<double>(box.minCorner().z) - origin().z());
+    double t_z1 =
+            z_inv_ * (static_cast<double>(box.maxCorner().z) - origin().z());
     t_min = std::max(t_min, std::min(t_z0, t_z1));
     t_max = std::min(t_max, std::max(t_z0, t_z1));
 
     return {t_min, t_max};
 }
 
-utility::optional<double> Line3D::ExactAABB(
-        const ccBBox& box) const {
+utility::optional<double> Line3D::ExactAABB(const ccBBox& box) const {
     /* This is a naive, exact method of computing the intersection with a
      * bounding box.  It is much slower than the highly optimized slab method,
      * but will perform correctly in the one case where the slab method
@@ -128,8 +139,7 @@ utility::optional<double> Line3D::ExactAABB(
     return minimum;
 }
 
-utility::optional<double> Line3D::SlabAABB(
-        const ccBBox& box) const {
+utility::optional<double> Line3D::SlabAABB(const ccBBox& box) const {
     /* The base case of the Line/AABB intersection allows for any intersection
      * along the direction of the line at any distance, in accordance with the
      * semantic meaning of a line.
@@ -276,8 +286,7 @@ double Line3D::DistanceTo(const Line3D& other) const {
 Ray3D::Ray3D(const Eigen::Vector3d& origin, const Eigen::Vector3d& direction)
     : Line3D(origin, direction, LineType::Ray) {}
 
-utility::optional<double> Ray3D::SlabAABB(
-        const ccBBox& box) const {
+utility::optional<double> Ray3D::SlabAABB(const ccBBox& box) const {
     /* The ray case of the Line/AABB intersection allows for any intersection
      * along the positive direction of the line at any distance, in accordance
      * with the semantic meaning of a ray.
@@ -327,8 +336,7 @@ void Segment3D::Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t) {
     end_point_ = t * end_point_;
 }
 
-utility::optional<double> Segment3D::SlabAABB(
-        const ccBBox& box) const {
+utility::optional<double> Segment3D::SlabAABB(const ccBBox& box) const {
     /* The segment case of the Line/AABB intersection only allows intersections
      * along the positive direction of the line which are at a distance less
      * than the segment length, in accordance with the semantic meaning of a
@@ -350,8 +358,7 @@ utility::optional<double> Segment3D::SlabAABB(
     return {};
 }
 
-utility::optional<double> Segment3D::ExactAABB(
-        const ccBBox& box) const {
+utility::optional<double> Segment3D::ExactAABB(const ccBBox& box) const {
     // For a line segment, the result must additionally be less than the
     // overall length of the segment
     auto result = Line3D::ExactAABB(box);

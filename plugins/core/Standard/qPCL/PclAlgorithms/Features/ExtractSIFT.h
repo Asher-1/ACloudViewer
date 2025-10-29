@@ -1,60 +1,45 @@
-//##########################################################################
-//#                                                                        #
-//#                       CLOUDVIEWER PLUGIN: qPCL                         #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                         COPYRIGHT: DAHAI LU                         #
-//#                                                                        #
-//##########################################################################
-//
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef Q_PCL_PLUGIN_EXTRACTSIFT_HEADER
-#define Q_PCL_PLUGIN_EXTRACTSIFT_HEADER
+#pragma once
 
 #include "../BasePclModule.h"
 
-//Qt
+// Qt
 #include <QString>
 
 class SIFTExtractDlg;
 
 //! SIFT keypoints extraction
-class ExtractSIFT: public BasePclModule
-{
+class ExtractSIFT : public BasePclModule {
 public:
-	ExtractSIFT();
-	virtual ~ExtractSIFT();
+    ExtractSIFT();
+    virtual ~ExtractSIFT();
 
-	//inherited from BasePclModule
-	virtual int compute();
+    // inherited from BasePclModule
+    virtual int compute();
+
 protected:
+    // inherited from BasePclModule
+    virtual int checkSelected();
+    virtual int openInputDialog();
+    virtual void getParametersFromDialog();
+    virtual int checkParameters();
+    virtual QString getErrorMessage(int errorCode);
 
-	//inherited from BasePclModule
-	virtual int checkSelected();
-	virtual int openInputDialog();
-	virtual void getParametersFromDialog();
-	virtual int checkParameters();
-	virtual QString getErrorMessage(int errorCode);
+    SIFTExtractDlg* m_dialog;
+    int m_nr_octaves;
+    float m_min_scale;
+    int m_nr_scales_per_octave;
+    float m_min_contrast;
+    bool m_use_min_contrast;
+    QString m_field_to_use;
+    std::string m_field_to_use_no_space;
 
-	SIFTExtractDlg* m_dialog;
-	int m_nr_octaves;
-	float m_min_scale;
-	int m_nr_scales_per_octave;
-	float m_min_contrast;
-	bool m_use_min_contrast;
-	QString m_field_to_use;
-	std::string m_field_to_use_no_space;
-
-	enum Modes {RGB, SCALAR_FIELD};
-	Modes m_mode;
+    enum Modes { RGB, SCALAR_FIELD };
+    Modes m_mode;
 };
-
-#endif

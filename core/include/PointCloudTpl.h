@@ -1,23 +1,11 @@
-//##########################################################################
-//#                                                                        #
-//#                               cloudViewer                              #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef CV_LIB_POINT_CLOUD_TPL_HEADER
-#define CV_LIB_POINT_CLOUD_TPL_HEADER
+#pragma once
 
 // Local
 #include "BoundingBox.h"
@@ -92,7 +80,7 @@ public:
         if (!currentInScalarField) {
             // if we get there, it means that either the caller has forgot to
             // create (and assign) a scalar field to the cloud, or that we are
-            //in a compatibility mode with old/basic behaviour: a unique SF for
+            // in a compatibility mode with old/basic behaviour: a unique SF for
             // everything (input/output)
 
             // we look for any already existing "default" scalar field
@@ -345,7 +333,7 @@ public:
 
     //! Invalidates bounding box
     /** Bounding box will be recomputed next time a request is made to
-      *'getBoundingBox'.
+     *'getBoundingBox'.
      **/
     virtual void invalidateBoundingBox() { m_bbox.setValidity(false); }
 
@@ -608,5 +596,3 @@ protected:
 };
 
 }  // namespace cloudViewer
-
-#endif  // CV_LIB_POINT_CLOUD_TPL_HEADER

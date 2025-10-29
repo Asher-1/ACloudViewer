@@ -1,22 +1,11 @@
-// ##########################################################################
-// #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                      #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                   COPYRIGHT: Thomas Montaigu                           #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef PYTHON_PLUGIN_PYTHON_CONFIG_H
-#define PYTHON_PLUGIN_PYTHON_CONFIG_H
+#pragma once
 
 #include <QString>
 #include <QtGlobal>
@@ -212,4 +201,3 @@ class PythonConfigPaths final
     /// m_pythonPath can however be freed after Py_SetPath was used
     std::unique_ptr<wchar_t[]> m_pythonPath{};
 };
-#endif // PYTHON_PLUGIN_PYTHON_CONFIG_H

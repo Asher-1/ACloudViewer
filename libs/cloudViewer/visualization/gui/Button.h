@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "visualization/gui/Widget.h"
 #include "visualization/gui/UIImage.h"
+#include "visualization/gui/Widget.h"
 
 #include <functional>
 

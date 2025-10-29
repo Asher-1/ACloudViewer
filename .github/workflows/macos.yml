@@ -14,7 +14,7 @@ on:
       - main
 
   release:
-    types: [published]
+    types: [released]
 
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
@@ -192,14 +192,10 @@ jobs:
         # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
         os: [macos-13, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
         exclude:
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
           - is_main: false
@@ -207,8 +203,9 @@ jobs:
 
     env:
       CONDA_DEP_FILE: ".ci/conda_macos.yml"
-      BUILD_TORCH_OPS: ON
-      # TensorFlow v2.16 does not support Python 3.8
+      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
+      BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
+      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
       BUILD_TENSORFLOW_OPS: OFF
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
@@ -227,7 +224,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
-          ref: main
+          ref: torch271
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       - name: Setup cache
@@ -308,7 +305,7 @@ jobs:
           build_mac_wheel with_conda build_realsense
           ccache -s
 
-          PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudViewer*.whl)"
+          PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudviewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload Wheel to GitHub artifacts
@@ -348,14 +345,10 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
         exclude:
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
           - is_main: false
@@ -371,14 +364,14 @@ jobs:
       - name: Download X64 wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: cloudViewer-*macosx*_x86_64.whl
+          pattern: cloudviewer-*macosx*_x86_64.whl
           path: x64_wheels
           merge-multiple: true
 
       - name: Download ARM64 wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: cloudViewer-*macosx*_arm64.whl
+          pattern: cloudviewer-*macosx*_arm64.whl
           path: arm64_wheels
           merge-multiple: true
 
@@ -389,8 +382,8 @@ jobs:
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           mkdir universal_wheels
           pip install delocate
-          delocate-merge -v -w universal_wheels x64_wheels/cloudViewer-*${PYTAG}*.whl arm64_wheels/cloudViewer-*${PYTAG}*.whl
-          NEW_WHL_NAME=$(basename universal_wheels/cloudViewer-*${PYTAG}*.whl)
+          delocate-merge -v -w universal_wheels x64_wheels/cloudviewer-*${PYTAG}*.whl arm64_wheels/cloudviewer-*${PYTAG}*.whl
+          NEW_WHL_NAME=$(basename universal_wheels/cloudviewer-*${PYTAG}*.whl)
           echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
 
       - name: Upload merged wheels to GitHub artifacts
@@ -428,26 +421,19 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-13, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
         exclude:
-          - os: macos-14
-            python_version: '3.8'
-          - os: macos-14
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
 
     env:
-      BUILD_TORCH_OPS: ON
-      # TensorFlow v2.16 does not support Python 3.8
+       # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
+      BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
+      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
       BUILD_TENSORFLOW_OPS: OFF
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
@@ -458,13 +444,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
-          ref: main
+          ref: torch271
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: cloudViewer-*macosx*.whl
+          pattern: cloudviewer-*macosx*.whl
           merge-multiple: true
 
       - name: Set up Python
@@ -477,7 +463,7 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel cloudViewer*-"$pi_tag"-*_$(uname -m).whl
+          test_wheel cloudviewer*-"$pi_tag"-*_$(uname -m).whl
 
       # - name: Run Python unit tests
       #   run: |

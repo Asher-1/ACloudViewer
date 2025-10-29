@@ -14,8 +14,10 @@ from setuptools.command.install import install as _install
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
 data_files_spec = [
-    ('share/jupyter/nbextensions/cloudViewer', 'cloudViewer/nbextension', '*.*'),
-    ('share/jupyter/labextensions/cloudViewer', 'cloudViewer/labextension', '**'),
+    ('share/jupyter/nbextensions/cloudViewer', 'cloudViewer/nbextension',
+     '*.*'),
+    ('share/jupyter/labextensions/cloudViewer', 'cloudViewer/labextension',
+     '**'),
     ('share/jupyter/labextensions/cloudViewer', '.', 'install.json'),
     ('etc/jupyter/nbconfig/notebook.d', '.', 'cloudViewer.json'),
 ]
@@ -34,7 +36,7 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
         import ipywidgets
         import jupyterlab
     except ImportError as error:
-        print(error.__class__.__name__ + ": " + error.message)
+        print(f"{error.__class__.__name__}: {str(error)}")
         print("Run `pip install -r requirements-jupyter-build.txt`.")
 
     here = os.path.dirname(os.path.abspath(__file__))
@@ -52,7 +54,6 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
     )
 else:
     cmdclass = dict()
-
 
 # Force platform specific wheel.
 # https://stackoverflow.com/a/45150383/1255535
@@ -147,6 +148,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Education",
     "Topic :: Multimedia :: Graphics :: 3D Modeling",
     "Topic :: Multimedia :: Graphics :: 3D Rendering",
@@ -163,14 +165,16 @@ classifiers = [
 name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
-# cloudViewer-cpu wheel for Linux OR Windows x86_64
+# cloudviewer-cpu wheel for Linux OR Windows x86_64
 if (sys.platform.startswith("linux") or
         sys.platform.startswith("win32")) and platform.machine() in (
             'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
     name += "-cpu"
     long_description += ("\n\nThis wheel only contains CPU functionality. "
-                         "Use the cloudViewer wheel for full functionality.")
+                         "Use the cloudviewer wheel for full functionality.")
     classifiers.remove("Environment :: GPU :: NVIDIA CUDA")
+
+print(f'PYPI Package name: {name}')
 
 setup_args = dict(
     name=name,
@@ -196,9 +200,10 @@ setup_args = dict(
     description="@PROJECT_DESCRIPTION@",
     long_description=long_description,
     long_description_content_type='text/x-rst',
-    # Metadata below is valid but currently ignored by pip (<=v23)
-    obsoletes=["cloudViewer_python"],
-    provides=["cloudViewer", "cloudViewer_cpu"],  # For cloudViewer-cpu
+    # Lowercase "cloudviewer" is PEP 503 standard behavior
+    # This normalization is enforced by pip 24.x and later
+    obsoletes=["cloudviewer_python"],
+    provides=["cloudviewer", "cloudviewer_cpu"],  # For cloudviewer-cpu
 )
 
 setup(**setup_args)

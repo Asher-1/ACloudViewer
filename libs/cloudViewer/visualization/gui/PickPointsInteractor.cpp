@@ -7,18 +7,20 @@
 
 #include "visualization/gui/PickPointsInteractor.h"
 
-#include <unordered_map>
-#include <unordered_set>
 #include <Eigen.h>
 #include <Image.h>
-#include <ecvPointCloud.h>
+#include <Logging.h>
 #include <ecvMesh.h>
+#include <ecvPointCloud.h>
+
+#include <unordered_map>
+#include <unordered_set>
+
 #include "t/geometry/PointCloud.h"
 #include "t/geometry/TriangleMesh.h"
-#include <Logging.h>
 #include "visualization/gui/Events.h"
-#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/CloudViewerScene.h"
+#include "visualization/rendering/MaterialRecord.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
 
@@ -72,7 +74,8 @@ private:
         std::string name;
         size_t start_index;
 
-        Obj(const std::string &n, size_t start) : name(n), start_index(start){};
+        Obj(const std::string &n, size_t start)
+            : name(n), start_index(start) {};
     };
 
 public:
@@ -124,8 +127,8 @@ PickPointsInteractor::PickPointsInteractor(rendering::CloudViewerScene *scene,
                                            rendering::Camera *camera) {
     scene_ = scene;
     camera_ = camera;
-    picking_scene_ =
-            cloudViewer::make_shared<rendering::CloudViewerScene>(scene->GetRenderer());
+    picking_scene_ = cloudViewer::make_shared<rendering::CloudViewerScene>(
+            scene->GetRenderer());
 
     picking_scene_->SetDownsampleThreshold(SIZE_MAX);  // don't downsample!
     picking_scene_->SetBackground(kBackgroundColor);
@@ -174,8 +177,8 @@ void PickPointsInteractor::SetPickableGeometry(
             points_.insert(points_.end(), temp_points.begin(),
                            temp_points.end());
         } else if (tcloud || tmesh) {
-            const auto &tpoints =
-                    (tcloud ? tcloud->GetPoints() : tmesh->GetVertexPositions());
+            const auto &tpoints = (tcloud ? tcloud->GetPoints()
+                                          : tmesh->GetVertexPositions());
             const size_t n = tpoints.NumElements();
             float *pts = (float *)tpoints.GetDataPtr();
             points_.reserve(points_.size() + n);
@@ -202,7 +205,8 @@ void PickPointsInteractor::SetPickableGeometry(
             } else {
                 utility::LogWarning(
                         "PickPointsInteractor::SetPickableGeometry(): "
-                        "CloudViewerScene cannot add a t::geometry::TriangleMesh, "
+                        "CloudViewerScene cannot add a "
+                        "t::geometry::TriangleMesh, "
                         "so points on the back side of the mesh '{}', will be "
                         "pickable",
                         pg.name);
@@ -238,7 +242,11 @@ rendering::MatrixInteractorLogic &PickPointsInteractor::GetMatrixInteractor() {
 }
 
 void PickPointsInteractor::SetOnPointsPicked(
-        std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> f) {
+        std::function<void(
+                const std::map<std::string,
+                               std::vector<std::pair<size_t, Eigen::Vector3d>>>
+                        &,
+                int)> f) {
     on_picked_ = f;
 }
 

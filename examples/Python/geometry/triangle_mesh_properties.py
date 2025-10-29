@@ -43,8 +43,8 @@ def check_properties(name, mesh):
         geoms.append(cv3dex.edges_to_lineset(mesh, edges, (0, 1, 0)))
     if not vertex_manifold:
         verts = np.asarray(mesh.get_non_manifold_vertices())
-        pcl = cv3d.geometry.ccPointCloud(
-            points=cv3d.utility.Vector3dVector(np.asarray(mesh.get_vertices())[verts]))
+        pcl = cv3d.geometry.ccPointCloud(points=cv3d.utility.Vector3dVector(
+            np.asarray(mesh.get_vertices())[verts]))
         pcl.paint_uniform_color((0, 0, 1))
         geoms.append(pcl)
     if self_intersecting:
@@ -68,8 +68,7 @@ if __name__ == "__main__":
     knot_mesh = cv3d.data.KnotMesh()
     mesh = cv3d.io.read_triangle_mesh(knot_mesh.path)
     check_properties('KnotMesh', mesh)
-    check_properties('Mobius',
-                     cv3d.geometry.ccMesh.create_mobius(twists=1))
+    check_properties('Mobius', cv3d.geometry.ccMesh.create_mobius(twists=1))
     check_properties("non-manifold edge", cv3dex.get_non_manifold_edge_mesh())
     check_properties("non-manifold vertex",
                      cv3dex.get_non_manifold_vertex_mesh())

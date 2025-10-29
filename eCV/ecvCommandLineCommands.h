@@ -1,5 +1,11 @@
-#ifndef COMMAND_LINE_COMMANDS_HEADER
-#define COMMAND_LINE_COMMANDS_HEADER
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include <QStringList>
 
@@ -407,5 +413,3 @@ struct CommandFeature : public ccCommandLineInterface::Command {
 
     bool process(ccCommandLineInterface& cmd) override;
 };
-
-#endif  // COMMAND_LINE_COMMANDS_HEADER

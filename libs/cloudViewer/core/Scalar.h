@@ -7,12 +7,13 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include <cstdint>
 #include <limits>
 #include <string>
 
 #include "cloudViewer/core/Dtype.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

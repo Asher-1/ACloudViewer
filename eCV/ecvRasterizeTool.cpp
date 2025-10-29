@@ -1,19 +1,9 @@
-// ##########################################################################
-// #                                                                        #
-// #                              CLOUDVIEWER                               #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "ecvRasterizeTool.h"
 
@@ -158,9 +148,9 @@ ccRasterizeTool::ccRasterizeTool(ccGenericPointCloud* cloud,
         }
 
         // populate layer box
-        activeLayerComboBox->addItem(ccRasterGrid::GetDefaultFieldName(
-                                             ccRasterGrid::PER_CELL_VALUE),
-                                     QVariant(LAYER_HEIGHT));
+        activeLayerComboBox->addItem(
+                ccRasterGrid::GetDefaultFieldName(ccRasterGrid::PER_CELL_VALUE),
+                QVariant(LAYER_HEIGHT));
         if (m_cloud->hasColors()) {
             activeLayerComboBox->addItem("RGB", QVariant(LAYER_RGB));
         }
@@ -910,7 +900,8 @@ void ccRasterizeTool::generateMesh() const {
             CVLog::Print(QString("[Rasterize] Mesh '%1' successfully exported")
                                  .arg(rasterMesh->getName()));
         } else {
-            CVLog::Error(QString("Failed to create mesh ('%1')").arg(QString::fromStdString(errorStr)));
+            CVLog::Error(QString("Failed to create mesh ('%1')")
+                                 .arg(QString::fromStdString(errorStr)));
         }
     }
 }

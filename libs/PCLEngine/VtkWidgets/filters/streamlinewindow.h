@@ -1,19 +1,23 @@
-#ifndef STREAMLINEWINDOW_H
-#define STREAMLINEWINDOW_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "filterwindow.h"
+#pragma once
 
 #include <vtkStreamTracer.h>
 
-namespace Ui
-{
-    class StreamlineConfig;
+#include "filterwindow.h"
+
+namespace Ui {
+class StreamlineConfig;
 }
 
 class vtkLineWidget;
 class vtkPointWidget;
-class StreamlineWindow : public FilterWindow
-{
+class StreamlineWindow : public FilterWindow {
     Q_OBJECT
 public:
     explicit StreamlineWindow(QWidget* parent = nullptr);
@@ -63,19 +67,16 @@ private:
     void updateLineActor();
 
 private:
-
-    struct TubeParams
-    {
+    struct TubeParams {
         double radius;
         double radiusFactor = 10;
-        int numberOfSides = 3; // minimum is 3
+        int numberOfSides = 3;  // minimum is 3
         int offset = 0;
         bool capping = false;
         bool useDefaultNormal = true;
     };
 
-    struct RuledSurfaceParams
-    {
+    struct RuledSurfaceParams {
         int distanceFactor;
         int onRatio;
         int offset;
@@ -106,5 +107,3 @@ private:
     vtkLineWidget* m_lineWidget = nullptr;
     vtkPointWidget* m_pointWidget = nullptr;
 };
-
-#endif // STREAMLINEWINDOW_H

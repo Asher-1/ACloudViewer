@@ -15,19 +15,17 @@ namespace visualization {
 namespace gl_util {
 
 static const std::unordered_map<int, unsigned int> texture_format_map_ = {
-		{1, GL_RED}, {3, GL_RGB}, {4, GL_RGBA} };
+        {1, GL_RED}, {3, GL_RGB}, {4, GL_RGBA}};
 
 static const std::unordered_map<int, unsigned int> texture_type_map_ = {
-		{1, GL_UNSIGNED_BYTE}, {2, GL_UNSIGNED_SHORT}, {4, GL_FLOAT} };
+        {1, GL_UNSIGNED_BYTE}, {2, GL_UNSIGNED_SHORT}, {4, GL_FLOAT}};
 
-const std::unordered_map<int, unsigned int>& GetTextureFormatMap()
-{
-	return texture_format_map_;
+const std::unordered_map<int, unsigned int> &GetTextureFormatMap() {
+    return texture_format_map_;
 }
 
-const std::unordered_map<int, unsigned int>& GetTextureTypeMap()
-{
-	return texture_type_map_;
+const std::unordered_map<int, unsigned int> &GetTextureTypeMap() {
+    return texture_type_map_;
 }
 
 GLMatrix4f LookAt(const Eigen::Vector3d &eye,

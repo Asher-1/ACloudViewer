@@ -7,6 +7,7 @@
 
 #include "io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 
+#include <Logging.h>
 #include <json/json.h>
 #include <k4a/k4a.h>
 
@@ -16,7 +17,6 @@
 #include <unordered_map>
 
 #include "io/sensor/azure_kinect/K4aPlugin.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace io {

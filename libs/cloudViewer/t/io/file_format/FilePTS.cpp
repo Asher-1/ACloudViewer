@@ -5,15 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <FileSystem.h>
+#include <Helper.h>
+#include <Logging.h>
+#include <ProgressReporters.h>
+
 #include <cstdio>
 
 #include "cloudViewer/core/TensorCheck.h"
 #include "cloudViewer/io/FileFormatIO.h"
 #include "cloudViewer/t/io/PointCloudIO.h"
-#include <FileSystem.h>
-#include <Helper.h>
-#include <Logging.h>
-#include <ProgressReporters.h>
 
 namespace cloudViewer {
 namespace t {

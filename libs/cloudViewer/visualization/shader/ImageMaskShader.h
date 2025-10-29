@@ -8,13 +8,13 @@
 #pragma once
 
 #include <string>
+
 #include "visualization/shader/ShaderWrapper.h"
 
 class ccHObject;
 namespace cloudViewer {
-namespace geometry
-{
-	class Image;
+namespace geometry {
+class Image;
 }
 
 namespace visualization {
@@ -68,7 +68,6 @@ protected:
 
 class ImageMaskShaderForImage : public ImageMaskShader {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     ImageMaskShaderForImage() : ImageMaskShader("ImageMaskShaderForImage") {}

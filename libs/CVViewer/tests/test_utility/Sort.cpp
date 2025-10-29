@@ -9,8 +9,8 @@
 
 #include <algorithm>
 
-#include "utility/Console.h"
 #include "tests/UnitTest.h"
+#include "utility/Console.h"
 
 namespace cloudViewer {
 namespace tests {

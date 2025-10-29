@@ -177,9 +177,9 @@ void FunctionDoc::ParseReturn() {
     if (arrow_pos != std::string::npos && arrow_pos > doc_pos_[0]) {
         size_t result_type_pos = arrow_pos + 4;
         std::string return_type = pybind_doc_.substr(
-            result_type_pos,
-            utility::WordLength(pybind_doc_, result_type_pos,
-                                "._:,[]() ,\""));
+                result_type_pos,
+                utility::WordLength(pybind_doc_, result_type_pos,
+                                    "._:,[]() ,\""));
         overload_docs_.back().return_doc_.type_ = StringCleanAll(return_type);
     }
 }

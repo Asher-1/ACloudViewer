@@ -1,36 +1,11 @@
-// Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//
-//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
-//       its contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef COLMAP_SRC_UTIL_MATH_H_
-#define COLMAP_SRC_UTIL_MATH_H_
+#pragma once
 
 #include <algorithm>
 #include <cmath>
@@ -138,46 +113,48 @@ T Percentile(const std::vector<T>& elems, const double p);
 namespace internal {
 
 template <class Iterator>
-bool NextCombination(Iterator first1, Iterator last1, Iterator first2,
+bool NextCombination(Iterator first1,
+                     Iterator last1,
+                     Iterator first2,
                      Iterator last2) {
-  if ((first1 == last1) || (first2 == last2)) {
-    return false;
-  }
-  Iterator m1 = last1;
-  Iterator m2 = last2;
-  --m2;
-  while (--m1 != first1 && *m1 >= *m2) {
-  }
-  bool result = (m1 == first1) && *first1 >= *m2;
-  if (!result) {
-    while (first2 != m2 && *m1 >= *first2) {
-      ++first2;
+    if ((first1 == last1) || (first2 == last2)) {
+        return false;
     }
-    first1 = m1;
-    std::iter_swap(first1, first2);
-    ++first1;
-    ++first2;
-  }
-  if ((first1 != last1) && (first2 != last2)) {
-    m1 = last1;
-    m2 = first2;
-    while ((m1 != first1) && (m2 != last2)) {
-      std::iter_swap(--m1, m2);
-      ++m2;
+    Iterator m1 = last1;
+    Iterator m2 = last2;
+    --m2;
+    while (--m1 != first1 && *m1 >= *m2) {
     }
-    std::reverse(first1, m1);
-    std::reverse(first1, last1);
-    std::reverse(m2, last2);
-    std::reverse(first2, last2);
-  }
-  return !result;
+    bool result = (m1 == first1) && *first1 >= *m2;
+    if (!result) {
+        while (first2 != m2 && *m1 >= *first2) {
+            ++first2;
+        }
+        first1 = m1;
+        std::iter_swap(first1, first2);
+        ++first1;
+        ++first2;
+    }
+    if ((first1 != last1) && (first2 != last2)) {
+        m1 = last1;
+        m2 = first2;
+        while ((m1 != first1) && (m2 != last2)) {
+            std::iter_swap(--m1, m2);
+            ++m2;
+        }
+        std::reverse(first1, m1);
+        std::reverse(first1, last1);
+        std::reverse(m2, last2);
+        std::reverse(first2, last2);
+    }
+    return !result;
 }
 
 }  // namespace internal
 
 template <typename T>
 int SignOfNumber(const T val) {
-  return (T(0) < val) - (val < T(0));
+    return (T(0) < val) - (val < T(0));
 }
 
 bool IsNaN(const float x) { return x != x; }
@@ -188,134 +165,133 @@ bool IsInf(const double x) { return !IsNaN(x) && IsNaN(x - x); }
 
 template <typename T>
 T Clip(const T& value, const T& low, const T& high) {
-  return std::max(low, std::min(value, high));
+    return std::max(low, std::min(value, high));
 }
 
 float DegToRad(const float deg) {
-  return deg * 0.0174532925199432954743716805978692718781530857086181640625f;
+    return deg * 0.0174532925199432954743716805978692718781530857086181640625f;
 }
 
 double DegToRad(const double deg) {
-  return deg * 0.0174532925199432954743716805978692718781530857086181640625;
+    return deg * 0.0174532925199432954743716805978692718781530857086181640625;
 }
 
 // Convert angle in radians to degree.
 float RadToDeg(const float rad) {
-  return rad * 57.29577951308232286464772187173366546630859375f;
+    return rad * 57.29577951308232286464772187173366546630859375f;
 }
 
 double RadToDeg(const double rad) {
-  return rad * 57.29577951308232286464772187173366546630859375;
+    return rad * 57.29577951308232286464772187173366546630859375;
 }
 
 template <typename T>
 double Median(const std::vector<T>& elems) {
-  CHECK(!elems.empty());
+    CHECK(!elems.empty());
 
-  const size_t mid_idx = elems.size() / 2;
+    const size_t mid_idx = elems.size() / 2;
 
-  std::vector<T> ordered_elems = elems;
-  std::nth_element(ordered_elems.begin(), ordered_elems.begin() + mid_idx,
-                   ordered_elems.end());
+    std::vector<T> ordered_elems = elems;
+    std::nth_element(ordered_elems.begin(), ordered_elems.begin() + mid_idx,
+                     ordered_elems.end());
 
-  if (elems.size() % 2 == 0) {
-    const T mid_element1 = ordered_elems[mid_idx];
-    const T mid_element2 = *std::max_element(ordered_elems.begin(),
-                                             ordered_elems.begin() + mid_idx);
-    return (mid_element1 + mid_element2) / 2.0;
-  } else {
-    return ordered_elems[mid_idx];
-  }
+    if (elems.size() % 2 == 0) {
+        const T mid_element1 = ordered_elems[mid_idx];
+        const T mid_element2 = *std::max_element(
+                ordered_elems.begin(), ordered_elems.begin() + mid_idx);
+        return (mid_element1 + mid_element2) / 2.0;
+    } else {
+        return ordered_elems[mid_idx];
+    }
 }
 
 template <typename T>
 T Percentile(const std::vector<T>& elems, const double p) {
-  CHECK(!elems.empty());
-  CHECK_GE(p, 0);
-  CHECK_LE(p, 100);
+    CHECK(!elems.empty());
+    CHECK_GE(p, 0);
+    CHECK_LE(p, 100);
 
-  const int idx = static_cast<int>(std::round(p / 100 * (elems.size() - 1)));
-  const size_t percentile_idx =
-      std::max(0, std::min(static_cast<int>(elems.size() - 1), idx));
+    const int idx = static_cast<int>(std::round(p / 100 * (elems.size() - 1)));
+    const size_t percentile_idx =
+            std::max(0, std::min(static_cast<int>(elems.size() - 1), idx));
 
-  std::vector<T> ordered_elems = elems;
-  std::nth_element(ordered_elems.begin(),
-                   ordered_elems.begin() + percentile_idx, ordered_elems.end());
+    std::vector<T> ordered_elems = elems;
+    std::nth_element(ordered_elems.begin(),
+                     ordered_elems.begin() + percentile_idx,
+                     ordered_elems.end());
 
-  return ordered_elems.at(percentile_idx);
+    return ordered_elems.at(percentile_idx);
 }
 
 template <typename T>
 double Mean(const std::vector<T>& elems) {
-  CHECK(!elems.empty());
-  double sum = 0;
-  for (const auto el : elems) {
-    sum += static_cast<double>(el);
-  }
-  return sum / elems.size();
+    CHECK(!elems.empty());
+    double sum = 0;
+    for (const auto el : elems) {
+        sum += static_cast<double>(el);
+    }
+    return sum / elems.size();
 }
 
 template <typename T>
 double Variance(const std::vector<T>& elems) {
-  const double mean = Mean(elems);
-  double var = 0;
-  for (const auto el : elems) {
-    const double diff = el - mean;
-    var += diff * diff;
-  }
-  return var / (elems.size() - 1);
+    const double mean = Mean(elems);
+    double var = 0;
+    for (const auto el : elems) {
+        const double diff = el - mean;
+        var += diff * diff;
+    }
+    return var / (elems.size() - 1);
 }
 
 template <typename T>
 double StdDev(const std::vector<T>& elems) {
-  return std::sqrt(Variance(elems));
+    return std::sqrt(Variance(elems));
 }
 
 template <typename T>
 bool AnyLessThan(std::vector<T> elems, T threshold) {
-  for (const auto& el : elems) {
-    if (el < threshold) {
-      return true;
+    for (const auto& el : elems) {
+        if (el < threshold) {
+            return true;
+        }
     }
-  }
-  return false;
+    return false;
 }
 
 template <typename T>
 bool AnyGreaterThan(std::vector<T> elems, T threshold) {
-  for (const auto& el : elems) {
-    if (el > threshold) {
-      return true;
+    for (const auto& el : elems) {
+        if (el > threshold) {
+            return true;
+        }
     }
-  }
-  return false;
+    return false;
 }
 
 template <class Iterator>
 bool NextCombination(Iterator first, Iterator middle, Iterator last) {
-  return internal::NextCombination(first, middle, middle, last);
+    return internal::NextCombination(first, middle, middle, last);
 }
 
 template <typename T>
 T Sigmoid(const T x, const T alpha) {
-  return T(1) / (T(1) + exp(-x * alpha));
+    return T(1) / (T(1) + exp(-x * alpha));
 }
 
 template <typename T>
 T ScaleSigmoid(T x, const T alpha, const T x0) {
-  const T t0 = Sigmoid(-x0, alpha);
-  const T t1 = Sigmoid(x0, alpha);
-  x = (Sigmoid(2 * x0 * x - x0, alpha) - t0) / (t1 - t0);
-  return x;
+    const T t0 = Sigmoid(-x0, alpha);
+    const T t1 = Sigmoid(x0, alpha);
+    x = (Sigmoid(2 * x0 * x - x0, alpha) - t0) / (t1 - t0);
+    return x;
 }
 
 template <typename T1, typename T2>
 T2 TruncateCast(const T1 value) {
-  return std::min(
-      static_cast<T1>(std::numeric_limits<T2>::max()),
-      std::max(static_cast<T1>(std::numeric_limits<T2>::min()), value));
+    return std::min(
+            static_cast<T1>(std::numeric_limits<T2>::max()),
+            std::max(static_cast<T1>(std::numeric_limits<T2>::min()), value));
 }
 
 }  // namespace colmap
-
-#endif  // COLMAP_SRC_UTIL_MATH_H_

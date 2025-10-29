@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <Parallel.h>
 #include <tbb/concurrent_unordered_map.h>
 
 #include <limits>
@@ -14,7 +15,6 @@
 
 #include "cloudViewer/core/hashmap/CPU/CPUHashBackendBufferAccessor.hpp"
 #include "cloudViewer/core/hashmap/DeviceHashBackend.h"
-#include <Parallel.h>
 
 namespace cloudViewer {
 namespace core {
@@ -143,18 +143,21 @@ void TBBHashBackend<Key, Hash, Eq>::Clear() {
 
 template <typename Key, typename Hash, typename Eq>
 void TBBHashBackend<Key, Hash, Eq>::Reserve(int64_t capacity) {
-    impl_->rehash(static_cast<size_t>(std::ceil(capacity / impl_->max_load_factor())));
+    impl_->rehash(static_cast<size_t>(
+            std::ceil(capacity / impl_->max_load_factor())));
 }
 
 template <typename Key, typename Hash, typename Eq>
 int64_t TBBHashBackend<Key, Hash, Eq>::GetBucketCount() const {
-    // oneTBB may not expose per-bucket APIs; return size as a conservative fallback.
+    // oneTBB may not expose per-bucket APIs; return size as a conservative
+    // fallback.
     return static_cast<int64_t>(impl_->size());
 }
 
 template <typename Key, typename Hash, typename Eq>
 std::vector<int64_t> TBBHashBackend<Key, Hash, Eq>::BucketSizes() const {
-    // Fallback without bucket introspection: single bucket representing total size.
+    // Fallback without bucket introspection: single bucket representing total
+    // size.
     return std::vector<int64_t>{static_cast<int64_t>(impl_->size())};
 }
 

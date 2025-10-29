@@ -169,7 +169,8 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3));
 
     // Const getters. (void)tl gets rid of the unused variables warning.
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertexPositions(); (void)tl);
+    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertexPositions();
+                    (void)tl);
     EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertexColors();
                     (void)tl);
     EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertexAttr("labels");
@@ -177,7 +178,8 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
     EXPECT_ANY_THROW(const core::TensorList& tl = mesh.GetVertexNormals();
                      (void)tl);
 
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangleIndices(); (void)tl);
+    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangleIndices();
+                    (void)tl);
     EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangleNormals();
                     (void)tl);
     EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangleAttr("labels");

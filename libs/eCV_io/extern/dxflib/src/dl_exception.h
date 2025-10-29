@@ -9,7 +9,7 @@
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
 **
-** Licensees holding valid dxflib Professional Edition licenses may use 
+** Licensees holding valid dxflib Professional Edition licenses may use
 ** this file in accordance with the dxflib Commercial License
 ** Agreement provided with the Software.
 **
@@ -30,26 +30,23 @@
 
 #if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+#endif  // _MSC_VER > 1000
 
 /**
  * Used for exception handling.
  */
-class DXFLIB_EXPORT DL_Exception {}
-;
+class DXFLIB_EXPORT DL_Exception {};
 
 /**
  * Used for exception handling.
  */
-class DXFLIB_EXPORT DL_NullStrExc : public DL_Exception {}
-;
+class DXFLIB_EXPORT DL_NullStrExc : public DL_Exception {};
 
 /**
  * Used for exception handling.
  */
 class DXFLIB_EXPORT DL_GroupCodeExc : public DL_Exception {
-    DL_GroupCodeExc(int gc=0) : groupCode(gc) {}
+    DL_GroupCodeExc(int gc = 0) : groupCode(gc) {}
     int groupCode;
 };
 #endif
-

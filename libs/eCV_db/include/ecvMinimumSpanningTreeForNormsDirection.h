@@ -1,37 +1,22 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_MST_FOR_NORMS_DIRECTION_HEADER
-#define ECV_MST_FOR_NORMS_DIRECTION_HEADER
+#pragma once
 
 class ccPointCloud;
 class ecvProgressDialog;
 
 //! Minimum Spanning Tree for normals direction resolution
 /** See http://people.maths.ox.ac.uk/wendland/research/old/reconhtml/node3.html
-**/
-class ccMinimumSpanningTreeForNormsDirection
-{
+ **/
+class ccMinimumSpanningTreeForNormsDirection {
 public:
-
-	//! Main entry point
-	static bool OrientNormals(	ccPointCloud* cloud,
-								unsigned kNN = 6,
-								ecvProgressDialog* progressDlg = 0);
+    //! Main entry point
+    static bool OrientNormals(ccPointCloud* cloud,
+                              unsigned kNN = 6,
+                              ecvProgressDialog* progressDlg = 0);
 };
-
-#endif //CC_MST_FOR_NORMS_DIRECTION_HEADER

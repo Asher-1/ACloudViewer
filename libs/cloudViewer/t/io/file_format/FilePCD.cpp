@@ -5,6 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <FileSystem.h>
+#include <Helper.h>
+#include <Logging.h>
+#include <ProgressReporters.h>
 #include <liblzf/lzf.h>
 
 #include <cinttypes>
@@ -17,10 +21,6 @@
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/io/FileFormatIO.h"
 #include "cloudViewer/t/io/PointCloudIO.h"
-#include <FileSystem.h>
-#include <Helper.h>
-#include <Logging.h>
-#include <ProgressReporters.h>
 
 // References for PCD file IO
 // http://pointclouds.org/documentation/tutorials/pcd_file_format.html

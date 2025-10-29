@@ -1,9 +1,10 @@
 # ----------------------------------------------------------------------------
 # -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.cloudViewer.org
+# Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
+
 from colorsys import rgb_to_yiq
 
 

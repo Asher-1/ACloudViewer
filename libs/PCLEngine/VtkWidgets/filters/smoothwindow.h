@@ -1,15 +1,19 @@
-#ifndef SMOOTHWINDOW_H
-#define SMOOTHWINDOW_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "filterwindow.h"
 
-namespace Ui
-{
-    class SmoothConfig;
+namespace Ui {
+class SmoothConfig;
 }
 
-class SmoothWindow : public FilterWindow
-{
+class SmoothWindow : public FilterWindow {
     Q_OBJECT
 public:
     explicit SmoothWindow(QWidget* parent = nullptr);
@@ -40,5 +44,3 @@ private:
     double m_featureAngle;
     double m_edgeAngle;
 };
-
-#endif // SMOOTHWINDOW_H

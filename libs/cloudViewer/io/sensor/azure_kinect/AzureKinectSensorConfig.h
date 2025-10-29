@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include <IJsonConvertible.h>
+
 #include <string>
 #include <unordered_map>
 
 #include "io/sensor/RGBDSensorConfig.h"
-#include <IJsonConvertible.h>
 
 struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 

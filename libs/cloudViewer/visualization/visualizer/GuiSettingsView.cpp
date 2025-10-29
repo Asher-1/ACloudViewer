@@ -53,8 +53,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     SetMargins(base_margins);
 
     gui::Margins indent(em, 0, 0, 0);
-    auto view_ctrls =
-            cloudViewer::make_shared<gui::CollapsableVert>("Scene controls", 0, indent);
+    auto view_ctrls = cloudViewer::make_shared<gui::CollapsableVert>(
+            "Scene controls", 0, indent);
 
     // Background
     show_skybox_ = cloudViewer::make_shared<gui::Checkbox>("Show skymap");
@@ -108,7 +108,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     });
 
     auto profile_layout = cloudViewer::make_shared<gui::Vert>();
-    profile_layout->AddChild(cloudViewer::make_shared<gui::Label>("Lighting profiles"));
+    profile_layout->AddChild(
+            cloudViewer::make_shared<gui::Label>("Lighting profiles"));
     profile_layout->AddChild(lighting_profile_);
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(profile_layout);
@@ -117,8 +118,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     AddFixed(separation_height);
 
     // Advanced lighting
-    advanced_ = cloudViewer::make_shared<gui::CollapsableVert>("Advanced lighting", 0,
-                                                       indent);
+    advanced_ = cloudViewer::make_shared<gui::CollapsableVert>(
+            "Advanced lighting", 0, indent);
     advanced_->SetIsOpen(false);
     AddChild(advanced_);
 
@@ -219,7 +220,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     sun_layout->AddChild(cloudViewer::make_shared<gui::Label>("Direction"));
     sun_layout->AddChild(sun_dir_);
     sun_layout->AddChild(sun_follows_camera_);
-    sun_layout->AddChild(cloudViewer::make_shared<gui::Label>("Sun Follows Camera"));
+    sun_layout->AddChild(
+            cloudViewer::make_shared<gui::Label>("Sun Follows Camera"));
     sun_layout->AddChild(cloudViewer::make_shared<gui::Label>("Color"));
     sun_layout->AddChild(sun_color_);
 
@@ -228,8 +230,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     advanced_->AddChild(sun_layout);
 
     // Materials
-    auto materials = cloudViewer::make_shared<gui::CollapsableVert>("Material settings",
-                                                            0, indent);
+    auto materials = cloudViewer::make_shared<gui::CollapsableVert>(
+            "Material settings", 0, indent);
 
     auto mat_grid = cloudViewer::make_shared<gui::VGrid>(2, grid_spacing);
     mat_grid->AddChild(cloudViewer::make_shared<gui::Label>("Type"));
@@ -296,7 +298,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     mat_grid->AddChild(point_size_);
 
     mat_grid->AddChild(cloudViewer::make_shared<gui::Label>(""));
-    generate_normals_ = cloudViewer::make_shared<SmallButton>("Estimate PCD Normals");
+    generate_normals_ =
+            cloudViewer::make_shared<SmallButton>("Estimate PCD Normals");
     generate_normals_->SetOnClicked(
             [this]() { model_.EstimateNormalsClicked(); });
     generate_normals_->SetEnabled(false);

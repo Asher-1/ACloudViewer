@@ -1,19 +1,26 @@
-﻿#ifndef VTKWIDGET_H
-#define VTKWIDGET_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-//#define vtkRenderingCore_AUTOINIT 3(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingOpenGL) // ogl2
-//#define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL)
+#pragma once
 
-//#include <vtkAutoInit.h>
-//#include <vtkAutoInit.h>
+// #define vtkRenderingCore_AUTOINIT
+// 3(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingOpenGL) // ogl2
+// #define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL)
 
-//VTK_MODULE_INIT(vtkRenderingOpenGL) // ogl2
-//VTK_MODULE_INIT(vtkInteractionStyle)
+// #include <vtkAutoInit.h>
+// #include <vtkAutoInit.h>
 
-//#include <vtkAutoInit.h>
-//VTK_MODULE_INIT(vtkRenderingFreeType)
-//VTK_MODULE_INIT(vtkRenderingOpenGL2);
-//VTK_MODULE_INIT(vtkInteractionStyle);
+// VTK_MODULE_INIT(vtkRenderingOpenGL) // ogl2
+// VTK_MODULE_INIT(vtkInteractionStyle)
+
+// #include <vtkAutoInit.h>
+//  VTK_MODULE_INIT(vtkRenderingFreeType)
+//  VTK_MODULE_INIT(vtkRenderingOpenGL2);
+//  VTK_MODULE_INIT(vtkInteractionStyle);
 
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkSmartPointer.h>
@@ -24,59 +31,55 @@ class vtkActor;
 class vtkProp;
 class vtkLODActor;
 class vtkDataSet;
-namespace VtkUtils
-{
+namespace VtkUtils {
 
 class VtkWidgetPrivate;
-class VtkWidget : public QVTKOpenGLNativeWidget
-{
-	Q_OBJECT
+class VtkWidget : public QVTKOpenGLNativeWidget {
+    Q_OBJECT
 public:
-	explicit VtkWidget(QWidget* parent = nullptr);
-	virtual ~VtkWidget();
+    explicit VtkWidget(QWidget* parent = nullptr);
+    virtual ~VtkWidget();
 
-	void setMultiViewports(bool multi = true);
-	bool multiViewports() const;
+    void setMultiViewports(bool multi = true);
+    bool multiViewports() const;
 
-    void createActorFromVTKDataSet(
-		const vtkSmartPointer<vtkDataSet> &data,
-		vtkSmartPointer<vtkLODActor> &actor, 
-		bool use_scalars = true);
+    void createActorFromVTKDataSet(const vtkSmartPointer<vtkDataSet>& data,
+                                   vtkSmartPointer<vtkLODActor>& actor,
+                                   bool use_scalars = true);
 
-	void addActor(vtkProp* actor, const QColor& clr = Qt::black);
-	void addViewProp(vtkProp* prop);
-	QList<vtkProp*> actors() const;
+    void addActor(vtkProp* actor, const QColor& clr = Qt::black);
+    void addViewProp(vtkProp* prop);
+    QList<vtkProp*> actors() const;
 
-	void setActorsVisible(bool visible);
-	void setActorVisible(vtkProp* actor, bool visible);
-	bool actorVisible(vtkProp* actor);
+    void setActorsVisible(bool visible);
+    void setActorVisible(vtkProp* actor, bool visible);
+    bool actorVisible(vtkProp* actor);
 
-	void setBackgroundColor(const QColor& clr);
-	void setBackgroundColor();
-	QColor backgroundColor() const;
+    void setBackgroundColor(const QColor& clr);
+    void setBackgroundColor();
+    QColor backgroundColor() const;
 
-	vtkRenderer* defaultRenderer();
-	bool defaultRendererTaken() const;
+    vtkRenderer* defaultRenderer();
+    bool defaultRendererTaken() const;
 
-	void showOrientationMarker(bool show = true);
+    void showOrientationMarker(bool show = true);
 
-	vtkRenderWindow* GetRenderWindow() {return this->renderWindow(); }
-	QVTKInteractor* GetInteractor() {return this->interactor(); }
+    vtkRenderWindow* GetRenderWindow() { return this->renderWindow(); }
+    QVTKInteractor* GetInteractor() { return this->interactor(); }
 
 protected:
-	void setBounds(double* bounds);
+    void setBounds(double* bounds);
 
-	double xMin() const;
-	double xMax() const;
-	double yMin() const;
-	double yMax() const;
-	double zMin() const;
-	double zMax() const;
+    double xMin() const;
+    double xMax() const;
+    double yMin() const;
+    double yMax() const;
+    double zMin() const;
+    double zMax() const;
 
 private:
-	VtkWidgetPrivate* d_ptr;
-	Q_DISABLE_COPY(VtkWidget)
+    VtkWidgetPrivate* d_ptr;
+    Q_DISABLE_COPY(VtkWidget)
 };
 
-} // namespace VtkUtils
-#endif // VTKWIDGET_H
+}  // namespace VtkUtils

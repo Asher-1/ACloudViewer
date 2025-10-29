@@ -11,11 +11,11 @@
 #include <omp.h>
 #endif
 
-#include <cstdlib>
-#include <string>
-
 #include <CPUInfo.h>
 #include <Logging.h>
+
+#include <cstdlib>
+#include <string>
 
 namespace cloudViewer {
 namespace utility {

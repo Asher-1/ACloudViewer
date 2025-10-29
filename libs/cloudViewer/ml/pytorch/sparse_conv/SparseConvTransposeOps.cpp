@@ -258,7 +258,8 @@ torch::Tensor SparseConvTranspose(
 }
 
 static auto registry = torch::RegisterOperators(
-        "cloudViewer::sparse_conv_transpose(Tensor filters, Tensor out_importance, "
+        "cloudViewer::sparse_conv_transpose(Tensor filters, Tensor "
+        "out_importance, "
         "Tensor inp_features, Tensor inp_neighbors_index, Tensor "
         "inp_neighbors_importance_sum, Tensor inp_neighbors_row_splits, Tensor "
         "neighbors_index, Tensor neighbors_kernel_index, Tensor "

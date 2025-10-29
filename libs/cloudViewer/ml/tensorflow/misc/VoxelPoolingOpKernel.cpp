@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ public:
 };
 
 #define REG_KB(type, typefeat)                                          \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerVoxelPooling")                  \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerVoxelPooling")             \
                                     .Device(DEVICE_CPU)                 \
                                     .TypeConstraint<type>("TReal")      \
                                     .TypeConstraint<typefeat>("TFeat"), \

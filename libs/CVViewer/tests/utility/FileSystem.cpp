@@ -6,14 +6,13 @@
 // ----------------------------------------------------------------------------
 
 #include <FileSystem.h>
-
 #include <fcntl.h>
 #include <sys/stat.h>
 
 #include <algorithm>
 
-#include "utility/Console.h"
 #include "tests/UnitTest.h"
+#include "utility/Console.h"
 
 namespace cloudViewer {
 namespace tests {

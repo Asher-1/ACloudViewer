@@ -1,5 +1,11 @@
-#ifndef CCENTITYACTION_H
-#define CCENTITYACTION_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 // ##########################################################################
 // #                                                                        #
 // #                              CLOUDVIEWER                               #
@@ -153,5 +159,3 @@ bool VoxelSampling(const ccHObject::Container &selectedEntities,
                    QWidget *parent);
 
 }  // namespace ccEntityAction
-
-#endif

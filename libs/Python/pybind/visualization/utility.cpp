@@ -140,8 +140,8 @@ void pybind_visualization_utility_methods(py::module &m) {
                 utility::filesystem::ChangeWorkingDirectory(current_dir);
             },
             "Function to draw a list of geometry::Geometry objects",
-            "geometry_list"_a, "window_name"_a = "CloudViewer", "width"_a = 1920,
-            "height"_a = 1080, "left"_a = 50, "top"_a = 50,
+            "geometry_list"_a, "window_name"_a = "CloudViewer",
+            "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50,
             "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
             "mesh_show_back_face"_a = false, "lookat"_a = py::none(),
             "up"_a = py::none(), "front"_a = py::none(), "zoom"_a = py::none());

@@ -51,8 +51,8 @@ def run(config):
     principal_point = intrinsic.get_principal_point()
 
     intrinsic_t = cv3d.core.Tensor([[focal_length[0], 0, principal_point[0]],
-                                   [0, focal_length[1], principal_point[1]],
-                                   [0, 0, 1]])
+                                    [0, focal_length[1], principal_point[1]],
+                                    [0, 0, 1]])
 
     device = cv3d.core.Device(
         'CUDA:0' if cv3d.core.cuda.is_available() else 'CPU:0')
@@ -70,9 +70,9 @@ def run(config):
     ctr_grid_values = cv3d.core.Tensor.load(slac_folder + "ctr_grid_values.npy")
 
     ctr_grid = cv3d.t.pipelines.slac.control_grid(3.0 / 8,
-                                                 ctr_grid_keys.to(device),
-                                                 ctr_grid_values.to(device),
-                                                 device)
+                                                  ctr_grid_keys.to(device),
+                                                  ctr_grid_values.to(device),
+                                                  device)
 
     fragment_folder = join(path_dataset, config["folder_fragment"])
 

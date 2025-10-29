@@ -7,13 +7,14 @@
 
 #pragma once
 
+#include <IJsonConvertibleIO.h>
+
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
 
 #include "cloudViewer/core/Dtype.h"
-#include <IJsonConvertibleIO.h>
 #include "cloudViewer/io/sensor/RGBDSensorConfig.h"
 #include "cloudViewer/t/io/sensor/RGBDVideoMetadata.h"
 

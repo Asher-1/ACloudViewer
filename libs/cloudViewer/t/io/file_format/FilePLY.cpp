@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <FileSystem.h>
+#include <Logging.h>
+#include <ProgressReporters.h>
 #include <rply.h>
 
 #include <vector>
@@ -14,9 +17,6 @@
 #include "cloudViewer/io/FileFormatIO.h"
 #include "cloudViewer/t/geometry/TensorMap.h"
 #include "cloudViewer/t/io/PointCloudIO.h"
-#include <FileSystem.h>
-#include <Logging.h>
-#include <ProgressReporters.h>
 
 namespace cloudViewer {
 namespace t {
@@ -173,9 +173,10 @@ std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
 
 }  // namespace
 
-bool ReadPointCloudFromPLY(const std::string &filename,
-                           geometry::PointCloud &pointcloud,
-                           const cloudViewer::io::ReadPointCloudOption &params) {
+bool ReadPointCloudFromPLY(
+        const std::string &filename,
+        geometry::PointCloud &pointcloud,
+        const cloudViewer::io::ReadPointCloudOption &params) {
     p_ply ply_file = ply_open(filename.c_str(), nullptr, 0, nullptr);
     if (!ply_file) {
         utility::LogWarning("Read PLY failed: unable to open file: {}.",
@@ -351,9 +352,10 @@ struct AttributePtr {
 };
 }  // namespace
 
-bool WritePointCloudToPLY(const std::string &filename,
-                          const geometry::PointCloud &pointcloud,
-                          const cloudViewer::io::WritePointCloudOption &params) {
+bool WritePointCloudToPLY(
+        const std::string &filename,
+        const geometry::PointCloud &pointcloud,
+        const cloudViewer::io::WritePointCloudOption &params) {
     if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write PLY failed: point cloud has 0 points.");
         return false;

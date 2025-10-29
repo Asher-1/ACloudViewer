@@ -7,10 +7,11 @@
 
 #include "pybind/core/core.h"
 
-#include "core/Tensor.h"
 #include <Logging.h>
-#include "pybind/core/nns/nearest_neighbor_search.h"
+
+#include "core/Tensor.h"
 #include "pybind/cloudViewer_pybind.h"
+#include "pybind/core/nns/nearest_neighbor_search.h"
 #include "pybind/pybind_utils.h"
 
 namespace cloudViewer {
