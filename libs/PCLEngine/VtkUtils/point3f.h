@@ -1,17 +1,20 @@
-#ifndef POINT3F_H
-#define POINT3F_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "../qPCL.h"
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-struct QPCL_ENGINE_LIB_API Point3F
-{
+struct QPCL_ENGINE_LIB_API Point3F {
     qreal x;
     qreal y;
     qreal z;
-} ;
+};
 
-} // namespace Utils
-#endif // POINT3F_H
+}  // namespace VtkUtils

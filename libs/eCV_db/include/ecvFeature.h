@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef ECV_FEATURE_HEADER
-#define ECV_FEATURE_HEADER
+#pragma once
 
 #include "eCV_db.h"
 
@@ -94,5 +93,3 @@ CorrespondencesFromFeatures(const Feature &source_features,
 
 }  // namespace utility
 }  // namespace cloudViewer
-
-#endif  // ECV_FEATURE_HEADER

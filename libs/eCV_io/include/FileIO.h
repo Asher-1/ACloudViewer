@@ -1,22 +1,28 @@
-#ifndef FILEIO_H
-#define FILEIO_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: CLOUDVIEWER  project                               #
-//#                                                                        #
-//##########################################################################
+#pragma once
+
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: CLOUDVIEWER  project                               #
+// #                                                                        #
+// ##########################################################################
 
 #include <QString>
 #include <functional>
@@ -60,7 +66,7 @@ struct ECV_IO_LIB_API ReadPointCloudOption {
           remove_nan_points(remove_nan_points),
           remove_infinite_points(remove_infinite_points),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     ReadPointCloudOption(std::function<bool(double)> up)
         : ReadPointCloudOption() {
         update_progress = up;
@@ -100,7 +106,7 @@ struct ECV_IO_LIB_API WritePointCloudOption {
           write_ascii(write_ascii),
           compressed(compressed),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     // for compatibility
     WritePointCloudOption(bool write_ascii,
                           bool compressed = false,
@@ -109,7 +115,7 @@ struct ECV_IO_LIB_API WritePointCloudOption {
         : write_ascii(IsAscii(write_ascii)),
           compressed(Compressed(compressed)),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     // for compatibility
     WritePointCloudOption(std::string format,
                           bool write_ascii,
@@ -120,7 +126,7 @@ struct ECV_IO_LIB_API WritePointCloudOption {
           write_ascii(IsAscii(write_ascii)),
           compressed(Compressed(compressed)),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     WritePointCloudOption(std::function<bool(double)> up)
         : WritePointCloudOption() {
         update_progress = up;
@@ -147,5 +153,3 @@ struct ECV_IO_LIB_API WritePointCloudOption {
 };
 }  // namespace io
 }  // namespace cloudViewer
-
-#endif

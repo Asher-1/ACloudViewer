@@ -16,7 +16,7 @@ export BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
 export PYTHON_VERSION=$1
 export ONLY_BUILD_CUDA=$2
-export NPROC=$(nproc)
+export NPROC=${NPROC:-$(($(nproc) + 2))} # run nproc+2 jobs to speed up the build
 export POST_FIX="python${PYTHON_VERSION}"
 export ENV_NAME="cloudViewer"
 echo "ENV_NAME: " ${ENV_NAME}

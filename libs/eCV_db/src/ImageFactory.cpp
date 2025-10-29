@@ -5,17 +5,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "Image.h"
-
 #include <Logging.h>
+
+#include "Image.h"
 #include "camera/PinholeCameraIntrinsic.h"
 
 namespace cloudViewer {
 namespace geometry {
-	using namespace cloudViewer;
+using namespace cloudViewer;
 
 std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
-    const camera::PinholeCameraIntrinsic& intrinsic) {
+        const camera::PinholeCameraIntrinsic &intrinsic) {
     auto fimage = cloudViewer::make_shared<Image>();
     fimage->Prepare(intrinsic.width_, intrinsic.height_, 1, 4);
     float ffl_inv[2] = {
@@ -35,8 +35,8 @@ std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
         yy[i] = (i - fpp[1]) * ffl_inv[1];
     }
     for (int i = 0; i < intrinsic.height_; i++) {
-        float* fp =
-            (float*)(fimage->data_.data() + i * fimage->BytesPerLine());
+        float *fp =
+                (float *)(fimage->data_.data() + i * fimage->BytesPerLine());
         for (int j = 0; j < intrinsic.width_; j++, fp++) {
             *fp = sqrtf(xx[j] * xx[j] + yy[i] * yy[i] + 1.0f);
         }
@@ -136,7 +136,8 @@ ImagePyramid Image::CreatePyramid(size_t num_of_levels,
 
     for (size_t i = 0; i < num_of_levels; i++) {
         if (i == 0) {
-            std::shared_ptr<Image> input_copy_ptr = cloudViewer::make_shared<Image>();
+            std::shared_ptr<Image> input_copy_ptr =
+                    cloudViewer::make_shared<Image>();
             *input_copy_ptr = *this;
             pyramid_image.push_back(input_copy_ptr);
         } else {

@@ -7,13 +7,14 @@
 
 #include "cloudViewer/t/io/sensor/RGBDVideoReader.h"
 
-#include <string>
-
-#include <IJsonConvertibleIO.h>
-#include <ImageIO.h>
-#include "cloudViewer/t/io/sensor/realsense/RSBagReader.h"
 #include <FileSystem.h>
 #include <Helper.h>
+#include <IJsonConvertibleIO.h>
+#include <ImageIO.h>
+
+#include <string>
+
+#include "cloudViewer/t/io/sensor/realsense/RSBagReader.h"
 
 namespace cloudViewer {
 namespace t {

@@ -1,4 +1,9 @@
-
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #define EIGEN_USE_GPU
 #include "BuildSpatialHashTableOpKernel.h"
@@ -65,7 +70,7 @@ private:
 };
 
 #define REG_KB(type)                                                       \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerBuildSpatialHashTable")            \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerBuildSpatialHashTable")       \
                                     .Device(DEVICE_GPU)                    \
                                     .TypeConstraint<type>("T")             \
                                     .HostMemory("radius")                  \

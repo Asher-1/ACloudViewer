@@ -7,6 +7,7 @@
 
 #include "visualization/webrtc_server/ImageCapturer.h"
 
+#include <Logging.h>
 #include <api/video/i420_buffer.h>
 #include <libyuv/convert.h>
 #include <libyuv/video_common.h>
@@ -16,7 +17,6 @@
 #include <memory>
 
 #include "core/Tensor.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {

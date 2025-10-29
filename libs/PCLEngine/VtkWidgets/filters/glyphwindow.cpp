@@ -1,35 +1,40 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "glyphwindow.h"
-#include "ui_glyphconfig.h"
-#include "ui_generalfilterwindow.h"
 
-#include <VtkUtils/utils.h>
-#include <VtkUtils/tablemodel.h>
 #include <VtkUtils/signalblocker.h>
-
-#include <VtkUtils/vtkwidget.h>
+#include <VtkUtils/tablemodel.h>
+#include <VtkUtils/utils.h>
 #include <VtkUtils/vtkutils.h>
-
-#include <vtkGlyph3D.h>
+#include <VtkUtils/vtkwidget.h>
+#include <vtkActor2D.h>
 #include <vtkArrowSource.h>
 #include <vtkConeSource.h>
-#include <vtkLineSource.h>
 #include <vtkCylinderSource.h>
-#include <vtkPointSource.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkRenderer.h>
-#include <vtkProperty.h>
+#include <vtkGlyph3D.h>
 #include <vtkLODActor.h>
 #include <vtkLabeledDataMapper.h>
-#include <vtkActor2D.h>
-#include <vtkProperty2D.h>
-#include <vtkSphereSource.h>
-#include <vtkSmartPointer.h>
+#include <vtkLineSource.h>
 #include <vtkPlaneSource.h>
+#include <vtkPointSource.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkProperty2D.h>
+#include <vtkRenderer.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
 
 #include <QWidget>
 
-GlyphWindow::GlyphWindow(QWidget* parent) : FilterWindow(parent)
-{
+#include "ui_generalfilterwindow.h"
+#include "ui_glyphconfig.h"
+
+GlyphWindow::GlyphWindow(QWidget* parent) : FilterWindow(parent) {
     createUi();
     setObjectName("GlyphWindow");
     setWindowTitle(tr("Glyph"));
@@ -49,17 +54,17 @@ GlyphWindow::GlyphWindow(QWidget* parent) : FilterWindow(parent)
     initTableModel();
 
     m_configUi->dataTable->setModel(m_tableModel);
-    connect(m_configUi->glyphColorButton, SIGNAL(colorChanged(QColor)), this, SLOT(onColorChanged(QColor)));
-    connect(m_configUi->labelColorButton, SIGNAL(colorChanged(QColor)), this, SLOT(onColorChanged(QColor)));
+    connect(m_configUi->glyphColorButton, SIGNAL(colorChanged(QColor)), this,
+            SLOT(onColorChanged(QColor)));
+    connect(m_configUi->labelColorButton, SIGNAL(colorChanged(QColor)), this,
+            SLOT(onColorChanged(QColor)));
 
     //
     fireupModelToPointsConverter();
 }
 
-void GlyphWindow::apply()
-{
-    if (!m_dataObject)
-        return;
+void GlyphWindow::apply() {
+    if (!m_dataObject) return;
 
     VTK_CREATE(vtkGlyph3D, glyph3d);
     glyph3d->SetInputData(m_dataObject);
@@ -67,51 +72,39 @@ void GlyphWindow::apply()
     glyph3d->SetScaling(0);
 
     switch (m_shape) {
-    case Arrow:
-    {
-        VTK_CREATE(vtkArrowSource, as);
-        glyph3d->SetSourceConnection(as->GetOutputPort());
-    }
-        break;
+        case Arrow: {
+            VTK_CREATE(vtkArrowSource, as);
+            glyph3d->SetSourceConnection(as->GetOutputPort());
+        } break;
 
-    case Cone:
-    {
-        VTK_CREATE(vtkConeSource, cs);
-        glyph3d->SetSourceConnection(cs->GetOutputPort());
-    }
-        break;
+        case Cone: {
+            VTK_CREATE(vtkConeSource, cs);
+            glyph3d->SetSourceConnection(cs->GetOutputPort());
+        } break;
 
-    case Line:
-    {
-        VTK_CREATE(vtkLineSource, ls);
-        glyph3d->SetSourceConnection(ls->GetOutputPort());
-    }
-        break;
+        case Line: {
+            VTK_CREATE(vtkLineSource, ls);
+            glyph3d->SetSourceConnection(ls->GetOutputPort());
+        } break;
 
-    case Cylinder:
-    {
-        VTK_CREATE(vtkCylinderSource, cs);
-        glyph3d->SetSourceConnection(cs->GetOutputPort());
-    }
-        break;
+        case Cylinder: {
+            VTK_CREATE(vtkCylinderSource, cs);
+            glyph3d->SetSourceConnection(cs->GetOutputPort());
+        } break;
 
-    case Sphere:
-    {
-        VTK_CREATE(vtkSphereSource, ss);
-        glyph3d->SetSourceConnection(ss->GetOutputPort());
-    }
-        break;
+        case Sphere: {
+            VTK_CREATE(vtkSphereSource, ss);
+            glyph3d->SetSourceConnection(ss->GetOutputPort());
+        } break;
 
-    case Point:
-    {
-        VTK_CREATE(vtkPointSource, ps);
-        ps->SetNumberOfPoints(1);
-        glyph3d->SetSourceConnection(ps->GetOutputPort());
-    }
-     break;
+        case Point: {
+            VTK_CREATE(vtkPointSource, ps);
+            ps->SetNumberOfPoints(1);
+            glyph3d->SetSourceConnection(ps->GetOutputPort());
+        } break;
     }
 
-	setResultData(glyph3d->GetOutput());
+    setResultData(glyph3d->GetOutput());
 
     // Create a mapper and actor
     VTK_CREATE(vtkPolyDataMapper, mapper);
@@ -134,35 +127,31 @@ void GlyphWindow::apply()
     applyDisplayEffect();
 }
 
-void GlyphWindow::modelReady()
-{
+void GlyphWindow::modelReady() {
     FilterWindow::modelReady();
     apply();
 }
 
-void GlyphWindow::createUi()
-{
+void GlyphWindow::createUi() {
     m_configUi = new Ui::GlyphConfig;
     setupConfigWidget(m_configUi);
 
     FilterWindow::createUi();
 }
 
-void GlyphWindow::on_sizeSpinBox_valueChanged(double arg1)
-{
+void GlyphWindow::on_sizeSpinBox_valueChanged(double arg1) {
     m_size = arg1;
     apply();
 }
 
-void GlyphWindow::on_shapeCombo_currentIndexChanged(int index)
-{
+void GlyphWindow::on_shapeCombo_currentIndexChanged(int index) {
     m_shape = static_cast<Shape>(index);
     apply();
 }
 
-void GlyphWindow::onColorChanged(const QColor& clr)
-{
-    Widgets::ColorPushButton* button = qobject_cast<Widgets::ColorPushButton*>(sender());
+void GlyphWindow::onColorChanged(const QColor& clr) {
+    Widgets::ColorPushButton* button =
+            qobject_cast<Widgets::ColorPushButton*>(sender());
 
     if (button == m_configUi->glyphColorButton)
         m_glyphColor = clr;
@@ -174,34 +163,28 @@ void GlyphWindow::onColorChanged(const QColor& clr)
     apply();
 }
 
-void GlyphWindow::on_openButton_clicked()
-{
+void GlyphWindow::on_openButton_clicked() {
     browseFile();
     m_configUi->fileEdit->setText(m_fileName);
 }
 
-void GlyphWindow::on_displayEffectCombo_currentIndexChanged(int index)
-{
+void GlyphWindow::on_displayEffectCombo_currentIndexChanged(int index) {
     setDisplayEffect(static_cast<DisplayEffect>(index));
 }
 
-void GlyphWindow::on_rowsSpinBox_valueChanged(int arg1)
-{
+void GlyphWindow::on_rowsSpinBox_valueChanged(int arg1) {
     m_tableModel->resize(m_tableModel->columnCount(), arg1);
     m_tableModel->random();
     fireupModelToPointsConverter();
 }
 
-void GlyphWindow::on_labelGroupBox_toggled(bool arg1)
-{
+void GlyphWindow::on_labelGroupBox_toggled(bool arg1) {
     m_labelVisible = arg1;
     showLabels(arg1);
 }
 
-void GlyphWindow::showLabels(bool show)
-{
-    if (!show && !m_labelActor)
-        return;
+void GlyphWindow::showLabels(bool show) {
+    if (!show && !m_labelActor) return;
 
     if (m_labelActor && !show) {
         m_labelActor->SetVisibility(show);
@@ -223,10 +206,8 @@ void GlyphWindow::showLabels(bool show)
     update();
 }
 
-void GlyphWindow::setLabelsColor(const QColor& clr)
-{
-    if (!m_labelActor)
-        return;
+void GlyphWindow::setLabelsColor(const QColor& clr) {
+    if (!m_labelActor) return;
 
     double vtkClr[3];
     Utils::vtkColor(clr, vtkClr);
@@ -234,13 +215,9 @@ void GlyphWindow::setLabelsColor(const QColor& clr)
     update();
 }
 
-void GlyphWindow::on_modeCombo_currentIndexChanged(int index)
-{
+void GlyphWindow::on_modeCombo_currentIndexChanged(int index) {
     m_labelMode = index;
     showLabels();
 }
 
-void GlyphWindow::on_randomButton_clicked()
-{
-    randomTableModel();
-}
+void GlyphWindow::on_randomButton_clicked() { randomTableModel(); }

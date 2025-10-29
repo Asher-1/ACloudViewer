@@ -1,10 +1,18 @@
-#include "filereaderutils.h"
-#include "vtkUnstructuredGridRelevantPointsFilter.h"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include <vtkUnstructuredGrid.h>
+#include "filereaderutils.h"
+
 #include <vtkCellData.h>
+#include <vtkUnstructuredGrid.h>
 
 #include <QDebug>
+
+#include "vtkUnstructuredGridRelevantPointsFilter.h"
 
 #define USE_POINT_INDICES_TO_INSERT
 #define ALL_LINES -1
@@ -20,11 +28,9 @@
 #define STRNCASECMP strncasecmp
 #endif
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
-static float Getf(const char *s)
-{
+static float Getf(const char *s) {
     char *ends;
     double val = 0.0;
 
@@ -49,8 +55,7 @@ static float Getf(const char *s)
 
     if (haveSeenNumChars && (*p == '-' || *p == '+')) {
         *q++ = 'e';
-        while (*p != '\0')
-            *q++ = *p++;
+        while (*p != '\0') *q++ = *p++;
         *q++ = '\0';
         errno = 0;
         val = strtod(tmps, &ends);
@@ -59,13 +64,12 @@ static float Getf(const char *s)
         val = strtod(s, &ends);
     }
 
-    if (errno != 0)
-    {
+    if (errno != 0) {
         qDebug() << "Error occured at " << __FUNCTION__;
         return 0.0;
     }
 
-    return (float) val;
+    return (float)val;
 }
 
 // ****************************************************************************
@@ -80,55 +84,36 @@ static float Getf(const char *s)
 //    Format %s doesn't use space modifier.
 //
 // ****************************************************************************
-static int Geti(const char *s)
-{
+static int Geti(const char *s) {
     char *ends;
 
     errno = 0;
     long val = strtol(s, &ends, 10);
 
-    if (errno != 0)
-    {
+    if (errno != 0) {
         qDebug() << "Error occured at " << __FUNCTION__;
         return 0;
     }
 
-    return (int) val;
+    return (int)val;
 }
-AbstractFileReader::AbstractFileReader(QObject *parent) : QObject(parent)
-{
+AbstractFileReader::AbstractFileReader(QObject *parent) : QObject(parent) {}
 
-}
-
-void AbstractFileReader::setFileName(const QString& file)
-{
-    if (m_fileName != file)
-        m_fileName = file;
+void AbstractFileReader::setFileName(const QString &file) {
+    if (m_fileName != file) m_fileName = file;
 }
 
-QString AbstractFileReader::fileName() const
-{
-    return m_fileName;
+QString AbstractFileReader::fileName() const { return m_fileName; }
+
+void AbstractFileReader::setTitle(const QString &title) {
+    if (m_title != title) m_title = title;
 }
 
-void AbstractFileReader::setTitle(const QString& title)
-{
-    if (m_title != title)
-        m_title = title;
-}
+QString AbstractFileReader::title() const { return m_title; }
 
-QString AbstractFileReader::title() const
-{
-    return m_title;
-}
+VtkFileReader::VtkFileReader(QObject *parent) : AbstractFileReader(parent) {}
 
-VtkFileReader::VtkFileReader(QObject *parent) : AbstractFileReader(parent)
-{
-
-}
-
-void VtkFileReader::run()
-{
+void VtkFileReader::run() {
     vtkInitOnce(&m_reader);
     m_reader->ReadAllScalarsOn();
     m_reader->ReadAllVectorsOn();
@@ -137,14 +122,9 @@ void VtkFileReader::run()
     emit finished();
 }
 
-StlFileReader::StlFileReader(QObject *parent) : AbstractFileReader(parent)
-{
+StlFileReader::StlFileReader(QObject *parent) : AbstractFileReader(parent) {}
 
-
-}
-
-void StlFileReader::run()
-{
+void StlFileReader::run() {
     vtkInitOnce(&m_reader);
     m_reader->SetFileName(fileName().toLocal8Bit());
     m_reader->Update();
@@ -152,26 +132,18 @@ void StlFileReader::run()
     emit finished();
 }
 
-ObjFileReader::ObjFileReader(QObject *parent) : AbstractFileReader(parent)
-{
+ObjFileReader::ObjFileReader(QObject *parent) : AbstractFileReader(parent) {}
 
-}
-
-void ObjFileReader::run()
-{
+void ObjFileReader::run() {
     vtkInitOnce(&m_reader);
     m_reader->SetFileName(fileName().toLocal8Bit());
     m_reader->Update();
     emit finished();
 }
 
-DynaFileReader::DynaFileReader(QObject *parent) : AbstractFileReader(parent)
-{
+DynaFileReader::DynaFileReader(QObject *parent) : AbstractFileReader(parent) {}
 
-}
-
-void DynaFileReader::run()
-{
+void DynaFileReader::run() {
     vtkInitOnce(&m_reader);
 
     m_reader->SetFileName(fileName().toLocal8Bit());
@@ -180,16 +152,12 @@ void DynaFileReader::run()
     emit finished();
 }
 
-NastranFileReader::NastranFileReader(QObject *parent) : AbstractFileReader(parent)
-{
+NastranFileReader::NastranFileReader(QObject *parent)
+    : AbstractFileReader(parent) {}
 
-}
-
-void NastranFileReader::run()
-{
+void NastranFileReader::run() {
     std::ifstream ifile(fileName().toLocal8Bit());
-    if (ifile.fail())
-        return;
+    if (ifile.fail()) return;
 
     // Determine the file size and come up with an estimate of the
     // number of vertices and cells so we can size the points and cells.
@@ -211,39 +179,34 @@ void NastranFileReader::run()
     pts->Delete();
     pts = ugrid->GetPoints();
 
-#endif // if !defined(MDSERVER)
+#endif  // if !defined(MDSERVER)
 
-    char  line[1024];
+    char line[1024];
     float pt[3];
     vtkIdType verts[8];
     bool recognized = false;
     bool titleRead = false;
-    for(int lineIndex = 0; !ifile.eof(); ++lineIndex)
-    {
+    for (int lineIndex = 0; !ifile.eof(); ++lineIndex) {
         int matid = INVALID_MAT_ID;
 
         // Get the line
         ifile.getline(line, 1024);
 
         // Determine what the line is for.
-        if(line[0] == '$' && !recognized)
-        {
-            if(!titleRead)
-                m_title += line;
-        }
-        else if(strncmp(line, "GRID*", 5) == 0)
-        {
+        if (line[0] == '$' && !recognized) {
+            if (!titleRead) m_title += line;
+        } else if (strncmp(line, "GRID*", 5) == 0) {
             recognized = true;
 
             // These GRID* lines need a second line of data. Read it into
             // the same buffer at the end.
-            ifile.getline(line + 72, 1024-72);
+            ifile.getline(line + 72, 1024 - 72);
 
 #define LONG_FIELD_WIDTH 16
             char *valstart = line + 81 - 1;
             pt[2] = Getf(valstart);
 
-            valstart = line + 72 - LONG_FIELD_WIDTH+1 - 1;
+            valstart = line + 72 - LONG_FIELD_WIDTH + 1 - 1;
             char *valend = line + 72;
             *valend = '\0';
             pt[1] = Getf(valstart);
@@ -257,19 +220,16 @@ void NastranFileReader::run()
             valstart -= (2 * LONG_FIELD_WIDTH);
             valend -= (2 * LONG_FIELD_WIDTH);
             *valend = '\0';
-            int psi = Geti(valstart)-1;
+            int psi = Geti(valstart) - 1;
 
 #if !defined(MDSERVER)
 
-            if(psi < nPoints)
+            if (psi < nPoints)
                 pts->SetPoint(psi, pt);
-            else
-            {
+            else {
                 int newSize = int(float(nPoints) * 1.1f);
-                if(newSize < psi)
-                    newSize = int(float(psi) * 1.1f);
-                if(newSize <= nPoints)
-                    newSize = nPoints + 1;
+                if (newSize < psi) newSize = int(float(psi) * 1.1f);
+                if (newSize <= nPoints) newSize = nPoints + 1;
 
                 qDebug() << "Resizing point array from " << nPoints
                          << " points to " << newSize
@@ -281,7 +241,7 @@ void NastranFileReader::run()
                 pts->SetPoint(psi, pt);
             }
 
-#endif // if !defined(MDSERVER)
+#endif  // if !defined(MDSERVER)
 
 #else
 #if !defined(MDSERVER)
@@ -289,9 +249,7 @@ void NastranFileReader::run()
 #endif
 #endif
 
-        }
-        else if(strncmp(line, "GRID", 4) == 0)
-        {
+        } else if (strncmp(line, "GRID", 4) == 0) {
             recognized = true;
 
 #define SHORT_FIELD_WIDTH 8
@@ -315,19 +273,16 @@ void NastranFileReader::run()
             valstart -= (2 * SHORT_FIELD_WIDTH);
             valend -= (2 * SHORT_FIELD_WIDTH);
             *valend = '\0';
-            int psi = Geti(valstart)-1;
+            int psi = Geti(valstart) - 1;
 
 #if !defined(MDSERVER)
 
-            if(psi < nPoints)
+            if (psi < nPoints)
                 pts->SetPoint(psi, pt);
-            else
-            {
+            else {
                 int newSize = int(float(nPoints) * 1.1f);
-                if(newSize < psi)
-                    newSize = int(float(psi) * 1.1f);
-                if(newSize <= nPoints)
-                    newSize = nPoints + 1;
+                if (newSize < psi) newSize = int(float(psi) * 1.1f);
+                if (newSize <= nPoints) newSize = nPoints + 1;
 
                 qDebug() << "Resizing point array from " << nPoints
                          << " points to " << newSize
@@ -339,31 +294,28 @@ void NastranFileReader::run()
                 pts->SetPoint(psi, pt);
             }
 
-#endif // if !defined(MDSERVER)
+#endif  // if !defined(MDSERVER)
 
 #else
 
 #if !defined(MDSERVER)
             pts->InsertNextPoint(pt);
-#endif // if !defined(MDSERVER)
+#endif  // if !defined(MDSERVER)
 
 #endif
 
-
-        }
-        else if(strncmp(line, "CHEXA", 5) == 0)
-        {
+        } else if (strncmp(line, "CHEXA", 5) == 0) {
 #define INDEX_FIELD_WIDTH 8
             // CHEXA requires more point indices so read another line.
-            ifile.getline(line + 72, 1024-72);
+            ifile.getline(line + 72, 1024 - 72);
 
             char *valstart = line + 88;
             char *valend = valstart;
-            verts[7] = Geti(valstart)-1;
+            verts[7] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[6] = Geti(valstart)-1;
+            verts[6] = Geti(valstart) - 1;
 
             // Skip the blank
             valstart -= INDEX_FIELD_WIDTH;
@@ -372,35 +324,34 @@ void NastranFileReader::run()
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[5] = Geti(valstart)-1;
+            verts[5] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[4] = Geti(valstart)-1;
+            verts[4] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[3] = Geti(valstart)-1;
+            verts[3] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[2] = Geti(valstart)-1;
+            verts[2] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[1] = Geti(valstart)-1;
+            verts[1] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[0] = Geti(valstart)-1;
+            verts[0] = Geti(valstart) - 1;
 
-            if (matCountOpt)
-            {
+            if (matCountOpt) {
                 valstart -= INDEX_FIELD_WIDTH;
                 valend -= INDEX_FIELD_WIDTH;
                 *valend = '\0';
@@ -411,29 +362,26 @@ void NastranFileReader::run()
             ugrid->InsertNextCell(VTK_HEXAHEDRON, 8, verts);
             if (matCountOpt) m_matList.push_back(matid);
 #endif
-        }
-        else if(strncmp(line, "CTETRA", 6) == 0)
-        {
+        } else if (strncmp(line, "CTETRA", 6) == 0) {
             char *valstart = line + 48;
             char *valend = valstart;
-            verts[3] = Geti(valstart)-1;
+            verts[3] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[2] = Geti(valstart)-1;
-
-            valstart -= INDEX_FIELD_WIDTH;
-            valend -= INDEX_FIELD_WIDTH;
-            *valend = '\0';
-            verts[1] = Geti(valstart)-1;
+            verts[2] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[0] = Geti(valstart)-1;
+            verts[1] = Geti(valstart) - 1;
 
-            if (matCountOpt)
-            {
+            valstart -= INDEX_FIELD_WIDTH;
+            valend -= INDEX_FIELD_WIDTH;
+            *valend = '\0';
+            verts[0] = Geti(valstart) - 1;
+
+            if (matCountOpt) {
                 valstart -= INDEX_FIELD_WIDTH;
                 valend -= INDEX_FIELD_WIDTH;
                 *valend = '\0';
@@ -444,34 +392,31 @@ void NastranFileReader::run()
             ugrid->InsertNextCell(VTK_TETRA, 4, verts);
             if (matCountOpt) m_matList.push_back(matid);
 #endif
-        }
-        else if(strncmp(line, "CPYRAM", 6) == 0)
-        {
+        } else if (strncmp(line, "CPYRAM", 6) == 0) {
             char *valstart = line + 56;
             char *valend = valstart;
-            verts[4] = Geti(valstart)-1;
+            verts[4] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[3] = Geti(valstart)-1;
-
-            valstart -= INDEX_FIELD_WIDTH;
-            valend -= INDEX_FIELD_WIDTH;
-            *valend = '\0';
-            verts[2] = Geti(valstart)-1;
+            verts[3] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[1] = Geti(valstart)-1;
+            verts[2] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[0] = Geti(valstart)-1;
+            verts[1] = Geti(valstart) - 1;
 
-            if (matCountOpt)
-            {
+            valstart -= INDEX_FIELD_WIDTH;
+            valend -= INDEX_FIELD_WIDTH;
+            *valend = '\0';
+            verts[0] = Geti(valstart) - 1;
+
+            if (matCountOpt) {
                 valstart -= INDEX_FIELD_WIDTH;
                 valend -= INDEX_FIELD_WIDTH;
                 *valend = '\0';
@@ -482,39 +427,36 @@ void NastranFileReader::run()
             ugrid->InsertNextCell(VTK_PYRAMID, 5, verts);
             if (matCountOpt) m_matList.push_back(matid);
 #endif
-        }
-        else if(strncmp(line, "CPENTA", 6) == 0)
-        {
+        } else if (strncmp(line, "CPENTA", 6) == 0) {
             char *valstart = line + 64;
             char *valend = valstart;
-            verts[5] = Geti(valstart)-1;
+            verts[5] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[4] = Geti(valstart)-1;
-
-            valstart -= INDEX_FIELD_WIDTH;
-            valend -= INDEX_FIELD_WIDTH;
-            *valend = '\0';
-            verts[3] = Geti(valstart)-1;
+            verts[4] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[2] = Geti(valstart)-1;
+            verts[3] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[1] = Geti(valstart)-1;
+            verts[2] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[0] = Geti(valstart)-1;
+            verts[1] = Geti(valstart) - 1;
 
-            if (matCountOpt)
-            {
+            valstart -= INDEX_FIELD_WIDTH;
+            valend -= INDEX_FIELD_WIDTH;
+            *valend = '\0';
+            verts[0] = Geti(valstart) - 1;
+
+            if (matCountOpt) {
                 valstart -= INDEX_FIELD_WIDTH;
                 valend -= INDEX_FIELD_WIDTH;
                 *valend = '\0';
@@ -522,8 +464,8 @@ void NastranFileReader::run()
             }
             //
             // http://www.simcenter.msstate.edu/docs/ug_io/3d_grid_file_type_nastran.html
-            // says that if 5th and 6th nodes are identical, then its really a 5 noded
-            // pyramid.
+            // says that if 5th and 6th nodes are identical, then its really a 5
+            // noded pyramid.
             //
 #if !defined(MDSERVER)
             if (verts[4] == verts[5])
@@ -532,29 +474,26 @@ void NastranFileReader::run()
                 ugrid->InsertNextCell(VTK_WEDGE, 6, verts);
             if (matCountOpt) m_matList.push_back(matid);
 #endif
-        }
-        else if(strncmp(line, "CQUAD4", 6) == 0)
-        {
+        } else if (strncmp(line, "CQUAD4", 6) == 0) {
             char *valstart = line + 48;
             char *valend = valstart;
-            verts[3] = Geti(valstart)-1;
+            verts[3] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[2] = Geti(valstart)-1;
-
-            valstart -= INDEX_FIELD_WIDTH;
-            valend -= INDEX_FIELD_WIDTH;
-            *valend = '\0';
-            verts[1] = Geti(valstart)-1;
+            verts[2] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[0] = Geti(valstart)-1;
+            verts[1] = Geti(valstart) - 1;
 
-            if (matCountOpt)
-            {
+            valstart -= INDEX_FIELD_WIDTH;
+            valend -= INDEX_FIELD_WIDTH;
+            *valend = '\0';
+            verts[0] = Geti(valstart) - 1;
+
+            if (matCountOpt) {
                 valstart -= INDEX_FIELD_WIDTH;
                 valend -= INDEX_FIELD_WIDTH;
                 *valend = '\0';
@@ -565,25 +504,22 @@ void NastranFileReader::run()
             ugrid->InsertNextCell(VTK_QUAD, 4, verts);
             if (matCountOpt) m_matList.push_back(matid);
 #endif
-        }
-        else if(strncmp(line, "CTRIA2", 6) == 0 ||
-                strncmp(line, "CTRIA3", 6) == 0)
-        {
+        } else if (strncmp(line, "CTRIA2", 6) == 0 ||
+                   strncmp(line, "CTRIA3", 6) == 0) {
             char *valstart = line + 40;
             char *valend = valstart;
-            verts[2] = Geti(valstart)-1;
+            verts[2] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[1] = Geti(valstart)-1;
+            verts[1] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             valend -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[0] = Geti(valstart)-1;
+            verts[0] = Geti(valstart) - 1;
 
-            if (matCountOpt)
-            {
+            if (matCountOpt) {
                 valstart -= INDEX_FIELD_WIDTH;
                 valend -= INDEX_FIELD_WIDTH;
                 *valend = '\0';
@@ -594,19 +530,16 @@ void NastranFileReader::run()
             ugrid->InsertNextCell(VTK_TRIANGLE, 3, verts);
             if (matCountOpt) m_matList.push_back(matid);
 #endif
-        }
-        else if(strncmp(line, "CBAR", 4) == 0)
-        {
+        } else if (strncmp(line, "CBAR", 4) == 0) {
             char *valstart = line + 32;
             char *valend = valstart;
-            verts[1] = Geti(valstart)-1;
+            verts[1] = Geti(valstart) - 1;
 
             valstart -= INDEX_FIELD_WIDTH;
             *valend = '\0';
-            verts[0] = Geti(valstart)-1;
+            verts[0] = Geti(valstart) - 1;
 
-            if (matCountOpt)
-            {
+            if (matCountOpt) {
                 valstart -= INDEX_FIELD_WIDTH;
                 valend -= INDEX_FIELD_WIDTH;
                 *valend = '\0';
@@ -617,28 +550,23 @@ void NastranFileReader::run()
             ugrid->InsertNextCell(VTK_LINE, 2, verts);
             if (matCountOpt) m_matList.push_back(matid);
 #endif
-        }
-        else if(strncmp(line, "TITLE", 5) == 0)
-        {
+        } else if (strncmp(line, "TITLE", 5) == 0) {
             titleRead = true;
             char *ptr = 0;
-            if((ptr = strstr(line, "=")) != 0)
-                m_title = /*std::string(*/++ptr/*)*/;
+            if ((ptr = strstr(line, "=")) != 0)
+                m_title = /*std::string(*/ ++ptr /*)*/;
             else
-                m_title = /*std::string(*/line+5/*)*/;
-        }
-        else if(strncmp(line, "CEND", 4) == 0 ||
-                strncmp(line, "BEGIN BULK", 10) == 0 ||
-                strncmp(line, "NASTRAN", 7) == 0)
-        {
+                m_title = /*std::string(*/ line + 5 /*)*/;
+        } else if (strncmp(line, "CEND", 4) == 0 ||
+                   strncmp(line, "BEGIN BULK", 10) == 0 ||
+                   strncmp(line, "NASTRAN", 7) == 0) {
             recognized = true;
         }
 
-        if (matid != INVALID_MAT_ID)
-            m_uniqMatIds[matid] = 1;
+        if (matid != INVALID_MAT_ID) m_uniqMatIds[matid] = 1;
     }
 
-    if(recognized) {
+    if (recognized) {
         vtkUnstructuredGridRelevantPointsFilter *rpf =
                 vtkUnstructuredGridRelevantPointsFilter::New();
         rpf->SetInputData(ugrid);
@@ -653,39 +581,34 @@ void NastranFileReader::run()
     emit finished();
 }
 
-FluentFileReader::FluentFileReader(QObject *parent) : AbstractFileReader(parent)
-{
+FluentFileReader::FluentFileReader(QObject *parent)
+    : AbstractFileReader(parent) {}
 
-}
-
-void FluentFileReader::run()
-{
+void FluentFileReader::run() {
     vtkInitOnce(&m_reader);
 
     m_reader->SetFileName(fileName().toLocal8Bit());
     m_reader->Update();
 
-    vtkUnstructuredGrid* grid = vtkUnstructuredGrid::SafeDownCast(m_reader->GetOutput()->GetBlock(0));
+    vtkUnstructuredGrid *grid = vtkUnstructuredGrid::SafeDownCast(
+            m_reader->GetOutput()->GetBlock(0));
     int num = m_reader->GetNumberOfCellArrays();
     for (int i = 0; i < num; ++i) {
         QString name(m_reader->GetCellArrayName(i));
-        m_dataMap.insert(name, grid->GetCellData()->GetArray(m_reader->GetCellArrayName(i)));
+        m_dataMap.insert(name, grid->GetCellData()->GetArray(
+                                       m_reader->GetCellArrayName(i)));
     }
 
     emit finished();
 }
 
-AnsysFileReader::AnsysFileReader(QObject *parent) : AbstractFileReader(parent)
-{
+AnsysFileReader::AnsysFileReader(QObject *parent)
+    : AbstractFileReader(parent) {}
 
-}
-
-void AnsysFileReader::run()
-{
+void AnsysFileReader::run() {
     // Open the file.
     std::ifstream ifile(fileName().toLocal8Bit());
-    if (ifile.fail())
-        return;
+    if (ifile.fail()) return;
 
     // Determine the file size and come up with an estimate of the
     // number of vertices and cells so we can size the points and cells.
@@ -700,32 +623,31 @@ void AnsysFileReader::run()
     pts->Delete();
 
 #define MAX_ANSYS_LINE 200
-    char  line[MAX_ANSYS_LINE];
+    char line[MAX_ANSYS_LINE];
     float pt[3];
-    vtkIdType   verts[8];
-    bool  recognized = false;
-    bool  fatalError = false;
-    bool  readingCoordinates = false;
-    bool  readingConnectivity = false;
-    int   expectedLineLength = 0;
+    vtkIdType verts[8];
+    bool recognized = false;
+    bool fatalError = false;
+    bool readingCoordinates = false;
+    bool readingConnectivity = false;
+    int expectedLineLength = 0;
 
-    int   firstFieldWidth = 8;
-    int   fieldWidth = 16;
-    int   fieldStart = 56;
+    int firstFieldWidth = 8;
+    int fieldWidth = 16;
+    int fieldStart = 56;
 
-    for(int lineIndex = 0; !ifile.eof(); ++lineIndex)
-    {
+    for (int lineIndex = 0; !ifile.eof(); ++lineIndex) {
         // Get the line
         ifile.getline(line, MAX_ANSYS_LINE);
 #if defined(_WIN32)
         int linelen = static_cast<int>(strlen(line));
 #else
-        int linelen = strlen(line)-1; // account for the end of line char.
+        int linelen = strlen(line) - 1;  // account for the end of line char.
 #endif
         // If the line length is less than expected then pad with NULLs.
-        if(expectedLineLength > 0 && linelen < expectedLineLength)
-        {
-            memset(line + linelen + 1, 0, (MAX_ANSYS_LINE - linelen - 1) * sizeof(char));
+        if (expectedLineLength > 0 && linelen < expectedLineLength) {
+            memset(line + linelen + 1, 0,
+                   (MAX_ANSYS_LINE - linelen - 1) * sizeof(char));
 #if 0
             debug5 << "Padding line with NULLs" << endl;
             debug5 << line << endl;
@@ -733,22 +655,19 @@ void AnsysFileReader::run()
         }
 
         // Give it a chance to break out of coordinate reading.
-        if(readingCoordinates)
-        {
+        if (readingCoordinates) {
             bool valid = true;
-            for(int i = 0; i < firstFieldWidth && valid; ++i)
+            for (int i = 0; i < firstFieldWidth && valid; ++i)
                 valid &= (line[i] == ' ' || (line[i] >= '0' && line[i] <= '9'));
 
-            if(!valid)
-            {
+            if (!valid) {
                 expectedLineLength = 0;
                 readingCoordinates = false;
                 continue;
             }
         }
 
-        if(readingCoordinates)
-        {
+        if (readingCoordinates) {
             char *valstart = line + fieldStart;
             char *valend = valstart + fieldWidth;
             pt[2] = atof(valstart);
@@ -767,14 +686,11 @@ void AnsysFileReader::run()
             debug4 << pt[0] << ", " << pt[1] << ", " << pt[2] << endl;
 #endif
             pts->InsertNextPoint(pt);
-        }
-        else if(readingConnectivity)
-        {
+        } else if (readingConnectivity) {
             // Get whether this cell is real from column 0
             line[fieldWidth] = '\0';
             bool realCell = atoi(line) > 0;
-            if(!realCell)
-            {
+            if (!realCell) {
                 expectedLineLength = 0;
                 readingConnectivity = false;
                 continue;
@@ -783,18 +699,16 @@ void AnsysFileReader::run()
             // Get the number of vertices in this cell from column 9.
             static const int ncellsColumn = 9;
             line[ncellsColumn * fieldWidth] = '\0';
-            int nverts = atoi(line + (ncellsColumn-1) * fieldWidth);
+            int nverts = atoi(line + (ncellsColumn - 1) * fieldWidth);
 
-            if(nverts == 8)
-            {
+            if (nverts == 8) {
                 char *valstart = line + fieldStart;
-                char *valend   = valstart + fieldWidth;
-                for(int i = 0; i < 8; ++i)
-                {
+                char *valend = valstart + fieldWidth;
+                for (int i = 0; i < 8; ++i) {
                     int ivalue = atoi(valstart);
-                    verts[7-i] = (ivalue > 0) ? (ivalue - 1) : ivalue;
+                    verts[7 - i] = (ivalue > 0) ? (ivalue - 1) : ivalue;
                     valstart -= fieldWidth;
-                    valend   -= fieldWidth;
+                    valend -= fieldWidth;
                     *valend = '\0';
                 }
 
@@ -804,28 +718,24 @@ void AnsysFileReader::run()
                 debug4 << endl;
 #endif
                 ugrid->InsertNextCell(VTK_HEXAHEDRON, 8, verts);
-            }
-            else
-            {
-                qDebug() << "The file " << fileName() << " contained cells "
-                                                            "that are not hexes."<< endl;
+            } else {
+                qDebug() << "The file " << fileName()
+                         << " contained cells "
+                            "that are not hexes."
+                         << endl;
 
                 fatalError = true;
                 break;
             }
-        }
-        else if(STRNCASECMP(line, "NBLOCK", 6) == 0)
-        {
+        } else if (STRNCASECMP(line, "NBLOCK", 6) == 0) {
             char *comma = strstr(line, ",");
-            if(comma != 0)
-            {
-                char *comma2 = strstr(comma+1, ",");
-                if(comma2 != 0)
-                {
+            if (comma != 0) {
+                char *comma2 = strstr(comma + 1, ",");
+                if (comma2 != 0) {
                     *comma2 = '\0';
                     char *cols = comma + 1;
-                    qDebug() << "Coordinate data stored in "
-                             << atoi(cols) << " columns." << endl;
+                    qDebug() << "Coordinate data stored in " << atoi(cols)
+                             << " columns." << endl;
                     recognized = true;
                 }
             }
@@ -833,35 +743,28 @@ void AnsysFileReader::run()
             // Get the field format string. Use it to set expectedLineLength,
             // fieldWidth, and fieldStart.
             ifile.getline(line, 1024);
-            if(line[0] == '(')
-            {
-                interpretFormatStringEx(line, firstFieldWidth, fieldStart, fieldWidth,
-                                      expectedLineLength);
+            if (line[0] == '(') {
+                interpretFormatStringEx(line, firstFieldWidth, fieldStart,
+                                        fieldWidth, expectedLineLength);
                 qDebug() << "firstFieldWidth=" << firstFieldWidth
                          << ", fieldStart=" << fieldStart
                          << ", fieldWidth=" << fieldWidth
                          << ", expectedLineLength=" << expectedLineLength
                          << endl;
                 readingCoordinates = true;
-            }
-            else
-            {
+            } else {
                 qDebug() << "Malformed format string: " << line << endl;
                 fatalError = true;
             }
-        }
-        else if(STRNCASECMP(line, "EBLOCK", 6) == 0)
-        {
+        } else if (STRNCASECMP(line, "EBLOCK", 6) == 0) {
             char *comma = strstr(line, ",");
-            if(comma != 0)
-            {
-                char *comma2 = strstr(comma+1, ",");
-                if(comma2 != 0)
-                {
+            if (comma != 0) {
+                char *comma2 = strstr(comma + 1, ",");
+                if (comma2 != 0) {
                     *comma2 = '\0';
                     char *cols = comma + 1;
-                    qDebug() << "Connectivity data stored in "
-                             << atoi(cols) << " columns." << endl;
+                    qDebug() << "Connectivity data stored in " << atoi(cols)
+                             << " columns." << endl;
                     recognized = true;
                 }
             }
@@ -869,50 +772,39 @@ void AnsysFileReader::run()
             // Get the field format string. Use it to set expectedLineLength,
             // fieldWidth, and fieldStart.
             ifile.getline(line, 1024);
-            if(line[0] == '(')
-            {
-                interpretFormatStringEx(line, firstFieldWidth, fieldStart, fieldWidth,
-                                      expectedLineLength);
+            if (line[0] == '(') {
+                interpretFormatStringEx(line, firstFieldWidth, fieldStart,
+                                        fieldWidth, expectedLineLength);
                 qDebug() << "firstFieldWidth=" << firstFieldWidth
                          << ", fieldStart=" << fieldStart
                          << ", fieldWidth=" << fieldWidth
                          << ", expectedLineLength=" << expectedLineLength
                          << endl;
                 readingConnectivity = true;
-            }
-            else
-            {
+            } else {
                 qDebug() << "Malformed format string: " << line << endl;
                 fatalError = true;
             }
-        }
-        else if(STRNCASECMP(line, "/COM", 4) == 0)
-        {
-            if(m_title.toStdString() == "")
-                m_title = /*std::string(*/line+6/*)*/;
+        } else if (STRNCASECMP(line, "/COM", 4) == 0) {
+            if (m_title.toStdString() == "")
+                m_title = /*std::string(*/ line + 6 /*)*/;
             recognized = true;
-        }
-        else if(STRNCASECMP(line, "/TITLE", 6) == 0)
-        {
-            m_title = /*std::string(*/line+8/*)*/;
+        } else if (STRNCASECMP(line, "/TITLE", 6) == 0) {
+            m_title = /*std::string(*/ line + 8 /*)*/;
             recognized = true;
-        }
-        else if(STRNCASECMP(line, "/BATCH",  6) == 0 ||
-                STRNCASECMP(line, "/NOPR",   5) == 0 ||
-                STRNCASECMP(line, "/CONFIG", 7) == 0 ||
-                STRNCASECMP(line, "/NOLIST", 7) == 0)
-        {
+        } else if (STRNCASECMP(line, "/BATCH", 6) == 0 ||
+                   STRNCASECMP(line, "/NOPR", 5) == 0 ||
+                   STRNCASECMP(line, "/CONFIG", 7) == 0 ||
+                   STRNCASECMP(line, "/NOLIST", 7) == 0) {
             recognized = true;
-        }
-        else
-        {
+        } else {
             expectedLineLength = 0;
             readingCoordinates = false;
             readingConnectivity = false;
         }
     }
 
-    if(recognized && !fatalError)
+    if (recognized && !fatalError)
         m_dataObject = ugrid;
     else
         ugrid->Delete();
@@ -920,131 +812,111 @@ void AnsysFileReader::run()
     emit finished();
 }
 
-void AnsysFileReader::interpretFormatString(char *line, int &fieldStart,
-                                              int &fieldWidth, int &expectedLineLength) const
-{
+void AnsysFileReader::interpretFormatString(char *line,
+                                            int &fieldStart,
+                                            int &fieldWidth,
+                                            int &expectedLineLength) const {
     char *fmt = line + 1;
     char *ptr = 0;
 
     expectedLineLength = 0;
     bool keepGoing = true;
-    while(keepGoing)
-    {
+    while (keepGoing) {
         int linelen = 0;
 
-        if((ptr = strstr(fmt, ",")) != 0)
-        {
+        if ((ptr = strstr(fmt, ",")) != 0) {
             *ptr = '\0';
             interpret(fmt, fieldWidth, linelen);
             expectedLineLength += linelen;
             fmt = ptr + 1;
-        }
-        else if((ptr = strstr(fmt, ")")) != 0)
-        {
+        } else if ((ptr = strstr(fmt, ")")) != 0) {
             *ptr = '\0';
             interpret(fmt, fieldWidth, linelen);
             expectedLineLength += linelen;
             keepGoing = false;
-        }
-        else
+        } else
             keepGoing = false;
     }
 
     fieldStart = expectedLineLength - fieldWidth;
 }
 
-void AnsysFileReader::interpretFormatStringEx(char *line, int &firstFieldWidth, int &fieldStart, int &fieldWidth, int &expectedLineLength) const
-{
+void AnsysFileReader::interpretFormatStringEx(char *line,
+                                              int &firstFieldWidth,
+                                              int &fieldStart,
+                                              int &fieldWidth,
+                                              int &expectedLineLength) const {
     char *fmt = line + 1;
     char *ptr = 0;
 
     expectedLineLength = 0;
     bool keepGoing = true;
     bool first = true;
-    while(keepGoing)
-    {
+    while (keepGoing) {
         int linelen = 0;
 
-        if((ptr = strstr(fmt, ",")) != 0)
-        {
+        if ((ptr = strstr(fmt, ",")) != 0) {
             *ptr = '\0';
             interpret(fmt, fieldWidth, linelen);
-            if(first)
-            {
+            if (first) {
                 first = false;
                 firstFieldWidth = fieldWidth;
             }
             expectedLineLength += linelen;
             fmt = ptr + 1;
-        }
-        else if((ptr = strstr(fmt, ")")) != 0)
-        {
+        } else if ((ptr = strstr(fmt, ")")) != 0) {
             *ptr = '\0';
             interpret(fmt, fieldWidth, linelen);
-            if(first)
-            {
+            if (first) {
                 first = false;
                 firstFieldWidth = fieldWidth;
             }
             expectedLineLength += linelen;
             keepGoing = false;
-        }
-        else
+        } else
             keepGoing = false;
     }
 
     fieldStart = expectedLineLength - fieldWidth;
 }
 
-void AnsysFileReader::interpret(const char *fmt, int &fieldWidth,
-                                  int &linelen) const
-{
+void AnsysFileReader::interpret(const char *fmt,
+                                int &fieldWidth,
+                                int &linelen) const {
     int i0, i1, i2;
 
     qDebug() << "avtANSYSFileFormat::Interpret: " << fmt << endl;
 
     // Example: 6e16.9
-    if(sscanf(fmt, "%de%d.%d", &i0, &i1, &i2) == 3)
-    {
+    if (sscanf(fmt, "%de%d.%d", &i0, &i1, &i2) == 3) {
         linelen = i0 * i1 / 2;
         fieldWidth = i1;
     }
     // Example: 19i7
-    else if(sscanf(fmt, "%di%d", &i0, &i1) == 2)
-    {
+    else if (sscanf(fmt, "%di%d", &i0, &i1) == 2) {
         linelen = i0 * i1;
         fieldWidth = i1;
-    }
-    else
-    {
+    } else {
         qDebug() << "Invalid format string: " << fmt << endl;
     }
 }
 
-PlyFileReader::PlyFileReader(QObject *parent) : AbstractFileReader(parent)
-{
+PlyFileReader::PlyFileReader(QObject *parent) : AbstractFileReader(parent) {}
 
-}
-
-void PlyFileReader::run()
-{
+void PlyFileReader::run() {
     vtkInitOnce(&m_reader);
     m_reader->SetFileName(fileName().toLocal8Bit());
     m_reader->Update();
     emit finished();
 }
 
-PdbFileReader::PdbFileReader(QObject *parent) : AbstractFileReader(parent)
-{
+PdbFileReader::PdbFileReader(QObject *parent) : AbstractFileReader(parent) {}
 
-}
-
-void PdbFileReader::run()
-{
+void PdbFileReader::run() {
     vtkInitOnce(&m_reader);
     m_reader->SetFileName(fileName().toLocal8Bit());
     m_reader->Update();
     emit finished();
 }
 
-} // namespace VtkUtils
+}  // namespace VtkUtils

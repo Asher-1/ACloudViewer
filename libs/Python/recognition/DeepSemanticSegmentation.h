@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "eCV_python.h"
 #include <ClassMap.h>
+
+#include "eCV_python.h"
 
 class ccHObject;
 namespace cloudViewer {
@@ -20,21 +21,21 @@ public:
     ~DeepSemanticSegmentation();
 
 public:
-	inline void setEnableVotes(bool state) { m_useVotes = state; }
-	inline void setEnableSampling(bool state) { m_useGridSampling = state; }
+    inline void setEnableVotes(bool state) { m_useVotes = state; }
+    inline void setEnableSampling(bool state) { m_useGridSampling = state; }
     void setInputCloud(const ccHObject* cloud);
-	void compute(std::vector< std::vector<size_t> >& clusters, std::vector< ClassMap::ClusterMap > &cluster_map);
+    void compute(std::vector<std::vector<size_t>>& clusters,
+                 std::vector<ClassMap::ClusterMap>& cluster_map);
 
 protected:
-	void extract(
-		const std::vector< std::vector<size_t> >& preds,
-		std::vector< ClassMap::ClusterMap > &clusters);
-	
+    void extract(const std::vector<std::vector<size_t>>& preds,
+                 std::vector<ClassMap::ClusterMap>& clusters);
+
 private:
     const ccHObject* m_container;
-	bool m_batchMode;
-	bool m_useGridSampling;
-	bool m_useVotes;
+    bool m_batchMode;
+    bool m_useGridSampling;
+    bool m_useVotes;
 };
 
 }  // namespace utility

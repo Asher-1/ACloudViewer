@@ -46,7 +46,7 @@ void ToCPU
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {                         \
         core::ParallelFor(                                                     \
                 src.GetDevice(), indexer.NumWorkloads(),                       \
-                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {                      \
+                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {                 \
                     auto src_ptr =                                             \
                             indexer.GetInputPtr<scalar_t>(0, workload_idx);    \
                     auto dst_ptr = indexer.GetOutputPtr<elem_t>(workload_idx); \
@@ -322,8 +322,9 @@ void ColorizeDepthCPU
 
     float inv_interval = 255.0f / (max_value - min_value);
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
-    core::ParallelFor(
-            src.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+        core::ParallelFor(
+                src.GetDevice(), n,
+                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                     int64_t y = workload_idx / cols;
                     int64_t x = workload_idx % cols;
 

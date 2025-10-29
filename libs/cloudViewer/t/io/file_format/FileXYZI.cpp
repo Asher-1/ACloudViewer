@@ -5,37 +5,40 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <cstdio>
-
-#include <Logging.h>
 #include <FileSystem.h>
+#include <Logging.h>
 #include <ProgressReporters.h>
-#include "io/FileFormatIO.h"
+
+#include <cstdio>
 
 #include "core/Dtype.h"
 #include "core/Tensor.h"
 #include "core/TensorList.h"
+#include "io/FileFormatIO.h"
 #include "t/io/PointCloudIO.h"
 
 namespace cloudViewer {
 namespace t {
 namespace io {
 
-cloudViewer::io::FileGeometry ReadFileGeometryTypeXYZI(const std::string &path) {
+cloudViewer::io::FileGeometry ReadFileGeometryTypeXYZI(
+        const std::string &path) {
     return cloudViewer::io::CONTAINS_POINTS;
 }
 
-bool ReadPointCloudFromXYZI(const std::string &filename,
-                            geometry::PointCloud &pointcloud,
-                            const cloudViewer::io::ReadPointCloudOption &params) {
+bool ReadPointCloudFromXYZI(
+        const std::string &filename,
+        geometry::PointCloud &pointcloud,
+        const cloudViewer::io::ReadPointCloudOption &params) {
     try {
         cloudViewer::utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
-            cloudViewer::utility::LogWarning("Read XYZI failed: unable to open file: {}",
-                                filename);
+            cloudViewer::utility::LogWarning(
+                    "Read XYZI failed: unable to open file: {}", filename);
             return false;
         }
-        cloudViewer::utility::CountingProgressReporter reporter(params.update_progress);
+        cloudViewer::utility::CountingProgressReporter reporter(
+                params.update_progress);
         reporter.SetTotal(file.GetFileSize());
         int64_t num_points = file.GetNumLines();
 
@@ -65,14 +68,16 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
 
         return true;
     } catch (const std::exception &e) {
-        cloudViewer::utility::LogWarning("Read XYZ failed with exception: {}", e.what());
+        cloudViewer::utility::LogWarning("Read XYZ failed with exception: {}",
+                                         e.what());
         return false;
     }
 }
 
-bool WritePointCloudToXYZI(const std::string &filename,
-                           const geometry::PointCloud &pointcloud,
-                           const cloudViewer::io::WritePointCloudOption &params) {
+bool WritePointCloudToXYZI(
+        const std::string &filename,
+        const geometry::PointCloud &pointcloud,
+        const cloudViewer::io::WritePointCloudOption &params) {
     if (!pointcloud.HasPointAttr("intensities")) {
         return false;
     }
@@ -80,13 +85,15 @@ bool WritePointCloudToXYZI(const std::string &filename,
     try {
         cloudViewer::utility::filesystem::CFile file;
         if (!file.Open(filename, "w")) {
-            cloudViewer::utility::LogWarning("Write XYZI failed: unable to open file: {}",
-                                filename);
+            cloudViewer::utility::LogWarning(
+                    "Write XYZI failed: unable to open file: {}", filename);
             return false;
         }
-        cloudViewer::utility::CountingProgressReporter reporter(params.update_progress);
+        cloudViewer::utility::CountingProgressReporter reporter(
+                params.update_progress);
         const core::Tensor &points = pointcloud.GetPoints();
-        if (!points.GetShape().IsCompatible({cloudViewer::utility::nullopt, 3})) {
+        if (!points.GetShape().IsCompatible(
+                    {cloudViewer::utility::nullopt, 3})) {
             cloudViewer::utility::LogWarning(
                     "Write XYZI failed: Shape of points is {}, but it should "
                     "be Nx3.",
@@ -122,11 +129,12 @@ bool WritePointCloudToXYZI(const std::string &filename,
         reporter.Finish();
         return true;
     } catch (const std::exception &e) {
-        cloudViewer::utility::LogWarning("Write XYZI failed with exception: {}", e.what());
+        cloudViewer::utility::LogWarning("Write XYZI failed with exception: {}",
+                                         e.what());
         return false;
     }
 }
 
 }  // namespace io
 }  // namespace t
-}  // namespace CloudViewer
+}  // namespace cloudViewer

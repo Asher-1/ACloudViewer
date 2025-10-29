@@ -21,8 +21,10 @@ public:
     enum class Projection { Perspective, Ortho };
 
 #ifdef SIMD_ENABLED
-    using Transform = Eigen::Transform<float, 3, Eigen::Affine, Eigen::DontAlign>;
-    using ProjectionMatrix = Eigen::Transform<float, 3, Eigen::Projective, Eigen::DontAlign>;
+    using Transform =
+            Eigen::Transform<float, 3, Eigen::Affine, Eigen::DontAlign>;
+    using ProjectionMatrix =
+            Eigen::Transform<float, 3, Eigen::Projective, Eigen::DontAlign>;
 #else
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
     using ProjectionMatrix = Eigen::Transform<float, 3, Eigen::Projective>;
@@ -113,7 +115,7 @@ public:
     /// Returns the view space depth (i.e., distance from camera) for the given
     /// Z-buffer value
     virtual double GetViewZ(float z_buffer) const = 0;
-    
+
     struct ProjectionInfo {
         bool is_ortho;
         bool is_intrinsic;

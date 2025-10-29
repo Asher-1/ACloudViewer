@@ -1,187 +1,160 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "ecvIndexedTransformation.h"
 
-//Qt
+// Qt
 #include <QFile>
 #include <QTextStream>
 
-//System
+// System
 #include <assert.h>
+
 #include <string>
 
-ccIndexedTransformation::ccIndexedTransformation()
-	: ccGLMatrix()
-	, m_index(0)
-{
-}
+ccIndexedTransformation::ccIndexedTransformation() : ccGLMatrix(), m_index(0) {}
 
 ccIndexedTransformation::ccIndexedTransformation(const ccGLMatrix& matrix)
-	: ccGLMatrix(matrix)
-	, m_index(0)
-{
+    : ccGLMatrix(matrix), m_index(0) {}
+
+ccIndexedTransformation::ccIndexedTransformation(const ccGLMatrix& matrix,
+                                                 double index)
+    : ccGLMatrix(matrix), m_index(index) {}
+
+ccIndexedTransformation::ccIndexedTransformation(
+        const ccIndexedTransformation& trans)
+    : ccGLMatrix(trans), m_index(trans.m_index) {}
+
+bool ccIndexedTransformation::toAsciiFile(QString filename,
+                                          int precision /*=12*/) const {
+    QFile fp(filename);
+    if (!fp.open(QFile::WriteOnly | QFile::Text)) return false;
+
+    QTextStream stream(&fp);
+    stream.setRealNumberNotation(QTextStream::FixedNotation);
+    stream.setRealNumberPrecision(precision);
+
+    // save transformation first (so that it can be loaded as a ccGLMatrix!)
+    for (unsigned i = 0; i < 4; ++i) {
+        stream << m_mat[i] << " " << m_mat[i + 4] << " " << m_mat[i + 8] << " "
+               << m_mat[i + 12] << endl;
+    }
+    // save index next
+    stream << m_index;
+
+    return (fp.error() == QFile::NoError);
 }
 
-ccIndexedTransformation::ccIndexedTransformation(const ccGLMatrix& matrix, double index)
-	: ccGLMatrix(matrix)
-	, m_index(index)
-{
+bool ccIndexedTransformation::fromAsciiFile(QString filename) {
+    QFile fp(filename);
+    if (!fp.open(QFile::ReadOnly | QFile::Text)) return false;
+
+    QTextStream stream(&fp);
+
+    // read the transformation first
+    for (unsigned i = 0; i < 4; ++i) {
+        stream >> m_mat[i];
+        stream >> m_mat[i + 4];
+        stream >> m_mat[i + 8];
+        stream >> m_mat[i + 12];
+    }
+    // read index
+    stream >> m_index;
+
+    return (fp.error() == QFile::NoError);
 }
 
-ccIndexedTransformation::ccIndexedTransformation(const ccIndexedTransformation& trans)
-	: ccGLMatrix(trans)
-	, m_index(trans.m_index)
-{
+ccIndexedTransformation ccIndexedTransformation::operator*(
+        const ccGLMatrix& M) const {
+    return ccIndexedTransformation(*static_cast<const ccGLMatrix*>(this) * M,
+                                   m_index);
 }
 
-bool ccIndexedTransformation::toAsciiFile(QString filename, int precision/*=12*/) const
-{
-	QFile fp(filename);
-	if (!fp.open(QFile::WriteOnly | QFile::Text))
-		return false;
+ccIndexedTransformation& ccIndexedTransformation::operator*=(
+        const ccGLMatrix& M) {
+    ccGLMatrix temp = (*this) * M;
+    (*this) = temp;
 
-	QTextStream stream(&fp);
-	stream.setRealNumberNotation(QTextStream::FixedNotation);
-	stream.setRealNumberPrecision(precision);
-
-	//save transformation first (so that it can be loaded as a ccGLMatrix!)
-	for (unsigned i=0; i<4; ++i)
-	{
-		stream << m_mat[i] << " " << m_mat[i+4] << " " << m_mat[i+8] << " " << m_mat[i+12] << endl;
-	}
-	//save index next
-	stream << m_index;
-
-	return (fp.error() == QFile::NoError);
+    return (*this);
 }
 
-bool ccIndexedTransformation::fromAsciiFile(QString filename)
-{
-	QFile fp(filename);
-	if (!fp.open(QFile::ReadOnly | QFile::Text))
-		return false;
+ccIndexedTransformation& ccIndexedTransformation::operator+=(
+        const CCVector3& T) {
+    *static_cast<ccGLMatrix*>(this) += T;
 
-	QTextStream stream(&fp);
-
-	//read the transformation first
-	for (unsigned i=0; i<4; ++i)
-	{
-		stream >> m_mat[i];
-		stream >> m_mat[i+4];
-		stream >> m_mat[i+8];
-		stream >> m_mat[i+12];
-	}
-	//read index
-	stream >> m_index;
-
-	return (fp.error() == QFile::NoError);
+    return (*this);
 }
 
-ccIndexedTransformation ccIndexedTransformation::operator * (const ccGLMatrix& M) const
-{
-	return ccIndexedTransformation( *static_cast<const ccGLMatrix*>(this) * M, m_index);
+ccIndexedTransformation& ccIndexedTransformation::operator-=(
+        const CCVector3& T) {
+    *static_cast<ccGLMatrix*>(this) -= T;
+
+    return (*this);
 }
 
-ccIndexedTransformation& ccIndexedTransformation::operator *= (const ccGLMatrix& M)
-{
-	ccGLMatrix temp = (*this) * M;
-	(*this) = temp;
+ccIndexedTransformation ccIndexedTransformation::transposed() const {
+    ccIndexedTransformation t(*this);
+    t.transpose();
 
-	return (*this);
+    return t;
 }
 
-ccIndexedTransformation& ccIndexedTransformation::operator += (const CCVector3& T)
-{
-	*static_cast<ccGLMatrix*>(this) += T;
+ccIndexedTransformation ccIndexedTransformation::inverse() const {
+    ccIndexedTransformation t(*this);
+    t.invert();
 
-	return (*this);
+    return t;
 }
 
-ccIndexedTransformation& ccIndexedTransformation::operator -= (const CCVector3& T)
-{
-	*static_cast<ccGLMatrix*>(this) -= T;
+ccIndexedTransformation ccIndexedTransformation::Interpolate(
+        double index,
+        const ccIndexedTransformation& trans1,
+        const ccIndexedTransformation& trans2) {
+    double dt = trans2.getIndex() - trans1.getIndex();
+    if (dt == 0.0) {
+        assert(index == trans1.getIndex());
+        return trans1;
+    }
 
-	return (*this);
+    // we compute the transformation matrix between trans1 and trans2
+    double t = (index - trans1.getIndex()) / dt;
+    assert(t >= 0 && t <= 1);
+
+    ccGLMatrix mat = ccGLMatrix::Interpolate(
+            static_cast<PointCoordinateType>(t), trans1, trans2);
+
+    return ccIndexedTransformation(mat, index);
 }
 
-ccIndexedTransformation ccIndexedTransformation::transposed() const
-{
-	ccIndexedTransformation t(*this);
-	t.transpose();
-	
-	return t;
+bool ccIndexedTransformation::toFile(QFile& out) const {
+    if (!ccGLMatrix::toFile(out)) return false;
+
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+
+    // index (dataVersion>=34)
+    if (out.write((const char*)&m_index, sizeof(double)) < 0)
+        return WriteError();
+
+    return true;
 }
 
-ccIndexedTransformation ccIndexedTransformation::inverse() const
-{
-	ccIndexedTransformation t(*this);
-	t.invert();
-
-	return t;
-}
-
-ccIndexedTransformation ccIndexedTransformation::Interpolate(	double index,
-																const ccIndexedTransformation& trans1,
-																const ccIndexedTransformation& trans2)
-{
-	double dt = trans2.getIndex() - trans1.getIndex();
-	if (dt == 0.0)
-	{
-		assert(index == trans1.getIndex());
-		return trans1;
-	}
-
-	//we compute the transformation matrix between trans1 and trans2
-	double t = (index - trans1.getIndex())/dt;
-	assert(t >= 0 && t <= 1);
-	
-	ccGLMatrix mat = ccGLMatrix::Interpolate(static_cast<PointCoordinateType>(t),trans1,trans2);
-
-	return ccIndexedTransformation(mat, index);
-}
-
-bool ccIndexedTransformation::toFile(QFile& out) const
-{
-	if (!ccGLMatrix::toFile(out))
-		return false;
-	
-	assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
-
-	//index (dataVersion>=34)
-	if (out.write((const char*)&m_index,sizeof(double)) < 0)
-		return WriteError();
-
-	return true;
-}
-
-bool ccIndexedTransformation::fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
-{
+bool ccIndexedTransformation::fromFile(QFile& in,
+                                       short dataVersion,
+                                       int flags,
+                                       LoadedIDMap& oldToNewIDMap) {
     if (!ccGLMatrix::fromFile(in, dataVersion, flags, oldToNewIDMap))
-		return false;
+        return false;
 
-	assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
+    assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
 
-	if (dataVersion<34)
-		return CorruptError();
+    if (dataVersion < 34) return CorruptError();
 
-	//index (dataVersion>=34)
-	if (in.read((char*)&m_index,sizeof(double)) < 0)
-		return ReadError();
+    // index (dataVersion>=34)
+    if (in.read((char*)&m_index, sizeof(double)) < 0) return ReadError();
 
-	return true;
+    return true;
 }

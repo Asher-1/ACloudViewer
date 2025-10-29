@@ -7,11 +7,12 @@
 
 #include "cloudViewer/core/kernel/BinaryEW.h"
 
+#include <Logging.h>
+
 #include <vector>
 
 #include "cloudViewer/core/ShapeUtil.h"
 #include "cloudViewer/core/Tensor.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

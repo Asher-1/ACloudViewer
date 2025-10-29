@@ -7,16 +7,16 @@
 
 #include "visualization/shader/GeometryRenderer.h"
 
+#include <HalfEdgeTriangleMesh.h>
 #include <Image.h>
-#include <ecvMesh.h>
+#include <LineSet.h>
 #include <ecvBBox.h>
 #include <ecvFacet.h>
-#include <HalfEdgeTriangleMesh.h>
-#include <ecvPolyline.h>
-#include <LineSet.h>
-#include <ecvPointCloud.h>
-#include <ecvOrientedBBox.h>
 #include <ecvHObjectCaster.h>
+#include <ecvMesh.h>
+#include <ecvOrientedBBox.h>
+#include <ecvPointCloud.h>
+#include <ecvPolyline.h>
 
 #include "visualization/utility/PointCloudPicker.h"
 #include "visualization/utility/SelectionPolygon.h"
@@ -165,77 +165,77 @@ bool LineSetRenderer::UpdateGeometry() {
 }
 
 bool PolylineRenderer::Render(const RenderOption &option,
-	const ViewControl &view) {
-	if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
-	return simple_polyline_shader_.Render(*geometry_ptr_, option, view);
+                              const ViewControl &view) {
+    if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
+    return simple_polyline_shader_.Render(*geometry_ptr_, option, view);
 }
 
 bool PolylineRenderer::AddGeometry(
-	std::shared_ptr<const ccHObject> geometry_ptr) {
-	if (!geometry_ptr->isKindOf(CV_TYPES::POLY_LINE)) {
-		return false;
-	}
-	geometry_ptr_ = geometry_ptr;
-	return UpdateGeometry();
+        std::shared_ptr<const ccHObject> geometry_ptr) {
+    if (!geometry_ptr->isKindOf(CV_TYPES::POLY_LINE)) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
 }
 
 bool PolylineRenderer::UpdateGeometry() {
-	simple_polyline_shader_.InvalidateGeometry();
-	return true;
+    simple_polyline_shader_.InvalidateGeometry();
+    return true;
 }
 
-bool FacetRenderer::Render( const RenderOption &option,
-							const ViewControl &view) {
-	if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
-	auto &facet = (ccFacet &)(*geometry_ptr_);
+bool FacetRenderer::Render(const RenderOption &option,
+                           const ViewControl &view) {
+    if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
+    auto &facet = (ccFacet &)(*geometry_ptr_);
 
-	// Normal Vector
-	if (facet.normalVectorIsShown())
-	{
-		if(!simple_shader_for_normal_.Render(*facet.getNormalVectorMesh(), option, view)) return false;
-	}
+    // Normal Vector
+    if (facet.normalVectorIsShown()) {
+        if (!simple_shader_for_normal_.Render(*facet.getNormalVectorMesh(),
+                                              option, view))
+            return false;
+    }
 
-	// Contour
-	if (!simple_polyline_shader_.Render(*facet.getContour(), option, view)) return false;
+    // Contour
+    if (!simple_polyline_shader_.Render(*facet.getContour(), option, view))
+        return false;
 
-	// Polygon
-	bool success = true;
-	if (facet.getPolygon())
-	{
-		if (facet.getPolygon()->hasTriNormals() && facet.getPolygon()->hasNormals())
-		{
-			phong_shader_for_polygon_.Render(*facet.getPolygon(), option, view);
-		}
-		else
-		{
-			simple_shader_for_polygon_.Render(*facet.getPolygon(), option, view);
-		}
-	}
+    // Polygon
+    bool success = true;
+    if (facet.getPolygon()) {
+        if (facet.getPolygon()->hasTriNormals() &&
+            facet.getPolygon()->hasNormals()) {
+            phong_shader_for_polygon_.Render(*facet.getPolygon(), option, view);
+        } else {
+            simple_shader_for_polygon_.Render(*facet.getPolygon(), option,
+                                              view);
+        }
+    }
 
-	return success;
+    return success;
 }
 
-bool FacetRenderer::AddGeometry(
-	std::shared_ptr<const ccHObject> geometry_ptr) {
-	if (!geometry_ptr->isKindOf(CV_TYPES::FACET)) {
-		return false;
-	}
-	geometry_ptr_ = geometry_ptr;
-	return UpdateGeometry();
+bool FacetRenderer::AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) {
+    if (!geometry_ptr->isKindOf(CV_TYPES::FACET)) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
 }
 
 bool FacetRenderer::UpdateGeometry() {
-	simple_shader_for_normal_.InvalidateGeometry();
-	phong_shader_for_polygon_.InvalidateGeometry();
-	simple_shader_for_polygon_.InvalidateGeometry();
-	simple_polyline_shader_.InvalidateGeometry();
-	return true;
+    simple_shader_for_normal_.InvalidateGeometry();
+    phong_shader_for_polygon_.InvalidateGeometry();
+    simple_shader_for_polygon_.InvalidateGeometry();
+    simple_polyline_shader_.InvalidateGeometry();
+    return true;
 }
 
 bool OrientedBoundingBoxRenderer::Render(const RenderOption &option,
                                          const ViewControl &view) {
     if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
-    return simple_oriented_bounding_box_shader_.Render(*geometry_ptr_, option, view);
+    return simple_oriented_bounding_box_shader_.Render(*geometry_ptr_, option,
+                                                       view);
 }
 
 bool OrientedBoundingBoxRenderer::AddGeometry(
@@ -322,7 +322,6 @@ bool TriangleMeshRenderer::UpdateGeometry() {
     return true;
 }
 
-
 bool TetraMeshRenderer::Render(const RenderOption &option,
                                const ViewControl &view) {
     if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
@@ -388,8 +387,7 @@ bool ImageRenderer::Render(const RenderOption &option,
     return image_shader_.Render(*geometry_ptr_, option, view);
 }
 
-bool ImageRenderer::AddGeometry(
-        std::shared_ptr<const ccHObject> geometry_ptr) {
+bool ImageRenderer::AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) {
     if (!geometry_ptr->isKindOf(CV_TYPES::IMAGE2)) {
         return false;
     }
@@ -482,8 +480,7 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
     };
     if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
     const auto &picker = (const PointCloudPicker &)(*geometry_ptr_);
-    const auto &pointcloud =
-            (const ccPointCloud &)(*picker.pointcloud_ptr_);
+    const auto &pointcloud = (const ccPointCloud &)(*picker.pointcloud_ptr_);
     const auto &_option = (const RenderOptionWithEditing &)option;
     for (size_t i = 0; i < picker.picked_indices_.size(); i++) {
         size_t index = picker.picked_indices_[i];
@@ -491,13 +488,14 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
             auto sphere = ccMesh::CreateSphere(
                     view.GetBoundingBox().GetMaxExtent() *
                     _option.pointcloud_picker_sphere_size_);
-			ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(sphere->getAssociatedCloud());
-			assert(cloud);
-			cloud->PaintUniformColor(color_palette[i % NUM_OF_COLOR_PALETTE]);
+            ccPointCloud *cloud =
+                    ccHObjectCaster::ToPointCloud(sphere->getAssociatedCloud());
+            assert(cloud);
+            cloud->PaintUniformColor(color_palette[i % NUM_OF_COLOR_PALETTE]);
             Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
             trans.block<3, 1>(0, 3) = pointcloud.getEigenPoint(index);
             sphere->Transform(trans);
-			sphere->ComputeVertexNormals();
+            sphere->ComputeVertexNormals();
             phong_shader_.InvalidateGeometry();
             if (!phong_shader_.Render(*sphere, option, view)) {
                 return false;

@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                      CLOUDVIEWER  PLUGIN: qSRA                         #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                           COPYRIGHT: EDF                               #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "distanceMapGenerationTool.h"
 
@@ -574,7 +564,8 @@ DistanceMapGenerationTool::CreateMap(ccPointCloud* cloud,
         CCVector3 relativePos = cloudToSurface * (*P);
 
         // convert to cylindrical or conical (spherical) coordinates
-        double x = ccw * atan2(relativePos.u[X], relativePos.u[Y]);  // longitude
+        double x =
+                ccw * atan2(relativePos.u[X], relativePos.u[Y]);  // longitude
         if (x < 0.0) {
             x += 2 * M_PI;
         }

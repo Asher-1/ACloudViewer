@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
 #include <png.h>
 
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/t/io/ImageIO.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

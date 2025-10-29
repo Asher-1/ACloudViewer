@@ -14,8 +14,7 @@ namespace rendering {
 CameraInteractorLogic::CameraInteractorLogic(Camera* c, double min_far_plane)
     : RotationInteractorLogic(c, min_far_plane), fov_at_mouse_down_(60.0) {}
 
-void CameraInteractorLogic::SetBoundingBox(
-        const ccBBox& bounds) {
+void CameraInteractorLogic::SetBoundingBox(const ccBBox& bounds) {
     Super::SetBoundingBox(bounds);
     // Initialize parent's matrix_ (in case we do a mouse wheel, which
     // doesn't involve a mouse down) and the center of rotation.
@@ -115,7 +114,7 @@ void CameraInteractorLogic::Zoom(int dy, DragType drag_type) {
             (near_v + old_dist_from_plane_to_cor) *
                     std::tan(old_fov / 2.0f * to_radians) /
                     std::tan(new_fov / 2.0f * to_radians) -
-             near_v;
+            near_v;
     if (drag_type == DragType::MOUSE) {
         Dolly(-(new_dist_from_plane_to_cor - old_dist_from_plane_to_cor),
               matrix_at_mouse_down_);
@@ -145,4 +144,4 @@ void CameraInteractorLogic::EndMouseDrag() {}
 
 }  // namespace rendering
 }  // namespace visualization
-}  // namespace CloudViewer
+}  // namespace cloudViewer

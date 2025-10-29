@@ -15,39 +15,38 @@ namespace kernel {
 
 // ---- Matmul ----
 template <typename scalar_t>
-static CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void matmul3x3_3x1(const scalar_t& m00,
-                                                            const scalar_t& m01,
-                                                            const scalar_t& m02,
-                                                            const scalar_t& m10,
-                                                            const scalar_t& m11,
-                                                            const scalar_t& m12,
-                                                            const scalar_t& m20,
-                                                            const scalar_t& m21,
-                                                            const scalar_t& m22,
-                                                            const scalar_t& v0,
-                                                            const scalar_t& v1,
-                                                            const scalar_t& v2,
-                                                            scalar_t& o0,
-                                                            scalar_t& o1,
-                                                            scalar_t& o2) {
+static CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void matmul3x3_3x1(
+        const scalar_t& m00,
+        const scalar_t& m01,
+        const scalar_t& m02,
+        const scalar_t& m10,
+        const scalar_t& m11,
+        const scalar_t& m12,
+        const scalar_t& m20,
+        const scalar_t& m21,
+        const scalar_t& m22,
+        const scalar_t& v0,
+        const scalar_t& v1,
+        const scalar_t& v2,
+        scalar_t& o0,
+        scalar_t& o1,
+        scalar_t& o2) {
     o0 = m00 * v0 + m01 * v1 + m02 * v2;
     o1 = m10 * v0 + m11 * v1 + m12 * v2;
     o2 = m20 * v0 + m21 * v1 + m22 * v2;
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_HOST_DEVICE CLOUDVIEWER_FORCE_INLINE void matmul3x3_3x1(const scalar_t* A_3x3,
-                                                          const scalar_t* B_3x1,
-                                                          scalar_t* C_3x1) {
+CLOUDVIEWER_HOST_DEVICE CLOUDVIEWER_FORCE_INLINE void matmul3x3_3x1(
+        const scalar_t* A_3x3, const scalar_t* B_3x1, scalar_t* C_3x1) {
     C_3x1[0] = A_3x3[0] * B_3x1[0] + A_3x3[1] * B_3x1[1] + A_3x3[2] * B_3x1[2];
     C_3x1[1] = A_3x3[3] * B_3x1[0] + A_3x3[4] * B_3x1[1] + A_3x3[5] * B_3x1[2];
     C_3x1[2] = A_3x3[6] * B_3x1[0] + A_3x3[7] * B_3x1[1] + A_3x3[8] * B_3x1[2];
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void matmul3x3_3x3(const scalar_t* A_3x3,
-                                                     const scalar_t* B_3x3,
-                                                     scalar_t* C_3x3) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void matmul3x3_3x3(
+        const scalar_t* A_3x3, const scalar_t* B_3x3, scalar_t* C_3x3) {
     matmul3x3_3x1(A_3x3[0], A_3x3[1], A_3x3[2], A_3x3[3], A_3x3[4], A_3x3[5],
                   A_3x3[6], A_3x3[7], A_3x3[8], B_3x3[0], B_3x3[3], B_3x3[6],
                   C_3x3[0], C_3x3[3], C_3x3[6]);
@@ -93,20 +92,22 @@ dot_3x1(const scalar_t* A_3x1_input, const scalar_t* B_3x1_input) {
 
 // ---- Determinant ----
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t det2x2(const scalar_t* A_2x2) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t
+det2x2(const scalar_t* A_2x2) {
     return A_2x2[0] * A_2x2[3] - A_2x2[1] * A_2x2[2];
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t det3x3(const scalar_t* A_3x3) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t
+det3x3(const scalar_t* A_3x3) {
     return A_3x3[0] * (A_3x3[4] * A_3x3[8] - A_3x3[5] * A_3x3[7]) -
            A_3x3[3] * (A_3x3[1] * A_3x3[8] - A_3x3[2] * A_3x3[7]) +
            A_3x3[6] * (A_3x3[1] * A_3x3[5] - A_3x3[2] * A_3x3[4]);
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE bool inverse2x2(const scalar_t* A_2x2,
-                                                  scalar_t* output_2x2) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE bool inverse2x2(
+        const scalar_t* A_2x2, scalar_t* output_2x2) {
     scalar_t det = det3x3(A_2x2);
     if (det < 1e-12) {
         return false;
@@ -122,8 +123,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE bool inverse2x2(const scalar_t* A_2x
 
 // ---- Matrix Inverse ----
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE bool inverse3x3(const scalar_t* A_3x3,
-                                                  scalar_t* output_3x3) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE bool inverse3x3(
+        const scalar_t* A_3x3, scalar_t* output_3x3) {
     scalar_t det = det3x3(A_3x3);
     if (det < 1e-12) {
         return false;
@@ -144,15 +145,16 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE bool inverse3x3(const scalar_t* A_3x
 
 // ---- Matrix Transpose ----
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose2x2_(scalar_t* A_2x2) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose2x2_(
+        scalar_t* A_2x2) {
     scalar_t temp_01 = A_2x2[1];
     A_2x2[1] = A_2x2[2];
     A_2x2[2] = temp_01;
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose2x2(const scalar_t* A_2x2,
-                                                    scalar_t* output_2x2) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose2x2(
+        const scalar_t* A_2x2, scalar_t* output_2x2) {
     output_2x2[0] = A_2x2[0];
     output_2x2[1] = A_2x2[2];
     output_2x2[2] = A_2x2[1];
@@ -160,7 +162,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose2x2(const scalar_t* A_
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose3x3_(scalar_t* A_3x3) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose3x3_(
+        scalar_t* A_3x3) {
     scalar_t temp_01 = A_3x3[1];
     scalar_t temp_02 = A_3x3[2];
     scalar_t temp_12 = A_3x3[5];
@@ -173,8 +176,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose3x3_(scalar_t* A_3x3) 
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose3x3(const scalar_t* A_3x3,
-                                                    scalar_t* output_3x3) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose3x3(
+        const scalar_t* A_3x3, scalar_t* output_3x3) {
     output_3x3[0] = A_3x3[0];
     output_3x3[1] = A_3x3[3];
     output_3x3[2] = A_3x3[6];
@@ -189,7 +192,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose3x3(const scalar_t* A_
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose4x4_(scalar_t* A_4x4) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose4x4_(
+        scalar_t* A_4x4) {
     scalar_t temp_01 = A_4x4[1];
     scalar_t temp_02 = A_4x4[2];
     scalar_t temp_03 = A_4x4[3];
@@ -211,8 +215,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose4x4_(scalar_t* A_4x4) 
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose4x4(const scalar_t* A_4x4,
-                                                    scalar_t* output_4x4) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose4x4(
+        const scalar_t* A_4x4, scalar_t* output_4x4) {
     output_4x4[0] = A_4x4[0];
     output_4x4[1] = A_4x4[4];
     output_4x4[2] = A_4x4[8];

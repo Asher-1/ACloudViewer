@@ -7,13 +7,14 @@
 
 #include "core/nns/NanoFlannIndex.h"
 
+#include <Helper.h>
+#include <ecvPointCloud.h>
+
 #include <cmath>
 #include <limits>
 
 #include "core/Dtype.h"
 #include "core/SizeVector.h"
-#include <ecvPointCloud.h>
-#include <Helper.h>
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

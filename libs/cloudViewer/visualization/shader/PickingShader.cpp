@@ -8,6 +8,7 @@
 #include "visualization/shader/PickingShader.h"
 
 #include <ecvPointCloud.h>
+
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
 #include "visualization/utility/GLHelper.h"
@@ -96,10 +97,9 @@ void PickingShader::UnbindGeometry() {
     }
 }
 
-bool PickingShaderForPointCloud::PrepareRendering(
-        const ccHObject &geometry,
-        const RenderOption &option,
-        const ViewControl &view) {
+bool PickingShaderForPointCloud::PrepareRendering(const ccHObject &geometry,
+                                                  const RenderOption &option,
+                                                  const ViewControl &view) {
     if (!geometry.isKindOf(CV_TYPES::POINT_CLOUD)) {
         PrintShaderWarning("Rendering type is not ccPointCloud.");
         return false;
@@ -120,8 +120,7 @@ bool PickingShaderForPointCloud::PrepareBinding(
         PrintShaderWarning("Rendering type is not ccPointCloud.");
         return false;
     }
-    const ccPointCloud &pointcloud =
-            (const ccPointCloud &)geometry;
+    const ccPointCloud &pointcloud = (const ccPointCloud &)geometry;
     if (!pointcloud.hasPoints()) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;

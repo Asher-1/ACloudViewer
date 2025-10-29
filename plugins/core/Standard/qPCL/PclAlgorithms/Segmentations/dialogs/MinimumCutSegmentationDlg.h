@@ -1,55 +1,41 @@
-//##########################################################################
-//#                                                                        #
-//#                       CLOUDVIEWER PLUGIN: qPCL                         #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                         COPYRIGHT: Asher                               #
-//#                                                                        #
-//##########################################################################
-//
-#ifndef Q_PCL_PLUGIN_MINIMUMCUT_DLG_HEADER
-#define Q_PCL_PLUGIN_MINIMUMCUT_DLG_HEADER
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include <ui_MinimumCutSegmentationDlg.h>
 
-//Qt
+// Qt
 #include <QDialog>
 
-//system
+// system
 #include <vector>
 
 class ecvMainAppInterface;
 class cc2DLabel;
 class ccHObject;
 
-class MinimumCutSegmentationDlg : public QDialog, public Ui::MinimumCutSegmentationDlg
-{
-	Q_OBJECT
+class MinimumCutSegmentationDlg : public QDialog,
+                                  public Ui::MinimumCutSegmentationDlg {
+    Q_OBJECT
 public:
-	explicit MinimumCutSegmentationDlg(ecvMainAppInterface* app);
+    explicit MinimumCutSegmentationDlg(ecvMainAppInterface* app);
 
-	void refreshLabelComboBox();
-	
+    void refreshLabelComboBox();
+
 public slots:
-	void updateForeGroundPoint();
-	void onLabelChanged(int);
+    void updateForeGroundPoint();
+    void onLabelChanged(int);
 
 protected:
+    //! Gives access to the application (data-base, UI, etc.)
+    ecvMainAppInterface* m_app;
 
-	//! Gives access to the application (data-base, UI, etc.)
-	ecvMainAppInterface* m_app;
+    QString getEntityName(ccHObject* obj);
 
-	QString getEntityName(ccHObject* obj);
-
-	cc2DLabel* get2DLabelFromCombo(QComboBox* comboBox, ccHObject* dbRoot);
+    cc2DLabel* get2DLabelFromCombo(QComboBox* comboBox, ccHObject* dbRoot);
 };
-
-#endif // Q_PCL_PLUGIN_MINIMUMCUT_DLG_HEADER

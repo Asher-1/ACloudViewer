@@ -1,22 +1,11 @@
-//##########################################################################
-//#                                                                        #
-//#                     ACLOUDVIEWER PLUGIN: qVoxFall                      #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 of the License.               #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                 COPYRIGHT: THE UNIVERSITY OF NEWCASTLE                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef Q_VOXFALL_TOOLS_HEADER
-#define Q_VOXFALL_TOOLS_HEADER
+#pragma once
 
 // cloudViewer
 #include <GenericProgressCallback.h>
@@ -73,5 +62,3 @@ public:
 
     static Tuple3i Index2Grid(unsigned index, CCVector3 steps);
 };
-
-#endif  // Q_VOXFALL_PROCESS_HEADER

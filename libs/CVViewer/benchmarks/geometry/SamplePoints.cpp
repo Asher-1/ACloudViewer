@@ -6,8 +6,8 @@
 // ----------------------------------------------------------------------------
 
 #include <benchmark/benchmark.h>
-
 #include <ecvMesh.h>
+
 #include "cloudViewer/data/Dataset.h"
 #include "cloudViewer/io/TriangleMeshIO.h"
 

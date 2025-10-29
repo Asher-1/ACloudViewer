@@ -108,8 +108,7 @@ private:
                     std::lock_guard<std::mutex> lock(cloud_lock_);
                     main_vis_->AddGeometry(CLOUD_NAME, cloud_, &mat);
                     main_vis_->ResetCameraToDefault();
-                    Eigen::Vector3f center =
-                            bounds.GetCenter().cast<float>();
+                    Eigen::Vector3f center = bounds.GetCenter().cast<float>();
                     main_vis_->SetupCamera(60, center, center + CENTER_OFFSET,
                                            {0.0f, -1.0f, 0.0f});
                 });

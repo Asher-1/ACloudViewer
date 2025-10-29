@@ -1,22 +1,11 @@
-// ##########################################################################
-// #                                                                        #
-// #                              CLOUDVIEWER                               #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_GRAPHICAL_TRANSFORMATION_TOOL_HEADER
-#define ECV_GRAPHICAL_TRANSFORMATION_TOOL_HEADER
+#pragma once
 
 // Local
 #include <ecvOverlayDialog.h>
@@ -95,11 +84,9 @@ protected:
 
     //! Rotation center
     /** The rotation center is actually the center of gravity of the selected
-      *'entities'
+     *'entities'
      **/
     CCVector3d m_rotationCenter;
 
     ecvGenericTransformTool* m_tool;
 };
-
-#endif  // ECV_GRAPHICAL_TRANSFORMATION_TOOL_HEADER

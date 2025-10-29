@@ -10,7 +10,6 @@
 #include <Logging.h>
 #include <json/json.h>
 
-
 namespace cloudViewer {
 namespace camera {
 using namespace cloudViewer;

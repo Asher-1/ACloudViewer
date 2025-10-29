@@ -160,13 +160,13 @@ TEST(PointCloud, GetOrientedBoundingBox) {
 
     // 8 points with known ground truth
     pcd = ccPointCloud({{0, 0, 0},
-                                {0, 0, 1},
-                                {0, 2, 0},
-                                {0, 2, 1},
-                                {3, 0, 0},
-                                {3, 0, 1},
-                                {3, 2, 0},
-                                {3, 2, 1}});
+                        {0, 0, 1},
+                        {0, 2, 0},
+                        {0, 2, 1},
+                        {3, 0, 0},
+                        {3, 0, 1},
+                        {3, 2, 0},
+                        {3, 2, 1}});
     obb = pcd.GetOrientedBoundingBox();
     EXPECT_EQ(obb.center_, Eigen::Vector3d(1.5, 1, 0.5));
     EXPECT_EQ(obb.extent_, Eigen::Vector3d(3, 2, 1));
@@ -222,13 +222,13 @@ TEST(PointCloud, GetMinimalOrientedBoundingBox) {
 
     // 8 points with known ground truth
     pcd = ccPointCloud({{0, 0, 0},
-                                {0, 0, 1},
-                                {0, 2, 0},
-                                {0, 2, 1},
-                                {3, 0, 0},
-                                {3, 0, 1},
-                                {3, 2, 0},
-                                {3, 2, 1}});
+                        {0, 0, 1},
+                        {0, 2, 0},
+                        {0, 2, 1},
+                        {3, 0, 0},
+                        {3, 0, 1},
+                        {3, 2, 0},
+                        {3, 2, 1}});
     obb = pcd.GetMinimalOrientedBoundingBox();
     EXPECT_EQ(obb.center_, Eigen::Vector3d(1.5, 1, 0.5));
     EXPECT_EQ(obb.extent_, Eigen::Vector3d(3, 2, 1));
@@ -251,13 +251,13 @@ TEST(PointCloud, GetMinimalOrientedBoundingBox) {
 
     // should always be equal/smaller than axis aligned- & oriented bounding box
     pcd = ccPointCloud({{0.866, 0.474, 0.659},
-                                {0.943, 0.025, 0.789},
-                                {0.386, 0.264, 0.691},
-                                {0.938, 0.588, 0.496},
-                                {0.221, 0.116, 0.257},
-                                {0.744, 0.182, 0.052},
-                                {0.019, 0.525, 0.699},
-                                {0.722, 0.134, 0.668}});
+                        {0.943, 0.025, 0.789},
+                        {0.386, 0.264, 0.691},
+                        {0.938, 0.588, 0.496},
+                        {0.221, 0.116, 0.257},
+                        {0.744, 0.182, 0.052},
+                        {0.019, 0.525, 0.699},
+                        {0.722, 0.134, 0.668}});
     geometry::OrientedBoundingBox mobb = pcd.GetMinimalOrientedBoundingBox();
     ;
     obb = pcd.GetOrientedBoundingBox();
@@ -866,15 +866,14 @@ TEST(PointCloud, UniformDownSample) {
 
 TEST(PointCloud, FarthestPointDownSample) {
     ccPointCloud pcd({{0, 2.0, 0},
-                              {1.0, 1.5, 0},
-                              {0, 1.0, 0},
-                              {1.0, 1.0, 0},
-                              {0, 0, 1.0},
-                              {1.0, 0, 1.0},
-                              {0, 1.0, 1.0},
-                              {1.0, 1.0, 1.5}});
-    std::shared_ptr<ccPointCloud> pcd_down =
-            pcd.FarthestPointDownSample(4);
+                      {1.0, 1.5, 0},
+                      {0, 1.0, 0},
+                      {1.0, 1.0, 0},
+                      {0, 0, 1.0},
+                      {1.0, 0, 1.0},
+                      {0, 1.0, 1.0},
+                      {1.0, 1.0, 1.5}});
+    std::shared_ptr<ccPointCloud> pcd_down = pcd.FarthestPointDownSample(4);
     std::vector<Eigen::Vector3d> expected = {
             {0, 2.0, 0}, {1.0, 1.0, 0}, {1.0, 0, 1.0}, {0, 1.0, 1.0}};
 
@@ -890,11 +889,11 @@ TEST(PointCloud, FarthestPointDownSample) {
 TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
     geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
     ccPointCloud pcd({{0, 0, 0},
-                              {2, 2, 2},
-                              {1, 1, 1},
-                              {1, 1, 2},
-                              {3, 1, 1},
-                              {-1, 1, 1}});
+                      {2, 2, 2},
+                      {1, 1, 1},
+                      {1, 1, 2},
+                      {3, 1, 1},
+                      {-1, 1, 1}});
     pcd.normals_ = {{0, 0, 0}, {1, 0, 0}, {2, 0, 0},
                     {3, 0, 0}, {4, 0, 0}, {5, 0, 0}};
     pcd.colors_ = {{0.0, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.2, 0.0, 0.0},
@@ -988,11 +987,11 @@ TEST(PointCloud, Crop_OrientedBoundingBox) {
 TEST(PointCloud, Crop_AxisAlignedBoundingBox_Invert) {
     geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
     ccPointCloud pcd({{0, 0, 0},
-                              {2, 2, 2},
-                              {1, 1, 1},
-                              {1, 1, 2},
-                              {3, 1, 1},
-                              {-1, 1, 1}});
+                      {2, 2, 2},
+                      {1, 1, 1},
+                      {1, 1, 2},
+                      {3, 1, 1},
+                      {-1, 1, 1}});
     pcd.normals_ = {{0, 0, 0}, {1, 0, 0}, {2, 0, 0},
                     {3, 0, 0}, {4, 0, 0}, {5, 0, 0}};
     pcd.colors_ = {{0.0, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.2, 0.0, 0.0},
@@ -1488,8 +1487,7 @@ TEST(PointCloud, CreateFromDepthImage) {
             io::CreateImageFromFile(im_depth_path);
 
     std::shared_ptr<ccPointCloud> pcd =
-            ccPointCloud::CreateFromDepthImage(*im_depth, intrinsic,
-                                                       extrinsic);
+            ccPointCloud::CreateFromDepthImage(*im_depth, intrinsic, extrinsic);
 
     // Hard-coded test
     EXPECT_EQ(pcd->points_.size(), 267129);
@@ -1522,8 +1520,7 @@ TEST(PointCloud, CreateFromRGBDImage) {
     geometry::RGBDImage im_rgbd(*im_rgb, *im_depth_float);
 
     std::shared_ptr<ccPointCloud> pcd =
-            ccPointCloud::CreateFromRGBDImage(im_rgbd, intrinsic,
-                                                      extrinsic);
+            ccPointCloud::CreateFromRGBDImage(im_rgbd, intrinsic, extrinsic);
 
     // Hard-coded test
     EXPECT_EQ(pcd->points_.size(), 267129);

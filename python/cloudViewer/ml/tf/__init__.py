@@ -1,5 +1,4 @@
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
 # -                        CloudViewer: www.cloudViewer.org                  -
 # ----------------------------------------------------------------------------
 # Copyright (c) 2018-2024 www.cloudViewer.org
@@ -11,7 +10,7 @@ from tensorflow import __version__ as _tf_version
 from cloudViewer import _build_config
 
 if not _build_config["Tensorflow_VERSION"]:
-    raise Exception('CloudViewer was not built with Tensorflow support!')
+    raise ImportError('CloudViewer was not built with TensorFlow support!')
 
 _cv3d_tf_version = _build_config["Tensorflow_VERSION"].split('.')
 if _tf_version.split('.')[:2] != _cv3d_tf_version[:2]:

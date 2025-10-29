@@ -11,20 +11,20 @@
 #include <Logging.h>
 
 #include "ecvBBox.h"
-#include "ecvMesh.h"
-#include "ecvQhull.h"
-#include "ecvPointCloud.h"
-#include "ecvOrientedBBox.h"
 #include "ecvHObjectCaster.h"
+#include "ecvMesh.h"
+#include "ecvOrientedBBox.h"
+#include "ecvPointCloud.h"
+#include "ecvQhull.h"
 
 // SYSTEM
 #include <Eigen/Dense>
+#include <array>
 #include <numeric>
 #include <queue>
 #include <random>
 #include <tuple>
 #include <unordered_map>
-#include <array>
 
 namespace cloudViewer {
 namespace geometry {
@@ -46,7 +46,6 @@ ecvMeshBase &ecvMeshBase::clear() {
 }
 
 bool ecvMeshBase::IsEmpty() const { return !HasVertices(); }
-
 
 Eigen::Vector3d ecvMeshBase::GetMinBound() const {
     return ComputeMinBound(vertices_);
@@ -75,7 +74,7 @@ ecvMeshBase &ecvMeshBase::Transform(const Eigen::Matrix4d &transformation) {
 }
 
 ecvMeshBase &ecvMeshBase::Translate(const Eigen::Vector3d &translation,
-                                bool relative) {
+                                    bool relative) {
     TranslatePoints(translation, vertices_, relative);
     return *this;
 }
@@ -86,7 +85,7 @@ ecvMeshBase &ecvMeshBase::Scale(const double s, const Eigen::Vector3d &center) {
 }
 
 ecvMeshBase &ecvMeshBase::Rotate(const Eigen::Matrix3d &R,
-                             const Eigen::Vector3d &center) {
+                                 const Eigen::Vector3d &center) {
     RotatePoints(R, vertices_, center);
     RotateNormals(R, vertex_normals_);
     return *this;

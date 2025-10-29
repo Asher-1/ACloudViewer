@@ -92,21 +92,91 @@ if os.path.exists(MAIN_LIB_PATH):
         os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = LIB_PATH
 
     if sys.platform == "win32":
-        os.environ['path'] = LIB_PATH + ";" + os.environ['path']
+        # Filter out conda/system Qt paths to avoid mixing Qt versions on Windows
+        old_path = os.environ.get('path', '') or os.environ.get('PATH', '')
+        filtered_paths = [
+            p for p in old_path.split(';') if p and not any(
+                x in p.lower() for x in
+                ['qt5', 'qt\\5', 'qt-5', 'anaconda', 'miniconda', 'conda'])
+        ]
+        if filtered_paths:
+            os.environ['path'] = LIB_PATH + ";" + ";".join(filtered_paths)
+        else:
+            os.environ['path'] = LIB_PATH
+        # Set Qt plugin paths for Windows
+        qt_plugin_path = os.path.join(LIB_PATH, 'plugins')
+        if os.path.exists(qt_plugin_path):
+            os.environ['QT_PLUGIN_PATH'] = qt_plugin_path
+        else:
+            os.environ['QT_PLUGIN_PATH'] = LIB_PATH
     else:
-        os.environ['PATH'] = LIB_PATH + ":" + os.environ['PATH']
+        # macOS and other Unix-like systems
+        old_path = os.environ.get('PATH', '')
+        # Filter out conda/system Qt paths to avoid mixing Qt versions
+        filtered_paths = [
+            p for p in old_path.split(':') if p and not any(
+                x in p.lower()
+                for x in ['qt5', 'qt-5', 'anaconda', 'miniconda', 'conda'])
+        ]
+        if filtered_paths:
+            os.environ['PATH'] = LIB_PATH + ":" + ":".join(filtered_paths)
+        else:
+            os.environ['PATH'] = LIB_PATH + ":" + old_path
+
+        # Set Qt plugin paths for macOS
+        if sys.platform == "darwin":
+            qt_plugin_path = os.path.join(LIB_PATH, 'plugins')
+            if os.path.exists(qt_plugin_path):
+                os.environ['QT_PLUGIN_PATH'] = qt_plugin_path
+            else:
+                os.environ['QT_PLUGIN_PATH'] = LIB_PATH
 
     if sys.platform == "linux":  # must load shared library in order on linux
-        # os.environ['LD_LIBRARY_PATH'] = LIB_PATH + ":" +  os.environ.get('LD_LIBRARY_PATH', '')
-        os.environ['LD_LIBRARY_PATH'] = LIB_PATH
+        # Prioritize package's Qt libraries to avoid version conflicts
+        # Set LD_LIBRARY_PATH to use package libraries first, then system libraries
+        old_ld_path = os.environ.get('LD_LIBRARY_PATH', '')
+        # Filter out conda/system Qt paths to avoid mixing Qt versions
+        filtered_paths = [
+            p for p in old_ld_path.split(':') if p and not any(
+                x in p.lower()
+                for x in ['qt5', 'qt-5', 'anaconda', 'miniconda', 'conda'])
+        ]
+        if filtered_paths:
+            os.environ['LD_LIBRARY_PATH'] = LIB_PATH + ":" + ":".join(
+                filtered_paths)
+        else:
+            os.environ['LD_LIBRARY_PATH'] = LIB_PATH
+
+        # Set Qt-specific environment variables to avoid mixing system Qt
+        # This ensures all Qt components come from the same version
+        qt_plugin_path = os.path.join(LIB_PATH, 'plugins')
+        if os.path.exists(qt_plugin_path):
+            os.environ['QT_PLUGIN_PATH'] = qt_plugin_path
+        else:
+            # Fallback to lib directory if plugins subdirectory doesn't exist
+            os.environ['QT_PLUGIN_PATH'] = LIB_PATH
+
+        # Set platform plugin path for both possible locations
+        platform_plugin_path = os.path.join(LIB_PATH, 'platforms')
+        if os.path.exists(platform_plugin_path):
+            os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = platform_plugin_path
+
         try_load_cdll('libtbb*')  # fix missing libtbb.so
         try_load_cdll('libicudata*')
         try_load_cdll('libicuuc*')
         try_load_cdll('libicui18n*')
+        if len(list(MAIN_LIB_PATH.glob('libdouble-conversion*'))) > 0:
+            try_load_cdll('libdouble-conversion*')
+        if len(list(MAIN_LIB_PATH.glob('libmd4c*'))) > 0:
+            try_load_cdll('libmd4c*')
+
+        try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Gui*')
         try_load_cdll('libQt5Widgets*')
         try_load_cdll('libQt5Concurrent*')
+        # fix symbol lookup error: libQt5Svg.so.5: undefined symbol: _ZdlPvm, version Qt_5
+        try_load_cdll('libQt5Svg*')
 
         try_load_cdll('libCVCoreLib*')
         try_load_cdll('libECV_DB_LIB*')
@@ -126,6 +196,7 @@ if os.path.exists(MAIN_LIB_PATH):
             try_load_cdll('libceres*')
         # for libcurl and libssl dep
         try_load_cdll('libcrypto*')
+        try_load_cdll('libssl*')
         load_cdll(str(next(MAIN_LIB_PATH.glob('lib*'))))
 
 __DEVICE_API__ = 'cpu'
@@ -284,7 +355,8 @@ if (_build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
 # CLOUDVIEWER_ML_ROOT points to the root of the CloudViewer-ML repo.
 # If set this will override the integrated CloudViewer-ML.
 if 'CLOUDVIEWER_ML_ROOT' in os.environ:
-    print('Using external CloudViewer-ML in {}'.format(os.environ['CLOUDVIEWER_ML_ROOT']))
+    print('Using external CloudViewer-ML in {}'.format(
+        os.environ['CLOUDVIEWER_ML_ROOT']))
     sys.path.append(os.environ['CLOUDVIEWER_ML_ROOT'])
 import cloudViewer.ml
 

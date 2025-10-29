@@ -1,22 +1,11 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / TELECOM ParisTech (ENST-TSI)             #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_MATERIAL_HEADER
-#define ECV_MATERIAL_HEADER
+#pragma once
 
 // Local
 #include "ecvColorTypes.h"
@@ -142,7 +131,8 @@ public:
     static QImage GetTexture(const QString& absoluteFilename);
 
     //! Adds a texture to the global texture DB
-    static void AddTexture(const QImage& image, const QString& absoluteFilename);
+    static void AddTexture(const QImage& image,
+                           const QString& absoluteFilename);
 
     //! Release all texture objects
     /** Should be called BEFORE the global shared context is destroyed.
@@ -186,5 +176,3 @@ protected:
     float m_shininessFront;
     float m_shininessBack;
 };
-
-#endif  // ECV_MATERIAL_HEADER

@@ -1,9 +1,11 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                  -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
+
+#include <Helper.h>
 
 #include "cloudViewer/core/CUDAUtils.h"
 #include "core/MemoryManager.h"
@@ -15,7 +17,6 @@
 #include "core/nns/kernel/BlockSelect.cuh"
 #include "core/nns/kernel/DistancesUtils.cuh"
 #include "core/nns/kernel/L2Select.cuh"
-#include <Helper.h>
 
 namespace cloudViewer {
 namespace core {

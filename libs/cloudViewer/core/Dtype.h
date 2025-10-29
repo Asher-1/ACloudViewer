@@ -7,12 +7,13 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include <cstring>
 #include <string>
 
 #include "cloudViewer/Macro.h"
 #include "cloudViewer/core/Dispatch.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

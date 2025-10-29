@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// ----------------------------------------------------------------------------q
+// ----------------------------------------------------------------------------
 
 #include <vector>
 
@@ -20,9 +20,10 @@ torch::Tensor Nms(torch::Tensor boxes,
 
     if (boxes.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
-        std::vector<int64_t> keep_indices = cloudViewer::ml::contrib::NmsCUDAKernel(
-                boxes.data_ptr<float>(), scores.data_ptr<float>(),
-                boxes.size(0), nms_overlap_thresh);
+        std::vector<int64_t> keep_indices =
+                cloudViewer::ml::contrib::NmsCUDAKernel(
+                        boxes.data_ptr<float>(), scores.data_ptr<float>(),
+                        boxes.size(0), nms_overlap_thresh);
         return torch::from_blob(keep_indices.data(),
                                 {static_cast<int64_t>(keep_indices.size())},
                                 torch::TensorOptions().dtype(torch::kLong))
@@ -32,9 +33,10 @@ torch::Tensor Nms(torch::Tensor boxes,
 
 #endif
     } else {
-        std::vector<int64_t> keep_indices = cloudViewer::ml::contrib::NmsCPUKernel(
-                boxes.data_ptr<float>(), scores.data_ptr<float>(),
-                boxes.size(0), nms_overlap_thresh);
+        std::vector<int64_t> keep_indices =
+                cloudViewer::ml::contrib::NmsCPUKernel(
+                        boxes.data_ptr<float>(), scores.data_ptr<float>(),
+                        boxes.size(0), nms_overlap_thresh);
         return torch::from_blob(keep_indices.data(),
                                 {static_cast<int64_t>(keep_indices.size())},
                                 torch::TensorOptions().dtype(torch::kLong))

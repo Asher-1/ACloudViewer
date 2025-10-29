@@ -29,7 +29,7 @@ DAMAGE.
 #ifndef MEMORY_USAGE_INCLUDED
 #define MEMORY_USAGE_INCLUDED
 
-#ifdef WIN32
+#ifdef _WIN32
 
 #include <Windows.h>
 class MemoryInfo

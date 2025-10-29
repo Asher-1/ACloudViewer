@@ -1,15 +1,19 @@
-#ifndef MOVEPOINTINTERACTORSTYLE_H
-#define MOVEPOINTINTERACTORSTYLE_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "qPCL.h"
+#pragma once
 
 #include <QObject>
 
-namespace VtkUtils
-{
+#include "qPCL.h"
 
-class QPCL_ENGINE_LIB_API MovePointInteractorStyle : public QObject
-{
+namespace VtkUtils {
+
+class QPCL_ENGINE_LIB_API MovePointInteractorStyle : public QObject {
     Q_OBJECT
 public:
     explicit MovePointInteractorStyle(QObject *parent = 0);
@@ -19,5 +23,4 @@ signals:
 public slots:
 };
 
-} // namespace VtkUtils
-#endif // MOVEPOINTINTERACTORSTYLE_H
+}  // namespace VtkUtils

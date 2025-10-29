@@ -1,19 +1,9 @@
-// ##########################################################################
-// #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                       #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 of the License.               #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #                   COPYRIGHT: Thomas Montaigu                           #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "PythonPlugin.h"
 #include "AboutDialog.h"
@@ -28,9 +18,9 @@
 #include "Utilities.h"
 
 #include <QDesktopServices>
+#include <QMessageBox>
 #include <QUrl>
 #include <pybind11/pytypes.h>
-#include <QMessageBox>
 
 #define slots Q_SLOTS
 #define signals Q_SIGNALS
@@ -268,8 +258,13 @@ QList<QAction *> PythonPlugin::getActions()
 
 void PythonPlugin::showRepl()
 {
-    if (!m_interp.IsInitialized()) {
-        QMessageBox::critical(nullptr, "Python Interpreter Not Initialized", "The Python interpreter failed to initialize. Cannot open the interactive REPL window.\nPlease check your Python environment configuration or logs.");
+    if (!m_interp.IsInitialized())
+    {
+        QMessageBox::critical(
+            nullptr,
+            "Python Interpreter Not Initialized",
+            "The Python interpreter failed to initialize. Cannot open the interactive REPL "
+            "window.\nPlease check your Python environment configuration or logs.");
         return;
     }
 

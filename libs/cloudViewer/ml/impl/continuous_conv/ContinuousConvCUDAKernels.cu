@@ -5,8 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include <Helper.h>
+
+#include "ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 
 using cloudViewer::utility::DivUp;
 

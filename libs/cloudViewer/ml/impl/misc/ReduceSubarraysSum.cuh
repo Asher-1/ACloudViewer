@@ -12,7 +12,7 @@
 using namespace cloudViewer::utility;
 
 namespace cloudViewer {
-    namespace ml {
+namespace ml {
 namespace impl {
 
 /// Kernel for ReduceSubarraysSumCUDA

@@ -1,5 +1,11 @@
-#ifndef COMMAND_CROSS_SECTION_HEADER
-#define COMMAND_CROSS_SECTION_HEADER
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "ecvCommandLineInterface.h"
 
@@ -17,5 +23,3 @@ private:
                     QString element,
                     const ccCommandLineInterface& cmd);
 };
-
-#endif  // COMMAND_CROSS_SECTION_HEADER

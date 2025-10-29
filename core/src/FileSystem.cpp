@@ -633,7 +633,7 @@ std::string GetIOErrorString(const int errnoVal) {
             // Error below could be EWOULDBLOCK on Linux
         case EAGAIN:
             return "Resource unavailable, try again";
-#if !defined(WIN32)
+#if !defined(_WIN32)
         case EDQUOT:
             return "Over quota";
 #endif

@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                CloudViewer PLUGIN: LAS-IO Plugin                      #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 of the License.               #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                   COPYRIGHT: Thomas Montaigu                           #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "LasIOFilter.h"
 
@@ -53,14 +43,14 @@ static CCVector3d GetGlobalShift(FileIOFilter::LoadParameters& parameters,
                                  const CCVector3d&             firstPoint)
 {
 	ecvGlobalShiftManager::Mode csModeBackup = parameters.shiftHandlingMode;
-	CCVector3d                 shift;
-	bool                       useLasOffset = false;
+	CCVector3d                  shift;
+	bool                        useLasOffset = false;
 
 	// set the lasOffset as default if none was provided
 	if (lasOffset.norm2() != 0 && (!parameters.coordinatesShiftEnabled || !(*parameters.coordinatesShiftEnabled)))
 	{
 		if (csModeBackup != ecvGlobalShiftManager::NO_DIALOG) // No dialog, practically means
-		                                                     // that we don't want any shift!
+		                                                      // that we don't want any shift!
 		{
 			useLasOffset = true;
 			shift        = -lasOffset;
@@ -78,7 +68,7 @@ static CCVector3d GetGlobalShift(FileIOFilter::LoadParameters& parameters,
 	                                     useLasOffset))
 	{
 		preserveCoordinateShift = false;
-		shift = CCVector3d(0.0, 0.0, 0.0);
+		shift                   = CCVector3d(0.0, 0.0, 0.0);
 	}
 
 	// restore previous parameters
@@ -471,7 +461,7 @@ CC_FILE_ERROR LasIOFilter::saveToFile(ccHObject* entity, const QString& filename
 	{
 		if (pointCloud->size() != 0)
 		{
-			//it can only be acceptable if the cloud is empty
+			// it can only be acceptable if the cloud is empty
 			//(yes, some people expect to save empty clouds!)
 			return CC_FERR_NO_SAVE;
 		}
@@ -540,7 +530,7 @@ CC_FILE_ERROR LasIOFilter::saveToFile(ccHObject* entity, const QString& filename
 	// Uniformize the optimal scale to make it less disturbing to some lastools users ;)
 	{
 		double maxScale = std::max(optimalScale.x, std::max(optimalScale.y, optimalScale.z));
-		double n        = ceil(log10(maxScale)); //ceil because n should be negative
+		double n        = ceil(log10(maxScale)); // ceil because n should be negative
 		maxScale        = pow(10.0, n);
 		optimalScale.x = optimalScale.y = optimalScale.z = maxScale;
 	}

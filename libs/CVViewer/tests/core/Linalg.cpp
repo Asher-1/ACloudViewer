@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Helper.h>
+
 #include <cmath>
 #include <limits>
 
@@ -14,7 +16,6 @@
 #include "core/SizeVector.h"
 #include "core/Tensor.h"
 #include "core/kernel/Kernel.h"
-#include <Helper.h>
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 

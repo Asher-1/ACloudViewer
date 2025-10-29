@@ -32,8 +32,7 @@ namespace e57
 {
    IntegerNodeImpl::IntegerNodeImpl( ImageFileImplWeakPtr destImageFile, int64_t value, int64_t minimum,
                                      int64_t maximum ) :
-      NodeImpl( destImageFile ),
-      value_( value ), minimum_( minimum ), maximum_( maximum )
+      NodeImpl( destImageFile ), value_( value ), minimum_( minimum ), maximum_( maximum )
    {
       // don't checkImageFileOpen, NodeImpl() will do it
 

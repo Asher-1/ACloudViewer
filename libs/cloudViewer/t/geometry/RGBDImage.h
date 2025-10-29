@@ -93,7 +93,7 @@ public:
     /// Convert to the legacy RGBDImage format.
     cloudViewer::geometry::RGBDImage ToLegacy() const {
         return cloudViewer::geometry::RGBDImage(color_.ToLegacy(),
-                                           depth_.ToLegacy());
+                                                depth_.ToLegacy());
     }
 
     /// Text description.

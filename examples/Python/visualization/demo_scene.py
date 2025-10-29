@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Demo scene demonstrating models, built-in shapes, and materials"""
 
 import numpy as np
@@ -35,15 +34,13 @@ def create_scene():
     a_sphere.translate((5, 2.4, 0))
     a_sphere = cv3d.t.geometry.TriangleMesh.from_legacy(a_sphere)
 
-    a_cylinder = cv3d.geometry.ccMesh.create_cylinder(
-        1.0, 4.0, 30, 4, True)
+    a_cylinder = cv3d.geometry.ccMesh.create_cylinder(1.0, 4.0, 30, 4, True)
     a_cylinder.compute_triangle_normals()
     a_cylinder.rotate(rotate_90)
     a_cylinder.translate((10, 2, 0))
     a_cylinder = cv3d.t.geometry.TriangleMesh.from_legacy(a_cylinder)
 
-    a_ico = cv3d.geometry.ccMesh.create_icosahedron(1.25,
-                                                    create_uv_map=True)
+    a_ico = cv3d.geometry.ccMesh.create_icosahedron(1.25, create_uv_map=True)
     a_ico.compute_triangle_normals()
     a_ico.translate((-10, 2, 0))
     a_ico = cv3d.t.geometry.TriangleMesh.from_legacy(a_ico)

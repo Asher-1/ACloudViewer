@@ -16,8 +16,8 @@
 
 // CV_CORE_LIB
 #include <Eigen.h>
-#include <Helper.h>
 #include <GenericMesh.h>
+#include <Helper.h>
 
 // LOCAL
 #include "eCV_db.h"
@@ -37,8 +37,8 @@ namespace geometry {
 ///
 /// Triangle mesh contains vertices. Optionally, the mesh may also contain
 /// vertex normals and vertex colors.
-class ECV_DB_LIB_API ecvMeshBase : public cloudViewer::GenericMesh, public ccHObject {
-
+class ECV_DB_LIB_API ecvMeshBase : public cloudViewer::GenericMesh,
+                                   public ccHObject {
 public:
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -48,13 +48,16 @@ public:
 
     // inherited methods (ccHObject)
     inline virtual bool isSerializable() const override { return true; }
-    inline virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::MESH_BASE; }
+    inline virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::MESH_BASE;
+    }
     virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
     virtual void getBoundingBox(CCVector3 &bbMin, CCVector3 &bbMax) override;
 
     // inherited methods (GenericMesh)
     inline virtual unsigned size() const override {
-        return static_cast<unsigned>(vertices_.size()); }
+        return static_cast<unsigned>(vertices_.size());
+    }
     // inherited methods (GenericIndexedMesh)
     virtual void placeIteratorAtBeginning() override {}
     virtual void forEach(genericTriangleAction action) override {}
@@ -70,13 +73,14 @@ public:
     virtual Eigen::Vector3d GetCenter() const override;
     virtual ccBBox GetAxisAlignedBoundingBox() const override;
     virtual ecvOrientedBBox GetOrientedBoundingBox() const override;
-    virtual ecvMeshBase &Transform(const Eigen::Matrix4d &transformation) override;
+    virtual ecvMeshBase &Transform(
+            const Eigen::Matrix4d &transformation) override;
     virtual ecvMeshBase &Translate(const Eigen::Vector3d &translation,
-                                bool relative = true) override;
+                                   bool relative = true) override;
     virtual ecvMeshBase &Scale(const double s,
-                            const Eigen::Vector3d &center) override;
+                               const Eigen::Vector3d &center) override;
     virtual ecvMeshBase &Rotate(const Eigen::Matrix3d &R,
-                             const Eigen::Vector3d &center) override;
+                                const Eigen::Vector3d &center) override;
 
     ecvMeshBase &operator+=(const ecvMeshBase &mesh);
     ecvMeshBase operator+(const ecvMeshBase &mesh) const;
@@ -116,7 +120,8 @@ public:
     }
 
     /// Function that computes the convex hull of the triangle mesh using qhull
-    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> ComputeConvexHull() const;
+    std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>> ComputeConvexHull()
+            const;
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base

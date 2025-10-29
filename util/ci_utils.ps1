@@ -36,10 +36,7 @@ $TENSORFLOW_VER="2.19.0"
 $TORCH_VER="2.7.1"
 $TORCH_REPO_URL = "https://download.pytorch.org/whl/torch/"
 $PIP_VER = "24.3.1"
-$WHEEL_VER = "0.38.4"   
-$STOOLS_VER = "67.3.2"
-$YAPF_VER = "0.30.0"
-$PROTOBUF_VER = "4.24.0"
+$PROTOBUF_VER = "4.25.3"  # Changed from 4.24.0 due to tensorboard 2.19.0 incompatibility
 
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
@@ -101,8 +98,8 @@ function Install-PythonDependencies {
 
     Write-Host "Installing Python dependencies"
 
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" setuptools=="$STOOLS_VER"
-
+    python -m pip install -U pip=="$PIP_VER"
+    python -m pip install -U -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt"
     if ($options -contains "with-unit-test") {
         Install-Requirements -ForceUpdate "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt"
     }
@@ -124,7 +121,6 @@ function Install-PythonDependencies {
     }
 
     Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt"
-
     if ($options -contains "with-jupyter") {
         Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     }
@@ -139,7 +135,7 @@ function Install-PythonDependencies {
     }
 
     if ($options -contains "with-torch" -or $options -contains "with-tensorflow") {
-        python -m pip install -U yapf=="$YAPF_VER"
+        python -m pip install -U -c "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt" yapf
         # python -m pip install -U protobuf=="$PROTOBUF_VER"
         $output = & { 
             $ErrorActionPreference = 'Continue'
@@ -250,7 +246,6 @@ function Build-GuiApp {
         "-DBUILD_RECONSTRUCTION=ON",
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE",
         "-DBUILD_COMMON_CUDA_ARCHS=ON",
-        "-DGLIBCXX_USE_CXX11_ABI=ON",
         "-DCVCORELIB_SHARED=ON",
         "-DCVCORELIB_USE_CGAL=ON", # for delaunay triangulation such as facet
         "-DCVCORELIB_USE_QT_CONCURRENT=ON", # for parallel processing
@@ -323,16 +318,16 @@ function Build-PipPackage {
     
     $BUILD_FILAMENT_FROM_SOURCE = "OFF"
     $REAL_ML_SHELL_PATH = Join-Path $env:CLOUDVIEWER_ML_ROOT "set_cloudViewer_ml_root.sh"
-    if (Test-Path "$REAL_ML_SHELL_PATH") {
+    if ((Test-Path "$REAL_ML_SHELL_PATH") -and ($env:BUILD_TENSORFLOW_OPS -eq "ON" -or $env:BUILD_PYTORCH_OPS -eq "ON")) {
         Write-Host "CloudViewer-ML available at $env:CLOUDVIEWER_ML_ROOT. Bundling CloudViewer-ML in wheel."
         Push-Location $env:CLOUDVIEWER_ML_ROOT
         $currentBranch = git rev-parse --abbrev-ref HEAD
-        if ($currentBranch -ne "main") {
-            $mainExists = git show-ref --verify --quiet refs/heads/main
-            if ($?) {
-                git checkout main 2>$null
+        if ($currentBranch -ne "torch271") {
+            git show-ref --verify --quiet refs/heads/torch271
+            if ($LASTEXITCODE -eq 0) {
+                git checkout torch271 2>&1 | Out-Null
             } else {
-                git checkout -b main 2>$null
+                git checkout -b torch271 2>&1 | Out-Null
             }
         }
         Pop-Location
@@ -443,8 +438,10 @@ function Build-PipPackage {
     cmake --build . --target pip-package --config Release --parallel $env:NPROC
     Write-Host "Finish make pip-package for cpu"
 
-    Write-Host "Backup lib/python_package/pip_package/cloudViewer*.whl to build path"
-    Move-Item lib/python_package/pip_package/cloudViewer*.whl . -Force
+    Write-Host "Backup lib/python_package/pip_package/cloudviewer*.whl to build path"
+    Write-Host "Listing contents of lib/python_package/pip_package/ directory:"
+    Get-ChildItem lib/python_package/pip_package/ -Force | Format-Table -AutoSize
+    Move-Item lib/python_package/pip_package/cloudviewer*.whl . -Force
 
     if ($BUILD_CUDA_MODULE -eq "ON") {
         Write-Host "`nInstalling CUDA versions of TensorFlow and PyTorch..."
@@ -474,8 +471,10 @@ function Build-PipPackage {
         Write-Host "Finish cmake --build with cuda"
     }
 
-    Write-Host "Restore cloudViewer*.whl from build path"
-    Move-Item cloudViewer*.whl lib/python_package/pip_package/ -Force
+    Write-Host "Restore cloudviewer*.whl from build path"
+    Move-Item cloudviewer*.whl lib/python_package/pip_package/ -Force
+    Write-Host "Listing contents of lib/python_package/pip_package/ directory:"
+    Get-ChildItem lib/python_package/pip_package/ -Force | Format-Table -AutoSize
 
     Pop-Location
 }
@@ -493,7 +492,8 @@ function Test-Wheel {
     python -m venv cloudViewer_test.venv
     & .\cloudViewer_test.venv\Scripts\Activate.ps1
 
-    python -m pip install --upgrade pip==$env:PIP_VER wheel==$env:WHEEL_VER setuptools==$env:STOOLS_VER
+    python -m pip install -U pip==$env:PIP_VER
+    python -m pip install -U -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt" wheel setuptools
 
     Write-Host "Using python: $(Get-Command python | Select-Object -ExpandProperty Source)"
     python --version

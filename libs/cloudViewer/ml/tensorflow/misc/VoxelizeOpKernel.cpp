@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.cloudViewer.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ public:
 };
 
 #define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerVoxelize")              \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerVoxelize")         \
                                     .Device(DEVICE_CPU)         \
                                     .TypeConstraint<type>("T"), \
                             VoxelizeOpKernelCPU<type>);

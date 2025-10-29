@@ -1,19 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "ecvDBRoot.h"
 
@@ -654,7 +644,7 @@ void ccDBRoot::deleteSelectedEntities() {
         if (object->isKindOf(CV_TYPES::MESH)) {
             // specific case: the object is a mesh and its parent is its
             // vertices! (can happen if a Delaunay mesh is computed directly in
-            //CC)
+            // CC)
             if (object->getParent() &&
                 object->getParent() == ccHObjectCaster::ToGenericMesh(object)
                                                ->getAssociatedCloud()) {
@@ -1455,7 +1445,7 @@ bool ccDBRoot::dropMimeData(const QMimeData* data,
                 // labels.begin(); it != labels.end(); ++it)
                 //{
                 //	if ((*it)->isA(CV_TYPES::LABEL_2D)) //Warning:
-                //cc2DViewportLabel is also a kind of 'CV_TYPES::LABEL_2D'!
+                // cc2DViewportLabel is also a kind of 'CV_TYPES::LABEL_2D'!
                 //	{
                 //		cc2DLabel* label = static_cast<cc2DLabel*>(*it);
                 //		bool canMove = false;
@@ -1465,11 +1455,11 @@ bool ccDBRoot::dropMimeData(const QMimeData* data,
                 //			//3 options to allow moving a label:
                 //			if
                 //(item->isAncestorOf(label->getPoint(j).cloud) //label's cloud
-                //is inside sub-tree
+                // is inside sub-tree
                 //				|| newParent ==
-                //label->getPoint(j).cloud //destination is label's cloud
+                // label->getPoint(j).cloud //destination is label's cloud
                 //				||
-                //label->getPoint(j).cloud->isAncestorOf(newParent))
+                // label->getPoint(j).cloud->isAncestorOf(newParent))
                 ////destination is below label's cloud
                 //			{
                 //				canMove = true;
@@ -1480,7 +1470,7 @@ bool ccDBRoot::dropMimeData(const QMimeData* data,
                 //		if (!canMove)
                 //		{
                 //			CVLog::Error("Labels (or group of) can't
-                //leave their parent"); 			return false;
+                // leave their parent"); 			return false;
                 //		}
                 //	}
                 //}

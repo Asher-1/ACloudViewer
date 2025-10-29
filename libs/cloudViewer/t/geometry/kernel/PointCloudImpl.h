@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <atomic>
 #include <vector>
 
@@ -22,7 +24,6 @@
 #include "cloudViewer/t/geometry/kernel/GeometryIndexer.h"
 #include "cloudViewer/t/geometry/kernel/GeometryMacros.h"
 #include "cloudViewer/t/geometry/kernel/PointCloud.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -89,7 +90,8 @@ void UnprojectCPU
 
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
         core::ParallelFor(
-                depth.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+                depth.GetDevice(), n,
+                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                     int64_t y = (workload_idx / cols_strided) * stride;
                     int64_t x = (workload_idx % cols_strided) * stride;
 
@@ -153,7 +155,8 @@ void GetPointMaskWithinAABBCPU
         bool* mask_ptr = mask.GetDataPtr<bool>();
 
         core::ParallelFor(
-                points.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+                points.GetDevice(), n,
+                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                     const scalar_t x = points_ptr[3 * workload_idx + 0];
                     const scalar_t y = points_ptr[3 * workload_idx + 1];
                     const scalar_t z = points_ptr[3 * workload_idx + 2];
@@ -334,8 +337,8 @@ void OrientNormalsTowardsCameraLocationCPU
 
 template <typename scalar_t>
 CLOUDVIEWER_HOST_DEVICE void GetCoordinateSystemOnPlane(const scalar_t* query,
-                                                   scalar_t* u,
-                                                   scalar_t* v) {
+                                                        scalar_t* u,
+                                                        scalar_t* v) {
     // Unless the x and y coords are both close to zero, we can simply take
     // ( -y, x, 0 ) and normalize it. If both x and y are close to zero,
     // then the vector is close to the z-axis, so it's far from colinear to
@@ -396,8 +399,8 @@ CLOUDVIEWER_HOST_DEVICE void HeapSort(scalar_t* arr, int n) {
 
 template <typename scalar_t>
 CLOUDVIEWER_HOST_DEVICE bool IsBoundaryPoints(const scalar_t* angles,
-                                         int counts,
-                                         double angle_threshold) {
+                                              int counts,
+                                              double angle_threshold) {
     scalar_t diff;
     scalar_t max_diff = 0;
     // Compute the maximal angle difference between two consecutive angles.
@@ -439,7 +442,8 @@ void ComputeBoundaryPointsCPU
         scalar_t* angles_ptr = angles.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
-                points.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+                points.GetDevice(), n,
+                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                     scalar_t u[3], v[3];
                     GetCoordinateSystemOnPlane(normals_ptr + 3 * workload_idx,
                                                u, v);
@@ -583,7 +587,8 @@ void EstimateCovariancesUsingHybridSearchCPU
         scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
-                points.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+                points.GetDevice(), n,
+                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                     // NNS [Hybrid Search].
                     const int32_t neighbour_offset = max_nn * workload_idx;
                     // Count of valid correspondences per point.
@@ -631,23 +636,24 @@ void EstimateCovariancesUsingRadiusSearchCPU
         const int32_t* neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
         scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
-        core::ParallelFor(
-                points.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
-                    const int32_t neighbour_offset =
-                            neighbour_counts_ptr[workload_idx];
-                    const int32_t neighbour_count =
-                            (neighbour_counts_ptr[workload_idx + 1] -
-                             neighbour_counts_ptr[workload_idx]);
-                    // Covariance is of shape {3, 3}, so it has an offset
-                    // factor of 9 x workload_idx.
-                    const int32_t covariances_offset = 9 * workload_idx;
+        core::ParallelFor(points.GetDevice(), n,
+                          [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+                              const int32_t neighbour_offset =
+                                      neighbour_counts_ptr[workload_idx];
+                              const int32_t neighbour_count =
+                                      (neighbour_counts_ptr[workload_idx + 1] -
+                                       neighbour_counts_ptr[workload_idx]);
+                              // Covariance is of shape {3, 3}, so it has an
+                              // offset factor of 9 x workload_idx.
+                              const int32_t covariances_offset =
+                                      9 * workload_idx;
 
-                    EstimatePointWiseRobustNormalizedCovarianceKernel(
-                            points_ptr,
-                            neighbour_indices_ptr + neighbour_offset,
-                            neighbour_count,
-                            covariances_ptr + covariances_offset);
-                });
+                              EstimatePointWiseRobustNormalizedCovarianceKernel(
+                                      points_ptr,
+                                      neighbour_indices_ptr + neighbour_offset,
+                                      neighbour_count,
+                                      covariances_ptr + covariances_offset);
+                          });
     });
 
     core::cuda::Synchronize(points.GetDevice());
@@ -689,7 +695,8 @@ void EstimateCovariancesUsingKNNSearchCPU
         auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
-                points.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+                points.GetDevice(), n,
+                [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                     // NNS [KNN Search].
                     const int32_t neighbour_offset = nn_count * workload_idx;
                     // Covariance is of shape {3, 3}, so it has an offset
@@ -708,8 +715,8 @@ void EstimateCovariancesUsingKNNSearchCPU
 
 template <typename scalar_t>
 CLOUDVIEWER_HOST_DEVICE void ComputeEigenvector0(const scalar_t* A,
-                                            const scalar_t eval0,
-                                            scalar_t* eigen_vector0) {
+                                                 const scalar_t eval0,
+                                                 scalar_t* eigen_vector0) {
     scalar_t row0[3] = {A[0] - eval0, A[1], A[2]};
     scalar_t row1[3] = {A[1], A[4] - eval0, A[5]};
     scalar_t row2[3] = {A[2], A[5], A[8] - eval0};
@@ -757,9 +764,9 @@ CLOUDVIEWER_HOST_DEVICE void ComputeEigenvector0(const scalar_t* A,
 
 template <typename scalar_t>
 CLOUDVIEWER_HOST_DEVICE void ComputeEigenvector1(const scalar_t* A,
-                                            const scalar_t* evec0,
-                                            const scalar_t eval1,
-                                            scalar_t* eigen_vector1) {
+                                                 const scalar_t* evec0,
+                                                 const scalar_t eval1,
+                                                 scalar_t* eigen_vector1) {
     scalar_t U[3];
     if (abs(evec0[0]) > abs(evec0[1])) {
         scalar_t inv_length =
@@ -1158,20 +1165,21 @@ void EstimateColorGradientsUsingHybridSearchCPU
         auto neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
         auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
 
-        core::ParallelFor(
-                points.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
-                    // NNS [Hybrid Search].
-                    int32_t neighbour_offset = max_nn * workload_idx;
-                    // Count of valid correspondences per point.
-                    int32_t neighbour_count =
-                            neighbour_counts_ptr[workload_idx];
-                    int32_t idx_offset = 3 * workload_idx;
+        core::ParallelFor(points.GetDevice(), n,
+                          [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+                              // NNS [Hybrid Search].
+                              int32_t neighbour_offset = max_nn * workload_idx;
+                              // Count of valid correspondences per point.
+                              int32_t neighbour_count =
+                                      neighbour_counts_ptr[workload_idx];
+                              int32_t idx_offset = 3 * workload_idx;
 
-                    EstimatePointWiseColorGradientKernel(
-                            points_ptr, normals_ptr, colors_ptr, idx_offset,
-                            neighbour_indices_ptr + neighbour_offset,
-                            neighbour_count, color_gradients_ptr);
-                });
+                              EstimatePointWiseColorGradientKernel(
+                                      points_ptr, normals_ptr, colors_ptr,
+                                      idx_offset,
+                                      neighbour_indices_ptr + neighbour_offset,
+                                      neighbour_count, color_gradients_ptr);
+                          });
     });
 
     core::cuda::Synchronize(points.GetDevice());
@@ -1217,16 +1225,17 @@ void EstimateColorGradientsUsingKNNSearchCPU
         auto neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
         auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
 
-        core::ParallelFor(
-                points.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
-                    int32_t neighbour_offset = max_nn * workload_idx;
-                    int32_t idx_offset = 3 * workload_idx;
+        core::ParallelFor(points.GetDevice(), n,
+                          [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+                              int32_t neighbour_offset = max_nn * workload_idx;
+                              int32_t idx_offset = 3 * workload_idx;
 
-                    EstimatePointWiseColorGradientKernel(
-                            points_ptr, normals_ptr, colors_ptr, idx_offset,
-                            neighbour_indices_ptr + neighbour_offset, nn_count,
-                            color_gradients_ptr);
-                });
+                              EstimatePointWiseColorGradientKernel(
+                                      points_ptr, normals_ptr, colors_ptr,
+                                      idx_offset,
+                                      neighbour_indices_ptr + neighbour_offset,
+                                      nn_count, color_gradients_ptr);
+                          });
     });
 
     core::cuda::Synchronize(points.GetDevice());
@@ -1267,21 +1276,22 @@ void EstimateColorGradientsUsingRadiusSearchCPU
         auto neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
         auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
 
-        core::ParallelFor(
-                points.GetDevice(), n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
-                    int32_t neighbour_offset =
-                            neighbour_counts_ptr[workload_idx];
-                    // Count of valid correspondences per point.
-                    const int32_t neighbour_count =
-                            (neighbour_counts_ptr[workload_idx + 1] -
-                             neighbour_counts_ptr[workload_idx]);
-                    int32_t idx_offset = 3 * workload_idx;
+        core::ParallelFor(points.GetDevice(), n,
+                          [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+                              int32_t neighbour_offset =
+                                      neighbour_counts_ptr[workload_idx];
+                              // Count of valid correspondences per point.
+                              const int32_t neighbour_count =
+                                      (neighbour_counts_ptr[workload_idx + 1] -
+                                       neighbour_counts_ptr[workload_idx]);
+                              int32_t idx_offset = 3 * workload_idx;
 
-                    EstimatePointWiseColorGradientKernel(
-                            points_ptr, normals_ptr, colors_ptr, idx_offset,
-                            neighbour_indices_ptr + neighbour_offset,
-                            neighbour_count, color_gradients_ptr);
-                });
+                              EstimatePointWiseColorGradientKernel(
+                                      points_ptr, normals_ptr, colors_ptr,
+                                      idx_offset,
+                                      neighbour_indices_ptr + neighbour_offset,
+                                      neighbour_count, color_gradients_ptr);
+                          });
     });
 
     core::cuda::Synchronize(points.GetDevice());

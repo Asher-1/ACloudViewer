@@ -7,8 +7,9 @@
 
 #include "cloudViewer/core/CUDAUtils.h"
 
-#include "cloudViewer/Macro.h"
 #include <Logging.h>
+
+#include "cloudViewer/Macro.h"
 
 #ifdef BUILD_CUDA_MODULE
 #include "cloudViewer/core/MemoryManager.h"
@@ -283,7 +284,7 @@ int GetCUDACurrentDeviceTextureAlignment() {
 int GetCUDACurrentWarpSize() {
     int value;
     CLOUDVIEWER_CUDA_CHECK(cudaDeviceGetAttribute(&value, cudaDevAttrWarpSize,
-                                             cuda::GetDevice()));
+                                                  cuda::GetDevice()));
     return value;
 }
 
@@ -304,7 +305,9 @@ size_t GetCUDACurrentTotalMemSize() {
 namespace cloudViewer {
 namespace core {
 
-void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err, const char* file, const int line) {
+void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err,
+                              const char* file,
+                              const int line) {
     if (err != cudaSuccess) {
         utility::LogError("{}:{} CUDA runtime error: {}", file, line,
                           cudaGetErrorString(err));
@@ -312,12 +315,12 @@ void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err, const char* file, const int line)
 }
 
 void __CLOUDVIEWER_GET_LAST_CUDA_ERROR(const char* message,
-                                  const char* file,
-                                  const int line) {
+                                       const char* file,
+                                       const int line) {
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        utility::LogError("{}:{} {}: CLOUDVIEWER_GET_LAST_CUDA_ERROR(): {}", file,
-                          line, message, cudaGetErrorString(err));
+        utility::LogError("{}:{} {}: CLOUDVIEWER_GET_LAST_CUDA_ERROR(): {}",
+                          file, line, message, cudaGetErrorString(err));
     }
 }
 

@@ -1,20 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                               cloudViewer                              #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <DgmOctree.h>
 
@@ -31,8 +20,8 @@
 #include <set>
 
 // DGM: tests in progress
-//#define COMPUTE_NN_SEARCH_STATISTICS
-//#define ADAPTATIVE_BINARY_SEARCH
+// #define COMPUTE_NN_SEARCH_STATISTICS
+// #define ADAPTATIVE_BINARY_SEARCH
 
 #ifdef CV_CORE_LIB_USES_QT_CONCURRENT
 #ifndef CV_DEBUG
@@ -2613,7 +2602,7 @@ int DgmOctree::findNeighborsInASphereStartingFromCell(
                     // if the distance is inferior to the sphere radius...
                     if (p->squareDistd <= squareRadius) {
                         //... we had it to the 'eligible points' part of the
-                        //container
+                        // container
                         nNSS.pointsInNeighbourhood[numberOfEligiblePoints++] =
                                 *p;
                     }

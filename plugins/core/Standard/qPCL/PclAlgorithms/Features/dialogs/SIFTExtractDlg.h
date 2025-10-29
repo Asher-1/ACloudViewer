@@ -1,38 +1,23 @@
-//##########################################################################
-//#                                                                        #
-//#                       CLOUDVIEWER PLUGIN: qPCL                         #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                         COPYRIGHT: DAHAI LU                         #
-//#                                                                        #
-//##########################################################################
-//
-#ifndef Q_PCL_PLUGIN_SIFT_DLG_HEADER
-#define Q_PCL_PLUGIN_SIFT_DLG_HEADER
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include <ui_SIFTExtractDlg.h>
 
-//Qt
+// Qt
 #include <QDialog>
 
-//system
+// system
 #include <vector>
 
-class SIFTExtractDlg : public QDialog, public Ui::SIFTExtractDlg
-{
+class SIFTExtractDlg : public QDialog, public Ui::SIFTExtractDlg {
 public:
     explicit SIFTExtractDlg(QWidget* parent = nullptr);
 
-	void updateComboBox(const std::vector<std::string>& fields);
-
+    void updateComboBox(const std::vector<std::string>& fields);
 };
-
-#endif //Q_PCL_PLUGIN_SIFT_DLG_HEADER

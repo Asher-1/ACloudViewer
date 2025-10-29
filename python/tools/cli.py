@@ -53,6 +53,7 @@ def _get_runnable_examples_dict():
     examples_dict = _get_all_examples_dict()
     categories_to_remove = [
         "benchmark",
+        "jupyter",
         "reconstruction_system",
         "t_reconstruction_system",
     ]
@@ -226,7 +227,7 @@ def main():
     print(f"*********************************************************\n"
           f"* CloudViewer: A Modern Library for 3D Data Processing  *\n"
           f"*                                                       *\n"
-          f"* Version {cv3d.__version__: <22}                       *\n"
+          f"* Version {cv3d.__version__: <23}                       *\n"
           f"* Docs    https://www.cloudViewer.org/docs              *\n"
           f"* Code    https://github.com/Asher-1/ACloudViewer       *\n"
           f"*********************************************************")

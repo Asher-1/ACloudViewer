@@ -1,37 +1,39 @@
-#ifndef FILEREADERUTILS_H
-#define FILEREADERUTILS_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include <QObject>
-#include <QRunnable>
-#include <QMap>
+#pragma once
 
 #include <vtkDataObject.h>
-#include <vtkGenericDataObjectReader.h>
-#include <vtkSTLReader.h>
-#include <vtkOBJReader.h>
-#include <vtkLSDynaReader.h>
 #include <vtkFLUENTReader.h>
+#include <vtkGenericDataObjectReader.h>
+#include <vtkLSDynaReader.h>
 #include <vtkMultiBlockDataSet.h>
-#include <vtkPLYReader.h>
+#include <vtkOBJReader.h>
 #include <vtkPDBReader.h>
+#include <vtkPLYReader.h>
+#include <vtkSTLReader.h>
+
+#include <QMap>
+#include <QObject>
+#include <QRunnable>
 
 #include "../qPCL.h"
 #include "vtkutils.h"
 
 class vtkDataArray;
 
-namespace VtkUtils
-{
+namespace VtkUtils {
 
 template <class T, class P = vtkDataObject>
-class ReaderTempl
-{
+class ReaderTempl {
 public:
-//    virtual void run() = 0;
-    virtual P* dataObject() const
-    {
-        if (m_reader)
-            return m_reader->GetOutput();
+    //    virtual void run() = 0;
+    virtual P* dataObject() const {
+        if (m_reader) return m_reader->GetOutput();
         return nullptr;
     }
 
@@ -42,8 +44,8 @@ protected:
     P* m_dataObject = nullptr;
 };
 
-class QPCL_ENGINE_LIB_API AbstractFileReader : public QObject, public QRunnable
-{
+class QPCL_ENGINE_LIB_API AbstractFileReader : public QObject,
+                                               public QRunnable {
     Q_OBJECT
 public:
     explicit AbstractFileReader(QObject* parent = nullptr);
@@ -62,8 +64,9 @@ protected:
     QString m_title;
 };
 
-class QPCL_ENGINE_LIB_API VtkFileReader : public AbstractFileReader, public ReaderTempl<vtkGenericDataObjectReader>
-{
+class QPCL_ENGINE_LIB_API VtkFileReader
+    : public AbstractFileReader,
+      public ReaderTempl<vtkGenericDataObjectReader> {
     Q_OBJECT
 public:
     explicit VtkFileReader(QObject* parent = nullptr);
@@ -71,18 +74,17 @@ public:
     void run();
 };
 
-class QPCL_ENGINE_LIB_API StlFileReader : public AbstractFileReader, public ReaderTempl<vtkSTLReader>
-{
+class QPCL_ENGINE_LIB_API StlFileReader : public AbstractFileReader,
+                                          public ReaderTempl<vtkSTLReader> {
     Q_OBJECT
 public:
     explicit StlFileReader(QObject* parent = nullptr);
 
     void run();
-
 };
 
-class QPCL_ENGINE_LIB_API ObjFileReader : public AbstractFileReader, public ReaderTempl<vtkOBJReader>
-{
+class QPCL_ENGINE_LIB_API ObjFileReader : public AbstractFileReader,
+                                          public ReaderTempl<vtkOBJReader> {
     Q_OBJECT
 public:
     explicit ObjFileReader(QObject* parent = nullptr);
@@ -90,8 +92,9 @@ public:
     void run();
 };
 
-class QPCL_ENGINE_LIB_API DynaFileReader : public AbstractFileReader, public ReaderTempl<vtkLSDynaReader, vtkMultiBlockDataSet>
-{
+class QPCL_ENGINE_LIB_API DynaFileReader
+    : public AbstractFileReader,
+      public ReaderTempl<vtkLSDynaReader, vtkMultiBlockDataSet> {
     Q_OBJECT
 public:
     explicit DynaFileReader(QObject* parent = nullptr);
@@ -99,8 +102,9 @@ public:
     void run();
 };
 
-class QPCL_ENGINE_LIB_API NastranFileReader : public AbstractFileReader, public ReaderTempl<vtkGenericDataObjectReader>
-{
+class QPCL_ENGINE_LIB_API NastranFileReader
+    : public AbstractFileReader,
+      public ReaderTempl<vtkGenericDataObjectReader> {
     Q_OBJECT
 public:
     explicit NastranFileReader(QObject* parent = nullptr);
@@ -108,12 +112,13 @@ public:
     void run();
 
 protected:
-    std::vector<int>  m_matList;
-    std::map<int,int> m_uniqMatIds;
+    std::vector<int> m_matList;
+    std::map<int, int> m_uniqMatIds;
 };
 
-class QPCL_ENGINE_LIB_API FluentFileReader : public AbstractFileReader, public ReaderTempl<vtkFLUENTReader, vtkMultiBlockDataSet>
-{
+class QPCL_ENGINE_LIB_API FluentFileReader
+    : public AbstractFileReader,
+      public ReaderTempl<vtkFLUENTReader, vtkMultiBlockDataSet> {
     Q_OBJECT
 public:
     explicit FluentFileReader(QObject* parent = nullptr);
@@ -124,8 +129,9 @@ protected:
     QMap<QString, vtkDataArray*> m_dataMap;
 };
 
-class QPCL_ENGINE_LIB_API AnsysFileReader : public AbstractFileReader, public ReaderTempl<vtkGenericDataObjectReader>
-{
+class QPCL_ENGINE_LIB_API AnsysFileReader
+    : public AbstractFileReader,
+      public ReaderTempl<vtkGenericDataObjectReader> {
     Q_OBJECT
 public:
     explicit AnsysFileReader(QObject* parent = nullptr);
@@ -133,17 +139,20 @@ public:
     void run();
 
 protected:
-    void interpretFormatString(char *line, int &fieldStart,
-        int &fieldWidth, int &expectedLineLength) const;
-    void interpretFormatStringEx(char *line, int &firstFieldWidth, int &fieldStart,
-                                   int &fieldWidth, int &expectedLineLength) const;
-    void interpret(const char *fmt, int &fieldWidth,
-        int &linelen) const;
-
+    void interpretFormatString(char* line,
+                               int& fieldStart,
+                               int& fieldWidth,
+                               int& expectedLineLength) const;
+    void interpretFormatStringEx(char* line,
+                                 int& firstFieldWidth,
+                                 int& fieldStart,
+                                 int& fieldWidth,
+                                 int& expectedLineLength) const;
+    void interpret(const char* fmt, int& fieldWidth, int& linelen) const;
 };
 
-class QPCL_ENGINE_LIB_API PlyFileReader : public AbstractFileReader, public ReaderTempl<vtkPLYReader>
-{
+class QPCL_ENGINE_LIB_API PlyFileReader : public AbstractFileReader,
+                                          public ReaderTempl<vtkPLYReader> {
     Q_OBJECT
 public:
     explicit PlyFileReader(QObject* parent = nullptr);
@@ -151,8 +160,8 @@ public:
     void run();
 };
 
-class QPCL_ENGINE_LIB_API PdbFileReader : public AbstractFileReader, public ReaderTempl<vtkPDBReader>
-{
+class QPCL_ENGINE_LIB_API PdbFileReader : public AbstractFileReader,
+                                          public ReaderTempl<vtkPDBReader> {
     Q_OBJECT
 public:
     explicit PdbFileReader(QObject* parent = nullptr);
@@ -160,6 +169,4 @@ public:
     void run();
 };
 
-} // namespace VtkUtils
-
-#endif // FILEREADERUTILS_H
+}  // namespace VtkUtils

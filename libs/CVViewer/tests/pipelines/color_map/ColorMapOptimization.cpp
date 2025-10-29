@@ -5,10 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "camera/PinholeCameraTrajectory.h"
 #include <Image.h>
 #include <RGBDImage.h>
 #include <ecvMesh.h>
+
+#include "camera/PinholeCameraTrajectory.h"
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

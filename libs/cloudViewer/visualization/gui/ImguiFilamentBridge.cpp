@@ -1,21 +1,3 @@
-// Altered from Filament's ImGuiHelper.cpp
-// Filament code is from somewhere close to v1.4.3 and is:
-/*
- * Copyright (C) 2018 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-// CloudViewer alterations are:
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
@@ -43,6 +25,7 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
+#include <FileSystem.h>
 #include <fcntl.h>
 #include <imgui.h>
 
@@ -51,7 +34,6 @@
 #include <map>
 #include <vector>
 
-#include <FileSystem.h>
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Color.h"
 #include "visualization/gui/Gui.h"
@@ -88,7 +70,7 @@ static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
 
 class MaterialPool {
 public:
-    MaterialPool(){};
+    MaterialPool() {};
 
     MaterialPool(filament::Engine* engine,
                  filament::Material* material_template) {

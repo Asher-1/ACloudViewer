@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <Logging.h>
+
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/SizeVector.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

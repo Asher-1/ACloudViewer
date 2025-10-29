@@ -10,14 +10,12 @@
 #include "visualization/shader/ShaderWrapper.h"
 
 namespace cloudViewer {
-	namespace geometry
-	{
-		class Image;
-	}
+namespace geometry {
+class Image;
+}
 namespace visualization {
 
 namespace glsl {
-
 
 class ImageShader : public ShaderWrapper {
 public:
@@ -62,7 +60,6 @@ protected:
 
 class ImageShaderForImage : public ImageShader {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     ImageShaderForImage() : ImageShader("ImageShaderForImage") {}

@@ -13,23 +13,23 @@
 
 #pragma once
 
-#include "cloudViewer/core/Device.h"
 #include <Logging.h>
+
+#include "cloudViewer/core/Device.h"
 
 #ifdef BUILD_CUDA_MODULE
 
+#include <Optional.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 
 #include <memory>
 #include <vector>
 
-#include <Optional.h>
-
 #define CLOUDVIEWER_FORCE_INLINE __forceinline__
 #define CLOUDVIEWER_HOST_DEVICE __host__ __device__
 #define CLOUDVIEWER_DEVICE __device__
-#define CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
+#define CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(type)                       \
     static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
                   #type " must be a __host__ __device__ lambda")
 #define CLOUDVIEWER_CUDA_CHECK(err) \
@@ -47,7 +47,7 @@
 #define CLOUDVIEWER_CUDA_CHECK(err)
 #define CLOUDVIEWER_GET_LAST_CUDA_ERROR(message)
 #define CUDA_CALL(cuda_function, ...) \
-    cloudViewer::utility::LogError(        \
+    cloudViewer::utility::LogError(   \
             "Not built with CUDA, cannot call " #cuda_function);
 
 #endif  // #ifdef BUILD_CUDA_MODULE
@@ -224,8 +224,8 @@ public:
 
 namespace cuda {
 
-/// Returns the number of available CUDA devices. Returns 0 if CloudViewer is not
-/// compiled with CUDA support.
+/// Returns the number of available CUDA devices. Returns 0 if CloudViewer is
+/// not compiled with CUDA support.
 int DeviceCount();
 
 /// Returns true if CloudViewer is compiled with CUDA support and at least one
@@ -239,10 +239,9 @@ void ReleaseCache();
 /// compiled with CUDA this function has no effect.
 void Synchronize();
 
-/// Calls cudaDeviceSynchronize() for the specified device. If CloudViewer is not
-/// compiled with CUDA or if \p device is not a CUDA device, this function has
-/// no effect.
-/// \param device The device to be synchronized.
+/// Calls cudaDeviceSynchronize() for the specified device. If CloudViewer is
+/// not compiled with CUDA or if \p device is not a CUDA device, this function
+/// has no effect. \param device The device to be synchronized.
 void Synchronize(const Device& device);
 
 /// Checks if the CUDA device-ID is available and throws error if not. The CUDA
@@ -280,11 +279,13 @@ cudaStream_t GetDefaultStream();
 namespace cloudViewer {
 namespace core {
 
-void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err, const char* file, const int line);
+void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err,
+                              const char* file,
+                              const int line);
 
 void __CLOUDVIEWER_GET_LAST_CUDA_ERROR(const char* message,
-                                  const char* file,
-                                  const int line);
+                                       const char* file,
+                                       const int line);
 
 }  // namespace core
 }  // namespace cloudViewer

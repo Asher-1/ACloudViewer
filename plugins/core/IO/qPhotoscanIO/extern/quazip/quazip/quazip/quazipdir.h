@@ -27,33 +27,35 @@ see quazip/(un)zip.h files for details. Basically it's the zlib license.
 
 class QuaZipDirPrivate;
 
-#include "quazip.h"
-#include "quazipfileinfo.h"
 #include <QDir>
 #include <QList>
 #include <QSharedDataPointer>
 
+#include "quazip.h"
+#include "quazipfileinfo.h"
+
 /// Provides ZIP archive navigation.
 /**
-* This class is modelled after QDir, and is designed to provide similar
-* features for ZIP archives.
-*
-* The only significant difference from QDir is that the root path is not
-* '/', but an empty string since that's how the file paths are stored in
-* the archive. However, QuaZipDir understands the paths starting with
-* '/'. It is important in a few places:
-*
-* - In the cd() function.
-* - In the constructor.
-* - In the exists() function.
-* - In the relativePath() function.
-*
-* Note that since ZIP uses '/' on all platforms, the '\' separator is
-* not supported.
-*/
+ * This class is modelled after QDir, and is designed to provide similar
+ * features for ZIP archives.
+ *
+ * The only significant difference from QDir is that the root path is not
+ * '/', but an empty string since that's how the file paths are stored in
+ * the archive. However, QuaZipDir understands the paths starting with
+ * '/'. It is important in a few places:
+ *
+ * - In the cd() function.
+ * - In the constructor.
+ * - In the exists() function.
+ * - In the relativePath() function.
+ *
+ * Note that since ZIP uses '/' on all platforms, the '\' separator is
+ * not supported.
+ */
 class QUAZIP_EXPORT QuaZipDir {
 private:
     QSharedDataPointer<QuaZipDirPrivate> d;
+
 public:
     /// The copy constructor.
     QuaZipDir(const QuaZipDir &that);
@@ -72,27 +74,27 @@ public:
       \return \c true if either this and \a that use different QuaZip
       instances or if they point to different directories.
       */
-    inline bool operator!=(const QuaZipDir &that) {return !operator==(that);}
+    inline bool operator!=(const QuaZipDir &that) { return !operator==(that); }
     /// operator==
     /**
       \return \c true if both this and \a that use the same QuaZip
       instance and point to the same directory.
       */
-    QuaZipDir& operator=(const QuaZipDir &that);
+    QuaZipDir &operator=(const QuaZipDir &that);
     /// Returns the name of the entry at the specified position.
     QString operator[](int pos) const;
     /// Returns the current case sensitivity mode.
     QuaZip::CaseSensitivity caseSensitivity() const;
     /// Changes the 'current' directory.
     /**
-      * If the path starts with '/', it is interpreted as an absolute
-      * path from the root of the archive. Otherwise, it is interpreted
-      * as a path relative to the current directory as was set by the
-      * previous cd() or the constructor.
-      * 
-      * Note that the subsequent path() call will not return a path
-      * starting with '/' in all cases.
-      */
+     * If the path starts with '/', it is interpreted as an absolute
+     * path from the root of the archive. Otherwise, it is interpreted
+     * as a path relative to the current directory as was set by the
+     * previous cd() or the constructor.
+     *
+     * Note that the subsequent path() call will not return a path
+     * starting with '/' in all cases.
+     */
     bool cd(const QString &dirName);
     /// Goes up.
     bool cdUp();
@@ -111,17 +113,19 @@ public:
       accepted.
       \param sort Sorting mode.
       */
-    QList<QuaZipFileInfo> entryInfoList(const QStringList &nameFilters,
-        QDir::Filters filters = QDir::NoFilter,
-        QDir::SortFlags sort = QDir::NoSort) const;
+    QList<QuaZipFileInfo> entryInfoList(
+            const QStringList &nameFilters,
+            QDir::Filters filters = QDir::NoFilter,
+            QDir::SortFlags sort = QDir::NoSort) const;
     /// Returns the list of the entries in the directory.
     /**
       \overload
 
       The same as entryInfoList(QStringList(), filters, sort).
       */
-    QList<QuaZipFileInfo> entryInfoList(QDir::Filters filters = QDir::NoFilter,
-        QDir::SortFlags sort = QDir::NoSort) const;
+    QList<QuaZipFileInfo> entryInfoList(
+            QDir::Filters filters = QDir::NoFilter,
+            QDir::SortFlags sort = QDir::NoSort) const;
     /// Returns the list of the entries in the directory with zip64 support.
     /**
       \param nameFilters The list of file patterns to list, uses the same
@@ -130,25 +134,27 @@ public:
       accepted.
       \param sort Sorting mode.
       */
-    QList<QuaZipFileInfo64> entryInfoList64(const QStringList &nameFilters,
-        QDir::Filters filters = QDir::NoFilter,
-        QDir::SortFlags sort = QDir::NoSort) const;
+    QList<QuaZipFileInfo64> entryInfoList64(
+            const QStringList &nameFilters,
+            QDir::Filters filters = QDir::NoFilter,
+            QDir::SortFlags sort = QDir::NoSort) const;
     /// Returns the list of the entries in the directory with zip64 support.
     /**
       \overload
 
       The same as entryInfoList64(QStringList(), filters, sort).
       */
-    QList<QuaZipFileInfo64> entryInfoList64(QDir::Filters filters = QDir::NoFilter,
-        QDir::SortFlags sort = QDir::NoSort) const;
+    QList<QuaZipFileInfo64> entryInfoList64(
+            QDir::Filters filters = QDir::NoFilter,
+            QDir::SortFlags sort = QDir::NoSort) const;
     /// Returns the list of the entry names in the directory.
     /**
       The same as entryInfoList(nameFilters, filters, sort), but only
       returns entry names.
       */
     QStringList entryList(const QStringList &nameFilters,
-        QDir::Filters filters = QDir::NoFilter,
-        QDir::SortFlags sort = QDir::NoSort) const;
+                          QDir::Filters filters = QDir::NoFilter,
+                          QDir::SortFlags sort = QDir::NoSort) const;
     /// Returns the list of the entry names in the directory.
     /**
       \overload
@@ -156,7 +162,7 @@ public:
       The same as entryList(QStringList(), filters, sort).
       */
     QStringList entryList(QDir::Filters filters = QDir::NoFilter,
-        QDir::SortFlags sort = QDir::NoSort) const;
+                          QDir::SortFlags sort = QDir::NoSort) const;
     /// Returns \c true if the entry with the specified name exists.
     /**
       The &quot;..&quot; is considered to exist if the current directory
@@ -220,4 +226,4 @@ public:
     QDir::SortFlags sorting() const;
 };
 
-#endif // QUAZIP_QUAZIPDIR_H
+#endif  // QUAZIP_QUAZIPDIR_H

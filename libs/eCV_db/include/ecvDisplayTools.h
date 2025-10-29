@@ -1,22 +1,11 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_DISPLAY_TOOLS_HEADER
-#define ECV_DISPLAY_TOOLS_HEADER
+#pragma once
 
 // Local
 #include "ecvGLMatrix.h"
@@ -26,13 +15,13 @@
 #include "ecvViewportParameters.h"
 
 // QT
+#include <QApplication>  // Added for QApplication::primaryScreen()
 #include <QElapsedTimer>
 #include <QMainWindow>
 #include <QObject>
 #include <QRect>
+#include <QScreen>  // Added for QScreen
 #include <QTimer>
-#include <QApplication> // Added for QApplication::primaryScreen()
-#include <QScreen> // Added for QScreen
 
 // System
 #include <list>
@@ -245,7 +234,7 @@ public:
         int margin;
         int iconSize;
         QPoint topCorner;
-        qreal  pixelDeviceRatio;
+        qreal pixelDeviceRatio;
 
         explicit HotZone(QWidget* win)
             : textHeight(0),
@@ -258,16 +247,13 @@ public:
               ,
               iconSize(16)  // 16
               ,
-              topCorner(0, 0)
-              , 
+              topCorner(0, 0),
               pixelDeviceRatio(1.0) {
-
             color[0] = ecvColor::defaultLabelBkgColor.r;
             color[1] = ecvColor::defaultLabelBkgColor.g;
             color[2] = ecvColor::defaultLabelBkgColor.b;
 
             updateInternalVariables(win);
-
         }
 
         void updateInternalVariables(QWidget* win) {
@@ -281,7 +267,8 @@ public:
                     font.setPointSize(12 * pixelDeviceRatio);
                 }
                 CVLog::Print(QString("pixelDeviceRatio: %1 and fontSize %2")
-                         .arg(pixelDeviceRatio).arg(fontSize));
+                                     .arg(pixelDeviceRatio)
+                                     .arg(fontSize));
                 margin *= pixelDeviceRatio;
                 iconSize *= pixelDeviceRatio;
                 font.setBold(true);
@@ -306,7 +293,8 @@ public:
                     std::max(psi_labelRect.height(), bbv_labelRect.height());
             textHeight = std::max(lsi_labelRect.height(), textHeight);
             textHeight = std::max(fs_labelRect.height(), textHeight);
-            textHeight = (3 * textHeight) / 4;  // --> factor: to recenter the baseline a little
+            textHeight = (3 * textHeight) /
+                         4;  // --> factor: to recenter the baseline a little
             yTextBottomLineShift = (iconSize / 2) + (textHeight / 2);
         }
 
@@ -323,8 +311,8 @@ public:
                 totalWidth = std::max(totalWidth, fs_totalWidth);
 
 #ifdef Q_OS_MAC
-                // fix the hot zone width on mac
-                totalWidth = totalWidth + 3 * (margin + iconSize);
+            // fix the hot zone width on mac
+            totalWidth = totalWidth + 3 * (margin + iconSize);
 #endif
             QPoint minAreaCorner(
                     0, std::min(0, yTextBottomLineShift - textHeight));
@@ -365,8 +353,7 @@ public:
         TheInstance()->displayText(CONTEXT);
     }
     inline virtual void displayText(
-            const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */
-    }
+            const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
 
     //! Displays a string at a given 3D position
     /** This method should be called solely during 3D pass rendering (see
@@ -390,8 +377,7 @@ public:  //! Draws the main 3D layer
         TheInstance()->draw(context, obj);
     }
     inline virtual void draw(const CC_DRAW_CONTEXT& context,
-                             const ccHObject* obj) { /* do nothing */
-    }
+                             const ccHObject* obj) { /* do nothing */ }
 
     inline static void UpdateMeshTextures(const CC_DRAW_CONTEXT& context,
                                           const ccGenericMesh* mesh) {
@@ -399,16 +385,14 @@ public:  //! Draws the main 3D layer
     }
     inline virtual void updateMeshTextures(
             const CC_DRAW_CONTEXT& context,
-            const ccGenericMesh* mesh) { /* do nothing */
-    }
+            const ccGenericMesh* mesh) { /* do nothing */ }
 
     inline static void DrawBBox(const CC_DRAW_CONTEXT& context,
                                 const ccBBox* bbox) {
         TheInstance()->drawBBox(context, bbox);
     }
     inline virtual void drawBBox(const CC_DRAW_CONTEXT& context,
-                                 const ccBBox* bbox) { /* do nothing */
-    }
+                                 const ccBBox* bbox) { /* do nothing */ }
 
     inline static void DrawOrientedBBox(const CC_DRAW_CONTEXT& context,
                                         const ecvOrientedBBox* obb) {
@@ -416,26 +400,23 @@ public:  //! Draws the main 3D layer
     }
     inline virtual void drawOrientedBBox(
             const CC_DRAW_CONTEXT& context,
-            const ecvOrientedBBox* obb) { /* do nothing */
-    }
+            const ecvOrientedBBox* obb) { /* do nothing */ }
 
     static void RemoveBB(CC_DRAW_CONTEXT context);
     static void RemoveBB(const QString& viewId);
     static void ChangeEntityProperties(PROPERTY_PARAM& propertyParam,
                                        bool autoUpdate = true);
     inline virtual void changeEntityProperties(
-            PROPERTY_PARAM& propertyParam) { /* do nothing */
-    }
+            PROPERTY_PARAM& propertyParam) { /* do nothing */ }
     static void DrawWidgets(const WIDGETS_PARAMETER& param,
                             bool update = false);
     inline virtual void drawWidgets(
-            const WIDGETS_PARAMETER& param) { /* do nothing */
-    }
+            const WIDGETS_PARAMETER& param) { /* do nothing */ }
     static void RemoveWidgets(const WIDGETS_PARAMETER& param,
-        bool update = false);
+                              bool update = false);
     static void RemoveAllWidgets(bool update = true);
     static void Remove3DLabel(const QString& view_id);
-    
+
     inline static void DrawCoordinates(double scale = 1.0,
                                        const std::string& id = "reference",
                                        int viewport = 0) {
@@ -444,8 +425,7 @@ public:  //! Draws the main 3D layer
 
     inline virtual void drawCoordinates(double scale = 1.0,
                                         const std::string& id = "reference",
-                                        int viewport = 0) { /* do nothing */
-    }
+                                        int viewport = 0) { /* do nothing */ }
 
     /// Rotate camera with axis given about angle.
     ///
@@ -464,16 +444,14 @@ public:  //! Draws the main 3D layer
     inline virtual void rotateWithAxis(const CCVector2i& pos,
                                        const CCVector3d& axis,
                                        double angle,
-                                       int viewport = 0) { /* do nothing */
-    }
+                                       int viewport = 0) { /* do nothing */ }
 
     inline static void ToggleOrientationMarker(bool state = true) {
         TheInstance()->toggleOrientationMarker(state);
         UpdateScreen();
     }
     inline virtual void toggleOrientationMarker(
-            bool state = true) { /* do nothing */
-    }
+            bool state = true) { /* do nothing */ }
 
     inline static bool OrientationMarkerShown() {
         return TheInstance()->orientationMarkerShown();
@@ -568,14 +546,12 @@ public:  // main interface
         TheInstance()->transformCameraView(viewMat);
     }
     inline virtual void transformCameraView(
-            const ccGLMatrixd& viewMat) { /* do nothing */
-    }
+            const ccGLMatrixd& viewMat) { /* do nothing */ }
     inline static void TransformCameraProjection(const ccGLMatrixd& projMat) {
         TheInstance()->transformCameraProjection(projMat);
     }
     inline virtual void transformCameraProjection(
-            const ccGLMatrixd& projMat) { /* do nothing */
-    }
+            const ccGLMatrixd& projMat) { /* do nothing */ }
 
     static inline int GetDevicePixelRatio() {
         // return TheInstance()->getDevicePixelRatio();
@@ -588,48 +564,48 @@ public:  // main interface
         if (!win) {
             return baseFontSize;
         }
-        
+
         int dpiScale = win->devicePixelRatio();
         QScreen* screen = QApplication::primaryScreen();
         if (!screen) {
             return baseFontSize;
         }
-        
+
         // 获取屏幕分辨率信息
         QSize screenSize = screen->size();
         int screenWidth = screenSize.width();
         int screenHeight = screenSize.height();
         int screenDPI = screen->physicalDotsPerInch();
-        
+
         // 平台特定的基础字体大小调整
         int platformBaseSize = baseFontSize;
-        #ifdef Q_OS_MAC
-            // macOS: 默认字体稍大，但需要考虑Retina显示器的过度放大
-            platformBaseSize = baseFontSize;
-            if (dpiScale > 1) {
-                // Retina显示器：使用较小的字体避免过度放大
-                platformBaseSize = std::max(8, baseFontSize - (dpiScale - 1) * 2);
-            }
-        #elif defined(Q_OS_WIN)
-            // Windows: 根据DPI调整字体大小
-            if (screenDPI > 120) {
-                // 高DPI显示器
-                platformBaseSize = std::max(8, baseFontSize - 1);
-            } else if (screenDPI < 96) {
-                // 低DPI显示器
-                platformBaseSize = baseFontSize + 1;
-            }
-        #elif defined(Q_OS_LINUX)
-            // Linux: 根据屏幕分辨率调整
-            if (screenWidth >= 1920 && screenHeight >= 1080) {
-                // 高分辨率显示器
-                platformBaseSize = std::max(8, baseFontSize - 1);
-            } else if (screenWidth < 1366) {
-                // 低分辨率显示器
-                platformBaseSize = baseFontSize + 1;
-            }
-        #endif
-        
+#ifdef Q_OS_MAC
+        // macOS: 默认字体稍大，但需要考虑Retina显示器的过度放大
+        platformBaseSize = baseFontSize;
+        if (dpiScale > 1) {
+            // Retina显示器：使用较小的字体避免过度放大
+            platformBaseSize = std::max(8, baseFontSize - (dpiScale - 1) * 2);
+        }
+#elif defined(Q_OS_WIN)
+        // Windows: 根据DPI调整字体大小
+        if (screenDPI > 120) {
+            // 高DPI显示器
+            platformBaseSize = std::max(8, baseFontSize - 1);
+        } else if (screenDPI < 96) {
+            // 低DPI显示器
+            platformBaseSize = baseFontSize + 1;
+        }
+#elif defined(Q_OS_LINUX)
+        // Linux: 根据屏幕分辨率调整
+        if (screenWidth >= 1920 && screenHeight >= 1080) {
+            // 高分辨率显示器
+            platformBaseSize = std::max(8, baseFontSize - 1);
+        } else if (screenWidth < 1366) {
+            // 低分辨率显示器
+            platformBaseSize = baseFontSize + 1;
+        }
+#endif
+
         // 分辨率特定的调整
         int resolutionFactor = 1;
         if (screenWidth >= 2560 && screenHeight >= 1440) {
@@ -642,13 +618,13 @@ public:  // main interface
             // 低分辨率
             resolutionFactor = 1;
         }
-        
+
         // 最终字体大小计算
         int finalSize = platformBaseSize + resolutionFactor;
-        
+
         // 确保字体大小在合理范围内
         finalSize = std::max(6, std::min(24, finalSize));
-        
+
         return finalSize;
     }
 
@@ -658,51 +634,51 @@ public:  // main interface
         if (!win) {
             return 1.0;
         }
-        
+
         int dpiScale = win->devicePixelRatio();
         QScreen* screen = QApplication::primaryScreen();
         if (!screen) {
             return static_cast<double>(dpiScale);
         }
-        
+
         // 获取屏幕信息
         QSize screenSize = screen->size();
         int screenWidth = screenSize.width();
         int screenHeight = screenSize.height();
         int screenDPI = screen->physicalDotsPerInch();
-        
+
         // 平台特定的DPI缩放调整
         double adjustedScale = static_cast<double>(dpiScale);
-        
-        #ifdef Q_OS_MAC
-            // macOS: Retina显示器需要特殊处理
-            if (dpiScale > 1) {
-                // 对于UI元素，使用较小的缩放以避免过度放大
-                adjustedScale = 1.0 + (dpiScale - 1.0) * 0.5;
-            }
-        #elif defined(Q_OS_WIN)
-            // Windows: 根据DPI设置调整
-            if (screenDPI > 120) {
-                // 高DPI显示器，适当减小缩放
-                adjustedScale = std::min(adjustedScale, 1.5);
-            } else if (screenDPI < 96) {
-                // 低DPI显示器，适当增加缩放
-                adjustedScale = std::max(adjustedScale, 1.0);
-            }
-        #elif defined(Q_OS_LINUX)
-            // Linux: 根据分辨率调整
-            if (screenWidth >= 2560 && screenHeight >= 1440) {
-                // 超高分辨率，减小缩放
-                adjustedScale = std::min(adjustedScale, 1.3);
-            } else if (screenWidth < 1366) {
-                // 低分辨率，增加缩放
-                adjustedScale = std::max(adjustedScale, 1.0);
-            }
-        #endif
-        
+
+#ifdef Q_OS_MAC
+        // macOS: Retina显示器需要特殊处理
+        if (dpiScale > 1) {
+            // 对于UI元素，使用较小的缩放以避免过度放大
+            adjustedScale = 1.0 + (dpiScale - 1.0) * 0.5;
+        }
+#elif defined(Q_OS_WIN)
+        // Windows: 根据DPI设置调整
+        if (screenDPI > 120) {
+            // 高DPI显示器，适当减小缩放
+            adjustedScale = std::min(adjustedScale, 1.5);
+        } else if (screenDPI < 96) {
+            // 低DPI显示器，适当增加缩放
+            adjustedScale = std::max(adjustedScale, 1.0);
+        }
+#elif defined(Q_OS_LINUX)
+        // Linux: 根据分辨率调整
+        if (screenWidth >= 2560 && screenHeight >= 1440) {
+            // 超高分辨率，减小缩放
+            adjustedScale = std::min(adjustedScale, 1.3);
+        } else if (screenWidth < 1366) {
+            // 低分辨率，增加缩放
+            adjustedScale = std::max(adjustedScale, 1.0);
+        }
+#endif
+
         // 确保缩放在合理范围内
         adjustedScale = std::max(0.5, std::min(2.0, adjustedScale));
-        
+
         return adjustedScale;
     }
 
@@ -725,14 +701,12 @@ public:  // main interface
     inline static void SetRenderWindowSize(int xw, int yw) {
         TheInstance()->setRenderWindowSize(xw, yw);
     }
-    inline virtual void setRenderWindowSize(int xw, int yw) { /* do nothing */
-    }
+    inline virtual void setRenderWindowSize(int xw, int yw) { /* do nothing */ }
 
     inline static void FullScreen(bool state) {
         TheInstance()->fullScreen(state);
     }
-    inline virtual void fullScreen(bool state) { /* do nothing */
-    }
+    inline virtual void fullScreen(bool state) { /* do nothing */ }
 
     static void ZoomCamera(double zoomFactor, int viewport = 0);
     inline virtual void zoomCamera(double zoomFactor, int viewport = 0) {}
@@ -748,34 +722,29 @@ public:  // main interface
         TheInstance()->setCameraFocalDistance(focal_distance, viewport);
     }
     inline virtual void setCameraFocalDistance(
-            double focal_distance, int viewport = 0) { /* do nothing */
-    }
+            double focal_distance, int viewport = 0) { /* do nothing */ }
 
     inline static void GetCameraPos(double* pos, int viewport = 0) {
         TheInstance()->getCameraPos(pos, viewport);
     }
     inline virtual void getCameraPos(double* pos,
-                                     int viewport = 0) { /* do nothing */
-    }
+                                     int viewport = 0) { /* do nothing */ }
     inline static void GetCameraFocal(double* focal, int viewport = 0) {
         TheInstance()->getCameraFocal(focal, viewport);
     }
     inline virtual void getCameraFocal(double* focal,
-                                       int viewport = 0) { /* do nothing */
-    }
+                                       int viewport = 0) { /* do nothing */ }
     inline static void GetCameraUp(double* up, int viewport = 0) {
         TheInstance()->getCameraUp(up, viewport);
     }
-    virtual void getCameraUp(double* up, int viewport = 0) { /* do nothing */
-    }
+    virtual void getCameraUp(double* up, int viewport = 0) { /* do nothing */ }
 
     inline static void SetCameraPosition(const CCVector3d& pos,
                                          int viewport = 0) {
         TheInstance()->setCameraPosition(pos, viewport);
     }
     inline virtual void setCameraPosition(const CCVector3d& pos,
-                                          int viewport = 0) { /* do nothing */
-    }
+                                          int viewport = 0) { /* do nothing */ }
     inline static void SetCameraPosition(const double* pos,
                                          const double* focal,
                                          const double* up,
@@ -785,8 +754,7 @@ public:  // main interface
     inline virtual void setCameraPosition(const double* pos,
                                           const double* focal,
                                           const double* up,
-                                          int viewport = 0) { /* do nothing */
-    }
+                                          int viewport = 0) { /* do nothing */ }
     inline static void SetCameraPosition(const double* pos,
                                          const double* up,
                                          int viewport = 0) {
@@ -794,8 +762,7 @@ public:  // main interface
     }
     inline virtual void setCameraPosition(const double* pos,
                                           const double* up,
-                                          int viewport = 0) { /* do nothing */
-    }
+                                          int viewport = 0) { /* do nothing */ }
     inline static void SetCameraPosition(double pos_x,
                                          double pos_y,
                                          double pos_z,
@@ -818,16 +785,14 @@ public:  // main interface
                                           double up_x,
                                           double up_y,
                                           double up_z,
-                                          int viewport = 0) { /* do nothing */
-    }
+                                          int viewport = 0) { /* do nothing */ }
 
     // set and get clip distances (near and far)
     inline static void GetCameraClip(double* clipPlanes, int viewport = 0) {
         TheInstance()->getCameraClip(clipPlanes, viewport);
     }
     virtual void getCameraClip(double* clipPlanes,
-                               int viewport = 0) { /* do nothing */
-    }
+                               int viewport = 0) { /* do nothing */ }
     inline static void SetCameraClip(double znear,
                                      double zfar,
                                      int viewport = 0) {
@@ -837,15 +802,13 @@ public:  // main interface
     }
     virtual void setCameraClip(double znear,
                                double zfar,
-                               int viewport = 0) { /* do nothing */
-    }
+                               int viewport = 0) { /* do nothing */ }
 
     inline static void ResetCameraClippingRange(int viewport = 0) {
         TheInstance()->resetCameraClippingRange(viewport);
     }
     inline virtual void resetCameraClippingRange(
-            int viewport = 0) { /* do nothing */
-    }
+            int viewport = 0) { /* do nothing */ }
 
     // set and get view angle in y direction
     inline static double GetCameraFovy(int viewport = 0) {
@@ -860,8 +823,7 @@ public:  // main interface
                                      viewport);
     }
     inline virtual void setCameraFovy(double fovy,
-                                      int viewport = 0) { /* do nothing */
-    }
+                                      int viewport = 0) { /* do nothing */ }
 
     inline static void GetViewerPos(int* viewPos, int viewport = 0) {
         viewPos[0] = 0;
@@ -877,8 +839,7 @@ public:  // main interface
         TheInstance()->saveScreenshot(file);
     }
     inline virtual void saveScreenshot(
-            const std::string& file) { /* do nothing */
-    }
+            const std::string& file) { /* do nothing */ }
 
     /** \brief Save or Load the current rendered camera parameters to disk or
      * current camera. \param[in] file the name of the param file
@@ -887,22 +848,19 @@ public:  // main interface
         TheInstance()->saveCameraParameters(file);
     }
     inline virtual void saveCameraParameters(
-            const std::string& file) { /* do nothing */
-    }
+            const std::string& file) { /* do nothing */ }
 
     inline static void LoadCameraParameters(const std::string& file) {
         TheInstance()->loadCameraParameters(file);
     }
     inline virtual void loadCameraParameters(
-            const std::string& file) { /* do nothing */
-    }
+            const std::string& file) { /* do nothing */ }
 
     inline static void ShowOrientationMarker() {
         TheInstance()->showOrientationMarker();
         UpdateScreen();
     }
-    inline virtual void showOrientationMarker() { /* do nothing */
-    }
+    inline virtual void showOrientationMarker() { /* do nothing */ }
 
     inline static void SetOrthoProjection(int viewport = 0) {
         TheInstance()->setOrthoProjection(viewport);
@@ -915,8 +873,7 @@ public:  // main interface
         UpdateScreen();
     }
     inline virtual void setPerspectiveProjection(
-            int viewport = 0) { /* do nothing */
-    }
+            int viewport = 0) { /* do nothing */ }
 
     /** \brief Use Vertex Buffer Objects renderers.
      * This is an optimization for the obsolete OpenGL backend. Modern OpenGL2
@@ -926,8 +883,7 @@ public:  // main interface
     inline static void SetUseVbos(bool useVbos) {
         TheInstance()->setUseVbos(useVbos);
     }
-    inline virtual void setUseVbos(bool useVbos) { /* do nothing */
-    }
+    inline virtual void setUseVbos(bool useVbos) { /* do nothing */ }
 
     /** \brief Set the ID of a cloud or shape to be used for LUT display
      * \param[in] id The id of the cloud/shape look up table to be displayed
@@ -936,8 +892,7 @@ public:  // main interface
         TheInstance()->setLookUpTableID(viewID);
     }
     inline virtual void setLookUpTableID(
-            const std::string& viewID) { /* do nothing */
-    }
+            const std::string& viewID) { /* do nothing */ }
 
     inline static void GetProjectionMatrix(double* projArray,
                                            int viewport = 0) {
@@ -950,16 +905,14 @@ public:  // main interface
         TheInstance()->getViewMatrix(viewArray, viewport);
     }
     inline virtual void getViewMatrix(double* viewArray,
-                                      int viewport = 0) { /* do nothing */
-    }
+                                      int viewport = 0) { /* do nothing */ }
 
     inline static void SetViewMatrix(const ccGLMatrixd& viewMat,
                                      int viewport = 0) {
         TheInstance()->setViewMatrix(viewMat, viewport);
     }
     inline virtual void setViewMatrix(const ccGLMatrixd& viewMat,
-                                      int viewport = 0) { /* do nothing */
-    }
+                                      int viewport = 0) { /* do nothing */ }
 
     static bool HideShowEntities(const ccHObject* obj, bool visible);
     inline static bool HideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) {
@@ -979,8 +932,7 @@ public:  // main interface
         TheInstance()->removeEntities(CONTEXT);
     }
     inline virtual void removeEntities(
-            const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */
-    }
+            const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
 
     static void DrawBackground(CC_DRAW_CONTEXT& CONTEXT);
     static void DrawForeground(CC_DRAW_CONTEXT& CONTEXT);
@@ -1008,8 +960,7 @@ public:  // main interface
                                    CV_CLASS_ENUM type);
 
     inline virtual void setBackgroundColor(
-            const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */
-    }
+            const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
 
     /** \brief Create a new viewport from [xmin,ymin] -> [xmax,ymax].
      * \param[in] xmin the minimum X coordinate for the viewport (0.0 <= 1.0)
@@ -1031,15 +982,13 @@ public:  // main interface
                                        double ymin,
                                        double xmax,
                                        double ymax,
-                                       int& viewport) { /* do nothing */
-    }
+                                       int& viewport) { /* do nothing */ }
 
     inline static void ResetCameraViewpoint(const std::string& viewID) {
         TheInstance()->resetCameraViewpoint(viewID);
     }
     inline virtual void resetCameraViewpoint(
-            const std::string& viewID) { /* do nothing */
-    }
+            const std::string& viewID) { /* do nothing */ }
 
     static void SetPointSize(float size, bool silent = false, int viewport = 0);
     static void SetPointSizeRecursive(int size);
@@ -1055,8 +1004,7 @@ public:  // main interface
     inline static void Toggle2Dviewer(bool state) {
         TheInstance()->toggle2Dviewer(state);
     }
-    inline virtual void toggle2Dviewer(bool state) { /* do nothing */
-    }
+    inline virtual void toggle2Dviewer(bool state) { /* do nothing */ }
 
 public:  // visualization matrix transformation
     //! Displays a status message in the bottom-left corner
@@ -1112,30 +1060,25 @@ public:  // visualization matrix transformation
         TheInstance()->resetCamera(bbox);
         UpdateScreen();
     }
-    inline virtual void resetCamera(const ccBBox* bbox) { /* do nothing */
-    }
+    inline virtual void resetCamera(const ccBBox* bbox) { /* do nothing */ }
     inline static void ResetCamera() {
         TheInstance()->resetCamera();
         UpdateScreen();
     }
-    inline virtual void resetCamera() { /* do nothing */
-    }
+    inline virtual void resetCamera() { /* do nothing */ }
     inline static void UpdateCamera() {
         TheInstance()->updateCamera();
         UpdateScreen();
     }
-    inline virtual void updateCamera() { /* do nothing */
-    }
+    inline virtual void updateCamera() { /* do nothing */ }
 
     inline static void UpdateScene() { TheInstance()->updateScene(); }
-    inline virtual void updateScene() { /* do nothing */
-    }
+    inline virtual void updateScene() { /* do nothing */ }
 
     inline static void SetAutoUpateCameraPos(bool state) {
         TheInstance()->setAutoUpateCameraPos(state);
     }
-    inline virtual void setAutoUpateCameraPos(bool state) { /* do nothing */
-    }
+    inline virtual void setAutoUpateCameraPos(bool state) { /* do nothing */ }
 
     /**
      * Get the current center of rotation
@@ -1157,8 +1100,7 @@ public:  // visualization matrix transformation
         UpdateScreen();
     }
     inline virtual void resetCenterOfRotation(
-            int viewport = 0) { /* do nothing */
-    }
+            int viewport = 0) { /* do nothing */ }
 
     /**
      * Set the center of rotation. For this to work,
@@ -1171,8 +1113,7 @@ public:  // visualization matrix transformation
     }
     inline virtual void setCenterOfRotation(double x,
                                             double y,
-                                            double z) { /* do nothing */
-    }
+                                            double z) { /* do nothing */ }
 
     inline static void SetCenterOfRotation(const double xyz[3]) {
         SetCenterOfRotation(xyz[0], xyz[1], xyz[2]);
@@ -1236,9 +1177,7 @@ public:  // visualization matrix transformation
     inline static void SetScaleBarVisible(bool visible) {
         return TheInstance()->setScaleBarVisible(visible);
     }
-    inline virtual void setScaleBarVisible(bool visible) {
-        /* do nothing */
-    }
+    inline virtual void setScaleBarVisible(bool visible) { /* do nothing */ }
 
     static void DisplayTexture2DPosition(QImage image,
                                          const QString& id,
@@ -1271,8 +1210,7 @@ public:  // visualization matrix transformation
         TheInstance()->toggleExclusiveFullScreen(state);
     }
     inline virtual void toggleExclusiveFullScreen(
-            bool state) { /* in this do nothing */
-    }
+            bool state) { /* in this do nothing */ }
 
     //! Returns whether the window is in exclusive full screen mode or not
     inline static bool ExclusiveFullScreen() {
@@ -1422,8 +1360,7 @@ public:  // visualization matrix transformation
     static void SetPivotVisibility(bool state) {
         TheInstance()->setPivotVisibility(state);
     }
-    virtual void setPivotVisibility(bool state) { /*do nothing here*/
-    }
+    virtual void setPivotVisibility(bool state) { /*do nothing here*/ }
 
     //! Returns pivot visibility
     inline static PivotVisibility GetPivotVisibility() {
@@ -1527,7 +1464,7 @@ public:  // visualization matrix transformation
     //! screen
     static void SetAutoPickPivotAtCenter(bool state);
     static void SendAutoPickPivotAtCenter(bool state) {
-        emit TheInstance()->autoPickPivot(state);
+        emit TheInstance() -> autoPickPivot(state);
     }
     //! Whether the pivot point is automatically set at the center of the screen
     inline static bool AutoPickPivotAtCenter() {
@@ -2055,5 +1992,3 @@ signals:
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(ecvDisplayTools::INTERACTION_FLAGS);
-
-#endif  // ECV_DISPLAY_TOOLS_HEADER

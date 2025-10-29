@@ -1,5 +1,11 @@
-#ifndef vtkAnnotationBoxSource_h
-#define vtkAnnotationBoxSource_h
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 #include "qPCL.h"
 #include "vtkFiltersSourcesModule.h"  // For export macro
@@ -21,5 +27,3 @@ private:
     vtkAnnotationBoxSource(const vtkAnnotationBoxSource &) = delete;
     void operator=(const vtkAnnotationBoxSource &) = delete;
 };
-
-#endif

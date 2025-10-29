@@ -19,12 +19,11 @@ if __name__ == "__main__":
     alpha = 0.03
     print(f"alpha={alpha:.3f}")
     print('Running alpha shapes surface reconstruction ...')
-    mesh = cv3d.geometry.ccMesh.create_from_point_cloud_alpha_shape(
-            pcd, alpha)
+    mesh = cv3d.geometry.ccMesh.create_from_point_cloud_alpha_shape(pcd, alpha)
     mesh.compute_triangle_normals(normalized=True)
     print("Displaying reconstructed mesh ...")
     cv3d.visualization.draw_geometries([mesh], mesh_show_back_face=True)
-    
+
     tetra_mesh, pt_map = cv3d.geometry.TetraMesh.create_from_point_cloud(pcd)
     print("done with tetra mesh")
     cv3d.visualization.draw_geometries([tetra_mesh])

@@ -7,13 +7,12 @@
 
 #include "visualization/gui/Events.h"
 
+#include <Logging.h>
 #include <json/json.h>
 
 #include <cstdint>
 #include <sstream>
 #include <string>
-
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {

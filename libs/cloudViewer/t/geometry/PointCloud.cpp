@@ -7,6 +7,7 @@
 
 #include "cloudViewer/t/geometry/PointCloud.h"
 
+#include <CVGeom.h>
 #include <libqhullcpp/PointCoordinates.h>
 #include <libqhullcpp/Qhull.h>
 #include <libqhullcpp/QhullFacet.h>
@@ -40,7 +41,6 @@
 #include "cloudViewer/t/geometry/kernel/Transform.h"
 #include "cloudViewer/t/pipelines/registration/Registration.h"
 #include "cloudViewer/utility/Random.h"
-#include <CVGeom.h>
 
 namespace cloudViewer {
 namespace t {
@@ -416,7 +416,7 @@ PointCloud PointCloud::FarthestPointDownSample(const size_t num_samples,
         core::Tensor diff = GetPointPositions() - selected;
         core::Tensor distances_to_selected = (diff * diff).Sum({1});
         smallest_distances = cloudViewer::core::Minimum(distances_to_selected,
-                                                   smallest_distances);
+                                                        smallest_distances);
 
         farthest_index = smallest_distances.ArgMax({0}).Item<int64_t>();
     }
@@ -1080,8 +1080,8 @@ PointCloud PointCloud::FromLegacy(
     const auto &pts = pcd_legacy.getPoints();
     if (!pts.empty()) {
         const int64_t n = static_cast<int64_t>(pts.size());
-        core::Tensor host = core::Tensor::Empty({n, 3}, dtype,
-                                                core::Device("CPU:0"));
+        core::Tensor host =
+                core::Tensor::Empty({n, 3}, dtype, core::Device("CPU:0"));
         if (dtype == core::Float64) {
             auto *p = host.GetDataPtr<double>();
             for (int64_t i = 0; i < n; ++i) {
@@ -1106,12 +1106,13 @@ PointCloud PointCloud::FromLegacy(
     // Normals (optional)
     if (pcd_legacy.hasNormals()) {
         const int64_t n = static_cast<int64_t>(pcd_legacy.size());
-        core::Tensor host = core::Tensor::Empty({n, 3}, dtype,
-                                                core::Device("CPU:0"));
+        core::Tensor host =
+                core::Tensor::Empty({n, 3}, dtype, core::Device("CPU:0"));
         if (dtype == core::Float64) {
             auto *p = host.GetDataPtr<double>();
             for (int64_t i = 0; i < n; ++i) {
-                const CCVector3 *nv = pcd_legacy.getNormal(static_cast<unsigned>(i));
+                const CCVector3 *nv =
+                        pcd_legacy.getNormal(static_cast<unsigned>(i));
                 p[3 * i + 0] = static_cast<double>(nv->x);
                 p[3 * i + 1] = static_cast<double>(nv->y);
                 p[3 * i + 2] = static_cast<double>(nv->z);
@@ -1119,7 +1120,8 @@ PointCloud PointCloud::FromLegacy(
         } else {
             auto *p = host.GetDataPtr<float>();
             for (int64_t i = 0; i < n; ++i) {
-                const CCVector3 *nv = pcd_legacy.getNormal(static_cast<unsigned>(i));
+                const CCVector3 *nv =
+                        pcd_legacy.getNormal(static_cast<unsigned>(i));
                 p[3 * i + 0] = static_cast<float>(nv->x);
                 p[3 * i + 1] = static_cast<float>(nv->y);
                 p[3 * i + 2] = static_cast<float>(nv->z);
@@ -1142,15 +1144,16 @@ cloudViewer::geometry::PointCloud PointCloud::ToLegacy() const {
         if (dtype == core::Float64) {
             auto *p = pts.GetDataPtr<double>();
             for (int64_t i = 0; i < n; ++i) {
-                pcd_legacy.addPoint(CCVector3(static_cast<float>(p[3 * i + 0]),
-                                              static_cast<float>(p[3 * i + 1]),
-                                              static_cast<float>(p[3 * i + 2])));
+                pcd_legacy.addPoint(
+                        CCVector3(static_cast<float>(p[3 * i + 0]),
+                                  static_cast<float>(p[3 * i + 1]),
+                                  static_cast<float>(p[3 * i + 2])));
             }
         } else {
             auto *p = pts.GetDataPtr<float>();
             for (int64_t i = 0; i < n; ++i) {
-                pcd_legacy.addPoint(CCVector3(p[3 * i + 0], p[3 * i + 1],
-                                              p[3 * i + 2]));
+                pcd_legacy.addPoint(
+                        CCVector3(p[3 * i + 0], p[3 * i + 1], p[3 * i + 2]));
             }
         }
     }
@@ -1170,8 +1173,8 @@ cloudViewer::geometry::PointCloud PointCloud::ToLegacy() const {
         } else {
             auto *p = ns.GetDataPtr<float>();
             for (int64_t i = 0; i < n; ++i) {
-                pcd_legacy.addNorm(CCVector3(p[3 * i + 0], p[3 * i + 1],
-                                             p[3 * i + 2]));
+                pcd_legacy.addNorm(
+                        CCVector3(p[3 * i + 0], p[3 * i + 1], p[3 * i + 2]));
             }
         }
     }

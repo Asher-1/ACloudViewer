@@ -21,7 +21,7 @@ on:
       - main
 
   release:
-    types: [published]
+    types: [released]
 
   pull_request:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
@@ -293,7 +293,7 @@ jobs:
             python_version: '3.11'
 
     env:
-      BUILD_TORCH_OPS: ON
+      BUILD_PYTORCH_OPS: ON
       # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF
       BUILD_JUPYTER_EXTENSION: ON
@@ -344,7 +344,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
-          ref: main
+          ref: torch271
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       # DGM: without caching, using conda on Windows takes a long time...
@@ -375,10 +375,10 @@ jobs:
           # no need to test due to to next step is test-wheel
           $env:IGNORE_TEST = "ON"
           echo "IGNORE_TEST=$env:IGNORE_TEST"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          scripts/build_win_wheel.ps1 "${{ matrix.python_version }}" "${{ env.INSTALL_DIR }}" "${{ env.CLOUDVIEWER_ML_ROOT }}"
+          scripts/build_win_wheel.ps1 -PythonVersion "${{ matrix.python_version }}" -ACloudViewerInstall "${{ env.INSTALL_DIR }}" -CloudViewerMLRoot "${{ env.CLOUDVIEWER_ML_ROOT }}"
 
-          $PIP_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudViewer-*.whl")).Name
-          $PIP_CPU_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudViewer_cpu*.whl")).Name
+          $PIP_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudviewer-*.whl")).Name
+          $PIP_CPU_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudviewer_cpu*.whl")).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
@@ -430,7 +430,7 @@ jobs:
 
     env:
       BUILD_CUDA_MODULE: ON
-      BUILD_TORCH_OPS: ON
+      BUILD_PYTORCH_OPS: ON
       # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF
       CONDA_DEP_FILE: ".ci/conda_windows.yml"
@@ -444,13 +444,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
-          ref: main
+          ref: torch271
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: cloudViewer*win*.whl
+          pattern: cloudviewer*win*.whl
           merge-multiple: true
 
       - name: Set up Python
@@ -471,9 +471,9 @@ jobs:
           python -m pip install -U -r python/requirements_test.txt
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
-            $PIP_PKG_NAME=(Get-ChildItem pip_package\cloudViewer_cpu*-$py_tag-*.whl).Name
+            $PIP_PKG_NAME=(Get-ChildItem pip_package\cloudviewer_cpu*-$py_tag-*.whl).Name
           } else {
-            $PIP_PKG_NAME=(Get-ChildItem cloudViewer_cpu*-$py_tag-*.whl).Name
+            $PIP_PKG_NAME=(Get-ChildItem cloudviewer_cpu*-$py_tag-*.whl).Name
           }
           echo "Installing ACloudViewer wheel $PIP_PKG_NAME in virtual environment..."
           python -m pip install "$PIP_PKG_NAME"

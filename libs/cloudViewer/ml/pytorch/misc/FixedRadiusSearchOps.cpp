@@ -5,9 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Helper.h>
+
 #include <vector>
 
-#include <Helper.h>
 #include "core/nns/NeighborSearchCommon.h"
 #include "ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
@@ -174,5 +175,5 @@ const char* fixed_radius_fn_format =
 
 static auto registry = torch::RegisterOperators(
         cloudViewer::utility::FormatString(fixed_radius_fn_format,
-                                      int(c10::ScalarType::Int)),
+                                           int(c10::ScalarType::Int)),
         &FixedRadiusSearch);

@@ -1,22 +1,11 @@
-// ##########################################################################
-// #                                                                        #
-// #                              CLOUDVIEWER                               #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef ECV_POINT_CLOUD_HEADER
-#define ECV_POINT_CLOUD_HEADER
+#pragma once
 
 #ifdef _MSC_VER
 // To get rid of the warnings about dominant inheritance
@@ -1405,5 +1394,3 @@ protected:  // waveform (e.g. from airborne scanners)
     //! Waveforms raw data storage
     SharedFWFDataContainer m_fwfData;
 };
-
-#endif  // ECV_POINT_CLOUD_HEADER

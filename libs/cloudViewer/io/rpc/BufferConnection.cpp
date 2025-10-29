@@ -7,10 +7,11 @@
 
 #include "io/rpc/BufferConnection.h"
 
+#include <Logging.h>
+
 #include <zmq.hpp>
 
 #include "io/rpc/Messages.h"
-#include <Logging.h>
 
 using namespace cloudViewer::utility;
 

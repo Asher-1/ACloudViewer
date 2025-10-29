@@ -1,8 +1,15 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "LasSaver.h"
 
 #include "LasMetadata.h"
 
-//Qt
+// Qt
 #include <QDate>
 // DB
 #include <ecvGlobalShiftManager.h>

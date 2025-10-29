@@ -1,9 +1,15 @@
-#ifndef vtkBoxWidgetRestricted_h
-#define vtkBoxWidgetRestricted_h
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "qPCL.h"
+#pragma once
 
 #include <vtkBoxWidget.h>
+
+#include "qPCL.h"
 
 /**
  * @brief The vtkBoxWidgetRestricted class
@@ -16,8 +22,8 @@ class QPCL_ENGINE_LIB_API vtkBoxWidgetRestricted : public vtkBoxWidget {
 public:
     static vtkBoxWidgetRestricted *New();
 
-    vtkTypeMacro(vtkBoxWidgetRestricted,vtkBoxWidget);
+    vtkTypeMacro(vtkBoxWidgetRestricted, vtkBoxWidget);
 
-    virtual void Rotate(int X, int Y, double *p1, double *p2, double *vpn) override;
+    virtual void Rotate(
+            int X, int Y, double *p1, double *p2, double *vpn) override;
 };
-#endif

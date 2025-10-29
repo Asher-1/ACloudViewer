@@ -5,10 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pipelines/application_gui.h"
-
-#include "pybind/docstring.h"
 #include "pybind/reconstruction/gui/gui.h"
+
+#include "pipelines/application_gui.h"
+#include "pybind/docstring.h"
 #include "pybind/reconstruction/reconstruction_options.h"
 
 namespace cloudViewer {

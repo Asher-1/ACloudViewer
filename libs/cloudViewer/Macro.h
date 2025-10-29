@@ -10,9 +10,9 @@
 #include <cassert>
 
 // https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
-// In CloudViewer, we set symbol visibility based on folder / cmake target through
-// cmake. e.g. all symbols in kernel folders are hidden. These macros allow fine
-// grained control over symbol visibility.
+// In CloudViewer, we set symbol visibility based on folder / cmake target
+// through cmake. e.g. all symbols in kernel folders are hidden. These macros
+// allow fine grained control over symbol visibility.
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define CLOUDVIEWER_DLL_IMPORT __declspec(dllimport)
 #define CLOUDVIEWER_DLL_EXPORT __declspec(dllexport)

@@ -1,22 +1,11 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                    COPYRIGHT: CLOUDVIEWER  project                     #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#ifndef QPCL_VTK_WIDGET_HEADER
-#define QPCL_VTK_WIDGET_HEADER
+#pragma once
 
 #ifdef _MSC_VER
 /* The below is MANDATORY for Windows builds or you will take an exception in
@@ -37,7 +26,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 #include <ecvColorTypes.h>
 
 // VTK
-//#include <QVTKWidget.h>
+// #include <QVTKWidget.h>
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkDataSet.h>
 #include <vtkLODActor.h>
@@ -109,7 +98,6 @@ public:
         return this->setRenderWindow(win);
     }
     QVTKInteractor* GetInteractor() { return this->interactor(); }
-
 
 protected:
     void setBounds(double* bounds);
@@ -192,5 +180,3 @@ protected:
 
     VtkWidgetPrivate* d_ptr;
 };
-
-#endif  // QPCL_VTK_WIDGET_HEADER

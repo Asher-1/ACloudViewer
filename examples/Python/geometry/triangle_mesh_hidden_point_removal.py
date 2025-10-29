@@ -17,12 +17,12 @@ def mesh_generator():
     mesh_knot = cv3d.io.read_triangle_mesh(knot.path)
     mesh_knot.compute_vertex_normals()
     yield mesh_knot
-    
+
     bunny = cv3d.data.BunnyMesh()
     mesh_bunny = cv3d.io.read_triangle_mesh(bunny.path)
     mesh_bunny.compute_vertex_normals()
     yield mesh_bunny
-    
+
     armadillo = cv3d.data.ArmadilloMesh()
     mesh_armadillo = cv3d.io.read_triangle_mesh(armadillo.path)
     mesh_armadillo.compute_vertex_normals()

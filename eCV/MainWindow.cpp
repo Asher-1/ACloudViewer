@@ -1,21 +1,10 @@
-﻿// ##########################################################################
-// #                                                                        #
-// #                              ACloudViewer                           #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-// LOCAL
 #include "MainWindow.h"
 
 #include "ecvAnnotationsTool.h"
@@ -321,68 +310,72 @@ MainWindow::MainWindow()
     updateUI();
 
     // advanced widgets not handled by QDesigner
-    {// view mode pop-up menu
-     {m_viewModePopupButton = new QToolButton();
-    QMenu* menu = new QMenu(m_viewModePopupButton);
-    menu->addAction(m_ui->actionOrthogonalProjection);
-    menu->addAction(m_ui->actionPerspectiveProjection);
+    {  // view mode pop-up menu
+        {
+            m_viewModePopupButton = new QToolButton();
+            QMenu* menu = new QMenu(m_viewModePopupButton);
+            menu->addAction(m_ui->actionOrthogonalProjection);
+            menu->addAction(m_ui->actionPerspectiveProjection);
 
-    m_viewModePopupButton->setMenu(menu);
-    m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
-    m_viewModePopupButton->setToolTip("Set current view mode");
-    m_viewModePopupButton->setStatusTip(m_viewModePopupButton->toolTip());
-    m_ui->ViewToolBar->insertWidget(m_ui->actionZoomAndCenter,
-                                    m_viewModePopupButton);
-    m_viewModePopupButton->setEnabled(false);
-}
+            m_viewModePopupButton->setMenu(menu);
+            m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
+            m_viewModePopupButton->setToolTip("Set current view mode");
+            m_viewModePopupButton->setStatusTip(
+                    m_viewModePopupButton->toolTip());
+            m_ui->ViewToolBar->insertWidget(m_ui->actionZoomAndCenter,
+                                            m_viewModePopupButton);
+            m_viewModePopupButton->setEnabled(false);
+        }
 
-// custom viewports configuration
-{
-    QToolBar* customViewpointsToolbar = new ecvCustomViewpointsToolbar(this);
-    customViewpointsToolbar->setObjectName("customViewpointsToolbar");
-    customViewpointsToolbar->layout()->setSpacing(0);
-    this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
-    // this->insertToolBar(m_ui->FilterToolBar, customViewpointsToolbar);
-}
+        // custom viewports configuration
+        {
+            QToolBar* customViewpointsToolbar =
+                    new ecvCustomViewpointsToolbar(this);
+            customViewpointsToolbar->setObjectName("customViewpointsToolbar");
+            customViewpointsToolbar->layout()->setSpacing(0);
+            this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
+            // this->insertToolBar(m_ui->FilterToolBar,
+            // customViewpointsToolbar);
+        }
 
-// orthogonal projection mode (default)
-{
-    m_ui->actionOrthogonalProjection->trigger();
-    ecvConsole::Print("Perspective off!");
-}
-}
-
-// restore options
-{
-    QSettings settings;
-
-    // auto pick center
-    bool autoPickRotationCenter =
-            settings.value(ecvPS::AutoPickRotationCenter(), false).toBool();
-    if (autoPickRotationCenter) {
-        m_ui->actionAutoPickPivot->toggle();
+        // orthogonal projection mode (default)
+        {
+            m_ui->actionOrthogonalProjection->trigger();
+            ecvConsole::Print("Perspective off!");
+        }
     }
 
-    // show center
-    bool autoShowCenterAxis =
-            settings.value(ecvPS::AutoShowCenter(), true).toBool();
-    m_ui->actionShowPivot->blockSignals(true);
-    m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
-    m_ui->actionShowPivot->blockSignals(false);
-    toggleRotationCenterVisibility(autoShowCenterAxis);
-}
+    // restore options
+    {
+        QSettings settings;
 
-refreshAll();
+        // auto pick center
+        bool autoPickRotationCenter =
+                settings.value(ecvPS::AutoPickRotationCenter(), false).toBool();
+        if (autoPickRotationCenter) {
+            m_ui->actionAutoPickPivot->toggle();
+        }
+
+        // show center
+        bool autoShowCenterAxis =
+                settings.value(ecvPS::AutoShowCenter(), true).toBool();
+        m_ui->actionShowPivot->blockSignals(true);
+        m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
+        m_ui->actionShowPivot->blockSignals(false);
+        toggleRotationCenterVisibility(autoShowCenterAxis);
+    }
+
+    refreshAll();
 
 #ifdef CV_WINDOWS
 #ifdef QT_DEBUG
-// speed up debugging on windows
-doActionToggleOrientationMarker(false);
+    // speed up debugging on windows
+    doActionToggleOrientationMarker(false);
 #else
-doActionToggleOrientationMarker(true);
+    doActionToggleOrientationMarker(true);
 #endif
 #else
-doActionToggleOrientationMarker(true);
+    doActionToggleOrientationMarker(true);
 #endif
 
 #ifdef USE_PYTHON_MODULE
@@ -396,18 +389,18 @@ doActionToggleOrientationMarker(true);
 //     successfully!").arg(pyHome));
 // }
 #else
-m_ui->actionSemanticSegmentation->setEnabled(false);
+    m_ui->actionSemanticSegmentation->setEnabled(false);
 #endif
 
 #ifdef USE_TBB
-ecvConsole::Print(tr("[TBB] Using Intel's Threading Building Blocks %1.%2")
-                          .arg(QString::number(TBB_VERSION_MAJOR),
-                               QString::number(TBB_VERSION_MINOR)));
+    ecvConsole::Print(tr("[TBB] Using Intel's Threading Building Blocks %1.%2")
+                              .arg(QString::number(TBB_VERSION_MAJOR),
+                                   QString::number(TBB_VERSION_MINOR)));
 #endif
 
-// print welcome message
-ecvConsole::Print(
-        tr("[ACloudViewer Software start], Welcome to use ACloudViewer"));
+    // print welcome message
+    ecvConsole::Print(
+            tr("[ACloudViewer Software start], Welcome to use ACloudViewer"));
 }
 
 MainWindow::~MainWindow() {
@@ -9730,7 +9723,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                             }
                         }
                     }  // for each label
-                }      // if (cloud)
+                }  // if (cloud)
 
                 // we temporarily detach the entity, as it may undergo
                 //"severe" modifications (octree deletion, etc.) --> see

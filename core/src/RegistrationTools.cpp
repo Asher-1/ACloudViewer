@@ -1,20 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                               CVCoreLib                                #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <RegistrationTools.h>
 
@@ -958,7 +947,7 @@ bool RegistrationTools::RegistrationProcedure(
         }
 
         // we deduce the first translation
-        //#26 in besl paper, modified with the scale as in jschmidt
+        // #26 in besl paper, modified with the scale as in jschmidt
         trans.T = Gx.toDouble() - (trans.R * Gp) * (aPrioriScale * trans.s);
 
         // we need to find the rotation in the (X) plane now
@@ -1067,7 +1056,7 @@ bool RegistrationTools::RegistrationProcedure(
         SquareMatrixd bottomMat = Sigma_px + Sigma_px_t - traceI3;
 
         // we build up the registration matrix (see ICP algorithm)
-        SquareMatrixd QSigma(4);  //#25 in the paper (besl)
+        SquareMatrixd QSigma(4);  // #25 in the paper (besl)
 
         QSigma.m_values[0][0] = trace;
 

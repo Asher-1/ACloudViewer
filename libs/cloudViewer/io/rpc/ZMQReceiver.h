@@ -1,17 +1,17 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 CloudViewer
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
+#include <Logging.h>
+
 #include <atomic>
 #include <mutex>
 #include <thread>
-
-#include <Logging.h>
 
 namespace zmq {
 class message_t;

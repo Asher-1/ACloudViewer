@@ -8,8 +8,9 @@
 #include "pybind/pipelines/color_map/color_map.h"
 
 #include <Logging.h>
-#include <ecvMesh.h>
 #include <RGBDImage.h>
+#include <ecvMesh.h>
+
 #include "camera/PinholeCameraTrajectory.h"
 #include "pipelines/color_map/NonRigidOptimizer.h"
 #include "pipelines/color_map/RigidOptimizer.h"
@@ -91,8 +92,7 @@ void pybind_color_map_options(py::module &m) {
             rigid_optimizer_option(m, "RigidOptimizerOption",
                                    "Rigid optimizer option class.");
     rigid_optimizer_option.def(
-            py::init([](int maximum_iteration,
-                        double maximum_allowable_depth,
+            py::init([](int maximum_iteration, double maximum_allowable_depth,
                         double depth_threshold_for_visibility_check,
                         double depth_threshold_for_discontinuity_check,
                         int half_dilation_kernel_size_for_discontinuity_map,

@@ -1,5 +1,11 @@
-#ifndef ECVAPPLICATION_H
-#define ECVAPPLICATION_H
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
 
 // ##########################################################################
 // #                                                                        #
@@ -30,5 +36,3 @@ public:
 protected:
     bool event(QEvent *inEvent) override;
 };
-
-#endif  // ECVAPPLICATION_H

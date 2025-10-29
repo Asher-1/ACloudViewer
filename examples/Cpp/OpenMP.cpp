@@ -232,7 +232,7 @@ void TestBindedFunction() {
                 ATb += ATb_private;
 #ifdef _OPENMP
             }  // omp critical
-        }      // omp parallel
+        }  // omp parallel
 #endif
     }
     std::cout << ATA << std::endl;
@@ -268,7 +268,7 @@ void TestBindedFunction() {
                 ATb += ATb_private;
 #ifdef _OPENMP
             }  // omp critical
-        }      // omp parallel
+        }  // omp parallel
 #endif
     }
     std::cout << ATA << std::endl;
@@ -304,7 +304,7 @@ void TestBindedFunction() {
                 ATb += ATb_private;
 #ifdef _OPENMP
             }  // omp critical
-        }      // omp parallel
+        }  // omp parallel
 #endif
     }
     std::cout << ATA << std::endl;
@@ -344,7 +344,7 @@ void TestBindedFunction() {
                 ATb += ATb_private;
 #ifdef _OPENMP
             }  // omp critical
-        }      // omp parallel
+        }  // omp parallel
 #endif
     }
     std::cout << ATA << std::endl;

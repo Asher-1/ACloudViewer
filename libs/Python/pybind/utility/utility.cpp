@@ -7,8 +7,8 @@
 
 #include "pybind/utility/utility.h"
 
-#include "pybind/docstring.h"
 #include "pybind/cloudViewer_pybind.h"
+#include "pybind/docstring.h"
 
 namespace cloudViewer {
 namespace utility {

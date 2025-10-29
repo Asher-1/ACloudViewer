@@ -32,8 +32,7 @@ namespace e57
 {
    FloatNodeImpl::FloatNodeImpl( ImageFileImplWeakPtr destImageFile, double value, FloatPrecision precision,
                                  double minimum, double maximum ) :
-      NodeImpl( destImageFile ),
-      value_( value ), precision_( precision ), minimum_( minimum ), maximum_( maximum )
+      NodeImpl( destImageFile ), value_( value ), precision_( precision ), minimum_( minimum ), maximum_( maximum )
    {
       // don't checkImageFileOpen, NodeImpl() will do it
 

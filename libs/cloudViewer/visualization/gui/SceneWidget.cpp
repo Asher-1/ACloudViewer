@@ -7,6 +7,8 @@
 
 #include "visualization/gui/SceneWidget.h"
 
+#include <Image.h>
+#include <ecvBBox.h>
 #include <imgui.h>
 
 #include <Eigen/Geometry>
@@ -14,8 +16,6 @@
 #include <unordered_set>
 
 #include "camera/PinholeCameraIntrinsic.h"
-#include <ecvBBox.h>
-#include <Image.h>
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Color.h"
 #include "visualization/gui/Events.h"
@@ -26,10 +26,10 @@
 #include "visualization/rendering/Camera.h"
 #include "visualization/rendering/CameraInteractorLogic.h"
 #include "visualization/rendering/CameraSphereInteractorLogic.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/IBLRotationInteractorLogic.h"
 #include "visualization/rendering/LightDirectionInteractorLogic.h"
 #include "visualization/rendering/ModelInteractorLogic.h"
-#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
 
@@ -498,7 +498,8 @@ class PickInteractor : public RotateCameraInteractor {
     using Super = RotateCameraInteractor;
 
 public:
-    PickInteractor(rendering::CloudViewerScene* scene, rendering::Camera* camera)
+    PickInteractor(rendering::CloudViewerScene* scene,
+                   rendering::Camera* camera)
         : Super(scene, camera),
           pick_(new PickPointsInteractor(scene, camera)) {}
 
@@ -819,10 +820,9 @@ void SceneWidget::SetFrame(const Rect& f) {
     impl_->frame_rect_changed_ = true;
 }
 
-void SceneWidget::SetupCamera(
-        float verticalFoV,
-        const ccBBox& scene_bounds,
-        const Eigen::Vector3f& center_of_rotation) {
+void SceneWidget::SetupCamera(float verticalFoV,
+                              const ccBBox& scene_bounds,
+                              const Eigen::Vector3f& center_of_rotation) {
     impl_->intrinsics_.is_using = false;
     impl_->bounds_ = scene_bounds;
     impl_->controls_->SetBoundingBox(scene_bounds);
@@ -833,20 +833,18 @@ void SceneWidget::SetupCamera(
     impl_->UpdateFarPlane(GetFrame(), verticalFoV);
 }
 
-void SceneWidget::SetupCamera(
-        const camera::PinholeCameraIntrinsic& intrinsic,
-        const Eigen::Matrix4d& extrinsic,
-        const ccBBox& scene_bounds) {
+void SceneWidget::SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
+                              const Eigen::Matrix4d& extrinsic,
+                              const ccBBox& scene_bounds) {
     SetupCamera(intrinsic.intrinsic_matrix_, extrinsic, intrinsic.width_,
                 intrinsic.height_, scene_bounds);
 }
 
-void SceneWidget::SetupCamera(
-        const Eigen::Matrix3d& intrinsic,
-        const Eigen::Matrix4d& extrinsic,
-        int intrinsic_width_px,
-        int intrinsic_height_px,
-        const ccBBox& scene_bounds) {
+void SceneWidget::SetupCamera(const Eigen::Matrix3d& intrinsic,
+                              const Eigen::Matrix4d& extrinsic,
+                              int intrinsic_width_px,
+                              int intrinsic_height_px,
+                              const ccBBox& scene_bounds) {
     impl_->intrinsics_.is_using = true;
     impl_->intrinsics_.matrix = intrinsic;
     impl_->intrinsics_.width = intrinsic_width_px;
@@ -928,8 +926,8 @@ void SceneWidget::SetScene(std::shared_ptr<rendering::CloudViewerScene> scene) {
     impl_->scene_ = scene;
     if (impl_->scene_) {
         auto view = impl_->scene_->GetView();
-        impl_->controls_ = cloudViewer::make_shared<Interactors>(impl_->scene_.get(),
-                                                         view->GetCamera());
+        impl_->controls_ = cloudViewer::make_shared<Interactors>(
+                impl_->scene_.get(), view->GetCamera());
         impl_->controls_->SetOnInteractorUIUpdated(
                 [this](const std::vector<Eigen::Vector2i>& lines) {
                     impl_->ui_lines_ = lines;
@@ -1015,7 +1013,8 @@ void SceneWidget::SetRenderQuality(Quality quality) {
                         impl_->scene_->GetViewId(), true);
             }
         } else {
-            impl_->scene_->SetLOD(rendering::CloudViewerScene::LOD::HIGH_DETAIL);
+            impl_->scene_->SetLOD(
+                    rendering::CloudViewerScene::LOD::HIGH_DETAIL);
             if (impl_->scene_caching_enabled_) {
                 impl_->scene_->GetScene()->SetRenderOnce(
                         impl_->scene_->GetViewId());

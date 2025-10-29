@@ -6,12 +6,13 @@
 // ----------------------------------------------------------------------------
 //
 
+#include <Logging.h>
+
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/core/nns/FixedRadiusIndex.h"
 #include "cloudViewer/core/nns/FixedRadiusSearchImpl.h"
 #include "cloudViewer/core/nns/NeighborSearchAllocator.h"
 #include "cloudViewer/core/nns/NeighborSearchCommon.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {

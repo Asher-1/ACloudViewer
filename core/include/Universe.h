@@ -12,8 +12,7 @@
 
 namespace cloudViewer {
 
-typedef struct
-{
+typedef struct {
     int rank;
     int p;
     int size;
@@ -22,8 +21,7 @@ typedef struct
 /**
  * @brief Allows to perform labelling by creating node and connecting them.
  */
-class CV_CORE_LIB_API Universe
-{
+class CV_CORE_LIB_API Universe {
 public:
     explicit Universe(int elements);
     ~Universe();
@@ -35,14 +33,11 @@ public:
     void join(int x, int y);
     void addEdge(int x, int y);
 
-    inline int size(int x) const
-    {
-        return elts[x].size;
-    }
+    inline int size(int x) const { return elts[x].size; }
 
 public:
     uni_elt* elts;
     int num, allelems;
 };
 
-} // namespace cloudViewer
+}  // namespace cloudViewer

@@ -32,13 +32,12 @@ void Camera::FromExtrinsics(const Eigen::Matrix4d& extrinsic) {
     SetModelMatrix(Camera::Transform(m));
 }
 
-void Camera::SetupCameraAsPinholeCamera(
-        rendering::Camera& camera,
-        const Eigen::Matrix3d& intrinsic,
-        const Eigen::Matrix4d& extrinsic,
-        int intrinsic_width_px,
-        int intrinsic_height_px,
-        const ccBBox& scene_bounds) {
+void Camera::SetupCameraAsPinholeCamera(rendering::Camera& camera,
+                                        const Eigen::Matrix3d& intrinsic,
+                                        const Eigen::Matrix4d& extrinsic,
+                                        int intrinsic_width_px,
+                                        int intrinsic_height_px,
+                                        const ccBBox& scene_bounds) {
     camera.FromExtrinsics(extrinsic);
     camera.SetProjection(intrinsic, NEAR_PLANE,
                          CalcFarPlane(camera, scene_bounds), intrinsic_width_px,
@@ -47,9 +46,8 @@ void Camera::SetupCameraAsPinholeCamera(
 
 float Camera::CalcNearPlane() { return NEAR_PLANE; }
 
-float Camera::CalcFarPlane(
-        const rendering::Camera& camera,
-        const ccBBox& scene_bounds) {
+float Camera::CalcFarPlane(const rendering::Camera& camera,
+                           const ccBBox& scene_bounds) {
     // The far plane needs to be the max absolute distance, not just the
     // max extent, so that axes are visible if requested.
     // See also RotationInteractorLogic::UpdateCameraFarPlane().
@@ -58,7 +56,7 @@ float Camera::CalcFarPlane(
     auto far3 = camera.GetModelMatrix().translation().cast<double>().norm();
     auto model_size = 2.0 * scene_bounds.GetExtent().norm();
     auto far_v = std::max(MIN_FAR_PLANE,
-                        std::max(std::max(far1, far2), far3) + model_size);
+                          std::max(std::max(far1, far2), far3) + model_size);
     return far_v;
 }
 

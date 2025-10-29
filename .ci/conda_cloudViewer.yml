@@ -7,7 +7,7 @@ dependencies:
   - ninja
   - libcurl=8.14.*
   - openssl
-  - boost=1.84.*
+  - boost=1.84.* # pcl and reconstruction
   - cgal=5.*
   - qt=5.15.*
   - pcl=1.14.0 # will auto install required dependencies like vtk-9.2.6 and qt-5.15.8

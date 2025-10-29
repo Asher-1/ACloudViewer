@@ -1,21 +1,10 @@
-// ##########################################################################
-// #                                                                        #
-// #                              CLOUDVIEWER                               #
-// #                                                                        #
-// #  This program is free software; you can redistribute it and/or modify  #
-// #  it under the terms of the GNU General Public License as published by  #
-// #  the Free Software Foundation; version 2 or later of the License.      #
-// #                                                                        #
-// #  This program is distributed in the hope that it will be useful,       #
-// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-// #  GNU General Public License for more details.                          #
-// #                                                                        #
-// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-// #                                                                        #
-// ##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-// Local
 #include "ecvConsole.h"
 
 #include "MainWindow.h"
@@ -33,8 +22,12 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QColor>
+#include <QDateTime>
+#include <QDir>
+#include <QFileInfo>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QTextStream>
 #include <QThread>
 #include <QTime>
@@ -43,6 +36,13 @@
 #include <cassert>
 #ifdef QT_DEBUG
 #include <iostream>
+#endif
+
+#ifdef _WIN32
+#include <process.h>
+#define getpid _getpid
+#else
+#include <unistd.h>
 #endif
 
 /***************
@@ -197,10 +197,8 @@ void ecvConsole::Init(QListWidget* textDisplay /*=0*/,
                                             "QtMessagesEnabled", false)
                         .toBool();
 
-#ifdef CV_WINDOWS  // only support Log file in Windows now!
-        // set log file.
-        s_console.instance->setLogFile(Settings::LOGFILE);
-#endif
+        // set log file with prefix
+        s_console.instance->setLogFile(Settings::LOGFILE_PREFIX);
 
         // install : set the callback for Qt messages
         qInstallMessageHandler(myMessageOutput);
@@ -224,7 +222,7 @@ void ecvConsole::setAutoRefresh(bool state) {
 void ecvConsole::refresh() {
     m_mutex.lock();
 
-    if ((m_textDisplay || m_logStream) && !m_queue.isEmpty()) {
+    if (m_textDisplay && !m_queue.isEmpty()) {
         for (QVector<ConsoleItemType>::const_iterator it = m_queue.constBegin();
              it != m_queue.constEnd(); ++it) {
             // it->second = message severity
@@ -234,44 +232,41 @@ void ecvConsole::refresh() {
             if (debugMessage) continue;
 #endif
 
-            // destination: log file
-            if (m_logStream) {
-                *m_logStream << it->first << endl;
+            // destination: console widget (log file is already written in
+            // logMessage()) it->first = message text
+            QListWidgetItem* item = new QListWidgetItem(it->first);
+
+            // set color based on the message severity
+            // Error
+            if (it->second & LOG_ERROR) {
+                item->setForeground(Qt::red);
             }
-
-            // destination: console widget
-            if (m_textDisplay) {
-                // it->first = message text
-                QListWidgetItem* item = new QListWidgetItem(it->first);
-
-                // set color based on the message severity
-                // Error
-                if (it->second & LOG_ERROR) {
-                    item->setForeground(Qt::red);
-                }
-                // Warning
-                else if (it->second & LOG_WARNING) {
-                    item->setForeground(Qt::darkRed);
-                    // we also force the console visibility if a warning message
-                    // arrives!
-                    if (m_parentWindow) m_parentWindow->forceConsoleDisplay();
-                }
+            // Warning
+            else if (it->second & LOG_WARNING) {
+                item->setForeground(Qt::darkRed);
+                // we also force the console visibility if a warning message
+                // arrives!
+                if (m_parentWindow) m_parentWindow->forceConsoleDisplay();
+            }
 #ifdef QT_DEBUG
-                else if (debugMessage) {
-                    item->setForeground(Qt::blue);
-                }
+            else if (debugMessage) {
+                item->setForeground(Qt::blue);
+            }
 #endif
 
-                m_textDisplay->addItem(item);
-            }
+            m_textDisplay->addItem(item);
         }
 
-        if (m_logStream) m_logFile.flush();
-
-        if (m_textDisplay) m_textDisplay->scrollToBottom();
+        m_textDisplay->scrollToBottom();
     }
 
     m_queue.clear();
+
+    // Flush log file periodically (non-critical messages may not have been
+    // flushed yet)
+    if (m_logStream) {
+        m_logFile.flush();
+    }
 
     m_mutex.unlock();
 }
@@ -296,7 +291,23 @@ void ecvConsole::logMessage(const QString& message, int level) {
     }
     if (m_textDisplay || m_logStream) {
         m_mutex.lock();
-        m_queue.push_back(ConsoleItemType(formatedMessage, level));
+
+        // Write to log file immediately for crash safety (all messages)
+        // UI update will still be handled by the timer for performance
+        if (m_logStream) {
+            *m_logStream << formatedMessage << endl;
+            // Flush immediately for ERROR/WARNING, or every few messages for
+            // others
+            if ((level & LOG_ERROR) || (level & LOG_WARNING)) {
+                m_logFile.flush();
+            }
+        }
+
+        // Queue for UI update
+        if (m_textDisplay) {
+            m_queue.push_back(ConsoleItemType(formatedMessage, level));
+        }
+
         m_mutex.unlock();
     }
 #ifdef QT_DEBUG
@@ -333,7 +344,116 @@ void ecvConsole::logMessage(const QString& message, int level) {
     }
 }
 
-bool ecvConsole::setLogFile(const QString& filename) {
+QString ecvConsole::generateLogFileName(const QString& prefix) {
+    // Generate timestamp in glog format: YYYYMMDD-HHMMSS
+    QString timestamp =
+            QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss");
+
+    // Get process ID
+    qint64 pid = getpid();
+
+    // Generate log filename: <prefix>.<timestamp>.<pid>.log
+    return QString("%1.%2.%3.log").arg(prefix).arg(timestamp).arg(pid);
+}
+
+QString ecvConsole::getLogDirectory() {
+    QStringList candidatePaths;
+
+#ifdef _WIN32
+    // Windows: Use application directory first, then temp directory
+    candidatePaths << QCoreApplication::applicationDirPath() + "/logs";
+    candidatePaths << QStandardPaths::writableLocation(
+                              QStandardPaths::TempLocation) +
+                              "/ACloudViewerCache/logs";
+
+#elif defined(__APPLE__)
+    // macOS: App bundle is read-only, use standard locations
+    // 1. User's log directory (~/Library/Logs/ACloudViewerCache)
+    QString appLogPath =
+            QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (!appLogPath.isEmpty()) {
+        // On macOS, AppDataLocation typically points to ~/Library/Application
+        // Support/ACloudViewer We want to use ~/Library/Logs/ACloudViewerCache
+        // instead
+        QDir appDir(appLogPath);
+        appDir.cdUp();  // Go to ~/Library/Application Support
+        appDir.cdUp();  // Go to ~/Library
+        if (appDir.cd("Logs")) {
+            candidatePaths << appDir.absolutePath() + "/ACloudViewerCache";
+        }
+    }
+
+    // 2. Standard AppDataLocation as fallback
+    if (!appLogPath.isEmpty()) {
+        candidatePaths << appLogPath + "/logs";
+    }
+
+    // 3. User's home directory
+    QString homePath =
+            QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+    if (!homePath.isEmpty()) {
+        candidatePaths << homePath + "/.ACloudViewerCache/logs";
+    }
+
+    // 4. Try application directory (might work if not in app bundle)
+    candidatePaths << QCoreApplication::applicationDirPath() + "/logs";
+
+    // 5. Fallback to temp directory
+    candidatePaths << QStandardPaths::writableLocation(
+                              QStandardPaths::TempLocation) +
+                              "/ACloudViewerCache/logs";
+
+#else
+    // Linux/Unix: Try multiple locations with fallback for permission issues
+    // 1. Try application directory first (for portable installations)
+    candidatePaths << QCoreApplication::applicationDirPath() + "/logs";
+
+    // 2. Try user's local data directory (usually
+    // ~/.local/share/ACloudViewerCache/logs)
+    QString dataPath =
+            QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (!dataPath.isEmpty()) {
+        candidatePaths << dataPath + "/logs";
+    }
+
+    // 3. Try user's home directory (hidden directory)
+    QString homePath =
+            QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+    if (!homePath.isEmpty()) {
+        candidatePaths << homePath + "/.ACloudViewerCache/logs";
+    }
+
+    // 4. Fallback to temp directory
+    candidatePaths << QStandardPaths::writableLocation(
+                              QStandardPaths::TempLocation) +
+                              "/ACloudViewerCache/logs";
+#endif
+
+    // Try each candidate path
+    for (const QString& path : candidatePaths) {
+        QDir dir(path);
+
+        // Try to create the directory if it doesn't exist
+        if (!dir.exists()) {
+            if (dir.mkpath(".")) {
+                // Successfully created directory
+                return path;
+            }
+        } else {
+            // Directory exists, check if writable
+            QFileInfo dirInfo(path);
+            if (dirInfo.isWritable()) {
+                return path;
+            }
+        }
+    }
+
+    // If all else fails, return temp directory path (Qt should always have
+    // access)
+    return QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+}
+
+bool ecvConsole::setLogFile(const QString& logPrefix) {
     // close previous stream (if any)
     if (m_logStream) {
         m_mutex.lock();
@@ -346,21 +466,44 @@ bool ecvConsole::setLogFile(const QString& filename) {
         }
     }
 
-    if (!filename.isEmpty()) {
-        QString logPath;
-        logPath = QCoreApplication::applicationDirPath() + "/";
-        logPath += filename;
+    if (!logPrefix.isEmpty()) {
+        // Get appropriate log directory
+        QString logDir = getLogDirectory();
+
+        // Generate log file name with timestamp and PID
+        QString logFileName = generateLogFileName(logPrefix);
+
+        // Construct full log path
+        QString logPath = logDir + "/" + logFileName;
+
         m_logFile.setFileName(logPath);
         if (!m_logFile.open(QFile::Text | QFile::WriteOnly | QFile::Append)) {
             return Error(
                     QString("[Console] Failed to open/create log file '%1'")
-                            .arg(filename));
+                            .arg(logPath));
         }
+
+        // Log the actual log file path for user reference
+        QString infoMsg =
+                QString("[Console] Log file created: %1").arg(logPath);
 
         m_mutex.lock();
         m_logStream = new QTextStream(&m_logFile);
+        // Write header to log file
+        *m_logStream << "========================================" << endl;
+        *m_logStream << "ACloudViewer Log File" << endl;
+        *m_logStream << "Started at: "
+                     << QDateTime::currentDateTime().toString(
+                                "yyyy-MM-dd HH:mm:ss")
+                     << endl;
+        *m_logStream << "Log file: " << logPath << endl;
+        *m_logStream << "========================================" << endl;
         m_mutex.unlock();
+
         setAutoRefresh(true);
+
+        // Print info message to console
+        Print(infoMsg);
     }
 
     return true;

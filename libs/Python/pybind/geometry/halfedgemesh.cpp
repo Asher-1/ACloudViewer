@@ -5,10 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "HalfEdgeTriangleMesh.h"
-
 #include <sstream>
 
+#include "HalfEdgeTriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"

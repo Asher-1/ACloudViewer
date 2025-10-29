@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <Eigen.h>
+#include <Logging.h>
+
 #include <Eigen/Core>
 #include <iostream>
 #include <tuple>
@@ -15,9 +18,6 @@
 #include "camera/PinholeCameraIntrinsic.h"
 #include "pipelines/odometry/OdometryOption.h"
 #include "pipelines/odometry/RGBDOdometryJacobian.h"
-
-#include <Eigen.h>
-#include <Logging.h>
 
 namespace cloudViewer {
 
@@ -37,8 +37,7 @@ namespace odometry {
 /// \param jacobin_method The odometry Jacobian method to use.
 /// \param option Odometry hyper parameteres.
 /// \return is_success, 4x4 motion matrix, 6x6 information matrix.
-std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> 
-ComputeRGBDOdometry(
+std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic =

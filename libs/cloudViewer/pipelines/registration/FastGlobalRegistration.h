@@ -13,6 +13,7 @@
 #include <Eigen/Geometry>
 #include <tuple>
 #include <vector>
+
 #include "cloudViewer/pipelines/registration/TransformationEstimation.h"
 
 class ccPointCloud;
@@ -47,15 +48,14 @@ public:
     /// \param maximum_tuple_count Maximum numer of tuples.
     /// \param tuple_test Set to `true` to perform geometric compatibility tests
     /// on initial set of correspondences.
-    FastGlobalRegistrationOption(
-            double division_factor = 1.4,
-            bool use_absolute_scale = false,
-            bool decrease_mu = true,
-            double maximum_correspondence_distance = 0.025,
-            int iteration_number = 64,
-            double tuple_scale = 0.95,
-            int maximum_tuple_count = 1000,
-            bool tuple_test = true)
+    FastGlobalRegistrationOption(double division_factor = 1.4,
+                                 bool use_absolute_scale = false,
+                                 bool decrease_mu = true,
+                                 double maximum_correspondence_distance = 0.025,
+                                 int iteration_number = 64,
+                                 double tuple_scale = 0.95,
+                                 int maximum_tuple_count = 1000,
+                                 bool tuple_test = true)
         : division_factor_(division_factor),
           use_absolute_scale_(use_absolute_scale),
           decrease_mu_(decrease_mu),
@@ -96,11 +96,11 @@ public:
 /// \param corres Correspondence indices between source and target point clouds.
 /// \param option FGR options
 RegistrationResult FastGlobalRegistrationBasedOnCorrespondence(
-    const ccPointCloud &source,
-    const ccPointCloud &target,
-    const CorrespondenceSet &corres,
-    const FastGlobalRegistrationOption &option =
-            FastGlobalRegistrationOption());
+        const ccPointCloud &source,
+        const ccPointCloud &target,
+        const CorrespondenceSet &corres,
+        const FastGlobalRegistrationOption &option =
+                FastGlobalRegistrationOption());
 
 /// \brief Fast Global Registration based on a given set of FPFH features.
 ///
@@ -109,12 +109,12 @@ RegistrationResult FastGlobalRegistrationBasedOnCorrespondence(
 /// \param corres Correspondence indices between source and target point clouds.
 /// \param option FGR options
 RegistrationResult FastGlobalRegistrationBasedOnFeatureMatching(
-    const ccPointCloud &source,
-    const ccPointCloud &target,
-    const utility::Feature &source_feature,
-    const utility::Feature &target_feature,
-    const FastGlobalRegistrationOption &option =
-            FastGlobalRegistrationOption());
+        const ccPointCloud &source,
+        const ccPointCloud &target,
+        const utility::Feature &source_feature,
+        const utility::Feature &target_feature,
+        const FastGlobalRegistrationOption &option =
+                FastGlobalRegistrationOption());
 
 }  // namespace registration
 }  // namespace pipelines

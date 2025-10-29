@@ -7,11 +7,11 @@
 
 #include "io/PoseGraphIO.h"
 
-#include <unordered_map>
-
-#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertibleIO.h>
+#include <Logging.h>
+
+#include <unordered_map>
 
 namespace cloudViewer {
 
@@ -23,14 +23,16 @@ bool ReadPoseGraphFromJSON(const std::string &filename,
     return ReadIJsonConvertible(filename, pose_graph);
 }
 
-bool WritePoseGraphToJSON(const std::string &filename,
-                          const pipelines::registration::PoseGraph &pose_graph) {
+bool WritePoseGraphToJSON(
+        const std::string &filename,
+        const pipelines::registration::PoseGraph &pose_graph) {
     return WriteIJsonConvertibleToJSON(filename, pose_graph);
 }
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, pipelines::registration::PoseGraph &)>>
+        std::function<bool(const std::string &,
+                           pipelines::registration::PoseGraph &)>>
         file_extension_to_pose_graph_read_function{
                 {"json", ReadPoseGraphFromJSON},
         };
@@ -50,7 +52,8 @@ using namespace cloudViewer;
 
 std::shared_ptr<pipelines::registration::PoseGraph> CreatePoseGraphFromFile(
         const std::string &filename) {
-    auto pose_graph = cloudViewer::make_shared<pipelines::registration::PoseGraph>();
+    auto pose_graph =
+            cloudViewer::make_shared<pipelines::registration::PoseGraph>();
     ReadPoseGraph(filename, *pose_graph);
     return pose_graph;
 }

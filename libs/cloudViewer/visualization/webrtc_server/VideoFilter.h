@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
-// ---------------------------------------------------------------------------- 
+// ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 // Contains source code from
 // https://github.com/mpromonet/webrtc-streamer
@@ -13,8 +13,8 @@
 // any purpose.
 // ----------------------------------------------------------------------------
 //
-// This is a private header. It shall be hidden from CloudViewer's public API. Do not
-// put this in CloudViewer.h.in.
+// This is a private header. It shall be hidden from CloudViewer's public API.
+// Do not put this in CloudViewer.h.in.
 
 #pragma once
 

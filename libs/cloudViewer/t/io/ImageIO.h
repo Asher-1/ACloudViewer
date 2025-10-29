@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <ImageIO.h>
+
 #include <string>
 
-#include <ImageIO.h>
 #include "cloudViewer/t/geometry/Image.h"
 
 namespace cloudViewer {

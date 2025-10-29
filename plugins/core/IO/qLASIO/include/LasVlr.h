@@ -1,21 +1,28 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
-//##########################################################################
-//#                                                                        #
-//#                CloudViewer PLUGIN: LAS-IO Plugin                      #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 of the License.               #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#                   COPYRIGHT: Thomas Montaigu                           #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                CloudViewer PLUGIN: LAS-IO Plugin                      #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 of the License.               #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #                   COPYRIGHT: Thomas Montaigu                           #
+// #                                                                        #
+// ##########################################################################
 
 #include "LasDetails.h"
 #include "LasExtraScalarField.h"
@@ -52,7 +59,7 @@ struct LasVlr
 		arch << static_cast<quint64>(object.vlrs.size());
 		for (const laszip_vlr_struct& v : object.vlrs)
 		{
-			//arch << v;
+			// arch << v;
 			arch << v.reserved;
 			arch.writeRawData(v.user_id, 16 * sizeof(laszip_CHAR));
 			arch << v.record_id;
@@ -64,7 +71,7 @@ struct LasVlr
 		arch << static_cast<quint64>(object.extraScalarFields.size());
 		for (const LasExtraScalarField& e : object.extraScalarFields)
 		{
-			//arch << e;
+			// arch << e;
 			arch.writeRawData((const char*)&e, sizeof(LasExtraScalarField));
 		}
 		return arch;
@@ -78,7 +85,7 @@ struct LasVlr
 		for (quint64 i = 0; i < vlrSize; ++i)
 		{
 			laszip_vlr_struct v;
-			//arch >> v;
+			// arch >> v;
 			arch >> v.reserved;
 			arch.readRawData((char*)v.user_id, 16 * sizeof(laszip_CHAR));
 			arch >> v.record_id;
@@ -88,7 +95,7 @@ struct LasVlr
 				v.data = new laszip_U8[v.record_length_after_header]; // TODO: potential memory leak
 				arch.readRawData((char*)v.data, v.record_length_after_header);
 			}
-			//arch >> QByteArray((const char*)v.data, v.record_length_after_header);
+			// arch >> QByteArray((const char*)v.data, v.record_length_after_header);
 			object.vlrs.push_back(v);
 		}
 
@@ -98,7 +105,7 @@ struct LasVlr
 		for (quint64 i = 0; i < extraScalarFieldCount; ++i)
 		{
 			LasExtraScalarField e;
-			//arch >> e;
+			// arch >> e;
 			{
 				char* data = (char*)&e;
 				uint  len  = sizeof(LasExtraScalarField);

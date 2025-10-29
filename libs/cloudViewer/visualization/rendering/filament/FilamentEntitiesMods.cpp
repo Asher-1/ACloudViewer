@@ -21,6 +21,7 @@
 #endif  // _MSC_VER
 
 #include <Logging.h>
+
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentResourceManager.h"
 

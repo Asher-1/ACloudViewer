@@ -124,10 +124,21 @@ def main():
                         type=str,
                         required=True,
                         help="This is cpp/cloudViewer/ml/tensorflow")
+    parser.add_argument("--dependencies_dir",
+                        type=str,
+                        required=True,
+                        help="PyTorch dependencies directory")
 
     args = parser.parse_args()
     print(args)
+    
+    if sys.platform == "win32":
+        cloudViewer_deps = os.add_dll_directory(args.dependencies_dir)
+
     torch.ops.load_library(args.lib)
+
+    if sys.platform == "win32":
+        cloudViewer_deps.close()
 
     generated_function_strs = ''
     generated_namedtuple_strs = ''

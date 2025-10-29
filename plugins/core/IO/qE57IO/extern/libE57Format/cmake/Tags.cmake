@@ -20,17 +20,19 @@ elseif (MSVC70)
     set(T1_ "-vc7")
 elseif (MINGW)
     set(T1_ "-mgw")
-    exec_program(${CMAKE_CXX_COMPILER}
-        ARGS ${CMAKE_CXX_COMPILER_ARG1} -dumpversion
+    execute_process(
+        COMMAND ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_ARG1} -dumpversion
         OUTPUT_VARIABLE T2_
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     string(REGEX REPLACE "([0-9])\\.([0-9])(\\.[0-9])?" "\\1\\2" T2_ ${T2_})
     set(T1_ ${T1_}${T2_})
 elseif (CMAKE_COMPILER_IS_GNUCXX)
     set(T1_ "-gcc")
-    exec_program(${CMAKE_CXX_COMPILER}
-        ARGS ${CMAKE_CXX_COMPILER_ARG1} -dumpversion
+    execute_process(
+        COMMAND ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_ARG1} -dumpversion
         OUTPUT_VARIABLE T2_
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     string(REGEX REPLACE "([0-9])\\.([0-9])(\\.[0-9])?" "\\1\\2" T2_ ${T2_})
     set(T1_ ${T1_}${T2_})

@@ -87,8 +87,7 @@ void RotationInteractorLogic::UpdateCameraFarPlane() {
         intrinsic << proj.proj.intrinsics.fx, 0.0, proj.proj.intrinsics.cx, 0.0,
                 proj.proj.intrinsics.fy, proj.proj.intrinsics.cy, 0.0, 0.0, 1.0;
         camera_->SetProjection(intrinsic, proj.proj.intrinsics.near_plane,
-                               far_v,
-                               proj.proj.intrinsics.width,
+                               far_v, proj.proj.intrinsics.width,
                                proj.proj.intrinsics.height);
     } else if (proj.is_ortho) {
         camera_->SetProjection(proj.proj.ortho.projection, proj.proj.ortho.left,

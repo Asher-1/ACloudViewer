@@ -37,6 +37,15 @@ ENV PIP_RETRIES=5
 ENV PIP_TIMEOUT=1000
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV CMAKE_VERSION=cmake-3.29.2-linux-x86_64
 ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
@@ -45,23 +54,18 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
 
-RUN curl https://pyenv.run | bash \
-        && pyenv update \
-        && pyenv install $PYTHON_VERSION \
-        && pyenv global $PYTHON_VERSION \
-        && pyenv rehash \
-        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
-RUN python --version && pip --version 
-
-# Miniconda requires bash as the default shell.
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
 ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
 
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b torch271 ${CLOUDVIEWER_ML_ROOT}
+
+# Install Rust (required for building some Python packages like y_py) only for Python 3.13+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && . "$HOME/.cargo/env" \
+    && echo 'source $HOME/.cargo/env' >> ~/.bashrc
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
@@ -78,7 +82,7 @@ RUN if [ "${BUILD_GUI}" = "ON" ]; then                                      \
     fi
 
 RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                                    \
-        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&          \
+        echo "Build cloudviewer wheel for ${PYTHON_VERSION}..." &&          \
         rm -rf ${ACloudViewer_BUILD}/* &&                                   \
         ./docker/build_cloudviewer_whl.sh ${PYTHON_VERSION};                \
     fi

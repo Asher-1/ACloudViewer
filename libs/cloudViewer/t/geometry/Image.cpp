@@ -7,6 +7,8 @@
 
 #include "cloudViewer/t/geometry/Image.h"
 
+#include <Logging.h>
+
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -19,7 +21,6 @@
 #include "cloudViewer/t/geometry/kernel/IPPImage.h"
 #include "cloudViewer/t/geometry/kernel/Image.h"
 #include "cloudViewer/t/geometry/kernel/NPPImage.h"
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

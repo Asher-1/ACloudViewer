@@ -1,20 +1,9 @@
-//##########################################################################
-//#                                                                        #
-//#                               cloudViewer                              #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU Library General Public License as       #
-//#  published by the Free Software Foundation; version 2 or later of the  #
-//#  License.                                                              #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "LocalModel.h"
 
@@ -195,8 +184,8 @@ LocalModel* LocalModel::New(CV_LOCAL_MODEL_TYPES type,
                     Neighbourhood::DUPLICATE_VERTICES,
                     Neighbourhood::IGNORE_MAX_EDGE_LENGTH,
                     errorStr);  //'subset' is potentially associated to a
-                                //volatile ReferenceCloud, so we must duplicate
-                                //vertices!
+                                // volatile ReferenceCloud, so we must duplicate
+                                // vertices!
             if (tri) {
                 return new DelaunayLocalModel(tri, center, squaredRadius);
             }

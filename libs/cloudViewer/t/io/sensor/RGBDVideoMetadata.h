@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include <camera/PinholeCameraIntrinsic.h>
-#include "cloudViewer/core/Dtype.h"
 #include <IJsonConvertible.h>
+#include <camera/PinholeCameraIntrinsic.h>
+
+#include "cloudViewer/core/Dtype.h"
 
 namespace cloudViewer {
 

@@ -1,4 +1,9 @@
-
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "FixedRadiusSearchOpKernel.h"
 
@@ -42,7 +47,7 @@ public:
 };
 
 #define REG_KB(type, itype)                                                \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerFixedRadiusSearch")                \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerFixedRadiusSearch")           \
                                     .Device(DEVICE_CPU)                    \
                                     .TypeConstraint<type>("T")             \
                                     .TypeConstraint<itype>("index_dtype"), \

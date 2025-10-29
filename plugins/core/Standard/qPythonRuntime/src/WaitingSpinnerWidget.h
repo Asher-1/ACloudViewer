@@ -1,9 +1,15 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 //
 // Created by Thomas on 14/01/2022.
 //
 
-#ifndef WAITINGSPINNERWIDGET_H
-#define WAITINGSPINNERWIDGET_H
+#pragma once
 /* Original Work Copyright (c) 2012-2014 Alexander Turkin
    Modified 2014 by William Hallatt
    Modified 2015 by Jacob Dawid
@@ -115,4 +121,3 @@ class WaitingSpinnerWidget : public QWidget
     int _currentCounter;
     bool _isSpinning;
 };
-#endif // WAITINGSPINNERWIDGET_H

@@ -7,10 +7,10 @@
 
 #include "visualization/gui/Task.h"
 
+#include <Logging.h>
+
 #include <atomic>
 #include <thread>
-
-#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {
