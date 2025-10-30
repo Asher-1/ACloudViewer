@@ -483,10 +483,7 @@ function Test-Wheel {
     param (
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateScript({Test-Path $_})]
-        [string]$wheel_path,
-        [Parameter(Mandatory=$false, Position=1)]
-        [AllowEmptyCollection()]
-        [string[]]$options = @()
+        [string]$wheel_path
     )
 
     python -m venv cloudViewer_test.venv
@@ -506,20 +503,48 @@ function Test-Wheel {
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
 
+    Write-Host ""
+    $HAVE_PYTORCH_OPS = $false
+    $HAVE_TENSORFLOW_OPS = $false
+
+    # Check if PyTorch Ops are built
+    python -c "import sys, cloudViewer; sys.exit(not cloudViewer._build_config['BUILD_PYTORCH_OPS'])"
+    if ($LASTEXITCODE -eq 0) {
+        $HAVE_PYTORCH_OPS = $true
+        Write-Host "BUILD_PYTORCH_OPS: ON"
+    } else {
+        Write-Host "BUILD_PYTORCH_OPS: OFF"
+    }
+
+    # Check if TensorFlow Ops are built
+    python -c "import sys, cloudViewer; sys.exit(not cloudViewer._build_config['BUILD_TENSORFLOW_OPS'])"
+    if ($LASTEXITCODE -eq 0) {
+        $HAVE_TENSORFLOW_OPS = $true
+        Write-Host "BUILD_TENSORFLOW_OPS: ON"
+    } else {
+        Write-Host "BUILD_TENSORFLOW_OPS: OFF"
+    }
+    Write-Host ""
+
     $CLOUDVIEWER_ML_ROOT = [System.IO.Path]::GetFullPath("$env:CLOUDVIEWER_ML_ROOT")
-    if ($options -contains "with_torch") {
+    
+    # Install and test PyTorch Ops if built
+    if ($HAVE_PYTORCH_OPS) {
         $Requirements_Path = Join-Path $CLOUDVIEWER_ML_ROOT "requirements-torch.txt"
         Install-Requirements $Requirements_Path
         python -W default -c "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
     }
 
-    if ($options -contains "with_tensorflow") {
+    # Install and test TensorFlow Ops if built
+    if ($HAVE_TENSORFLOW_OPS) {
         $Requirements_Path = Join-Path $CLOUDVIEWER_ML_ROOT "requirements-tensorflow.txt"
         Install-Requirements $Requirements_Path
         python -W default -c "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
     }
 
-    if ($options -contains "with_torch" -and $options -contains "with_tensorflow") {
+    # Test importing both libraries in different orders if both are built
+    if ($HAVE_PYTORCH_OPS -and $HAVE_TENSORFLOW_OPS) {
+        Write-Host ""
         Write-Host "Importing TensorFlow and torch in the reversed order"
         python -W default -c "import tensorflow as tf; import torch; import cloudViewer.ml.torch as o3d"
         Write-Host "Importing TensorFlow and torch in the normal order"
