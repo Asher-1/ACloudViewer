@@ -181,19 +181,19 @@ if os.path.exists(MAIN_LIB_PATH):
         # fix symbol lookup error: libQt5XcbQpa.so.5: maybe you should load libxcb-icccm.so.4 first
         # Load libxcb libraries in dependency order
         libxcb_libs = [
-            'libxcb-util*',           # Base utility library
-            'libxcb-icccm*',          # ICCCM depends on util
-            'libxcb-image*',          # Image depends on util and shm
-            'libxcb-keysyms*',        # Keysyms depends on util
-            'libxcb-render-util*',    # Render util
-            'libxcb-render*',         # Render
-            'libxcb-shape*',          # Shape extension
-            'libxcb-shm*',            # Shared memory
-            'libxcb-sync*',           # Sync extension
-            'libxcb-xfixes*',         # Xfixes extension
-            'libxcb-xinerama*',       # Xinerama extension
-            'libxcb-xkb*',            # XKB extension
-            'libxcb-randr*',          # RandR extension
+            'libxcb-util*',  # Base utility library
+            'libxcb-icccm*',  # ICCCM depends on util
+            'libxcb-image*',  # Image depends on util and shm
+            'libxcb-keysyms*',  # Keysyms depends on util
+            'libxcb-render-util*',  # Render util
+            'libxcb-render*',  # Render
+            'libxcb-shape*',  # Shape extension
+            'libxcb-shm*',  # Shared memory
+            'libxcb-sync*',  # Sync extension
+            'libxcb-xfixes*',  # Xfixes extension
+            'libxcb-xinerama*',  # Xinerama extension
+            'libxcb-xkb*',  # XKB extension
+            'libxcb-randr*',  # RandR extension
         ]
         for lib in libxcb_libs:
             if len(list(MAIN_LIB_PATH.glob(lib))) > 0:

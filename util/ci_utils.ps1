@@ -13,7 +13,9 @@ $env:PIP_DISABLE_PIP_VERSION_CHECK = "1"
 $env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalProcessors
 
 $env:BUILD_RIEGL = "ON"
-$env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
+if ($env:CONDA_PREFIX) {
+    $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
+}
 
 if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_INSTALL_DIR)) {
     $env:CLOUDVIEWER_INSTALL_DIR = $env:CLOUDVIEWER_INSTALL_DIR
@@ -21,12 +23,14 @@ if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_INSTALL_DIR)) {
     $env:CLOUDVIEWER_INSTALL_DIR = "C:\dev\cloudViewer_install"
 }
 
-if ($env:CONDA_PREFIX) {
-    Write-Host "Conda env: $env:CONDA_PREFIX is activated."
-}
-else {
-    Write-Host "Conda env is not activated!"
-    exit 1
+function Check-CondaEnv {
+    if ($env:CONDA_PREFIX) {
+        Write-Host "Conda env: $env:CONDA_PREFIX is activated."
+    }
+    else {
+        Write-Host "Conda env is not activated!"
+        exit 1
+    }
 }
 
 # Dependency versions:
@@ -96,6 +100,7 @@ function Install-PythonDependencies {
         [string[]]$options
     )
 
+    Check-CondaEnv
     Write-Host "Installing Python dependencies"
 
     python -m pip install -U pip=="$PIP_VER"
@@ -165,6 +170,7 @@ function Build-GuiApp {
         [string[]]$Arguments
     )
 
+    Check-CondaEnv
     Write-Host "Building ACloudViewer gui app"
     $options = $Arguments -join "|"
     Write-Host "Using cmake: $(Get-Command cmake -ErrorAction SilentlyContinue)"
@@ -314,6 +320,7 @@ function Build-PipPackage {
         [string[]]$options
     )
 
+    Check-CondaEnv
     Write-Host "Building CloudViewer wheel"
     
     $BUILD_FILAMENT_FROM_SOURCE = "OFF"
