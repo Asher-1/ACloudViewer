@@ -207,12 +207,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
-      - name: Test Python package
-        run: |
-          python -V
-          source util/ci_utils.sh
-          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel cloudviewer-[0-9]*-"$pi_tag"-*.whl
       - name: Test Python package (CPU)
         env:
           BUILD_CUDA_MODULE: OFF
@@ -221,3 +215,11 @@ jobs:
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           test_wheel cloudviewer_cpu*-"$pi_tag"-*.whl
+      # - name: Test Python package (CUDA) # github ci no cuda device support
+      #   env:
+      #     BUILD_CUDA_MODULE: ON
+      #   run: |
+      #     python -V
+      #     source util/ci_utils.sh
+      #     pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+      #     test_wheel cloudviewer-[0-9]*-"$pi_tag"-*.whl

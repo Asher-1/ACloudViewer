@@ -294,7 +294,6 @@ jobs:
 
     env:
       BUILD_PYTORCH_OPS: ON
-      # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF
       BUILD_JUPYTER_EXTENSION: ON
       BUILD_AZURE_KINECT: ON
@@ -411,7 +410,7 @@ jobs:
             ${{ env.INSTALL_DIR }}/${{ env.PIP_CPU_PKG_NAME }}
 
   test-wheel:
-    name: Test wheel(CPU)
+    name: Test wheel
     permissions:
       contents: read
     runs-on: windows-2022
@@ -429,9 +428,7 @@ jobs:
             python_version: '3.11'
 
     env:
-      BUILD_CUDA_MODULE: ON
       BUILD_PYTORCH_OPS: ON
-      # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: OFF
       CONDA_DEP_FILE: ".ci/conda_windows.yml"
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
@@ -458,28 +455,39 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
 
-      - name: Test Python package
+      - name: Test Python package (CPU)
+        env:
+          BUILD_CUDA_MODULE: OFF
         run: |
-          $ErrorActionPreference = 'Stop'
           python -V
-          python -m venv cloudViewer_test_venv
-          cloudViewer_test_venv\Scripts\Activate.ps1
-
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
-            wheel==${{ env.WHEEL_VER }} `
-            setuptools==${{ env.STOOLS_VER }}
-          python -m pip install -U -r python/requirements_test.txt
+          $env:PIP_VER = "${{ env.PIP_VER }}"
+          $env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
+          . util/ci_utils.ps1
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\cloudviewer_cpu*-$py_tag-*.whl).Name
           } else {
             $PIP_PKG_NAME=(Get-ChildItem cloudviewer_cpu*-$py_tag-*.whl).Name
           }
-          echo "Installing ACloudViewer wheel $PIP_PKG_NAME in virtual environment..."
-          python -m pip install "$PIP_PKG_NAME"
-          python -c "import cloudViewer; print('Imported:', cloudViewer)"
-          python -c "import cloudViewer; print('CUDA enabled: ', cloudViewer.core.cuda.is_available())"
-          deactivate
+          echo "Testing wheel: $PIP_PKG_NAME"
+          Test-Wheel -wheel_path $PIP_PKG_NAME
+
+      - name: Test Python package (CUDA)
+        env:
+          BUILD_CUDA_MODULE: ON
+        run: |
+          python -V
+          $env:PIP_VER = "${{ env.PIP_VER }}"
+          $env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
+          . util/ci_utils.ps1
+          $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          if (Test-Path -Path "pip_package") {
+            $PIP_PKG_NAME=(Get-ChildItem pip_package\cloudviewer-*-$py_tag-*.whl).Name
+          } else {
+            $PIP_PKG_NAME=(Get-ChildItem cloudviewer-*-$py_tag-*.whl).Name
+          }
+          echo "Testing wheel: $PIP_PKG_NAME"
+          Test-Wheel -wheel_path $PIP_PKG_NAME
 
       # - name: Run Python unit tests
       #   run: |

@@ -63,8 +63,8 @@ For more, please visit the [ACloudViewer documentation](http://asher-1.github.io
 
 ## Python quick start
 
-Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
-(64-bit) with Python 3.8-3.12.
+Pre-built pip packages support Ubuntu 20.04+, macOS 10.15+ and Windows 10+
+(64-bit) with Python 3.10-3.12 and cuda12.x.
 
 ```bash
 # Install

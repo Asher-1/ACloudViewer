@@ -7,4 +7,6 @@ test -d docker || (
 	exit 1
 )
 
-CUDA_VERSION=12.6.3-cudnn UBUNTU_VERSION=22.04 docker/build-ubuntu.sh
+# build ubuntu 20.04 wheel
+# due to some crash issues with Reconstruction module on ubuntu 22.04
+CUDA_VERSION=12.6.3-cudnn UBUNTU_VERSION=20.04 docker/build-ubuntu.sh
