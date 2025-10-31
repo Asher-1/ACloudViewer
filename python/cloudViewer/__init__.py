@@ -33,25 +33,46 @@ MAIN_LIB_PATH = Path(__file__).parent / "lib"
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
 
+# Cache for loaded libraries to prevent duplicate loading
+_loaded_libs_cache = {}
+
 
 def load_cdll(path):
     """
     Wrapper around ctypes.CDLL to take care of Windows compatibility.
+    Prevents duplicate loading by caching loaded libraries.
     """
-    path = Path(path)
-    if not path.is_file():
-        raise FileNotFoundError(f"Shared library file not found: {path}.")
+    file_path = Path(path)
+    if not file_path.is_file():
+        raise FileNotFoundError(f"Shared library file not found: {file_path}.")
 
+    # Use absolute path as cache key to handle relative/absolute path variations
+    abs_path = str(file_path.resolve())
+
+    # Return cached library if already loaded
+    if abs_path in _loaded_libs_cache:
+        return _loaded_libs_cache[abs_path]
+
+    # Load the library
     if sys.platform == "win32" and sys.version_info >= (3, 8):
         # https://stackoverflow.com/a/64472088/1255535
-        return CDLL(str(path), winmode=0)
+        lib = CDLL(str(file_path), winmode=0)
     else:
-        return CDLL(str(path))
+        lib = CDLL(str(file_path))
+
+    # Cache the loaded library
+    _loaded_libs_cache[abs_path] = lib
+    return lib
 
 
-def try_load_cdll(so_name):
+def try_load_cdll(so_name, max_retries=3):
     """
     Wrapper around ctypes.CDLL to take care of Linux compatibility.
+    Automatically detects and loads missing dependencies.
+    
+    Args:
+        so_name: Library name pattern to load (e.g., 'libQt5Core*')
+        max_retries: Maximum number of retry attempts to resolve dependencies
     """
     try:  # StopIteration if lib not available
         libs_file_list = list(MAIN_LIB_PATH.glob(so_name))
@@ -63,8 +84,25 @@ def try_load_cdll(so_name):
                 )
             load_cdll(str(next(MAIN_LIB_PATH.glob(so_name))))
     except OSError as os_error:
+        # Try to extract the missing library name from the error message
         match = re.search(r'lib[^/]+\.so[^\s:]*', str(os_error))
         missing_so_name = match.group(0) if match else ''
+
+        if missing_so_name and max_retries > 0:
+            # Try to find and load the missing dependency
+            missing_pattern = missing_so_name.replace('.so', '*')
+            missing_libs = list(MAIN_LIB_PATH.glob(missing_pattern))
+
+            if missing_libs:
+                # Found the missing dependency, try to load it first
+                try:
+                    load_cdll(str(missing_libs[0]))
+                    # Retry loading the original library
+                    try_load_cdll(so_name, max_retries - 1)
+                    return  # Success
+                except Exception:
+                    pass  # Fall through to warning
+
         warnings.warn(
             f"{os_error} when loading {libs_file_list}, maybe you should load {missing_so_name} first",
             ImportWarning,
@@ -171,7 +209,6 @@ if os.path.exists(MAIN_LIB_PATH):
             try_load_cdll('libmd4c*')
 
         try_load_cdll('libQt5Core*')
-        try_load_cdll('libQt5Core*')
         try_load_cdll('libQt5Gui*')
         try_load_cdll('libQt5Widgets*')
         try_load_cdll('libQt5Concurrent*')
@@ -179,23 +216,34 @@ if os.path.exists(MAIN_LIB_PATH):
         try_load_cdll('libQt5Svg*')
 
         # fix symbol lookup error: libQt5XcbQpa.so.5: maybe you should load libxcb-icccm.so.4 first
-        # Load libxcb libraries in dependency order
-        libxcb_libs = [
+        # Load X11/XCB related libraries in dependency order before Qt5XcbQpa
+        # These libraries must be loaded in the correct order to resolve all dependencies
+        x11_xcb_libs = [
+            # Base X11 libraries
+            'libxcb.so*',  # Base XCB library (must be first)
+            'libX11.so*',  # X11 library
+            'libX11-xcb*',  # X11-XCB bridge
+            'libXext*',  # X11 extensions
+            # XKB libraries (needed by Qt5XcbQpa)
+            'libxkbcommon.so*',  # Base XKB library (before x11 variant)
+            'libxkbcommon-x11*',  # XKB X11 integration
+            # XCB utility libraries
             'libxcb-util*',  # Base utility library
+            'libxcb-shm*',  # Shared memory (needed by image)
             'libxcb-icccm*',  # ICCCM depends on util
             'libxcb-image*',  # Image depends on util and shm
             'libxcb-keysyms*',  # Keysyms depends on util
             'libxcb-render-util*',  # Render util
-            'libxcb-render*',  # Render
+            'libxcb-render.*',  # Render
             'libxcb-shape*',  # Shape extension
-            'libxcb-shm*',  # Shared memory
             'libxcb-sync*',  # Sync extension
             'libxcb-xfixes*',  # Xfixes extension
             'libxcb-xinerama*',  # Xinerama extension
             'libxcb-xkb*',  # XKB extension
             'libxcb-randr*',  # RandR extension
+            'libxcb-xinput*',  # XInput extension
         ]
-        for lib in libxcb_libs:
+        for lib in x11_xcb_libs:
             if len(list(MAIN_LIB_PATH.glob(lib))) > 0:
                 try_load_cdll(lib)
 
@@ -431,4 +479,4 @@ def _jupyter_nbextension_paths():
 
 if sys.platform == "win32":
     _win32_dll_dir.close()
-del os, re, sys, CDLL, load_cdll, try_load_cdll, find_library, Path, warnings, _insert_pybind_names
+del os, re, sys, CDLL, load_cdll, try_load_cdll, find_library, Path, warnings, _insert_pybind_names, _loaded_libs_cache
