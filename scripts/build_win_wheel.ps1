@@ -165,19 +165,8 @@ if ($env:IGNORE_TEST -ne "ON") {
         $wheel_file = (Get-Item "lib/python_package/pip_package/cloudviewer_cpu*.whl").FullName
         Write-Host "Test with cpu version: $wheel_file"
     }
-    $test_options = @()
-    if ($env:BUILD_CUDA_MODULE -eq "ON") {
-        $test_options += "with_cuda"
-    }
-    if ($env:BUILD_PYTORCH_OPS -eq "ON") {
-        $test_options += "with_torch"
-    }
-    if ($env:BUILD_TENSORFLOW_OPS -eq "ON") {
-        $test_options += "with_tensorflow"
-    }
     Write-Host "Wheel_file path: $wheel_file"
-    Write-Host "Test options: $test_options"
-    Test-Wheel -wheel_path $wheel_file -options $test_options
+    Test-Wheel -wheel_path $wheel_file
     Pop-Location  # PWD=ACloudViewer
 }
 
