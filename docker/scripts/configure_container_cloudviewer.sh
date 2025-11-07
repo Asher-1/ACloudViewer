@@ -7,7 +7,7 @@
 # export DISPLAY=:0
 
 # create container instance
-docker run -dit --name=test_cloudviewer_dep \
+docker run -dit --name=test_cloudviewer_dep_ubuntu2004 \
   --shm-size="16g" \
   --cap-add=SYS_PTRACE \
   --security-opt seccomp=unconfined --privileged \
@@ -32,10 +32,11 @@ docker run -dit --name=test_cloudviewer_dep \
   -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
-  cloudviewer-deps:develop-ubuntu20.04-cuda11.8.0-cudnn8
+  cloudviewer-deps:develop-ubuntu20.04-cuda12.6.3-cudnn
 
+docker exec -it test_cloudviewer_dep_ubuntu2004 /bin/bash
 
-docker run -dit --name=test_cloudviewer_dep \
+docker run -dit --name=test_cloudviewer_dep_ubuntu2204 \
   --shm-size="16g" \
   --cap-add=SYS_PTRACE \
   --security-opt seccomp=unconfined --privileged \
@@ -63,7 +64,7 @@ docker run -dit --name=test_cloudviewer_dep \
   cloudviewer-deps:develop-ubuntu22.04-cuda12.6.3-cudnn
 
 # attach into container instance
-docker exec -it test_cloudviewer_dep /bin/bash
+docker exec -it test_cloudviewer_dep_ubuntu2204 /bin/bash
 
 docker run -dit --name=test_cloudviewer \
   --shm-size="16g" \
@@ -90,7 +91,7 @@ docker run -dit --name=test_cloudviewer \
   -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
-  cloudviewer:develop-ubuntu18.04-cuda11.8.0-cudnn8
+  cloudviewer:develop-ubuntu18.04-cuda12.6.3-cudnn
 
 
 # attach into container instance
@@ -98,10 +99,10 @@ docker exec -it test_cloudviewer /bin/bash
 
 cd /root/ACloudViewer
 export QT_BASE_DIR=/opt/qt515
-export ACloudViewer_DEV=/root \
-export ACloudViewer_BUILD=/root/ACloudViewer/build \
-export ACloudViewer_INSTALL=/root/install \
-export CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML \
+export ACloudViewer_DEV=/root
+export ACloudViewer_BUILD=/root/ACloudViewer/build
+export ACloudViewer_INSTALL=/root/install
+export CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
 export LD_LIBRARY_PATH=${QT_BASE_DIR}/lib:$LD_LIBRARY_PATH
 export PKG_CONFIG_PATH=${QT_BASE_DIR}/lib/pkgconfig:$PKG_CONFIG_PATH
 
@@ -132,6 +133,16 @@ rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh $PYTHON_VERS
 test cloudViewer
 python3 -c "import cloudViewer as cv3d; print(cv3d.__version__); print('CUDA available: ', cv3d.core.cuda.is_available());"
 python3 -c "import cloudViewer.ml.torch as ml3d"
+
+
+debug ACloudViewer App
+export LD_LIBRARY_PATH=~/ACloudViewer/lib
+export PYTHONPATH=~/ACloudViewer/plugins/Python
+cd ~/ACloudViewer
+gdb ./ACloudViewer
+run
+bt
+
 
 pcl: metslib-0.5.3
 wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz
