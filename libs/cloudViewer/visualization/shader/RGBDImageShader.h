@@ -19,8 +19,6 @@ enum ImageTextureMode { Depth = 0, RGB = 1, Grayscale = 2 };
 
 class RGBDImageShader : public ShaderWrapper {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     ~RGBDImageShader() override { Release(); }
 
 protected:
@@ -70,8 +68,6 @@ protected:
 
 class RGBDImageShaderForImage : public RGBDImageShader {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     RGBDImageShaderForImage() : RGBDImageShader("RGBDImageShaderForImage") {}
 
 protected:

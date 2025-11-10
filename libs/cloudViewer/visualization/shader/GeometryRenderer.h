@@ -27,9 +27,6 @@ namespace glsl {
 
 class GeometryRenderer {
 public:
-    // fix for inheritants alignment!
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     virtual ~GeometryRenderer() {}
 
 public:

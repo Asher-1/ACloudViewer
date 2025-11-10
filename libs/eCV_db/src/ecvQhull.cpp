@@ -42,7 +42,7 @@ Qhull::ComputeConvexHull(const std::vector<CCVector3>& points) {
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    auto convex_hull = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto convex_hull = std::make_shared<ccMesh>(baseVertices);
     convex_hull->addChild(baseVertices);
     convex_hull->setName("ConvexMesh");
     std::vector<size_t> pt_map;
@@ -133,7 +133,7 @@ std::tuple<std::shared_ptr<TetraMesh>, std::vector<size_t>>
 Qhull::ComputeDelaunayTetrahedralization(
         const std::vector<Eigen::Vector3d>& points) {
     typedef decltype(TetraMesh::tetras_)::value_type Vector4i;
-    auto delaunay_triangulation = cloudViewer::make_shared<TetraMesh>();
+    auto delaunay_triangulation = std::make_shared<TetraMesh>();
     std::vector<size_t> pt_map;
 
     if (points.size() < 4) {

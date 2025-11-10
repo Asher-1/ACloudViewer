@@ -449,8 +449,8 @@ geometry::RansacResults ccPointCloud::ExecuteRANSAC(
                                      CCVector3::fromArray(G.getValue()));
 
                     // plane primitive
-                    prim = make_shared<ccPlane>(std::abs(dX), std::abs(dY),
-                                                &glMat);
+                    prim = std::make_shared<ccPlane>(std::abs(dX), std::abs(dY),
+                                                     &glMat);
                     prim->setSelectionBehavior(ccHObject::SELECTION_FIT_BBOX);
                     prim->enableStippling(true);
                     PointCoordinateType dip = 0.0f;
@@ -481,7 +481,7 @@ geometry::RansacResults ccPointCloud::ExecuteRANSAC(
                     ccGLMatrix glMat;
                     glMat.setTranslation(CC.getValue());
                     // sphere primitive
-                    prim = make_shared<ccSphere>(radius, &glMat);
+                    prim = std::make_shared<ccSphere>(radius, &glMat);
                     prim->setEnabled(true);
                     prim->setName(QString("Sphere (r=%1)").arg(radius, 0, 'f'));
                     sphereCount++;
@@ -515,7 +515,7 @@ geometry::RansacResults ccPointCloud::ExecuteRANSAC(
                                      CCVector3::fromArray(G.getValue()));
 
                     // cylinder primitive
-                    prim = make_shared<ccCylinder>(radius, h, &glMat);
+                    prim = std::make_shared<ccCylinder>(radius, h, &glMat);
                     prim->setEnabled(true);
                     prim->setName(QString("Cylinder (r=%1/h=%2)")
                                           .arg(radius, 0, 'f')
@@ -581,9 +581,9 @@ geometry::RansacResults ccPointCloud::ExecuteRANSAC(
                         ccGLMatrix glMat(X, Y, Z, C);
 
                         // eventually create the cone primitive
-                        prim = make_shared<ccCone>(maxRadius, minRadius,
-                                                   maxHeight - minHeight, 0, 0,
-                                                   &glMat);
+                        prim = std::make_shared<ccCone>(maxRadius, minRadius,
+                                                        maxHeight - minHeight,
+                                                        0, 0, &glMat);
                         prim->setEnabled(true);
                         prim->setName(
                                 QString("Cone (alpha=%1/h=%2)")
@@ -624,7 +624,7 @@ geometry::RansacResults ccPointCloud::ExecuteRANSAC(
                         ccGLMatrix glMat(X, Y, Z, C);
 
                         // torus primitive
-                        prim = make_shared<ccTorus>(
+                        prim = std::make_shared<ccTorus>(
                                 maxRadius - minRadius, maxRadius + minRadius,
                                 M_PI * 2.0, false, 0, &glMat);
                         prim->setEnabled(true);

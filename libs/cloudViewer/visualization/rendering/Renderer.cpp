@@ -76,7 +76,7 @@ void Renderer::RenderToImage(
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
-                auto image = cloudViewer::make_shared<geometry::Image>();
+                auto image = std::make_shared<geometry::Image>();
                 image->width_ = int(buffer.width);
                 image->height_ = int(buffer.height);
                 image->num_of_channels_ = 3;

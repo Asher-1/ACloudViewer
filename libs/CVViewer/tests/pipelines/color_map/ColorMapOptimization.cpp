@@ -56,7 +56,7 @@ std::vector<std::shared_ptr<geometry::Image>> GenerateSharedImages(
 
     std::vector<std::shared_ptr<geometry::Image>> output;
     for (size_t i = 0; i < size; i++)
-        output.push_back(cloudViewer::make_shared<geometry::Image>(images[i]));
+        output.push_back(std::make_shared<geometry::Image>(images[i]));
 
     return output;
 }

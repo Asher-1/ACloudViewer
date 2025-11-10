@@ -82,7 +82,7 @@ static const std::unordered_map<
 namespace io {
 std::shared_ptr<geometry::Image> CreateImageFromFile(
         const std::string &filename) {
-    auto image = cloudViewer::make_shared<geometry::Image>();
+    auto image = std::make_shared<geometry::Image>();
     ReadImage(filename, *image);
     return image;
 }
@@ -91,7 +91,7 @@ std::shared_ptr<geometry::Image> CreateImageFromMemory(
         const std::string &image_format,
         const unsigned char *image_data_ptr,
         size_t image_data_size) {
-    auto image = cloudViewer::make_shared<geometry::Image>();
+    auto image = std::make_shared<geometry::Image>();
     ReadImageFromMemory(image_format, image_data_ptr, image_data_size, *image);
     return image;
 }

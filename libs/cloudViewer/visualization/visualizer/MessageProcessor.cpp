@@ -47,7 +47,7 @@ std::shared_ptr<zmq::message_t> MessageProcessor::ProcessMessage(
         baseVertices->setEnabled(false);
         // DGM: no need to lock it as it is only used by one mesh!
         baseVertices->setLocked(false);
-        auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+        auto mesh = std::make_shared<ccMesh>(baseVertices);
         mesh->addChild(baseVertices);
 
         errstr = "";
@@ -192,7 +192,7 @@ std::shared_ptr<zmq::message_t> MessageProcessor::ProcessMessage(
         SetGeometry(mesh, msg.path, msg.time, msg.layer);
     } else {
         // create a PointCloud
-        auto pcd = cloudViewer::make_shared<ccPointCloud>();
+        auto pcd = std::make_shared<ccPointCloud>();
         if (!msg.data.vertices.CheckType(
                     {messages::TypeStr<float>(), messages::TypeStr<double>()},
                     errstr)) {

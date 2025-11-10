@@ -394,6 +394,24 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRE
 
 include(CMakePolicies)
 include(CMakeSetCompilerOptions)
+
+# We want EIGEN_HAS_CXX17_OVERALIGN=1 even with EIGEN_MAX_ALIGN_BYTES=0 to:
+# - Allow Eigen to use C++17 std::allocator's automatic alignment handling
+# - Avoid potential compilation issues with C++17 standard library features
+# - Maintain compatibility with C++17 over-alignment support in standard containers
+# Note: Eigen will auto-detect EIGEN_HAS_CXX17_OVERALIGN based on compiler/C++ standard.
+# We don't explicitly define it here to avoid redefine warnings - Eigen's auto-detection
+# will handle it correctly when C++17 is available.
+if (DEFINED UBUNTU_VERSION AND USE_PCL_BACKEND)
+    if (UBUNTU_VERSION VERSION_GREATER_EQUAL "22.04")
+        # Fix Ubuntu 22.04+ crash issues with Eigen alignment
+        add_compile_definitions(EIGEN_MAX_ALIGN_BYTES=0)
+        message(STATUS "Eigen alignment disabled for PCL compatibility on Ubuntu ${UBUNTU_VERSION} (EIGEN_MAX_ALIGN_BYTES=0)")
+    else()
+        message(STATUS "Eigen alignment enabled for optimal performance (Ubuntu ${UBUNTU_VERSION} < 22.04)")
+    endif()
+endif()
+
 # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
 add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
 

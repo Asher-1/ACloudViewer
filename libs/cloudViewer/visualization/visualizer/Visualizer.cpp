@@ -277,7 +277,7 @@ void Visualizer::BuildUtilities() {
     coordinate_frame_mesh_ptr_ =
             ccMesh::CreateCoordinateFrame(extent, boundingbox.GetMinBound());
     coordinate_frame_mesh_renderer_ptr_ =
-            cloudViewer::make_shared<glsl::CoordinateFrameRenderer>();
+            std::make_shared<glsl::CoordinateFrameRenderer>();
     if (!coordinate_frame_mesh_renderer_ptr_->AddGeometry(
                 coordinate_frame_mesh_ptr_)) {
         return;
@@ -351,69 +351,67 @@ bool Visualizer::AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
     if (geometry_ptr->isKindOf(CV_TYPES::CUSTOM_H_OBJECT)) {
         return false;
     } else if (geometry_ptr->isKindOf(CV_TYPES::POINT_CLOUD)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::PointCloudRenderer>();
+        renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::VOXEL_GRID)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::VoxelGridRenderer>();
+        renderer_ptr = std::make_shared<glsl::VoxelGridRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::POINT_OCTREE2)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::OctreeRenderer>();
+        renderer_ptr = std::make_shared<glsl::OctreeRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::LINESET)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::LineSetRenderer>();
+        renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::POLY_LINE)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::PolylineRenderer>();
+        renderer_ptr = std::make_shared<glsl::PolylineRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::FACET)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::FacetRenderer>();
+        renderer_ptr = std::make_shared<glsl::FacetRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::TriangleMeshRenderer>();
+        renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::HalfEdgeMeshRenderer>();
+        renderer_ptr = std::make_shared<glsl::HalfEdgeMeshRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::IMAGE2)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::ImageRenderer>();
+        renderer_ptr = std::make_shared<glsl::ImageRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::RGBD_IMAGE)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::RGBDImageRenderer>();
+        renderer_ptr = std::make_shared<glsl::RGBDImageRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::TETRA_MESH)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::TetraMeshRenderer>();
+        renderer_ptr = std::make_shared<glsl::TetraMeshRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::ORIENTED_BBOX)) {
-        renderer_ptr =
-                cloudViewer::make_shared<glsl::OrientedBoundingBoxRenderer>();
+        renderer_ptr = std::make_shared<glsl::OrientedBoundingBoxRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::BBOX)) {
-        renderer_ptr = cloudViewer::make_shared<
-                glsl::AxisAlignedBoundingBoxRenderer>();
+        renderer_ptr = std::make_shared<glsl::AxisAlignedBoundingBoxRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }

@@ -85,7 +85,7 @@ std::shared_ptr<ccPointCloud> CreatePointCloudFromFile(
         const std::string &filename,
         const std::string &format,
         bool print_progress) {
-    auto pointcloud = cloudViewer::make_shared<ccPointCloud>("pointCloud");
+    auto pointcloud = std::make_shared<ccPointCloud>("pointCloud");
     ReadPointCloud(filename, *pointcloud, {format, true, true, print_progress});
     return pointcloud;
 }

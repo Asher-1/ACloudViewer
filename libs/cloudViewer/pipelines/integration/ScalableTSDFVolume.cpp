@@ -104,7 +104,7 @@ void ScalableTSDFVolume::Integrate(
 }
 
 std::shared_ptr<ccPointCloud> ScalableTSDFVolume::ExtractPointCloud() {
-    auto pointcloud = cloudViewer::make_shared<ccPointCloud>();
+    auto pointcloud = std::make_shared<ccPointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
     float w0, w1, f0, f1;
     Eigen::Vector3f c0, c1;
@@ -223,7 +223,7 @@ std::shared_ptr<ccMesh> ScalableTSDFVolume::ExtractTriangleMesh() {
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
 
     double half_voxel_length = voxel_length_ * 0.5;
@@ -388,7 +388,7 @@ std::shared_ptr<ccMesh> ScalableTSDFVolume::ExtractTriangleMesh() {
 }
 
 std::shared_ptr<ccPointCloud> ScalableTSDFVolume::ExtractVoxelPointCloud() {
-    auto voxel = cloudViewer::make_shared<ccPointCloud>();
+    auto voxel = std::make_shared<ccPointCloud>();
     for (auto &unit : volume_units_) {
         if (unit.second.volume_) {
             auto v = unit.second.volume_->ExtractVoxelPointCloud();

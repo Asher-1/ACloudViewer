@@ -19,8 +19,6 @@ namespace visualization {
 /// \brief Visualizer with custom key callack capabilities.
 class VisualizerWithKeyCallback : public Visualizer {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     typedef std::pair<int, std::function<bool(Visualizer *)>> KeyCallbackPair;
 
 public:

@@ -20,7 +20,6 @@ class IBLRotationInteractorLogic : public MatrixInteractorLogic {
     using Super = MatrixInteractorLogic;
 
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
     IBLRotationInteractorLogic(Scene* scene, Camera* camera);
 
     void Rotate(int dx, int dy) override;

@@ -21,7 +21,7 @@ void testFromFile(const std::string& filename) {
     ccHObject::Container polylines;
     cloud_ptr->filterChildren(polylines, false, CV_TYPES::POLY_LINE);
     for (size_t i = 0; i < polylines.size(); ++i) {
-        auto poly = cloudViewer::make_shared<ccPolyline>(nullptr);
+        auto poly = std::make_shared<ccPolyline>(nullptr);
         *poly = *ccHObjectCaster::ToPolyline(polylines[i]);
         poly->setColor(ecvColor::blue);
         if (poly) {
@@ -33,7 +33,7 @@ void testFromFile(const std::string& filename) {
         ccPolyline* poly1 = ccHObjectCaster::ToPolyline(polylines[0]);
         ccPolyline* poly2 = ccHObjectCaster::ToPolyline(polylines[1]);
 
-        auto poly = cloudViewer::make_shared<ccPolyline>(nullptr);
+        auto poly = std::make_shared<ccPolyline>(nullptr);
         *poly = *poly1 + *poly2;
         poly->setWidth(10);
         unsigned vertCount = poly->getAssociatedCloud()->size();

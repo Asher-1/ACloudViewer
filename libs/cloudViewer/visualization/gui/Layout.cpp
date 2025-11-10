@@ -210,7 +210,7 @@ void Layout1D::SetSpacing(int spacing) { impl_->spacing_ = spacing; }
 void Layout1D::SetMargins(const Margins& margins) { impl_->margins_ = margins; }
 
 void Layout1D::AddFixed(int size) {
-    AddChild(cloudViewer::make_shared<Fixed>(size, impl_->dir_));
+    AddChild(std::make_shared<Fixed>(size, impl_->dir_));
 }
 
 int Layout1D::GetMinorAxisPreferredSize() const {
@@ -221,7 +221,7 @@ void Layout1D::SetMinorAxisPreferredSize(int size) {
     impl_->minor_axis_size_ = size;
 }
 
-void Layout1D::AddStretch() { AddChild(cloudViewer::make_shared<Stretch>()); }
+void Layout1D::AddStretch() { AddChild(std::make_shared<Stretch>()); }
 
 Size Layout1D::CalcPreferredSize(const LayoutContext& context,
                                  const Constraints& constraints) const {
@@ -341,11 +341,11 @@ void Layout1D::Layout(const LayoutContext& context) {
 
 // ----------------------------------------------------------------------------
 std::shared_ptr<Layout1D::Fixed> Vert::MakeFixed(int size) {
-    return cloudViewer::make_shared<Layout1D::Fixed>(size, VERT);
+    return std::make_shared<Layout1D::Fixed>(size, VERT);
 }
 
 std::shared_ptr<Layout1D::Stretch> Vert::MakeStretch() {
-    return cloudViewer::make_shared<Layout1D::Stretch>();
+    return std::make_shared<Layout1D::Stretch>();
 }
 
 Vert::Vert() : Layout1D(VERT, 0, Margins(), {}) {}
@@ -521,15 +521,15 @@ Widget::DrawResult ScrollableVert::Draw(const DrawContext& context) {
 
 // ----------------------------------------------------------------------------
 std::shared_ptr<Layout1D::Fixed> Horiz::MakeFixed(int size) {
-    return cloudViewer::make_shared<Layout1D::Fixed>(size, HORIZ);
+    return std::make_shared<Layout1D::Fixed>(size, HORIZ);
 }
 
 std::shared_ptr<Layout1D::Stretch> Horiz::MakeStretch() {
-    return cloudViewer::make_shared<Layout1D::Stretch>();
+    return std::make_shared<Layout1D::Stretch>();
 }
 
 std::shared_ptr<Horiz> Horiz::MakeCentered(std::shared_ptr<Widget> w) {
-    return cloudViewer::make_shared<Horiz>(
+    return std::make_shared<Horiz>(
             0, Margins(),
             std::vector<std::shared_ptr<Widget>>(
                     {Horiz::MakeStretch(), w, Horiz::MakeStretch()}));

@@ -90,7 +90,7 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromVoxelGrid(
         const geometry::VoxelGrid& voxel_grid) {
     ccPointCloud* baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     auto num_voxels = voxel_grid.voxels_.size();
     if (!baseVertices->reserve(static_cast<unsigned>(36 * num_voxels))) {
         utility::LogError("not enough memory!");
@@ -144,7 +144,7 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromVoxelGrid(
 
 static std::shared_ptr<ccMesh> CreateTriangleMeshFromOctree(
         const geometry::Octree& octree) {
-    auto mesh = cloudViewer::make_shared<ccMesh>();
+    auto mesh = std::make_shared<ccMesh>();
     if (!mesh->CreateInternalCloud()) {
         utility::LogError("creating internal cloud failed!");
         return nullptr;

@@ -92,6 +92,26 @@ void Model::ReadFromCOLMAP(const std::string& path,
     }
     points.push_back(point);
   }
+
+  // Fix for Reconstruction::~Reconstruction() crash issue:
+  // The crash may be caused by memory alignment issues when Image objects
+  // (which contain Eigen::Vector4d and Eigen::Vector3d requiring 16-byte
+  // alignment) are stored in std::unordered_map without proper alignment.
+  // Explicitly clear data structures before destruction to avoid potential
+  // alignment-related crashes, double-free, or memory corruption issues
+  // during automatic destruction.
+  //
+  // Cleanup order is critical:
+  // 1. First, tear down the reconstruction to clean up correspondence graph
+  //    and compress tracks (this may reallocate memory with proper alignment)
+  reconstruction.TearDown();
+  // 2. Then, explicitly clear all points and 2D observations to break
+  //    cross-references between points3D_ and images_ before destruction.
+  //    This ensures Image objects with Eigen-aligned members are destroyed
+  //    in a controlled manner, avoiding alignment issues in unordered_map.
+  reconstruction.DeleteAllPoints2DAndPoints3D();
+  // Note: After these operations, the reconstruction object will be safely
+  // destroyed without accessing potentially misaligned Eigen members.
 }
 
 void Model::ReadFromPMVS(const std::string& path) {
