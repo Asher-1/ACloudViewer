@@ -12,6 +12,9 @@
 
 #include "CVCoreLib.h"
 #include "CVTypes.h"
+// clang-format off
+#include "Eigen.h"  // Must be included before <vector> to ensure vector specializations
+// clang-format on
 
 // system
 #include <algorithm>

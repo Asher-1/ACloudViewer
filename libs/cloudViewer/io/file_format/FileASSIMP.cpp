@@ -367,7 +367,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         ccPointCloud* baseVertices = new ccPointCloud("vertices");
         assert(baseVertices);
-        auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+        auto mesh = std::make_shared<ccMesh>(baseVertices);
 
         if (!baseVertices->reserveThePointsTable(assimp_mesh->mNumVertices)) {
             utility::LogError(

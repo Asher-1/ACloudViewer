@@ -33,42 +33,42 @@ using namespace cloudViewer;
 auto getUnions() {
     double d = 4;
     std::shared_ptr<ccGenericPrimitive> mesh = nullptr;
-    mesh = cloudViewer::make_shared<ccPlane>(2.0f, 4.0f);
+    mesh = std::make_shared<ccPlane>(2.0f, 4.0f);
     mesh->setColor(ecvColor::Rgb(125, 255, 0));
     mesh->Translate(Eigen::Vector3d(-d, 0.0, 0.0));
 
-    auto box = cloudViewer::make_shared<ccBox>(CCVector3(2.0f, 2.0f, 2.0f));
+    auto box = std::make_shared<ccBox>(CCVector3(2.0f, 2.0f, 2.0f));
     box->setColor(ecvColor::Rgb(0, 0, 255));
     mesh->merge(&box->Translate(Eigen::Vector3d(0.0, 0.0, 0.0)), false);
 
-    auto sphere = cloudViewer::make_shared<ccSphere>(2.0f);
+    auto sphere = std::make_shared<ccSphere>(2.0f);
     sphere->setDrawingPrecision(96);
     sphere->setColor(ecvColor::Rgb(255, 0, 0));
     mesh->merge(&sphere->Translate(Eigen::Vector3d(0.0, -d, 0.0)), false);
 
-    auto torus = cloudViewer::make_shared<ccTorus>(1.0f, 1.5f);
+    auto torus = std::make_shared<ccTorus>(1.0f, 1.5f);
     torus->setDrawingPrecision(96);
     torus->setColor(ecvColor::Rgb(125, 0, 255));
     mesh->merge(&torus->Translate(Eigen::Vector3d(-d, -d, 0.0)), false);
 
-    auto truncatedCone = cloudViewer::make_shared<ccCone>(2.0f, 1.0f, 4.0f);
+    auto truncatedCone = std::make_shared<ccCone>(2.0f, 1.0f, 4.0f);
     truncatedCone->setDrawingPrecision(128);
     truncatedCone->setColor(ecvColor::Rgb(255, 0, 255));
     mesh->merge(&truncatedCone->Translate(Eigen::Vector3d(d, -d, 0.0)), false);
 
-    auto cone = cloudViewer::make_shared<ccCone>(2.0f, 0.0f, 4.0f);
+    auto cone = std::make_shared<ccCone>(2.0f, 0.0f, 4.0f);
     cone->setDrawingPrecision(128);
     cone->setColor(ecvColor::Rgb(255, 0, 255));
     mesh->merge(&cone->Translate(Eigen::Vector3d(-d, d, 0.0)), false);
 
-    auto cylinder = cloudViewer::make_shared<ccCylinder>(2.0f, 4.0f);
+    auto cylinder = std::make_shared<ccCylinder>(2.0f, 4.0f);
     cylinder->setDrawingPrecision(128);
     cylinder->setColor(ecvColor::Rgb(0, 255, 0));
     mesh->merge(&cylinder->Translate(Eigen::Vector3d(d, d, 0.0)), false);
 
     PointCoordinateType equation[6] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-    auto quadric = cloudViewer::make_shared<ccQuadric>(
-            CCVector2(-1.0f, -1.0f), CCVector2(1.0f, 1.0f), equation);
+    auto quadric = std::make_shared<ccQuadric>(CCVector2(-1.0f, -1.0f),
+                                               CCVector2(1.0f, 1.0f), equation);
     quadric->setDrawingPrecision(96);
     quadric->setColor(ecvColor::Rgb(0, 255, 125));
     mesh->merge(&quadric->Translate(Eigen::Vector3d(d, 0.0, 0.0)), false);
@@ -96,29 +96,29 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<ccGenericPrimitive> mesh = nullptr;
     if (option == "plane") {
-        mesh = cloudViewer::make_shared<ccPlane>(2.0f, 4.0f);
+        mesh = std::make_shared<ccPlane>(2.0f, 4.0f);
     } else if (option == "box") {
-        mesh = cloudViewer::make_shared<ccBox>(CCVector3(2.0f, 2.0f, 2.0f));
+        mesh = std::make_shared<ccBox>(CCVector3(2.0f, 2.0f, 2.0f));
     } else if (option == "sphere") {
-        mesh = cloudViewer::make_shared<ccSphere>(2.0f);
+        mesh = std::make_shared<ccSphere>(2.0f);
         mesh->setDrawingPrecision(96);
     } else if (option == "torus") {
-        mesh = cloudViewer::make_shared<ccTorus>(1.0f, 1.5f);
+        mesh = std::make_shared<ccTorus>(1.0f, 1.5f);
         mesh->setDrawingPrecision(128);
     } else if (option == "quadric") {
         PointCoordinateType equation[6] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-        mesh = cloudViewer::make_shared<ccQuadric>(
-                CCVector2(-1.0f, -1.0f), CCVector2(1.0f, 1.0f), equation);
+        mesh = std::make_shared<ccQuadric>(CCVector2(-1.0f, -1.0f),
+                                           CCVector2(1.0f, 1.0f), equation);
         mesh->setDrawingPrecision(96);
         mesh->setColor(ecvColor::Rgb(0, 255, 125));
     } else if (option == "cone") {
-        mesh = cloudViewer::make_shared<ccCone>(2.0f, 1.0f, 4.0f);
+        mesh = std::make_shared<ccCone>(2.0f, 1.0f, 4.0f);
         mesh->setDrawingPrecision(128);
     } else if (option == "truncated_cone") {
-        mesh = cloudViewer::make_shared<ccCone>(2.0f, 0.0f, 4.0f);
+        mesh = std::make_shared<ccCone>(2.0f, 0.0f, 4.0f);
         mesh->setDrawingPrecision(128);
     } else if (option == "cylinder") {
-        mesh = cloudViewer::make_shared<ccCylinder>(2.0f, 4.0f);
+        mesh = std::make_shared<ccCylinder>(2.0f, 4.0f);
         mesh->setDrawingPrecision(128);
     } else {  // union modes
         mesh = getUnions();

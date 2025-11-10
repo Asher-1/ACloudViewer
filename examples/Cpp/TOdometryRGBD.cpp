@@ -90,12 +90,12 @@ int main(int argc, char* argv[]) {
     Tensor trans = Tensor::Eye(4, core::Dtype::Float64, device);
 
     // Visualize before odometry
-    auto source_pcd = cloudViewer::make_shared<ccPointCloud>(
+    auto source_pcd = std::make_shared<ccPointCloud>(
             PointCloud::CreateFromDepthImage(src.depth_, intrinsic_t, trans,
                                              depth_scale)
                     .ToLegacy());
     source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-    auto target_pcd = cloudViewer::make_shared<ccPointCloud>(
+    auto target_pcd = std::make_shared<ccPointCloud>(
             PointCloud::CreateFromDepthImage(dst.depth_, intrinsic_t, trans,
                                              depth_scale)
                     .ToLegacy());
@@ -123,13 +123,13 @@ int main(int argc, char* argv[]) {
             t::pipelines::odometry::OdometryLossParams(depth_diff));
 
     // Visualize after odometry
-    source_pcd = cloudViewer::make_shared<ccPointCloud>(
+    source_pcd = std::make_shared<ccPointCloud>(
             PointCloud::CreateFromRGBDImage(
                     RGBDImage(src.color_, src.depth_), intrinsic_t,
                     result.transformation_.Inverse(), depth_scale)
                     .ToLegacy());
     source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
-    target_pcd = cloudViewer::make_shared<ccPointCloud>(
+    target_pcd = std::make_shared<ccPointCloud>(
             PointCloud::CreateFromRGBDImage(
                     RGBDImage(dst.color_, dst.depth_), intrinsic_t,
                     Tensor::Eye(4, core::Dtype::Float32, device), depth_scale)

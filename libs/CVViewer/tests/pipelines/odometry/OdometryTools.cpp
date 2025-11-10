@@ -19,7 +19,7 @@ std::shared_ptr<geometry::Image> odometry_tools::GenerateImage(
         const float& vmax,
         const int& seed) {
     std::shared_ptr<geometry::Image> image =
-            cloudViewer::make_shared<geometry::Image>();
+            std::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -76,7 +76,7 @@ std::shared_ptr<geometry::Image> odometry_tools::CorrespondenceMap(
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::Image> image =
-            cloudViewer::make_shared<geometry::Image>();
+            std::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -99,7 +99,7 @@ std::shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::Image> image =
-            cloudViewer::make_shared<geometry::Image>();
+            std::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 

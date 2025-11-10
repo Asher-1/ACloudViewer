@@ -37,8 +37,8 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
 
         geometry::PointCloud pcd;
         pcd.points_.push_back(Eigen::Vector3d(1, 2, 3));
-        auto connection = cloudViewer::make_shared<Connection>(
-                connection_address, 500, 500);
+        auto connection =
+                std::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetPointCloud(pcd, "", 0, "", connection));
         receiver.Stop();
     }
@@ -52,8 +52,8 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         mesh.vertices_.push_back(Eigen::Vector3d(1, 2, 3));
         mesh.vertices_.push_back(Eigen::Vector3d(1, 2, 3));
         mesh.triangles_.push_back(Eigen::Vector3i(0, 1, 2));
-        auto connection = cloudViewer::make_shared<Connection>(
-                connection_address, 500, 500);
+        auto connection =
+                std::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetTriangleMesh(mesh, "", 0, "", connection));
         receiver.Stop();
     }
@@ -63,8 +63,8 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         receiver.Start();
 
         camera::PinholeCameraParameters cam;
-        auto connection = cloudViewer::make_shared<Connection>(
-                connection_address, 500, 500);
+        auto connection =
+                std::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetLegacyCamera(cam, "", 0, "", connection));
         receiver.Stop();
     }
@@ -73,8 +73,8 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         DummyReceiver receiver(connection_address, 500);
         receiver.Start();
 
-        auto connection = cloudViewer::make_shared<Connection>(
-                connection_address, 500, 500);
+        auto connection =
+                std::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetTime(0, connection));
         receiver.Stop();
     }
@@ -83,8 +83,8 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         DummyReceiver receiver(connection_address, 500);
         receiver.Start();
 
-        auto connection = cloudViewer::make_shared<Connection>(
-                connection_address, 500, 500);
+        auto connection =
+                std::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetActiveCamera("group/mycam", connection));
         receiver.Stop();
     }
@@ -97,7 +97,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
 
         geometry::PointCloud pcd;
         pcd.points_.push_back(Eigen::Vector3d(1, 2, 3));
-        auto buf_connection = cloudViewer::make_shared<BufferConnection>();
+        auto buf_connection = std::make_shared<BufferConnection>();
         ASSERT_TRUE(SetPointCloud(pcd, "", 0, "", buf_connection));
 
         camera::PinholeCameraParameters cam;
@@ -105,8 +105,8 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
 
         ASSERT_TRUE(SetTime(0, buf_connection));
 
-        auto connection = cloudViewer::make_shared<Connection>(
-                connection_address, 500, 500);
+        auto connection =
+                std::make_shared<Connection>(connection_address, 500, 500);
         std::string buf = buf_connection->buffer().str();
         auto reply = connection->Send(buf.data(), buf.size());
 

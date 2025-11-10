@@ -16,7 +16,7 @@ using namespace cloudViewer;
 
 std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
         const camera::PinholeCameraIntrinsic &intrinsic) {
-    auto fimage = cloudViewer::make_shared<Image>();
+    auto fimage = std::make_shared<Image>();
     fimage->Prepare(intrinsic.width_, intrinsic.height_, 1, 4);
     float ffl_inv[2] = {
             1.0f / (float)intrinsic.GetFocalLength().first,
@@ -46,7 +46,7 @@ std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
 
 std::shared_ptr<Image> Image::CreateFloatImage(
         Image::ColorToIntensityConversionType type /* = WEIGHTED*/) const {
-    auto fimage = cloudViewer::make_shared<Image>();
+    auto fimage = std::make_shared<Image>();
     if (IsEmpty()) {
         return fimage;
     }
@@ -105,7 +105,7 @@ std::shared_ptr<Image> Image::CreateFloatImage(
 
 template <typename T>
 std::shared_ptr<Image> Image::CreateImageFromFloatImage() const {
-    auto output = cloudViewer::make_shared<Image>();
+    auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError(
                 "[CreateImageFromFloatImage] Unsupported image format.");
@@ -136,8 +136,7 @@ ImagePyramid Image::CreatePyramid(size_t num_of_levels,
 
     for (size_t i = 0; i < num_of_levels; i++) {
         if (i == 0) {
-            std::shared_ptr<Image> input_copy_ptr =
-                    cloudViewer::make_shared<Image>();
+            std::shared_ptr<Image> input_copy_ptr = std::make_shared<Image>();
             *input_copy_ptr = *this;
             pyramid_image.push_back(input_copy_ptr);
         } else {

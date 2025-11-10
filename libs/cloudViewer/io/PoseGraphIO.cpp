@@ -52,8 +52,7 @@ using namespace cloudViewer;
 
 std::shared_ptr<pipelines::registration::PoseGraph> CreatePoseGraphFromFile(
         const std::string &filename) {
-    auto pose_graph =
-            cloudViewer::make_shared<pipelines::registration::PoseGraph>();
+    auto pose_graph = std::make_shared<pipelines::registration::PoseGraph>();
     ReadPoseGraph(filename, *pose_graph);
     return pose_graph;
 }

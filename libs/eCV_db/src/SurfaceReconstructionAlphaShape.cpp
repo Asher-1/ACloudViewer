@@ -44,7 +44,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
 
     baseVertices->addPoints(tetra_mesh->vertices_);

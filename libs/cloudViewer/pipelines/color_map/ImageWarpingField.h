@@ -15,8 +15,6 @@ namespace color_map {
 
 class ImageWarpingField : public cloudViewer::utility::IJsonConvertible {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     ImageWarpingField();
     ImageWarpingField(int width, int height, int number_of_vertical_anchors);
     void InitializeWarpingFields(int width,

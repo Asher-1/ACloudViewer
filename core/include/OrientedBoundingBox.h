@@ -21,8 +21,6 @@ namespace cloudViewer {
 /// maxtrix and extent.
 class CV_CORE_LIB_API OrientedBoundingBox {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     /// \brief Default constructor.
     ///
     /// Creates an empty Oriented Bounding Box.

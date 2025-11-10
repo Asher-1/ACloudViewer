@@ -40,7 +40,7 @@ RGBDImagePyramid RGBDImage::FilterPyramid(
         auto depth_level = rgbd_image_pyramid[level]->depth_;
         auto color_level_filtered = color_level.Filter(type);
         auto depth_level_filtered = depth_level.Filter(type);
-        auto rgbd_image_level_filtered = cloudViewer::make_shared<RGBDImage>(
+        auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(
                 RGBDImage(*color_level_filtered, *depth_level_filtered));
         rgbd_image_pyramid_filtered.push_back(rgbd_image_level_filtered);
     }
@@ -58,7 +58,7 @@ RGBDImagePyramid RGBDImage::CreatePyramid(
     RGBDImagePyramid rgbd_image_pyramid;
     rgbd_image_pyramid.clear();
     for (size_t level = 0; level < num_of_levels; level++) {
-        auto rgbd_image_level = cloudViewer::make_shared<RGBDImage>(
+        auto rgbd_image_level = std::make_shared<RGBDImage>(
                 RGBDImage(*color_pyramid[level], *depth_pyramid[level]));
         rgbd_image_pyramid.push_back(rgbd_image_level);
     }

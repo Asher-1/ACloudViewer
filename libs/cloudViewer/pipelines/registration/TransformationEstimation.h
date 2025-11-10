@@ -135,7 +135,7 @@ public:
 
 public:
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
-    std::shared_ptr<RobustKernel> kernel_ = cloudViewer::make_shared<L2Loss>();
+    std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
 
 private:
     const TransformationEstimationType type_ =

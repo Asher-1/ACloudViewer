@@ -27,8 +27,6 @@ namespace visualization {
 /// \brief Select a polygon volume for cropping.
 class SelectionPolygonVolume : public cloudViewer::utility::IJsonConvertible {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     ~SelectionPolygonVolume() override {}
 
 public:

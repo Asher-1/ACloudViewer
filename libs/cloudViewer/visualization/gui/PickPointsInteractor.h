@@ -34,8 +34,6 @@ class SelectionIndexLookup;
 // This is an internal class used by SceneWidget
 class PickPointsInteractor : public SceneWidget::MouseInteractor {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     PickPointsInteractor(rendering::CloudViewerScene* scene,
                          rendering::Camera* camera);
     virtual ~PickPointsInteractor();

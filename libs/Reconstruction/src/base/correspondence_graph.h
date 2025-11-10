@@ -127,7 +127,7 @@ private:
         point2D_t num_correspondences = 0;
     };
 
-    EIGEN_STL_UMAP(image_t, Image) images_;
+    std::unordered_map<image_t, Image> images_;
     std::unordered_map<image_pair_t, ImagePair> image_pairs_;
 };
 

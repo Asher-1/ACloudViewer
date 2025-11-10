@@ -35,7 +35,7 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     geometry::KDTreeFlann tree;
     tree.SetGeometry(target);
 
-    auto output = cloudViewer::make_shared<PointCloudForColoredICP>();
+    auto output = std::make_shared<PointCloudForColoredICP>();
     output->reserveThePointsTable(target.size());
     if (target.hasColors()) {
         output->reserveTheRGBTable();

@@ -72,7 +72,7 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
 std::shared_ptr<ccPointCloud> SelectionPolygonVolume::CropPointCloud(
         const ccPointCloud &input) const {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
-        return cloudViewer::make_shared<ccPointCloud>();
+        return std::make_shared<ccPointCloud>();
     return CropPointCloudInPolygon(input);
 }
 
@@ -84,13 +84,13 @@ std::shared_ptr<ccPointCloud> SelectionPolygonVolume::CropPointCloudInPolygon(
 std::shared_ptr<ccMesh> SelectionPolygonVolume::CropTriangleMesh(
         const ccMesh &input) const {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
-        return cloudViewer::make_shared<ccMesh>(nullptr);
+        return std::make_shared<ccMesh>(nullptr);
     if (!input.getAssociatedCloud() && input.size() == 0) {
         utility::LogWarning(
                 "ccMesh contains vertices, but no triangles; "
                 "cropping will always yield an empty "
                 "ccMesh.");
-        return cloudViewer::make_shared<ccMesh>(nullptr);
+        return std::make_shared<ccMesh>(nullptr);
     }
     return CropTriangleMeshInPolygon(input);
 }

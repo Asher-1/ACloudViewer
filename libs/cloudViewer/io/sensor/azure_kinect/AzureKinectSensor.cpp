@@ -234,10 +234,10 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
     static std::shared_ptr<geometry::RGBDImage> rgbd_buffer = nullptr;
 
     if (color_buffer == nullptr) {
-        color_buffer = cloudViewer::make_shared<geometry::Image>();
+        color_buffer = std::make_shared<geometry::Image>();
     }
     if (rgbd_buffer == nullptr) {
-        rgbd_buffer = cloudViewer::make_shared<geometry::RGBDImage>();
+        rgbd_buffer = std::make_shared<geometry::RGBDImage>();
     }
 
     k4a_image_t k4a_color = k4a_plugin::k4a_capture_get_color_image(capture);

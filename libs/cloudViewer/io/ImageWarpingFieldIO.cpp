@@ -54,7 +54,7 @@ using namespace cloudViewer;
 std::shared_ptr<pipelines::color_map::ImageWarpingField>
 CreateImageWarpingFieldFromFile(const std::string &filename) {
     auto warping_field =
-            cloudViewer::make_shared<pipelines::color_map::ImageWarpingField>();
+            std::make_shared<pipelines::color_map::ImageWarpingField>();
     ReadImageWarpingField(filename, *warping_field);
     return warping_field;
 }

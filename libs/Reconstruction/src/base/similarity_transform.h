@@ -23,8 +23,6 @@ class Reconstruction;
 // 3D similarity transformation with 7 degrees of freedom.
 class SimilarityTransform3 {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     SimilarityTransform3();
 
     explicit SimilarityTransform3(const Eigen::Matrix3x4d& matrix);
@@ -93,4 +91,4 @@ bool SimilarityTransform3::Estimate(const std::vector<Eigen::Vector3d>& src,
 
 }  // namespace colmap
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::SimilarityTransform3)
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::SimilarityTransform3)

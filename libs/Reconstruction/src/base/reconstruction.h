@@ -7,7 +7,10 @@
 
 #pragma once
 
-#include <Eigen/Core>
+// clang-format off
+#include "util/alignment.h"
+// clang-format on
+
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -22,7 +25,6 @@
 #include "base/track.h"
 #include "estimators/similarity_transform.h"
 #include "optim/loransac.h"
-#include "util/alignment.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -46,12 +48,17 @@ public:
 
     Reconstruction();
 
+    // Copy construct/assign. Updates camera pointers.
+    Reconstruction(const Reconstruction& other);
+    Reconstruction& operator=(const Reconstruction& other);
+
     // Get number of objects.
     inline size_t NumCameras() const;
     inline size_t NumImages() const;
     inline size_t NumRegImages() const;
     inline size_t NumPoints3D() const;
     inline size_t NumImagePairs() const;
+    inline size_t NumAddedPoints3D() const;
 
     // Get const objects.
     inline const class Camera& Camera(const camera_t camera_id) const;
@@ -70,10 +77,10 @@ public:
                                           const image_t image_id2) const;
 
     // Get reference to all objects.
-    inline const EIGEN_STL_UMAP(camera_t, class Camera) & Cameras() const;
-    inline const EIGEN_STL_UMAP(image_t, class Image) & Images() const;
+    inline const std::unordered_map<camera_t, class Camera>& Cameras() const;
+    inline const std::unordered_map<image_t, class Image>& Images() const;
     inline const std::vector<image_t>& RegImageIds() const;
-    inline const EIGEN_STL_UMAP(point3D_t, class Point3D) & Points3D() const;
+    inline const std::unordered_map<point3D_t, class Point3D>& Points3D() const;
     inline const std::unordered_map<image_pair_t, ImagePairStat>& ImagePairs()
             const;
 
@@ -369,6 +376,10 @@ public:
     // Create all image sub-directories in the given path.
     void CreateImageDirs(const std::string& path) const;
 
+    // Access the correspondence graph.
+    inline const CorrespondenceGraph* GetCorrespondenceGraph() const;
+    inline bool HasCorrespondenceGraph() const;
+
 private:
     size_t FilterPoints3DWithSmallTriangulationAngle(
             const double min_tri_angle,
@@ -405,9 +416,9 @@ private:
 
     const CorrespondenceGraph* correspondence_graph_;
 
-    EIGEN_STL_UMAP(camera_t, class Camera) cameras_;
-    EIGEN_STL_UMAP(image_t, class Image) images_;
-    EIGEN_STL_UMAP(point3D_t, class Point3D) points3D_;
+    std::unordered_map<camera_t, class Camera> cameras_;
+    std::unordered_map<image_t, class Image> images_;
+    std::unordered_map<point3D_t, class Point3D> points3D_;
 
     std::unordered_map<image_pair_t, ImagePairStat> image_pair_stats_;
 
@@ -433,6 +444,8 @@ size_t Reconstruction::NumPoints3D() const { return points3D_.size(); }
 size_t Reconstruction::NumImagePairs() const {
     return image_pair_stats_.size();
 }
+
+size_t Reconstruction::NumAddedPoints3D() const { return num_added_points3D_; }
 
 const class Camera& Reconstruction::Camera(const camera_t camera_id) const {
     return cameras_.at(camera_id);
@@ -480,11 +493,11 @@ Reconstruction::ImagePairStat& Reconstruction::ImagePair(
     return image_pair_stats_.at(pair_id);
 }
 
-const EIGEN_STL_UMAP(camera_t, Camera) & Reconstruction::Cameras() const {
+const std::unordered_map<camera_t, Camera>& Reconstruction::Cameras() const {
     return cameras_;
 }
 
-const EIGEN_STL_UMAP(image_t, class Image) & Reconstruction::Images() const {
+const std::unordered_map<image_t, class Image>& Reconstruction::Images() const {
     return images_;
 }
 
@@ -492,7 +505,7 @@ const std::vector<image_t>& Reconstruction::RegImageIds() const {
     return reg_image_ids_;
 }
 
-const EIGEN_STL_UMAP(point3D_t, Point3D) & Reconstruction::Points3D() const {
+const std::unordered_map<point3D_t, Point3D>& Reconstruction::Points3D() const {
     return points3D_;
 }
 
@@ -519,6 +532,14 @@ bool Reconstruction::ExistsImagePair(const image_pair_t pair_id) const {
 
 bool Reconstruction::IsImageRegistered(const image_t image_id) const {
     return Image(image_id).IsRegistered();
+}
+
+const CorrespondenceGraph* Reconstruction::GetCorrespondenceGraph() const {
+    return correspondence_graph_;
+}
+
+bool Reconstruction::HasCorrespondenceGraph() const {
+    return correspondence_graph_ != nullptr;
 }
 
 template <bool kEstimateScale>

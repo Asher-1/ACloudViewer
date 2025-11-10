@@ -17,8 +17,6 @@ namespace colmap {
 
 // Two-view geometry estimator.
 struct TwoViewGeometry {
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     // The configuration of the estimated two-view geometry.
     enum ConfigurationType {
         UNDEFINED = 0,
@@ -224,4 +222,4 @@ struct TwoViewGeometry {
 
 }  // namespace colmap
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::TwoViewGeometry)
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::TwoViewGeometry)

@@ -38,7 +38,7 @@ std::shared_ptr<ccMesh> ccMesh::SubdivideMidpoint(
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
     mesh->merge(this, false);
 
@@ -379,7 +379,7 @@ std::shared_ptr<ccMesh> ccMesh::SubdivideLoop(int number_of_iterations) const {
     oldVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     oldVertices->setLocked(false);
-    auto old_mesh = cloudViewer::make_shared<ccMesh>(oldVertices);
+    auto old_mesh = std::make_shared<ccMesh>(oldVertices);
     old_mesh->addChild(oldVertices);
     old_mesh->merge(this, false);
 
@@ -393,7 +393,7 @@ std::shared_ptr<ccMesh> ccMesh::SubdivideLoop(int number_of_iterations) const {
         newVertices->setEnabled(false);
         // DGM: no need to lock it as it is only used by one mesh!
         newVertices->setLocked(false);
-        auto new_mesh = cloudViewer::make_shared<ccMesh>(newVertices);
+        auto new_mesh = std::make_shared<ccMesh>(newVertices);
         new_mesh->addChild(newVertices);
 
         newVertices->resize(static_cast<unsigned>(n_new_vertices));

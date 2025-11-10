@@ -69,7 +69,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
     if (input.IsEmpty()) {
         cloudViewer::utility::LogWarning(
                 "[ComputeISSKeypoints] Input ccPointCloud is empty!");
-        return cloudViewer::make_shared<ccPointCloud>();
+        return std::make_shared<ccPointCloud>();
     }
     const auto& points = input.getEigenPoints();
     KDTreeFlann kdtree(input);

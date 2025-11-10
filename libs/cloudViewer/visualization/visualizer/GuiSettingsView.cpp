@@ -31,7 +31,7 @@ std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,
                                         const double min,
                                         const double max,
                                         const double value) {
-    auto slider = cloudViewer::make_shared<gui::Slider>(type);
+    auto slider = std::make_shared<gui::Slider>(type);
     slider->SetLimits(min, max);
     slider->SetValue(value);
     return slider;
@@ -53,22 +53,22 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     SetMargins(base_margins);
 
     gui::Margins indent(em, 0, 0, 0);
-    auto view_ctrls = cloudViewer::make_shared<gui::CollapsableVert>(
-            "Scene controls", 0, indent);
+    auto view_ctrls =
+            std::make_shared<gui::CollapsableVert>("Scene controls", 0, indent);
 
     // Background
-    show_skybox_ = cloudViewer::make_shared<gui::Checkbox>("Show skymap");
+    show_skybox_ = std::make_shared<gui::Checkbox>("Show skymap");
     show_skybox_->SetOnChecked(
             [this](bool checked) { model_.SetShowSkybox(checked); });
 
-    bg_color_ = cloudViewer::make_shared<gui::ColorEdit>();
+    bg_color_ = std::make_shared<gui::ColorEdit>();
     bg_color_->SetOnValueChanged([this](const gui::Color &newColor) {
         model_.SetBackgroundColor(
                 {newColor.GetRed(), newColor.GetGreen(), newColor.GetBlue()});
     });
 
-    auto bg_layout = cloudViewer::make_shared<gui::VGrid>(2, grid_spacing);
-    bg_layout->AddChild(cloudViewer::make_shared<gui::Label>("BG Color"));
+    auto bg_layout = std::make_shared<gui::VGrid>(2, grid_spacing);
+    bg_layout->AddChild(std::make_shared<gui::Label>("BG Color"));
     bg_layout->AddChild(bg_color_);
 
     view_ctrls->AddChild(show_skybox_);
@@ -76,21 +76,21 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     view_ctrls->AddChild(bg_layout);
 
     // Show axes
-    show_axes_ = cloudViewer::make_shared<gui::Checkbox>("Show axes");
+    show_axes_ = std::make_shared<gui::Checkbox>("Show axes");
     show_axes_->SetOnChecked(
             [this](bool is_checked) { model_.SetShowAxes(is_checked); });
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(show_axes_);
 
     // Show ground plane
-    show_ground_ = cloudViewer::make_shared<gui::Checkbox>("Show ground");
+    show_ground_ = std::make_shared<gui::Checkbox>("Show ground");
     show_ground_->SetOnChecked(
             [this](bool is_checked) { model_.SetShowGround(is_checked); });
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(show_ground_);
 
     // Lighting profiles
-    lighting_profile_ = cloudViewer::make_shared<gui::Combobox>();
+    lighting_profile_ = std::make_shared<gui::Combobox>();
     for (auto &lp : GuiSettingsModel::lighting_profiles_) {
         lighting_profile_->AddItem(lp.name.c_str());
     }
@@ -107,9 +107,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         }
     });
 
-    auto profile_layout = cloudViewer::make_shared<gui::Vert>();
-    profile_layout->AddChild(
-            cloudViewer::make_shared<gui::Label>("Lighting profiles"));
+    auto profile_layout = std::make_shared<gui::Vert>();
+    profile_layout->AddChild(std::make_shared<gui::Label>("Lighting profiles"));
     profile_layout->AddChild(lighting_profile_);
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(profile_layout);
@@ -118,15 +117,15 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     AddFixed(separation_height);
 
     // Advanced lighting
-    advanced_ = cloudViewer::make_shared<gui::CollapsableVert>(
-            "Advanced lighting", 0, indent);
+    advanced_ = std::make_shared<gui::CollapsableVert>("Advanced lighting", 0,
+                                                       indent);
     advanced_->SetIsOpen(false);
     AddChild(advanced_);
 
     // ... lighting on/off
-    advanced_->AddChild(cloudViewer::make_shared<gui::Label>("Light sources"));
-    auto checkboxes = cloudViewer::make_shared<gui::Horiz>();
-    ibl_enabled_ = cloudViewer::make_shared<gui::Checkbox>("HDR map");
+    advanced_->AddChild(std::make_shared<gui::Label>("Light sources"));
+    auto checkboxes = std::make_shared<gui::Horiz>();
+    ibl_enabled_ = std::make_shared<gui::Checkbox>("HDR map");
     ibl_enabled_->SetOnChecked([this](bool checked) {
         auto lighting = model_.GetLighting();  // copy
         lighting.ibl_enabled = checked;
@@ -134,7 +133,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     });
     checkboxes->AddChild(ibl_enabled_);
 
-    sun_enabled_ = cloudViewer::make_shared<gui::Checkbox>("Sun");
+    sun_enabled_ = std::make_shared<gui::Checkbox>("Sun");
     sun_enabled_->SetOnChecked([this](bool checked) {
         auto lighting = model_.GetLighting();  // copy
         lighting.sun_enabled = checked;
@@ -146,7 +145,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     advanced_->AddFixed(separation_height);
 
     // ... IBL
-    ibls_ = cloudViewer::make_shared<gui::Combobox>();
+    ibls_ = std::make_shared<gui::Combobox>();
     std::vector<std::string> resource_files;
     utility::filesystem::ListFilesInDirectory(resource_path, resource_files);
     std::sort(resource_files.begin(), resource_files.end());
@@ -174,13 +173,13 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetCustomLighting(lighting);
     });
 
-    auto ambient_layout = cloudViewer::make_shared<gui::VGrid>(2, grid_spacing);
-    ambient_layout->AddChild(cloudViewer::make_shared<gui::Label>("HDR map"));
+    auto ambient_layout = std::make_shared<gui::VGrid>(2, grid_spacing);
+    ambient_layout->AddChild(std::make_shared<gui::Label>("HDR map"));
     ambient_layout->AddChild(ibls_);
-    ambient_layout->AddChild(cloudViewer::make_shared<gui::Label>("Intensity"));
+    ambient_layout->AddChild(std::make_shared<gui::Label>("Intensity"));
     ambient_layout->AddChild(ibl_intensity_);
 
-    advanced_->AddChild(cloudViewer::make_shared<gui::Label>("Environment"));
+    advanced_->AddChild(std::make_shared<gui::Label>("Environment"));
     advanced_->AddChild(ambient_layout);
     advanced_->AddFixed(separation_height);
 
@@ -192,21 +191,21 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         lighting.sun_intensity = new_value;
         model_.SetCustomLighting(lighting);
     });
-    sun_dir_ = cloudViewer::make_shared<gui::VectorEdit>();
+    sun_dir_ = std::make_shared<gui::VectorEdit>();
     sun_dir_->SetOnValueChanged([this](const Eigen::Vector3f &dir) {
         auto lighting = model_.GetLighting();  // copy
         lighting.sun_dir = dir.normalized();
         model_.SetCustomLighting(lighting);
     });
 
-    sun_follows_camera_ = cloudViewer::make_shared<gui::Checkbox>(" ");
+    sun_follows_camera_ = std::make_shared<gui::Checkbox>(" ");
     sun_follows_camera_->SetChecked(true);
     sun_follows_camera_->SetOnChecked([this](bool checked) {
         sun_dir_->SetEnabled(!checked);
         model_.SetSunFollowsCamera(checked);
     });
 
-    sun_color_ = cloudViewer::make_shared<gui::ColorEdit>();
+    sun_color_ = std::make_shared<gui::ColorEdit>();
     sun_color_->SetOnValueChanged([this](const gui::Color &new_color) {
         auto lighting = model_.GetLighting();  // copy
         lighting.sun_color = {new_color.GetRed(), new_color.GetGreen(),
@@ -214,27 +213,26 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetCustomLighting(lighting);
     });
 
-    auto sun_layout = cloudViewer::make_shared<gui::VGrid>(2, grid_spacing);
-    sun_layout->AddChild(cloudViewer::make_shared<gui::Label>("Intensity"));
+    auto sun_layout = std::make_shared<gui::VGrid>(2, grid_spacing);
+    sun_layout->AddChild(std::make_shared<gui::Label>("Intensity"));
     sun_layout->AddChild(sun_intensity_);
-    sun_layout->AddChild(cloudViewer::make_shared<gui::Label>("Direction"));
+    sun_layout->AddChild(std::make_shared<gui::Label>("Direction"));
     sun_layout->AddChild(sun_dir_);
     sun_layout->AddChild(sun_follows_camera_);
-    sun_layout->AddChild(
-            cloudViewer::make_shared<gui::Label>("Sun Follows Camera"));
-    sun_layout->AddChild(cloudViewer::make_shared<gui::Label>("Color"));
+    sun_layout->AddChild(std::make_shared<gui::Label>("Sun Follows Camera"));
+    sun_layout->AddChild(std::make_shared<gui::Label>("Color"));
     sun_layout->AddChild(sun_color_);
 
     advanced_->AddChild(
-            cloudViewer::make_shared<gui::Label>("Sun (Directional light)"));
+            std::make_shared<gui::Label>("Sun (Directional light)"));
     advanced_->AddChild(sun_layout);
 
     // Materials
-    auto materials = cloudViewer::make_shared<gui::CollapsableVert>(
-            "Material settings", 0, indent);
+    auto materials = std::make_shared<gui::CollapsableVert>("Material settings",
+                                                            0, indent);
 
-    auto mat_grid = cloudViewer::make_shared<gui::VGrid>(2, grid_spacing);
-    mat_grid->AddChild(cloudViewer::make_shared<gui::Label>("Type"));
+    auto mat_grid = std::make_shared<gui::VGrid>(2, grid_spacing);
+    mat_grid->AddChild(std::make_shared<gui::Label>("Type"));
     // If edit order of items, change Update()
     material_type_.reset(
             new gui::Combobox({"Lit", "Unlit", "Normal map", "Depth"}));
@@ -258,7 +256,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     });
     mat_grid->AddChild(material_type_);
 
-    prefab_material_ = cloudViewer::make_shared<gui::Combobox>();
+    prefab_material_ = std::make_shared<gui::Combobox>();
     for (auto &prefab : GuiSettingsModel::prefab_materials_) {
         prefab_material_->AddItem(prefab.first.c_str());
     }
@@ -272,47 +270,46 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
             model_.SetLitMaterial(model_.GetCurrentMaterials().lit, name);
         }
     });
-    mat_grid->AddChild(cloudViewer::make_shared<gui::Label>("Material"));
+    mat_grid->AddChild(std::make_shared<gui::Label>("Material"));
     mat_grid->AddChild(prefab_material_);
 
-    material_color_ = cloudViewer::make_shared<gui::ColorEdit>();
+    material_color_ = std::make_shared<gui::ColorEdit>();
     material_color_->SetOnValueChanged([this](const gui::Color &color) {
         model_.SetCurrentMaterialColor(
                 {color.GetRed(), color.GetGreen(), color.GetBlue()});
     });
-    reset_material_color_ = cloudViewer::make_shared<SmallButton>("Reset");
+    reset_material_color_ = std::make_shared<SmallButton>("Reset");
     reset_material_color_->SetOnClicked([this]() { model_.ResetColors(); });
 
-    mat_grid->AddChild(cloudViewer::make_shared<gui::Label>("Color"));
-    auto color_layout = cloudViewer::make_shared<gui::Horiz>();
+    mat_grid->AddChild(std::make_shared<gui::Label>("Color"));
+    auto color_layout = std::make_shared<gui::Horiz>();
     color_layout->AddChild(material_color_);
     color_layout->AddFixed(int(std::ceil(0.25 * em)));
     color_layout->AddChild(reset_material_color_);
     mat_grid->AddChild(color_layout);
 
-    mat_grid->AddChild(cloudViewer::make_shared<gui::Label>("Point size"));
+    mat_grid->AddChild(std::make_shared<gui::Label>("Point size"));
     point_size_ = MakeSlider(gui::Slider::INT, 1.0, 10.0, 3);
     point_size_->SetOnValueChanged([this](double value) {
         model_.SetPointSize(int(std::round(value)));
     });
     mat_grid->AddChild(point_size_);
 
-    mat_grid->AddChild(cloudViewer::make_shared<gui::Label>(""));
-    generate_normals_ =
-            cloudViewer::make_shared<SmallButton>("Estimate PCD Normals");
+    mat_grid->AddChild(std::make_shared<gui::Label>(""));
+    generate_normals_ = std::make_shared<SmallButton>("Estimate PCD Normals");
     generate_normals_->SetOnClicked(
             [this]() { model_.EstimateNormalsClicked(); });
     generate_normals_->SetEnabled(false);
     mat_grid->AddChild(generate_normals_);
-    mat_grid->AddChild(cloudViewer::make_shared<gui::Label>("Raw Mode"));
-    basic_mode_ = cloudViewer::make_shared<gui::Checkbox>("");
+    mat_grid->AddChild(std::make_shared<gui::Label>("Raw Mode"));
+    basic_mode_ = std::make_shared<gui::Checkbox>("");
     basic_mode_->SetOnChecked([this](bool checked) {
         UpdateUIForBasicMode(checked);
         model_.SetBasicMode(checked);
     });
     mat_grid->AddChild(basic_mode_);
-    mat_grid->AddChild(cloudViewer::make_shared<gui::Label>("Wireframe"));
-    wireframe_mode_ = cloudViewer::make_shared<gui::Checkbox>("");
+    mat_grid->AddChild(std::make_shared<gui::Label>("Wireframe"));
+    wireframe_mode_ = std::make_shared<gui::Checkbox>("");
     wireframe_mode_->SetOnChecked(
             [this](bool checked) { model_.SetWireframeMode(checked); });
     mat_grid->AddChild(wireframe_mode_);

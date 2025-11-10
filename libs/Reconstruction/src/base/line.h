@@ -15,7 +15,6 @@
 namespace colmap {
 
 struct LineSegment {
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
     Eigen::Vector2d start;
     Eigen::Vector2d end;
 };
@@ -37,4 +36,4 @@ std::vector<LineSegmentOrientation> ClassifyLineSegmentOrientations(
 
 }  // namespace colmap
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::LineSegment)
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::LineSegment)

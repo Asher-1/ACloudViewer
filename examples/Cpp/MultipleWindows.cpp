@@ -30,7 +30,7 @@ public:
     }
 
     void Run() {
-        main_vis_ = cloudViewer::make_shared<visualizer::O3DVisualizer>(
+        main_vis_ = std::make_shared<visualizer::O3DVisualizer>(
                 "CloudViewer - Multi-Window Demo", WIDTH, HEIGHT);
         main_vis_->AddAction(
                 "Take snapshot in new window",
@@ -53,8 +53,8 @@ private:
         auto title =
                 std::string("CloudViewer - Multi-Window Demo (Snapshot #") +
                 std::to_string(n_snapshots_) + ")";
-        auto new_vis = cloudViewer::make_shared<visualizer::O3DVisualizer>(
-                title, WIDTH, HEIGHT);
+        auto new_vis = std::make_shared<visualizer::O3DVisualizer>(title, WIDTH,
+                                                                   HEIGHT);
 
         ccBBox bounds;
         {
@@ -94,7 +94,7 @@ private:
         data::DemoICPPointClouds demo_icp_pointclouds;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
-            cloud_ = cloudViewer::make_shared<ccPointCloud>();
+            cloud_ = std::make_shared<ccPointCloud>();
             io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *cloud_);
             bounds = cloud_->GetAxisAlignedBoundingBox();
             extent = bounds.GetExtent();

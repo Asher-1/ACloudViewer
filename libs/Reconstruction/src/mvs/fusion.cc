@@ -562,15 +562,6 @@ void StereoFusion::Fuse(const int thread_id,
                 if (next_col < 0 || next_row < 0 ||
                     next_col >= depth_map_size.first ||
                     next_row >= depth_map_size.second) {
-                    std::cout << "next_col or next_row is out of bounds"
-                              << std::endl;
-                    std::cout << "next_col: " << next_col << std::endl;
-                    std::cout << "next_row: " << next_row << std::endl;
-                    std::cout
-                            << "depth_map_size.first: " << depth_map_size.first
-                            << std::endl;
-                    std::cout << "depth_map_size.second: "
-                              << depth_map_size.second << std::endl;
                     continue;
                 }
                 fusion_queue.emplace_back(next_image_idx, next_row, next_col,
