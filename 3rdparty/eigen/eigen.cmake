@@ -1,15 +1,7 @@
 include(ExternalProject)
 
-if (NOT USE_SIMD)
-    set(EIGEN_ALIGN_FLAGS
-            "-DCMAKE_CXX_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0"
-            "-DCMAKE_C_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0")
-else ()
-    set(EIGEN_ALIGN_FLAGS ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
-    if (MSVC)
-        set(EIGEN_ALIGN_FLAGS ${EIGEN_ALIGN_FLAGS} -DEIGEN_TEST_SSE2=ON)
-    endif ()
-endif ()
+# just for compatibility with older versions of Eigen
+set(EIGEN_ALIGN_FLAGS "")
 
 ExternalProject_Add(ext_eigen
         PREFIX eigen

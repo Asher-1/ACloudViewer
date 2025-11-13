@@ -55,7 +55,7 @@ std::shared_ptr<ccMesh> CreateArrow(const Eigen::Vector3d& dir,
 
     ccPointCloud* baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto arrow = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto arrow = std::make_shared<ccMesh>(baseVertices);
     if (!arrow->reserveAssociatedCloud(n_segs + 1, false, true)) {
         return nullptr;
     }

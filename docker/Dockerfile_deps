@@ -163,16 +163,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
  && node --version
 RUN npm install -g yarn \
  && yarn --version
-# RUN mkdir -p /etc/apt/keyrings \
-#  && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
-#  | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-#  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
-#  | tee /etc/apt/sources.list.d/nodesource.list \
-#  && apt-get update \
-#  && apt-get install -y nodejs \
-#  && node --version \
-#  && npm install -g yarn \
-#  && yarn --version
 
 # Update eigen to 3.4+
 WORKDIR /opt
@@ -257,6 +247,7 @@ RUN unzip pcl-${PCL_VERSION}.zip && \
             -DBUILD_apps=OFF \
             -DBUILD_examples=OFF \
             -DBUILD_surface_on_nurbs=ON \
+            -DPCL_ENABLE_MARCHNATIVE=OFF \
             -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \

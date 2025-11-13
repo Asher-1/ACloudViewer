@@ -55,7 +55,7 @@ void testFromFile(const std::string& filename) {
     ccHObject::Container facets;
     cloud_ptr->filterChildren(facets, false, CV_TYPES::FACET);
     for (size_t i = 0; i < facets.size(); ++i) {
-        auto facet = cloudViewer::make_shared<ccFacet>();
+        auto facet = std::make_shared<ccFacet>();
         *facet = *ccHObjectCaster::ToFacet(facets[i]);
         if (facet) {
             facet->getPolygon()->setOpacity(0.5f);

@@ -125,7 +125,6 @@ public:
     // relevant data for triangulation, in order to avoid duplicate lookup
     // in the underlying unordered_map's in the Reconstruction
     struct CorrData {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         image_t image_id;
         point2D_t point2D_idx;
         const Image* image;
@@ -185,5 +184,5 @@ private:
 
 }  // namespace colmap
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
-        colmap::IncrementalTriangulator::CorrData)
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
+//         colmap::IncrementalTriangulator::CorrData)

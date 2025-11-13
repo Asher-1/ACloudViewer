@@ -203,24 +203,23 @@ void BitmapWindowSystem::DestroyWindow(OSWindow w) {
 
 void BitmapWindowSystem::PostRedrawEvent(OSWindow w) {
     auto hw = (BitmapWindow *)w;
-    impl_->event_queue_.push(cloudViewer::make_shared<BitmapDrawEvent>(hw));
+    impl_->event_queue_.push(std::make_shared<BitmapDrawEvent>(hw));
 }
 
 void BitmapWindowSystem::PostMouseEvent(OSWindow w, const MouseEvent &e) {
     auto hw = (BitmapWindow *)w;
-    impl_->event_queue_.push(cloudViewer::make_shared<BitmapMouseEvent>(hw, e));
+    impl_->event_queue_.push(std::make_shared<BitmapMouseEvent>(hw, e));
 }
 
 void BitmapWindowSystem::PostKeyEvent(OSWindow w, const KeyEvent &e) {
     auto hw = (BitmapWindow *)w;
-    impl_->event_queue_.push(cloudViewer::make_shared<BitmapKeyEvent>(hw, e));
+    impl_->event_queue_.push(std::make_shared<BitmapKeyEvent>(hw, e));
 }
 
 void BitmapWindowSystem::PostTextInputEvent(OSWindow w,
                                             const TextInputEvent &e) {
     auto hw = (BitmapWindow *)w;
-    impl_->event_queue_.push(
-            cloudViewer::make_shared<BitmapTextInputEvent>(hw, e));
+    impl_->event_queue_.push(std::make_shared<BitmapTextInputEvent>(hw, e));
 }
 
 bool BitmapWindowSystem::GetWindowIsVisible(OSWindow w) const { return false; }

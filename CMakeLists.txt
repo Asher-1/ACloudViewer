@@ -394,6 +394,24 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRE
 
 include(CMakePolicies)
 include(CMakeSetCompilerOptions)
+
+# We want EIGEN_HAS_CXX17_OVERALIGN=1 even with EIGEN_MAX_ALIGN_BYTES=0 to:
+# - Allow Eigen to use C++17 std::allocator's automatic alignment handling
+# - Avoid potential compilation issues with C++17 standard library features
+# - Maintain compatibility with C++17 over-alignment support in standard containers
+# Note: Eigen will auto-detect EIGEN_HAS_CXX17_OVERALIGN based on compiler/C++ standard.
+# We don't explicitly define it here to avoid redefine warnings - Eigen's auto-detection
+# will handle it correctly when C++17 is available.
+if (DEFINED UBUNTU_VERSION AND USE_PCL_BACKEND)
+    if (UBUNTU_VERSION VERSION_GREATER_EQUAL "22.04")
+        # Fix Ubuntu 22.04+ crash issues with Eigen alignment
+        add_compile_definitions(EIGEN_MAX_ALIGN_BYTES=0)
+        message(STATUS "Eigen alignment disabled for PCL compatibility on Ubuntu ${UBUNTU_VERSION} (EIGEN_MAX_ALIGN_BYTES=0)")
+    else()
+        message(STATUS "Eigen alignment enabled for optimal performance (Ubuntu ${UBUNTU_VERSION} < 22.04)")
+    endif()
+endif()
+
 # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
 add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
 
@@ -658,12 +676,15 @@ if (USE_SIMD)
     endif ()
 
     if (UNIX AND NOT APPLE)
-        # Disable AVX512 and AVX2 for Linux to fix "Illegal instruction" issues
+        # Disable AVX512 for Linux to fix "Illegal instruction" issues
         # when binaries are compiled on newer CPUs but run on older ones
-        # This ensures better compatibility across different CPU generations
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx512f -mno-avx512cd -mno-avx512vl -mno-avx512bw -mno-avx512dq")
-        # Uncomment the line below if you need to disable AVX2 as well for very old CPUs
-        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx2")
+        # AVX and AVX2 are widely supported and should be kept enabled
+        # AVX512 variants - disable all to ensure compatibility
+        # Include all AVX512 variants: f, cd, vl, bw, dq, ifma, pf, er, vbmi, vbmi2, vnni, bitalg, vpopcntdq
+        set(AVX512_DISABLE_FLAGS "-mno-avx512f -mno-avx512cd -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-avx512ifma -mno-avx512pf -mno-avx512er -mno-avx512vbmi -mno-avx512vbmi2 -mno-avx512vnni -mno-avx512bitalg -mno-avx512vpopcntdq")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${AVX512_DISABLE_FLAGS}")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${AVX512_DISABLE_FLAGS}")
+        message(STATUS "Disabled AVX512 for compatibility (AVX/AVX2 remain enabled)")
     endif()
 
     message(STATUS "Enabling SIMD support")

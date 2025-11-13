@@ -20,8 +20,6 @@ namespace glsl {
 
 class PhongShader : public ShaderWrapper {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     ~PhongShader() override { Release(); }
 
 protected:
@@ -80,8 +78,6 @@ protected:
 
 class PhongShaderForPointCloud : public PhongShader {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     PhongShaderForPointCloud() : PhongShader("PhongShaderForPointCloud") {}
 
 protected:
@@ -98,8 +94,6 @@ protected:
 
 class PhongShaderForTriangleMesh : public PhongShader {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     PhongShaderForTriangleMesh() : PhongShader("PhongShaderForTriangleMesh") {}
 
 protected:

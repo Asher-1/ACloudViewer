@@ -80,8 +80,7 @@ void VisualizerWithCustomAnimation::Play(
     recording_file_index_ = 0;
     utility::ConsoleProgressBar progress_bar(view_control.NumOfFrames(),
                                              "Play animation: ");
-    auto trajectory_ptr =
-            cloudViewer::make_shared<camera::PinholeCameraTrajectory>();
+    auto trajectory_ptr = std::make_shared<camera::PinholeCameraTrajectory>();
     bool recording_trajectory = view_control.IsValidPinholeCameraTrajectory();
     if (recording) {
         if (recording_depth) {

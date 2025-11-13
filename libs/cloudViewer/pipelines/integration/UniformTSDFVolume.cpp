@@ -86,7 +86,7 @@ void UniformTSDFVolume::Integrate(
 }
 
 std::shared_ptr<ccPointCloud> UniformTSDFVolume::ExtractPointCloud() {
-    auto pointcloud = cloudViewer::make_shared<ccPointCloud>();
+    auto pointcloud = std::make_shared<ccPointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
     for (int x = 1; x < resolution_ - 1; x++) {
         for (int y = 1; y < resolution_ - 1; y++) {
@@ -159,7 +159,7 @@ std::shared_ptr<ccMesh> UniformTSDFVolume::ExtractTriangleMesh() {
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
 
     double half_voxel_length = voxel_length_ * 0.5;
@@ -265,7 +265,7 @@ std::shared_ptr<ccMesh> UniformTSDFVolume::ExtractTriangleMesh() {
 
 std::shared_ptr<ccPointCloud> UniformTSDFVolume::ExtractVoxelPointCloud()
         const {
-    auto voxel = cloudViewer::make_shared<ccPointCloud>();
+    auto voxel = std::make_shared<ccPointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
     // const float *p_tsdf = (const float *)tsdf_.data();
     // const float *p_weight = (const float *)weight_.data();
@@ -295,7 +295,7 @@ std::shared_ptr<ccPointCloud> UniformTSDFVolume::ExtractVoxelPointCloud()
 
 std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
         const {
-    auto voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
+    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_;
 

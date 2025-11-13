@@ -28,8 +28,6 @@ typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 /// \brief Class to store featrues for registration.
 class ECV_DB_LIB_API Feature {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     /// Resize feature data buffer to `dim x n`.
     ///
     /// \param dim Feature dimension per point.

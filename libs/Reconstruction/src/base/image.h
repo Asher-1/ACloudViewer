@@ -7,14 +7,16 @@
 
 #pragma once
 
-#include <Eigen/Core>
+// clang-format off
+#include "util/alignment.h"
+// clang-format on
+
 #include <string>
 #include <vector>
 
 #include "base/camera.h"
 #include "base/point2d.h"
 #include "base/visibility_pyramid.h"
-#include "util/alignment.h"
 #include "util/logging.h"
 #include "util/math.h"
 #include "util/types.h"
@@ -26,8 +28,6 @@ namespace colmap {
 // share a camera with multiple other images, if its intrinsics are the same.
 class Image {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     Image();
 
     // Setup / tear down the image and necessary internal data structures before
@@ -82,6 +82,15 @@ public:
     // the next best image in incremental reconstruction, because a more
     // uniform distribution of observations results in more robust registration.
     inline size_t Point3DVisibilityScore() const;
+
+    // Access the number of correspondences that have a 3D point per image
+    // point.
+    inline const std::vector<point2D_t>& NumCorrespondencesHavePoint3D() const;
+    inline std::vector<point2D_t>& NumCorrespondencesHavePoint3D();
+
+    // Access the visibility pyramid for triangulated correspondences.
+    inline const VisibilityPyramid& Point3DVisibilityPyramid() const;
+    inline VisibilityPyramid& Point3DVisibilityPyramid();
 
     // Access quaternion vector as (qw, qx, qy, qz) specifying the rotation of
     // the pose which is defined as the transformation from world to image
@@ -273,6 +282,22 @@ size_t Image::Point3DVisibilityScore() const {
     return point3D_visibility_pyramid_.Score();
 }
 
+const std::vector<point2D_t>& Image::NumCorrespondencesHavePoint3D() const {
+    return num_correspondences_have_point3D_;
+}
+
+std::vector<point2D_t>& Image::NumCorrespondencesHavePoint3D() {
+    return num_correspondences_have_point3D_;
+}
+
+const VisibilityPyramid& Image::Point3DVisibilityPyramid() const {
+    return point3D_visibility_pyramid_;
+}
+
+VisibilityPyramid& Image::Point3DVisibilityPyramid() {
+    return point3D_visibility_pyramid_;
+}
+
 const Eigen::Vector4d& Image::Qvec() const { return qvec_; }
 
 Eigen::Vector4d& Image::Qvec() { return qvec_; }
@@ -336,5 +361,3 @@ bool Image::IsPoint3DVisible(const point2D_t point2D_idx) const {
 }
 
 }  // namespace colmap
-
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::Image)

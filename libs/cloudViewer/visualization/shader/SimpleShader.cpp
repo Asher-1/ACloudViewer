@@ -846,7 +846,7 @@ bool SimpleShaderForPolyline::AdditionalRendering(const ccHObject &geometry,
             glEnd();
         } else {
             if (!c_unitArrow) {
-                c_unitArrow = cloudViewer::make_shared<ccCone>(0.5, 0.0, 1.0);
+                c_unitArrow = std::make_shared<ccCone>(0.5, 0.0, 1.0);
                 c_unitArrow->showColors(true);
                 c_unitArrow->showNormals(false);
                 c_unitArrow->setVisible(true);

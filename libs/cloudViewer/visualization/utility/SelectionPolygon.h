@@ -28,8 +28,6 @@ class SelectionPolygonVolume;
 /// convention).
 class SelectionPolygon : public ccHObject {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     enum class SectionPolygonType {
         Unfilled = 0,
         Rectangle = 1,

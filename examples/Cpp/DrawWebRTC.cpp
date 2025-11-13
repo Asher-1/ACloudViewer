@@ -28,9 +28,8 @@ void AddDrawWindow(const std::vector<std::shared_ptr<ccHObject>> &geometries,
     auto &o3d_app = visualization::gui::Application::GetInstance();
     o3d_app.Initialize();
 
-    auto draw =
-            cloudViewer::make_shared<visualization::visualizer::O3DVisualizer>(
-                    window_name, width, height);
+    auto draw = std::make_shared<visualization::visualizer::O3DVisualizer>(
+            window_name, width, height);
     for (auto &o : objects) {
         if (o.geometry) {
             draw->AddGeometry(o.name, o.geometry);
@@ -53,14 +52,14 @@ void EmptyBox() {
     const double pc_rad = 1.0;
     const double r = 0.4;
 
-    auto big_bbox = cloudViewer::make_shared<ccBBox>(
-            Eigen::Vector3d{-pc_rad, -3, -pc_rad},
-            Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
+    auto big_bbox =
+            std::make_shared<ccBBox>(Eigen::Vector3d{-pc_rad, -3, -pc_rad},
+                                     Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
 
     auto new_window_action =
             [&](visualization::visualizer::O3DVisualizer &o3dvis) {
                 utility::LogInfo("new_window_action called");
-                auto mesh = cloudViewer::make_shared<ccMesh>();
+                auto mesh = std::make_shared<ccMesh>();
                 data::KnotMesh knot_data;
                 io::ReadTriangleMesh(knot_data.GetPath(), *mesh);
                 mesh->ComputeVertexNormals();
@@ -89,12 +88,12 @@ void BoxWithObjects() {
     sphere_colored_lit->ComputeVertexNormals();
     sphere_colored_lit->PaintUniformColor({0.0, 1.0, 0.0});
     sphere_colored_lit->Translate({6, 1, 0});
-    auto big_bbox = cloudViewer::make_shared<ccBBox>(
-            Eigen::Vector3d{-pc_rad, -3, -pc_rad},
-            Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
+    auto big_bbox =
+            std::make_shared<ccBBox>(Eigen::Vector3d{-pc_rad, -3, -pc_rad},
+                                     Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
     auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
-    auto sphere_bbox = cloudViewer::make_shared<ccBBox>(bbox.GetMinBound(),
-                                                        bbox.GetMaxBound());
+    auto sphere_bbox =
+            std::make_shared<ccBBox>(bbox.GetMinBound(), bbox.GetMaxBound());
     sphere_bbox->SetColor({1.0, 0.5, 0.0});
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             sphere_lit->GetAxisAlignedBoundingBox());

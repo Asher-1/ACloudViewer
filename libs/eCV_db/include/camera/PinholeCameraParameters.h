@@ -22,9 +22,6 @@ namespace camera {
 class ECV_DB_LIB_API PinholeCameraParameters
     : public cloudViewer::utility::IJsonConvertible {
 public:
-    // Must comment it due to unreferenced symbols when linked
-    // CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     /// \brief Default Constructor.
     PinholeCameraParameters();
     virtual ~PinholeCameraParameters() override;

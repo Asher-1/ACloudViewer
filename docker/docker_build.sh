@@ -117,6 +117,7 @@ cuda_wheel_build() {
         -f docker/Dockerfile.wheel .
     popd
 
+    # Copy wheel to host
     docker run -v "${PWD}:/opt/mount" --rm cloudviewer-ci:wheel \
         bash -c "cp /root/install/cloudviewer*.whl /opt/mount \
             && chown $(id -u):$(id -g) /opt/mount/cloudviewer*.whl"

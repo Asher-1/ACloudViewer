@@ -68,7 +68,7 @@ void Gradient::SetMode(Mode mode) {
 
 TextureHandle Gradient::GetTextureHandle(Renderer& renderer) {
     if (textures_.find(&renderer) == textures_.end()) {
-        auto img = cloudViewer::make_shared<geometry::Image>();
+        auto img = std::make_shared<geometry::Image>();
         if (!points_.empty()) {
             int n_points = int(points_.size());
             if (mode_ == Mode::kGradient) {

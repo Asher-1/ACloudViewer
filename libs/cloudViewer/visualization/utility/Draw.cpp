@@ -95,8 +95,8 @@ void Draw(const std::vector<DrawObject> &objects,
           int height /*= 768*/,
           const std::vector<DrawAction> &actions /*= {}*/) {
     gui::Application::GetInstance().Initialize();
-    auto draw = cloudViewer::make_shared<visualizer::O3DVisualizer>(
-            window_name, width, height);
+    auto draw = std::make_shared<visualizer::O3DVisualizer>(window_name, width,
+                                                            height);
     for (auto &o : objects) {
         if (o.geometry) {
             draw->AddGeometry(o.name, o.geometry);

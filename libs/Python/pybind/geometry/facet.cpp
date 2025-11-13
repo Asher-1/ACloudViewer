@@ -109,8 +109,7 @@ void pybind_facet(py::module& m) {
                         } else {
                             cloudViewer::utility::LogWarning(
                                     "[ccFacet] ccFacet do not have polygons!");
-                            return std::ref(
-                                    *cloudViewer::make_shared<ccMesh>());
+                            return std::ref(*std::make_shared<ccMesh>());
                         }
                     },
                     "Returns polygon mesh (if any)")
@@ -129,8 +128,7 @@ void pybind_facet(py::module& m) {
                             cloudViewer::utility::LogWarning(
                                     "[ccFacet] ccFacet do not have contours!");
                             return std::ref(
-                                    *cloudViewer::make_shared<ccPolyline>(
-                                            nullptr));
+                                    *std::make_shared<ccPolyline>(nullptr));
                         }
                     },
                     "Returns contour polyline (if any)")
@@ -149,8 +147,7 @@ void pybind_facet(py::module& m) {
                             cloudViewer::utility::LogWarning(
                                     "[ccFacet] ccFacet do not have origin "
                                     "points!");
-                            return std::ref(
-                                    *cloudViewer::make_shared<ccPointCloud>());
+                            return std::ref(*std::make_shared<ccPointCloud>());
                         }
                     },
                     "Returns contour vertices (if any)")
@@ -169,8 +166,7 @@ void pybind_facet(py::module& m) {
                             cloudViewer::utility::LogWarning(
                                     "[ccFacet] ccFacet do not have origin "
                                     "points!");
-                            return std::ref(
-                                    *cloudViewer::make_shared<ccPointCloud>());
+                            return std::ref(*std::make_shared<ccPointCloud>());
                         }
                     },
                     "Returns origin points (if any)")
@@ -200,7 +196,7 @@ void pybind_facet(py::module& m) {
                             cloudViewer::utility::LogWarning(
                                     "[ccFacet::Create] Illegal input "
                                     "parameters, only support point cloud!");
-                            return cloudViewer::make_shared<ccFacet>();
+                            return std::make_shared<ccFacet>();
                         }
 
                         PointCoordinateType eq[4];

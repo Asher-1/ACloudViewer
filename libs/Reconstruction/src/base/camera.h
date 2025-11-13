@@ -122,6 +122,9 @@ public:
     void Rescale(const double scale);
     void Rescale(const size_t width, const size_t height);
 
+    inline bool operator==(const Camera& other) const;
+    inline bool operator!=(const Camera& other) const;
+
 private:
     // The unique identifier of the camera. If the identifier is not specified
     // it is set to `kInvalidCameraId`.
@@ -183,5 +186,14 @@ const double* Camera::ParamsData() const { return params_.data(); }
 double* Camera::ParamsData() { return params_.data(); }
 
 void Camera::SetParams(const std::vector<double>& params) { params_ = params; }
+
+bool Camera::operator==(const Camera& other) const {
+    return CameraId() == other.CameraId() && ModelId() == other.ModelId() &&
+           Width() == other.Width() && Height() == other.Height() &&
+           Params() == other.Params() &&
+           HasPriorFocalLength() == other.HasPriorFocalLength();
+}
+
+bool Camera::operator!=(const Camera& other) const { return !(*this == other); }
 
 }  // namespace colmap

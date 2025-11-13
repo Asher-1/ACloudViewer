@@ -661,10 +661,10 @@ void Window::CloseDialog() {
 void Window::ShowMessageBox(const char* title, const char* message) {
     auto em = GetTheme().font_size;
     auto margins = Margins(GetTheme().default_margin);
-    auto dlg = cloudViewer::make_shared<Dialog>(title);
-    auto layout = cloudViewer::make_shared<Vert>(em, margins);
-    layout->AddChild(cloudViewer::make_shared<Label>(message));
-    auto ok = cloudViewer::make_shared<Button>("Ok");
+    auto dlg = std::make_shared<Dialog>(title);
+    auto layout = std::make_shared<Vert>(em, margins);
+    layout->AddChild(std::make_shared<Label>(message));
+    auto ok = std::make_shared<Button>("Ok");
     ok->SetOnClicked([this]() { this->CloseDialog(); });
     layout->AddChild(Horiz::MakeCentered(ok));
     dlg->AddChild(layout);

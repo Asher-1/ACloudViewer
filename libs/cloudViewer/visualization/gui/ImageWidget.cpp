@@ -22,23 +22,23 @@ struct ImageWidget::Impl {
 };
 
 ImageWidget::ImageWidget() : impl_(new ImageWidget::Impl()) {
-    impl_->image_ = cloudViewer::make_shared<UIImage>(
-            cloudViewer::make_shared<geometry::Image>());
+    impl_->image_ =
+            std::make_shared<UIImage>(std::make_shared<geometry::Image>());
 }
 
 ImageWidget::ImageWidget(const char* image_path)
     : impl_(new ImageWidget::Impl()) {
-    impl_->image_ = cloudViewer::make_shared<UIImage>(image_path);
+    impl_->image_ = std::make_shared<UIImage>(image_path);
 }
 
 ImageWidget::ImageWidget(std::shared_ptr<geometry::Image> image)
     : impl_(new ImageWidget::Impl()) {
-    impl_->image_ = cloudViewer::make_shared<UIImage>(image);
+    impl_->image_ = std::make_shared<UIImage>(image);
 }
 
 ImageWidget::ImageWidget(std::shared_ptr<t::geometry::Image> image)
     : impl_(new ImageWidget::Impl()) {
-    impl_->image_ = cloudViewer::make_shared<UIImage>(image);
+    impl_->image_ = std::make_shared<UIImage>(image);
 }
 
 ImageWidget::ImageWidget(visualization::rendering::TextureHandle texture_id,
@@ -47,8 +47,7 @@ ImageWidget::ImageWidget(visualization::rendering::TextureHandle texture_id,
                          float u1 /*= 1.0f*/,
                          float v1 /*= 1.0f*/)
     : impl_(new ImageWidget::Impl()) {
-    impl_->image_ =
-            cloudViewer::make_shared<UIImage>(texture_id, u0, v0, u1, v1);
+    impl_->image_ = std::make_shared<UIImage>(texture_id, u0, v0, u1, v1);
 }
 
 ImageWidget::ImageWidget(std::shared_ptr<UIImage> image)

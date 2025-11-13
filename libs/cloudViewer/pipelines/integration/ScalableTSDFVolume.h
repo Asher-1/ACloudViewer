@@ -40,11 +40,8 @@ class UniformTSDFVolume;
 /// structure edges.
 class ScalableTSDFVolume : public TSDFVolume {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     struct VolumeUnit {
     public:
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         VolumeUnit() : volume_(nullptr) {}
 
     public:

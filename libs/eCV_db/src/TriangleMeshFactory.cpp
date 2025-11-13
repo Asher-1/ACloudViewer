@@ -441,8 +441,7 @@ std::shared_ptr<ccMesh> ccMesh::FilterSharpen(int number_of_iterations,
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    std::shared_ptr<ccMesh> mesh =
-            cloudViewer::make_shared<ccMesh>(baseVertices);
+    std::shared_ptr<ccMesh> mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
 
     baseVertices->resize(cloud->size());
@@ -562,8 +561,7 @@ std::shared_ptr<ccMesh> ccMesh::FilterSmoothSimple(int number_of_iterations,
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    std::shared_ptr<ccMesh> mesh =
-            cloudViewer::make_shared<ccMesh>(baseVertices);
+    std::shared_ptr<ccMesh> mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
 
     baseVertices->resize(cloud->size());
@@ -735,8 +733,7 @@ std::shared_ptr<ccMesh> ccMesh::FilterSmoothLaplacian(int number_of_iterations,
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    std::shared_ptr<ccMesh> mesh =
-            cloudViewer::make_shared<ccMesh>(baseVertices);
+    std::shared_ptr<ccMesh> mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
 
     baseVertices->resize(cloud->size());
@@ -816,8 +813,7 @@ std::shared_ptr<ccMesh> ccMesh::FilterSmoothTaubin(int number_of_iterations,
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    std::shared_ptr<ccMesh> mesh =
-            cloudViewer::make_shared<ccMesh>(baseVertices);
+    std::shared_ptr<ccMesh> mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
 
     baseVertices->resize(cloud->size());
@@ -1467,7 +1463,7 @@ std::shared_ptr<ccPointCloud> ccMesh::SamplePointsPoissonDisk(
                                         triangle_areas, surface_area,
                                         use_triangle_normal, seed);
     } else {
-        pcl = cloudViewer::make_shared<ccPointCloud>();
+        pcl = std::make_shared<ccPointCloud>();
         *pcl = *pcl_init;
     }
 
@@ -1746,7 +1742,7 @@ std::shared_ptr<ccPointCloud> ccMesh::SamplePointsUniformlyImpl(
     }
     std::mt19937 mt(seed);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
-    auto pcd = cloudViewer::make_shared<ccPointCloud>();
+    auto pcd = std::make_shared<ccPointCloud>();
     pcd->resize(static_cast<unsigned>(number_of_points));
     if (has_vert_normal || use_triangle_normal) {
         pcd->resizeTheNormsTable();
@@ -1856,7 +1852,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateTetrahedron(
         double radius /* = 1.0*/, bool create_uv_map /* = false*/) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     if (radius <= 0) {
         utility::LogError("[CreateTetrahedron] radius <= 0");
     }
@@ -1907,7 +1903,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateOctahedron(
         double radius /* = 1.0*/, bool create_uv_map /* = false*/) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
 
     if (radius <= 0) {
         utility::LogError("[CreateOctahedron] radius <= 0");
@@ -1964,7 +1960,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateIcosahedron(
         double radius /* = 1.0*/, bool create_uv_map /* = false*/) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     if (radius <= 0) {
         utility::LogError("[CreateIcosahedron] radius <= 0");
     }
@@ -2053,7 +2049,7 @@ std::shared_ptr<ccMesh> ccMesh::CreatePlane(double width /* = 1.0*/,
                                             bool create_uv_map /* = false*/) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     if (width <= 0) {
         utility::LogError("[CreatePlane] width <= 0");
     }
@@ -2100,7 +2096,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateBox(
         bool map_texture_to_each_face /*= false*/) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     if (width <= 0) {
         utility::LogError("[CreateBox] width <= 0");
     }
@@ -2186,7 +2182,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateSphere(double radius /* = 1.0*/,
                                              bool create_uv_map /* = false*/) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
 
     if (radius <= 0) {
         utility::LogError("[CreateSphere] radius <= 0");
@@ -2377,7 +2373,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateCylinder(
         bool create_uv_map /* = false*/) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     if (radius <= 0) {
         utility::LogError("[CreateCylinder] radius <= 0");
     }
@@ -2552,7 +2548,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateCone(double radius /* = 1.0*/,
                                            bool create_uv_map /* = false*/) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
 
     if (radius <= 0) {
         utility::LogError("[CreateCone] radius <= 0");
@@ -2696,7 +2692,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateTorus(double torus_radius /* = 1.0 */,
                                             int tubular_resolution /* = 20 */) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
 
     if (torus_radius <= 0) {
         utility::LogError("[CreateTorus] torus_radius <= 0");
@@ -2860,7 +2856,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateMobius(int length_split /* = 70 */,
                                              double scale /* = 1 */) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
 
     if (length_split <= 0) {
         utility::LogError("[CreateMobius] length_split <= 0");

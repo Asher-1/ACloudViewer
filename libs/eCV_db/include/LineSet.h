@@ -28,8 +28,6 @@ class TetraMesh;
 /// display the point cloud correspondence pairs.
 class ECV_DB_LIB_API LineSet : public ccHObject {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     /// \brief Default Constructor.
     LineSet(const char *name = "LineSet") : ccHObject(name) {}
     /// \brief Parameterized Constructor.

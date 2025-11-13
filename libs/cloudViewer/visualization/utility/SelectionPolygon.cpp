@@ -110,7 +110,7 @@ void SelectionPolygon::FillPolygon(int width, int height) {
 std::shared_ptr<ccPointCloud> SelectionPolygon::CropPointCloud(
         const ccPointCloud &input, const ViewControl &view) {
     if (isEmpty()) {
-        return cloudViewer::make_shared<ccPointCloud>();
+        return std::make_shared<ccPointCloud>();
     }
     switch (polygon_type_) {
         case SectionPolygonType::Rectangle:
@@ -126,14 +126,14 @@ std::shared_ptr<ccPointCloud> SelectionPolygon::CropPointCloud(
 std::shared_ptr<ccMesh> SelectionPolygon::CropTriangleMesh(
         const ccMesh &input, const ViewControl &view) {
     if (isEmpty()) {
-        return cloudViewer::make_shared<ccMesh>(nullptr);
+        return std::make_shared<ccMesh>(nullptr);
     }
     if (input.size() == 0 && input.getAssociatedCloud()) {
         utility::LogWarning(
                 "ccMesh contains vertices, but no triangles; "
                 "cropping will always yield an empty "
                 "ccMesh.");
-        return cloudViewer::make_shared<ccMesh>(nullptr);
+        return std::make_shared<ccMesh>(nullptr);
     }
     switch (polygon_type_) {
         case SectionPolygonType::Rectangle:
@@ -148,7 +148,7 @@ std::shared_ptr<ccMesh> SelectionPolygon::CropTriangleMesh(
 
 std::shared_ptr<SelectionPolygonVolume>
 SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
-    auto volume = cloudViewer::make_shared<SelectionPolygonVolume>();
+    auto volume = std::make_shared<SelectionPolygonVolume>();
     const auto &editing_view = (const ViewControlWithEditing &)view;
     if (!editing_view.IsLocked() ||
         editing_view.GetEditingMode() == ViewControlWithEditing::FreeMode) {

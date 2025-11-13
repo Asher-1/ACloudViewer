@@ -7,7 +7,10 @@
 
 #pragma once
 
-#include <Eigen/Core>
+// clang-format off
+#include "util/alignment.h"
+// clang-format on
+
 #include <vector>
 
 #include "base/track.h"
@@ -19,8 +22,6 @@ namespace colmap {
 // 3D point class that holds information about triangulated 2D points.
 class Point3D {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     Point3D();
 
     // The point coordinate in world space.
@@ -48,6 +49,9 @@ public:
     inline const class Track& Track() const;
     inline class Track& Track();
     inline void SetTrack(const class Track& track);
+
+    inline bool operator==(const Point3D& other) const;
+    inline bool operator!=(const Point3D& other) const;
 
 private:
     // The 3D position of the point.
@@ -105,6 +109,15 @@ class Track& Point3D::Track() { return track_; }
 
 void Point3D::SetTrack(const class Track& track) { track_ = track; }
 
+bool Point3D::operator==(const Point3D& other) const {
+    return XYZ() == other.XYZ() && Color() == other.Color() &&
+           Error() == other.Error() && Track() == other.Track();
+}
+
+bool Point3D::operator!=(const Point3D& other) const {
+    return !(*this == other);
+}
+
 }  // namespace colmap
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::Point3D)
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::Point3D)

@@ -1515,7 +1515,6 @@ public:
     struct Result {
         float fitness_score;
         Eigen::Matrix4f final_transformation;
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
     };
 
     TemplateMatching();

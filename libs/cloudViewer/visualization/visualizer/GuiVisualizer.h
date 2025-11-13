@@ -25,8 +25,6 @@ class GuiVisualizer : public gui::Window {
     using Super = gui::Window;
 
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     GuiVisualizer(const std::string& title, int width, int height);
     GuiVisualizer(
             const std::vector<std::shared_ptr<const ccHObject>>& geometries,

@@ -32,7 +32,7 @@ static const std::unordered_map<
 
 std::shared_ptr<geometry::Octree> CreateOctreeFromFile(
         const std::string &filename, const std::string &format) {
-    auto octree = cloudViewer::make_shared<geometry::Octree>();
+    auto octree = std::make_shared<geometry::Octree>();
     WriteOctree(filename, *octree);
     return octree;
 }

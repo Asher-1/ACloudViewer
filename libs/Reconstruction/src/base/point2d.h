@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
+// clang-format off
 #include "util/alignment.h"
+// clang-format on
+
 #include "util/types.h"
 
 namespace colmap {
@@ -18,8 +19,6 @@ namespace colmap {
 // corresponding 3D point if it is part of a triangulated track.
 class Point2D {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     Point2D();
 
     // The coordinate in image space in pixels.
@@ -34,6 +33,9 @@ public:
     inline point3D_t Point3DId() const;
     inline bool HasPoint3D() const;
     inline void SetPoint3DId(const point3D_t point3D_id);
+
+    inline bool operator==(const Point2D& other) const;
+    inline bool operator!=(const Point2D& other) const;
 
 private:
     // The image coordinates in pixels, starting at upper left corner with 0.
@@ -66,6 +68,12 @@ void Point2D::SetPoint3DId(const point3D_t point3D_id) {
     point3D_id_ = point3D_id;
 }
 
-}  // namespace colmap
+bool Point2D::operator==(const Point2D& other) const {
+    return XY() == other.XY() && Point3DId() == other.Point3DId();
+}
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::Point2D)
+bool Point2D::operator!=(const Point2D& other) const {
+    return !(*this == other);
+}
+
+}  // namespace colmap

@@ -105,7 +105,7 @@ void pybind_class_io(py::module &m_io) {
             "read_entity",
             [](const fs::path &filename, const std::string &format,
                bool print_progress) {
-                auto entity = cloudViewer::make_shared<ccHObject>("group");
+                auto entity = std::make_shared<ccHObject>("group");
                 ReadEntity(filename.string(), *entity, format, print_progress);
                 return entity;
             },
@@ -189,7 +189,7 @@ void pybind_class_io(py::module &m_io) {
                bool remove_nan_points, bool remove_infinite_points,
                bool print_progress) {
                 py::gil_scoped_release release;
-                auto pcd = cloudViewer::make_shared<ccPointCloud>();
+                auto pcd = std::make_shared<ccPointCloud>();
                 ReadPointCloud(filename.string(), *pcd,
                                {format, remove_nan_points,
                                 remove_infinite_points, print_progress});
@@ -212,7 +212,7 @@ void pybind_class_io(py::module &m_io) {
                 // copy before releasing GIL
                 std::memcpy(buffer, dataptr, length);
                 py::gil_scoped_release release;
-                auto pcd = cloudViewer::make_shared<ccPointCloud>();
+                auto pcd = std::make_shared<ccPointCloud>();
                 ReadPointCloud(reinterpret_cast<const unsigned char *>(buffer),
                                length, *pcd,
                                {format, remove_nan_points,

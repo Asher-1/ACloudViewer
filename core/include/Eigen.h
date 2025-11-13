@@ -5,42 +5,43 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef CLOUDVIEWER_EIGEN_H
+#define CLOUDVIEWER_EIGEN_H
 
 #include "CVCoreLib.h"
 
+#ifdef _MSVC_LANG
+#define CPP_VERSION _MSVC_LANG
+#else
+#define CPP_VERSION __cplusplus
+#endif
+
 // EIGEN
-#include <Eigen/Core>  // for EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+// Ensure EIGEN_HAS_CXX17_OVERALIGN is set before including Eigen headers
+// This allows C++17 std::allocator's automatic alignment handling even when
+// EIGEN_MAX_ALIGN_BYTES=0 (for PCL compatibility)
+#ifndef EIGEN_HAS_CXX17_OVERALIGN
+#ifdef CPP_VERSION
+#if CPP_VERSION >= 201703L
+#define EIGEN_HAS_CXX17_OVERALIGN 1
+#endif
+#endif
+#endif
+
+#include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 
 // SYSTEM
-#include <initializer_list>
-#include <memory>  // for std::allocate_shared, std::dynamic_pointer_cast, cloudViewer::make_shared, std::shared_ptr, std::static_pointer_cast, std::weak_ptr
+#include <memory>
 #include <tuple>
-#include <type_traits>  // for std::enable_if_t, std::false_type, std::true_type
-#include <utility>      // for std::forward
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
-/**
- * \brief Macro to signal a class requires a custom allocator
- *
- *  It's an implementation detail to have pcl::has_custom_allocator work, a
- *  thin wrapper over Eigen's own macro
- *
- * \see pcl::has_custom_allocator, pcl::make_shared
- * \ingroup common
- */
+#if !EIGEN_VERSION_AT_LEAST(3, 4, 0) || CPP_VERSION < 201703L
 
-#ifdef SIMD_ENABLED
-#define CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW \
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW           \
-    using _custom_allocator_type_trait = void;
-#else
-#define CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW using _custom_type_trait = void;
-#endif
-
-#ifdef SIMD_ENABLED
+#include <initializer_list>
 #ifndef EIGEN_ALIGNED_ALLOCATOR
 #define EIGEN_ALIGNED_ALLOCATOR Eigen::aligned_allocator
 #endif
@@ -48,7 +49,6 @@
 // Equivalent to EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION but with support for
 // initializer lists, which is a C++11 feature and not supported by the Eigen.
 // The initializer list extension is inspired by Theia and StackOverflow code.
-#ifndef EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM
 #define EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(...)                   \
     namespace std {                                                          \
     template <>                                                              \
@@ -82,29 +82,7 @@
     };                                                                       \
     }  // namespace std
 
-#define EIGEN_STL_UMAP(KEY, VALUE)                                     \
-    std::unordered_map<KEY, VALUE, std::hash<KEY>, std::equal_to<KEY>, \
-                       Eigen::aligned_allocator<std::pair<KEY const, VALUE>>>
-#define EIGEN_STL_UMAP_HASH(KEY, VALUE, HASH)                \
-    std::unordered_map<KEY, VALUE, HASH, std::equal_to<KEY>, \
-                       Eigen::aligned_allocator<std::pair<KEY const, VALUE>>>
-#endif
-#else
-// Equivalent to EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION but with support for
-// initializer lists, which is a C++11 feature and not supported by the Eigen.
-// The initializer list extension is inspired by Theia and StackOverflow code.
-#define EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(...) \
-    namespace std {}  // namespace std
-
-#define EIGEN_STL_UMAP(KEY, VALUE)                                     \
-    std::unordered_map<KEY, VALUE, std::hash<KEY>, std::equal_to<KEY>, \
-                       std::allocator<std::pair<KEY const, VALUE>>>
-#define EIGEN_STL_UMAP_HASH(KEY, VALUE, HASH)                \
-    std::unordered_map<KEY, VALUE, HASH, std::equal_to<KEY>, \
-                       std::allocator<std::pair<KEY const, VALUE>>>
-#endif
-
-// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector2d)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector2d)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector4d)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector4f)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix2d)
@@ -118,17 +96,11 @@ EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Quaternionf)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix<float, 3, 4>)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix<double, 3, 4>)
 
+#endif
+
+#undef CPP_VERSION
+
 namespace Eigen {
-
-template <typename X, typename... Args>
-inline std::shared_ptr<X> make_shared(Args&&... args) {
-    return std::shared_ptr<X>(new X(std::forward<Args>(args)...));
-}
-
-template <typename X, typename... Args>
-inline std::unique_ptr<X> make_unique(Args&&... args) {
-    return std::unique_ptr<X>(new X(std::forward<Args>(args)...));
-}
 
 /// Extending Eigen namespace by adding frequently used matrix type
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
@@ -147,26 +119,6 @@ typedef Eigen::Matrix<float, 4, 1, Eigen::DontAlign> Vector4f_u;
 }  // namespace Eigen
 
 namespace cloudViewer {
-template <typename...>
-using void_t = void;  // part of std in c++17
-template <typename, typename = void_t<>>
-struct has_custom_allocator : std::false_type {};
-template <typename T>
-struct has_custom_allocator<T, void_t<typename T::_custom_allocator_type_trait>>
-    : std::true_type {};
-
-template <typename T, typename... Args>
-std::enable_if_t<has_custom_allocator<T>::value, std::shared_ptr<T>>
-make_shared(Args&&... args) {
-    return std::allocate_shared<T>(Eigen::aligned_allocator<T>(),
-                                   std::forward<Args>(args)...);
-}
-
-template <typename T, typename... Args>
-std::enable_if_t<!has_custom_allocator<T>::value, std::shared_ptr<T>>
-make_shared(Args&&... args) {
-    return std::make_shared<T>(std::forward<Args>(args)...);
-}
 
 namespace utility {
 
@@ -224,10 +176,10 @@ std::tuple<bool, std::vector<Eigen::Matrix4d, Matrix4d_allocator>>
 /// Note: f takes index of row, and outputs corresponding residual and row
 /// vector.
 template <typename MatType, typename VecType>
-std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(int, VecType&, double&, double&)> f,
-        int iteration_num,
-        bool verbose = true);
+std::tuple<MatType, VecType, double> CV_CORE_LIB_API
+ComputeJTJandJTr(std::function<void(int, VecType&, double&, double&)> f,
+                 int iteration_num,
+                 bool verbose = true);
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix
@@ -235,7 +187,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
 /// Note: f takes index of row, and outputs corresponding residual and row
 /// vector.
 template <typename MatType, typename VecType>
-std::tuple<MatType, VecType, double> ComputeJTJandJTr(
+std::tuple<MatType, VecType, double> CV_CORE_LIB_API ComputeJTJandJTr(
         std::function<
                 void(int,
                      std::vector<VecType, Eigen::aligned_allocator<VecType>>&,
@@ -267,47 +219,18 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> CV_CORE_LIB_API
 ComputeMeanAndCovariance(const std::vector<Eigen::Vector3d>& points,
                          const std::vector<IdxType>& indices);
 
-// Overload: compute mean and covariance from raw pointer to a contiguous
-// array of (N, 3) points. Points are accessed via indices.
-template <typename Scalar, typename IdxType>
-inline std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
-        const Scalar* points, const std::vector<IdxType>& indices) {
-    Eigen::Vector3d mean;
-    Eigen::Matrix3d covariance;
-    Eigen::Matrix<double, 9, 1> cumulants;
-    cumulants.setZero();
-    for (const auto& idx : indices) {
-        const double x =
-                static_cast<double>(points[3 * static_cast<size_t>(idx) + 0]);
-        const double y =
-                static_cast<double>(points[3 * static_cast<size_t>(idx) + 1]);
-        const double z =
-                static_cast<double>(points[3 * static_cast<size_t>(idx) + 2]);
-        cumulants(0) += x;
-        cumulants(1) += y;
-        cumulants(2) += z;
-        cumulants(3) += x * x;
-        cumulants(4) += x * y;
-        cumulants(5) += x * z;
-        cumulants(6) += y * y;
-        cumulants(7) += y * z;
-        cumulants(8) += z * z;
-    }
-    cumulants /= static_cast<double>(indices.size());
-    mean(0) = cumulants(0);
-    mean(1) = cumulants(1);
-    mean(2) = cumulants(2);
-    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
-    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
-    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
-    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
-    covariance(1, 0) = covariance(0, 1);
-    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
-    covariance(2, 0) = covariance(0, 2);
-    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
-    covariance(2, 1) = covariance(1, 2);
-    return std::make_tuple(mean, covariance);
-}
+/// Function to compute the mean and covariance matrix of a set of points.
+/// \tparam RealType Either float or double.
+/// \tparam IdxType Either size_t or int.
+/// \param points Contiguous memory with the 3D points.
+/// \param indices The indices for which the mean and covariance will be
+/// computed. \return The mean and covariance matrix.
+template <typename RealType, typename IdxType>
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d> CV_CORE_LIB_API
+ComputeMeanAndCovariance(const RealType* const points,
+                         const std::vector<IdxType>& indices);
 
 }  // namespace utility
 }  // namespace cloudViewer
+
+#endif  // CLOUDVIEWER_EIGEN_H
