@@ -247,6 +247,7 @@ RUN unzip pcl-${PCL_VERSION}.zip && \
             -DBUILD_apps=OFF \
             -DBUILD_examples=OFF \
             -DBUILD_surface_on_nurbs=ON \
+            -DPCL_ENABLE_MARCHNATIVE=OFF \
             -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
