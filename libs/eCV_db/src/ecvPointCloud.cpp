@@ -5453,7 +5453,7 @@ bool ccPointCloud::exportNormalToSF(bool exportDims[3]) {
 
 std::shared_ptr<ccPointCloud> ccPointCloud::SelectByIndex(
         const std::vector<size_t>& indices, bool invert /* = false */) const {
-    auto output = cloudViewer::make_shared<ccPointCloud>("pointCloud");
+    auto output = std::make_shared<ccPointCloud>("pointCloud");
     bool has_normals = hasNormals();
     bool has_colors = hasColors();
     bool has_covariance = HasCovariances();

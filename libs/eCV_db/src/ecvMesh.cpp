@@ -906,7 +906,7 @@ std::shared_ptr<ccMesh> ccMesh::SelectByIndex(
     ccPointCloud* baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
 
-    auto output = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto output = std::make_shared<ccMesh>(baseVertices);
     output->reserve(indices.size());
     bool has_triangle_normals = hasTriNormals();
     bool has_vertex_normals = hasNormals();
@@ -994,7 +994,7 @@ std::shared_ptr<ccMesh> ccMesh::Crop(const ccBBox& bbox) const {
         cloudViewer::utility::LogError(
                 "[ccMesh::Crop] ccBBox either has zeros "
                 "size, or has wrong bounds.");
-        return cloudViewer::make_shared<ccMesh>(nullptr);
+        return std::make_shared<ccMesh>(nullptr);
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(getVertices()));
 }
@@ -1004,7 +1004,7 @@ std::shared_ptr<ccMesh> ccMesh::Crop(const ecvOrientedBBox& bbox) const {
         cloudViewer::utility::LogError(
                 "[ccMesh::Crop] ecvOrientedBBox either has zeros "
                 "size, or has wrong bounds.");
-        return cloudViewer::make_shared<ccMesh>(nullptr);
+        return std::make_shared<ccMesh>(nullptr);
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(
             ccHObjectCaster::ToPointCloud(m_associatedCloud)->getPoints()));

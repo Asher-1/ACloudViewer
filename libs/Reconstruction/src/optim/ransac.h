@@ -56,8 +56,6 @@ template <typename Estimator,
 class RANSAC {
 public:
     struct Report {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
         // Whether the estimation was successful.
         bool success = false;
 

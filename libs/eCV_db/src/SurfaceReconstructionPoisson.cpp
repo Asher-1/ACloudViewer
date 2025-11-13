@@ -790,7 +790,7 @@ ccMesh::CreateFromPointCloudPoisson(const ccPointCloud& pcd,
                      n_threads);
 #endif
 
-    auto mesh = cloudViewer::make_shared<ccMesh>();
+    auto mesh = std::make_shared<ccMesh>();
     if (!mesh->CreateInternalCloud()) {
         utility::LogError(
                 "[CreateFromPointCloudPoisson] creating internal cloud "

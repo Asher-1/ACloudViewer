@@ -219,7 +219,7 @@ class DelaunayMeshingInput {
     uint32_t num_visible_images = 0;
   };
 
-  EIGEN_STL_UMAP(camera_t, Camera) cameras;
+  std::unordered_map<camera_t, Camera> cameras;
   std::vector<Image> images;
   std::vector<Point> points;
 
@@ -1016,7 +1016,7 @@ void SparseDelaunayMeshing(const DelaunayMeshingOptions& options,
 
   const auto mesh = DelaunayMeshing(options, input_data);
 
-  std::cout << "Writing surface mesh..." << std::endl;
+  std::cout << "Writing surface mesh to " << output_path << std::endl;
   WriteBinaryPlyMesh(output_path, mesh);
 
   timer.PrintSeconds();
@@ -1033,7 +1033,7 @@ void DenseDelaunayMeshing(const DelaunayMeshingOptions& options,
 
   const auto mesh = DelaunayMeshing(options, input_data);
 
-  std::cout << "Writing surface mesh..." << std::endl;
+  std::cout << "Writing surface mesh to " << output_path << std::endl;
   WriteBinaryPlyMesh(output_path, mesh);
 
   timer.PrintSeconds();

@@ -94,7 +94,7 @@ std::shared_ptr<ccMesh> ccMesh::SimplifyVertexClustering(
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
 
     if (voxel_size <= 0.0) {
@@ -292,7 +292,7 @@ std::shared_ptr<ccMesh> ccMesh::SimplifyQuadricDecimation(
     baseVertices->setEnabled(false);
     // DGM: no need to lock it as it is only used by one mesh!
     baseVertices->setLocked(false);
-    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto mesh = std::make_shared<ccMesh>(baseVertices);
     mesh->addChild(baseVertices);
     mesh->merge(this, false);
 

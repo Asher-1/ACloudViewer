@@ -112,7 +112,7 @@ std::shared_ptr<geometry::LineSet> CreateLineSetFromFile(
         const std::string &filename,
         const std::string &format,
         bool print_progress) {
-    auto lineset = cloudViewer::make_shared<geometry::LineSet>();
+    auto lineset = std::make_shared<geometry::LineSet>();
     ReadLineSet(filename, *lineset, format, print_progress);
     return lineset;
 }

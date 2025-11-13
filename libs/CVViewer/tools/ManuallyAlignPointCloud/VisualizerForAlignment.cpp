@@ -34,8 +34,8 @@ bool VisualizerForAlignment::AddSourceAndTarget(
     GetRenderOption().point_size_ = 1.0;
     alignment_session_.source_ptr_ = source;
     alignment_session_.target_ptr_ = target;
-    source_copy_ptr_ = cloudViewer::make_shared<ccPointCloud>();
-    target_copy_ptr_ = cloudViewer::make_shared<ccPointCloud>();
+    source_copy_ptr_ = std::make_shared<ccPointCloud>();
+    target_copy_ptr_ = std::make_shared<ccPointCloud>();
     *source_copy_ptr_ = *source;
     *target_copy_ptr_ = *target;
     return AddGeometry(source_copy_ptr_) && AddGeometry(target_copy_ptr_);
@@ -201,7 +201,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         polygon_filename_ = "polygon.json";
                     }
                 }
-                auto polygon_volume = cloudViewer::make_shared<
+                auto polygon_volume = std::make_shared<
                         visualization::SelectionPolygonVolume>();
                 if (io::ReadIJsonConvertible(polygon_filename_,
                                              *polygon_volume)) {

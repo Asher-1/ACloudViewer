@@ -463,8 +463,6 @@ CC_FILE_ERROR AsciiFilter::loadStream(
 }
 
 struct cloudAttributesDescriptor {
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     ccPointCloud* cloud;
     static const unsigned c_attribCount = 14;
     union {

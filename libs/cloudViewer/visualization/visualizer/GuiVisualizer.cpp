@@ -312,8 +312,6 @@ enum MenuId {
 };
 
 struct GuiVisualizer::Impl {
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     GuiVisualizer *visualizer_;
 
     std::shared_ptr<gui::SceneWidget> scene_wgt_;
@@ -323,8 +321,6 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<MessageProcessor> message_processor_;
 
     struct Settings {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
         rendering::MaterialRecord lit_material_;
         rendering::MaterialRecord unlit_material_;
         rendering::MaterialRecord normal_depth_material_;

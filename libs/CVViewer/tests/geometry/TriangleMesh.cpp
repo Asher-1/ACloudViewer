@@ -734,7 +734,7 @@ TEST(TriangleMesh, SamplePointsUniformly) {
 }
 
 TEST(TriangleMesh, FilterSharpen) {
-    auto mesh = cloudViewer::make_shared<geometry::TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
@@ -753,7 +753,7 @@ TEST(TriangleMesh, FilterSharpen) {
 }
 
 TEST(TriangleMesh, FilterSmoothSimple) {
-    auto mesh = cloudViewer::make_shared<geometry::TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
@@ -775,7 +775,7 @@ TEST(TriangleMesh, FilterSmoothSimple) {
 }
 
 TEST(TriangleMesh, FilterSmoothLaplacian) {
-    auto mesh = cloudViewer::make_shared<geometry::TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
@@ -794,7 +794,7 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
 }
 
 TEST(TriangleMesh, FilterSmoothTaubin) {
-    auto mesh = cloudViewer::make_shared<geometry::TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 

@@ -29,7 +29,6 @@ public:
     std::vector<colmap::Image> views;
 
     struct ViewData {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         ccGLMatrixd model_view_matrix;
         ecvViewportParameters viewportParams;
         float point_size = -1.0f;
@@ -72,10 +71,10 @@ private:
 
     std::vector<colmap::image_t> camera_ids_;
 
-    EIGEN_STL_UMAP(const QTableWidgetItem*, ViewData) view_data_;
+    std::unordered_map<const QTableWidgetItem*, ViewData> view_data_;
 };
 
 }  // namespace cloudViewer
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
-        cloudViewer::MovieGrabberWidget::ViewData)
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
+//         cloudViewer::MovieGrabberWidget::ViewData)

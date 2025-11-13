@@ -83,7 +83,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccPointCloud>());
+                    return std::ref(*std::make_shared<ccPointCloud>());
                 }
             },
             "Converts current object to 'equivalent' ccPointCloud", "entity"_a);
@@ -95,8 +95,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(
-                            *cloudViewer::make_shared<ccPolyline>(nullptr));
+                    return std::ref(*std::make_shared<ccPolyline>(nullptr));
                 }
             },
             "Converts current object to ccPolyline (if possible)", "entity"_a);
@@ -108,7 +107,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccFacet>());
+                    return std::ref(*std::make_shared<ccFacet>());
                 }
             },
             "Converts current object to ccFacet (if possible)", "entity"_a);
@@ -120,7 +119,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccMesh>());
+                    return std::ref(*std::make_shared<ccMesh>());
                 }
             },
             "Converts current object to ccMesh (if possible)", "entity"_a);
@@ -132,8 +131,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(
-                            *cloudViewer::make_shared<ccSubMesh>(nullptr));
+                    return std::ref(*std::make_shared<ccSubMesh>(nullptr));
                 }
             },
             "Converts current object to ccSubMesh (if possible)", "entity"_a);
@@ -145,7 +143,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccQuadric>());
+                    return std::ref(*std::make_shared<ccQuadric>());
                 }
             },
             "Converts current object to ccQuadric (if possible)", "entity"_a);
@@ -157,7 +155,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccBox>());
+                    return std::ref(*std::make_shared<ccBox>());
                 }
             },
             "Converts current object to ccBox (if possible)", "entity"_a);
@@ -169,7 +167,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccSphere>());
+                    return std::ref(*std::make_shared<ccSphere>());
                 }
             },
             "Converts current object to ccSphere (if possible)", "entity"_a);
@@ -181,7 +179,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccCylinder>());
+                    return std::ref(*std::make_shared<ccCylinder>());
                 }
             },
             "Converts current object to ccCylinder (if possible)", "entity"_a);
@@ -194,8 +192,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(
-                            *cloudViewer::make_shared<ccCoordinateSystem>());
+                    return std::ref(*std::make_shared<ccCoordinateSystem>());
                 }
             },
             "Converts current object to ccCoordinateSystem (if possible)",
@@ -208,7 +205,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccCone>());
+                    return std::ref(*std::make_shared<ccCone>());
                 }
             },
             "Converts current object to ccCone (if possible)", "entity"_a);
@@ -220,7 +217,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccPlane>());
+                    return std::ref(*std::make_shared<ccPlane>());
                 }
             },
             "Converts current object to ccPlane (if possible)", "entity"_a);
@@ -232,7 +229,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccDish>());
+                    return std::ref(*std::make_shared<ccDish>());
                 }
             },
             "Converts current object to ccDish (if possible)", "entity"_a);
@@ -244,7 +241,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccExtru>());
+                    return std::ref(*std::make_shared<ccExtru>());
                 }
             },
             "Converts current object to ccExtru (if possible)", "entity"_a);
@@ -256,7 +253,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccTorus>());
+                    return std::ref(*std::make_shared<ccTorus>());
                 }
             },
             "Converts current object to ccTorus (if possible)", "entity"_a);
@@ -269,7 +266,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccOctreeProxy>());
+                    return std::ref(*std::make_shared<ccOctreeProxy>());
                 }
             },
             "Converts current object to ccOctreeProxy (if possible)",
@@ -283,8 +280,7 @@ void pybind_geometry_classes(py::module& m) {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
                     auto pcd = std::make_shared<ccPointCloud>();
-                    return std::ref(
-                            *cloudViewer::make_shared<ccKdTree>(pcd.get()));
+                    return std::ref(*std::make_shared<ccKdTree>(pcd.get()));
                 }
             },
             "Converts current object to ccKdTree (if possible)", "entity"_a);
@@ -296,8 +292,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(
-                            *cloudViewer::make_shared<ccSensor>("Invalid"));
+                    return std::ref(*std::make_shared<ccSensor>("Invalid"));
                 }
             },
             "Converts current object to ccSensor (if possible)", "entity"_a);
@@ -309,7 +304,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccGBLSensor>());
+                    return std::ref(*std::make_shared<ccGBLSensor>());
                 }
             },
             "Converts current object to ccGBLSensor (if possible)", "entity"_a);
@@ -321,8 +316,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(
-                            *cloudViewer::make_shared<ccCameraSensor>());
+                    return std::ref(*std::make_shared<ccCameraSensor>());
                 }
             },
             "Converts current object to ccCameraSensor (if possible)",
@@ -335,7 +329,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccImage>());
+                    return std::ref(*std::make_shared<ccImage>());
                 }
             },
             "Converts current object to ccImage (if possible)", "entity"_a);
@@ -348,7 +342,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<cc2DLabel>());
+                    return std::ref(*std::make_shared<cc2DLabel>());
                 }
             },
             "Converts current object to cc2DLabel (if possible)", "entity"_a);
@@ -361,8 +355,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(
-                            *cloudViewer::make_shared<cc2DViewportLabel>());
+                    return std::ref(*std::make_shared<cc2DViewportLabel>());
                 }
             },
             "Converts current object to cc2DViewportLabel (if possible)",
@@ -376,8 +369,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(
-                            *cloudViewer::make_shared<cc2DViewportObject>());
+                    return std::ref(*std::make_shared<cc2DViewportObject>());
                 }
             },
             "Converts current object to cc2DViewportObject (if possible)",
@@ -390,8 +382,8 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<
-                                    ccIndexedTransformationBuffer>());
+                    return std::ref(
+                            *std::make_shared<ccIndexedTransformationBuffer>());
                 }
             },
             "Converts current object to ccIndexedTransformationBuffer (if "
@@ -405,7 +397,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<Image>());
+                    return std::ref(*std::make_shared<Image>());
                 }
             },
             "Converts current object to Image (if possible)", "entity"_a);
@@ -417,7 +409,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<RGBDImage>());
+                    return std::ref(*std::make_shared<RGBDImage>());
                 }
             },
             "Converts current object to RGBDImage (if possible)", "entity"_a);
@@ -429,7 +421,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<VoxelGrid>());
+                    return std::ref(*std::make_shared<VoxelGrid>());
                 }
             },
             "Converts current object to VoxelGrid (if possible)", "entity"_a);
@@ -441,7 +433,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<LineSet>());
+                    return std::ref(*std::make_shared<LineSet>());
                 }
             },
             "Converts current object to LineSet (if possible)", "entity"_a);
@@ -453,7 +445,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<Octree>());
+                    return std::ref(*std::make_shared<Octree>());
                 }
             },
             "Converts current object to Octree (if possible)", "entity"_a);
@@ -465,7 +457,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(*cloudViewer::make_shared<ccBBox>());
+                    return std::ref(*std::make_shared<ccBBox>());
                 }
             },
             "Converts current object to ccBBox (if possible)", "entity"_a);
@@ -477,8 +469,7 @@ void pybind_geometry_classes(py::module& m) {
                 } else {
                     cloudViewer::utility::LogWarning(
                             "[ccHObjectCaster] converting failed!");
-                    return std::ref(
-                            *cloudViewer::make_shared<ecvOrientedBBox>());
+                    return std::ref(*std::make_shared<ecvOrientedBBox>());
                 }
             },
             "Converts current object to ecvOrientedBBox (if possible)",

@@ -103,7 +103,12 @@ wheel_release_export_env() {
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=ON
+		if [ "$UBUNTU_VERSION" = "18.04" ]; then
+			# PyTorch and CloudViewer ABI mismatch issues on ubuntu18.04
+			export BUILD_PYTORCH_OPS=OFF
+		else
+			export BUILD_PYTORCH_OPS=ON
+		fi
     export PACKAGE=OFF
 }
 
@@ -145,6 +150,7 @@ release_build() {
     echo "[release_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:?'env var must be set.'}"
     echo "[release_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:?'env var must be set.'}"
 
+    LOG_FILE="docker_build-py${PYTHON_VERSION}-${BUILD_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}-${POST_SUFFIX}.log"
     docker build \
 			--network host \
 			--build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
@@ -163,7 +169,7 @@ release_build() {
 			--build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
 			--build-arg PACKAGE="${PACKAGE}" \
 			--tag "$CLOUDVIEWER_IMAGE_TAG" \
-			-f docker/Dockerfile_build${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-py${PYTHON_VERSION}-${BUILD_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}-${POST_SUFFIX}.log
+			-f docker/Dockerfile_build${DOCKER_FILE_POSFIX} . 2>&1 | tee "${LOG_FILE}"
 
 			if [ "$BUILD_GUI" = "ON" ]; then
 				docker run -v "${HOST_INSTALL_PATH}:/opt/mount" --rm "$CLOUDVIEWER_IMAGE_TAG" \
@@ -174,6 +180,32 @@ release_build() {
 				docker run -v "${HOST_INSTALL_PATH}:/opt/mount" --rm "$CLOUDVIEWER_IMAGE_TAG" \
 						bash -cx "cp ${DOCKER_INSTALL_PATH}/*.whl /opt/mount \
 									&& chown $(id -u):$(id -g) /opt/mount/*.whl"
+
+				# Test wheel in runtime container (automatically detects CUDA vs CPU based on BUILD_CUDA_MODULE)
+				# Use build image if available, otherwise fall back to base image
+				TEST_DOCKER_IMAGE="$CLOUDVIEWER_IMAGE_TAG"
+				if ! docker image inspect "$CLOUDVIEWER_IMAGE_TAG" > /dev/null 2>&1; then
+					echo "" | tee -a "${LOG_FILE}"
+					echo "Warning: Docker image $CLOUDVIEWER_IMAGE_TAG not found, using base image for testing" | tee -a "${LOG_FILE}"
+					if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
+						TEST_DOCKER_IMAGE="nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}"
+					else
+						TEST_DOCKER_IMAGE="ubuntu:${UBUNTU_VERSION}"
+					fi
+					echo "Using base image: $TEST_DOCKER_IMAGE" | tee -a "${LOG_FILE}"
+				fi
+				
+				echo "" | tee -a "${LOG_FILE}"
+				echo "==========================================" | tee -a "${LOG_FILE}"
+				echo "Testing wheel with BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}" | tee -a "${LOG_FILE}"
+				echo "Using Docker image: $TEST_DOCKER_IMAGE" | tee -a "${LOG_FILE}"
+				echo "==========================================" | tee -a "${LOG_FILE}"
+				"${PWD}/docker/test_wheel_runtime.sh" \
+					"${HOST_INSTALL_PATH}" "${BUILD_CUDA_MODULE}" "${PYTHON_VERSION}" "$TEST_DOCKER_IMAGE" 2>&1 | tee -a "${LOG_FILE}" || {
+					echo "Warning: Wheel test failed, but wheel was built successfully" | tee -a "${LOG_FILE}"
+					echo "You can test it manually with:" | tee -a "${LOG_FILE}"
+					echo "  ${PWD}/docker/test_wheel_runtime.sh ${HOST_INSTALL_PATH} ${BUILD_CUDA_MODULE} ${PYTHON_VERSION} $TEST_DOCKER_IMAGE" | tee -a "${LOG_FILE}"
+				}
 			fi
 
 			echo					

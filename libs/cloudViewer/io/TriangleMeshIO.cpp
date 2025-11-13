@@ -191,7 +191,7 @@ namespace io {
 using namespace cloudViewer;
 std::shared_ptr<ccMesh> CreateMeshFromFile(const std::string& filename,
                                            bool print_progress) {
-    auto mesh = cloudViewer::make_shared<ccMesh>();
+    auto mesh = std::make_shared<ccMesh>();
     if (!mesh->CreateInternalCloud()) {
         utility::LogError("creating internal cloud failed!");
         return nullptr;

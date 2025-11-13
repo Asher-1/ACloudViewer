@@ -17,7 +17,7 @@ std::shared_ptr<ccPointCloud> MakePointCloud(int npts,
                                              const Eigen::Vector3d center,
                                              double radius,
                                              bool colorize) {
-    auto cloud = cloudViewer::make_shared<ccPointCloud>();
+    auto cloud = std::make_shared<ccPointCloud>();
     cloud->reserveThePointsTable(static_cast<unsigned>(npts));
     for (int i = 0; i < npts; ++i) {
         cloud->addEigenPoint({radius * GetRandom() + center.x(),
@@ -84,13 +84,13 @@ void Actions() {
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
-    auto bunny = cloudViewer::make_shared<ccMesh>();
+    auto bunny = std::make_shared<ccMesh>();
     data::BunnyMesh bunny_data;
     io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 
     bunny->PaintUniformColor({1, 0.75, 0});
     bunny->ComputeVertexNormals();
-    auto cloud = cloudViewer::make_shared<ccPointCloud>();
+    auto cloud = std::make_shared<ccPointCloud>();
 
     cloud->addPoints(bunny->getVerticesPtr());
     cloud->addEigenNorms(bunny->getVertexNormals());
@@ -161,14 +161,14 @@ void Selections() {
     std::cout << "            three points from the target." << std::endl;
 
     data::DemoICPPointClouds demo_icp_pointclouds;
-    auto source = cloudViewer::make_shared<ccPointCloud>();
+    auto source = std::make_shared<ccPointCloud>();
     io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *source);
     if (source->IsEmpty()) {
         utility::LogError("Could not open {}",
                           demo_icp_pointclouds.GetPaths(0));
         return;
     }
-    auto target = cloudViewer::make_shared<ccPointCloud>();
+    auto target = std::make_shared<ccPointCloud>();
     io::ReadPointCloud(demo_icp_pointclouds.GetPaths(1), *target);
     if (target->IsEmpty()) {
         utility::LogError("Could not open {}",

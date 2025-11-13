@@ -43,11 +43,11 @@ using cp_t = std::tuple<lt_t, v_t, v_t, lt_t, v_t, v_t, double, double>;
 // Factory function to build appropriate type from enum
 std::shared_ptr<Line3D> LineFactory(lt_t type, const v_t& v0, const v_t& v1) {
     if (type == lt_t::Line) {
-        return cloudViewer::make_shared<Line3D>(v0, v1);
+        return std::make_shared<Line3D>(v0, v1);
     } else if (type == lt_t::Ray) {
-        return cloudViewer::make_shared<Ray3D>(v0, v1);
+        return std::make_shared<Ray3D>(v0, v1);
     } else if (type == lt_t::Segment) {
-        return cloudViewer::make_shared<Segment3D>(v0, v1);
+        return std::make_shared<Segment3D>(v0, v1);
     } else {
         throw std::exception();
     }

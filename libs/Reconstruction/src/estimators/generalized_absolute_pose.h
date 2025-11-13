@@ -28,7 +28,6 @@ public:
     // pose of the specific camera in the generalized camera and its image
     // observation.
     struct X_t {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         // The relative transformation from the generalized camera to the camera
         // frame of the observation.
         Eigen::Matrix3x4d rel_tform;
@@ -72,4 +71,4 @@ public:
 
 }  // namespace colmap
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::GP3PEstimator::X_t)
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::GP3PEstimator::X_t)

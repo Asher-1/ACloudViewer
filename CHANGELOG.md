@@ -11,6 +11,10 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Fix code style
     -   Fix ubuntu wheel import warning
     -   Fix ubuntu wheel cuda testing
+    -   Fix Illegal instruction issues with pcl and ACloudViewer with -march=native
+    -   Remove cloudViewer::make_shared and EIGEN_MAKE_ALIGNED_OPERATOR_NEW as no need any more with C++17
+    -   Replace EIGEN_STL_MAP with std::unordered_map for Reconstruction module
+    -   Fix crash on ubuntu22.04 for reconstruction due to misalignment
 
 - Enhancements:
     -   Replace `#ifndef` with `#pragma once`
@@ -19,6 +23,8 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   CUDA support 11.8 -> 12.6.3 Tensorflow 2.16.2 -> 2.19.0. PyTorch 2.2.2 -> 2.7.1
     -   Change python package file name from `cloudViewer*` to `cloudviewer*` due to PEP 503 standard behavior
     -   Opt win wheel testing with cuda and cpu
+    -   Opt Cuda test wheel strategy on ubuntu
+    -   Rename docker scripts
 
 ### supported platform:
 - Windows `x86/64`

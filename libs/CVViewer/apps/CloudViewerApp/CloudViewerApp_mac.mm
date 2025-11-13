@@ -41,13 +41,13 @@ protected:
     void OnMenuItemSelected(Menu::ItemId item_id) override {
         if (item_id == MAC_MAKE_DEFAULT_APP) {
             auto em = GetTheme().font_size;
-            auto dlg = cloudViewer::make_shared<Dialog>(
+            auto dlg = std::make_shared<Dialog>(
                     "Make CloudViewer default");
 
-            auto cancel = cloudViewer::make_shared<Button>("Cancel");
+            auto cancel = std::make_shared<Button>("Cancel");
             cancel->SetOnClicked([this]() { this->CloseDialog(); });
 
-            auto ok = cloudViewer::make_shared<Button>("Make Default");
+            auto ok = std::make_shared<Button>("Make Default");
             ok->SetOnClicked([this]() {
                 // This will set the users personal default to use CloudViewer
                 // for the file types below. THIS SHOULD ONLY BE CALLED AFTER
@@ -96,23 +96,23 @@ protected:
                 this->CloseDialog();
             });
 
-            auto vert = cloudViewer::make_shared<Vert>(0, Margins(em));
-            vert->AddChild(cloudViewer::make_shared<Label>(
+            auto vert = std::make_shared<Vert>(0, Margins(em));
+            vert->AddChild(std::make_shared<Label>(
                     "This will make CloudViewer the default application for "
                     "the "
                     "following file types:"));
             vert->AddFixed(em);
             auto table =
-                    cloudViewer::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
-            table->AddChild(cloudViewer::make_shared<Label>("Mesh:"));
-            table->AddChild(cloudViewer::make_shared<Label>(
+                    std::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
+            table->AddChild(std::make_shared<Label>("Mesh:"));
+            table->AddChild(std::make_shared<Label>(
                     ".gltf, .glb, .obj, .off, .ply, .stl"));
-            table->AddChild(cloudViewer::make_shared<Label>("Point clouds:"));
-            table->AddChild(cloudViewer::make_shared<Label>(
+            table->AddChild(std::make_shared<Label>("Point clouds:"));
+            table->AddChild(std::make_shared<Label>(
                     ".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb"));
             vert->AddChild(table);
             vert->AddFixed(em);
-            auto buttons = cloudViewer::make_shared<Horiz>(0.5 * em);
+            auto buttons = std::make_shared<Horiz>(0.5 * em);
             buttons->AddStretch();
             buttons->AddChild(cancel);
             buttons->AddChild(ok);
@@ -130,7 +130,7 @@ constexpr Menu::ItemId
 
 // ----------------------------------------------------------------------------
 static void LoadAndCreateWindow(const char *path) {
-    auto vis = cloudViewer::make_shared<CloudViewerVisualizer>();
+    auto vis = std::make_shared<CloudViewerVisualizer>();
     bool is_path_valid = (path && path[0] != '\0');
     if (is_path_valid) {
         vis->LoadGeometry(path);

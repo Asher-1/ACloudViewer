@@ -96,7 +96,7 @@ bool AutoReadEntity(const std::string& filename,
     FileIOFilter::Shared filter(nullptr);
 
     // load file
-    auto container = cloudViewer::make_shared<ccHObject>();
+    auto container = std::make_shared<ccHObject>();
 
     while (true) {
         // look for file extension (we trust Qt on this task)
@@ -329,7 +329,7 @@ using namespace cloudViewer;
 std::shared_ptr<ccHObject> CreateEntityFromFile(const std::string& filename,
                                                 const std::string& format,
                                                 bool print_progress) {
-    auto entity = cloudViewer::make_shared<ccHObject>("Group");
+    auto entity = std::make_shared<ccHObject>("Group");
     ReadEntity(filename, *entity, format, print_progress);
     return entity;
 }

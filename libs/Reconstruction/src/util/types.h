@@ -37,10 +37,13 @@ typedef unsigned __int64 uint64_t;
 namespace Eigen {
 using Matrix3x4f = Matrix<float, 3, 4>;
 using Matrix3x4d = Matrix<double, 3, 4>;
+using Matrix2x3d = Matrix<double, 2, 3>;
 using Matrix6d = Matrix<double, 6, 6>;
 using Vector3ub = Matrix<uint8_t, 3, 1>;
 using Vector4ub = Matrix<uint8_t, 4, 1>;
 using Vector6d = Matrix<double, 6, 1>;
+using RowMajorMatrixXf = Matrix<float, Dynamic, Dynamic, RowMajor>;
+using RowMajorMatrixXd = Matrix<double, Dynamic, Dynamic, RowMajor>;
 using RowMajorMatrixXi = Matrix<int, Dynamic, Dynamic, RowMajor>;
 
 }  // namespace Eigen

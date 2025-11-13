@@ -542,8 +542,7 @@ void pybind_primitives(py::module& m) {
                                     "[ccQuadric::Fit] Illegal input "
                                     "parameters, only support point cloud!");
                             return std::make_tuple(
-                                    cloudViewer::make_shared<ccQuadric>(
-                                            "Quadric"),
+                                    std::make_shared<ccQuadric>("Quadric"),
                                     0.0);
                         }
                         double rms = 0.0;

@@ -66,11 +66,9 @@ static void BenchmarkICPLegacy(benchmark::State& state,
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {
-        estimation = cloudViewer::make_shared<
-                TransformationEstimationPointToPlane>();
+        estimation = std::make_shared<TransformationEstimationPointToPlane>();
     } else if (type == TransformationEstimationType::PointToPoint) {
-        estimation = cloudViewer::make_shared<
-                TransformationEstimationPointToPoint>();
+        estimation = std::make_shared<TransformationEstimationPointToPoint>();
     }
 
     Eigen::Matrix4d init_trans;

@@ -107,9 +107,9 @@ public:
 
     // Copy of current scene data that is displayed
     colmap::Reconstruction* reconstruction = nullptr;
-    EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) cameras;
-    EIGEN_STL_UMAP(colmap::image_t, colmap::Image) images;
-    EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) points3D;
+    std::unordered_map<colmap::camera_t, colmap::Camera> cameras;
+    std::unordered_map<colmap::image_t, colmap::Image> images;
+    std::unordered_map<colmap::point3D_t, colmap::Point3D> points3D;
     std::vector<colmap::image_t> reg_image_ids;
 
     QLabel* statusbar_status_label;

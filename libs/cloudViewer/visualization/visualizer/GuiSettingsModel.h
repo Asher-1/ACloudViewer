@@ -16,8 +16,6 @@ namespace visualization {
 
 class GuiSettingsModel {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     static constexpr const char* DEFAULT_IBL = "default";
     static constexpr const char* CUSTOM_IBL = "Custom KTX file...";
     static constexpr const char* DEFAULT_MATERIAL_NAME = "Polished ceramic";
@@ -27,7 +25,6 @@ public:
             "Cloudy day (no direct sun)";
 
     struct LightingProfile {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         std::string name;
         double ibl_intensity;
         double sun_intensity;
@@ -48,7 +45,6 @@ public:
     };
 
     struct LitMaterial {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         Eigen::Vector3f base_color = {0.9f, 0.9f, 0.9f};
         float metallic = 0.f;
         float roughness = 0.7f;
@@ -59,14 +55,12 @@ public:
     };
 
     struct UnlitMaterial {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         // The base color should NOT be {1, 1, 1}, because then the
         // model will be invisible against the default white background.
         Eigen::Vector3f base_color = {0.9f, 0.9f, 0.9f};
     };
 
     struct Materials {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         LitMaterial lit;
         UnlitMaterial unlit;
         float point_size = 3.0f;

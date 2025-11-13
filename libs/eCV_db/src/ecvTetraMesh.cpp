@@ -184,7 +184,7 @@ std::shared_ptr<ccMesh> TetraMesh::ExtractTriangleMesh(
 
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto triangle_mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto triangle_mesh = std::make_shared<ccMesh>(baseVertices);
 
     if (values.size() != vertices_.size()) {
         utility::LogError(

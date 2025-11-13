@@ -33,7 +33,6 @@ public:
     };
 
     struct PointData {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         PointData() {}
         PointData(const Eigen::Vector2d& point_,
                   const Eigen::Vector2d& point_N_)
@@ -46,7 +45,6 @@ public:
     };
 
     struct PoseData {
-        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         PoseData() : camera(nullptr) {}
         PoseData(const Eigen::Matrix3x4d& proj_matrix_,
                  const Eigen::Vector3d& pose_,
@@ -127,7 +125,7 @@ bool EstimateTriangulation(
 
 }  // namespace colmap
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
-        colmap::TriangulationEstimator::PointData)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
-        colmap::TriangulationEstimator::PoseData)
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
+//         colmap::TriangulationEstimator::PointData)
+// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
+//         colmap::TriangulationEstimator::PoseData)

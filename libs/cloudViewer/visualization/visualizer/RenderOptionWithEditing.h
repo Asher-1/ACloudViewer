@@ -16,8 +16,6 @@ namespace visualization {
 
 class RenderOptionWithEditing : public RenderOption {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     static const double PICKER_SPHERE_SIZE_MIN;
     static const double PICKER_SPHERE_SIZE_MAX;
     static const double PICKER_SPHERE_SIZE_DEFAULT;

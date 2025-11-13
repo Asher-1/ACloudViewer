@@ -204,7 +204,7 @@ void FilamentRenderer::RequestReadPixels(
     core::Dtype dtype = core::UInt8;
     int64_t nbytes = shape.NumElements() * dtype.ByteSize();
 
-    auto image = cloudViewer::make_shared<core::Tensor>(shape, dtype);
+    auto image = std::make_shared<core::Tensor>(shape, dtype);
     auto* user_data = new UserData(callback, image);
 
     using namespace filament;
@@ -325,7 +325,7 @@ void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
 }
 
 std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
-    auto renderer = cloudViewer::make_shared<FilamentRenderToBuffer>(engine_);
+    auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_);
     buffer_renderers_.insert(renderer);
     return renderer;
 }

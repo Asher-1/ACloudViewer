@@ -67,8 +67,6 @@ class View;
 // Can have multiple views
 class FilamentScene : public Scene {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     FilamentScene(filament::Engine& engine,
                   FilamentResourceManager& resource_mgr,
                   Renderer& renderer);

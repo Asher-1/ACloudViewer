@@ -174,7 +174,7 @@ static CorrespondenceSetPixelWise ComputeCorrespondence(
 
 static std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
         const geometry::Image &depth, const Eigen::Matrix3d &intrinsic_matrix) {
-    auto image_xyz = cloudViewer::make_shared<geometry::Image>();
+    auto image_xyz = std::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
         utility::LogError(
                 "[ConvertDepthImageToXYZImage] Unsupported image format.");
@@ -293,14 +293,14 @@ static void NormalizeIntensity(
 
 static inline std::shared_ptr<geometry::RGBDImage> PackRGBDImage(
         const geometry::Image &color, const geometry::Image &depth) {
-    return cloudViewer::make_shared<geometry::RGBDImage>(
+    return std::make_shared<geometry::RGBDImage>(
             geometry::RGBDImage(color, depth));
 }
 
 static std::shared_ptr<geometry::Image> PreprocessDepth(
         const geometry::Image &depth_orig, const OdometryOption &option) {
     std::shared_ptr<geometry::Image> depth_processed =
-            cloudViewer::make_shared<geometry::Image>();
+            std::make_shared<geometry::Image>();
     *depth_processed = depth_orig;
     for (int y = 0; y < depth_processed->height_; y++) {
         for (int x = 0; x < depth_processed->width_; x++) {
@@ -370,8 +370,8 @@ InitializeRGBDOdometry(
         source_color = source.color_.CreateFloatImage();
         target_color = target.color_.CreateFloatImage();
     } else {
-        source_color = cloudViewer::make_shared<geometry::Image>(source.color_);
-        target_color = cloudViewer::make_shared<geometry::Image>(target.color_);
+        source_color = std::make_shared<geometry::Image>(source.color_);
+        target_color = std::make_shared<geometry::Image>(target.color_);
     }
 
     auto source_gray =
