@@ -676,12 +676,15 @@ if (USE_SIMD)
     endif ()
 
     if (UNIX AND NOT APPLE)
-        # Disable AVX512 and AVX2 for Linux to fix "Illegal instruction" issues
+        # Disable AVX512 for Linux to fix "Illegal instruction" issues
         # when binaries are compiled on newer CPUs but run on older ones
-        # This ensures better compatibility across different CPU generations
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx512f -mno-avx512cd -mno-avx512vl -mno-avx512bw -mno-avx512dq")
-        # Uncomment the line below if you need to disable AVX2 as well for very old CPUs
-        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx2")
+        # AVX and AVX2 are widely supported and should be kept enabled
+        # AVX512 variants - disable all to ensure compatibility
+        # Include all AVX512 variants: f, cd, vl, bw, dq, ifma, pf, er, vbmi, vbmi2, vnni, bitalg, vpopcntdq
+        set(AVX512_DISABLE_FLAGS "-mno-avx512f -mno-avx512cd -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-avx512ifma -mno-avx512pf -mno-avx512er -mno-avx512vbmi -mno-avx512vbmi2 -mno-avx512vnni -mno-avx512bitalg -mno-avx512vpopcntdq")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${AVX512_DISABLE_FLAGS}")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${AVX512_DISABLE_FLAGS}")
+        message(STATUS "Disabled AVX512 for compatibility (AVX/AVX2 remain enabled)")
     endif()
 
     message(STATUS "Enabling SIMD support")

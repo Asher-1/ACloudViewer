@@ -8,22 +8,34 @@ macro(CLOUDVIEWER_CHECK_FOR_SSE)
         # Test GCC/G++ and CLANG
         if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
             include(CheckCXXCompilerFlag)
-            # Use -march=x86-64-v2 for better compatibility across different CPUs
-            # instead of -march=native to avoid "Illegal instruction" errors
-            # x86-64-v2: SSE3, SSE4.1, SSE4.2, SSSE3 (supported by most CPUs since ~2008)
-            check_cxx_compiler_flag("-march=x86-64-v2" HAVE_MARCH_V2)
-            if(HAVE_MARCH_V2)
-                list(APPEND SSE_FLAGS "-march=x86-64-v2")
-                message(STATUS "Using -march=x86-64-v2 for SSE optimization (compatible mode)")
+            # Use -march=x86-64-v3 for better compatibility while supporting AVX2
+            # x86-64-v3: AVX, AVX2, BMI1, BMI2 (supported by most CPUs since ~2011)
+            # Avoid -march=native to prevent AVX512 instructions that may cause "Illegal instruction"
+            check_cxx_compiler_flag("-march=x86-64-v3" HAVE_MARCH_V3)
+            if(HAVE_MARCH_V3)
+                list(APPEND SSE_FLAGS "-march=x86-64-v3")
+                message(STATUS "Using -march=x86-64-v3 for SIMD optimization (AVX2 compatible)")
             else()
-                # Fallback: try native if v2 not supported, or just tune
-                check_cxx_compiler_flag("-march=native" HAVE_MARCH)
-                if(HAVE_MARCH)
-                    list(APPEND SSE_FLAGS "-march=native")
-                    message(STATUS "Using -march=native for SSE optimization")
+                # Fallback to x86-64-v2 if v3 not supported
+                check_cxx_compiler_flag("-march=x86-64-v2" HAVE_MARCH_V2)
+                if(HAVE_MARCH_V2)
+                    list(APPEND SSE_FLAGS "-march=x86-64-v2")
+                    message(STATUS "Using -march=x86-64-v2 for SSE optimization (compatible mode)")
+                elseif(UNIX AND NOT APPLE)
+                    # On Linux, avoid -march=native to prevent AVX512 instructions
+                    # Use -mtune=generic with explicit AVX2 flags instead
+                    list(APPEND SSE_FLAGS "-mtune=generic" "-mavx2" "-mavx")
+                    message(STATUS "Using -mtune=generic with AVX2 for optimization (Linux compatibility mode)")
                 else()
-                    list(APPEND SSE_FLAGS "-mtune=generic")
-                    message(STATUS "Using -mtune=generic for SSE optimization")
+                    # Fallback: try native if v2/v3 not supported (non-Linux platforms)
+                    check_cxx_compiler_flag("-march=native" HAVE_MARCH)
+                    if(HAVE_MARCH)
+                        list(APPEND SSE_FLAGS "-march=native")
+                        message(STATUS "Using -march=native for SSE optimization")
+                    else()
+                        list(APPEND SSE_FLAGS "-mtune=generic")
+                        message(STATUS "Using -mtune=generic for SSE optimization")
+                    endif()
                 endif()
             endif()
         endif()
