@@ -454,7 +454,6 @@ void DenseReconstructionWidget::Texturing() {
         return;
     }
 
-#ifdef USE_PCL_BACKEND
     if (!ExistsFile(options_->texturing->meshed_file_path)) {
         if (ExistsFile(JoinPaths(workspace_path, kPoissonMeshedFileName))) {
             options_->texturing->meshed_file_path =
@@ -491,12 +490,6 @@ void DenseReconstructionWidget::Texturing() {
         show_meshing_info_action_->trigger();
     });
     thread_control_widget_->StartThread("Texturing...", true, texturingTool);
-#else
-    QMessageBox::critical(
-            this, "",
-            tr("Dense texturing reconstruction requires pcl, which "
-               "is not available on your system."));
-#endif
 }
 
 void DenseReconstructionWidget::SelectWorkspacePath() {

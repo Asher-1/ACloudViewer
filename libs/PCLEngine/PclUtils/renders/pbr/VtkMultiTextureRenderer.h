@@ -73,10 +73,28 @@ public:
         float sheenTint = 0.0f;  // Sheen color tint [0,1]
 
         // Phong lighting parameters (for non-PBR rendering)
-        float ambient = 0.3f;
-        float diffuse = 0.7f;
-        float specular = 0.2f;
-        float shininess = 30.0f;
+        // RGB colors for ambient, diffuse, specular (can be used with
+        // SetAmbientColor, etc.) Default to white (1.0, 1.0, 1.0) to match
+        // baseColor and VTK defaults Ambient RGB color (white)
+        float ambientColor[3] = {1.0f, 1.0f, 1.0f};
+        // Diffuse RGB color (white)
+        float diffuseColor[3] = {1.0f, 1.0f, 1.0f};
+        // Specular RGB color (white)
+        float specularColor[3] = {1.0f, 1.0f, 1.0f};
+        // Intensity coefficients (for backward compatibility, used if colors
+        // are uniform) Ambient intensity (legacy, use ambientColor for RGB)
+        float ambient = 1.0f;
+        // Diffuse intensity (legacy, use diffuseColor for RGB)
+        float diffuse = 1.0f;
+        // Specular intensity (legacy, use specularColor for RGB)
+        float specular = 1.0f;
+        // Shininess (legacy, use shininess for specular power)
+        float shininess = 4.0f;
+
+        // Flag to indicate if there are multiple map_Kd textures
+        // VTK PBR doesn't support multiple map_Kd, so we need to use
+        // traditional multi-texture rendering instead
+        bool hasMultipleMapKd = false;
 
         // Check if has PBR textures
         bool hasPBRTextures() const {
@@ -221,9 +239,9 @@ private:
      * @param material PBR material structure
      * @param opacity Opacity (clamped)
      */
-    void SetPhongProperties(vtkProperty* property,
-                            const PBRMaterial& material,
-                            float opacity);
+    void SetProperties(vtkProperty* property,
+                       const PBRMaterial& material,
+                       float opacity);
 
     /**
      * @brief Load texture image

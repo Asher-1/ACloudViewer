@@ -8,8 +8,8 @@
 #pragma once
 
 // Local
-#include "../qPCL.h"
 #include "PCLCloud.h"
+#include "qPCL.h"
 
 // ECV_DB_LIB
 #include <ecvMaterial.h>
@@ -18,12 +18,16 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+// Eigen (for texture coordinates)
+#include <Eigen/Dense>
+
 // VTK
 #include <vtkSmartPointer.h>
 
 // system
 #include <list>
 #include <string>
+#include <vector>
 
 class ccPointCloud;
 class ccGenericMesh;
@@ -31,6 +35,8 @@ class ccPolyline;
 
 class vtkPolyData;
 class vtkDataArray;
+class vtkMatrix4x4;
+class vtkPolyData;
 
 //! CC to PCL cloud converter
 class QPCL_ENGINE_LIB_API cc2smReader {
@@ -86,6 +92,52 @@ public:
     PCLPolygon::Ptr getPclPolygon(ccPolyline* polyline) const;
 
     bool getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const;
+
+    /**
+     * @brief Convert ccGenericMesh to vtkPolyData using same logic as
+     * getPclCloud2 Direct conversion without PCL intermediate format for
+     * efficiency
+     * @param mesh Input mesh
+     * @param polydata Output VTK polydata (will be created)
+     * @return true on success
+     * @note This method uses the same point indexing as getPclCloud2:
+     *       pointIndex = n * dimension + vertexIndex
+     *       This ensures consistency with getPclTextureMesh
+     */
+    bool getVtkPolyDataFromMeshCloud(
+            ccGenericMesh* mesh, vtkSmartPointer<vtkPolyData>& polydata) const;
+
+    /**
+     * @brief Convert ccGenericMesh to vtkPolyData with proper handling of
+     * colors, normals, and visibility
+     * @param mesh Input mesh
+     * @param polydata Output VTK polydata (will be created)
+     * @param transformation Output transformation matrix (will be created)
+     * @return true on success
+     * @note This method reuses the same logic as getPclCloud2 to ensure
+     * consistency
+     */
+    bool getVtkPolyDataFromMesh(ccGenericMesh* mesh,
+                                vtkPolyData*& polydata,
+                                vtkMatrix4x4*& transformation) const;
+
+    /**
+     * @brief Convert ccGenericMesh to vtkPolyData with texture coordinates
+     *        Reuses getPclTextureMesh logic to ensure consistency
+     * @param mesh Input mesh
+     * @param polydata Output VTK polydata (will be created)
+     * @param transformation Output transformation matrix (will be created)
+     * @param tex_coordinates Output texture coordinates grouped by material
+     * index
+     * @return true on success
+     * @note This method reuses getPclTextureMesh logic to ensure texture
+     * coordinate mapping is consistent with addTextureMesh interface
+     */
+    bool getVtkPolyDataWithTextures(
+            ccGenericMesh* mesh,
+            vtkSmartPointer<vtkPolyData>& polydata,
+            vtkSmartPointer<vtkMatrix4x4>& transformation,
+            std::vector<std::vector<Eigen::Vector2f>>& tex_coordinates);
 
     static std::string GetSimplifiedSFName(const std::string& ccSfName);
 

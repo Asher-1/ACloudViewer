@@ -8,7 +8,7 @@
 #pragma once
 
 // Local
-#include "../qPCL.h"
+#include "qPCL.h"
 
 // ECV_DB_LIB
 #include <ecvColorTypes.h>

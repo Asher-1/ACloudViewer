@@ -114,7 +114,7 @@ if (USE_PCL_BACKEND)
     endif ()
 
     target_include_directories(${PROJECT_NAME} PUBLIC
-            ${PCL_INCLUDE_DIRS})
+            ${PCL_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/PclUtils")
 
     if (CMAKE_VERSION VERSION_LESS 3.13)
         link_directories(${PCL_LIBRARY_DIRS})

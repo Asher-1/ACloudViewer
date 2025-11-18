@@ -49,9 +49,6 @@ class ccGBLSensor;
 class ccCameraSensor;
 namespace PclTools {
 
-QPCL_ENGINE_LIB_API bool SaveOBJFile(const std::string& file_name,
-                                     const PCLTextureMesh& tex_mesh,
-                                     unsigned precision);
 QPCL_ENGINE_LIB_API PCLTextureMesh::Ptr CreateTexturingMesh(
         const std::string& filePath,
         bool show_cameras = false,
