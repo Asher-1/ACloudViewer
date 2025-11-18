@@ -183,14 +183,29 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
     bool firstShow = !m_visualizer3D->contains(viewID);
 
     if (mesh->isRedraw() || firstShow) {
+        CVLog::PrintDebug(
+                "[PCLDisplayTools::drawMesh] Entering render block "
+                "(isRedraw=%d || firstShow=%d)",
+                mesh->isRedraw(), firstShow);
+
         ccPointCloud* ecvCloud = ccHObjectCaster::ToPointCloud(mesh);
-        if (!ecvCloud) return;
+        if (!ecvCloud) {
+            CVLog::Warning(
+                    "[PCLDisplayTools::drawMesh] Failed to get point cloud "
+                    "from mesh!");
+            return;
+        }
 
         // materials & textures
         bool applyMaterials = (mesh->hasMaterials() && mesh->materialsShown());
         bool lodEnabled = false;
         bool showTextures =
                 (mesh->hasTextures() && mesh->materialsShown() && !lodEnabled);
+
+        CVLog::PrintDebug(
+                "[PCLDisplayTools::drawMesh] applyMaterials=%d, "
+                "showTextures=%d",
+                applyMaterials, showTextures);
 
         if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
             if (applyMaterials || showTextures) {
@@ -199,6 +214,9 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                 if (textureMesh) {
                     m_visualizer3D->draw(context, textureMesh);
                 } else {
+                    CVLog::Warning(
+                            "[PCLDisplayTools::drawMesh] Failed to create "
+                            "PCLTextureMesh, falling back to regular mesh");
                     PCLMesh::Ptr pclMesh =
                             cc2smReader(ecvCloud, true).getPclMesh(mesh);
                     if (!pclMesh) return;
@@ -212,24 +230,37 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                 m_visualizer3D->draw(context, pclMesh);
             }
         } else {
+            // Non-first display and no need for complete rebuild: only update
+            // properties (color, visibility, normals, etc.)
+            CVLog::PrintDebug(
+                    "[PCLDisplayTools::drawMesh] Update path: updating "
+                    "properties only");
             m_visualizer3D->resetScalarColor(viewID, true, viewport);
+
             if (!updateEntityColor(context, ecvCloud)) {
                 if (applyMaterials || showTextures) {
-                    PCLTextureMesh::Ptr textureMesh =
-                            cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
-                    if (textureMesh) {
-                        m_visualizer3D->draw(context, textureMesh);
-                    } else {
-                        PCLMesh::Ptr pclMesh =
-                                cc2smReader(ecvCloud, true).getPclMesh(mesh);
-                        if (!pclMesh) return;
-                        m_visualizer3D->draw(context, pclMesh);
+                    // Update texture materials (without rebuilding geometry)
+                    const ccMaterialSet* materials = mesh->getMaterialSet();
+                    if (materials) {
+                        std::vector<pcl::TexMaterial> tex_materials;
+                        for (std::size_t i = 0; i < materials->size(); ++i) {
+                            PCLMaterial pcl_material;
+                            cc2smReader::ConVertToPCLMaterial(materials->at(i),
+                                                              pcl_material);
+                            tex_materials.push_back(pcl_material);
+                        }
+
+                        CVLog::PrintDebug(
+                                "[PCLDisplayTools::drawMesh] Updating textures "
+                                "for %zu materials",
+                                tex_materials.size());
+                        if (!m_visualizer3D->updateTexture(context,
+                                                           tex_materials)) {
+                            CVLog::Warning(
+                                    "[PCLDisplayTools::drawMesh] Update "
+                                    "texture failed!");
+                        }
                     }
-                } else {
-                    PCLMesh::Ptr pclMesh =
-                            cc2smReader(ecvCloud, true).getPclMesh(mesh);
-                    if (!pclMesh) return;
-                    m_visualizer3D->draw(context, pclMesh);
                 }
             }
         }
@@ -429,7 +460,11 @@ void PCLDisplayTools::draw(const CC_DRAW_CONTEXT& context,
         // the mesh to draw
         ccGenericMesh* tempMesh =
                 ccHObjectCaster::ToGenericMesh(const_cast<ccHObject*>(obj));
-        if (!tempMesh) return;
+        if (!tempMesh) {
+            CVLog::Warning(
+                    "[PCLDisplayTools::draw] Failed to cast to ccGenericMesh!");
+            return;
+        }
         drawMesh(const_cast<CC_DRAW_CONTEXT&>(context), tempMesh);
     } else if (obj->isA(CV_TYPES::POLY_LINE)) {
         // the polyline to draw

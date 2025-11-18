@@ -431,8 +431,26 @@ void cc2smReader::ConVertToPCLMaterial(ccMaterial::CShared inMaterial,
     std::string texFile =
             CVTools::FromQString(inMaterial->getTextureFilename());
     std::string texName = CVTools::FromQString(inMaterial->getName());
+
+    // Log all available texture maps
+    auto allTextures = inMaterial->getAllTextureFilenames();
     // FIX special symbols bugs in vtk rendering system!
     texName = CVTools::ExtractDigitAlpha(texName);
+
+    // DEPRECATED: PBR multi-texture encoding into tex_name
+    // Format: materialName_PBR_MULTITEX|type0:path0|type1:path1|...
+    if (allTextures.size() > 1) {
+        texName += "_PBR_MULTITEX";
+        for (const auto& tex : allTextures) {
+            // Encoding format: |type:path
+            texName += "|" + std::to_string(static_cast<int>(tex.first)) + ":" +
+                       CVTools::FromQString(tex.second);
+        }
+        CVLog::PrintDebug(
+                "[cc2smReader::ConVertToPCLMaterial] Encoded %zu PBR textures "
+                "into material name (deprecated)",
+                allTextures.size());
+    }
     const ecvColor::Rgbaf& ambientColor = inMaterial->getAmbient();
     const ecvColor::Rgbaf& diffuseColor = inMaterial->getDiffuseFront();
     const ecvColor::Rgbaf& specularColor = inMaterial->getSpecular();
@@ -1174,12 +1192,29 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
                 TexCoords2D* Tx2 = nullptr;
                 TexCoords2D* Tx3 = nullptr;
                 mesh->getTriangleTexCoordinates(n, Tx1, Tx2, Tx3);
-                textureMesh->tex_coordinates.back().push_back(
-                        Eigen::Vector2f(Tx1->tx, Tx1->ty));
-                textureMesh->tex_coordinates.back().push_back(
-                        Eigen::Vector2f(Tx2->tx, Tx2->ty));
-                textureMesh->tex_coordinates.back().push_back(
-                        Eigen::Vector2f(Tx3->tx, Tx3->ty));
+
+                // Check for null pointers before dereferencing
+                if (Tx1 && Tx2 && Tx3) {
+                    textureMesh->tex_coordinates.back().push_back(
+                            Eigen::Vector2f(Tx1->tx, Tx1->ty));
+                    textureMesh->tex_coordinates.back().push_back(
+                            Eigen::Vector2f(Tx2->tx, Tx2->ty));
+                    textureMesh->tex_coordinates.back().push_back(
+                            Eigen::Vector2f(Tx3->tx, Tx3->ty));
+                } else {
+                    CVLog::Warning(
+                            "[cc2smReader::getPclTextureMesh] Null texture "
+                            "coordinates for triangle %d (Tx1=%p, Tx2=%p, "
+                            "Tx3=%p)",
+                            n, Tx1, Tx2, Tx3);
+                    // Add default UV coordinates to avoid crash
+                    textureMesh->tex_coordinates.back().push_back(
+                            Eigen::Vector2f(0.0f, 0.0f));
+                    textureMesh->tex_coordinates.back().push_back(
+                            Eigen::Vector2f(0.0f, 0.0f));
+                    textureMesh->tex_coordinates.back().push_back(
+                            Eigen::Vector2f(0.0f, 0.0f));
+                }
             }
 
             pcl::Vertices tri;

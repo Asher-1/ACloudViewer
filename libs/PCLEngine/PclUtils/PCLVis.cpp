@@ -10,6 +10,7 @@
 #include "PCLConv.h"
 #include "Tools/PclTools.h"
 #include "Tools/ecvTools.h"
+#include "VtkUtils/VtkMultiTextureRenderer.h"
 #include "VtkUtils/vtkutils.h"
 #include "cc2sm.h"
 
@@ -26,6 +27,9 @@
 #include <ecvColorScale.h>
 #include <ecvDisplayTools.h>
 #include <ecvGBLSensor.h>
+#include <ecvGenericMesh.h>
+#include <ecvMaterial.h>
+#include <ecvMaterialSet.h>
 #include <ecvOrientedBBox.h>
 #include <ecvScalarField.h>
 
@@ -96,6 +100,21 @@
 #define SELECT_MODE 1
 
 namespace PclUtils {
+
+// ============================================================================
+// MultiTextureRendererImpl - Pimpl Implementation
+// ============================================================================
+class PCLVis::MultiTextureRendererImpl {
+public:
+    VtkUtils::VtkMultiTextureRenderer renderer;
+
+    MultiTextureRendererImpl() = default;
+    ~MultiTextureRendererImpl() = default;
+};
+
+// ============================================================================
+// PCLVis Constructor and Destructor
+// ============================================================================
 PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>
                        interactor_style,
                const std::string& viewerName /* = ""*/,
@@ -110,7 +129,8 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>
       m_pointPickingEnabled(true),
       m_areaPickingEnabled(false),
       m_actorPickingEnabled(false),
-      m_autoUpdateCameraPos(false) {
+      m_autoUpdateCameraPos(false),
+      multi_texture_renderer_(std::make_unique<MultiTextureRendererImpl>()) {
     // disable warnings!
     getRenderWindow()->GlobalWarningDisplayOff();
 
@@ -142,7 +162,8 @@ PCLVis::PCLVis(vtkSmartPointer<vtkRenderer> ren,
       m_pointPickingEnabled(true),
       m_areaPickingEnabled(false),
       m_actorPickingEnabled(false),
-      m_autoUpdateCameraPos(false) {
+      m_autoUpdateCameraPos(false),
+      multi_texture_renderer_(std::make_unique<MultiTextureRendererImpl>()) {
     // disable warnings!
     getRenderWindow()->GlobalWarningDisplayOff();
 
@@ -1435,6 +1456,45 @@ bool PCLVis::updateTexture(const CC_DRAW_CONTEXT& context,
     auto actor = getActorById(viewID);
     if (!actor) return false;
 
+    // ⚠️ CRITICAL: Detect PBR material to determine update path
+    bool has_pbr = false;
+    if (!tex_materials.empty()) {
+        std::string tex_name = tex_materials[0].tex_name;
+        has_pbr = (tex_name.find("_PBR_MULTITEX") != std::string::npos);
+        if (has_pbr) {
+            CVLog::PrintDebug(
+                    "[PCLVis::updateTexture] Detected PBR material: %s",
+                    tex_name.c_str());
+        }
+    }
+
+    if (has_pbr) {
+        // ========================================================================
+        // PBR update path: Directly apply PBR properties, don't use traditional
+        // multi-texture API
+        // ========================================================================
+        CVLog::PrintDebug("[PCLVis::updateTexture] Using PBR update path");
+
+        // Clear all traditional textures
+        actor->GetProperty()->RemoveAllTextures();
+
+        // Apply PBR material (need to convert to vtkLODActor)
+        vtkLODActor* lod_actor = vtkLODActor::SafeDownCast(actor);
+        if (lod_actor) {
+            applyPBRProperties(lod_actor, tex_materials);
+        } else {
+            CVLog::Warning(
+                    "[PCLVis::updateTexture] Actor is not a vtkLODActor, "
+                    "cannot apply PBR");
+        }
+
+        actor->Modified();
+        return true;
+    }
+
+    // ========================================================================
+    // Traditional update path
+    // ========================================================================
     vtkTextureUnitManager* tex_manager =
             vtkOpenGLRenderWindow::SafeDownCast(getRenderWindow())
                     ->GetTextureUnitManager();
@@ -1443,7 +1503,7 @@ bool PCLVis::updateTexture(const CC_DRAW_CONTEXT& context,
     int texture_units = tex_manager->GetNumberOfTextureUnits();
     if (static_cast<std::size_t>(texture_units) < tex_materials.size()) {
         CVLog::Warning(
-                "[PCLVis::addTextureMesh] GPU texture units %d < mesh "
+                "[PCLVis::updateTexture] GPU texture units %d < mesh "
                 "textures %d!",
                 texture_units, tex_materials.size());
     }
@@ -1465,7 +1525,7 @@ bool PCLVis::updateTexture(const CC_DRAW_CONTEXT& context,
                 vtkSmartPointer<vtkTexture>::New();
         if (textureFromTexMaterial(tex_materials[tex_id], texture) <= 0) {
             CVLog::Warning(
-                    "[PCLVisualizer::addTextureMesh] Failed to load "
+                    "[PCLVis::updateTexture] Failed to load "
                     "texture %s located in %s, skipping!",
                     tex_materials[tex_id].tex_name.c_str(),
                     tex_materials[tex_id].tex_file.c_str());
@@ -1656,11 +1716,52 @@ bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
     for (const auto& tex_coordinate : mesh.tex_coordinates)
         nb_coordinates += tex_coordinate.size();
     // no texture coordinates --> exit
+    // ⚠️ CRITICAL: Detect PBR material to determine rendering path
+    bool has_pbr = false;
+    if (!mesh.tex_materials.empty()) {
+        std::string tex_name = mesh.tex_materials[0].tex_name;
+        has_pbr = (tex_name.find("_PBR_MULTITEX") != std::string::npos);
+        if (has_pbr) {
+            CVLog::PrintDebug(
+                    "[PCLVis::addTextureMesh] Detected PBR material: %s",
+                    tex_name.c_str());
+        }
+    }
+
     if (nb_coordinates == 0) {
         CVLog::Warning(
                 "[PCLVisualizer::addTextureMesh] No textures coordinates "
                 "found!");
+    } else if (has_pbr) {
+        // ========================================================================
+        // PBR rendering path: Only add texture coordinates, don't set
+        // traditional textures
+        // ========================================================================
+        CVLog::PrintDebug("[PCLVis::addTextureMesh] Using PBR rendering path");
+
+        // Add the first texture coordinate array (TCoords0)
+        if (!mesh.tex_coordinates.empty()) {
+            vtkSmartPointer<vtkFloatArray> coordinates =
+                    vtkSmartPointer<vtkFloatArray>::New();
+            coordinates->SetNumberOfComponents(2);
+            coordinates->SetName("TCoords0");
+
+            for (const auto& tc : mesh.tex_coordinates[0]) {
+                coordinates->InsertNextTuple2(tc[0], tc[1]);
+            }
+
+            polydata->GetPointData()->AddArray(coordinates);
+            polydata->GetPointData()->SetTCoords(
+                    coordinates);  // Set as active TCoords
+        }
+
+        // Don't set traditional textures to avoid conflicts with PBR
+        // PBR materials will be applied later via applyPBRProperties
+
     } else {
+        // ========================================================================
+        // Traditional multi-texture rendering path
+        // ========================================================================
         vtkTextureUnitManager* tex_manager =
                 vtkOpenGLRenderWindow::SafeDownCast(getRenderWindow())
                         ->GetTextureUnitManager();
@@ -1688,13 +1789,18 @@ bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
 #endif
             vtkSmartPointer<vtkTexture> texture =
                     vtkSmartPointer<vtkTexture>::New();
-            if (textureFromTexMaterial(mesh.tex_materials[tex_id], texture) <=
-                0) {
-                CVLog::Warning(
-                        "[PCLVisualizer::addTextureMesh] Failed to load "
-                        "texture %s located in %s, skipping!",
-                        mesh.tex_materials[tex_id].tex_name.c_str(),
-                        mesh.tex_materials[tex_id].tex_file.c_str());
+            int tex_result =
+                    textureFromTexMaterial(mesh.tex_materials[tex_id], texture);
+            if (tex_result <= 0) {
+                // Only warn if texture file is specified but failed to load
+                // Don't warn for models without textures (empty tex_file)
+                if (!mesh.tex_materials[tex_id].tex_file.empty()) {
+                    CVLog::Warning(
+                            "[PCLVisualizer::addTextureMesh] Failed to load "
+                            "texture %s located in %s, skipping!",
+                            mesh.tex_materials[tex_id].tex_name.c_str(),
+                            mesh.tex_materials[tex_id].tex_file.c_str());
+                }
                 ++tex_id;
                 continue;
             }
@@ -1733,12 +1839,19 @@ bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
             applyMaterial(mesh.tex_materials[tex_id], actor);
 
             ++tex_id;
-        }
-    }
+        }  // end while (traditional multi-texture loop)
+    }  // end else (Traditional rendering path)
 
     // set mapper
     actor->SetMapper(mapper);
     addActorToRenderer(actor, viewport);
+
+    // ⚠️ CRITICAL:
+    // Apply PBR materials (must be done after actor is added to renderer)
+    if (has_pbr && !mesh.tex_materials.empty()) {
+        CVLog::PrintDebug("[PCLVis::addTextureMesh] Applying PBR properties");
+        applyPBRProperties(actor, mesh.tex_materials);
+    }
 
     // Save the pointer/ID pair to the global actor map
     (*getCloudActorMap())[id].actor = actor;
@@ -2899,5 +3012,337 @@ QImage PCLVis::renderToImage(int zoomFactor,
 
 /********************************Interactor
  * Function*********************************/
+
+// ============================================================================
+// PBR Material Conversion Functions
+// ============================================================================
+
+VtkUtils::VtkMultiTextureRenderer::PBRMaterial PCLVis::convertFromCCMaterial(
+        const ccMaterial* ccMat) {
+    VtkUtils::VtkMultiTextureRenderer::PBRMaterial pbr;
+
+    if (!ccMat) {
+        CVLog::Warning("[PCLVis::convertFromCCMaterial] ccMaterial is null");
+        return pbr;
+    }
+
+    pbr.name = ccMat->getName().toStdString();
+
+    // Extract PBR texture paths
+    using TexType = ccMaterial::TextureMapType;
+
+    QString diffuse_path = ccMat->getTextureFilename(TexType::DIFFUSE);
+    if (!diffuse_path.isEmpty()) {
+        pbr.baseColorTexture = diffuse_path.toStdString();
+    }
+
+    QString ao_path = ccMat->getTextureFilename(TexType::AMBIENT);
+    if (!ao_path.isEmpty()) {
+        pbr.aoTexture = ao_path.toStdString();
+    }
+
+    QString normal_path = ccMat->getTextureFilename(TexType::NORMAL);
+    if (!normal_path.isEmpty()) {
+        pbr.normalTexture = normal_path.toStdString();
+    }
+
+    QString metallic_path = ccMat->getTextureFilename(TexType::METALLIC);
+    if (!metallic_path.isEmpty()) {
+        pbr.metallicTexture = metallic_path.toStdString();
+    }
+
+    QString roughness_path = ccMat->getTextureFilename(TexType::ROUGHNESS);
+    if (!roughness_path.isEmpty()) {
+        pbr.roughnessTexture = roughness_path.toStdString();
+    }
+
+    QString emissive_path = ccMat->getTextureFilename(TexType::EMISSIVE);
+    if (!emissive_path.isEmpty()) {
+        pbr.emissiveTexture = emissive_path.toStdString();
+    }
+
+    // Extract material properties - fully use configuration from model file
+    const ecvColor::Rgbaf& ambient = ccMat->getAmbient();
+    const ecvColor::Rgbaf& diffuse = ccMat->getDiffuseFront();
+    const ecvColor::Rgbaf& spec = ccMat->getSpecular();
+
+    // Clamp color values to [0,1] range
+    pbr.baseColor[0] = std::max(0.0f, std::min(1.0f, diffuse.r));
+    pbr.baseColor[1] = std::max(0.0f, std::min(1.0f, diffuse.g));
+    pbr.baseColor[2] = std::max(0.0f, std::min(1.0f, diffuse.b));
+
+    pbr.ambient = std::max(
+            0.0f, std::min(1.0f, (ambient.r + ambient.g + ambient.b) / 3.0f));
+    pbr.diffuse = std::max(
+            0.0f, std::min(1.0f, (diffuse.r + diffuse.g + diffuse.b) / 3.0f));
+    pbr.specular =
+            std::max(0.0f, std::min(1.0f, (spec.r + spec.g + spec.b) / 3.0f));
+    pbr.shininess = std::max(
+            0.0f,
+            std::min(128.0f,
+                     ccMat->getShininessFront()));  // Phong shininess
+                                                    // typically in [0,128]
+    pbr.opacity =
+            std::max(0.0f, std::min(1.0f,
+                                    diffuse.a));  // Use alpha channel of
+                                                  // diffuse color as opacity
+
+    // Use PBR scalar parameters from material (if available)
+    // These values come from MTL file (Pm, Pr, etc.) or defaults from
+    // ccMaterial constructor
+    pbr.metallic = std::max(0.0f, std::min(1.0f, ccMat->getMetallic()));
+    pbr.roughness = std::max(0.0f, std::min(1.0f, ccMat->getRoughness()));
+
+    // Additional PBR parameters (for future use)
+    // pbr.sheen = ccMat->getSheen();
+    // pbr.clearcoat = ccMat->getClearcoat();
+    // pbr.clearcoatRoughness = ccMat->getClearcoatRoughness();
+    // pbr.anisotropy = ccMat->getAnisotropy();
+
+    CVLog::PrintDebug(
+            "[PCLVis::convertFromCCMaterial] Converted material '%s': PBR "
+            "textures=%d, metallic=%.2f, roughness=%.2f",
+            pbr.name.c_str(), pbr.hasPBRTextures(), pbr.metallic,
+            pbr.roughness);
+
+    return pbr;
+}
+
+VtkUtils::VtkMultiTextureRenderer::PBRMaterial PCLVis::convertFromPCLMaterial(
+        const pcl::TexMaterial& pclMat) {
+    VtkUtils::VtkMultiTextureRenderer::PBRMaterial pbr;
+
+    pbr.name = pclMat.tex_name;
+
+    // PCL TexMaterial only has one texture path, needs decoding
+    // Format: materialName_PBR_MULTITEX|type0:path0|type1:path1|...
+    std::string tex_name = pclMat.tex_name;
+    size_t pbr_pos = tex_name.find("_PBR_MULTITEX");
+
+    if (pbr_pos != std::string::npos) {
+        // Parse encoded texture paths
+        size_t start = pbr_pos + 13;  // Length of "_PBR_MULTITEX"
+        while (start < tex_name.length() && tex_name[start] == '|') {
+            size_t colon = tex_name.find(':', start + 1);
+            size_t next_pipe = tex_name.find('|', colon);
+            if (colon == std::string::npos) break;
+
+            std::string type_str =
+                    tex_name.substr(start + 1, colon - start - 1);
+            std::string path =
+                    (next_pipe != std::string::npos)
+                            ? tex_name.substr(colon + 1, next_pipe - colon - 1)
+                            : tex_name.substr(colon + 1);
+
+            int type = std::stoi(type_str);
+
+            // Assign to corresponding variable based on type
+            switch (type) {
+                case 0:  // DIFFUSE
+                    pbr.baseColorTexture = path;
+                    break;
+                case 1:  // AMBIENT (AO)
+                    pbr.aoTexture = path;
+                    break;
+                case 3:  // NORMAL
+                    pbr.normalTexture = path;
+                    break;
+                case 4:  // METALLIC
+                    pbr.metallicTexture = path;
+                    break;
+                case 5:  // ROUGHNESS
+                    pbr.roughnessTexture = path;
+                    break;
+                default:
+                    break;
+            }
+
+            start = (next_pipe != std::string::npos) ? next_pipe
+                                                     : tex_name.length();
+        }
+
+        // Extract real material name (remove encoded part)
+        pbr.name = tex_name.substr(0, pbr_pos);
+    } else {
+        // Single texture mode
+        pbr.baseColorTexture = pclMat.tex_file;
+    }
+
+    // Extract material properties - fully use configuration from model file
+    pbr.baseColor[0] = pclMat.tex_Kd.r;
+    pbr.baseColor[1] = pclMat.tex_Kd.g;
+    pbr.baseColor[2] = pclMat.tex_Kd.b;
+
+    pbr.ambient = pclMat.tex_Ka.r;
+    pbr.diffuse = pclMat.tex_Kd.r;
+    pbr.specular = pclMat.tex_Ks.r;
+    pbr.shininess = pclMat.tex_Ns;
+    pbr.opacity = pclMat.tex_d;
+
+    // PBR scalar parameters
+    // Note: PCL TexMaterial doesn't have direct fields for metallic/roughness
+    // Use default values (will be overridden by textures if available)
+    pbr.metallic = 0.0f;   // Default: non-metallic
+    pbr.roughness = 0.5f;  // Default: medium roughness
+
+    // TODO: If needed, these could be encoded in tex_name like PBR textures
+    // Format: materialName_PBR_MULTITEX|...|Pm:0.5|Pr:0.3|...
+
+    CVLog::PrintDebug(
+            "[PCLVis::convertFromPCLMaterial] Converted material '%s': PBR "
+            "textures=%d, metallic=%.2f, roughness=%.2f",
+            pbr.name.c_str(), pbr.hasPBRTextures(), pbr.metallic,
+            pbr.roughness);
+
+    return pbr;
+}
+
+bool PCLVis::applyPBRMaterial(
+        vtkLODActor* actor,
+        const VtkUtils::VtkMultiTextureRenderer::PBRMaterial& material,
+        vtkPolyData* polydata) {
+    if (!actor) {
+        CVLog::Error("[PCLVis::applyPBRMaterial] Actor is null");
+        return false;
+    }
+
+    CVLog::PrintDebug("[PCLVis::applyPBRMaterial] Applying PBR material: %s",
+                      material.name.c_str());
+
+    // If polydata not provided, try to get it from actor
+    vtkSmartPointer<vtkPolyData> poly = polydata;
+    if (!poly) {
+        vtkPolyDataMapper* mapper =
+                vtkPolyDataMapper::SafeDownCast(actor->GetMapper());
+        if (mapper) {
+            poly = vtkPolyData::SafeDownCast(mapper->GetInput());
+        }
+    }
+
+    // Get renderer
+    vtkRenderer* renderer = getRendererCollection()->GetFirstRenderer();
+
+    // Call VtkMultiTextureRenderer's ApplyPBRMaterial
+    if (!multi_texture_renderer_) {
+        CVLog::Error(
+                "[PCLVis::applyPBRMaterial] MultiTextureRenderer not "
+                "initialized");
+        return false;
+    }
+
+    bool success = multi_texture_renderer_->renderer.ApplyPBRMaterial(
+            actor, material, poly, renderer);
+
+    if (success) {
+        CVLog::PrintDebug(
+                "[PCLVis::applyPBRMaterial] Successfully applied PBR material");
+    } else {
+        CVLog::Error("[PCLVis::applyPBRMaterial] Failed to apply PBR material");
+    }
+
+    return success;
+}
+
+bool PCLVis::applyMaterialFromMesh(vtkLODActor* actor,
+                                   const ccGenericMesh* mesh,
+                                   vtkPolyData* polydata) {
+    if (!actor) {
+        CVLog::Error("[PCLVis::applyMaterialFromMesh] Actor is null");
+        return false;
+    }
+
+    if (!mesh) {
+        CVLog::Warning(
+                "[PCLVis::applyMaterialFromMesh] Mesh is null, using default "
+                "material");
+        // Use default material
+        VtkUtils::VtkMultiTextureRenderer::PBRMaterial default_mat;
+        default_mat.name = "default";
+        default_mat.baseColor[0] = 0.8f;
+        default_mat.baseColor[1] = 0.8f;
+        default_mat.baseColor[2] = 0.8f;
+        return applyPBRMaterial(actor, default_mat, polydata);
+    }
+
+    CVLog::Print(
+            "[PCLVis::applyMaterialFromMesh] Extracting material from mesh");
+
+    // Try to get materials
+    const ccMaterialSet* materials =
+            const_cast<ccGenericMesh*>(mesh)->getMaterialSet();
+    if (!materials || materials->size() == 0) {
+        CVLog::Warning(
+                "[PCLVis::applyMaterialFromMesh] No materials found in mesh, "
+                "using default");
+        // Use mesh's default color
+        VtkUtils::VtkMultiTextureRenderer::PBRMaterial default_mat;
+        default_mat.name = "mesh_default";
+
+        // Try to get color from mesh
+        if (mesh->hasColors()) {
+            // Use first vertex color as base color
+            // Note: Simplified handling, may need more complex logic in
+            // practice
+            default_mat.baseColor[0] = 0.7f;
+            default_mat.baseColor[1] = 0.7f;
+            default_mat.baseColor[2] = 0.7f;
+        }
+
+        return applyPBRMaterial(actor, default_mat, polydata);
+    }
+
+    // Use first material (ccMaterialSet returns QSharedPointer)
+    auto mat_ptr = materials->at(0);
+    if (!mat_ptr) {
+        CVLog::Error("[PCLVis::applyMaterialFromMesh] First material is null");
+        return false;
+    }
+
+    const ccMaterial* ccMat = mat_ptr.data();
+    if (!ccMat) {
+        CVLog::Error(
+                "[PCLVis::applyMaterialFromMesh] Failed to get material data");
+        return false;
+    }
+
+    // Convert to PBR material
+    auto pbr_material = convertFromCCMaterial(ccMat);
+
+    CVLog::Print(
+            "[PCLVis::applyMaterialFromMesh] Converted material: %s, has PBR "
+            "textures: %d",
+            pbr_material.name.c_str(), pbr_material.hasPBRTextures());
+
+    // Apply material
+    return applyPBRMaterial(actor, pbr_material, polydata);
+}
+
+void PCLVis::applyPBRProperties(
+        vtkLODActor* actor, const std::vector<pcl::TexMaterial>& materials) {
+    if (!actor || materials.empty()) {
+        CVLog::Warning(
+                "[PCLVis::applyPBRProperties] Invalid actor or empty "
+                "materials");
+        return;
+    }
+
+    CVLog::PrintDebug(
+            "[PCLVis::applyPBRProperties] Applying PBR properties using "
+            "VtkMultiTextureRenderer");
+
+    // Convert first material to PBR material
+    auto pbr_material = convertFromPCLMaterial(materials[0]);
+
+    // Get polydata (for texture coordinates)
+    vtkPolyDataMapper* mapper =
+            vtkPolyDataMapper::SafeDownCast(actor->GetMapper());
+    vtkPolyData* polydata = nullptr;
+    if (mapper) {
+        polydata = vtkPolyData::SafeDownCast(mapper->GetInput());
+    }
+
+    // Call generic interface
+    applyPBRMaterial(actor, pbr_material, polydata);
+}
 
 }  // namespace PclUtils

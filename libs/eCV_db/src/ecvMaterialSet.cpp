@@ -225,16 +225,101 @@ bool ccMaterialSet::ParseMTL(QString path,
                 if (tokens.size() > 1)
                     currentMaterial->setIllum(tokens[1].toInt());
             }
-            // texture map
+            // texture maps - support standard OBJ and PBR extensions
             else if (tokens.front() == "map_Ka" || tokens.front() == "map_Kd" ||
-                     tokens.front() == "map_Ks") {
+                     tokens.front() == "map_Ks" || tokens.front() == "map_Ke" ||
+                     tokens.front() == "map_d" || tokens.front() == "map_Ns" ||
+                     tokens.front() == "map_Bump" ||
+                     tokens.front() == "map_bump" || tokens.front() == "bump" ||
+                     tokens.front() == "norm" || tokens.front() == "map_Pr" ||
+                     tokens.front() == "map_Pm" || tokens.front() == "map_Ps" ||
+                     tokens.front() == "map_Pc" ||
+                     tokens.front() == "map_Pcr" ||
+                     tokens.front() == "map_aniso" ||
+                     tokens.front() == "map_disp" || tokens.front() == "disp" ||
+                     tokens.front() == "refl") {
+                // Determine texture map type
+                ccMaterial::TextureMapType mapType;
+                QString mapCommand = tokens.front();
+
+                if (mapCommand == "map_Kd") {
+                    mapType = ccMaterial::TextureMapType::DIFFUSE;
+                } else if (mapCommand == "map_Ka") {
+                    mapType = ccMaterial::TextureMapType::AMBIENT;
+                } else if (mapCommand == "map_Ks") {
+                    mapType = ccMaterial::TextureMapType::SPECULAR;
+                } else if (mapCommand == "map_Ke") {
+                    mapType = ccMaterial::TextureMapType::EMISSIVE;
+                } else if (mapCommand == "map_d") {
+                    mapType = ccMaterial::TextureMapType::OPACITY;
+                } else if (mapCommand == "map_Ns") {
+                    // map_Ns is shininess/glossiness map
+                    // Can be mapped to roughness (inverted) or used as-is
+                    mapType = ccMaterial::TextureMapType::SHININESS;
+                } else if (mapCommand == "map_Bump" ||
+                           mapCommand == "map_bump" || mapCommand == "bump" ||
+                           mapCommand == "norm") {
+                    mapType = ccMaterial::TextureMapType::NORMAL;
+                } else if (mapCommand == "map_Pr") {
+                    mapType = ccMaterial::TextureMapType::ROUGHNESS;
+                } else if (mapCommand == "map_Pm") {
+                    mapType = ccMaterial::TextureMapType::METALLIC;
+                } else if (mapCommand == "map_Ps") {
+                    mapType = ccMaterial::TextureMapType::SHEEN;
+                } else if (mapCommand == "map_Pc") {
+                    mapType = ccMaterial::TextureMapType::CLEARCOAT;
+                } else if (mapCommand == "map_Pcr") {
+                    mapType = ccMaterial::TextureMapType::CLEARCOAT_ROUGHNESS;
+                } else if (mapCommand == "map_aniso") {
+                    mapType = ccMaterial::TextureMapType::ANISOTROPY;
+                } else if (mapCommand == "map_disp" || mapCommand == "disp") {
+                    mapType = ccMaterial::TextureMapType::DISPLACEMENT;
+                } else if (mapCommand == "refl") {
+                    mapType = ccMaterial::TextureMapType::REFLECTION;
+                } else {
+                    // Fallback to diffuse
+                    mapType = ccMaterial::TextureMapType::DIFFUSE;
+                }
+
+                // Extract texture filename
                 // DGM: in case there's hidden or space characters at the
                 // beginning of the line...
-                int shift = currentLine.indexOf("map_K", 0);
+                int shift = currentLine.indexOf(mapCommand, 0);
                 QString textureFilename =
-                        (shift + 7 < currentLine.size()
-                                 ? currentLine.mid(shift + 7).trimmed()
+                        (shift + mapCommand.length() + 1 < currentLine.size()
+                                 ? currentLine
+                                           .mid(shift + mapCommand.length() + 1)
+                                           .trimmed()
                                  : QString());
+
+                // Filter out MTL texture options (e.g., -bm, -blendu, -blendv,
+                // -boost, -mm, -o, -s, -t, -texres, -clamp, -imfchan) These
+                // options start with '-' and may have numeric parameters
+                QStringList parts =
+                        textureFilename.split(' ', Qt::SkipEmptyParts);
+                QString actualFilename;
+                for (const QString& part : parts) {
+                    // Skip options that start with '-' and their numeric
+                    // parameters
+                    if (part.startsWith('-')) {
+                        continue;  // Skip option flag
+                    }
+                    // Check if this is a numeric parameter following an option
+                    bool isNumber = false;
+                    part.toDouble(&isNumber);
+                    if (isNumber && actualFilename.isEmpty()) {
+                        continue;  // Skip numeric parameter
+                    }
+                    // This should be the actual filename
+                    actualFilename = part;
+                    break;
+                }
+
+                // If we found a filename after filtering, use it
+                if (!actualFilename.isEmpty()) {
+                    textureFilename = actualFilename;
+                }
+
                 // remove any quotes around the filename (Photoscan 1.4 bug)
                 if (textureFilename.startsWith("\"")) {
                     textureFilename =
@@ -245,11 +330,50 @@ bool ccMaterialSet::ParseMTL(QString path,
                             textureFilename.left(textureFilename.size() - 1);
                 }
 
+                // Normalize path separators (convert backslashes to forward
+                // slashes)
+                textureFilename = textureFilename.replace('\\', '/');
+
                 QString fullTexName = path + QString('/') + textureFilename;
-                if (!currentMaterial->loadAndSetTexture(fullTexName)) {
-                    errors << QString("Failed to load texture file: %1")
-                                      .arg(fullTexName);
+
+                // Load texture using new multi-texture API
+                if (!currentMaterial->loadAndSetTextureMap(mapType,
+                                                           fullTexName)) {
+                    errors << QString("Failed to load texture file: %1 (type: "
+                                      "%2)")
+                                      .arg(fullTexName)
+                                      .arg(mapCommand);
                 }
+            }
+            // PBR scalar parameters
+            else if (tokens.front() == "Pm") {
+                // Metallic factor
+                if (tokens.size() > 1)
+                    currentMaterial->setMetallic(tokens[1].toFloat());
+            } else if (tokens.front() == "Pr") {
+                // Roughness factor
+                if (tokens.size() > 1)
+                    currentMaterial->setRoughness(tokens[1].toFloat());
+            } else if (tokens.front() == "Ps") {
+                // Sheen factor
+                if (tokens.size() > 1)
+                    currentMaterial->setSheen(tokens[1].toFloat());
+            } else if (tokens.front() == "Pc") {
+                // Clearcoat factor
+                if (tokens.size() > 1)
+                    currentMaterial->setClearcoat(tokens[1].toFloat());
+            } else if (tokens.front() == "Pcr") {
+                // Clearcoat roughness
+                if (tokens.size() > 1)
+                    currentMaterial->setClearcoatRoughness(tokens[1].toFloat());
+            } else if (tokens.front() == "aniso") {
+                // Anisotropy factor
+                if (tokens.size() > 1)
+                    currentMaterial->setAnisotropy(tokens[1].toFloat());
+            } else if (tokens.front() == "Pa") {
+                // Ambient Occlusion factor
+                if (tokens.size() > 1)
+                    currentMaterial->setAmbientOcclusion(tokens[1].toFloat());
             } else {
                 errors << QString("Unknown command '%1' at line %2")
                                   .arg(tokens.front())

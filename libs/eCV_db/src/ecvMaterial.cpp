@@ -28,7 +28,14 @@ ccMaterial::ccMaterial(const QString& name)
       m_diffuseBack(ecvColor::bright),
       m_ambient(ecvColor::night),
       m_specular(ecvColor::night),
-      m_emission(ecvColor::night) {
+      m_emission(ecvColor::night),
+      m_metallic(0.0f),
+      m_roughness(0.5f),
+      m_sheen(0.0f),
+      m_clearcoat(0.0f),
+      m_clearcoatRoughness(0.0f),
+      m_anisotropy(0.0f),
+      m_ambientOcclusion(0.0f) {
     setShininess(50.0);
 };
 
@@ -43,7 +50,15 @@ ccMaterial::ccMaterial(const ccMaterial& mtl)
       m_specular(mtl.m_specular),
       m_emission(mtl.m_emission),
       m_shininessFront(mtl.m_shininessFront),
-      m_shininessBack(mtl.m_shininessFront) {}
+      m_shininessBack(mtl.m_shininessFront),
+      m_metallic(mtl.m_metallic),
+      m_roughness(mtl.m_roughness),
+      m_sheen(mtl.m_sheen),
+      m_clearcoat(mtl.m_clearcoat),
+      m_clearcoatRoughness(mtl.m_clearcoatRoughness),
+      m_anisotropy(mtl.m_anisotropy),
+      m_ambientOcclusion(mtl.m_ambientOcclusion),
+      m_textureFilenames(mtl.m_textureFilenames) {}
 
 void ccMaterial::setDiffuse(const ecvColor::Rgbaf& color) {
     setDiffuseFront(color);
@@ -214,6 +229,69 @@ void ccMaterial::releaseTexture() {
 
     s_textureDB.remove(m_textureFilename);
     m_textureFilename.clear();
+}
+
+// ========== Multi-Texture PBR Support Implementation ==========
+
+bool ccMaterial::loadAndSetTextureMap(TextureMapType type,
+                                      const QString& absoluteFilename) {
+    if (absoluteFilename.isEmpty()) {
+        CVLog::Warning(QString(
+                "[ccMaterial::loadAndSetTextureMap] filename can't be empty!"));
+        return false;
+    }
+
+    const QString& nativeFilename =
+            CVTools::ToNativeSeparators(absoluteFilename);
+
+    CVLog::Print(
+            "[ccMaterial::loadAndSetTextureMap] Loading texture map (type=%d): "
+            "%s",
+            static_cast<int>(type), qPrintable(nativeFilename));
+
+    // Load texture into global DB if not already present
+    if (!s_textureDB.contains(nativeFilename)) {
+        QImage image(nativeFilename);
+        if (image.isNull()) {
+            CVLog::Warning(QString("[ccMaterial::loadAndSetTextureMap] Failed "
+                                   "to load image '%1'")
+                                   .arg(nativeFilename));
+            return false;
+        }
+        s_textureDB[nativeFilename] = image;
+    }
+
+    // Store filename for this texture type
+    m_textureFilenames[type] = nativeFilename;
+
+    // If this is the diffuse map, also set legacy m_textureFilename for
+    // backward compatibility
+    if (type == TextureMapType::DIFFUSE) {
+        m_textureFilename = nativeFilename;
+    }
+
+    return true;
+}
+
+QString ccMaterial::getTextureFilename(TextureMapType type) const {
+    auto it = m_textureFilenames.find(type);
+    if (it != m_textureFilenames.end()) {
+        return it->second;
+    }
+    return QString();
+}
+
+bool ccMaterial::hasTextureMap(TextureMapType type) const {
+    return m_textureFilenames.find(type) != m_textureFilenames.end();
+}
+
+std::vector<std::pair<ccMaterial::TextureMapType, QString>>
+ccMaterial::getAllTextureFilenames() const {
+    std::vector<std::pair<TextureMapType, QString>> result;
+    for (const auto& pair : m_textureFilenames) {
+        result.push_back(pair);
+    }
+    return result;
 }
 
 bool ccMaterial::toFile(QFile& out) const {

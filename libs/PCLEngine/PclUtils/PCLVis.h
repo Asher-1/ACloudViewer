@@ -16,6 +16,7 @@
 #include <thread>
 
 #include "PCLCloud.h"
+#include "VtkUtils/VtkMultiTextureRenderer.h"
 #include "WidgetMap.h"
 #include "qPCL.h"
 
@@ -39,11 +40,13 @@ class vtkPropPicker;
 class vtkAbstractWidget;
 class vtkRenderWindow;
 class vtkMatrix4x4;
+class ccGenericMesh;
 
 class ccBBox;
 class ecvOrientedBBox;
 class ccSensor;
 class ecvPointpickingTools;
+class ccMaterial;
 
 namespace cloudViewer {
 namespace geometry {
@@ -307,7 +310,146 @@ public:
     bool addTextureMesh(const PCLTextureMesh& mesh,
                         const std::string& id,
                         int viewport);
+
+    /** \brief Add a mesh with multi-texture PBR support directly from ccMesh
+     * Bypasses PCL limitations to support multiple PBR texture maps
+     * \param[in] mesh the ccGenericMesh object
+     * \param[in] id the mesh object id
+     * \param[in] viewport (optional) the id of the new viewport (default: 0)
+     */
+    bool addMeshWithMultiTexture(ccGenericMesh* mesh,
+                                 const std::string& id,
+                                 int viewport = 0);
+
+    /**
+     * @brief Generic PBR material structure (format-independent)
+     */
+    struct PBRMaterial {
+        // Texture paths
+        std::string baseColorTexture;  // Albedo/Diffuse
+        std::string normalTexture;     // Normal map
+        std::string metallicTexture;   // Metallic
+        std::string roughnessTexture;  // Roughness
+        std::string aoTexture;         // Ambient Occlusion
+        std::string emissiveTexture;   // Emissive
+
+        // Material parameters (use these values if no texture)
+        double baseColor[3] = {1.0, 1.0, 1.0};
+        double metallic = 0.0;
+        double roughness = 0.5;
+        double ao = 1.0;
+        double emissive[3] = {0.0, 0.0, 0.0};
+
+        // Lighting parameters
+        double ambient = 0.3;
+        double diffuse = 0.7;
+        double specular = 0.2;
+        double shininess = 30.0;
+
+        // Check if has PBR textures
+        bool hasPBRTextures() const {
+            return !baseColorTexture.empty() || !normalTexture.empty() ||
+                   !metallicTexture.empty() || !roughnessTexture.empty() ||
+                   !aoTexture.empty();
+        }
+    };
+
     bool applyMaterial(const pcl::TexMaterial& material, vtkActor* actor);
+
+    /**
+     * @brief Apply PBR material properties to actor (generic version)
+     * @param actor VTK actor object
+     * @param material Generic PBR material structure
+     * @param polydata Polygon data (for texture coordinates)
+     * @return Returns true on success
+     */
+    bool applyPBRMaterial(
+            vtkLODActor* actor,
+            const VtkUtils::VtkMultiTextureRenderer::PBRMaterial& material,
+            vtkPolyData* polydata = nullptr);
+
+    /**
+     * @brief Extract and apply PBR material from ccMesh (generic interface)
+     * @param actor VTK actor object
+     * @param mesh ccMesh object
+     * @param polydata Polygon data (for texture coordinates)
+     * @return Returns true on success
+     */
+    bool applyMaterialFromMesh(vtkLODActor* actor,
+                               const ccGenericMesh* mesh,
+                               vtkPolyData* polydata = nullptr);
+
+    /**
+     * @brief Apply PBR material properties to actor (PCL version, compatible
+     * with old interface)
+     * @param actor VTK actor object
+     * @param materials Material list (contains PBR textures)
+     */
+    void applyPBRProperties(vtkLODActor* actor,
+                            const std::vector<pcl::TexMaterial>& materials);
+
+    /**
+     * @brief Convert from ccMaterial to generic PBR material
+     * @param ccMat ccMaterial object
+     * @return Generic PBR material structure
+     */
+    static VtkUtils::VtkMultiTextureRenderer::PBRMaterial convertFromCCMaterial(
+            const ccMaterial* ccMat);
+
+    /**
+     * @brief Convert from PCL TexMaterial to generic PBR material
+     * @param pclMat PCL TexMaterial object
+     * @return Generic PBR material structure
+     */
+    static VtkUtils::VtkMultiTextureRenderer::PBRMaterial
+    convertFromPCLMaterial(const pcl::TexMaterial& pclMat);
+
+    /**
+     * @brief Load multi-texture mesh from OBJ file (enhanced version)
+     * @param obj_path OBJ file path
+     * @param id Unique identifier
+     * @param viewport Viewport ID
+     * @param quality Texture quality (0=low, 1=medium, 2=high, 3=original)
+     * @param enable_cache Whether to enable texture cache
+     * @return Returns true on success
+     */
+    bool addTextureMeshFromOBJ(const std::string& obj_path,
+                               const std::string& id,
+                               int viewport = 0,
+                               int quality = 2,
+                               bool enable_cache = true);
+
+    /**
+     * @brief Load multi-texture mesh from OBJ file (advanced options)
+     * @param obj_path OBJ file path
+     * @param mtl_path MTL file path (optional)
+     * @param id Unique identifier
+     * @param viewport Viewport ID
+     * @param max_texture_size Maximum texture size
+     * @param use_mipmaps Whether to use mipmaps
+     * @param enable_cache Whether to enable texture cache
+     * @return Returns true on success
+     */
+    bool addTextureMeshFromOBJAdvanced(const std::string& obj_path,
+                                       const std::string& mtl_path,
+                                       const std::string& id,
+                                       int viewport = 0,
+                                       int max_texture_size = 4096,
+                                       bool use_mipmaps = true,
+                                       bool enable_cache = true);
+
+    /**
+     * @brief Clear texture cache
+     */
+    void clearTextureCache();
+
+    /**
+     * @brief Get texture cache information
+     * @param count Output cached texture count
+     * @param memory_bytes Output cache memory usage (bytes)
+     */
+    void getTextureCacheInfo(size_t& count, size_t& memory_bytes) const;
+
     bool addOrientedCube(const ccGLMatrixd& trans,
                          double width,
                          double height,
@@ -334,6 +476,16 @@ public:
                                vtkTexture* vtk_tex) const;
     void displayText(const CC_DRAW_CONTEXT& context);
 
+private:
+    // Multi-texture renderer instance (using Pimpl to avoid header
+    // dependencies)
+    class MultiTextureRendererImpl;
+    std::unique_ptr<MultiTextureRendererImpl> multi_texture_renderer_;
+
+    // Initialize multi-texture renderer
+    void initMultiTextureRenderer();
+
+public:
     void setPointSize(const unsigned char pointSize,
                       const std::string& viewID,
                       int viewport = 0);
