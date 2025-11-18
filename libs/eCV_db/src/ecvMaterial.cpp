@@ -212,12 +212,7 @@ void ccMaterial::AddTexture(const QImage& image,
     s_textureDB[absoluteFilename] = image;
 }
 
-void ccMaterial::ReleaseTextures() {
-    if (!QOpenGLContext::currentContext()) {
-        CVLog::Warning("[ccMaterial::ReleaseTextures] No valid OpenGL context");
-        return;
-    }
-}
+void ccMaterial::ReleaseTextures() { s_textureDB.clear(); }
 
 void ccMaterial::releaseTexture() {
     if (m_textureFilename.isEmpty()) {
@@ -225,8 +220,8 @@ void ccMaterial::releaseTexture() {
         return;
     }
 
-    assert(QOpenGLContext::currentContext());
-
+    CVLog::Print(QString("[ccMaterial::releaseTexture] Releasing texture '%1'")
+                         .arg(m_textureFilename));
     s_textureDB.remove(m_textureFilename);
     m_textureFilename.clear();
 }
@@ -262,12 +257,38 @@ bool ccMaterial::loadAndSetTextureMap(TextureMapType type,
     }
 
     // Store filename for this texture type
-    m_textureFilenames[type] = nativeFilename;
+    // Support multiple textures of the same type (e.g., multiple map_Kd)
+    auto& textureList = m_textureFilenames[type];
+
+    // Check if this exact texture file already exists for this type
+    bool alreadyExists = false;
+    for (const QString& existingTex : textureList) {
+        if (existingTex == nativeFilename) {
+            alreadyExists = true;
+            CVLog::PrintDebug(
+                    QString("[ccMaterial::loadAndSetTextureMap] Texture file "
+                            "'%1' already exists for type %2, skipping "
+                            "duplicate")
+                            .arg(nativeFilename)
+                            .arg(static_cast<int>(type)));
+            break;
+        }
+    }
+
+    if (!alreadyExists) {
+        textureList.push_back(nativeFilename);
+        CVLog::PrintDebug(
+                QString("[ccMaterial::loadAndSetTextureMap] Added texture '%1' "
+                        "for type %2 (total: %3)")
+                        .arg(nativeFilename)
+                        .arg(static_cast<int>(type))
+                        .arg(textureList.size()));
+    }
 
     // If this is the diffuse map, also set legacy m_textureFilename for
-    // backward compatibility
-    if (type == TextureMapType::DIFFUSE) {
-        m_textureFilename = nativeFilename;
+    // backward compatibility (use the first one)
+    if (type == TextureMapType::DIFFUSE && !textureList.empty()) {
+        m_textureFilename = textureList[0];
     }
 
     return true;
@@ -275,21 +296,36 @@ bool ccMaterial::loadAndSetTextureMap(TextureMapType type,
 
 QString ccMaterial::getTextureFilename(TextureMapType type) const {
     auto it = m_textureFilenames.find(type);
-    if (it != m_textureFilenames.end()) {
-        return it->second;
+    if (it != m_textureFilenames.end() && !it->second.empty()) {
+        // Return the first texture of this type for backward compatibility
+        return it->second[0];
     }
     return QString();
 }
 
+std::vector<QString> ccMaterial::getTextureFilenames(
+        TextureMapType type) const {
+    auto it = m_textureFilenames.find(type);
+    if (it != m_textureFilenames.end()) {
+        // Return all textures of this type
+        return it->second;
+    }
+    return std::vector<QString>();
+}
+
 bool ccMaterial::hasTextureMap(TextureMapType type) const {
-    return m_textureFilenames.find(type) != m_textureFilenames.end();
+    auto it = m_textureFilenames.find(type);
+    return it != m_textureFilenames.end() && !it->second.empty();
 }
 
 std::vector<std::pair<ccMaterial::TextureMapType, QString>>
 ccMaterial::getAllTextureFilenames() const {
     std::vector<std::pair<TextureMapType, QString>> result;
+    // Include all textures, including multiple textures of the same type
     for (const auto& pair : m_textureFilenames) {
-        result.push_back(pair);
+        for (const QString& texPath : pair.second) {
+            result.push_back(std::make_pair(pair.first, texPath));
+        }
     }
     return result;
 }

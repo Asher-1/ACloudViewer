@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "VtkMultiTextureRenderer.h"
+#include "renders/pbr/VtkMultiTextureRenderer.h"
 
 #include <algorithm>
 #include <fstream>
@@ -170,6 +170,16 @@ vtkSmartPointer<vtkTexture> VtkMultiTextureRenderer::LoadTexture(
 VtkMultiTextureRenderer::RenderingMode
 VtkMultiTextureRenderer::DetectRenderingMode(
         const PBRMaterial& material) const {
+    // If there are multiple map_Kd textures, VTK PBR doesn't support it,
+    // so we must use traditional multi-texture rendering
+    if (material.hasMultipleMapKd) {
+        CVLog::Print(
+                "[VtkMultiTextureRenderer::DetectRenderingMode] Multiple "
+                "map_Kd detected, using traditional multi-texture rendering "
+                "instead of PBR");
+        return RenderingMode::TEXTURED;
+    }
+
     if (material.hasPBRTextures()) {
         return RenderingMode::PBR;
     } else if (material.hasAnyTexture()) {
@@ -179,19 +189,36 @@ VtkMultiTextureRenderer::DetectRenderingMode(
     }
 }
 
-void VtkMultiTextureRenderer::SetPhongProperties(vtkProperty* property,
-                                                 const PBRMaterial& material,
-                                                 float opacity) {
-    property->SetInterpolationToPhong();
+void VtkMultiTextureRenderer::SetProperties(vtkProperty* property,
+                                            const PBRMaterial& material,
+                                            float opacity) {
+    property->SetInterpolationToPBR();
     property->SetColor(material.baseColor[0], material.baseColor[1],
                        material.baseColor[2]);
-    property->SetAmbient(material.ambient);
-    property->SetDiffuse(material.diffuse);
-    property->SetSpecular(material.specular);
+    // Set RGB colors for ambient, diffuse, specular
+    property->SetAmbientColor(material.ambientColor[0],
+                              material.ambientColor[1],
+                              material.ambientColor[2]);
+    property->SetDiffuseColor(material.diffuseColor[0],
+                              material.diffuseColor[1],
+                              material.diffuseColor[2]);
+    property->SetSpecularColor(material.specularColor[0],
+                               material.specularColor[1],
+                               material.specularColor[2]);
+    // Set intensity coefficients to 1.0 to preserve RGB color brightness
+    property->SetAmbient(1.0f);
+    property->SetDiffuse(1.0f);
+    property->SetSpecular(1.0f);
     property->SetSpecularPower(material.shininess);
     property->SetOpacity(opacity);
+
     property->BackfaceCullingOff();
     property->FrontfaceCullingOff();
+
+    CVLog::PrintDebug(
+            "[VtkMultiTextureRenderer::SetProperties] Setting properties: "
+            "specularPower=%.2f, opacity=%.2f",
+            material.shininess, opacity);
 }
 
 // ============================================================================
@@ -221,6 +248,41 @@ bool VtkMultiTextureRenderer::ApplyPBRMaterial(
 
     // Validate and clamp material parameter ranges
     float opacity = std::max(0.0f, std::min(1.0f, material.opacity));
+
+    // Enable transparency rendering support ONLY if opacity < 1.0
+    // This avoids unnecessary performance overhead for opaque materials
+    if (opacity < 1.0f) {
+        actor->ForceTranslucentOn();
+        actor->ForceOpaqueOff();
+
+        if (renderer) {
+            vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
+            if (renderWindow) {
+                // Enable alpha bit planes for transparency rendering
+                renderWindow->SetAlphaBitPlanes(1);
+            }
+
+            // Enable depth peeling for proper transparency rendering
+            renderer->UseDepthPeelingOn();
+            renderer->SetMaximumNumberOfPeels(4);  // Reasonable default
+            renderer->SetOcclusionRatio(0.0);      // Full transparency support
+
+            CVLog::Print(
+                    "[VtkMultiTextureRenderer::ApplyPBRMaterial] Enabled "
+                    "transparency rendering support: opacity=%.3f, depth "
+                    "peeling enabled",
+                    opacity);
+        }
+    } else {
+        // Fully opaque material - ensure transparent rendering is disabled
+        actor->ForceTranslucentOff();
+        actor->ForceOpaqueOn();
+
+        CVLog::PrintDebug(
+                "[VtkMultiTextureRenderer::ApplyPBRMaterial] Material is fully "
+                "opaque (opacity=%.3f), transparent rendering disabled",
+                opacity);
+    }
     float metallic = std::max(0.0f, std::min(1.0f, material.metallic));
     float roughness = std::max(0.0f, std::min(1.0f, material.roughness));
     float ao = std::max(
@@ -261,7 +323,7 @@ bool VtkMultiTextureRenderer::ApplyPBRMaterial(
     // ========================================================================
     RenderingMode mode = DetectRenderingMode(material);
 
-    CVLog::PrintDebug(
+    CVLog::Print(
             "[VtkMultiTextureRenderer::ApplyPBRMaterial] Detected rendering "
             "mode: %s",
             mode == RenderingMode::PBR        ? "PBR"
@@ -363,10 +425,32 @@ bool VtkMultiTextureRenderer::ApplyPBRRendering(
     // 2. Set base material properties (using clamped values)
     property->SetColor(material.baseColor[0], material.baseColor[1],
                        material.baseColor[2]);
-    property->SetMetallic(metallic);
-    property->SetRoughness(roughness);
-    property->SetOcclusionStrength(ao);
     property->SetOpacity(opacity);
+
+    // Check if we will use ORM texture
+    // If ORM texture is present, scalar values (metallic, roughness, ao) will
+    // be ignored/overridden by texture values. Setting them may cause
+    // multiplication/overlay effects leading to darker rendering.
+    bool has_orm_texture = (!material.aoTexture.empty() ||
+                            !material.roughnessTexture.empty() ||
+                            !material.metallicTexture.empty());
+
+    // Only set scalar values if NO ORM texture will be used
+    // When ORM texture is present, VTK uses texture values directly
+    if (!has_orm_texture) {
+        property->SetMetallic(metallic);
+        property->SetRoughness(roughness);
+        property->SetOcclusionStrength(ao);
+        CVLog::PrintDebug(
+                "[VtkMultiTextureRenderer::ApplyPBRRendering] Using scalar "
+                "values: metallic=%.2f, roughness=%.2f, ao=%.2f",
+                metallic, roughness, ao);
+    } else {
+        CVLog::PrintDebug(
+                "[VtkMultiTextureRenderer::ApplyPBRRendering] ORM texture will "
+                "be used, skipping scalar metallic/roughness/ao settings to "
+                "avoid conflicts");
+    }
 
 #if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 2, 0)
     // Advanced PBR parameters (VTK 9.2+)
@@ -632,6 +716,9 @@ bool VtkMultiTextureRenderer::ApplyPBRRendering(
 
     property->SetLighting(true);
     property->SetShading(true);
+    property->SetAmbient(1.0f);
+    property->SetDiffuse(1.0f);
+    property->SetSpecular(1.0f);
 #else
     CVLog::Warning(
             "[VtkMultiTextureRenderer::ApplyPBRMaterial] VTK < 9.0, falling "
@@ -639,9 +726,22 @@ bool VtkMultiTextureRenderer::ApplyPBRRendering(
     property->SetInterpolationToPhong();
     property->SetColor(material.baseColor[0], material.baseColor[1],
                        material.baseColor[2]);
-    property->SetAmbient(material.ambient);
-    property->SetDiffuse(material.diffuse);
-    property->SetSpecular(material.specular);
+    // Set RGB colors for ambient, diffuse, specular
+    property->SetAmbientColor(material.ambientColor[0],
+                              material.ambientColor[1],
+                              material.ambientColor[2]);
+    property->SetDiffuseColor(material.diffuseColor[0],
+                              material.diffuseColor[1],
+                              material.diffuseColor[2]);
+    property->SetSpecularColor(material.specularColor[0],
+                               material.specularColor[1],
+                               material.specularColor[2]);
+    // Set intensity coefficients to 1.0 to preserve RGB color brightness
+    // Since we're using RGB colors, setting intensity to 1.0 preserves the
+    // original color brightness
+    property->SetAmbient(1.0f);
+    property->SetDiffuse(1.0f);
+    property->SetSpecular(1.0f);
     property->SetSpecularPower(material.shininess);
     property->SetOpacity(opacity);  // Use clamped value
 
@@ -674,11 +774,11 @@ bool VtkMultiTextureRenderer::ApplyTexturedRendering(
         const PBRMaterial& material,
         float opacity) {
     // ========================================================================
-    // Mode 2: Single texture Phong rendering (only baseColor texture)
+    // Mode 2: Single texture rendering (only baseColor texture)
     // ========================================================================
     CVLog::PrintDebug(
             "[VtkMultiTextureRenderer::ApplyTexturedRendering] Using single "
-            "texture Phong mode");
+            "texture mode");
 
     vtkProperty* property = actor->GetProperty();
     if (!property) {
@@ -688,8 +788,8 @@ bool VtkMultiTextureRenderer::ApplyTexturedRendering(
         return false;
     }
 
-    // Set Phong material properties
-    SetPhongProperties(property, material, opacity);
+    // Set material properties
+    SetProperties(property, material, opacity);
 
     // Load texture
     std::string tex_path = material.baseColorTexture;
@@ -751,11 +851,11 @@ bool VtkMultiTextureRenderer::ApplyMaterialOnlyRendering(
         const PBRMaterial& material,
         float opacity) {
     // ========================================================================
-    // Mode 3: Pure material Phong rendering (no texture)
+    // Mode 3: Pure material rendering (no texture) - PBR mode
     // ========================================================================
     CVLog::PrintDebug(
             "[VtkMultiTextureRenderer::ApplyMaterialOnlyRendering] Using "
-            "material-only Phong mode");
+            "material-only PBR mode");
 
     vtkProperty* property = actor->GetProperty();
     if (!property) {
@@ -765,21 +865,60 @@ bool VtkMultiTextureRenderer::ApplyMaterialOnlyRendering(
         return false;
     }
 
-    // Set Phong material properties
-    SetPhongProperties(property, material, opacity);
+    // Enable PBR interpolation mode (same as ApplyPBRRendering)
+    property->SetInterpolationToPBR();
+
+    // Set base material properties
+    property->SetColor(material.baseColor[0], material.baseColor[1],
+                       material.baseColor[2]);
+    property->SetOpacity(opacity);
+
+    // Set PBR scalar parameters (metallic, roughness, ao)
+    // These are essential for PBR rendering to show proper glossy/reflective
+    // surfaces
+    float metallic = std::max(0.0f, std::min(1.0f, material.metallic));
+    float roughness = std::max(0.0f, std::min(1.0f, material.roughness));
+    float ao = std::max(0.0f, std::min(2.0f, material.ao));
+
+    property->SetMetallic(metallic);
+    property->SetRoughness(roughness);
+    property->SetOcclusionStrength(ao);
+
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 2, 0)
+    // Advanced PBR parameters (VTK 9.2+)
+    property->SetAnisotropy(std::max(
+            0.0, std::min(1.0, static_cast<double>(material.anisotropy))));
+    property->SetAnisotropyRotation(std::max(
+            0.0,
+            std::min(1.0, static_cast<double>(material.anisotropyRotation))));
+    property->SetCoatStrength(std::max(
+            0.0, std::min(1.0, static_cast<double>(material.clearcoat))));
+    property->SetCoatRoughness(std::max(
+            0.0,
+            std::min(1.0, static_cast<double>(material.clearcoatRoughness))));
+    // Note: VTK uses "Coat" terminology for clearcoat
+
+    CVLog::PrintDebug(
+            "[VtkMultiTextureRenderer::ApplyMaterialOnlyRendering] Advanced "
+            "PBR: "
+            "anisotropy=%.2f, clearcoat=%.2f, clearcoatRoughness=%.2f",
+            material.anisotropy, material.clearcoat,
+            material.clearcoatRoughness);
+#endif
+
+    // Set lighting properties for proper PBR rendering
+    property->SetLighting(true);
+    property->SetShading(true);
+    property->BackfaceCullingOff();
+    property->FrontfaceCullingOff();
 
     CVLog::PrintDebug(
             "[VtkMultiTextureRenderer::ApplyMaterialOnlyRendering] Material "
             "properties: "
-            "color=(%.2f,%.2f,%.2f), ambient=%.2f, diffuse=%.2f, "
-            "specular=%.2f, shininess=%.2f, opacity=%.2f",
+            "color=(%.2f,%.2f,%.2f), metallic=%.2f, roughness=%.2f, ao=%.2f, "
+            "opacity=%.2f",
             material.baseColor[0], material.baseColor[1], material.baseColor[2],
-            material.ambient, material.diffuse, material.specular,
-            material.shininess, opacity);
-
-    CVLog::PrintDebug(
-            "[VtkMultiTextureRenderer::ApplyMaterialOnlyRendering] "
-            "Material-only rendering setup complete");
+            metallic, roughness, ao, opacity);
     return true;
 }
 

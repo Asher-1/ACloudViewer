@@ -757,8 +757,7 @@ bool ccGenericMesh::updateTextures(
                 ccMaterial* material =
                         const_cast<ccMaterial*>(materials->at(ti).get());
                 assert(material);
-                material->releaseTexture();
-                material->setName(textureFileName);
+                // material->releaseTexture();
                 if (material->loadAndSetTexture(textureFilePath)) {
                     const QImage& texture = material->getTexture();
                     CVLog::Print(QString("[Texture] Update "

@@ -209,10 +209,11 @@ bool AutoReadEntity(const std::string& filename,
             successFlag = true;
         } else if (entity.isKindOf(CV_TYPES::MESH)) {
             ccMesh* outMesh = ccHObjectCaster::ToMesh(&entity);
+
             for (unsigned i = 0; i < container->getChildrenNumber(); ++i) {
                 ccMesh* mesh = ccHObjectCaster::ToMesh(container->getChild(i));
-                if (!mesh) continue;
-
+                if (!mesh || mesh->IsEmpty()) continue;
+                if (!outMesh || !outMesh->getAssociatedCloud()) continue;
                 if (!outMesh->merge(mesh, false)) {
                     cloudViewer::utility::LogWarning(
                             "[AutoReadEntity] merge mesh child failed!");

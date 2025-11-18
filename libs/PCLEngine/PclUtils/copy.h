@@ -8,8 +8,8 @@
 #pragma once
 
 // Local
-#include "../qPCL.h"
 #include "PCLCloud.h"
+#include "qPCL.h"
 
 // PCL
 #include <pcl/PointIndices.h>

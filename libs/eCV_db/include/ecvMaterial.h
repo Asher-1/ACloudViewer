@@ -195,13 +195,20 @@ public:
     bool loadAndSetTextureMap(TextureMapType type,
                               const QString& absoluteFilename);
 
-    //! Get texture filename for a specific map type
+    //! Get texture filename for a specific map type (returns first one)
     QString getTextureFilename(TextureMapType type) const;
+
+    //! Get all texture filenames for a specific map type
+    /** Returns all textures of the specified type (e.g., all map_Kd textures)
+     **/
+    std::vector<QString> getTextureFilenames(TextureMapType type) const;
 
     //! Check if a specific texture map type exists
     bool hasTextureMap(TextureMapType type) const;
 
     //! Get all texture map filenames
+    /** Returns all textures including multiple textures of the same type
+     **/
     std::vector<std::pair<TextureMapType, QString>> getAllTextureFilenames()
             const;
 
@@ -261,5 +268,6 @@ protected:
     float m_ambientOcclusion;    // Pa - Ambient Occlusion factor [0,1]
 
     // Multi-texture PBR support
-    std::map<TextureMapType, QString> m_textureFilenames;
+    // Support multiple textures of the same type (e.g., multiple map_Kd)
+    std::map<TextureMapType, std::vector<QString>> m_textureFilenames;
 };
