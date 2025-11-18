@@ -136,48 +136,96 @@ ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
     CVLog::PrintDebug(QStringLiteral("[qMeshIO] Creating material '%1'")
                               .arg(newMaterial->getName()));
 
-    // we only handle the diffuse texture for now
-    if (aiMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
-        aiString texturePath;
+    // ========================================================================
+    // Load all PBR texture types
+    // ========================================================================
 
-        if (aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) !=
-            AI_SUCCESS) {
-            CVLog::Warning(
-                    QStringLiteral("[qMeshIO] Could not get texture path"));
-        } else {
-            static QRegularExpression sRegExp("^\\*(?<index>[0-9]+)$");
+    // Helper lambda to load a texture for a specific type
+    auto loadTexture = [&](aiTextureType aiType,
+                           ccMaterial::TextureMapType ccType,
+                           const char *typeName) {
+        if (aiMaterial->GetTextureCount(aiType) > 0) {
+            aiString texturePath;
 
-            auto match = sRegExp.match(texturePath.C_Str());
+            if (aiMaterial->GetTexture(aiType, 0, &texturePath) == AI_SUCCESS) {
+                static QRegularExpression sRegExp("^\\*(?<index>[0-9]+)$");
+                auto match = sRegExp.match(texturePath.C_Str());
 
-            QImage image;
-            QString path;
+                QImage image;
+                QString path =
+                        CVTools::ToNativeSeparators(QStringLiteral("%1/%2").arg(
+                                inPath, texturePath.C_Str()));
 
-            path = CVTools::ToNativeSeparators(
-                    QStringLiteral("%1/%2").arg(inPath, texturePath.C_Str()));
-
-            if (match.hasMatch()) {
-                const QString cIndex = match.captured("index");
-                image = _getEmbeddedTexture(cIndex.toUInt(), inScene);
-            } else if (!QFile::exists(path) && inScene->HasTextures()) {
-                // just try loading first embedded texture!
-                unsigned int cIndex = 0;
-                for (unsigned int i = 0; i < inScene->mNumTextures; ++i) {
-                    aiString textureName = inScene->mTextures[i]->mFilename;
-                    if (textureName == texturePath) {
-                        cIndex = i;
-                        break;
+                // Try different loading methods
+                if (match.hasMatch()) {
+                    // Embedded texture by index
+                    const QString cIndex = match.captured("index");
+                    image = _getEmbeddedTexture(cIndex.toUInt(), inScene);
+                } else if (!QFile::exists(path) && inScene->HasTextures()) {
+                    // Find embedded texture by name
+                    unsigned int cIndex = 0;
+                    for (unsigned int i = 0; i < inScene->mNumTextures; ++i) {
+                        aiString textureName = inScene->mTextures[i]->mFilename;
+                        if (textureName == texturePath) {
+                            cIndex = i;
+                            break;
+                        }
                     }
+                    image = _getEmbeddedTexture(cIndex, inScene);
+                } else {
+                    // Load from file
+                    image = _getTextureFromFile(inPath, texturePath.C_Str());
                 }
-                image = _getEmbeddedTexture(cIndex, inScene);
-            } else {
-                image = _getTextureFromFile(inPath, texturePath.C_Str());
-            }
 
-            if (!image.isNull()) {
-                newMaterial->setTexture(image, path, false);
+                if (!image.isNull()) {
+                    // Use new multi-texture API
+                    if (newMaterial->loadAndSetTextureMap(ccType, path)) {
+                        CVLog::PrintDebug(
+                                QStringLiteral(
+                                        "[qMeshIO] Loaded %1 texture: %2")
+                                        .arg(typeName, path));
+                    }
+
+                    // For diffuse, also set legacy texture for backward
+                    // compatibility
+                    if (ccType == ccMaterial::TextureMapType::DIFFUSE) {
+                        newMaterial->setTexture(image, path, false);
+                    }
+                } else {
+                    CVLog::Warning(
+                            QStringLiteral(
+                                    "[qMeshIO] Failed to load %1 texture: %2")
+                                    .arg(typeName, path));
+                }
             }
         }
-    }
+    };
+
+    // Load all supported texture types
+    loadTexture(aiTextureType_DIFFUSE, ccMaterial::TextureMapType::DIFFUSE,
+                "Diffuse");
+    loadTexture(aiTextureType_AMBIENT, ccMaterial::TextureMapType::AMBIENT,
+                "Ambient/AO");
+    loadTexture(aiTextureType_SPECULAR, ccMaterial::TextureMapType::SPECULAR,
+                "Specular");
+    loadTexture(aiTextureType_NORMALS, ccMaterial::TextureMapType::NORMAL,
+                "Normal");
+    loadTexture(aiTextureType_HEIGHT, ccMaterial::TextureMapType::NORMAL,
+                "Height/Normal");  // Height maps can be used as normals
+    loadTexture(aiTextureType_EMISSIVE, ccMaterial::TextureMapType::EMISSIVE,
+                "Emissive");
+    loadTexture(aiTextureType_OPACITY, ccMaterial::TextureMapType::OPACITY,
+                "Opacity");
+    loadTexture(aiTextureType_DISPLACEMENT,
+                ccMaterial::TextureMapType::DISPLACEMENT, "Displacement");
+    loadTexture(aiTextureType_REFLECTION,
+                ccMaterial::TextureMapType::REFLECTION, "Reflection");
+    loadTexture(aiTextureType_SHININESS, ccMaterial::TextureMapType::SHININESS,
+                "Shininess");
+    loadTexture(aiTextureType_METALNESS, ccMaterial::TextureMapType::METALLIC,
+                "Metallic");
+    loadTexture(aiTextureType_DIFFUSE_ROUGHNESS,
+                ccMaterial::TextureMapType::ROUGHNESS, "Roughness");
 
     _assignMaterialProperties(aiMaterial, newMaterial);
 
