@@ -37,7 +37,7 @@ public:
                                between 0 and 1) */
         HSV_360_DEG = 6,    /**< HSV colors between 0 and 360 degrees */
         VERTEX_QUALITY = 7, /**< Mesh vertex quality (see
-                               CCCoreLib::MeshSamplingTools::VertexFlags) */
+                               cloudViewer::MeshSamplingTools::VertexFlags) */
         DIP_BRYW = 8, /**< Dip (0 - 90 degrees) (Brown-Red-Yellow-White) */
         DIP_DIR_REPEAT = 9, /**< Dip direction (0 - 360 degrees) */
         VIRIDIS = 10, /**< matplotlib library colorscale created by Stéfan van

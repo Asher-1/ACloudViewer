@@ -738,7 +738,7 @@ void ccClipBox::drawMeOnly(CC_DRAW_CONTEXT& context) {
     }
 
     // standard case: list names pushing (1st level)
-    bool pushName = MACRO_DrawEntityNames(context);
+    bool entityPickingMode = MACRO_EntityPicking(context);
 
     // draw the interactors
     {
@@ -752,58 +752,62 @@ void ccClipBox::drawMeOnly(CC_DRAW_CONTEXT& context) {
         CC_DRAW_CONTEXT componentContext = context;
         // we must remove the 'push name flag' so that the arows don't push
         // their own!
-        componentContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES);
+        componentContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
-        pushName = true;
-        DrawUnitArrow(X_MINUS_ARROW * pushName,
+        entityPickingMode = true;
+        DrawUnitArrow(X_MINUS_ARROW * entityPickingMode,
                       CCVector3(minC.x, center.y, center.z),
                       CCVector3(-1.0, 0.0, 0.0), scale, ecvColor::red,
                       componentContext);
-        DrawUnitArrow(X_PLUS_ARROW * pushName,
+        DrawUnitArrow(X_PLUS_ARROW * entityPickingMode,
                       CCVector3(maxC.x, center.y, center.z),
                       CCVector3(1.0, 0.0, 0.0), scale, ecvColor::red,
                       componentContext);
-        DrawUnitArrow(Y_MINUS_ARROW * pushName,
+        DrawUnitArrow(Y_MINUS_ARROW * entityPickingMode,
                       CCVector3(center.x, minC.y, center.z),
                       CCVector3(0.0, -1.0, 0.0), scale, ecvColor::green,
                       componentContext);
-        DrawUnitArrow(Y_PLUS_ARROW * pushName,
+        DrawUnitArrow(Y_PLUS_ARROW * entityPickingMode,
                       CCVector3(center.x, maxC.y, center.z),
                       CCVector3(0.0, 1.0, 0.0), scale, ecvColor::green,
                       componentContext);
-        DrawUnitArrow(Z_MINUS_ARROW * pushName,
+        DrawUnitArrow(Z_MINUS_ARROW * entityPickingMode,
                       CCVector3(center.x, center.y, minC.z),
                       CCVector3(0.0, 0.0, -1.0), scale, ecvColor::blue,
                       componentContext);
-        DrawUnitArrow(Z_PLUS_ARROW * pushName,
+        DrawUnitArrow(Z_PLUS_ARROW * entityPickingMode,
                       CCVector3(center.x, center.y, maxC.z),
                       CCVector3(0.0, 0.0, 1.0), scale, ecvColor::blue,
                       componentContext);
-        DrawUnitCross(CROSS * pushName,
+        DrawUnitCross(CROSS * entityPickingMode,
                       minC - CCVector3(scale, scale, scale) / 2.0, scale,
                       ecvColor::yellow, componentContext);
-        // DrawUnitSphere(SPHERE*pushName, maxC + CCVector3(scale, scale, scale)
-        // / 2.0, scale / 2.0, ecvColor::yellow, componentContext);
-        DrawUnitTorus(
-                X_MINUS_TORUS * pushName, CCVector3(minC.x, center.y, center.z),
-                CCVector3(-1.0, 0.0, 0.0), scale, c_lightRed, componentContext);
-        DrawUnitTorus(Y_MINUS_TORUS * pushName,
+        // DrawUnitSphere(SPHERE*entityPickingMode, maxC + CCVector3(scale,
+        // scale, scale) / 2.0, scale / 2.0, ecvColor::yellow,
+        // componentContext);
+        DrawUnitTorus(X_MINUS_TORUS * entityPickingMode,
+                      CCVector3(minC.x, center.y, center.z),
+                      CCVector3(-1.0, 0.0, 0.0), scale, c_lightRed,
+                      componentContext);
+        DrawUnitTorus(Y_MINUS_TORUS * entityPickingMode,
                       CCVector3(center.x, minC.y, center.z),
                       CCVector3(0.0, -1.0, 0.0), scale, c_lightGreen,
                       componentContext);
-        DrawUnitTorus(Z_MINUS_TORUS * pushName,
+        DrawUnitTorus(Z_MINUS_TORUS * entityPickingMode,
                       CCVector3(center.x, center.y, minC.z),
                       CCVector3(0.0, 0.0, -1.0), scale, c_lightBlue,
                       componentContext);
-        DrawUnitTorus(
-                X_PLUS_TORUS * pushName, CCVector3(maxC.x, center.y, center.z),
-                CCVector3(1.0, 0.0, 0.0), scale, c_lightRed, componentContext);
-        DrawUnitTorus(Y_PLUS_TORUS * pushName,
+        DrawUnitTorus(X_PLUS_TORUS * entityPickingMode,
+                      CCVector3(maxC.x, center.y, center.z),
+                      CCVector3(1.0, 0.0, 0.0), scale, c_lightRed,
+                      componentContext);
+        DrawUnitTorus(Y_PLUS_TORUS * entityPickingMode,
                       CCVector3(center.x, maxC.y, center.z),
                       CCVector3(0.0, 1.0, 0.0), scale, c_lightGreen,
                       componentContext);
-        DrawUnitTorus(
-                Z_PLUS_TORUS * pushName, CCVector3(center.x, center.y, maxC.z),
-                CCVector3(0.0, 0.0, 1.0), scale, c_lightBlue, componentContext);
+        DrawUnitTorus(Z_PLUS_TORUS * entityPickingMode,
+                      CCVector3(center.x, center.y, maxC.z),
+                      CCVector3(0.0, 0.0, 1.0), scale, c_lightBlue,
+                      componentContext);
     }
 }
