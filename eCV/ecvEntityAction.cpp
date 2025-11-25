@@ -498,7 +498,6 @@ bool convertTextureToColor(const ccHObject::Container& selectedEntities,
                     mesh->showColors(true);
                     mesh->showSF(false);  // just in case
                     mesh->showMaterials(false);
-                    // mesh->prepareDisplayForRefresh_recursive();
                 } else {
                     CVLog::Warning(QString("[convertTextureToColor] Failed to "
                                            "convert texture on mesh '%1'!")
@@ -801,7 +800,6 @@ bool sfBilateralFilter(const ccHObject::Container& selectedEntities,
                 pc->showSF(sfIdx >= 0);
                 sf = pc->getCurrentDisplayedScalarField();
                 if (sf) sf->computeMinAndMax();
-                // pc->prepareDisplayForRefresh_recursive();
             }
         } else {
             ecvConsole::Warning(
@@ -850,8 +848,6 @@ bool sfConvertToRGB(const ccHObject::Container& selectedEntities,
                     ent->setRedrawFlagRecursive(true);
                 }
             }
-
-            // cloud->prepareDisplayForRefresh_recursive();
         }
     }
 
@@ -1218,8 +1214,6 @@ bool sfArithmetic(const ccHObject::Container& selectedEntities,
     }
 
     cloud->showSF(true);
-    // cloud->prepareDisplayForRefresh_recursive();
-
     return true;
 }
 
@@ -1352,7 +1346,6 @@ bool processMeshSF(const ccHObject::Container& selectedEntities,
                     pc->setCurrentScalarField(sfIdx);
                     mesh->processScalarField(process);
                     pc->getCurrentInScalarField()->computeMinAndMax();
-                    // mesh->prepareDisplayForRefresh_recursive();
                 } else {
                     ecvConsole::Warning(QString("Mesh [%1] vertices have no "
                                                 "activated scalar field!")
@@ -1610,7 +1603,6 @@ bool computeNormals(const ccHObject::Container& selectedEntities,
                                 .arg(mesh->getName()));
                 continue;
             }
-            // mesh->prepareDisplayForRefresh_recursive();
         }
     }
 
@@ -2281,7 +2273,6 @@ bool statisticalTest(const ccHObject::Container& selectedEntities,
 
             pc->setCurrentDisplayedScalarField(chi2SfIdx);
             pc->showSF(true);
-            // pc->prepareDisplayForRefresh_recursive();
         }
     }
 

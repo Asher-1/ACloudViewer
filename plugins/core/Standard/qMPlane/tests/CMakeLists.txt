@@ -13,7 +13,7 @@ add_executable(
     # Testing sources
     main.cpp
     item_tree_test.cpp
-    mocks/ccMainAppInterfaceMock.h
+    mocks/ecvMainAppInterfaceMock.h
     mocks/ccGenericGLDisplayMock.h
 )
 

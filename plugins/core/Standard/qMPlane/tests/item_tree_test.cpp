@@ -10,7 +10,7 @@
 
 // Mocks
 #include "mocks\ccGenericGLDisplayMock.h"
-#include "mocks\ccMainAppInterfaceMock.h"
+#include "mocks\ecvMainAppInterfaceMock.h"
 
 // ACloudViewer
 #include <ecvPointCloud.h>

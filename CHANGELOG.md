@@ -29,6 +29,11 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Opt Cuda test wheel strategy on ubuntu
     -   Rename docker scripts
 
+-	New plugins:
+	- G3 Point - Granulometry made simple in ACloudViewer
+		- github repository: https://github.com/p-leroy/qG3Point
+		- author page: https://lidar.univ-rennes.fr/en/g3point
+
 ### supported platform:
 - Windows `x86/64`
 - Linux `x86/64`

@@ -9,6 +9,7 @@
 
 // Qt
 #include <QAbstractButton>
+#include <QThread>
 
 class ccQtHelpers {
 public:
@@ -21,5 +22,21 @@ public:
                             .arg(col.red())
                             .arg(col.green())
                             .arg(col.blue()));
+    }
+
+    //! Returns the ideal number of threads/cores
+    static int GetMaxThreadCount(int idealThreadCount) {
+        if (idealThreadCount <= 4) {
+            return idealThreadCount;
+        } else if (idealThreadCount <= 8) {
+            return idealThreadCount - 1;
+        } else {
+            return idealThreadCount - 2;
+        }
+    }
+
+    //! Returns the ideal number of threads/cores with Qt Concurrent
+    static int GetMaxThreadCount() {
+        return GetMaxThreadCount(QThread::idealThreadCount());
     }
 };
