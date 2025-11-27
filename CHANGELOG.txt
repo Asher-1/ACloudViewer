@@ -9,6 +9,7 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Add vtk PBR rendering support for multiple texturing
     -   Add Texturing Atlas support for reconstruction module
     -   Add Excellent Texture mesh rendering support
+    -   Add 2D Image Rendering support with transparency feature
 
 - Bug fixes:
     -   Fix code style

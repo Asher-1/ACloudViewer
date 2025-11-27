@@ -16,6 +16,9 @@
 #include "renders/utils/MeshTextureApplier.h"
 #include "sm2cc.h"
 
+// SYSTEM
+#include <cmath>
+
 // CV_CORE_LIB
 #include <CVTools.h>
 #include <FileSystem.h>
@@ -2158,7 +2161,50 @@ void PCLVis::setLineWidth(const unsigned char lineWidth,
 pcl::visualization::Camera PCLVis::getCamera(int viewport) {
     // get camera param in all viewport
     pcl::visualization::Camera camera;
-    this->getCameraParameters(camera);
+
+    // Check if interactor style is PCLVisualizerInteractorStyle
+    // If not (e.g., vtkInteractorStyleImage for 2D image viewer), get camera
+    // params directly from vtkCamera This prevents crashes when ImageVis sets
+    // vtkInteractorStyleImage on shared interactor
+    vtkInteractorObserver* currentStyle =
+            getRenderWindowInteractor()
+                    ? getRenderWindowInteractor()->GetInteractorStyle()
+                    : nullptr;
+    pcl::visualization::PCLVisualizerInteractorStyle* pclStyle =
+            dynamic_cast<pcl::visualization::PCLVisualizerInteractorStyle*>(
+                    currentStyle);
+
+    if (pclStyle) {
+        // Use PCL's getCameraParameters method when interactor style is correct
+        this->getCameraParameters(camera);
+    } else {
+        // Fallback: Get camera parameters directly from vtkCamera
+        // This is needed when interactor style is vtkInteractorStyleImage (for
+        // 2D image viewer)
+        vtkSmartPointer<vtkCamera> vtkCam = getVtkCamera(viewport);
+        if (vtkCam) {
+            double pos[3], focal[3], viewUp[3], clipRange[2];
+            vtkCam->GetPosition(pos);
+            vtkCam->GetFocalPoint(focal);
+            vtkCam->GetViewUp(viewUp);
+            vtkCam->GetClippingRange(clipRange);
+
+            camera.pos[0] = pos[0];
+            camera.pos[1] = pos[1];
+            camera.pos[2] = pos[2];
+            camera.focal[0] = focal[0];
+            camera.focal[1] = focal[1];
+            camera.focal[2] = focal[2];
+            camera.view[0] = viewUp[0];
+            camera.view[1] = viewUp[1];
+            camera.view[2] = viewUp[2];
+            camera.clip[0] = clipRange[0];
+            camera.clip[1] = clipRange[1];
+            camera.fovy = vtkCam->GetViewAngle() * M_PI /
+                          180.0;  // Convert degrees to radians
+        }
+    }
+
     return camera;
 }
 
