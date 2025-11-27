@@ -2606,7 +2606,8 @@ void ccPropertiesTreeDelegate::imageAlphaChanged(int val) {
     float alpha = val / 255.0f;
     if (image && image->getAlpha() != alpha) {
         image->setAlpha(alpha);
-        updateDisplay();
+        ecvDisplayTools::ChangeOpacity(
+                alpha, CVTools::FromQString(image->getViewId()));
     }
 }
 

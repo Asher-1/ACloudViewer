@@ -36,10 +36,6 @@
 #include <QPushButton>
 #include <QSettings>
 
-// Boost
-#include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
-
 // System
 #include <iostream>
 
