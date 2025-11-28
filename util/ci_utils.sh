@@ -347,6 +347,7 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_3DMASC=ON"
                 "-DPLUGIN_STANDARD_QTREEISO=$PLUGIN_STANDARD_QTREEISO"
                 "-DPLUGIN_STANDARD_QVOXFALL=ON"
+                "-DPLUGIN_STANDARD_G3POINT=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"

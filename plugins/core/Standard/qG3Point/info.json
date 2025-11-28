@@ -1,0 +1,26 @@
+{
+	"type" : "Standard",
+	"name" : "G3Point",
+	"icon" : ":/CC/plugin/G3PointPlugin/images/icon.png",
+	"description": "G3Point grain segmentation algorithm.",
+	"authors" : [
+		{
+			"name" : "Paul Leroy",
+			"email" : "paul.leroy@univ-rennes.fr"
+		}
+	],
+	"references" : [
+		{
+			"text" : "Size, shape and orientation matter: fast and automatic measurement of grain geometries from 3D point clouds",
+			"url" : "https://esurf.copernicus.org/articles/10/1211/2022/"
+		},
+		{
+			"text" : "G3Point original source repository",
+			"url" : "https://github.com/philippesteer/G3Point"
+		},
+		{
+			"text" : "G3Point python source repository",
+			"url" : "https://github.com/p-leroy/g3point_python"
+		}
+	]
+}
