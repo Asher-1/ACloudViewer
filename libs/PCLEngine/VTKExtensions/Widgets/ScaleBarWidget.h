@@ -23,10 +23,10 @@
 #endif
 #include <QScreen>
 
-class ScaleBar {
+class ScaleBarWidget {
 public:
-    ScaleBar(vtkRenderer* renderer);
-    ~ScaleBar();
+    ScaleBarWidget(vtkRenderer* renderer);
+    ~ScaleBarWidget();
     void update(vtkRenderer* renderer, vtkRenderWindowInteractor* interactor);
     void setVisible(bool visible);
 
