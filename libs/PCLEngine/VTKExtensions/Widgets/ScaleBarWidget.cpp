@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ScaleBar.h"
+#include "ScaleBarWidget.h"
 
 #include <vtkActor2D.h>
 #include <vtkAlgorithmOutput.h>
@@ -35,7 +35,7 @@
 #include <cstring>
 #include <sstream>
 
-ScaleBar::ScaleBar(vtkRenderer* renderer) {
+ScaleBarWidget::ScaleBarWidget(vtkRenderer* renderer) {
     // Get cross-platform optimized DPI scaling
     dpiScale = getPlatformAwareDPIScale();
 
@@ -75,9 +75,9 @@ ScaleBar::ScaleBar(vtkRenderer* renderer) {
     }
 }
 
-ScaleBar::~ScaleBar() {}
+ScaleBarWidget::~ScaleBarWidget() {}
 
-void ScaleBar::setVisible(bool v) {
+void ScaleBarWidget::setVisible(bool v) {
     visible = v;
     lineActor->SetVisibility(v);
     textActor->SetVisibility(v);
@@ -85,7 +85,7 @@ void ScaleBar::setVisible(bool v) {
     rightTickActor->SetVisibility(v);
 }
 
-double ScaleBar::getDPIScale() {
+double ScaleBarWidget::getDPIScale() {
     // DPI retrieval method compatible with different Qt versions
     if (!QApplication::instance()) {
         return 1.0;
@@ -134,7 +134,7 @@ double ScaleBar::getDPIScale() {
     return 1.0;  // Default scaling
 }
 
-int ScaleBar::getOptimizedFontSize(int baseFontSize) {
+int ScaleBarWidget::getOptimizedFontSize(int baseFontSize) {
     // Get screen information
     QScreen* screen = QApplication::primaryScreen();
     if (!screen) {
@@ -197,7 +197,7 @@ int ScaleBar::getOptimizedFontSize(int baseFontSize) {
     return finalSize;
 }
 
-double ScaleBar::getPlatformAwareDPIScale() {
+double ScaleBarWidget::getPlatformAwareDPIScale() {
     double dpiScale = getDPIScale();
     QScreen* screen = QApplication::primaryScreen();
     if (!screen) {
@@ -245,7 +245,7 @@ double ScaleBar::getPlatformAwareDPIScale() {
     return adjustedScale;
 }
 
-vtkSmartPointer<vtkActor2D> ScaleBar::createTickActor(double x,
+vtkSmartPointer<vtkActor2D> ScaleBarWidget::createTickActor(double x,
                                                       double y,
                                                       double length) {
     auto lineSource = vtkSmartPointer<vtkLineSource>::New();
@@ -263,7 +263,7 @@ vtkSmartPointer<vtkActor2D> ScaleBar::createTickActor(double x,
     return actor;
 }
 
-void ScaleBar::update(vtkRenderer* renderer,
+void ScaleBarWidget::update(vtkRenderer* renderer,
                       vtkRenderWindowInteractor* interactor) {
     if (!visible || !renderer || !renderer->GetRenderWindow()) return;
 

@@ -68,7 +68,7 @@
 #include <vld.h>
 #endif
 
-#include "ScaleBar.h"
+#include "ScaleBarWidget.h"
 
 // macroes
 #ifndef VTK_CREATE
@@ -243,7 +243,7 @@ void QVTKWidgetCustom::initVtk(
     this->m_camera = m_render->GetActiveCamera();
     this->m_renders = this->GetRenderWindow()->GetRenderers();
     if (!m_scaleBar) {
-        m_scaleBar = new ScaleBar(m_render);
+        m_scaleBar = new ScaleBarWidget(m_render);
     }
 }
 
