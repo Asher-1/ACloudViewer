@@ -173,6 +173,7 @@
         <file>Resources/images/gradient.png</file>
         <file>Resources/images/qt.png</file>
         <file>Resources/images/vtk_logo.png</file>
+        <file>Resources/images/pqContours.png</file>
         <file>Resources/images/Components_72px.png</file>
         <file>Resources/images/compression.png</file>
         <file>Resources/images/decimate.png</file>
@@ -204,6 +205,8 @@
         <file>Resources/images/svg/pqThreshold.png</file>
         <file>Resources/images/svg/pqToggleLock.png</file>
         <file>Resources/images/svg/pqZoomToData.png</file>
+        <file>Resources/images/svg/pqProtractor.svg</file>
+        <file>Resources/images/svg/pqRuler.svg</file>
         <file>Resources/images/svg/slice.png</file>
         <file>Resources/images/svg/pqElemMapData.png</file>
         <file>Resources/images/svg/pqFaceSetData.png</file>

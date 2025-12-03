@@ -4,6 +4,9 @@ project(ECV_DB_LIB)
 
 add_library(${PROJECT_NAME} SHARED)
 
+# Enable AUTOMOC for this target as we now use QObject based classes
+set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
+
 add_subdirectory(include)
 add_subdirectory(src)
 

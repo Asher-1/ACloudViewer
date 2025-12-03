@@ -29,6 +29,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericCameraTool.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericDisplayTools.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericFiltersTool.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericMeasurementTools.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericMesh.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericPointCloud.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericPrimitive.cpp
@@ -77,7 +78,6 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvTorus.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewportParameters.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvWaveform.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/ecvWidgetsInterface.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/RGBDImage.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/RGBDImageFactory.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/SurfaceReconstructionAlphaShape.cpp

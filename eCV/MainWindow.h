@@ -61,7 +61,7 @@ class ccDBRoot;
 class ecvFilterTool;
 class ecvRecentFiles;
 class ecvAnnotationsTool;
-class ecvFilterWindowTool;
+class ecvMeasurementTool;
 class ccTracePolylineTool;
 class ccGraphicalSegmentationTool;
 class ccGraphicalTransformationTool;
@@ -531,8 +531,10 @@ private slots:
     // Tools -> Segmentation
     void activateSegmentationMode();
     void deactivateSegmentationMode(bool);
-    void activateFilterWindowMode();
-    void deactivateFilterWindowMode(bool);
+    void doActionMeasurementMode(int mode);
+    void activateDistanceMode();
+    void activateContourMode();
+    void activateProtractorMode();
 
     void doActionFilterMode(int mode);
     void activateClippingMode();
@@ -674,8 +676,8 @@ private:
     ecvAnnotationsTool* m_annoTool;
     //! Filter Label Tool dialog
     ecvFilterByLabelDlg* m_filterLabelTool;
-    //! Filter Window tool
-    ecvFilterWindowTool* m_filterWindowTool;
+    //! Measurement Tool dialog (Distance, Contour, Protractor)
+    ecvMeasurementTool* m_measurementTool;
     //! Deep Semantic Segmentation tool dialog
     ecvDeepSemanticSegmentationTool* m_dssTool;
 

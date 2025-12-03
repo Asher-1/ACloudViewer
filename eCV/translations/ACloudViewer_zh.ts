@@ -6344,7 +6344,7 @@ Parameter</source>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="449"/>
-        <source>Erow DB Tree</source>
+        <source>DB Tree</source>
         <translation>资源树</translation>
     </message>
     <message>

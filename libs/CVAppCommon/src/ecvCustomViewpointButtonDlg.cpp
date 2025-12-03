@@ -18,7 +18,7 @@
 #include <ecvGenericCameraTool.h>
 
 #ifdef USE_PCL_BACKEND
-#include <../PCLEngine/Tools/EditCameraTool.h>
+#include <Tools/CameraTools/EditCameraTool.h>
 #endif
 
 // LOCAL

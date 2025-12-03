@@ -1,7 +1,7 @@
 ACloudViewer Version History
 ============================
 
-v3.9.4-Beta (Asher) - 10/17/2025
+v3.9.4-Beta (Asher) - 12/02/2025
 ----------------------
 
 - New features:
@@ -12,6 +12,9 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Add 2D Image Rendering support with transparency feature
 		-   Add Qt6 compatible interface strategy support
 		-   Add Cork plugin for linux and macos
+    -   Add ruler widget based on vtk support for measurement tools
+    -   Add protractor widget based on vtk support for measurement tools
+    -   Add contour widget based on vtk support for measurement tools
 
 - Bug fixes:
     -   Fix code style
@@ -33,6 +36,8 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Opt win wheel testing with cuda and cpu
     -   Opt Cuda test wheel strategy on ubuntu
     -   Rename docker scripts
+    -   Remove deprecated module: libs/PCLEngine/VtkWidgets
+    -   Refactor module: libs/PCLEngine/Tools
 
 -	New plugins:
 	- G3 Point - Granulometry made simple in ACloudViewer

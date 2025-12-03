@@ -14,7 +14,7 @@
 #include "PclUtils/PCLConv.h"
 #include "PclUtils/PCLVis.h"
 #include "PclUtils/cc2sm.h"
-#include "Tools/ecvTools.h"
+#include "Tools/Common/ecvTools.h"
 
 // Vtk Filters
 #include "cvClipFilter.h"

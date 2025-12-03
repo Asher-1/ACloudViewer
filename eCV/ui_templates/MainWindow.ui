@@ -175,6 +175,7 @@
      <addaction name="actionDisplayScalarFieldsTools"/>
      <addaction name="actionDisplayViewTools"/>
      <addaction name="actionDisplayFilterTools"/>
+     <addaction name="actionDisplayMeasurementsTools"/>
      <addaction name="actionDisplayAnnotationTools"/>
     </widget>
     <widget class="QMenu" name="menuActiveScalarField">
@@ -228,7 +229,18 @@
      <addaction name="actionIsoSurfaceFilter"/>
      <addaction name="actionStreamlineFilter"/>
      <addaction name="actionGlyphFilter"/>
-     <addaction name="actionFilterSection"/>
+    </widget>
+    <widget class="QMenu" name="menuMeasurements">
+     <property name="title">
+      <string>Measurements</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/svg/pqRuler.svg</normaloff>:/Resources/images/svg/pqRuler.svg</iconset>
+     </property>
+     <addaction name="actionDistanceWidget"/>
+     <addaction name="actionProtractorWidget"/>
+     <addaction name="actionContourWidget"/>
     </widget>
     <widget class="QMenu" name="menuSandBox">
      <property name="title">
@@ -318,6 +330,7 @@
      <addaction name="actionPlaneSegmentation"/>
     </widget>
     <addaction name="menuFilters"/>
+    <addaction name="menuMeasurements"/>
     <addaction name="menuDistances"/>
     <addaction name="menuAnnotations"/>
     <addaction name="menuRecognition"/>
@@ -654,7 +667,7 @@ item{border: 0px};</string>
     </font>
    </property>
    <property name="windowTitle">
-    <string>Erow DB Tree</string>
+    <string>DB Tree</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -891,7 +904,23 @@ QTreeView::branch:open:has-children:has-siblings  {
    <addaction name="actionProbeFilter"/>
    <addaction name="actionGlyphFilter"/>
    <addaction name="actionStreamlineFilter"/>
-   <addaction name="actionFilterSection"/>
+  </widget>
+  <widget class="QToolBar" name="MeasurementsToolBar">
+   <property name="windowTitle">
+    <string>Measurement Tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Measurement Tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionDistanceWidget"/>
+   <addaction name="actionProtractorWidget"/>
+   <addaction name="actionContourWidget"/>
   </widget>
   <widget class="QToolBar" name="AnnotationToolBar">
    <property name="windowTitle">
@@ -1109,7 +1138,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set front view</string>
    </property>
    <property name="shortcut">
-    <string>5</string>
+    <string>Alt+5</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1133,7 +1162,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set left side view</string>
    </property>
    <property name="shortcut">
-    <string>4</string>
+    <string>Alt+4</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1154,7 +1183,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set top view</string>
    </property>
    <property name="shortcut">
-    <string>8</string>
+    <string>Alt+8</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1560,7 +1589,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set back view</string>
    </property>
    <property name="shortcut">
-    <string>0</string>
+    <string>Alt+0</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1581,7 +1610,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set right side view</string>
    </property>
    <property name="shortcut">
-    <string>6</string>
+    <string>Alt+6</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1602,7 +1631,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set bottom view</string>
    </property>
    <property name="shortcut">
-    <string>2</string>
+    <string>Alt+2</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1623,7 +1652,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set view to 'front' isometric</string>
    </property>
    <property name="shortcut">
-    <string>7</string>
+    <string>Alt+7</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1644,7 +1673,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set view to 'back' isometric</string>
    </property>
    <property name="shortcut">
-    <string>9</string>
+    <string>Alt+9</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1823,19 +1852,61 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Color Scales Manager</string>
    </property>
   </action>
-  <action name="actionFilterSection">
+  <action name="actionDistanceWidget">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/vtk_logo.png</normaloff>:/Resources/images/vtk_logo.png</iconset>
+     <normaloff>:/Resources/images/svg/pqRuler.svg</normaloff>:/Resources/images/svg/pqRuler.svg</iconset>
    </property>
    <property name="text">
-    <string>Filter Section</string>
+    <string>Distance Widget</string>
    </property>
    <property name="toolTip">
-    <string>Filter Window Section</string>
+    <string>Distance Measurement Tool</string>
    </property>
    <property name="statusTip">
-    <string>Filter Window Section</string>
+    <string>Distance Measurement Tool</string>
+   </property>
+  </action>
+  <action name="actionProtractorWidget">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqProtractor.svg</normaloff>:/Resources/images/svg/pqProtractor.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Protractor Widget</string>
+   </property>
+   <property name="toolTip">
+    <string>Protractor Measurement Tool</string>
+   </property>
+   <property name="statusTip">
+    <string>Protractor Measurement Tool</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionContourWidget">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/pqContours.png</normaloff>:/Resources/images/pqContours.png</iconset>
+   </property>
+   <property name="text">
+    <string>Contour Widget</string>
+   </property>
+   <property name="toolTip">
+    <string>Contour Measurement Tool</string>
+   </property>
+   <property name="statusTip">
+    <string>Contour Measurement Tool</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionTracePolyline">
@@ -1853,7 +1924,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Trace a polyline by point picking</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+P</string>
+    <string>Ctrl+Alt+P</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -3225,6 +3296,23 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>actionDisplayAnnotationTools</string>
    </property>
   </action>
+  <action name="actionDisplayMeasurementsTools">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Measurements</string>
+   </property>
+   <property name="toolTip">
+    <string>Show/hide measurements toolbar</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/hide measurements toolbar</string>
+   </property>
+  </action>
   <action name="actionSemanticSegmentation">
    <property name="text">
     <string>Semantic Segmentation</string>
@@ -3525,7 +3613,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Paste from ASCII/text data stored in the clipboard</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+P</string>
+    <string>Alt+P</string>
    </property>
   </action>
   <action name="actionCheckForUpdates">
@@ -3548,7 +3636,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Lock 3D camera rotation about an axis</string>
    </property>
    <property name="shortcut">
-    <string>L</string>
+    <string>Alt+L</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -3789,6 +3877,22 @@ QTreeView::branch:open:has-children:has-siblings  {
     </hint>
     <hint type="destinationlabel">
      <x>138</x>
+     <y>61</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDisplayMeasurementsTools</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MeasurementsToolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>400</x>
      <y>61</y>
     </hint>
    </hints>

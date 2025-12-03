@@ -14,8 +14,8 @@
 
 #include "PCLConv.h"
 #include "PclUtils/CustomContextItem.h"
-#include "Tools/PclTools.h"
-#include "Tools/ecvTools.h"
+#include "Tools/Common/PclTools.h"
+#include "Tools/Common/ecvTools.h"
 
 // CV_CORE_LIB
 #include <CVPlatform.h>

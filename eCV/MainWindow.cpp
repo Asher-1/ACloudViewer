@@ -12,12 +12,12 @@
 #include "ecvConsole.h"
 #include "ecvCropTool.h"
 #include "ecvFilterTool.h"
-#include "ecvFilterWindowTool.h"
 #include "ecvGraphicalSegmentationTool.h"
 #include "ecvGraphicalTransformationTool.h"
 #include "ecvHistogramWindow.h"
 #include "ecvInnerRect2DFinder.h"
 #include "ecvLibAlgorithms.h"
+#include "ecvMeasurementTool.h"
 #include "ecvPersistentSettings.h"
 #include "ecvRecentFiles.h"
 #include "ecvRegistrationTools.h"
@@ -160,10 +160,11 @@
 #ifdef USE_PCL_BACKEND
 #include <PclUtils/PCLDisplayTools.h>
 #include <Tools/AnnotationTools/PclAnnotationTool.h>
-#include <Tools/CurveFitting.h>
-#include <Tools/EditCameraTool.h>
+#include <Tools/CameraTools/EditCameraTool.h>
+#include <Tools/Common/CurveFitting.h>
 #include <Tools/FilterTools/PclFiltersTool.h>
-#include <Tools/TransformTools/QvtkTransformTool.h>
+#include <Tools/MeasurementTools/PclMeasurementTools.h>
+#include <Tools/TransformTools/PclTransformTool.h>
 #endif
 
 // ECV_PYTHON_LIB
@@ -269,7 +270,7 @@ MainWindow::MainWindow()
       m_filterTool(nullptr),
       m_annoTool(nullptr),
       m_filterLabelTool(nullptr),
-      m_filterWindowTool(nullptr),
+      m_measurementTool(nullptr),
       m_dssTool(nullptr),
       m_layout(nullptr),
       m_uiManager(nullptr),
@@ -321,42 +322,34 @@ MainWindow::MainWindow()
 
     // advanced widgets not handled by QDesigner
     {  // view mode pop-up menu
-        {
-            m_viewModePopupButton = new QToolButton();
-            QMenu* menu = new QMenu(m_viewModePopupButton);
-            menu->addAction(m_ui->actionOrthogonalProjection);
-            menu->addAction(m_ui->actionPerspectiveProjection);
+        m_viewModePopupButton = new QToolButton();
+        QMenu* menu = new QMenu(m_viewModePopupButton);
+        menu->addAction(m_ui->actionOrthogonalProjection);
+        menu->addAction(m_ui->actionPerspectiveProjection);
 
-            m_viewModePopupButton->setMenu(menu);
-            m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
-            m_viewModePopupButton->setToolTip("Set current view mode");
-            m_viewModePopupButton->setStatusTip(
-                    m_viewModePopupButton->toolTip());
-            m_ui->ViewToolBar->insertWidget(m_ui->actionZoomAndCenter,
-                                            m_viewModePopupButton);
-            m_viewModePopupButton->setEnabled(false);
-        }
-
-        // custom viewports configuration
-        {
-            QToolBar* customViewpointsToolbar =
-                    new ecvCustomViewpointsToolbar(this);
-            customViewpointsToolbar->setObjectName("customViewpointsToolbar");
-            customViewpointsToolbar->layout()->setSpacing(0);
-            this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
-            // this->insertToolBar(m_ui->FilterToolBar,
-            // customViewpointsToolbar);
-        }
-
-        // orthogonal projection mode (default)
-        {
-            m_ui->actionOrthogonalProjection->trigger();
-            ecvConsole::Print("Perspective off!");
-        }
+        m_viewModePopupButton->setMenu(menu);
+        m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
+        m_viewModePopupButton->setToolTip("Set current view mode");
+        m_viewModePopupButton->setStatusTip(m_viewModePopupButton->toolTip());
+        m_ui->ViewToolBar->insertWidget(m_ui->actionZoomAndCenter,
+                                        m_viewModePopupButton);
+        m_viewModePopupButton->setEnabled(false);
     }
 
-    // restore options
-    {
+    {  // custom viewports configuration
+        QToolBar* customViewpointsToolbar =
+                new ecvCustomViewpointsToolbar(this);
+        customViewpointsToolbar->setObjectName("customViewpointsToolbar");
+        customViewpointsToolbar->layout()->setSpacing(0);
+        this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
+    }
+
+    {  // orthogonal projection mode (default)
+        m_ui->actionOrthogonalProjection->trigger();
+        ecvConsole::Print("Perspective off!");
+    }
+
+    {  // restore options
         QSettings settings;
 
         // auto pick center
@@ -441,7 +434,7 @@ MainWindow::~MainWindow() {
     m_mousePosLabel = nullptr;
     m_systemInfoLabel = nullptr;
 
-    m_filterWindowTool = nullptr;
+    m_measurementTool = nullptr;
     m_gsTool = nullptr;
     m_transTool = nullptr;
     m_filterTool = nullptr;
@@ -592,6 +585,14 @@ void MainWindow::connectActions() {
             &MainWindow::doActionVoxelSampling);
 
     //"Edit" menu
+    connect(m_ui->actionSegment, &QAction::triggered, this,
+            &MainWindow::activateSegmentationMode);
+    connect(m_ui->actionRemoveDuplicatePoints, &QAction::triggered, this,
+            &MainWindow::doRemoveDuplicatePoints);
+    connect(m_ui->actionSubsample, &QAction::triggered, this,
+            &MainWindow::doActionSubsample);
+    connect(m_ui->actionEditGlobalShiftAndScale, &QAction::triggered, this,
+            &MainWindow::doActionEditGlobalShiftAndScale);
     connect(m_ui->actionClone, &QAction::triggered, this,
             &MainWindow::doActionClone);
     connect(m_ui->actionMerge, &QAction::triggered, this,
@@ -741,7 +742,6 @@ void MainWindow::connectActions() {
             &MainWindow::doActionInterpolateScalarFields);
     connect(m_ui->actionScalarFieldArithmetic, &QAction::triggered, this,
             &MainWindow::doActionScalarFieldArithmetic);
-
     connect(m_ui->actionDeleteScalarField, &QAction::triggered, this, [=]() {
         clearSelectedEntitiesProperty(
                 ccEntityAction::CLEAR_PROPERTY::CURRENT_SCALAR_FIELD);
@@ -783,13 +783,6 @@ void MainWindow::connectActions() {
     connect(m_ui->actionCompressFWFData, &QAction::triggered, this,
             &MainWindow::doActionCompressFWFData);
 
-    connect(m_ui->actionRemoveDuplicatePoints, &QAction::triggered, this,
-            &MainWindow::doRemoveDuplicatePoints);
-    connect(m_ui->actionSubsample, &QAction::triggered, this,
-            &MainWindow::doActionSubsample);
-    connect(m_ui->actionEditGlobalShiftAndScale, &QAction::triggered, this,
-            &MainWindow::doActionEditGlobalShiftAndScale);
-
     //"Tools > Filter" menu
     connect(m_ui->actionClipFilter, &QAction::triggered, this,
             &MainWindow::activateClippingMode);
@@ -809,14 +802,14 @@ void MainWindow::connectActions() {
             &MainWindow::activateStreamlineMode);
     connect(m_ui->actionGlyphFilter, &QAction::triggered, this,
             &MainWindow::activateGlyphMode);
-    connect(m_ui->actionSegment, &QAction::triggered, this,
-            &MainWindow::activateSegmentationMode);
-    connect(m_ui->actionFilterSection, &QAction::triggered, this,
-            &MainWindow::activateFilterWindowMode);
-    connect(m_ui->actionKMeans, &QAction::triggered, this,
-            &MainWindow::doActionKMeans);
-    connect(m_ui->actionFrontPropagation, &QAction::triggered, this,
-            &MainWindow::doActionFrontPropagation);
+
+    // "Tools > Measurements" menu
+    connect(m_ui->actionDistanceWidget, &QAction::triggered, this,
+            &MainWindow::activateDistanceMode);
+    connect(m_ui->actionProtractorWidget, &QAction::triggered, this,
+            &MainWindow::activateProtractorMode);
+    connect(m_ui->actionContourWidget, &QAction::triggered, this,
+            &MainWindow::activateContourMode);
 
     // "Tools > Distances" menu
     connect(m_ui->actionCloudCloudDist, &QAction::triggered, this,
@@ -1010,6 +1003,12 @@ void MainWindow::connectActions() {
     connect(ecvDisplayTools::TheInstance(),
             &ecvDisplayTools::exclusiveFullScreenToggled, this,
             &MainWindow::toggleExclusiveFullScreen);
+
+    // Not yet implemented!
+    connect(m_ui->actionKMeans, &QAction::triggered, this,
+            &MainWindow::doActionKMeans);
+    connect(m_ui->actionFrontPropagation, &QAction::triggered, this,
+            &MainWindow::doActionFrontPropagation);
 
     // update
     initApplicationUpdate();
@@ -2629,8 +2628,8 @@ void MainWindow::activateTranslateRotateMode() {
     if (!getActiveWindow()) return;
 
 #ifdef USE_PCL_BACKEND
-    QvtkTransformTool* qTransTool =
-            new QvtkTransformTool(ecvDisplayTools::GetVisualizer3D());
+    PclTransformTool* pclTransTool =
+            new PclTransformTool(ecvDisplayTools::GetVisualizer3D());
     if (!m_transTool) m_transTool = new ccGraphicalTransformationTool(this);
     if (m_transTool->getNumberOfValidEntities() != 0) {
         m_transTool->clear();
@@ -2641,7 +2640,7 @@ void MainWindow::activateTranslateRotateMode() {
     return;
 #endif  // USE_PCL_BACKEND
 
-    if (!m_transTool->setTansformTool(qTransTool) ||
+    if (!m_transTool->setTansformTool(pclTransTool) ||
         !m_transTool->linkWith(ecvDisplayTools::GetCurrentScreen())) {
         CVLog::Warning(
                 "[MainWindow::activateTranslateRotateMode] Initialization "
@@ -2771,7 +2770,9 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionImportSFFromFile->setEnabled(atLeastOneEntity);
     m_ui->actionExportCoordToSF->setEnabled(atLeastOneEntity);
     m_ui->actionSegment->setEnabled(atLeastOneEntity);
-    m_ui->actionFilterSection->setEnabled(atLeastOneEntity);
+    m_ui->actionContourWidget->setEnabled(atLeastOneEntity);
+    m_ui->actionDistanceWidget->setEnabled(atLeastOneEntity);
+    m_ui->actionProtractorWidget->setEnabled(atLeastOneEntity);
     m_ui->actionTranslateRotate->setEnabled(atLeastOneEntity);
     m_ui->actionShowDepthBuffer->setEnabled(atLeastOneGBLSensor);
     m_ui->actionExportDepthBuffer->setEnabled(atLeastOneGBLSensor);
@@ -3085,7 +3086,10 @@ void MainWindow::updateMenus() {
 
     ////oher actions
     m_ui->actionSegment->setEnabled(hasMdiChild && hasSelectedEntities);
-    m_ui->actionFilterSection->setEnabled(hasMdiChild && hasSelectedEntities);
+    m_ui->actionContourWidget->setEnabled(hasMdiChild && hasSelectedEntities);
+    m_ui->actionDistanceWidget->setEnabled(hasMdiChild && hasSelectedEntities);
+    m_ui->actionProtractorWidget->setEnabled(hasMdiChild &&
+                                             hasSelectedEntities);
     m_ui->actionTranslateRotate->setEnabled(hasMdiChild && hasSelectedEntities);
     m_ui->actionPointPicking->setEnabled(hasMdiChild && hasLoadedEntities);
     m_ui->actionPointListPicking->setEnabled(hasLoadedEntities);
@@ -9213,56 +9217,116 @@ void MainWindow::doActionEditGlobalShiftAndScale() {
     updateUI();
 }
 
-// Tools menu methods
-void MainWindow::activateFilterWindowMode() {
-    if (!haveSelection()) {
-        return;
-    }
-    if (!m_filterWindowTool) {
-        m_filterWindowTool = new ecvFilterWindowTool(this);
-        connect(m_filterWindowTool, &ccOverlayDialog::processFinished, this,
-                &MainWindow::deactivateFilterWindowMode);
-        registerOverlayDialog(m_filterWindowTool, Qt::TopRightCorner);
-    }
-    m_filterWindowTool->linkWith(ecvDisplayTools::GetCurrentScreen());
+// Tools measurement menu methods
+void MainWindow::activateDistanceMode() {
+#ifdef USE_PCL_BACKEND
+    doActionMeasurementMode(
+            ecvGenericMeasurementTools::MeasurementType::DISTANCE_WIDGET);
+#else
+    CVLog::Warning(
+            "[MainWindow] please use pcl as backend and then try again!");
+    return;
+#endif  // USE_PCL_BACKEND
+}
+
+void MainWindow::activateProtractorMode() {
+#ifdef USE_PCL_BACKEND
+    doActionMeasurementMode(
+            ecvGenericMeasurementTools::MeasurementType::PROTRACTOR_WIDGET);
+#else
+    CVLog::Warning(
+            "[MainWindow] please use pcl as backend and then try again!");
+    return;
+#endif  // USE_PCL_BACKEND
+}
+
+void MainWindow::activateContourMode() {
+#ifdef USE_PCL_BACKEND
+    doActionMeasurementMode(
+            ecvGenericMeasurementTools::MeasurementType::CONTOUR_WIDGET);
+#else
+    CVLog::Warning(
+            "[MainWindow] please use pcl as backend and then try again!");
+    return;
+#endif  // USE_PCL_BACKEND
+}
+
+void MainWindow::doActionMeasurementMode(int mode) {
+    if (!haveOneSelection()) return;
 
     // we have to use a local copy: 'unselectEntity' will change the set of
     // currently selected entities!
     ccHObject::Container selectedEntities = getSelectedEntities();
+
+    if (!m_measurementTool) {
+        m_measurementTool = new ecvMeasurementTool(this);
+        connect(m_measurementTool, &ccOverlayDialog::processFinished, this,
+                [=]() {
+                    ccHObject::Container outs = m_measurementTool->getOutputs();
+                    for (ccHObject* entity : outs) {
+                        entity->setEnabled(true);
+                    }
+
+                    if (!outs.empty()) {
+                        // hide origin entities.
+                        for (ccHObject* entity : selectedEntities) {
+                            entity->setEnabled(false);
+                        }
+
+                        m_ccRoot->selectEntities(outs);
+                        refreshSelected();
+                    }
+
+                    freezeUI(false);
+                    updateUI();
+                });
+        registerOverlayDialog(m_measurementTool, Qt::TopRightCorner);
+    }
+
+#ifdef USE_PCL_BACKEND
+    ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+    if (!viewer) {
+        CVLog::Error("[MainWindow] No visualizer available!");
+        return;
+    }
+
+    ecvGenericMeasurementTools* measurementTool = new PclMeasurementTools(
+            viewer, ecvGenericMeasurementTools::MeasurementType(mode));
+
+    // Add the new tool instance to the measurement tool dialog
+    m_measurementTool->setMeasurementTool(measurementTool);
+    m_measurementTool->linkWith(ecvDisplayTools::GetCurrentScreen());
+
     for (ccHObject* entity : selectedEntities) {
-        if (m_filterWindowTool->addAssociatedEntity(entity)) {
+        if (m_measurementTool->addAssociatedEntity(entity)) {
             // automatically deselect the entity (to avoid seeing its bounding
             // box ;)
             m_ccRoot->unselectEntity(entity);
         }
     }
 
-    if (m_filterWindowTool->getNumberOfAssociatedEntity() == 0) {
-        m_filterWindowTool->close();
+    if (m_measurementTool->getNumberOfAssociatedEntity() == 0) {
+        CVLog::Warning("[MainWindow] No valid entities for measurement!");
         return;
     }
 
-    freezeUI(true);
-    m_ui->ViewToolBar->setDisabled(true);
-    m_ui->ViewToolBar->hide();
-    m_ui->propertyDock->hide();
+    // freezeUI(true);
+    // m_ui->ViewToolBar->setDisabled(true);
+    // m_ui->ViewToolBar->hide();
+    // m_ui->propertyDock->hide();
 
-    if (m_filterWindowTool->start()) {
+    if (m_measurementTool->start()) {
         updateOverlayDialogsPlacement();
     } else {
-        deactivateFilterWindowMode(false);
         freezeUI(false);
         updateUI();
-        ecvConsole::Error(tr("Unexpected error!"));  // indeed...
+        ecvConsole::Error(tr("Unexpected error!"));
     }
-}
-
-void MainWindow::deactivateFilterWindowMode(bool state) {
-    freezeUI(false);
-    m_ui->ViewToolBar->setDisabled(false);
-    m_ui->ViewToolBar->show();
-    m_ui->propertyDock->show();
-    updateUI();
+#else
+    CVLog::Warning(
+            "[MainWindow] please use pcl as backend and then try again!");
+    return;
+#endif  // USE_PCL_BACKEND
 }
 
 void MainWindow::activateClippingMode() {
@@ -9696,13 +9760,9 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                     }
                     for (ccHObject::Container::iterator it = labels.begin();
                          it != labels.end(); ++it) {
-                        if ((*it)->isA(
-                                    CV_TYPES::
-                                            LABEL_2D))  // Warning:
-                                                        // cc2DViewportLabel is
-                                                        // also a kind of
-                                                        // 'CV_TYPES::LABEL_2D'!
-                        {
+                        // Warning: cc2DViewportLabel is also a kind of
+                        // 'CV_TYPES::LABEL_2D'!
+                        if ((*it)->isA(CV_TYPES::LABEL_2D)) {
                             // we must search for all dependent labels and
                             // remove them!!!
                             // TODO: couldn't we be more clever and update the
@@ -9733,7 +9793,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                             }
                         }
                     }  // for each label
-                }  // if (cloud)
+                }      // if (cloud)
 
                 // we temporarily detach the entity, as it may undergo
                 //"severe" modifications (octree deletion, etc.) --> see
