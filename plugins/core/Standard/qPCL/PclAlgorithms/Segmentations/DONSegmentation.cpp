@@ -10,7 +10,7 @@
 #include "PclUtils/PCLModules.h"
 #include "PclUtils/cc2sm.h"
 #include "PclUtils/sm2cc.h"
-#include "Tools/ecvTools.h"  // must below above three
+#include "Tools/Common/ecvTools.h"  // must below above three
 #include "dialogs/DONSegmentationDlg.h"
 
 // ECV_DB_LIB

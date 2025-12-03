@@ -8,8 +8,8 @@
 #include "PCLVis.h"
 
 #include "PCLConv.h"
-#include "Tools/PclTools.h"
-#include "Tools/ecvTools.h"
+#include "Tools/Common/PclTools.h"
+#include "Tools/Common/ecvTools.h"
 #include "VtkUtils/vtkutils.h"
 #include "cc2sm.h"
 #include "renders/TextureRenderManager.h"

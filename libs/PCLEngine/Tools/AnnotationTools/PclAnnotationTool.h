@@ -9,7 +9,7 @@
 
 // LOCAL
 #include "PclUtils/PCLCloud.h"
-#include "Tools/PclPointCloudColorHandlerLUT.h"
+#include "Tools/ColorTools/PclPointCloudColorHandlerLUT.h"
 #include "qPCL.h"
 
 // ECV_DB_LIB

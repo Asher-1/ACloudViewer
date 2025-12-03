@@ -66,15 +66,30 @@ if (USE_PCL_BACKEND)
     source_group("Tools" FILES ${Basic_list})
     file(GLOB_RECURSE AnnotationTools_list ${QPCL_TOOLS}/AnnotationTools/*)
     source_group("Tools\\AnnotationTools" FILES ${AnnotationTools_list})
+    file(GLOB_RECURSE CameraTools_list ${QPCL_TOOLS}/CameraTools/*)
+    source_group("Tools\\CameraTools" FILES ${CameraTools_list})
+    file(GLOB_RECURSE ColorTools_list ${QPCL_TOOLS}/ColorTools/*)
+    source_group("Tools\\ColorTools" FILES ${ColorTools_list})
+    file(GLOB_RECURSE Common_list ${QPCL_TOOLS}/Common/*)
+    source_group("Tools\\Common" FILES ${Common_list})
     file(GLOB_RECURSE FilterTools_list ${QPCL_TOOLS}/FilterTools/*)
     source_group("Tools\\FilterTools" FILES ${FilterTools_list})
+    file(GLOB_RECURSE MeasurementTools_list ${QPCL_TOOLS}/MeasurementTools/*)
+    source_group("Tools\\MeasurementTools" FILES ${MeasurementTools_list})
+    file(GLOB_RECURSE PickingTools_list ${QPCL_TOOLS}/PickingTools/*)
+    source_group("Tools\\PickingTools" FILES ${PickingTools_list})
     file(GLOB_RECURSE TransformTools_list ${QPCL_TOOLS}/TransformTools/*)
     source_group("Tools\\TransformTools" FILES ${TransformTools_list})
 
     set(Tools_list
             ${Basic_list}
             ${AnnotationTools_list}
+            ${CameraTools_list}
+            ${ColorTools_list}
+            ${Common_list}
             ${FilterTools_list}
+            ${MeasurementTools_list}
+            ${PickingTools_list}
             ${TransformTools_list})
 
     # PCL VISUALIZATION MODULE
@@ -90,19 +105,6 @@ if (USE_PCL_BACKEND)
     file(GLOB_RECURSE PclUtils_list ${QPCL_UTILS}/*)
     source_group("PclUtils" FILES ${PclUtils_list})
 
-    # VTK WIDGETS MODULE
-    SET(QVTK_WIDGETS ${CMAKE_CURRENT_SOURCE_DIR}/VtkWidgets)
-    # filter module
-    file(GLOB_RECURSE VtkWidgets_filters_list ${QVTK_WIDGETS}/filters/*)
-    source_group("VtkWidgets\\filters" FILES ${VtkWidgets_filters_list})
-
-    # smallWidgets module
-    file(GLOB_RECURSE VtkWidgets_smallWidgets_list ${QVTK_WIDGETS}/smallWidgets/*)
-    source_group("VtkWidgets\\smallWidgets" FILES ${VtkWidgets_smallWidgets_list})
-
-    set(Widget_list ${VtkWidgets_filters_list}
-            ${VtkWidgets_smallWidgets_list})
-
     add_library(${PROJECT_NAME} SHARED
             ${header_list}
             ${ui_list_all}
@@ -110,8 +112,7 @@ if (USE_PCL_BACKEND)
             ${VtkExtensions_list}
             ${Tools_list}
             ${PclVis_list}
-            ${PclUtils_list}
-            ${Widget_list})
+            ${PclUtils_list})
 
     if (MSVC)
         # fix compiling error on windows platform for deprecated flag in pcl

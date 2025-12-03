@@ -8,7 +8,7 @@
 #pragma once
 
 // LOCAL
-#include "../../qPCL.h"
+#include "qPCL.h"
 #include "PclUtils/PCLCloud.h"
 
 // ECV_DB_LIB

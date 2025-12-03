@@ -10,6 +10,10 @@
 #include <vtkAngleRepresentation2D.h>
 #include <vtkAngleRepresentation3D.h>
 #include <vtkAngleWidget.h>
+#include <vtkMath.h>
+
+// ECV_DB_LIB
+#include <CVLog.h>
 
 namespace VtkUtils {
 
@@ -27,6 +31,15 @@ void AngleWidgetObserver::Execute(vtkObject* caller,
         vtkAngleRepresentation* angleRep = vtkAngleRepresentation::SafeDownCast(
                 widget->GetRepresentation());
 
+        if (!angleRep) {
+            CVLog::Warning("[AngleWidgetObserver] Execute: angleRep is null");
+            return;
+        }
+
+        // Check if it's 2D or 3D representation
+        vtkAngleRepresentation2D* rep2D =
+                vtkAngleRepresentation2D::SafeDownCast(angleRep);
+
         double worldPot1[3];
         double worldPot2[3];
         double worldCenter[3];
@@ -41,7 +54,19 @@ void AngleWidgetObserver::Execute(vtkObject* caller,
         angleRep->GetPoint2DisplayPosition(displayPot2);
         angleRep->GetCenterDisplayPosition(displayCenter);
 
-        emit angleChanged(angleRep->GetAngle());
+        // IMPORTANT: vtkAngleRepresentation2D::GetAngle() returns DEGREES
+        //            vtkAngleRepresentation3D::GetAngle() returns RADIANS
+        double angleDegrees = 0.0;
+        double rawAngle = angleRep->GetAngle();
+        if (rep2D) {
+            // 2D representation returns degrees directly
+            angleDegrees = rawAngle;
+        } else {
+            // 3D representation returns radians, convert to degrees
+            angleDegrees = vtkMath::DegreesFromRadians(rawAngle);
+        }
+
+        emit angleChanged(angleDegrees);
         emit worldPoint1Changed(worldPot1);
         emit worldPoint2Changed(worldPot2);
         emit worldCenterChanged(worldCenter);

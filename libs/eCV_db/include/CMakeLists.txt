@@ -37,6 +37,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericCameraTool.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericDisplayTools.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericFiltersTool.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvGenericMeasurementTools.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericMesh.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericPointCloud.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericPrimitive.h
@@ -92,7 +93,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvTorus.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvViewportParameters.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvWaveform.h
-		${CMAKE_CURRENT_LIST_DIR}/ecvWidgetsInterface.h
 		${CMAKE_CURRENT_LIST_DIR}/Image.h
 		${CMAKE_CURRENT_LIST_DIR}/LineSet.h
 		${CMAKE_CURRENT_LIST_DIR}/Line3D.h
