@@ -83,7 +83,11 @@ if(COLMAP_FIND_QUIETLY)
     find_package(OpenGL QUIET)
     find_package(Glew QUIET)
 
-    find_package(Qt5 5.4 QUIET COMPONENTS Core OpenGL Widgets)
+    # Qt5/Qt6 compatibility - try Qt6 first, then Qt5
+    find_package(Qt6 QUIET COMPONENTS Core OpenGL OpenGLWidgets Widgets)
+    if(NOT Qt6_FOUND)
+        find_package(Qt5 5.4 QUIET COMPONENTS Core OpenGL Widgets)
+    endif()
 else()
     find_package(Ceres REQUIRED)
 
@@ -103,7 +107,11 @@ else()
     find_package(OpenGL REQUIRED)
     find_package(Glew REQUIRED)
 
-    find_package(Qt5 5.4 REQUIRED COMPONENTS Core OpenGL Widgets)
+    # Qt5/Qt6 compatibility - try Qt6 first, then Qt5
+    find_package(Qt6 QUIET COMPONENTS Core OpenGL OpenGLWidgets Widgets)
+    if(NOT Qt6_FOUND)
+        find_package(Qt5 5.4 REQUIRED COMPONENTS Core OpenGL Widgets)
+    endif()
 endif()
 
 # Set the exported variables.
@@ -129,10 +137,22 @@ set(COLMAP_INCLUDE_DIRS
     ${FREEIMAGE_INCLUDE_DIRS}
     ${CERES_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
-    ${Qt5Core_INCLUDE_DIRS}
-    ${Qt5OpenGL_INCLUDE_DIRS}
-    ${Qt5Widgets_INCLUDE_DIRS}
 )
+
+# Qt5/Qt6 compatibility - add include directories based on which version was found
+if(Qt6_FOUND)
+    list(APPEND COLMAP_INCLUDE_DIRS
+        ${Qt6Core_INCLUDE_DIRS}
+        ${Qt6OpenGL_INCLUDE_DIRS}
+        ${Qt6Widgets_INCLUDE_DIRS}
+    )
+elseif(Qt5_FOUND)
+    list(APPEND COLMAP_INCLUDE_DIRS
+        ${Qt5Core_INCLUDE_DIRS}
+        ${Qt5OpenGL_INCLUDE_DIRS}
+        ${Qt5Widgets_INCLUDE_DIRS}
+    )
+endif()
 
 set(COLMAP_LINK_DIRS
     ${COLMAP_INSTALL_PREFIX}/lib/colmap
@@ -157,10 +177,22 @@ set(COLMAP_EXTERNAL_LIBRARIES
     ${CERES_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${GLEW_LIBRARIES}
-    ${Qt5Core_LIBRARIES}
-    ${Qt5OpenGL_LIBRARIES}
-    ${Qt5Widgets_LIBRARIES}
 )
+
+# Qt5/Qt6 compatibility - add libraries based on which version was found
+if(Qt6_FOUND)
+    list(APPEND COLMAP_EXTERNAL_LIBRARIES
+        ${Qt6Core_LIBRARIES}
+        ${Qt6OpenGL_LIBRARIES}
+        ${Qt6Widgets_LIBRARIES}
+    )
+elseif(Qt5_FOUND)
+    list(APPEND COLMAP_EXTERNAL_LIBRARIES
+        ${Qt5Core_LIBRARIES}
+        ${Qt5OpenGL_LIBRARIES}
+        ${Qt5Widgets_LIBRARIES}
+    )
+endif()
 
 if(UNIX)
     list(APPEND COLMAP_EXTERNAL_LIBRARIES

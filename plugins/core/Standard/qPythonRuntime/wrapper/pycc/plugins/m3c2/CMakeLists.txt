@@ -14,7 +14,8 @@ target_include_directories(
   pym3c2 PRIVATE "${STANDARD_PLUGINS_ROOT_DIR}/qM3C2/include"
 )
 
-find_package(Qt5 COMPONENTS Widgets)
+# Qt5/Qt6 compatibility
+# Note: Widgets is already found in CMakeExternalLibs.cmake
 
 set_target_properties(
   pym3c2 PROPERTIES AUTOUIC ON AUTOUIC_SEARCH_PATHS

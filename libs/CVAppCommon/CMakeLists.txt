@@ -26,12 +26,21 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         )
 
 if (OPTION_SUPPORT_GAMEPADS)
-    find_package(Qt5
-            COMPONENTS
-            Gamepad
-            REQUIRED
-            )
-    target_link_libraries(${PROJECT_NAME} Qt5::Gamepad)
+    if(USE_QT6)
+        # Qt6 does not include Gamepad module - it was removed in Qt6
+        # Gamepad support is disabled when using Qt6
+        message(WARNING "Gamepad support is not available in Qt6. OPTION_SUPPORT_GAMEPADS will be ignored.")
+        set(OPTION_SUPPORT_GAMEPADS OFF)
+    else()
+        find_package(Qt5
+                COMPONENTS
+                Gamepad
+                REQUIRED
+                )
+        # Note: Gamepad is Qt5-only, so we use Qt5::Gamepad directly
+        # (no unified Qt::Gamepad alias exists since it's not in Qt6)
+        target_link_libraries(${PROJECT_NAME} Qt5::Gamepad)
+    endif()
 endif ()
 
 if (OPTION_SUPPORT_3DCONNEXION_DEVICES)

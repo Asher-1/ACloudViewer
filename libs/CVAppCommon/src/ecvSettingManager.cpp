@@ -14,7 +14,9 @@
 #include <ecvSingleton.h>
 
 // QT
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
+#endif
 #include <QDialog>
 #include <QDockWidget>
 #include <QFile>
@@ -102,10 +104,12 @@ void ecvSettingManager::restoreState(const QString& key, QMainWindow& window) {
 
 //-----------------------------------------------------------------------------
 void ecvSettingManager::sanityCheckDock(QDockWidget* dock_widget) {
-    QDesktopWidget desktop;
     if (nullptr == dock_widget) {
         return;
     }
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    QDesktopWidget desktop;
+#endif
 
     QPoint dockTopLeft = dock_widget->pos();
     QRect dockRect(dockTopLeft, dock_widget->size());
@@ -113,7 +117,16 @@ void ecvSettingManager::sanityCheckDock(QDockWidget* dock_widget) {
     QRect geometry = QRect(dockTopLeft, dock_widget->frameSize());
     int titleBarHeight = geometry.height() - dockRect.height();
 
+    // Qt5/Qt6 Compatibility: QDesktopWidget removed in Qt6, use QScreen instead
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QScreen* screen = dock_widget->screen();
+    if (!screen) {
+        screen = QGuiApplication::primaryScreen();
+    }
+    QRect screenRect = screen ? screen->availableGeometry() : QRect();
+#else
     QRect screenRect = desktop.availableGeometry(dock_widget);
+#endif
     QRect desktopRect =
             QGuiApplication::primaryScreen()
                     ->availableGeometry();  // Should give us the entire Desktop

@@ -20,6 +20,9 @@
 // System
 #include <string>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 OFFFilter::OFFFilter()
     : FileIOFilter({"_OFF Filter",
                     11.0f,  // priority
@@ -124,7 +127,7 @@ CC_FILE_ERROR OFFFilter::loadFile(const QString& filename,
     // check if the number of vertices/faces/etc. are on the first line (yes it
     // happens :( )
     QStringList tokens =
-            currentLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+            qtCompatSplitRegex(currentLine, "\\s+", QtCompat::SkipEmptyParts);
     if (tokens.size() == 4) {
         tokens.removeAt(0);
     } else {
@@ -134,7 +137,8 @@ CC_FILE_ERROR OFFFilter::loadFile(const QString& filename,
         if (currentLine.isNull()) return CC_FERR_MALFORMED_FILE;
 
         // read the number of vertices/faces
-        tokens = currentLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        tokens = qtCompatSplitRegex(currentLine, "\\s+",
+                                    QtCompat::SkipEmptyParts);
         if (tokens.size() <
             2 /*3*/)  // should be 3 but we only use the 2 firsts...
             return CC_FERR_MALFORMED_FILE;
@@ -158,8 +162,8 @@ CC_FILE_ERROR OFFFilter::loadFile(const QString& filename,
         CCVector3d Pshift(0, 0, 0);
         for (unsigned i = 0; i < vertCount; ++i) {
             currentLine = GetNextLine(stream);
-            tokens =
-                    currentLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+            tokens = qtCompatSplitRegex(currentLine, "\\s+",
+                                        QtCompat::SkipEmptyParts);
             if (tokens.size() < 3) {
                 delete vertices;
                 return CC_FERR_MALFORMED_FILE;
@@ -212,8 +216,8 @@ CC_FILE_ERROR OFFFilter::loadFile(const QString& filename,
         bool ignoredPolygons = false;
         for (unsigned i = 0; i < triCount; ++i) {
             currentLine = GetNextLine(stream);
-            tokens =
-                    currentLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+            tokens = qtCompatSplitRegex(currentLine, "\\s+",
+                                        QtCompat::SkipEmptyParts);
             if (tokens.size() < 3) {
                 delete mesh;
                 return CC_FERR_MALFORMED_FILE;

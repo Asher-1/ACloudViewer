@@ -82,6 +82,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/Parallel.h
 		${CMAKE_CURRENT_LIST_DIR}/MemoryInfo.h
 		${CMAKE_CURRENT_LIST_DIR}/Universe.h
+		${CMAKE_CURRENT_LIST_DIR}/QtCompat.h
 		# ${CMAKE_CURRENT_LIST_DIR}/StaticVector.h
 )
 
@@ -163,6 +164,7 @@ install(
 		ProgressReporters.h
 		TrueKdTree.h
 		WeibullDistribution.h
+		QtCompat.h
 	DESTINATION
 		include/CVCoreLib
 )

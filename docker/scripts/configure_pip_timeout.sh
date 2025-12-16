@@ -26,8 +26,8 @@ echo "=== Pip configuration completed ==="
 
 # Function to install PyTorch with robust settings
 install_pytorch_robust() {
-    local torch_version=${1:-"2.2.2+cu118"}
-    local cuda_version=${2:-"cu118"}
+    local torch_version=${1:-"2.7.1+cu126"}
+    local cuda_version=${2:-"cu126"}
     
     echo "Installing PyTorch ${torch_version} with CUDA ${cuda_version}..."
     

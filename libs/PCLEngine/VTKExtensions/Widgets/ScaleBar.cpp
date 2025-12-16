@@ -24,7 +24,9 @@
 
 #include <QApplication>
 #include <QCoreApplication>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
+#endif
 #include <QProcessEnvironment>
 #include <QScreen>
 #include <QString>

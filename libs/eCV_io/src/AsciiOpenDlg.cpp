@@ -16,7 +16,9 @@
 
 // Qt
 #include <QComboBox>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
+#endif
 #include <QDialogButtonBox>
 #include <QFile>
 #include <QLineEdit>
@@ -28,6 +30,9 @@
 #include <QTableWidgetItem>
 #include <QTextStream>
 #include <QToolButton>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 
 // system
 #include <cassert>
@@ -400,7 +405,7 @@ void AsciiOpenDlg::updateTable() {
         if (!currentLine.startsWith(
                     "//") /* || !currentLine.startsWith("#")*/) {
             QStringList parts = currentLine.simplified().split(
-                    m_separator, QString::SkipEmptyParts);
+                    m_separator, QtCompat::SkipEmptyParts);
 
             if (lineCount < DISPLAYED_LINES) {
                 unsigned partsCount = std::min(
@@ -658,7 +663,7 @@ void AsciiOpenDlg::updateTable() {
 
         // split header (if any)
         QStringList headerParts = m_headerLine.simplified().split(
-                m_separator, QString::SkipEmptyParts);
+                m_separator, QtCompat::SkipEmptyParts);
         bool validHeader =
                 (headerParts.size() >= static_cast<int>(columnsCount));
         m_ui->extractSFNamesFrom1stLineCheckBox->setEnabled(
@@ -1110,7 +1115,7 @@ AsciiOpenDlg::Sequence AsciiOpenDlg::getOpenSequence() const {
             m_ui->extractSFNamesFrom1stLineCheckBox->isEnabled() &&
             m_ui->extractSFNamesFrom1stLineCheckBox->isChecked()) {
             headerParts = m_headerLine.simplified().split(
-                    m_separator, QString::SkipEmptyParts);
+                    m_separator, QtCompat::SkipEmptyParts);
         }
 
         seq.reserve(m_columnsCount - 1);
@@ -1139,7 +1144,7 @@ bool AsciiOpenDlg::safeSequence() const {
 
     AsciiOpenDlg::Sequence seq = getOpenSequence();
     QStringList headerParts = m_headerLine.simplified().split(
-            m_separator, QString::SkipEmptyParts);
+            m_separator, QtCompat::SkipEmptyParts);
 
     // not enough column headers?
     if (headerParts.size() < static_cast<int>(seq.size())) return false;

@@ -19,6 +19,9 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 ccPolyline* ProfileLoader::Load(QString filename,
                                 CCVector3& origin,
                                 ecvMainAppInterface* app /*=0*/) {
@@ -54,8 +57,8 @@ ccPolyline* ProfileLoader::Load(QString filename,
             }
             QString centerLine = stream.readLine();
             {
-                QStringList tokens = centerLine.split(QRegExp("\\s+"),
-                                                      QString::SkipEmptyParts);
+                QStringList tokens = qtCompatSplitRegex(
+                        centerLine, "\\s+", QtCompat::SkipEmptyParts);
                 bool validLine = false;
                 if (tokens.size() == 3) {
                     bool ok[3] = {false, false, false};
@@ -95,8 +98,8 @@ ccPolyline* ProfileLoader::Load(QString filename,
             QString line = stream.readLine();
             std::vector<CCVector2d> points;
             while (!line.isEmpty()) {
-                QStringList tokens =
-                        line.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+                QStringList tokens = qtCompatSplitRegex(
+                        line, "\\s+", QtCompat::SkipEmptyParts);
                 if (tokens.size() < 2) {
                     if (app)
                         app->dispToConsole(

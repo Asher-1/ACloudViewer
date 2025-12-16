@@ -1,7 +1,7 @@
 option( PLUGIN_STANDARD_G3POINT "Install example plugin" OFF )
 
 if ( PLUGIN_STANDARD_G3POINT )
-	project( G3PointPlugin )
+	project( QG3POINT_PLUGIN )
 
 	AddPlugin( NAME ${PROJECT_NAME} )
 
@@ -19,9 +19,10 @@ if ( PLUGIN_STANDARD_G3POINT )
 	# target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)  # for mlpack
 
 	# QCUSTOMPLOT
+	# Qt5/Qt6 compatibility - use unified Qt:: prefix
 	target_link_libraries(${PROJECT_NAME}
 		QCustomPlot
-		Qt5::PrintSupport
+		Qt::PrintSupport
 	)
 
 	target_link_libraries( ${PROJECT_NAME} 3rdparty_eigen3 3rdparty_nanoflann)

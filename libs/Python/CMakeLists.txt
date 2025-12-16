@@ -48,12 +48,13 @@ if (BUILD_PYTHON_MODULE)
             )
 
     # dependence
+    # Qt5/Qt6 compatibility - use unified Qt:: prefix
     target_link_libraries(
         ${PROJECT_NAME}
         CVCoreLib
         ECV_DB_LIB
-        Qt5::Core
-        Qt5::PrintSupport
+        Qt::Core
+        Qt::PrintSupport
         pybind11::embed
         ${PYTHON_LIBRARIES}
     )

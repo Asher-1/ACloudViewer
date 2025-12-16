@@ -13,6 +13,9 @@
 // Qt
 #include <QLayoutItem>
 #include <QStringListModel>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 // CORE
 #include <CVLog.h>
 // DB
@@ -471,8 +474,8 @@ void LasSaveDialog::selectedVersion(uint8_t& versionMajor, uint8_t& versionMinor
 	versionMajor = 1;
 	versionMinor = 0;
 
-	const QString       versionString = versionComboBox->currentText();
-	QVector<QStringRef> tokens        = versionString.splitRef('.');
+	const QString versionString = versionComboBox->currentText();
+	auto          tokens        = qtCompatSplitRefChar(versionString, '.');
 	if (tokens.size() == 2)
 	{
 		versionMajor = static_cast<uint8_t>(std::min(tokens[0].toUInt(), 255u));

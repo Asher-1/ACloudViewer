@@ -22,6 +22,7 @@ echo "PYTHON_VERSION: " python${PYTHON_VERSION}
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # for python plugin
+# you can use PackageManager to install 3DFin==0.4.1 as python plugin (with qt5 support not latest version)
 python -m pip install -r ${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt
 
 eval $(

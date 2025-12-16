@@ -35,7 +35,9 @@
 
 // QT
 #include <QApplication>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
+#endif
 #include <QLayout>
 #include <QMainWindow>
 #include <QMessageBox>

@@ -22,6 +22,9 @@
 #include <QMessageBox>
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // System
 #include <cassert>
 #include <string>
@@ -141,7 +144,7 @@ CC_FILE_ERROR PTXFilter::loadFile(const QString& filename,
             // read sensor transformation matrix
             for (int i = 0; i < 4; ++i) {
                 line = inFile.readLine();
-                QStringList tokens = line.split(" ", QString::SkipEmptyParts);
+                QStringList tokens = line.split(" ", QtCompat::SkipEmptyParts);
                 if (tokens.size() != 3) return CC_FERR_MALFORMED_FILE;
 
                 double* colDest = nullptr;
@@ -166,7 +169,7 @@ CC_FILE_ERROR PTXFilter::loadFile(const QString& filename,
             // read cloud transformation matrix
             for (int i = 0; i < 4; ++i) {
                 line = inFile.readLine();
-                QStringList tokens = line.split(" ", QString::SkipEmptyParts);
+                QStringList tokens = line.split(" ", QtCompat::SkipEmptyParts);
                 if (tokens.size() != 4) return CC_FERR_MALFORMED_FILE;
 
                 double* col = cloudTransD.getColumn(i);
@@ -266,7 +269,7 @@ CC_FILE_ERROR PTXFilter::loadFile(const QString& filename,
                 for (unsigned i = 0; i < width; ++i, ++gridIndex) {
                     QString line = inFile.readLine();
                     QStringList tokens =
-                            line.split(" ", QString::SkipEmptyParts);
+                            line.split(" ", QtCompat::SkipEmptyParts);
 
                     if (firstPoint) {
                         hasColors = (tokens.size() == 7);

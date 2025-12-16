@@ -9,6 +9,9 @@
 
 #include <QSyntaxHighlighter>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 class ColorScheme;
 
 // Started from Qt Syntax Highlighter example and then ported
@@ -44,14 +47,14 @@ class PythonHighlighter final : public QSyntaxHighlighter
     struct HighlightingRule
     {
         CodeElement element = CodeElement::End;
-        QRegExp pattern;
+        QtCompatRegExp pattern;
         QTextCharFormat format;
         int matchIndex = 0;
 
         HighlightingRule() = default;
 
         HighlightingRule(const CodeElement e, const QString &p, const int i)
-            : element(e), pattern(QRegExp(p)), matchIndex(i)
+            : element(e), pattern(qtCompatRegExp(p)), matchIndex(i)
         {
         }
     };

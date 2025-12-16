@@ -12,9 +12,11 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QStringRef>
 #include <QTextStream>
 #include <QXmlStreamReader>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 
 // qCC_db
 #include <ecvCameraSensor.h>
@@ -91,7 +93,7 @@ QString ToName(Sections section) {
 
 template <typename T>
 bool DecodeRotation(const QString& rotationValues, ccGLMatrixTpl<T>& output) {
-    QStringList tokens = rotationValues.split(" ", QString::SkipEmptyParts);
+    QStringList tokens = rotationValues.split(" ", QtCompat::SkipEmptyParts);
     if (tokens.size() != 9) {
         return false;
     }
@@ -116,7 +118,7 @@ template <typename T>
 bool DecodeTransformation(const QString& transformationValues,
                           ccGLMatrixTpl<T>& output) {
     QStringList tokens =
-            transformationValues.split(" ", QString::SkipEmptyParts);
+            transformationValues.split(" ", QtCompat::SkipEmptyParts);
     if (tokens.size() != 16) {
         return false;
     }
