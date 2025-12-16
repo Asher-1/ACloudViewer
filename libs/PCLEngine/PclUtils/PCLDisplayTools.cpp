@@ -43,6 +43,9 @@
 // SYSTEM
 #include <assert.h>
 
+// Qt
+#include <QImage>
+
 void PCLDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
     this->m_vtkWidget = new QVTKWidgetCustom(win, this, stereoMode);
     SetMainScreen(this->m_vtkWidget);
@@ -157,15 +160,7 @@ void PCLDisplayTools::updateMeshTextures(const CC_DRAW_CONTEXT& context,
             // materials
             const ccMaterialSet* materials = mesh->getMaterialSet();
             assert(materials);
-            std::vector<pcl::TexMaterial> tex_materials;
-            for (std::size_t newMatlIndex = 0; newMatlIndex < materials->size();
-                 ++newMatlIndex) {
-                PCLMaterial pcl_material;
-                cc2smReader::ConVertToPCLMaterial(materials->at(newMatlIndex),
-                                                  pcl_material);
-                tex_materials.push_back(pcl_material);
-            }
-            if (!m_visualizer3D->updateTexture(context, tex_materials)) {
+            if (!m_visualizer3D->updateTexture(context, materials)) {
                 CVLog::Warning(QString("Update mesh texture failed!"));
             }
         } else {
@@ -183,8 +178,18 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
     bool firstShow = !m_visualizer3D->contains(viewID);
 
     if (mesh->isRedraw() || firstShow) {
+        CVLog::PrintDebug(
+                "[PCLDisplayTools::drawMesh] Entering render block "
+                "(isRedraw=%d || firstShow=%d)",
+                mesh->isRedraw(), firstShow);
+
         ccPointCloud* ecvCloud = ccHObjectCaster::ToPointCloud(mesh);
-        if (!ecvCloud) return;
+        if (!ecvCloud) {
+            CVLog::Warning(
+                    "[PCLDisplayTools::drawMesh] Failed to get point cloud "
+                    "from mesh!");
+            return;
+        }
 
         // materials & textures
         bool applyMaterials = (mesh->hasMaterials() && mesh->materialsShown());
@@ -192,17 +197,33 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
         bool showTextures =
                 (mesh->hasTextures() && mesh->materialsShown() && !lodEnabled);
 
+        CVLog::PrintDebug(
+                "[PCLDisplayTools::drawMesh] applyMaterials=%d, "
+                "showTextures=%d",
+                applyMaterials, showTextures);
+
         if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
             if (applyMaterials || showTextures) {
-                PCLTextureMesh::Ptr textureMesh =
-                        cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
-                if (textureMesh) {
-                    m_visualizer3D->draw(context, textureMesh);
-                } else {
-                    PCLMesh::Ptr pclMesh =
-                            cc2smReader(ecvCloud, true).getPclMesh(mesh);
-                    if (!pclMesh) return;
-                    m_visualizer3D->draw(context, pclMesh);
+                // Use new direct method to avoid pcl::TexMaterial encoding
+                if (!m_visualizer3D->addTextureMeshFromCCMesh(mesh, viewID,
+                                                              viewport)) {
+                    CVLog::Warning(
+                            "[PCLDisplayTools::drawMesh] Failed to add texture "
+                            "mesh directly, falling back to PCLTextureMesh");
+                    // Fallback to old method for backward compatibility
+                    PCLTextureMesh::Ptr textureMesh =
+                            cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
+                    if (textureMesh) {
+                        m_visualizer3D->draw(context, textureMesh);
+                    } else {
+                        CVLog::Warning(
+                                "[PCLDisplayTools::drawMesh] Failed to create "
+                                "PCLTextureMesh, falling back to regular mesh");
+                        PCLMesh::Ptr pclMesh =
+                                cc2smReader(ecvCloud, true).getPclMesh(mesh);
+                        if (!pclMesh) return;
+                        m_visualizer3D->draw(context, pclMesh);
+                    }
                 }
 
             } else {
@@ -212,18 +233,27 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                 m_visualizer3D->draw(context, pclMesh);
             }
         } else {
+            // Non-first display and no need for complete rebuild: only update
+            // properties (color, visibility, normals, etc.)
+            CVLog::PrintDebug(
+                    "[PCLDisplayTools::drawMesh] Update path: updating "
+                    "properties only");
             m_visualizer3D->resetScalarColor(viewID, true, viewport);
             if (!updateEntityColor(context, ecvCloud)) {
                 if (applyMaterials || showTextures) {
-                    PCLTextureMesh::Ptr textureMesh =
-                            cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
-                    if (textureMesh) {
-                        m_visualizer3D->draw(context, textureMesh);
-                    } else {
-                        PCLMesh::Ptr pclMesh =
-                                cc2smReader(ecvCloud, true).getPclMesh(mesh);
-                        if (!pclMesh) return;
-                        m_visualizer3D->draw(context, pclMesh);
+                    // Update texture materials (without rebuilding geometry)
+                    const ccMaterialSet* materials = mesh->getMaterialSet();
+                    if (materials) {
+                        CVLog::PrintDebug(
+                                "[PCLDisplayTools::drawMesh] Updating textures "
+                                "for %zu materials",
+                                materials->size());
+                        if (!m_visualizer3D->updateTexture(context,
+                                                           materials)) {
+                            CVLog::Warning(
+                                    "[PCLDisplayTools::drawMesh] Update "
+                                    "texture failed!");
+                        }
                     }
                 } else {
                     PCLMesh::Ptr pclMesh =
@@ -302,28 +332,48 @@ void PCLDisplayTools::drawLines(const CC_DRAW_CONTEXT& context,
 
 void PCLDisplayTools::drawImage(const CC_DRAW_CONTEXT& context,
                                 ccImage* image) {
-    Q_UNUSED(context);
-    Q_UNUSED(image);
+    if (!image || !m_visualizer2D) return;
 
-    if (!m_visualizer2D) return;
-
-#if 1
     std::string viewID = CVTools::FromQString(context.viewID);
     bool firstShow = !m_visualizer2D->contains(viewID);
 
-    if (image->isRedraw() || firstShow) {
-        m_visualizer2D->showRGBImage(image->data().bits(), image->getW(),
-                                     image->getH(), viewID,
-                                     image->getOpacity());
-        // m_visualizer2D->addRGBImage(image->data().bits(), 0, 0,
-        // image->getW(),
-        //                             image->getH(), viewID,
-        //                             image->getOpacity());
+    bool imageExists = !firstShow;
+
+    // Note: isRedraw() might be true even if only opacity changed,
+    // because ccHObject::draw() always sets setRedraw(true) at the end.
+    // So we check if image already exists - if it does and only opacity
+    // changed, we can just update opacity without reloading image data.
+    bool needsImageReload = firstShow || (image->isRedraw() && !imageExists);
+
+    double opacity = image->getAlpha();
+    // Only reload image data if image data has changed or first time showing
+    if (needsImageReload) {
+        const QImage& qimage = image->data();
+        if (qimage.isNull()) {
+            CVLog::Warning(
+                    "[PCLDisplayTools::drawImage] Failed to get image data!");
+            return;
+        }
+
+        CVLog::PrintDebug(
+                "[PCLDisplayTools::drawImage] Reloading image data: %d x %d, "
+                "opacity: %f, redraw: %d, firstShow: %d, isEnabled: %d",
+                image->getW(), image->getH(), image->getAlpha(),
+                image->isRedraw(), firstShow, image->isEnabled());
+
+        // ParaView-style: Use addQImage with vtkQImageToImageSource for
+        // efficient conversion This avoids manual format conversion and memory
+        // copying
+        m_visualizer2D->addQImage(qimage, viewID, opacity);
+    } else {
+        // Only update opacity if image already exists and data hasn't changed
+        CVLog::PrintDebug(
+                "[PCLDisplayTools::drawImage] Updating opacity only for image "
+                "%s, "
+                "opacity: %f",
+                viewID.c_str(), opacity);
+        m_visualizer2D->changeOpacity(opacity, viewID);
     }
-    m_visualizer2D->changeOpacity(viewID, image->getOpacity());
-#else
-    CVLog::Warning(QString("Image showing has not been supported!"));
-#endif
 }
 
 void PCLDisplayTools::drawSensor(const CC_DRAW_CONTEXT& context,
@@ -429,7 +479,11 @@ void PCLDisplayTools::draw(const CC_DRAW_CONTEXT& context,
         // the mesh to draw
         ccGenericMesh* tempMesh =
                 ccHObjectCaster::ToGenericMesh(const_cast<ccHObject*>(obj));
-        if (!tempMesh) return;
+        if (!tempMesh) {
+            CVLog::Warning(
+                    "[PCLDisplayTools::draw] Failed to cast to ccGenericMesh!");
+            return;
+        }
         drawMesh(const_cast<CC_DRAW_CONTEXT&>(context), tempMesh);
     } else if (obj->isA(CV_TYPES::POLY_LINE)) {
         // the polyline to draw
@@ -878,9 +932,8 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             if (m_visualizer2D) {
                 if (param.image.isNull()) return;
 
-                m_visualizer2D->addRGBImage(param.image.bits(), param.rect.x(),
-                                            param.rect.y(), param.image.width(),
-                                            param.image.height(), viewID,
+                m_visualizer2D->addRGBImage(param.image, param.rect.x(),
+                                            param.rect.y(), viewID,
                                             param.opacity);
             }
             break;
@@ -1023,6 +1076,14 @@ void PCLDisplayTools::getViewMatrix(double* ViewArray, int viewport) {
 void PCLDisplayTools::setViewMatrix(const ccGLMatrixd& viewMat, int viewport) {
     if (m_visualizer3D) {
         m_visualizer3D->setModelViewMatrix(viewMat, viewport);
+    }
+}
+
+void PCLDisplayTools::changeOpacity(double opacity,
+                                    const std::string& viewID,
+                                    int viewport) {
+    if (m_visualizer2D) {
+        m_visualizer2D->changeOpacity(opacity, viewID);
     }
 }
 

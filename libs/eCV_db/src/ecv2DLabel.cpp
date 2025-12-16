@@ -849,10 +849,10 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
     }
 
     // standard case: list names pushing
-    bool pushName = MACRO_DrawEntityNames(context);
-    if (pushName) {
+    bool entityPickingMode = MACRO_EntityPicking(context);
+    if (entityPickingMode) {
         // not particularly fast
-        if (MACRO_DrawFastNamesOnly(context)) return;
+        if (MACRO_FastEntityPicking(context)) return;
     }
 
     // bool loop = false;
@@ -949,7 +949,7 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                 CC_DRAW_CONTEXT markerContext = context;
                 // we must remove the 'push name flag' so that the sphere
                 // doesn't push its own!
-                markerContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES);
+                markerContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
                 // draw triangle contour
                 markerContext.viewID = m_contourIdfix;
@@ -1011,9 +1011,9 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                 CC_DRAW_CONTEXT markerContext = context;
                 // we must remove the 'push name flag' so that the sphere
                 // doesn't push its own!
-                markerContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES);
+                markerContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
-                if (isSelected() && !pushName)
+                if (isSelected() && !entityPickingMode)
                     c_unitPointMarker->setTempColor(ecvColor::red);
                 else
                     c_unitPointMarker->setTempColor(
@@ -1162,7 +1162,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
     }
 
     // standard case: list names pushing
-    bool pushName = MACRO_DrawEntityNames(context);
+    bool entityPickingMode = MACRO_EntityPicking(context);
 
     size_t count = m_pickedPoints.size();
     assert(count != 0);
@@ -1171,7 +1171,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
     // in 2D so that they always appear above the entities
     {
         // don't do this in picking mode!
-        if (!pushName) {
+        if (!entityPickingMode) {
             // we always project the points in 2D (maybe useful later, even when
             // displaying the label during the 2D pass!)
             ccGLCameraParameters camera;
@@ -1198,7 +1198,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 
         if (visibleCount) {
             // no need to display the point(s) legend in picking mode
-            if (m_dispPointsLegend && !pushName) {
+            if (m_dispPointsLegend && !entityPickingMode) {
                 QFont font(ecvDisplayTools::
                                    GetTextDisplayFont());  // takes rendering
                                                            // zoom into account!
@@ -1263,7 +1263,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 
     int titleHeight = 0;
     QFont bodyFont, titleFont;
-    if (!pushName) {
+    if (!entityPickingMode) {
         /*** label border ***/
         bodyFont =
                 ecvDisplayTools::GetLabelDisplayFont();  // takes rendering zoom
@@ -1465,7 +1465,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                     }
                 } catch (const std::bad_alloc&) {
                     // not enough memory
-                    assert(!pushName);
+                    assert(!entityPickingMode);
                     return;
                 }
 
@@ -1509,7 +1509,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
     m_lastScreenPos[1] = yStart - m_labelROI.height();
 
     // colors
-    bool highlighted = (!pushName && isSelected());
+    bool highlighted = (!entityPickingMode && isSelected());
     // default background color
     unsigned char alpha =
             static_cast<unsigned char>((context.labelOpacity / 100.0) * 255);
@@ -1538,7 +1538,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
     }
 
     // display text
-    if (!pushName) {
+    if (!entityPickingMode) {
         // label title
         m_historyMessage << title;
 
@@ -1553,7 +1553,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         }
     }
 
-    if (!pushName && count > 0 && !m_historyMessage.empty()) {
+    if (!entityPickingMode && count > 0 && !m_historyMessage.empty()) {
         // compute arrow head position
         CCVector3 position(0, 0, 0);
         for (size_t i = 0; i < count; ++i) {
@@ -1664,7 +1664,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
     }
 
     // standard case: list names pushing
-    bool pushName = MACRO_DrawEntityNames(context);
+    bool entityPickingMode = MACRO_EntityPicking(context);
 
     float halfW = context.glW / 2.0f;
     float halfH = context.glH / 2.0f;
@@ -1676,7 +1676,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
     // in 2D so that they always appear above the entities
     {
         // don't do this in picking mode!
-        if (!pushName) {
+        if (!entityPickingMode) {
             // we always project the points in 2D (maybe useful later, even when
             // displaying the label during the 2D pass!)
             ccGLCameraParameters camera;
@@ -1703,7 +1703,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
 
         if (visibleCount) {
             // no need to display the point(s) legend in picking mode
-            if (m_dispPointsLegend && !pushName) {
+            if (m_dispPointsLegend && !entityPickingMode) {
                 QFont font(ecvDisplayTools::
                                    GetTextDisplayFont());  // takes rendering
                                                            // zoom into account!
@@ -1737,7 +1737,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
             }
         } else {
             // no need to draw anything (might be confusing)
-            if (pushName) {
+            if (entityPickingMode) {
                 // glFunc->glPopName();
             }
             return;
@@ -1746,7 +1746,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
 
     if (!m_dispIn2D) {
         // nothing to do
-        if (pushName) {
+        if (entityPickingMode) {
             // glFunc->glPopName();
         }
         return;
@@ -1774,7 +1774,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
 
     int titleHeight = 0;
     QFont bodyFont, titleFont;
-    if (!pushName) {
+    if (!entityPickingMode) {
         /*** label border ***/
         bodyFont =
                 ecvDisplayTools::GetLabelDisplayFont();  // takes rendering zoom
@@ -1975,7 +1975,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
                     }
                 } catch (const std::bad_alloc&) {
                     // not enough memory
-                    assert(!pushName);
+                    assert(!entityPickingMode);
                     return;
                 }
 
@@ -2019,7 +2019,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
     m_lastScreenPos[1] = yStart - m_labelROI.height();
 
     // colors
-    bool highlighted = (!pushName && isSelected());
+    bool highlighted = (!entityPickingMode && isSelected());
     // default background color
     unsigned char alpha =
             static_cast<unsigned char>((context.labelOpacity / 100.0) * 255);
@@ -2040,7 +2040,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
     WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
                             this->getViewId());
 
-    if (!pushName) {
+    if (!entityPickingMode) {
         // compute arrow base position relatively to the label rectangle (for 0
         // to 8)
         int arrowBaseConfig = 0;
@@ -2188,7 +2188,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
     }
 
     // display text
-    if (!pushName) {
+    if (!entityPickingMode) {
         int xStartRel = margin;
         int yStartRel = 0;
         yStartRel -= titleHeight;
@@ -2307,9 +2307,5 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
             }
 #endif  // DRAW_CONTENT_AS_TAB
         }
-    }
-
-    if (pushName) {
-        // glFunc->glPopName();
     }
 }

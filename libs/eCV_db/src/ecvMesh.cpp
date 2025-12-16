@@ -2496,11 +2496,10 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
         bool showTextures = (hasTextures() && materialsShown() && !lodEnabled);
 
         // GL name pushing
-        bool pushName = MACRO_DrawEntityNames(context);
-        if (pushName) {
+        bool entityPickingMode = MACRO_EntityPicking(context);
+        if (entityPickingMode) {
             // not fast at all!
-            if (MACRO_DrawFastNamesOnly(context)) return;
-            // glFunc->glPushName(getUniqueIDForDisplay());
+            if (MACRO_FastEntityPicking(context)) return;
             // minimal display for picking mode!
             glParams.showNorms = false;
             glParams.showColors = false;
@@ -2521,7 +2520,7 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
             greyForNanScalarValues = (cloud->getCurrentDisplayedScalarField() &&
                                       cloud->getCurrentDisplayedScalarField()
                                               ->areNaNValuesShownInGrey());
-            if (greyForNanScalarValues && pushName) {
+            if (greyForNanScalarValues && entityPickingMode) {
                 // in picking mode, no need to take SF into account if we don't
                 // hide any points!
                 glParams.showSF = false;
@@ -3433,11 +3432,30 @@ void ccMesh::getTriangleTexCoordinates(unsigned triIndex,
                                        TexCoords2D*& tx3) const {
     if (m_texCoords && m_texCoordIndexes) {
         const Tuple3i& txInd = m_texCoordIndexes->getValue(triIndex);
-        tx1 = (txInd.u[0] >= 0 ? &m_texCoords->getValue(txInd.u[0]) : nullptr);
-        tx2 = (txInd.u[1] >= 0 ? &m_texCoords->getValue(txInd.u[1]) : nullptr);
-        tx3 = (txInd.u[2] >= 0 ? &m_texCoords->getValue(txInd.u[2]) : nullptr);
+        unsigned int texCoordsSize = m_texCoords->size();
+
+        // Add detailed logging for debugging
+        if (txInd.u[0] >= static_cast<int>(texCoordsSize) ||
+            txInd.u[1] >= static_cast<int>(texCoordsSize) ||
+            txInd.u[2] >= static_cast<int>(texCoordsSize)) {
+            CVLog::Warning(
+                    "[ccMesh::getTriangleTexCoordinates] Triangle %u: texCoord "
+                    "indices [%d, %d, %d] out of range (size=%u)",
+                    triIndex, txInd.u[0], txInd.u[1], txInd.u[2],
+                    texCoordsSize);
+        }
+
+        tx1 = (txInd.u[0] >= 0 && txInd.u[0] < static_cast<int>(texCoordsSize)
+                       ? &m_texCoords->getValue(txInd.u[0])
+                       : nullptr);
+        tx2 = (txInd.u[1] >= 0 && txInd.u[1] < static_cast<int>(texCoordsSize)
+                       ? &m_texCoords->getValue(txInd.u[1])
+                       : nullptr);
+        tx3 = (txInd.u[2] >= 0 && txInd.u[2] < static_cast<int>(texCoordsSize)
+                       ? &m_texCoords->getValue(txInd.u[2])
+                       : nullptr);
     } else {
-        tx1 = tx2 = tx3;
+        tx1 = tx2 = tx3 = nullptr;
     }
 }
 

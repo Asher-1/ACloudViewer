@@ -708,10 +708,10 @@ void ecvDisplayTools::StartOpenGLPicking(const PickingParameters& params) {
 
     switch (params.mode) {
         case FAST_PICKING:
-            flags |= CC_DRAW_FAST_NAMES_ONLY;
+            flags |= CC_FAST_ENTITY_PICKING;
         case ENTITY_PICKING:
         case ENTITY_RECT_PICKING:
-            flags |= CC_DRAW_ENTITY_NAMES;
+            flags |= CC_ENTITY_PICKING;
             break;
         default:
             // unhandled mode?!

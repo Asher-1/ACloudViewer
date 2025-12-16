@@ -58,9 +58,7 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
         }
 
         // push name for picking
-        bool pushName = MACRO_DrawEntityNames(context);
-        // if (pushName)
-        //	glFunc->glPushName(getUniqueIDForDisplay());
+        bool entityPickingMode = MACRO_EntityPicking(context);
 
         // check sphere exists
         if (!c_unitPointMarker) {
@@ -96,9 +94,9 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
         CC_DRAW_CONTEXT markerContext =
                 context;  // build-up point maker own 'context'
         markerContext.drawingFlags &=
-                (~CC_DRAW_ENTITY_NAMES);  // we must remove the 'push name flag'
-                                          // so that the sphere doesn't push its
-                                          // own!
+                (~CC_ENTITY_PICKING);  // we must remove the 'push name flag'
+                                       // so that the sphere doesn't push its
+                                       // own!
 
         // get camera info
         ccGLCameraParameters camera;

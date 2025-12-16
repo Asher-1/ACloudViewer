@@ -55,12 +55,14 @@
 #include <QAbstractItemView>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QImageReader>
 #include <QLineEdit>
 #include <QLocale>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSet>
 #include <QSlider>
 #include <QSpinBox>
 #include <QStandardItemModel>
@@ -85,8 +87,6 @@ const char* ccPropertiesTreeDelegate::s_defaultPolyWidthSizeString =
 // Default separator colors
 constexpr const char* SEPARATOR_STYLESHEET(
         "QLabel { background-color : darkGray; color : white; }");
-
-static QMap<QString, QString> s_texturePathMap;
 
 // Shortcut to create a delegate item
 QStandardItem* ITEM(QString name,
@@ -164,6 +164,9 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
 
 void ccPropertiesTreeDelegate::unbind() {
     if (m_model) m_model->disconnect(this);
+    // Clear texture path maps when unbinding
+    // This ensures we don't keep stale references to removed objects
+    m_meshTexturePathMaps.clear();
 }
 
 ccHObject* ccPropertiesTreeDelegate::getCurrentObject() {
@@ -1172,8 +1175,10 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
             ecvTextureFileSelector* selector = new ecvTextureFileSelector(
                     parent,
                     QString::fromUtf8(":/Resources/images/ecvGear.png"));
-            // fill texture file path combobox box
-            selector->init(s_texturePathMap);
+            // Initialize with empty map - will be populated in setEditorData
+            // based on current mesh object
+            QMap<QString, QString> emptyMap;
+            selector->init(emptyMap);
 
             connect(selector, &ecvTextureFileSelector::textureFileSelected,
                     this, &ccPropertiesTreeDelegate::textureFileChanged);
@@ -1636,22 +1641,60 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             ccGenericMesh* mesh =
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
+
+            // Get or create texture path map for current mesh
+            QMap<QString, QString>& texturePathMap =
+                    m_meshTexturePathMaps[m_currentObject];
+
             const ccMaterialSet* materialSet =
                     mesh ? mesh->getMaterialSet() : nullptr;
             if (materialSet) {
-                if (!materialSet->empty())
-                    if (selector->isEmpty()) {  // init combox
-                        selector->addItem(
-                                materialSet->at(0)->getName(),
-                                materialSet->at(0)->getTextureFilename());
-                        s_texturePathMap[materialSet->at(0)->getName()] =
-                                materialSet->at(0)->getTextureFilename();
-                    } else {
-                        selector->setSelectedTexturefile(
-                                materialSet->at(0)->getTextureFilename());
+                if (!materialSet->empty()) {
+                    // Always clear and repopulate selector when switching mesh
+                    // objects This ensures we only show textures for the
+                    // current mesh Clear the combo box by reinitializing with
+                    // empty map
+                    QMap<QString, QString> emptyMap;
+                    selector->init(emptyMap);
+                    texturePathMap.clear();
+
+                    // Collect ALL DIFFUSE (map_Kd) textures from all materials
+                    // Include all occurrences from the file, even if the same
+                    // path appears multiple times
+                    for (std::size_t i = 0; i < materialSet->size(); ++i) {
+                        const ccMaterial::CShared& material =
+                                materialSet->at(i);
+                        if (!material) continue;
+
+                        // Get ALL DIFFUSE textures for this material using the
+                        // new method This returns all map_Kd textures,
+                        // including duplicates
+                        std::vector<QString> diffuseTextures =
+                                material->getTextureFilenames(
+                                        ccMaterial::TextureMapType::DIFFUSE);
+
+                        // Add ALL DIFFUSE textures (map_Kd) - include all
+                        // occurrences
+                        for (const QString& texPath : diffuseTextures) {
+                            if (!texPath.isEmpty()) {
+                                QString texName = QFileInfo(texPath).fileName();
+                                if (texName.isEmpty()) {
+                                    texName = material->getName();
+                                }
+                                // Add all textures to show all map_Kd from the
+                                // file
+                                selector->addItem(texName, texPath);
+                                texturePathMap[texName] = texPath;
+                            }
+                        }
                     }
-                else
+
+                    // Don't auto-select - let user choose from all available
+                    // textures The selector will show the first item but user
+                    // can change it
+                } else {
                     selector->setSelectedTexturefile(QString());
+                }
             }
             break;
         }
@@ -2198,6 +2241,21 @@ void ccPropertiesTreeDelegate::updateModel() {
     fillModel(m_currentObject);
 }
 
+QMap<QString, QString> ccPropertiesTreeDelegate::getCurrentMeshTexturePathMap()
+        const {
+    if (!m_currentObject) {
+        return QMap<QString, QString>();
+    }
+    return m_meshTexturePathMaps.value(m_currentObject,
+                                       QMap<QString, QString>());
+}
+
+void ccPropertiesTreeDelegate::clearMeshTexturePathMap(ccHObject* mesh) {
+    if (mesh) {
+        m_meshTexturePathMaps.remove(mesh);
+    }
+}
+
 void ccPropertiesTreeDelegate::scalarFieldChanged(int pos) {
     if (!m_currentObject) return;
 
@@ -2277,10 +2335,13 @@ void ccPropertiesTreeDelegate::spawnTextureFileEditor() {
                                     currentOpenDlgFilter);
 
         if (QFileInfo(selectedFiles).exists() && mesh) {
-            selector->addItem(QFileInfo(selectedFiles).fileName(),
-                              selectedFiles);
-            s_texturePathMap[QFileInfo(selectedFiles).fileName()] =
-                    selectedFiles;
+            // Add to current mesh's texture path map
+            QMap<QString, QString>& texturePathMap =
+                    m_meshTexturePathMaps[m_currentObject];
+            QString fileName = QFileInfo(selectedFiles).fileName();
+            texturePathMap[fileName] = selectedFiles;
+            selector->addItem(fileName, selectedFiles);
+            selector->setSelectedTexturefile(selectedFiles);
         }
 
         updateModel();
@@ -2545,7 +2606,8 @@ void ccPropertiesTreeDelegate::imageAlphaChanged(int val) {
     float alpha = val / 255.0f;
     if (image && image->getAlpha() != alpha) {
         image->setAlpha(alpha);
-        updateDisplay();
+        ecvDisplayTools::ChangeOpacity(
+                alpha, CVTools::FromQString(image->getViewId()));
     }
 }
 

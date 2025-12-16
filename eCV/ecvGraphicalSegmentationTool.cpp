@@ -1426,9 +1426,6 @@ bool ccGraphicalSegmentationTool::applySegmentation(
                     resultParent->addChild(segmentationResult);
                 }
 
-                // segmentationResult->setDisplay_recursive(entity->getDisplay());
-                // segmentationResult->prepareDisplayForRefresh_recursive();
-
                 app->addToDB(segmentationResult, false, true, false, true);
 
                 newEntities.push_back(segmentationResult);

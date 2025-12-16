@@ -258,10 +258,10 @@ void ccPolyline::drawMeOnly(CC_DRAW_CONTEXT& context) {
                 // build-up unit arrow own 'context'
                 CC_DRAW_CONTEXT markerContext = context;
                 markerContext.drawingFlags &=
-                        (~CC_DRAW_ENTITY_NAMES);  // we must remove the 'push
-                                                  // name flag' so that the
-                                                  // sphere doesn't push its
-                                                  // own!
+                        (~CC_ENTITY_PICKING);  // we must remove the 'push
+                                               // name flag' so that the
+                                               // sphere doesn't push its
+                                               // own!
 
                 markerContext.transformInfo.setTranslationStart(
                         CCVector3(P1->x, P1->y, P1->z));

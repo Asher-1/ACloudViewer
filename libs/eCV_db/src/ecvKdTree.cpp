@@ -131,21 +131,17 @@ void ccKdTree::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
     if (ecvDisplayTools::GetCurrentScreen() == nullptr) return;
 
-    bool pushName = MACRO_DrawEntityNames(context);
+    bool entityPickingMode = MACRO_EntityPicking(context);
 
-    if (pushName) {
+    if (entityPickingMode) {
         // not fast at all!
-        if (MACRO_DrawFastNamesOnly(context)) return;
-        // glFunc->glPushName(getUniqueIDForDisplay());
+        if (MACRO_FastEntityPicking(context)) return;
     }
 
     context.visible = isEnabled();
 
     DrawMeOnlyVisitor(m_associatedGenericCloud->getOwnBB())
             .visit(context, m_root);
-
-    // if (pushName)
-    // glFunc->glPopName();
 }
 
 bool ccKdTree::convertCellIndexToSF() {
