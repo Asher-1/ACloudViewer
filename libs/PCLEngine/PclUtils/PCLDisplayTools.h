@@ -167,7 +167,22 @@ public:
         m_visualizer3D->resetCamera(bbox);
     }
     inline virtual void updateCamera() override {
+        // PCL's updateCamera() is deprecated and will be removed in PCL 1.15
+        // Only call it for PCL versions < 1.15
+#if defined(PCL_VERSION_COMPARE)
+#if PCL_VERSION_COMPARE(<, 1, 13, 0)
         m_visualizer3D->updateCamera();
+#endif
+#elif defined(PCL_MAJOR_VERSION) && defined(PCL_MINOR_VERSION)
+#if (PCL_MAJOR_VERSION < 1) || \
+        (PCL_MAJOR_VERSION == 1 && PCL_MINOR_VERSION < 13)
+        m_visualizer3D->updateCamera();
+#endif
+#else
+        // If version macros are not available, assume older version and call it
+        // This maintains backward compatibility
+        // m_visualizer3D->updateCamera();
+#endif
     }
 
     inline virtual void updateScene() override {
@@ -390,12 +405,15 @@ public:
         m_visualizer3D->setLookUpTableID(viewID);
     }
 
-    inline virtual void getProjectionMatrix(double* projArray,
-                                            int viewport = 0) override;
-    inline virtual void getViewMatrix(double* ViewArray,
-                                      int viewport = 0) override;
-    inline virtual void setViewMatrix(const ccGLMatrixd& viewMat,
-                                      int viewport = 0) override;
+    virtual void getProjectionMatrix(double* projArray,
+                                     int viewport = 0) override;
+    virtual void getViewMatrix(double* ViewArray, int viewport = 0) override;
+    virtual void setViewMatrix(const ccGLMatrixd& viewMat,
+                               int viewport = 0) override;
+
+    virtual void changeOpacity(double opacity,
+                               const std::string& viewID,
+                               int viewport = 0) override;
 
 public:
     inline PclUtils::PCLVis* get3DViewer() { return m_visualizer3D.get(); }

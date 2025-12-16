@@ -1470,7 +1470,7 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
     CC_DRAW_CONTEXT cameraContext = context;
     // we must remove the 'push name flag' so that the primitives don't push
     // their own!
-    cameraContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES);
+    cameraContext.drawingFlags &= (~CC_ENTITY_PICKING);
     cameraContext.currentLineWidth = 1;
     cameraContext.defaultPolylineColor = getFrameColor();
     cameraContext.defaultMeshColor = getPlaneColor();

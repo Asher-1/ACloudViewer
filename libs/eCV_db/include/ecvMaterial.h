@@ -16,6 +16,11 @@
 
 #include <QSharedPointer>
 
+// STL
+#include <map>
+#include <utility>
+#include <vector>
+
 class QImage;
 class QOpenGLContext;
 
@@ -99,6 +104,41 @@ public:
     //! Sets transparency (all colors)
     void setTransparency(float val);
 
+    //! Sets metallic factor (PBR)
+    inline void setMetallic(float val) { m_metallic = val; }
+    //! Returns metallic factor
+    inline float getMetallic() const { return m_metallic; }
+
+    //! Sets roughness factor (PBR)
+    inline void setRoughness(float val) { m_roughness = val; }
+    //! Returns roughness factor
+    inline float getRoughness() const { return m_roughness; }
+
+    //! Sets sheen factor (PBR)
+    inline void setSheen(float val) { m_sheen = val; }
+    //! Returns sheen factor
+    inline float getSheen() const { return m_sheen; }
+
+    //! Sets clearcoat factor (PBR)
+    inline void setClearcoat(float val) { m_clearcoat = val; }
+    //! Returns clearcoat factor
+    inline float getClearcoat() const { return m_clearcoat; }
+
+    //! Sets clearcoat roughness (PBR)
+    inline void setClearcoatRoughness(float val) { m_clearcoatRoughness = val; }
+    //! Returns clearcoat roughness
+    inline float getClearcoatRoughness() const { return m_clearcoatRoughness; }
+
+    //! Sets anisotropy factor (PBR)
+    inline void setAnisotropy(float val) { m_anisotropy = val; }
+    //! Returns anisotropy factor
+    inline float getAnisotropy() const { return m_anisotropy; }
+
+    //! Sets ambient occlusion factor (PBR)
+    inline void setAmbientOcclusion(float val) { m_ambientOcclusion = val; }
+    //! Returns ambient occlusion factor
+    inline float getAmbientOcclusion() const { return m_ambientOcclusion; }
+
     //! Apply parameters (OpenGL)
     void applyGL(const QOpenGLContext* context,
                  bool lightEnabled,
@@ -129,6 +169,48 @@ public:
 
     //! Returns the texture image associated to a given name
     static QImage GetTexture(const QString& absoluteFilename);
+
+    // ========== Multi-Texture PBR Support ==========
+
+    //! Texture map types for PBR materials
+    enum class TextureMapType {
+        DIFFUSE,       // map_Kd - Diffuse/Albedo
+        AMBIENT,       // map_Ka - Ambient Occlusion
+        SPECULAR,      // map_Ks - Specular
+        NORMAL,        // map_Bump, map_bump, norm, bump - Normal map
+        METALLIC,      // map_Pm - Metallic
+        ROUGHNESS,     // map_Pr - Roughness
+        SHININESS,     // map_Ns - Shininess/Glossiness (inverse of roughness)
+        EMISSIVE,      // map_Ke - Emissive
+        OPACITY,       // map_d - Opacity/Alpha
+        DISPLACEMENT,  // map_disp, disp - Displacement
+        REFLECTION,    // refl - Reflection
+        SHEEN,         // map_Ps - Sheen (fabric-like materials)
+        CLEARCOAT,     // map_Pc - Clearcoat layer
+        CLEARCOAT_ROUGHNESS,  // map_Pcr - Clearcoat roughness
+        ANISOTROPY            // map_aniso - Anisotropic reflection
+    };
+
+    //! Load and set a specific texture map type
+    bool loadAndSetTextureMap(TextureMapType type,
+                              const QString& absoluteFilename);
+
+    //! Get texture filename for a specific map type (returns first one)
+    QString getTextureFilename(TextureMapType type) const;
+
+    //! Get all texture filenames for a specific map type
+    /** Returns all textures of the specified type (e.g., all map_Kd textures)
+     **/
+    std::vector<QString> getTextureFilenames(TextureMapType type) const;
+
+    //! Check if a specific texture map type exists
+    bool hasTextureMap(TextureMapType type) const;
+
+    //! Get all texture map filenames
+    /** Returns all textures including multiple textures of the same type
+     **/
+    std::vector<std::pair<TextureMapType, QString>> getAllTextureFilenames()
+            const;
 
     //! Adds a texture to the global texture DB
     static void AddTexture(const QImage& image,
@@ -164,7 +246,7 @@ public:
 
 protected:
     QString m_name;
-    QString m_textureFilename;
+    QString m_textureFilename;  // Legacy: main diffuse texture
     QString m_uniqueID;
     int m_illum;
 
@@ -175,4 +257,17 @@ protected:
     ecvColor::Rgbaf m_emission;
     float m_shininessFront;
     float m_shininessBack;
+
+    // PBR scalar parameters
+    float m_metallic;            // Pm - Metallic factor [0,1]
+    float m_roughness;           // Pr - Roughness factor [0,1]
+    float m_sheen;               // Ps - Sheen factor [0,1]
+    float m_clearcoat;           // Pc - Clearcoat factor [0,1]
+    float m_clearcoatRoughness;  // Pcr - Clearcoat roughness [0,1]
+    float m_anisotropy;          // aniso - Anisotropy factor [0,1]
+    float m_ambientOcclusion;    // Pa - Ambient Occlusion factor [0,1]
+
+    // Multi-texture PBR support
+    // Support multiple textures of the same type (e.g., multiple map_Kd)
+    std::map<TextureMapType, std::vector<QString>> m_textureFilenames;
 };

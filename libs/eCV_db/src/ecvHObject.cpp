@@ -1469,7 +1469,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     }
 
     // draw name - container objects are not visible but can still show a name
-    if (m_showNameIn3D && !MACRO_DrawEntityNames(context)) {
+    if (m_showNameIn3D && !MACRO_EntityPicking(context)) {
         if (MACRO_Draw3D(context)) {
             // we have to comute the 2D position during the 3D pass!
             ccBBox bBox = getBB_recursive(
@@ -1503,7 +1503,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
     // if the entity is currently selected, we draw its bounding-box
     if (m_selected && draw3D && drawInThisContext &&
-        !MACRO_DrawEntityNames(context) && context.currentLODLevel == 0) {
+        !MACRO_EntityPicking(context) && context.currentLODLevel == 0) {
         CC_DRAW_CONTEXT tempContext = context;
         tempContext.meshRenderingMode = MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
         tempContext.viewID = getViewId();

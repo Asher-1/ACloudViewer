@@ -64,7 +64,6 @@ void ecvTextureFileSelector::addItem(const QString& textureFilename,
                                      const QString& textureFilepath) {
     if (m_comboBox && m_comboBox->findData(textureFilepath) < 0) {
         m_comboBox->addItem(textureFilename, textureFilepath);
-        setSelectedTexturefile(textureFilepath);
     }
 }
 

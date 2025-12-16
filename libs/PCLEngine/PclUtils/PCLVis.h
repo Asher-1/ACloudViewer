@@ -12,12 +12,20 @@
 #endif
 
 // LOCAL
+#include <map>
 #include <mutex>
 #include <thread>
 
 #include "PCLCloud.h"
 #include "WidgetMap.h"
 #include "qPCL.h"
+
+// Forward declaration
+namespace PclUtils {
+namespace renders {
+class TextureRenderManager;
+}
+}  // namespace PclUtils
 
 // ECV_DB_LIB
 #include <ecvColorTypes.h>
@@ -39,11 +47,14 @@ class vtkPropPicker;
 class vtkAbstractWidget;
 class vtkRenderWindow;
 class vtkMatrix4x4;
+class ccGenericMesh;
 
 class ccBBox;
 class ecvOrientedBBox;
 class ccSensor;
 class ecvPointpickingTools;
+class ccMaterial;
+class ccMaterialSet;
 
 namespace cloudViewer {
 namespace geometry {
@@ -303,11 +314,74 @@ public:
                      const std::string& id = "multiline",
                      int viewport = 0);
     bool updateTexture(const CC_DRAW_CONTEXT& context,
-                       const std::vector<pcl::TexMaterial>& tex_materials);
+                       const ccMaterialSet* materials);
+    /**
+     * @brief Add texture mesh from PCLTextureMesh (deprecated)
+     * @deprecated Use addTextureMeshFromCCMesh instead to avoid
+     * pcl::TexMaterial encoding
+     */
     bool addTextureMesh(const PCLTextureMesh& mesh,
                         const std::string& id,
                         int viewport);
-    bool applyMaterial(const pcl::TexMaterial& material, vtkActor* actor);
+    /**
+     * @brief Add texture mesh directly from ccGenericMesh (preferred)
+     * @param mesh ccGenericMesh object containing geometry and materials
+     * @param id Unique identifier for the mesh
+     * @param viewport Viewport ID (default: 0)
+     * @return true on success
+     * @note This method directly uses ccMaterialSet, avoiding pcl::TexMaterial
+     * encoding
+     */
+    bool addTextureMeshFromCCMesh(ccGenericMesh* mesh,
+                                  const std::string& id,
+                                  int viewport = 0);
+
+    /**
+     * @brief Load multi-texture mesh from OBJ file (enhanced version)
+     * @param obj_path OBJ file path
+     * @param id Unique identifier
+     * @param viewport Viewport ID
+     * @param quality Texture quality (0=low, 1=medium, 2=high, 3=original)
+     * @param enable_cache Whether to enable texture cache
+     * @return Returns true on success
+     */
+    bool addTextureMeshFromOBJ(const std::string& obj_path,
+                               const std::string& id,
+                               int viewport = 0,
+                               int quality = 2,
+                               bool enable_cache = true);
+
+    /**
+     * @brief Load multi-texture mesh from OBJ file (advanced options)
+     * @param obj_path OBJ file path
+     * @param mtl_path MTL file path (optional)
+     * @param id Unique identifier
+     * @param viewport Viewport ID
+     * @param max_texture_size Maximum texture size
+     * @param use_mipmaps Whether to use mipmaps
+     * @param enable_cache Whether to enable texture cache
+     * @return Returns true on success
+     */
+    bool addTextureMeshFromOBJAdvanced(const std::string& obj_path,
+                                       const std::string& mtl_path,
+                                       const std::string& id,
+                                       int viewport = 0,
+                                       int max_texture_size = 4096,
+                                       bool use_mipmaps = true,
+                                       bool enable_cache = true);
+
+    /**
+     * @brief Clear texture cache
+     */
+    void clearTextureCache();
+
+    /**
+     * @brief Get texture cache information
+     * @param count Output cached texture count
+     * @param memory_bytes Output cache memory usage (bytes)
+     */
+    void getTextureCacheInfo(size_t& count, size_t& memory_bytes) const;
+
     bool addOrientedCube(const ccGLMatrixd& trans,
                          double width,
                          double height,
@@ -330,10 +404,17 @@ public:
     bool addOrientedCube(const ecvOrientedBBox& obb,
                          const std::string& id = "cube",
                          int viewport = 0);
-    int textureFromTexMaterial(const pcl::TexMaterial& tex_mat,
-                               vtkTexture* vtk_tex) const;
     void displayText(const CC_DRAW_CONTEXT& context);
 
+private:
+    // Texture rendering manager
+    std::unique_ptr<renders::TextureRenderManager> texture_render_manager_;
+
+    // Store transformation matrices to prevent memory leaks
+    // Maps view ID to transformation matrix smart pointer
+    std::map<std::string, vtkSmartPointer<vtkMatrix4x4>> transformation_map_;
+
+public:
     void setPointSize(const unsigned char pointSize,
                       const std::string& viewID,
                       int viewport = 0);

@@ -774,7 +774,11 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename,
                     }
                     // should we have a tex. coord index as second vertex
                     // element?
-                    if (hasTexCoords && currentMaterialDefined) {
+                    // NOTE: Always update tex coord index if hasTexCoords is
+                    // true, regardless of currentMaterialDefined, because OBJ
+                    // indices are 1-based and need to be converted to 0-based
+                    // for internal storage
+                    if (hasTexCoords) {
                         if (!vertex.updateTexCoordIndex(texCoordsRead)) {
                             objWarnings[INVALID_INDEX] = true;
                             error = true;
@@ -1161,6 +1165,29 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename,
             if (materials) {
                 baseMesh->setMaterialSet(materials);
                 baseMesh->showMaterials(true);
+
+                // If materials were loaded but no usemtl commands were found in
+                // the OBJ file, automatically assign the first material to all
+                // faces (tinyobj behavior) This matches the behavior of
+                // cloudViewer/io module and tinyobj library
+                if (!hasMaterial && materials->size() > 0 &&
+                    baseMesh->size() > 0) {
+                    CVLog::Print(
+                            "[OBJ] No usemtl commands found, auto-assigning "
+                            "first material to all %d faces (tinyobj "
+                            "compatible behavior)",
+                            baseMesh->size());
+                    if (baseMesh->reservePerTriangleMtlIndexes()) {
+                        for (unsigned int i = 0; i < baseMesh->size(); ++i) {
+                            baseMesh->addTriangleMtlIndex(
+                                    0);  // Use first material (tinyobj default)
+                        }
+                        hasMaterial = true;
+                    } else {
+                        CVLog::Warning(
+                                "[OBJ] Failed to reserve material indexes!");
+                    }
+                }
             }
             if (texCoords) {
                 if (materials) {

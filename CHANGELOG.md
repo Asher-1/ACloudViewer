@@ -6,6 +6,10 @@ v3.9.4-Beta (Asher) - 10/17/2025
 
 - New features:
     -   Add code style check support
+    -   Add vtk PBR rendering support for multiple texturing
+    -   Add Texturing Atlas support for reconstruction module
+    -   Add Excellent Texture mesh rendering support
+    -   Add 2D Image Rendering support with transparency feature
 
 - Bug fixes:
     -   Fix code style
@@ -25,6 +29,11 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Opt win wheel testing with cuda and cpu
     -   Opt Cuda test wheel strategy on ubuntu
     -   Rename docker scripts
+
+-	New plugins:
+	- G3 Point - Granulometry made simple in ACloudViewer
+		- github repository: https://github.com/p-leroy/qG3Point
+		- author page: https://lidar.univ-rennes.fr/en/g3point
 
 ### supported platform:
 - Windows `x86/64`

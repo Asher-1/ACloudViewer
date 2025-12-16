@@ -125,13 +125,11 @@ void ccSymbolCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
         getDrawingParameters(glParams);
 
         // standard case: list names pushing
-        bool pushName = MACRO_DrawEntityNames(context);
+        bool entityPickingMode = MACRO_EntityPicking(context);
         bool hasLabels = !m_labels.empty();
-        if (pushName) {
+        if (entityPickingMode) {
             // not fast at all!
-            if (MACRO_DrawFastNamesOnly(context)) return;
-
-            // glFunc->glPushName(getUniqueID());
+            if (MACRO_FastEntityPicking(context)) return;
             hasLabels = false;  // no need to display labels in 'picking' mode
         }
 
@@ -211,10 +209,5 @@ void ccSymbolCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
         // restore original symbol size
         m_symbolSize = symbolSizeBackup;
-
-        // if (pushName)
-        //{
-        //	glFunc->glPopName();
-        // }
     }
 }

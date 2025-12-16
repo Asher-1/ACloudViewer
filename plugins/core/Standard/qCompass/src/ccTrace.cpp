@@ -969,9 +969,9 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
                 context;  // build-up point maker own 'context'
         // markerContext.display = 0;
         markerContext.drawingFlags &=
-                (~CC_DRAW_ENTITY_NAMES);  // we must remove the 'push name flag'
-                                          // so that the sphere doesn't push its
-                                          // own!
+                (~CC_ENTITY_PICKING);  // we must remove the 'push name flag'
+                                       // so that the sphere doesn't push its
+                                       // own!
 
         // get camera info
         ccGLCameraParameters camera;
@@ -980,8 +980,8 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
                 ecvDisplayTools::GetViewportParameters();
 
         // push name for picking
-        bool pushName = MACRO_DrawEntityNames(context);
-        if (pushName) {
+        bool entityPickingMode = MACRO_EntityPicking(context);
+        if (entityPickingMode) {
             // glFunc->glPushName(getUniqueIDForDisplay());
             // minimal display for picking mode!
             glParams.showNorms = false;
@@ -1096,10 +1096,6 @@ void ccTrace::drawMeOnly(CC_DRAW_CONTEXT& context) {
                 }
             }
         }
-
-        // finish picking name
-        // if (pushName)
-        //	glFunc->glPopName();
     }
 }
 

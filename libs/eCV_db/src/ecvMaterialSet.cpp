@@ -197,10 +197,32 @@ bool ccMaterialSet::ParseMTL(QString path,
                 if (tokens.size() > 1)
                     currentMaterial->setShininess(tokens[1].toFloat());
             }
-            // transparent
-            else if (tokens.front() == "d" || tokens.front() == "Tr") {
-                if (tokens.size() > 1)
-                    currentMaterial->setTransparency(tokens[1].toFloat());
+            // transparency (inverse of)
+            else if (tokens.front() == "d") {
+                if (tokens.size() > 1) {
+                    float d = tokens[1].toFloat();
+                    if (d == 0) {
+                        CVLog::Warning(
+                                QString("Material %1 'alpha' (=d) value is 0 "
+                                        "(= fully transparent)")
+                                        .arg(currentMaterial->getName()));
+                    }
+                    currentMaterial->setTransparency(d);
+                }
+            }
+            // transparency
+            else if (tokens.front() == "Tr") {
+                if (tokens.size() > 1) {
+                    float tr = tokens[1].toFloat();
+                    if (tr == 1.0f) {
+                        CVLog::Warning(
+                                QString("Material %1 'transparency' (=Tr) "
+                                        "value is 1 (= fully transparent)")
+                                        .arg(currentMaterial->getName()));
+                    }
+                    currentMaterial->setTransparency(1.0f -
+                                                     tokens[1].toFloat());
+                }
             }
             // reflection
             else if (tokens.front() == "r") {
@@ -225,16 +247,101 @@ bool ccMaterialSet::ParseMTL(QString path,
                 if (tokens.size() > 1)
                     currentMaterial->setIllum(tokens[1].toInt());
             }
-            // texture map
+            // texture maps - support standard OBJ and PBR extensions
             else if (tokens.front() == "map_Ka" || tokens.front() == "map_Kd" ||
-                     tokens.front() == "map_Ks") {
+                     tokens.front() == "map_Ks" || tokens.front() == "map_Ke" ||
+                     tokens.front() == "map_d" || tokens.front() == "map_Ns" ||
+                     tokens.front() == "map_Bump" ||
+                     tokens.front() == "map_bump" || tokens.front() == "bump" ||
+                     tokens.front() == "norm" || tokens.front() == "map_Pr" ||
+                     tokens.front() == "map_Pm" || tokens.front() == "map_Ps" ||
+                     tokens.front() == "map_Pc" ||
+                     tokens.front() == "map_Pcr" ||
+                     tokens.front() == "map_aniso" ||
+                     tokens.front() == "map_disp" || tokens.front() == "disp" ||
+                     tokens.front() == "refl") {
+                // Determine texture map type
+                ccMaterial::TextureMapType mapType;
+                QString mapCommand = tokens.front();
+
+                if (mapCommand == "map_Kd") {
+                    mapType = ccMaterial::TextureMapType::DIFFUSE;
+                } else if (mapCommand == "map_Ka") {
+                    mapType = ccMaterial::TextureMapType::AMBIENT;
+                } else if (mapCommand == "map_Ks") {
+                    mapType = ccMaterial::TextureMapType::SPECULAR;
+                } else if (mapCommand == "map_Ke") {
+                    mapType = ccMaterial::TextureMapType::EMISSIVE;
+                } else if (mapCommand == "map_d") {
+                    mapType = ccMaterial::TextureMapType::OPACITY;
+                } else if (mapCommand == "map_Ns") {
+                    // map_Ns is shininess/glossiness map
+                    // Can be mapped to roughness (inverted) or used as-is
+                    mapType = ccMaterial::TextureMapType::SHININESS;
+                } else if (mapCommand == "map_Bump" ||
+                           mapCommand == "map_bump" || mapCommand == "bump" ||
+                           mapCommand == "norm") {
+                    mapType = ccMaterial::TextureMapType::NORMAL;
+                } else if (mapCommand == "map_Pr") {
+                    mapType = ccMaterial::TextureMapType::ROUGHNESS;
+                } else if (mapCommand == "map_Pm") {
+                    mapType = ccMaterial::TextureMapType::METALLIC;
+                } else if (mapCommand == "map_Ps") {
+                    mapType = ccMaterial::TextureMapType::SHEEN;
+                } else if (mapCommand == "map_Pc") {
+                    mapType = ccMaterial::TextureMapType::CLEARCOAT;
+                } else if (mapCommand == "map_Pcr") {
+                    mapType = ccMaterial::TextureMapType::CLEARCOAT_ROUGHNESS;
+                } else if (mapCommand == "map_aniso") {
+                    mapType = ccMaterial::TextureMapType::ANISOTROPY;
+                } else if (mapCommand == "map_disp" || mapCommand == "disp") {
+                    mapType = ccMaterial::TextureMapType::DISPLACEMENT;
+                } else if (mapCommand == "refl") {
+                    mapType = ccMaterial::TextureMapType::REFLECTION;
+                } else {
+                    // Fallback to diffuse
+                    mapType = ccMaterial::TextureMapType::DIFFUSE;
+                }
+
+                // Extract texture filename
                 // DGM: in case there's hidden or space characters at the
                 // beginning of the line...
-                int shift = currentLine.indexOf("map_K", 0);
+                int shift = currentLine.indexOf(mapCommand, 0);
                 QString textureFilename =
-                        (shift + 7 < currentLine.size()
-                                 ? currentLine.mid(shift + 7).trimmed()
+                        (shift + mapCommand.length() + 1 < currentLine.size()
+                                 ? currentLine
+                                           .mid(shift + mapCommand.length() + 1)
+                                           .trimmed()
                                  : QString());
+
+                // Filter out MTL texture options (e.g., -bm, -blendu, -blendv,
+                // -boost, -mm, -o, -s, -t, -texres, -clamp, -imfchan) These
+                // options start with '-' and may have numeric parameters
+                QStringList parts =
+                        textureFilename.split(' ', Qt::SkipEmptyParts);
+                QString actualFilename;
+                for (const QString& part : parts) {
+                    // Skip options that start with '-' and their numeric
+                    // parameters
+                    if (part.startsWith('-')) {
+                        continue;  // Skip option flag
+                    }
+                    // Check if this is a numeric parameter following an option
+                    bool isNumber = false;
+                    part.toDouble(&isNumber);
+                    if (isNumber && actualFilename.isEmpty()) {
+                        continue;  // Skip numeric parameter
+                    }
+                    // This should be the actual filename
+                    actualFilename = part;
+                    break;
+                }
+
+                // If we found a filename after filtering, use it
+                if (!actualFilename.isEmpty()) {
+                    textureFilename = actualFilename;
+                }
+
                 // remove any quotes around the filename (Photoscan 1.4 bug)
                 if (textureFilename.startsWith("\"")) {
                     textureFilename =
@@ -245,11 +352,50 @@ bool ccMaterialSet::ParseMTL(QString path,
                             textureFilename.left(textureFilename.size() - 1);
                 }
 
+                // Normalize path separators (convert backslashes to forward
+                // slashes)
+                textureFilename = textureFilename.replace('\\', '/');
+
                 QString fullTexName = path + QString('/') + textureFilename;
-                if (!currentMaterial->loadAndSetTexture(fullTexName)) {
-                    errors << QString("Failed to load texture file: %1")
-                                      .arg(fullTexName);
+
+                // Load texture using new multi-texture API
+                if (!currentMaterial->loadAndSetTextureMap(mapType,
+                                                           fullTexName)) {
+                    errors << QString("Failed to load texture file: %1 (type: "
+                                      "%2)")
+                                      .arg(fullTexName)
+                                      .arg(mapCommand);
                 }
+            }
+            // PBR scalar parameters
+            else if (tokens.front() == "Pm") {
+                // Metallic factor
+                if (tokens.size() > 1)
+                    currentMaterial->setMetallic(tokens[1].toFloat());
+            } else if (tokens.front() == "Pr") {
+                // Roughness factor
+                if (tokens.size() > 1)
+                    currentMaterial->setRoughness(tokens[1].toFloat());
+            } else if (tokens.front() == "Ps") {
+                // Sheen factor
+                if (tokens.size() > 1)
+                    currentMaterial->setSheen(tokens[1].toFloat());
+            } else if (tokens.front() == "Pc") {
+                // Clearcoat factor
+                if (tokens.size() > 1)
+                    currentMaterial->setClearcoat(tokens[1].toFloat());
+            } else if (tokens.front() == "Pcr") {
+                // Clearcoat roughness
+                if (tokens.size() > 1)
+                    currentMaterial->setClearcoatRoughness(tokens[1].toFloat());
+            } else if (tokens.front() == "aniso") {
+                // Anisotropy factor
+                if (tokens.size() > 1)
+                    currentMaterial->setAnisotropy(tokens[1].toFloat());
+            } else if (tokens.front() == "Pa") {
+                // Ambient Occlusion factor
+                if (tokens.size() > 1)
+                    currentMaterial->setAmbientOcclusion(tokens[1].toFloat());
             } else {
                 errors << QString("Unknown command '%1' at line %2")
                                   .arg(tokens.front())
@@ -286,58 +432,191 @@ bool ccMaterialSet::saveAsMTL(QString path,
     QMap<QString, QString> absFilenamesSaved;
     QSet<QString> filenamesUsed;
 
+    // Helper function to save texture and return relative filename
+    auto saveTextureFile = [&](const QString& absFilename,
+                               size_t matIndex) -> QString {
+        if (absFilename.isEmpty()) return QString();
+
+        // if the file has not already been saved
+        if (!absFilenamesSaved.contains(absFilename)) {
+            QFileInfo fileInfo(absFilename);
+            QString texName = fileInfo.fileName();
+            if (texName.isEmpty()) {
+                // Generate a name if filename is empty
+                texName = QString("tex_%1.jpg").arg(matIndex);
+            } else if (fileInfo.suffix().isEmpty()) {
+                texName += QString(".jpg");
+            }
+
+            // make sure that the local filename is unique!
+            QString originalTexName = texName;
+            int counter = 0;
+            while (filenamesUsed.contains(texName)) {
+                QString baseName = fileInfo.completeBaseName();
+                QString suffix =
+                        fileInfo.suffix().isEmpty() ? "jpg" : fileInfo.suffix();
+                texName = QString("%1_%2.%3")
+                                  .arg(baseName)
+                                  .arg(counter++)
+                                  .arg(suffix);
+            }
+            filenamesUsed.insert(texName);
+
+            QString destFilename = path + QString('/') + texName;
+            QImage texture = ccMaterial::GetTexture(absFilename);
+            if (!texture.isNull() && texture.save(destFilename)) {
+                // Normalize path separators (use forward slashes for MTL
+                // format)
+                QString normalizedTexName = texName.replace('\\', '/');
+                absFilenamesSaved[absFilename] = normalizedTexName;
+            } else {
+                errors << QString("Failed to save the texture file '%1' to "
+                                  "'%2'!")
+                                  .arg(absFilename, destFilename);
+                return QString();
+            }
+        }
+
+        if (absFilenamesSaved.contains(absFilename)) {
+            // Normalize path separators (use forward slashes for MTL format)
+            QString relativeFilename = absFilenamesSaved[absFilename];
+            return relativeFilename.replace('\\', '/');
+        }
+        return QString();
+    };
+
     size_t matIndex = 0;
     for (ccMaterialSet::const_iterator it = begin(); it != end();
          ++it, ++matIndex) {
         ccMaterial::CShared mtl = *it;
         stream << endl << "newmtl " << mtl->getName() << endl;
 
+        // Basic material colors
         const ecvColor::Rgbaf& Ka = mtl->getAmbient();
         const ecvColor::Rgbaf& Kd = mtl->getDiffuseFront();
         const ecvColor::Rgbaf& Ks = mtl->getSpecular();
+        const ecvColor::Rgbaf& Ke = mtl->getEmission();
+
         stream << "Ka " << Ka.r << " " << Ka.g << " " << Ka.b << endl;
         stream << "Kd " << Kd.r << " " << Kd.g << " " << Kd.b << endl;
         stream << "Ks " << Ks.r << " " << Ks.g << " " << Ks.b << endl;
-        stream << "Tr " << Ka.a << endl;  // we take the ambient's by default
-        stream << "illum 1" << endl;
-        stream << "Ns " << mtl->getShininessFront()
-               << endl;  // we take the front's by default
 
-        if (mtl->hasTexture()) {
-            QString absFilename = mtl->getTextureFilename();
+        // Emission color (if not black/default)
+        if (Ke.r > 0.0f || Ke.g > 0.0f || Ke.b > 0.0f) {
+            stream << "Ke " << Ke.r << " " << Ke.g << " " << Ke.b << endl;
+        }
 
-            // if the file has not already been saved
-            if (!absFilenamesSaved.contains(absFilename)) {
-                QFileInfo fileInfo(absFilename);
+        // Transparency (use diffuse alpha, or ambient if diffuse is not set)
+        float transparency = Kd.a;
+        if (transparency < 1.0f) {
+            stream << "d " << transparency << endl;
+        }
 
-                QString texName = fileInfo.fileName();
-                if (fileInfo.suffix().isEmpty()) {
-                    texName += QString(".jpg");
-                }
+        // Illumination model
+        stream << "illum " << mtl->getIllum() << endl;
 
-                // make sure that the local filename is unique!
-                if (filenamesUsed.contains(texName)) {
-                    texName.prepend(QString("t%1_").arg(matIndex));
-                    assert(!filenamesUsed.contains(texName));
-                }
-                filenamesUsed.insert(texName);
+        // Shininess
+        stream << "Ns " << mtl->getShininessFront() << endl;
 
-                QString destFilename = path + QString('/') + texName;
-                if (mtl->getTexture().save(
-                            destFilename))  // mirrored: see ccMaterial
-                {
-                    // new absolute filemane
-                    absFilenamesSaved[absFilename] = texName;
-                } else {
-                    errors << QString("Failed to save the texture of material "
-                                      "'%1' to file '%2'!")
-                                      .arg(mtl->getName(), destFilename);
-                }
+        // PBR scalar parameters (only save if non-default values)
+        if (mtl->getMetallic() > 0.0f) {
+            stream << "Pm " << mtl->getMetallic() << endl;
+        }
+        if (mtl->getRoughness() != 0.5f) {
+            stream << "Pr " << mtl->getRoughness() << endl;
+        }
+        if (mtl->getSheen() > 0.0f) {
+            stream << "Ps " << mtl->getSheen() << endl;
+        }
+        if (mtl->getClearcoat() > 0.0f) {
+            stream << "Pc " << mtl->getClearcoat() << endl;
+        }
+        if (mtl->getClearcoatRoughness() > 0.0f) {
+            stream << "Pcr " << mtl->getClearcoatRoughness() << endl;
+        }
+        if (mtl->getAnisotropy() > 0.0f) {
+            stream << "aniso " << mtl->getAnisotropy() << endl;
+        }
+        if (mtl->getAmbientOcclusion() > 0.0f) {
+            stream << "Pa " << mtl->getAmbientOcclusion() << endl;
+        }
+
+        // Save all texture maps using the multi-texture API
+        auto allTextures = mtl->getAllTextureFilenames();
+        for (const auto& texPair : allTextures) {
+            ccMaterial::TextureMapType mapType = texPair.first;
+            QString absFilename = texPair.second;
+
+            if (absFilename.isEmpty()) continue;
+
+            QString relativeFilename = saveTextureFile(absFilename, matIndex);
+            if (relativeFilename.isEmpty()) continue;
+
+            // Map texture type to MTL command
+            QString mapCommand;
+            switch (mapType) {
+                case ccMaterial::TextureMapType::DIFFUSE:
+                    mapCommand = "map_Kd";
+                    break;
+                case ccMaterial::TextureMapType::AMBIENT:
+                    mapCommand = "map_Ka";
+                    break;
+                case ccMaterial::TextureMapType::SPECULAR:
+                    mapCommand = "map_Ks";
+                    break;
+                case ccMaterial::TextureMapType::EMISSIVE:
+                    mapCommand = "map_Ke";
+                    break;
+                case ccMaterial::TextureMapType::OPACITY:
+                    mapCommand = "map_d";
+                    break;
+                case ccMaterial::TextureMapType::SHININESS:
+                    mapCommand = "map_Ns";
+                    break;
+                case ccMaterial::TextureMapType::NORMAL:
+                    mapCommand = "map_Bump";
+                    break;
+                case ccMaterial::TextureMapType::ROUGHNESS:
+                    mapCommand = "map_Pr";
+                    break;
+                case ccMaterial::TextureMapType::METALLIC:
+                    mapCommand = "map_Pm";
+                    break;
+                case ccMaterial::TextureMapType::SHEEN:
+                    mapCommand = "map_Ps";
+                    break;
+                case ccMaterial::TextureMapType::CLEARCOAT:
+                    mapCommand = "map_Pc";
+                    break;
+                case ccMaterial::TextureMapType::CLEARCOAT_ROUGHNESS:
+                    mapCommand = "map_Pcr";
+                    break;
+                case ccMaterial::TextureMapType::ANISOTROPY:
+                    mapCommand = "map_aniso";
+                    break;
+                case ccMaterial::TextureMapType::DISPLACEMENT:
+                    mapCommand = "map_disp";
+                    break;
+                case ccMaterial::TextureMapType::REFLECTION:
+                    mapCommand = "refl";
+                    break;
+                default:
+                    // Fallback to diffuse
+                    mapCommand = "map_Kd";
+                    break;
             }
 
-            if (absFilenamesSaved.contains(absFilename)) {
-                assert(!absFilenamesSaved[absFilename].isEmpty());
-                stream << "map_Kd " << absFilenamesSaved[absFilename] << endl;
+            stream << mapCommand << " " << relativeFilename << endl;
+        }
+
+        // Legacy texture support (for backward compatibility)
+        // Only save if not already saved via multi-texture API
+        if (mtl->hasTexture() &&
+            !mtl->hasTextureMap(ccMaterial::TextureMapType::DIFFUSE)) {
+            QString absFilename = mtl->getTextureFilename();
+            QString relativeFilename = saveTextureFile(absFilename, matIndex);
+            if (!relativeFilename.isEmpty()) {
+                stream << "map_Kd " << relativeFilename << endl;
             }
         }
     }

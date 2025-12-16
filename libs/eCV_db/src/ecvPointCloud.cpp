@@ -2513,10 +2513,10 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context) {
         assert(!glParams.showSF || hasDisplayedScalarField());
 
         // standard case: list names pushing
-        bool pushName = MACRO_DrawEntityNames(context);
-        if (pushName) {
+        bool entityPickingMode = MACRO_EntityPicking(context);
+        if (entityPickingMode) {
             // not fast at all!
-            if (MACRO_DrawFastNamesOnly(context)) {
+            if (MACRO_FastEntityPicking(context)) {
                 return;
             }
 

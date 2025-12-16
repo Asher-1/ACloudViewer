@@ -211,7 +211,16 @@ protected:
     //! Updates the current model (assuming object is the same)
     void updateModel();
 
+    //! Get texture path map for current mesh object
+    QMap<QString, QString> getCurrentMeshTexturePathMap() const;
+    //! Clear texture path map for a specific mesh object
+    void clearMeshTexturePathMap(ccHObject* mesh);
+
     ccHObject* m_currentObject;
     QStandardItemModel* m_model;
     QAbstractItemView* m_view;
+    //! Texture path maps indexed by mesh object pointer
+    //! Maps mesh object -> (texture name -> texture path)
+    //! Mutable to allow modification in const methods (setEditorData)
+    mutable QMap<ccHObject*, QMap<QString, QString>> m_meshTexturePathMaps;
 };

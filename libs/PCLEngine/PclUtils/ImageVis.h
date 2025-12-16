@@ -9,6 +9,7 @@
 
 // LOCAL
 #include "PCLCloud.h"
+#include "PclUtils/CustomContextItem.h"
 #include "qPCL.h"
 
 // ECV_DB_LIB
@@ -23,9 +24,14 @@
 // VTK
 #include <vtkSmartPointer.h>
 
+// Forward declarations
 class vtkRenderer;
 class vtkRenderWindow;
 class vtkRenderWindowInteractor;
+#if VTK_MAJOR_VERSION >= 6
+class vtkImageSlice;
+class vtkImageSliceMapper;
+#endif
 
 namespace PclUtils {
 class QPCL_ENGINE_LIB_API ImageVis : public ecvGenericVisualizer2D,
@@ -61,8 +67,13 @@ public:
     bool contains(const std::string& id) const;
 
     Layer* getLayer(const std::string& id);
-    void changeOpacity(const std::string& viewID, double opacity);
+    void changeOpacity(double opacity, const std::string& viewID);
     void hideShowActors(bool visibility, const std::string& viewID);
+
+    /** \brief Remove a layer from the viewer.
+     * \param[in] layer_id the name of the layer to remove
+     */
+    void removeLayer(const std::string& layer_id);
 
     /** \brief Add a new 2D rendering layer to the viewer.
      * \param[in] layer_id the name of the layer
@@ -80,13 +91,20 @@ public:
                                    double opacity = 0.5,
                                    bool fill_box = true);
 
-    void addRGBImage(const unsigned char* rgb_data,
+    void addRGBImage(const QImage& qimage,
                      unsigned x,
                      unsigned y,
-                     unsigned width,
-                     unsigned height,
                      const std::string& layer_id,
-                     double opacity);
+                     double opacity = 1.0);
+
+    /** \brief Add a QImage directly (ParaView-style, using
+     * vtkQImageToImageSource). \param[in] qimage the QImage to add \param[in]
+     * layer_id the name of the layer \param[in] opacity the opacity of the
+     * layer (default: 1.0)
+     */
+    void addQImage(const QImage& qimage,
+                   const std::string& layer_id = "image",
+                   double opacity = 1.0);
 
     bool addText(unsigned int x,
                  unsigned int y,
@@ -110,7 +128,55 @@ private:
     boost::signals2::connection m_mouseConnection;
     std::string pickItem(const pcl::visualization::MouseEvent& event);
 
+    // Window resize callback
+    static void WindowResizeCallback(vtkObject* caller,
+                                     unsigned long eventId,
+                                     void* clientData,
+                                     void* callData);
+    void onWindowResize();
+    void updateImageScales();
+#if VTK_MAJOR_VERSION >= 6
+    void updateImageSliceTransform(vtkImageSlice* imageSlice,
+                                   unsigned width,
+                                   unsigned height);
+#endif
+
+    // Set interactor style to image style (pan/drag instead of rotate)
+    // This prevents crashes by saving original style and checking before
+    // setting
+    void setImageInteractorStyle();
+
     vtkSmartPointer<vtkRenderWindowInteractor> m_mainInteractor;
+    vtkSmartPointer<vtkCallbackCommand> m_windowResizeCallback;
+
+    // Store original interactor style to restore when needed
+    // This prevents crashes when getCamera is called on
+    // PCLVisualizerInteractorStyle
+    vtkSmartPointer<vtkInteractorObserver> m_originalInteractorStyle;
+
+    // Store original camera parameters to restore when exiting image mode
+    struct CameraParams {
+        bool parallelProjection;
+        double focalPoint[3];
+        double position[3];
+        double viewUp[3];
+        double viewAngle;
+        double parallelScale;
+        double clippingRange[2];
+    };
+    CameraParams m_originalCameraParams;
+    bool m_cameraParamsSaved;
+
+    // Store image slice info for each layer (ParaView-style)
+    struct ImageInfo {
+        unsigned originalWidth;
+        unsigned originalHeight;
+#if VTK_MAJOR_VERSION >= 6
+        vtkSmartPointer<vtkImageSlice> imageSlice;
+        vtkSmartPointer<vtkImageSliceMapper> imageMapper;
+#endif
+    };
+    std::map<std::string, ImageInfo> m_imageInfoMap;
 };
 
 typedef std::shared_ptr<ImageVis> ImageVisPtr;

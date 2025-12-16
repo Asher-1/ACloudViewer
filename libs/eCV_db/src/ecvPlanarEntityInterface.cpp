@@ -74,7 +74,7 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context,
     CC_DRAW_CONTEXT normalContext = context;
     // we must remove the 'push name flag' so that the primitives don't push
     // their own!
-    normalContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES);
+    normalContext.drawingFlags &= (~CC_ENTITY_PICKING);
 
     if (color) {
         c_unitNormalSymbol->setTempColor(*color, true);

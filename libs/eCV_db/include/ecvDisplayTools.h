@@ -1130,6 +1130,18 @@ public:  // visualization matrix transformation
         return 1.0; /* do nothing */
     }
 
+    inline static void ChangeOpacity(double opacity,
+                                     const std::string& viewID,
+                                     int viewport = 0) {
+        TheInstance()->changeOpacity(opacity, viewID, viewport);
+        UpdateScreen();
+    }
+    inline virtual void changeOpacity(double opacity,
+                                      const std::string& viewID,
+                                      int viewport = 0) {
+        /* do nothing */
+    }
+
     //! Converts a given (mouse) position in pixels to an orientation
     /** The orientation vector origin is the current pivot point!
      **/

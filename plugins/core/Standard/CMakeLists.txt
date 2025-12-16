@@ -24,6 +24,7 @@ set( submod_plugins
 		${CMAKE_CURRENT_SOURCE_DIR}/qMasonry
 		${CMAKE_CURRENT_SOURCE_DIR}/qMPlane
 		${CMAKE_CURRENT_SOURCE_DIR}/qJSonRPCPlugin
+		${CMAKE_CURRENT_SOURCE_DIR}/qG3Point
 )
 
 foreach( dir ${submod_plugins} )

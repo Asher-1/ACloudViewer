@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/CC/plugin/G3PointPlugin">
+        <file>info.json</file>
+        <file>images/icon.png</file>
+        <file>images/smallCSVFile.png</file>
+        <file>images/dbImageSymbol.png</file>
+    </qresource>
+</RCC>
