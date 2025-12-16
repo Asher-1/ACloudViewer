@@ -10,8 +10,9 @@ if ( PLUGIN_STANDARD_QJSONRPC )
 
     AddPlugin( NAME ${PROJECT_NAME} )
 
-    find_package(Qt5 COMPONENTS Network WebSockets REQUIRED)
-    target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Network Qt5::WebSockets)
+    # Qt5/Qt6 compatibility - use unified Qt:: prefix
+    # Note: Network and WebSockets are already found in CMakeExternalLibs.cmake
+    target_link_libraries(${PROJECT_NAME} Qt::Core Qt::Network Qt::WebSockets)
 
     add_subdirectory( include )
     add_subdirectory( src )

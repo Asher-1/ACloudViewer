@@ -185,10 +185,13 @@ template <> struct type_caster<QVariant>
             Q_FALLTHROUGH();
         case QVariant::PointF:
             Q_FALLTHROUGH();
-        case QVariant::RegExp:
-            Q_FALLTHROUGH();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         case QVariant::RegularExpression:
             Q_FALLTHROUGH();
+#else
+        case QVariant::RegExp:
+            Q_FALLTHROUGH();
+#endif
         case QVariant::Hash:
             Q_FALLTHROUGH();
         case QVariant::EasingCurve:

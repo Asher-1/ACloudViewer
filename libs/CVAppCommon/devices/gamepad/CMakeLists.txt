@@ -1,6 +1,7 @@
 
-option( OPTION_SUPPORT_GAMEPADS "Build with gamepad support (requires Qt 5.7+)" OFF )
-if( OPTION_SUPPORT_GAMEPADS )
+option( OPTION_SUPPORT_GAMEPADS "Build with gamepad support (requires Qt 5.7+, not available in Qt6)" OFF )
+# Qt6 does not include Gamepad module - disable if using Qt6
+if( OPTION_SUPPORT_GAMEPADS AND NOT USE_QT6 )
 	target_sources( ${PROJECT_NAME}
 		PRIVATE
 		    ${CMAKE_CURRENT_LIST_DIR}/ccGamepadManager.h

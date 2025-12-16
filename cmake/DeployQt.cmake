@@ -1,21 +1,31 @@
-find_package( Qt5
-	COMPONENTS
-		Core
-	REQUIRED
-)
+# Support both Qt5 and Qt6 based on USE_QT6 option
+if(USE_QT6)
+    find_package( Qt6
+        COMPONENTS
+            Core
+        REQUIRED
+    )
+    get_target_property( qmake_location Qt6::qmake IMPORTED_LOCATION )
+    get_filename_component( qt_bin_dir ${qmake_location} DIRECTORY )
+else()
+    find_package( Qt5
+        COMPONENTS
+            Core
+        REQUIRED
+    )
+    get_target_property( qmake_location Qt5::qmake IMPORTED_LOCATION )
+    get_filename_component( qt_bin_dir ${qmake_location} DIRECTORY )
+endif()
 
-get_target_property( qmake_location Qt5::qmake IMPORTED_LOCATION )
-get_filename_component( qt5_bin_dir ${qmake_location} DIRECTORY )
-	
 if ( APPLE )
-	find_program( mac_deploy_qt macdeployqt HINTS "${qt5_bin_dir}" )
+	find_program( mac_deploy_qt macdeployqt HINTS "${qt_bin_dir}" )
 	if( NOT EXISTS "${mac_deploy_qt}" )
-		message( FATAL_ERROR "macdeployqt not found in ${qt5_bin_dir}" )
+		message( FATAL_ERROR "macdeployqt not found in ${qt_bin_dir}" )
 	endif()
 elseif( WIN32 )
-	find_program( win_deploy_qt windeployqt HINTS "${qt5_bin_dir}" )
+	find_program( win_deploy_qt windeployqt HINTS "${qt_bin_dir}" )
 	if( NOT EXISTS "${win_deploy_qt}" )
-		message( FATAL_ERROR "windeployqt not found in ${qt5_bin_dir}" )
+		message( FATAL_ERROR "windeployqt not found in ${qt_bin_dir}" )
 	endif()
 endif()
 
@@ -141,4 +151,4 @@ function( DeployQt )
 endfunction()
 
 unset( qmake_location )
-unset( qt5_bin_dir )
+unset( qt_bin_dir )

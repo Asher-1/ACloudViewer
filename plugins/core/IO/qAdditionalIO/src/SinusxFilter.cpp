@@ -17,6 +17,9 @@
 #include <QFile>
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // System
 #include <cstring>
 
@@ -181,8 +184,8 @@ CC_FILE_ERROR SinusxFilter::loadFile(const QString& filename,
                 currentVertices = 0;
             }
             // read type
-            QStringList tokens =
-                    currentLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+            QStringList tokens = qtCompatSplitRegex(currentLine, "\\s+",
+                                                    QtCompat::SkipEmptyParts);
             if (tokens.size() < 2 || tokens[1].length() > 1) {
                 CVLog::Warning(QString("[SinusX] Line %1 is corrupted")
                                        .arg(lineNumber));
@@ -227,8 +230,8 @@ CC_FILE_ERROR SinusxFilter::loadFile(const QString& filename,
                     currentPoly->setName(name);
                 }
             } else if (currentLine.startsWith("CP")) {
-                QStringList tokens = currentLine.split(QRegExp("\\s+"),
-                                                       QString::SkipEmptyParts);
+                QStringList tokens = qtCompatSplitRegex(
+                        currentLine, "\\s+", QtCompat::SkipEmptyParts);
 
                 switch (cpIndex) {
                     case 0:  // first 'CP' line
@@ -302,9 +305,9 @@ CC_FILE_ERROR SinusxFilter::loadFile(const QString& filename,
                                    file.error() == QFile::NoError) {
                                 currentLine = stream.readLine();
                                 ++lineNumber;
-                                tokens = currentLine.split(
-                                        QRegExp("\\s+"),
-                                        QString::SkipEmptyParts);
+                                tokens = qtCompatSplitRegex(
+                                        currentLine, "\\s+",
+                                        QtCompat::SkipEmptyParts);
                                 skipped += tokens.size();
                             }
                             assert(skipped == 16);  // no more than 16 normally!
@@ -356,8 +359,8 @@ CC_FILE_ERROR SinusxFilter::loadFile(const QString& filename,
                 assert(currentVertices);
 
                 // shoud be a point!
-                QStringList tokens = currentLine.split(QRegExp("\\s+"),
-                                                       QString::SkipEmptyParts);
+                QStringList tokens = qtCompatSplitRegex(
+                        currentLine, "\\s+", QtCompat::SkipEmptyParts);
                 bool ok = (tokens.size() == 4);
                 if (ok) {
                     CCVector3d Pd;

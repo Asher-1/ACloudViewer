@@ -111,6 +111,7 @@ option(WITH_MINIZIP               "Enable MiniZIP"                              
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"            OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"             OFF)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1"                   ON )
+option(USE_QT6 "Use Qt6 instead of Qt5 (requires Qt6 >= 6.2.0)"                OFF)
 if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                     ON )
 else()
@@ -862,8 +863,8 @@ if (NOT APPLE) # already down on macos
     endif()
 
     # fix missing qt plugins
-    foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
-        install(DIRECTORY "${qt5_plugins_folder}"
+    foreach( qt_plugins_folder ${QT_PLUGINS_PATH_LIST} )
+        install(DIRECTORY "${qt_plugins_folder}"
                 DESTINATION "${ACLOUDVIEWER_INSTALL_PATH}"
                 USE_SOURCE_PERMISSIONS)
     endforeach()

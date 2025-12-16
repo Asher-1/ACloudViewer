@@ -20,6 +20,9 @@
 // Qt
 #include <QSharedPointer>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // System
 #include <assert.h>
 #include <string.h>
@@ -1282,11 +1285,8 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         int dy = 0;
         {
             // base box dimension
-#if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
-            dx = std::max(dx, titleFontMetrics.width(title));
-#else
-            dx = std::max(dx, titleFontMetrics.horizontalAdvance(title));
-#endif
+            dx = std::max(dx,
+                          QTCOMPAT_FONTMETRICS_WIDTH(titleFontMetrics, title));
 
             dy += margin;       // top vertical margin
             dy += titleHeight;  // title
@@ -1486,7 +1486,8 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                 if (!body.empty()) {
                     dy += margin;  // vertical margin above separator
                     for (int j = 0; j < body.size(); ++j) {
-                        dx = std::max(dx, bodyFontMetrics.width(body[j]));
+                        dx = std::max(dx, QTCOMPAT_FONTMETRICS_WIDTH(
+                                                  bodyFontMetrics, body[j]));
                         dy += rowHeight;  // body line height
                     }
                     dy += margin;  // vertical margin below text
@@ -1795,11 +1796,8 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
         // context.renderZoom);
         {
             // base box dimension
-#if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
-            dx = std::max(dx, titleFontMetrics.width(title));
-#else
-            dx = std::max(dx, titleFontMetrics.horizontalAdvance(title));
-#endif
+            dx = std::max(dx,
+                          QTCOMPAT_FONTMETRICS_WIDTH(titleFontMetrics, title));
 
             dy += margin;       // top vertical margin
             dy += titleHeight;  // title
@@ -1996,7 +1994,8 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
                 if (!body.empty()) {
                     dy += margin;  // vertical margin above separator
                     for (int j = 0; j < body.size(); ++j) {
-                        dx = std::max(dx, bodyFontMetrics.width(body[j]));
+                        dx = std::max(dx, QTCOMPAT_FONTMETRICS_WIDTH(
+                                                  bodyFontMetrics, body[j]));
                         dy += rowHeight;  // body line height
                     }
                     dy += margin;  // vertical margin below text
@@ -2260,25 +2259,15 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
                     int xShift = 0;
                     if (labelCol) {
                         // align characters in the middle
-#if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
                         xShift = (tab.colWidth[c] -
-                                  QFontMetrics(bodyFont).width(str)) /
+                                  QTCOMPAT_FONTMETRICS_WIDTH(
+                                          QFontMetrics(bodyFont), str)) /
                                  2;
-#else
-                        xShift = (tab.colWidth[c] -
-                                  QFontMetrics(bodyFont).horizontalAdvance(
-                                          str)) /
-                                 2;
-#endif
                     } else {
                         // align digits on the right
-#if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
                         xShift = tab.colWidth[c] -
-                                 QFontMetrics(bodyFont).width(str);
-#else
-                        xShift = tab.colWidth[c] -
-                                 QFontMetrics(bodyFont).horizontalAdvance(str);
-#endif
+                                 QTCOMPAT_FONTMETRICS_WIDTH(
+                                         QFontMetrics(bodyFont), str);
                     }
 
                     m_historyMessage << str;

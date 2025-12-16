@@ -17,6 +17,9 @@
 #include <QStringList>
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 SalomeHydroFilter::SalomeHydroFilter()
     : FileIOFilter({"_SalomeHydro Filter",
                     DEFAULT_PRIORITY,  // priority
@@ -165,8 +168,8 @@ CC_FILE_ERROR SalomeHydroFilter::loadFile(const QString& filename,
                 }
             }
 
-            QStringList parts =
-                    currentLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+            QStringList parts = qtCompatSplitRegex(currentLine, "\\s+",
+                                                   QtCompat::SkipEmptyParts);
             if (parts.size() == 3) {
                 //(X,Y,Z)
                 CCVector3d P(parts[0].toDouble(), parts[1].toDouble(),

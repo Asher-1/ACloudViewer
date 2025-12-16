@@ -23,7 +23,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${NANOFLANN_INCLUDE_DIRS})
 # INTERNAL LIB
 target_link_libraries(${PROJECT_NAME} PUBLIC CVCoreLib)
 # Qt
-target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::OpenGL)
+# Qt5/Qt6 compatibility - use unified Qt:: prefix
+target_link_libraries(${PROJECT_NAME} PUBLIC Qt::OpenGL)
 
 # Enforce 3rd party dependencies
 if (USE_SIMD)

@@ -11,7 +11,9 @@
 
 #include <QApplication>
 #include <QColorDialog>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
+#endif
 #include <QFocusEvent>
 #include <QGridLayout>
 #include <QHideEvent>

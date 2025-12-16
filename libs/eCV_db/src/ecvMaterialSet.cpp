@@ -14,6 +14,9 @@
 #include <QImage>
 #include <QSet>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // System
 #include <set>
 
@@ -124,8 +127,8 @@ bool ccMaterialSet::ParseMTL(QString path,
     while (!currentLine.isNull()) {
         ++currentLineIndex;
 
-        QStringList tokens =
-                currentLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        QStringList tokens = qtCompatSplitRegex(currentLine, "\\s+",
+                                                QtCompat::SkipEmptyParts);
 
         // skip comments & empty lines
         if (tokens.empty() ||

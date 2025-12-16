@@ -28,6 +28,10 @@
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QInputDialog>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QSettings>
@@ -495,7 +499,8 @@ bool ccColorScaleEditorDialog::exportCustomLabelsList(
     labels.clear();
 
     QString text = m_ui->customLabelsPlainTextEdit->toPlainText();
-    QStringList items = text.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+    QStringList items =
+            qtCompatSplitRegex(text, "\\s+", QtCompat::SkipEmptyParts);
     if (items.size() < 2) {
         assert(false);
         return false;
@@ -521,7 +526,8 @@ bool ccColorScaleEditorDialog::exportCustomLabelsList(
 
 bool ccColorScaleEditorDialog::checkCustomLabelsList(bool showWarnings) {
     QString text = m_ui->customLabelsPlainTextEdit->toPlainText();
-    QStringList items = text.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+    QStringList items =
+            qtCompatSplitRegex(text, "\\s+", QtCompat::SkipEmptyParts);
     if (items.size() < 2) {
         if (showWarnings)
             CVLog::Error("Not enough labels defined (2 at least are required)");

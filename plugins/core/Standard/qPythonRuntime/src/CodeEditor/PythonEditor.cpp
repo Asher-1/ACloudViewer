@@ -538,7 +538,12 @@ void PythonEditor::readSettings()
     const QByteArray geometry = settings.value("geometry", QByteArray()).toByteArray();
     if (geometry.isEmpty())
     {
+        // Qt5/Qt6 Compatibility: QDesktopWidget removed in Qt6, use QScreen instead
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        const QRect availableGeometry = screen()->availableGeometry();
+#else
         const QRect availableGeometry = QApplication::desktop()->availableGeometry(this);
+#endif
         resize(availableGeometry.width() / 3, availableGeometry.height() / 2);
         move((availableGeometry.width() - width()) / 2,
              (availableGeometry.height() - height()) / 2);

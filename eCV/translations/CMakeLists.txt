@@ -1,20 +1,49 @@
 set_directory_properties( PROPERTIES CLEAN_NO_CUSTOM 1 )
 
-find_package( Qt5LinguistTools REQUIRED )
-
-# Note that _qt5_linguisttools_install_prefix is from Qt5LinguistToolsConfig.cmake
-#	and probably a private variable...
-set( QT_PATH ${_qt5_linguisttools_install_prefix} )
-if( UNIX AND NOT APPLE )
-	set( QT_PATH "${QT_PATH}/share/qt5" )
+# Qt5/Qt6 compatibility
+if(USE_QT6)
+		find_package( Qt6 COMPONENTS LinguistTools REQUIRED )
+    set( QT_PATH ${_qt6_linguisttools_install_prefix} )
+    if( UNIX AND NOT APPLE )
+        set( QT_PATH "${QT_PATH}/share/qt6" )
+    endif()
+    # Create unified Qt::lconvert alias
+    if(NOT TARGET Qt::lconvert)
+        add_executable(Qt::lconvert IMPORTED)
+        get_target_property(lconvert_location Qt6::lconvert IMPORTED_LOCATION)
+        if(lconvert_location)
+            set_target_properties(Qt::lconvert PROPERTIES IMPORTED_LOCATION ${lconvert_location})
+        endif()
+    endif()
+    set( QT_LCONVERT_EXE Qt::lconvert )
+else()
+    find_package( Qt5LinguistTools REQUIRED )
+    # Note that _qt5_linguisttools_install_prefix is from Qt5LinguistToolsConfig.cmake
+    #	and probably a private variable...
+    set( QT_PATH ${_qt5_linguisttools_install_prefix} )
+    if( UNIX AND NOT APPLE )
+        set( QT_PATH "${QT_PATH}/share/qt5" )
+    endif()
+    # Create unified Qt::lconvert alias
+    if(NOT TARGET Qt::lconvert)
+        add_executable(Qt::lconvert IMPORTED)
+        get_target_property(lconvert_location Qt5::lconvert IMPORTED_LOCATION)
+        if(lconvert_location)
+            set_target_properties(Qt::lconvert PROPERTIES IMPORTED_LOCATION ${lconvert_location})
+        endif()
+    endif()
+    set( QT_LCONVERT_EXE Qt::lconvert )
 endif()
-
-set( QT_LCONVERT_EXE Qt5::lconvert )
 
 # Now handle our own .ts files
 file( GLOB TRANSLATION_FILES ${CMAKE_CURRENT_LIST_DIR}/*.ts )
 
-qt5_add_translation( TRANSLATION_QM ${TRANSLATION_FILES} )
+# Qt5/Qt6 compatibility
+if(USE_QT6)
+    qt6_add_translation( TRANSLATION_QM ${TRANSLATION_FILES} )
+else()
+    qt5_add_translation( TRANSLATION_QM ${TRANSLATION_FILES} )
+endif()
 add_custom_target( translations ALL DEPENDS ${TRANSLATION_QM} )
 
 # For each language we have .ts files for, process Qt's qm files

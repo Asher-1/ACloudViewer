@@ -4,11 +4,8 @@ project( CVPluginAPI )
 
 add_library( ${PROJECT_NAME} SHARED )
 
-find_package( Qt5
-	COMPONENTS
-		Gui
-	REQUIRED
-)
+# Qt5/Qt6 compatibility
+# Note: Gui is already found in CMakeExternalLibs.cmake
 
 add_subdirectory( include )
 add_subdirectory( src )

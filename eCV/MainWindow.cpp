@@ -94,6 +94,9 @@
 #include "ui_distanceMapDlg.h"
 #include "ui_globalShiftSettingsDlg.h"
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // dialogs
 #include "ecvAboutDialog.h"
 #include "ecvAlignDlg.h"
@@ -234,7 +237,14 @@ static bool IsValidFileName(QString filename) {
             "\\|<>\\. ]))?$");
 #endif
 
-    return QRegExp(sPattern).exactMatch(filename);
+    // Use QtCompat for Qt5/Qt6 compatibility
+    QtCompatRegExp regex(sPattern);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QRegularExpressionMatch match = regex.match(filename);
+    return match.hasMatch();
+#else
+    return regex.exactMatch(filename);
+#endif
 }
 
 MainWindow::MainWindow()
@@ -2060,7 +2070,7 @@ void MainWindow::doActionSaveFile() {
         QString defaultFileName(m_selectedEntities.front()->getName());
         if (m_selectedEntities.front()->isA(CV_TYPES::HIERARCHY_OBJECT)) {
             QStringList parts =
-                    defaultFileName.split(' ', QString::SkipEmptyParts);
+                    defaultFileName.split(' ', QtCompat::SkipEmptyParts);
             if (!parts.empty()) {
                 defaultFileName = parts[0];
             }
@@ -2194,7 +2204,7 @@ void MainWindow::doActionSaveProject() {
             // type of name with a path inside disturbs the QFileDialog a lot
             // ;))
             QStringList parts =
-                    defaultFileName.split(' ', QString::SkipEmptyParts);
+                    defaultFileName.split(' ', QtCompat::SkipEmptyParts);
             if (!parts.empty()) {
                 defaultFileName = parts[0];
             }

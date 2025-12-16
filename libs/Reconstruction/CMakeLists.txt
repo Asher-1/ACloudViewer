@@ -316,9 +316,13 @@ if (OPENMP_FOUND)
     list(APPEND COLMAP_EXTERNAL_LIBRARIES ${OpenMP_libomp_LIBRARY})
 endif ()
 
-if (Qt5_FOUND AND GUI_ENABLED)
-    list(APPEND COLMAP_INCLUDE_DIRS ${Qt5Core_INCLUDE_DIRS} ${Qt5OpenGL_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS})
-    list(APPEND COLMAP_EXTERNAL_LIBRARIES ${Qt5Core_LIBRARIES} ${Qt5OpenGL_LIBRARIES} ${Qt5Widgets_LIBRARIES})
+if (GUI_ENABLED)
+    # Use unified Qt:: prefix (CMakeExternalLibs.cmake creates Qt:: aliases for Qt5)
+    list(APPEND COLMAP_EXTERNAL_LIBRARIES Qt::Core Qt::OpenGL Qt::Widgets)
+    if(USE_QT6)
+        # Qt6: QOpenGLWidget is in OpenGLWidgets module
+        list(APPEND COLMAP_EXTERNAL_LIBRARIES Qt::OpenGLWidgets)
+    endif()
 endif ()
 
 if (CGAL_FOUND)

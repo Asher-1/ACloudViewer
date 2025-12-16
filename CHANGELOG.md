@@ -10,6 +10,7 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Add Texturing Atlas support for reconstruction module
     -   Add Excellent Texture mesh rendering support
     -   Add 2D Image Rendering support with transparency feature
+    -   Add Qt6 compatible interface strategy support
 
 - Bug fixes:
     -   Fix code style
@@ -19,6 +20,8 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Remove cloudViewer::make_shared and EIGEN_MAKE_ALIGNED_OPERATOR_NEW as no need any more with C++17
     -   Replace EIGEN_STL_MAP with std::unordered_map for Reconstruction module
     -   Fix crash on ubuntu22.04 for reconstruction due to misalignment
+    -   Fix python env package issues with pyenv manager
+    -   Fix numpy version > 2.x issues and now support numpy > 2.x version
 
 - Enhancements:
     -   Replace `#ifndef` with `#pragma once`
