@@ -7,10 +7,13 @@
 
 #include "LogWidget.h"
 
-#include "OptionManager.h"
+#include "util/option_manager.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 
 namespace cloudViewer {
 
@@ -111,13 +114,27 @@ void LogWidget::Append(const std::string& text) {
                 int logLevel = CVLog::LOG_STANDARD;
                 QString lowerLine = qline.toLower();
 
-                if (lowerLine.contains("error") ||
-                    lowerLine.contains("failed") ||
-                    lowerLine.contains("fatal") ||
-                    lowerLine.contains("exception")) {
+                // Use QtCompatRegExp for Qt5/Qt6 compatibility
+                static const QtCompatRegExp errorPattern(
+                        "\\b(error|failed|failure|fatal|exception|crash)\\b",
+                        QtCompatRegExpOption::CaseInsensitive);
+                static const QtCompatRegExp warningPattern(
+                        "\\b(warning|warn|caution)\\b",
+                        QtCompatRegExpOption::CaseInsensitive);
+
+                // Use qtCompatRegExpMatch for cross-version compatibility
+                bool hasError = qtCompatRegExpMatch(errorPattern, lowerLine);
+                bool hasWarning =
+                        qtCompatRegExpMatch(warningPattern, lowerLine);
+
+                // Also check for common log format prefixes
+                if (lowerLine.startsWith("error") ||
+                    lowerLine.startsWith("[error") ||
+                    lowerLine.startsWith("e ") || hasError) {
                     logLevel = CVLog::LOG_ERROR;
-                } else if (lowerLine.contains("warning") ||
-                           lowerLine.contains("warn")) {
+                } else if (lowerLine.startsWith("warning") ||
+                           lowerLine.startsWith("[warning") ||
+                           lowerLine.startsWith("w ") || hasWarning) {
                     logLevel = CVLog::LOG_WARNING;
                 }
 

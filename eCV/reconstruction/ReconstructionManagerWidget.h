@@ -9,16 +9,18 @@
 
 #include <QtWidgets>
 
-namespace cloudViewer {
-
+namespace colmap {
 class ReconstructionManager;
+}
+
+namespace cloudViewer {
 class ReconstructionManagerWidget : public QComboBox {
 public:
     const static size_t kNewestReconstructionIdx;
 
     ReconstructionManagerWidget(
             QWidget* parent,
-            const ReconstructionManager* reconstruction_manager);
+            const colmap::ReconstructionManager* reconstruction_manager);
 
     void Update();
 
@@ -26,7 +28,7 @@ public:
     void SelectReconstruction(const size_t idx);
 
 private:
-    const ReconstructionManager* reconstruction_manager_;
+    const colmap::ReconstructionManager* reconstruction_manager_;
 };
 
 }  // namespace cloudViewer

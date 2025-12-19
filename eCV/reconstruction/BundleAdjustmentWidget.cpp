@@ -7,12 +7,14 @@
 
 #include "BundleAdjustmentWidget.h"
 
-#include "OptionManager.h"
 #include "ReconstructionWidget.h"
 #include "ThreadControlWidget.h"
-#include "controllers/BundleAdjustmentController.h"
+#include "controllers/bundle_adjustment.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
+
+using BundleAdjustmentController = colmap::BundleAdjustmentController;
 
 using namespace colmap;
 BundleAdjustmentWidget::BundleAdjustmentWidget(

@@ -11,6 +11,7 @@
 #include <CVLog.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
+#include <ecvNormalVectors.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
@@ -131,15 +132,78 @@ CC_FILE_ERROR VTKFilter::saveToFile(ccHObject* entity,
         for (unsigned i = 0; i < ptsCount; ++i) outFile << "1 " << endl;
     }
 
-    outFile << "POINT_DATA " << ptsCount << endl;
+    // write normals (per-triangle or per-vertex)
+    bool withTriNormals = mesh ? mesh->hasTriNormals() : false;
+    bool withVertNormals = vertices->hasNormals();
+    bool withNormals = withTriNormals || withVertNormals;
 
-    // write normals
-    if (vertices->hasNormals()) {
-        outFile << "NORMALS Normals " << floatType << endl;
-        for (unsigned i = 0; i < ptsCount; ++i) {
-            const CCVector3& N = vertices->getPointNormal(i);
-            outFile << N.x << " " << N.y << " " << N.z << endl;
+    if (withNormals) {
+        // per-triangle normals
+        if (withTriNormals) {
+            NormsIndexesTableType* normsTable = mesh->getTriNormsTable();
+            if (normsTable && triCount > 0) {
+                outFile << "CELL_DATA " << triCount << endl;
+                outFile << "NORMALS TriangleNormals " << floatType << endl;
+
+                // write normal for each triangle
+                // Note: if each vertex of the triangle has a different normal
+                // index, we compute the average of the three normals as the
+                // triangle normal
+                mesh->placeIteratorAtBeginning();
+                for (unsigned i = 0; i < triCount; ++i) {
+                    int n1, n2, n3;
+                    mesh->getTriangleNormalIndexes(i, n1, n2, n3);
+
+                    CCVector3 avgNormal(0, 0, 0);
+                    int validNormals = 0;
+
+                    if (n1 >= 0 &&
+                        n1 < static_cast<int>(normsTable->currentSize())) {
+                        avgNormal += ccNormalVectors::GetNormal(
+                                normsTable->getValue(n1));
+                        ++validNormals;
+                    }
+                    if (n2 >= 0 &&
+                        n2 < static_cast<int>(normsTable->currentSize())) {
+                        avgNormal += ccNormalVectors::GetNormal(
+                                normsTable->getValue(n2));
+                        ++validNormals;
+                    }
+                    if (n3 >= 0 &&
+                        n3 < static_cast<int>(normsTable->currentSize())) {
+                        avgNormal += ccNormalVectors::GetNormal(
+                                normsTable->getValue(n3));
+                        ++validNormals;
+                    }
+
+                    if (validNormals > 0) {
+                        avgNormal /=
+                                static_cast<PointCoordinateType>(validNormals);
+                        avgNormal.normalize();
+                        outFile << avgNormal.x << " " << avgNormal.y << " "
+                                << avgNormal.z << endl;
+                    } else {
+                        // fallback: output a default normal
+                        outFile << "0 0 1" << endl;
+                    }
+                }
+            }
         }
+        // per-vertex normals (only if no per-triangle normals)
+        else if (withVertNormals) {
+            outFile << "POINT_DATA " << ptsCount << endl;
+            outFile << "NORMALS Normals " << floatType << endl;
+            for (unsigned i = 0; i < ptsCount; ++i) {
+                const CCVector3& N = vertices->getPointNormal(i);
+                outFile << N.x << " " << N.y << " " << N.z << endl;
+            }
+        }
+    }
+
+    // if no normals or per-triangle normals were written, still need POINT_DATA
+    // section for colors/scalars
+    if (!withVertNormals) {
+        outFile << "POINT_DATA " << ptsCount << endl;
     }
 
     // write colors
@@ -221,6 +285,7 @@ CC_FILE_ERROR VTKFilter::loadFile(const QString& filename,
 
     ccMesh* mesh = 0;
     ccPointCloud* vertices = 0;
+    NormsIndexesTableType* normals = nullptr;
 
     std::vector<int>
             indexes;  // global so as to avoid unnecessary memory. allocations
@@ -471,12 +536,29 @@ CC_FILE_ERROR VTKFilter::loadFile(const QString& filename,
                 break;
             }
 
-            bool loadNormals = false;
+            // check if normals are per-vertex or per-triangle
+            bool loadVertexNormals = false;
+            bool loadTriangleNormals = false;
+
             if (lastDataSize == vertices->size()) {
+                // per-vertex normals
                 if (!vertices->reserveTheNormsTable())
                     CVLog::Warning("[VTK] Not enough memory to load normals!");
                 else
-                    loadNormals = true;
+                    loadVertexNormals = true;
+            } else if (mesh && lastDataSize == mesh->size()) {
+                // per-triangle normals
+                if (!normals) {
+                    normals = new NormsIndexesTableType;
+                    normals->link();
+                }
+                if (!mesh->reservePerTriangleNormalIndexes()) {
+                    CVLog::Warning(
+                            "[VTK] Not enough memory to load triangle "
+                            "normals!");
+                } else {
+                    loadTriangleNormals = true;
+                }
             }
 
             // warning: multiple normals can be stored on a single line!
@@ -503,7 +585,21 @@ CC_FILE_ERROR VTKFilter::loadFile(const QString& filename,
                     }
 
                     if (coordIndex == 2) {
-                        if (loadNormals) vertices->addNorm(N);
+                        if (loadVertexNormals) {
+                            vertices->addNorm(N);
+                        } else if (loadTriangleNormals) {
+                            // normalize and compress the normal
+                            N.normalize();
+                            CompressedNormType nIndex =
+                                    ccNormalVectors::GetNormIndex(N.u);
+                            normals->addElement(nIndex);
+                            // for per-triangle normals, all three vertices use
+                            // the same normal
+                            mesh->addTriangleNormalIndexes(
+                                    static_cast<int>(iNorm),
+                                    static_cast<int>(iNorm),
+                                    static_cast<int>(iNorm));
+                        }
                         coordIndex = 0;
                         ++iNorm;
                     } else {
@@ -761,6 +857,14 @@ CC_FILE_ERROR VTKFilter::loadFile(const QString& filename,
     }
 
     if (mesh) {
+        // set triangle normals if loaded
+        if (normals && normals->currentSize() > 0) {
+            mesh->setTriNormsTable(normals);
+            if (mesh->hasTriNormals()) {
+                mesh->showTriNorms(true);
+            }
+        }
+
         container.addChild(mesh);
         mesh->setVisible(true);
 
@@ -794,6 +898,12 @@ CC_FILE_ERROR VTKFilter::loadFile(const QString& filename,
             vertices->showSF(true);
         }
         if (vertices->hasColors()) vertices->showColors(true);
+    }
+
+    // release normals if not used
+    if (normals) {
+        normals->release();
+        normals = nullptr;
     }
 
     return error;

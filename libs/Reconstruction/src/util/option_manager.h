@@ -25,6 +25,7 @@ struct TransitiveMatchingOptions;
 struct ImagePairsMatchingOptions;
 struct BundleAdjustmentOptions;
 struct IncrementalMapperOptions;
+struct TexturingOptions;
 struct RenderOptions;
 
 namespace mvs {
@@ -72,6 +73,7 @@ public:
     void AddStereoFusionOptions();
     void AddPoissonMeshingOptions();
     void AddDelaunayMeshingOptions();
+    void AddTexturingOptions();
     void AddRenderOptions();
 
     template <typename T>
@@ -115,6 +117,7 @@ public:
     std::shared_ptr<mvs::StereoFusionOptions> stereo_fusion;
     std::shared_ptr<mvs::PoissonMeshingOptions> poisson_meshing;
     std::shared_ptr<mvs::DelaunayMeshingOptions> delaunay_meshing;
+    std::shared_ptr<TexturingOptions> texturing;
 
     std::shared_ptr<RenderOptions> render;
 
@@ -156,6 +159,7 @@ private:
     bool added_stereo_fusion_options_;
     bool added_poisson_meshing_options_;
     bool added_delaunay_meshing_options_;
+    bool added_texturing_options_;
     bool added_render_options_;
 };
 

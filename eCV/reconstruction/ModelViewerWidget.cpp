@@ -7,9 +7,9 @@
 
 #include "ModelViewerWidget.h"
 
-#include "QtUtils.h"
 #include "ReconstructionWidget.h"
-#include "RenderOptions.h"
+#include "ui/qt_utils.h"
+#include "ui/render_options.h"
 
 // CV_DB_LIB
 #include <ecvCameraSensor.h>
@@ -200,10 +200,10 @@ void ModelViewerWidget::ClearReconstruction() {
 int ModelViewerWidget::GetProjectionType() const {
     if (ecvDisplayTools::GetPerspectiveState()) {
         options_->render->projection_type =
-                RenderOptions::ProjectionType::PERSPECTIVE;
+                colmap::RenderOptions::ProjectionType::PERSPECTIVE;
     } else {
         options_->render->projection_type =
-                RenderOptions::ProjectionType::ORTHOGRAPHIC;
+                colmap::RenderOptions::ProjectionType::ORTHOGRAPHIC;
     }
     return options_->render->projection_type;
 }
@@ -425,7 +425,8 @@ QImage ModelViewerWidget::GrabImage() {
 }
 
 void ModelViewerWidget::GrabMovie() {
-    if (GetProjectionType() != RenderOptions::ProjectionType::PERSPECTIVE) {
+    if (GetProjectionType() !=
+        colmap::RenderOptions::ProjectionType::PERSPECTIVE) {
         const int reply = QMessageBox::question(
                 this, tr("Warning"),
                 tr("You must use perspective projection, "

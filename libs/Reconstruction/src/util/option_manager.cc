@@ -36,6 +36,7 @@
 
 #include "base/image_reader.h"
 #include "controllers/incremental_mapper.h"
+#include "controllers/texturing_controller.h"
 #include "feature/extraction.h"
 #include "feature/matching.h"
 #include "feature/sift.h"
@@ -72,6 +73,7 @@ OptionManager::OptionManager(bool add_project_options) {
     stereo_fusion.reset(new mvs::StereoFusionOptions());
     poisson_meshing.reset(new mvs::PoissonMeshingOptions());
     delaunay_meshing.reset(new mvs::DelaunayMeshingOptions());
+    texturing.reset(new TexturingOptions());
     render.reset(new RenderOptions());
 
     Reset();
@@ -110,7 +112,9 @@ void OptionManager::ModifyForInternetData() {
 
 void OptionManager::ModifyForLowQuality() {
     sift_extraction->max_image_size = 1000;
+    sift_extraction->max_num_features = 2048;
     sequential_matching->loop_detection_num_images /= 2;
+    vocab_tree_matching->max_num_features = 256;
     vocab_tree_matching->num_images /= 2;
     mapper->ba_local_max_num_iterations /= 2;
     mapper->ba_global_max_num_iterations /= 2;
@@ -129,7 +133,9 @@ void OptionManager::ModifyForLowQuality() {
 
 void OptionManager::ModifyForMediumQuality() {
     sift_extraction->max_image_size = 1600;
+    sift_extraction->max_num_features = 4096;
     sequential_matching->loop_detection_num_images /= 1.5;
+    vocab_tree_matching->max_num_features = 1024;
     vocab_tree_matching->num_images /= 1.5;
     mapper->ba_local_max_num_iterations /= 1.5;
     mapper->ba_global_max_num_iterations /= 1.5;
@@ -149,7 +155,9 @@ void OptionManager::ModifyForMediumQuality() {
 void OptionManager::ModifyForHighQuality() {
     sift_extraction->estimate_affine_shape = true;
     sift_extraction->max_image_size = 2400;
+    sift_extraction->max_num_features = 8192;
     sift_matching->guided_matching = true;
+    vocab_tree_matching->max_num_features = 4096;
     mapper->ba_local_max_num_iterations = 30;
     mapper->ba_local_max_refinements = 3;
     mapper->ba_global_max_num_iterations = 75;
@@ -808,6 +816,7 @@ void OptionManager::Reset() {
     added_stereo_fusion_options_ = false;
     added_poisson_meshing_options_ = false;
     added_delaunay_meshing_options_ = false;
+    added_texturing_options_ = false;
     added_render_options_ = false;
 }
 
@@ -832,6 +841,7 @@ void OptionManager::ResetOptions(const bool reset_paths) {
     *stereo_fusion = mvs::StereoFusionOptions();
     *poisson_meshing = mvs::PoissonMeshingOptions();
     *delaunay_meshing = mvs::DelaunayMeshingOptions();
+    *texturing = TexturingOptions();
     *render = RenderOptions();
 }
 
@@ -925,7 +935,7 @@ bool OptionManager::Read(const std::string& path) {
     config::variables_map vmap;
 
     if (!ExistsFile(path)) {
-        std::cout << "ERROR: Configuration file does not exist." << std::endl;
+        std::cout << "WARNING: Configuration file does not exist." << std::endl;
         return false;
     }
 
@@ -935,11 +945,11 @@ bool OptionManager::Read(const std::string& path) {
         config::store(config::parse_config_file(file, *desc_), vmap);
         vmap.notify();
     } catch (std::exception& e) {
-        std::cout << "ERROR: Failed to parse options " << e.what() << "."
+        std::cout << "WARNING: Failed to parse options " << e.what() << "."
                   << std::endl;
         return false;
     } catch (...) {
-        std::cout << "ERROR: Failed to parse options for unknown reason."
+        std::cout << "WARNING: Failed to parse options for unknown reason."
                   << std::endl;
         return false;
     }
@@ -1010,6 +1020,33 @@ void OptionManager::Write(const std::string& path) const {
     }
 
     boost::property_tree::write_ini(path, pt);
+}
+
+void OptionManager::AddTexturingOptions() {
+    if (added_texturing_options_) {
+        return;
+    }
+    added_texturing_options_ = true;
+
+    AddAndRegisterDefaultOption("Texturing.verbose", &texturing->verbose);
+    AddAndRegisterDefaultOption("Texturing.meshed_file_path",
+                                &texturing->meshed_file_path);
+    AddAndRegisterDefaultOption("Texturing.textured_file_path",
+                                &texturing->textured_file_path);
+    AddAndRegisterDefaultOption("Texturing.use_depth_normal_maps",
+                                &texturing->use_depth_normal_maps);
+    AddAndRegisterDefaultOption("Texturing.depth_map_type",
+                                &texturing->depth_map_type);
+    AddAndRegisterDefaultOption("Texturing.max_depth_error",
+                                &texturing->max_depth_error);
+    AddAndRegisterDefaultOption("Texturing.min_normal_consistency",
+                                &texturing->min_normal_consistency);
+    AddAndRegisterDefaultOption("Texturing.max_viewing_angle_deg",
+                                &texturing->max_viewing_angle_deg);
+    AddAndRegisterDefaultOption("Texturing.use_gradient_magnitude",
+                                &texturing->use_gradient_magnitude);
+    AddAndRegisterDefaultOption("Texturing.mesh_source",
+                                &texturing->mesh_source);
 }
 
 }  // namespace colmap

@@ -36,14 +36,34 @@
 #include <QDir>
 #include <QGLFormat>
 #include <QMessageBox>
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include <QOpenGLFunctions>
 #include <QPixmap>
 #include <QSplashScreen>
+#include <QStorageInfo>
+#include <QSysInfo>
 #include <QTime>
 #include <QTimer>
 #include <QTranslator>
 #include <QtWidgets/QApplication>
 #ifdef CC_GAMEPAD_SUPPORT
 #include <QGamepadManager>
+#endif
+
+// System-specific includes for hardware info
+#ifdef Q_OS_LINUX
+#include <sys/sysinfo.h>
+#include <unistd.h>
+#endif
+#ifdef Q_OS_WIN
+#include <sysinfoapi.h>
+#include <windows.h>
+#endif
+#ifdef Q_OS_MAC
+#include <mach/mach.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
 #endif
 
 // COMMON
@@ -61,6 +81,181 @@
 // #if defined(_MSC_VER) && (_MSC_VER >= 1600)
 // #pragma execution_character_set("utf-8")
 // #endif
+
+// Function to get total system memory in GB
+QString GetTotalMemoryInfo() {
+    QString memInfo;
+
+#ifdef Q_OS_LINUX
+    struct sysinfo si;
+    if (sysinfo(&si) == 0) {
+        unsigned long long totalRAM = si.totalram * si.mem_unit;
+        double totalGB = totalRAM / (1024.0 * 1024.0 * 1024.0);
+        memInfo = QString("RAM: %1 GB").arg(totalGB, 0, 'f', 2);
+    }
+#elif defined(Q_OS_WIN)
+    MEMORYSTATUSEX statex;
+    statex.dwLength = sizeof(statex);
+    if (GlobalMemoryStatusEx(&statex)) {
+        double totalGB = statex.ullTotalPhys / (1024.0 * 1024.0 * 1024.0);
+        memInfo = QString("RAM: %1 GB").arg(totalGB, 0, 'f', 2);
+    }
+#elif defined(Q_OS_MAC)
+    int mib[2] = {CTL_HW, HW_MEMSIZE};
+    int64_t physical_memory;
+    size_t length = sizeof(int64_t);
+    if (sysctl(mib, 2, &physical_memory, &length, NULL, 0) == 0) {
+        double totalGB = physical_memory / (1024.0 * 1024.0 * 1024.0);
+        memInfo = QString("RAM: %1 GB").arg(totalGB, 0, 'f', 2);
+    }
+#endif
+
+    if (memInfo.isEmpty()) {
+        memInfo = "RAM: Unable to detect";
+    }
+
+    return memInfo;
+}
+
+// Function to get storage information
+QString GetStorageInfo() {
+    QStorageInfo storage = QStorageInfo::root();
+
+    if (storage.isValid() && storage.isReady()) {
+        qint64 totalBytes = storage.bytesTotal();
+        qint64 availableBytes = storage.bytesAvailable();
+
+        double totalGB = totalBytes / (1024.0 * 1024.0 * 1024.0);
+        double availableGB = availableBytes / (1024.0 * 1024.0 * 1024.0);
+        double usedGB = totalGB - availableGB;
+
+        return QString("Storage: %1 GB total, %2 GB used, %3 GB available")
+                .arg(totalGB, 0, 'f', 2)
+                .arg(usedGB, 0, 'f', 2)
+                .arg(availableGB, 0, 'f', 2);
+    }
+
+    return QString("Storage: Unable to detect");
+}
+
+// Function to get CPU information
+QString GetCPUInfo() {
+    QString cpuInfo;
+
+#ifdef Q_OS_LINUX
+    // Get number of processors
+    long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+
+    // Try to read CPU model from /proc/cpuinfo
+    QFile file("/proc/cpuinfo");
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            if (line.startsWith("model name")) {
+                QStringList parts = line.split(":");
+                if (parts.size() >= 2) {
+                    cpuInfo = QString("CPU: %1 (%2 cores)")
+                                      .arg(parts[1].trimmed())
+                                      .arg(nprocs);
+                    break;
+                }
+            }
+        }
+        file.close();
+    }
+
+    if (cpuInfo.isEmpty()) {
+        cpuInfo = QString("CPU: %1 cores").arg(nprocs);
+    }
+#elif defined(Q_OS_WIN)
+    SYSTEM_INFO siSysInfo;
+    GetSystemInfo(&siSysInfo);
+    cpuInfo = QString("CPU: %1 cores").arg(siSysInfo.dwNumberOfProcessors);
+#elif defined(Q_OS_MAC)
+    int mib[2] = {CTL_HW, HW_NCPU};
+    int numCPU = 0;
+    size_t len = sizeof(numCPU);
+    if (sysctl(mib, 2, &numCPU, &len, NULL, 0) == 0) {
+        cpuInfo = QString("CPU: %1 cores").arg(numCPU);
+    }
+#endif
+
+    if (cpuInfo.isEmpty()) {
+        cpuInfo = "CPU: Unable to detect";
+    }
+
+    return cpuInfo;
+}
+
+// Function to get GPU information
+QString GetGPUInfo() {
+    QString gpuInfo = "GPU: ";
+
+    // Create a temporary OpenGL context to query GPU info
+    QOffscreenSurface surface;
+    surface.create();
+
+    QOpenGLContext context;
+    if (context.create() && context.makeCurrent(&surface)) {
+        QOpenGLFunctions* functions = context.functions();
+        if (functions) {
+            const GLubyte* vendor = functions->glGetString(GL_VENDOR);
+            const GLubyte* renderer = functions->glGetString(GL_RENDERER);
+            const GLubyte* version = functions->glGetString(GL_VERSION);
+
+            if (vendor && renderer && version) {
+                gpuInfo += QString("%1 %2 (OpenGL %3)")
+                                   .arg(reinterpret_cast<const char*>(vendor))
+                                   .arg(reinterpret_cast<const char*>(renderer))
+                                   .arg(reinterpret_cast<const char*>(version));
+            } else {
+                gpuInfo += "Unable to query details";
+            }
+        }
+        context.doneCurrent();
+    } else {
+        gpuInfo += "Unable to create OpenGL context";
+    }
+
+    return gpuInfo;
+}
+
+// Function to print all system hardware information
+void PrintSystemHardwareInfo() {
+    CVLog::Print(
+            "=================================================================="
+            "==============");
+    CVLog::Print("System Hardware Information");
+    CVLog::Print(
+            "=================================================================="
+            "==============");
+
+    // Operating System
+    CVLog::Print(QString("OS: %1 %2 (%3)")
+                         .arg(QSysInfo::productType())
+                         .arg(QSysInfo::productVersion())
+                         .arg(QSysInfo::currentCpuArchitecture()));
+
+    // Kernel version
+    CVLog::Print(QString("Kernel: %1").arg(QSysInfo::kernelVersion()));
+
+    // CPU Information
+    CVLog::Print(GetCPUInfo());
+
+    // Memory Information
+    CVLog::Print(GetTotalMemoryInfo());
+
+    // Storage Information
+    CVLog::Print(GetStorageInfo());
+
+    // GPU Information
+    CVLog::Print(GetGPUInfo());
+
+    CVLog::Print(
+            "=================================================================="
+            "==============");
+}
 
 void InitEnvironment() {
     // fix OMP: Error #15: Initializing libomp.dylib, but found libomp.dylib
@@ -235,6 +430,9 @@ int main(int argc, char* argv[]) {
         }
 
         mainWindow->initPlugins();
+
+        // Print system hardware information
+        PrintSystemHardwareInfo();
 
         if (Settings::UI_WRAPPER) {
             // use UIManager instead

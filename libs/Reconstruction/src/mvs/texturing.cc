@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "MvsTexturing.h"
+#include "mvs/texturing.h"
 
 #include <QImage>
 #include <QImageReader>
@@ -38,13 +38,16 @@
 // ECV_IO_LIB
 #include <AutoIO.h>
 #include <ImageIO.h>
+#include <ObjFilter.h>
 #include <ecvHObjectCaster.h>
+#include <ecvMaterial.h>
+#include <ecvMaterialSet.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
-namespace cloudViewer {
+namespace colmap {
+namespace mvs {
 
-using namespace colmap;
 using colmap::image_t;
 
 // Implementations of internal structures
@@ -125,88 +128,6 @@ TexturePatch::TexturePatch(int label,
       max_x(max_x),
       max_y(max_y) {}
 
-bool ObjModel::SaveToFiles(const std::string& prefix) const {
-    // Save OBJ file
-    std::string obj_file = prefix + ".obj";
-    std::ofstream obj_out(obj_file);
-    if (!obj_out.good()) {
-        CVLog::Error("Failed to open OBJ file: %s", obj_file.c_str());
-        return false;
-    }
-
-    std::string mtl_name = colmap::GetPathBaseName(prefix) + ".mtl";
-    obj_out << "mtllib " << mtl_name << "\n";
-
-    obj_out << std::fixed << std::setprecision(6);
-
-    // Write vertices
-    for (const auto& v : vertices) {
-        obj_out << "v " << v.x() << " " << v.y() << " " << v.z() << "\n";
-    }
-
-    // Write texture coordinates
-    for (const auto& vt : texcoords) {
-        obj_out << "vt " << vt.x() << " " << (1.0f - vt.y()) << "\n";
-    }
-
-    // Write normals
-    for (const auto& vn : normals) {
-        obj_out << "vn " << vn.x() << " " << vn.y() << " " << vn.z() << "\n";
-    }
-
-    // Write groups and faces
-    for (const auto& group : groups) {
-        obj_out << "usemtl " << group.material_name << "\n";
-        for (const auto& face : group.faces) {
-            obj_out << "f";
-            for (int k = 0; k < 3; ++k) {
-                obj_out << " " << (face.vertex_ids[k] + 1);
-                // OBJ format: v/vt/vn (with texture), v//vn (without texture)
-                if (face.texcoord_ids[k] != SIZE_MAX) {
-                    // Has texture coordinates: v/vt/vn
-                    obj_out << "/" << (face.texcoord_ids[k] + 1) << "/"
-                            << (face.normal_ids[k] + 1);
-                } else {
-                    // No texture coordinates: v//vn (two slashes)
-                    obj_out << "//" << (face.normal_ids[k] + 1);
-                }
-            }
-            obj_out << "\n";
-        }
-    }
-
-    obj_out.close();
-
-    // Save MTL file (following mvs-texturing:
-    // material_lib.save_to_files(prefix))
-    std::string mtl_file =
-            colmap::JoinPaths(colmap::GetParentDir(prefix), mtl_name);
-    std::ofstream mtl_out(mtl_file);
-    if (!mtl_out.good()) {
-        CVLog::Error("Failed to open MTL file: %s", mtl_file.c_str());
-        return false;
-    }
-
-    std::string const name = colmap::GetPathBaseName(prefix);
-
-    for (const auto& [mat_name, texture_file] : materials) {
-        // Following mvs-texturing: diffuse_map_postfix = "_" + material.name +
-        // "_map_Kd.png"
-        std::string diffuse_map_postfix = "_" + mat_name + "_map_Kd.png";
-        mtl_out << "newmtl " << mat_name << "\n"
-                << "Ka 1.000000 1.000000 1.000000\n"
-                << "Kd 1.000000 1.000000 1.000000\n"
-                << "Ks 0.000000 0.000000 0.000000\n"
-                << "Tr 0.000000\n"  // Transparency (Tr = 1.0 - d)
-                << "illum 1\n"
-                << "Ns 1.000000\n"
-                << "map_Kd " << name + diffuse_map_postfix << "\n";
-    }
-
-    mtl_out.close();
-    return true;
-}
-
 MvsTexturing::MvsTexturing(const Options& options,
                            const colmap::Reconstruction& reconstruction,
                            colmap::mvs::Workspace* workspace,
@@ -220,7 +141,7 @@ int MvsTexturing::GetWorkspaceImageIdx(const colmap::image_t image_id) const {
     if (!workspace_) {
         return -1;
     }
-    const Image& image = reconstruction_.Image(image_id);
+    const colmap::Image& image = reconstruction_.Image(image_id);
     const std::string& image_name = image.Name();
 
     const auto& model = workspace_->GetModel();
@@ -244,8 +165,8 @@ int MvsTexturing::GetWorkspaceImageIdx(const colmap::image_t image_id) const {
 }
 
 bool MvsTexturing::IsPointVisible(const Eigen::Vector3d& point3d,
-                                  const Image& image,
-                                  const Camera& camera,
+                                  const colmap::Image& image,
+                                  const colmap::Camera& camera,
                                   int workspace_image_idx) const {
     if (!options_.use_depth_normal_maps || !workspace_ ||
         workspace_image_idx < 0) {
@@ -314,35 +235,35 @@ bool MvsTexturing::IsPointVisible(const Eigen::Vector3d& point3d,
 
 bool MvsTexturing::TextureMesh(
         ccMesh& mesh,
-        const camera::PinholeCameraTrajectory& camera_trajectory,
+        const ::cloudViewer::camera::PinholeCameraTrajectory& camera_trajectory,
         const std::string& output_path) {
     if (options_.verbose) {
-        CVLog::Print("Starting mvs-texturing based texture mapping...");
+        std::cout << StringPrintf("Starting mvs-texturing based texture mapping...\n");
     }
 
     // Verify mesh has associated cloud
     ccGenericPointCloud* generic_cloud = mesh.getAssociatedCloud();
     if (!generic_cloud) {
-        CVLog::Error(
+        std::cerr << "ERROR: " << StringPrintf(
                 "Mesh has no associated cloud! "
                 "This may be due to mesh merge failure. "
-                "Please ensure the mesh file has valid vertices.");
+                "Please ensure the mesh file has valid vertices.\n");
         return false;
     }
 
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(generic_cloud);
     if (!cloud || cloud->size() == 0) {
-        CVLog::Error("Mesh has invalid or empty associated cloud!");
+        std::cerr << "ERROR: " << StringPrintf("Mesh has invalid or empty associated cloud!\n");
         return false;
     }
 
     if (mesh.size() == 0) {
-        CVLog::Error("Mesh has no triangles!");
+        std::cerr << "ERROR: " << StringPrintf("Mesh has no triangles!\n");
         return false;
     }
 
     if (options_.verbose) {
-        CVLog::Print("Using mesh: %u vertices, %u triangles", cloud->size(),
+        std::cout << StringPrintf("Using mesh: %u vertices, %u triangles\n", cloud->size(),
                      mesh.size());
     }
 
@@ -351,8 +272,8 @@ bool MvsTexturing::TextureMesh(
     // mesh, before processing
     if (!cloud->hasNormals()) {
         if (options_.verbose) {
-            CVLog::Print(
-                    "Mesh has no normals, computing per-vertex normals...");
+            std::cout << StringPrintf(
+                    "Mesh has no normals, computing per-vertex normals...\n");
         }
         {
             mesh.ComputeVertexNormals();
@@ -360,19 +281,15 @@ bool MvsTexturing::TextureMesh(
             generic_cloud = mesh.getAssociatedCloud();
             cloud = ccHObjectCaster::ToPointCloud(generic_cloud);
             if (!cloud) {
-                CVLog::Error(
+                std::cerr << "ERROR: " << StringPrintf(
                         "Failed to get associated cloud after computing "
-                        "normals!");
+                        "normals!\n");
                 return false;
             }
             if (options_.verbose) {
-                CVLog::Print("Computed per-vertex normals for %u vertices",
-                             cloud->size());
+                std::cout << StringPrintf("Computed per-vertex normals for %u vertices",
+                             cloud->size()) << "\n";
             }
-        }
-    } else {
-        if (options_.verbose) {
-            CVLog::Print("Mesh already has normals");
         }
     }
 
@@ -380,12 +297,12 @@ bool MvsTexturing::TextureMesh(
     CreateTextureViews(camera_trajectory);
 
     if (texture_views_.empty()) {
-        CVLog::Error("No valid texture views created!");
+        std::cerr << "ERROR: " << StringPrintf("No valid texture views created!\n");
         return false;
     }
 
     if (options_.verbose) {
-        CVLog::Print("Created %zu texture views", texture_views_.size());
+        std::cout << StringPrintf("Created %zu texture views\n", texture_views_.size());
     }
 
     // Build adjacency graph for mesh faces
@@ -408,7 +325,7 @@ bool MvsTexturing::TextureMesh(
 
     // Build and save OBJ model
     if (!SaveOBJModel(output_path, mesh)) {
-        CVLog::Error("Failed to save OBJ model to %s", output_path.c_str());
+        std::cerr << "ERROR: " << StringPrintf("Failed to save OBJ model to %s\n", output_path.c_str());
         return false;
     }
 
@@ -416,7 +333,7 @@ bool MvsTexturing::TextureMesh(
 }
 
 void MvsTexturing::CreateTextureViews(
-        const camera::PinholeCameraTrajectory& camera_trajectory) {
+        const ::cloudViewer::camera::PinholeCameraTrajectory& camera_trajectory) {
     texture_views_.clear();
     view_to_image_id_.clear();
     texture_views_.reserve(camera_trajectory.parameters_.size());
@@ -432,7 +349,7 @@ void MvsTexturing::CreateTextureViews(
         std::string texture_file_base =
                 colmap::GetPathBaseName(params.texture_file_);
         for (const colmap::image_t& img_id : reconstruction_.RegImageIds()) {
-            const Image& img = reconstruction_.Image(img_id);
+            const colmap::Image& img = reconstruction_.Image(img_id);
             if (colmap::GetPathBaseName(img.Name()) == texture_file_base) {
                 image_id = img_id;
                 break;
@@ -453,7 +370,7 @@ void MvsTexturing::CreateTextureViews(
             // Image::ProjectionMatrix() returns [R|t] (world_to_cam), NOT
             // K*[R|t] This ensures we use the exact same coordinate system as
             // COLMAP
-            const Image& img = reconstruction_.Image(image_id);
+            const colmap::Image& img = reconstruction_.Image(image_id);
             const Eigen::Matrix3x4d Rt_matrix = img.ProjectionMatrix();
 
             // Build intrinsic matrix K
@@ -534,9 +451,9 @@ void MvsTexturing::CreateTextureViews(
 
         // Verify file exists, log warning if not
         if (!ExistsFile(image_file)) {
-            CVLog::Warning(
+            std::cerr << "WARNING: " << StringPrintf(
                     "Image file does not exist: %s (will try to load anyway)",
-                    image_file.c_str());
+                    image_file.c_str()) << "\n";
         }
 
         auto view = std::make_unique<TextureView>(
@@ -549,13 +466,13 @@ void MvsTexturing::CreateTextureViews(
 
 void MvsTexturing::CalculateDataCosts(const ccMesh& mesh) {
     if (options_.verbose) {
-        CVLog::Print("Calculating data costs for %zu faces...", mesh.size());
+        std::cout << StringPrintf("Calculating data costs for %zu faces...\n", mesh.size());
     }
 
     ccPointCloud* cloud =
             ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
     if (!cloud) {
-        CVLog::Error("Mesh has no associated cloud!");
+        std::cerr << "ERROR: " << StringPrintf("Mesh has no associated cloud!\n");
         return;
     }
 
@@ -568,9 +485,9 @@ void MvsTexturing::CalculateDataCosts(const ccMesh& mesh) {
     double mesh_global_scale = cloud->getGlobalScale();
 
     if (options_.verbose && mesh_is_shifted) {
-        CVLog::Print("Mesh has global shift: (%.6f, %.6f, %.6f), scale: %.6f",
+        std::cout << StringPrintf("Mesh has global shift: (%.6f, %.6f, %.6f), scale: %.6f",
                      mesh_global_shift.x, mesh_global_shift.y,
-                     mesh_global_shift.z, mesh_global_scale);
+                     mesh_global_shift.z, mesh_global_scale) << "\n";
     }
 
     const unsigned num_faces = mesh.size();
@@ -595,14 +512,14 @@ void MvsTexturing::CalculateDataCosts(const ccMesh& mesh) {
 
         if (image_id == colmap::kInvalidImageId) {
             if (options_.verbose) {
-                CVLog::Warning("View %zu has invalid image_id, skipping",
-                               view_id);
+                std::cerr << "WARNING: " << StringPrintf("View %zu has invalid image_id, skipping",
+                               view_id) << "\n";
             }
             continue;
         }
 
-        const Image& image = reconstruction_.Image(image_id);
-        const Camera& camera = reconstruction_.Camera(image.CameraId());
+        const colmap::Image& image = reconstruction_.Image(image_id);
+        const colmap::Camera& camera = reconstruction_.Camera(image.CameraId());
         int workspace_image_idx = GetWorkspaceImageIdx(image_id);
 
         // Process each face
@@ -731,10 +648,7 @@ void MvsTexturing::CalculateDataCosts(const ccMesh& mesh) {
             // Continue processing even if depth check failed - this ensures
             // faces have candidate views
 
-            // Compute quality following mvs-texturing: use projection area or
-            // GMI For now, use projection area (DATA_TERM_AREA)
-            // TODO: Implement GMI (Gradient Magnitude Integral) for better
-            // quality
+            // Compute quality following mvs-texturing: use projection area or GMI
             Eigen::Vector2f p1 = view->GetPixelCoords(v1);
             Eigen::Vector2f p2 = view->GetPixelCoords(v2);
             Eigen::Vector2f p3 = view->GetPixelCoords(v3);
@@ -752,7 +666,18 @@ void MvsTexturing::CalculateDataCosts(const ccMesh& mesh) {
                 continue;  // Zero or near-zero area projection
             }
 
-            float quality = area;  // Use area as quality (DATA_TERM_AREA)
+            float quality;
+            if (options_.use_gradient_magnitude) {
+                // Use GMI (Gradient Magnitude Image) for quality
+                quality = CalculateGMIQuality(view_id, p1, p2, p3);
+                // Fallback to area if GMI fails
+                if (quality <= 0.0f) {
+                    quality = area;
+                }
+            } else {
+                // Use area as quality (DATA_TERM_AREA)
+                quality = area;
+            }
 
             // If depth map check failed, reduce quality slightly to prefer
             // views that pass depth check, but still allow the face to be
@@ -778,23 +703,23 @@ void MvsTexturing::CalculateDataCosts(const ccMesh& mesh) {
         }
 
         if (options_.verbose && (view_id + 1) % 10 == 0) {
-            CVLog::Print("Processed %zu/%zu views...", view_id + 1,
+            std::cout << StringPrintf("Processed %zu/%zu views...\n", view_id + 1,
                          texture_views_.size());
         }
     }
 
     if (options_.verbose) {
-        CVLog::Print(
-                "Data cost calculation stats:\n"
+        std::cout << StringPrintf(
+                "\nData cost calculation stats:\n"
                 "  Total face-view pairs processed: %zu\n"
                 "  Inside view: %zu\n"
                 "  Backface culled: %zu\n"
                 "  Viewing angle too steep: %zu\n"
                 "  Behind camera: %zu\n"
                 "  Depth check passed: %zu\n"
-                "  Depth check failed: %zu\n"
+                "  Depth check not passed: %zu\n"
                 "  Zero area projection: %zu\n"
-                "  Quality OK (added to data costs): %zu",
+                "  Quality OK (added to data costs): %zu\n",
                 total_faces_processed, faces_inside_view, faces_backface_culled,
                 faces_viewing_angle_too_steep, faces_behind_camera,
                 faces_depth_check_passed, faces_depth_check_failed,
@@ -834,8 +759,8 @@ void MvsTexturing::CalculateDataCosts(const ccMesh& mesh) {
     }
 
     if (options_.verbose) {
-        CVLog::Print("Maximum quality: %.6f, 99.5%% percentile: %.6f",
-                     max_quality, percentile);
+        std::cout << StringPrintf("Maximum quality: %.6f, 99.5%% percentile: %.6f",
+                     max_quality, percentile) << "\n";
     }
 
     // 3. Convert face_projection_infos_ to data_costs_ format
@@ -866,14 +791,14 @@ void MvsTexturing::CalculateDataCosts(const ccMesh& mesh) {
         for (const auto& infos : face_projection_infos_) {
             total_projections += infos.size();
         }
-        CVLog::Print("Calculated data costs: %zu total face-view projections",
-                     total_projections);
+        std::cout << StringPrintf("Calculated data costs: %zu total face-view projections",
+                     total_projections) << "\n";
     }
 }
 
 void MvsTexturing::BuildAdjacencyGraph(const ccMesh& mesh) {
     if (options_.verbose) {
-        CVLog::Print("Building adjacency graph for mesh faces...");
+        std::cout << StringPrintf("Building adjacency graph for mesh faces...\n");
     }
 
     const unsigned num_faces = mesh.size();
@@ -883,7 +808,7 @@ void MvsTexturing::BuildAdjacencyGraph(const ccMesh& mesh) {
     ccPointCloud* cloud =
             ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
     if (!cloud) {
-        CVLog::Error("Mesh has no associated cloud!");
+        std::cerr << "ERROR: " << StringPrintf("Mesh has no associated cloud!\n");
         return;
     }
 
@@ -934,7 +859,7 @@ void MvsTexturing::BuildAdjacencyGraph(const ccMesh& mesh) {
         for (const auto& adj : face_adjacency_) {
             total_edges += adj.size();
         }
-        CVLog::Print("Built adjacency graph: %zu faces, %zu edges", num_faces,
+        std::cout << StringPrintf("Built adjacency graph: %zu faces, %zu edges\n", num_faces,
                      total_edges / 2);
     }
 }
@@ -952,7 +877,7 @@ float MvsTexturing::ComputePairwiseCost(size_t face1,
 
 void MvsTexturing::SelectViews() {
     if (options_.verbose) {
-        CVLog::Print("Selecting views using graph cut algorithm...");
+        std::cout << StringPrintf("Selecting views using graph cut algorithm...\n");
     }
 
     face_labels_.clear();
@@ -1045,7 +970,7 @@ void MvsTexturing::SelectViews() {
         if (!changed) break;
 
         if (options_.verbose && iter % 2 == 0) {
-            CVLog::Print("Graph cut iteration %d...", iter + 1);
+            std::cout << StringPrintf("Graph cut iteration %d...\n", iter + 1);
         }
     }
 
@@ -1061,13 +986,13 @@ void MvsTexturing::SelectViews() {
     }
 
     if (options_.verbose) {
-        CVLog::Print("Selected views: %zu/%zu faces have valid labels (%.1f%%)",
+        std::cout << StringPrintf("Selected views: %zu/%zu faces have valid labels (%.1f%%)\n",
                      labeled_faces, face_labels_.size(),
                      100.0f * labeled_faces / face_labels_.size());
         if (unlabeled_faces > 0) {
-            CVLog::Warning(
+            std::cerr << "WARNING: " << StringPrintf(
                     "%zu faces have no valid labels (will be handled as unseen "
-                    "faces)",
+                    "faces)\n",
                     unlabeled_faces);
         }
     }
@@ -1176,7 +1101,7 @@ static TexturePatchCandidate GenerateCandidate(int label,
     }
 
     if (!texture_view->image_data) {
-        CVLog::Error("Failed to load image for texture view");
+        std::cerr << "ERROR: " << StringPrintf("Failed to load image for texture view\n");
         TexturePatchCandidate empty;
         empty.min_x = empty.min_y = empty.max_x = empty.max_y = 0;
         return empty;
@@ -1243,7 +1168,7 @@ static TexturePatchCandidate GenerateCandidate(int label,
     // Validate bounding box
     if (min_x < 0 || min_y < 0 || max_x >= texture_view->width ||
         max_y >= texture_view->height) {
-        CVLog::Warning("Bounding box out of bounds, clamping");
+        std::cerr << "WARNING: " << StringPrintf("Bounding box out of bounds, clamping\n");
         min_x = std::max(0, min_x);
         min_y = std::max(0, min_y);
         max_x = std::min(texture_view->width - 1, max_x);
@@ -1312,14 +1237,14 @@ static TexturePatchCandidate GenerateCandidate(int label,
 void MvsTexturing::GenerateTexturePatches(const ccMesh& mesh) {
     // Following mvs-texturing's generate_texture_patches implementation exactly
     if (options_.verbose) {
-        CVLog::Print("Generating texture patches...");
+        std::cout << StringPrintf("Generating texture patches...\n");
     }
 
     texture_patches_.clear();
     ccPointCloud* cloud =
             ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
     if (!cloud) {
-        CVLog::Error("Mesh has no associated cloud!");
+        std::cerr << "ERROR: " << StringPrintf("Mesh has no associated cloud!\n");
         return;
     }
 
@@ -1391,7 +1316,7 @@ void MvsTexturing::GenerateTexturePatches(const ccMesh& mesh) {
                 texture_view->image_data = std::make_shared<QImage>(
                         img.convertToFormat(QImage::Format_RGB888));
             } else {
-                CVLog::Warning("Failed to load image: %s", image_path.c_str());
+                std::cerr << "WARNING: " << StringPrintf("Failed to load image: %s\n", image_path.c_str());
                 continue;
             }
         }
@@ -1535,7 +1460,7 @@ void MvsTexturing::GenerateTexturePatches(const ccMesh& mesh) {
         // unseen faces
         // TODO: Implement proper hole filling if needed
         if (!unseen_faces.empty() && options_.verbose) {
-            CVLog::Print("Found %zu unseen faces in %zu subgraphs",
+            std::cout << StringPrintf("Found %zu unseen faces in %zu subgraphs\n",
                          unseen_faces.size(), subgraphs.size());
 
             // Create a simple texture patch for unseen faces (following
@@ -1586,7 +1511,7 @@ void MvsTexturing::GenerateTexturePatches(const ccMesh& mesh) {
     MergeVertexProjectionInfos();
 
     if (options_.verbose) {
-        CVLog::Print("Generated %zu texture patches", texture_patches_.size());
+        std::cout << StringPrintf("Generated %zu texture patches\n", texture_patches_.size());
     }
 }
 
@@ -1600,7 +1525,7 @@ void MvsTexturing::SeamLeveling(const ccMesh& mesh) {
     // use simplified approach
 
     if (options_.verbose) {
-        CVLog::Print("Performing seam leveling...");
+        std::cout << StringPrintf("Performing seam leveling...\n");
     }
 
     if (texture_patches_.empty()) {
@@ -1664,14 +1589,14 @@ void MvsTexturing::SeamLeveling(const ccMesh& mesh) {
     //  3. Optionally call local_seam_leveling if enabled
 
     if (options_.verbose) {
-        CVLog::Print("Seam leveling completed: %zu seam edges found",
+        std::cout << StringPrintf("Seam leveling completed: %zu seam edges found\n",
                      seam_edges_.size());
     }
 }
 
 void MvsTexturing::GenerateTextureAtlases() {
     if (options_.verbose) {
-        CVLog::Print("Generating texture atlases with bin packing...");
+        std::cout << StringPrintf("Generating texture atlases with bin packing...\n");
     }
 
     if (texture_patches_.empty()) {
@@ -1681,7 +1606,7 @@ void MvsTexturing::GenerateTextureAtlases() {
     // Constants for texture atlas sizing
     const unsigned int MAX_TEXTURE_SIZE = 8192;
     const unsigned int PREF_TEXTURE_SIZE = 4096;
-    const unsigned int MIN_TEXTURE_SIZE = 256;
+    // const unsigned int MIN_TEXTURE_SIZE = 256;  // Reserved for future use
     const unsigned int PADDING = 2;
 
     // Sort patches by size (largest first) for better packing
@@ -1799,7 +1724,7 @@ void MvsTexturing::GenerateTextureAtlases() {
                 atlas_info.width, atlas_info.height, QImage::Format_RGB888);
         atlas.image->fill(Qt::black);
 
-        size_t texcoord_id_offset = 0;
+        // size_t texcoord_id_offset = 0;  // Currently unused
 
         // Merge all patches into this atlas
         for (const auto& ap : atlas_info.patches) {
@@ -1843,175 +1768,373 @@ void MvsTexturing::GenerateTextureAtlases() {
     }
 
     if (options_.verbose) {
-        CVLog::Print("Created %zu texture atlases from %zu patches",
-                     texture_atlases_.size(), texture_patches_.size());
+        std::cout << StringPrintf("Created %zu texture atlases from %zu patches",
+                     texture_atlases_.size(), texture_patches_.size()) << "\n";
         for (size_t i = 0; i < texture_atlases_.size(); ++i) {
-            CVLog::Print("  Atlas %zu: %u x %u, %zu faces", i + 1,
+            std::cout << StringPrintf("  Atlas %zu: %u x %u, %zu faces", i + 1,
                          texture_atlases_[i].width, texture_atlases_[i].height,
-                         texture_atlases_[i].face_ids.size());
+                         texture_atlases_[i].face_ids.size()) << "\n";
         }
     }
 }
 
+// ============================================================================
+// GMI (Gradient Magnitude Image) Implementation
+// Reference: OpenMVS (https://github.com/cdcseacave/openMVS)
+// ============================================================================
+
+// Compute gradient magnitude image using Sobel operator
+QImage MvsTexturing::ComputeGradientMagnitudeImage(const QImage& image) {
+    // Convert to grayscale if needed
+    QImage gray;
+    if (image.format() == QImage::Format_Grayscale8) {
+        gray = image;
+    } else {
+        gray = image.convertToFormat(QImage::Format_Grayscale8);
+    }
+    
+    const int width = gray.width();
+    const int height = gray.height();
+    
+    // Create output GMI image
+    QImage gmi(width, height, QImage::Format_Grayscale8);
+    gmi.fill(0);
+    
+    // Compute gradients using Sobel operator
+    // Sobel kernels:
+    // Gx = [-1 0 1; -2 0 2; -1 0 1]
+    // Gy = [-1 -2 -1; 0 0 0; 1 2 1]
+    
+    std::vector<float> magnitudes;
+    magnitudes.reserve((width - 2) * (height - 2));
+    
+    for (int y = 1; y < height - 1; y++) {
+        const uchar* row_prev = gray.constScanLine(y - 1);
+        const uchar* row_curr = gray.constScanLine(y);
+        const uchar* row_next = gray.constScanLine(y + 1);
+        
+        for (int x = 1; x < width - 1; x++) {
+            // Sobel Gx (horizontal gradient)
+            int gx = -static_cast<int>(row_prev[x - 1]) + static_cast<int>(row_prev[x + 1])
+                     - 2 * static_cast<int>(row_curr[x - 1]) + 2 * static_cast<int>(row_curr[x + 1])
+                     - static_cast<int>(row_next[x - 1]) + static_cast<int>(row_next[x + 1]);
+            
+            // Sobel Gy (vertical gradient)
+            int gy = -static_cast<int>(row_prev[x - 1]) - 2 * static_cast<int>(row_prev[x]) - static_cast<int>(row_prev[x + 1])
+                     + static_cast<int>(row_next[x - 1]) + 2 * static_cast<int>(row_next[x]) + static_cast<int>(row_next[x + 1]);
+            
+            // Gradient magnitude
+            float mag = std::sqrt(static_cast<float>(gx * gx + gy * gy));
+            magnitudes.push_back(mag);
+        }
+    }
+    
+    // Find max magnitude for normalization
+    float max_mag = 0.0f;
+    for (float mag : magnitudes) {
+        max_mag = std::max(max_mag, mag);
+    }
+    
+    // Normalize and store
+    size_t idx = 0;
+    for (int y = 1; y < height - 1; y++) {
+        uchar* row = gmi.scanLine(y);
+        for (int x = 1; x < width - 1; x++) {
+            float normalized = (max_mag > 0.0f) ? (magnitudes[idx] / max_mag) : 0.0f;
+            row[x] = static_cast<uchar>(normalized * 255.0f);
+            idx++;
+        }
+    }
+    
+    return gmi;
+}
+
+// Check if point (px, py) is inside triangle (p1, p2, p3) using barycentric coordinates
+bool MvsTexturing::IsPointInTriangle(float px, float py,
+                                    const Eigen::Vector2f& p1,
+                                    const Eigen::Vector2f& p2,
+                                    const Eigen::Vector2f& p3) const {
+    // Use barycentric coordinates method
+    float denom = (p2.y() - p3.y()) * (p1.x() - p3.x()) + 
+                  (p3.x() - p2.x()) * (p1.y() - p3.y());
+    
+    if (std::abs(denom) < 1e-10f) {
+        return false;  // Degenerate triangle
+    }
+    
+    float a = ((p2.y() - p3.y()) * (px - p3.x()) + 
+               (p3.x() - p2.x()) * (py - p3.y())) / denom;
+    float b = ((p3.y() - p1.y()) * (px - p3.x()) + 
+               (p1.x() - p3.x()) * (py - p3.y())) / denom;
+    float c = 1.0f - a - b;
+    
+    return a >= 0.0f && b >= 0.0f && c >= 0.0f;
+}
+
+// Calculate GMI quality for a projected triangle
+// Reference: OpenMVS texture quality computation based on gradient magnitude
+float MvsTexturing::CalculateGMIQuality(size_t view_id,
+                                       const Eigen::Vector2f& p1,
+                                       const Eigen::Vector2f& p2,
+                                       const Eigen::Vector2f& p3) {
+    // Ensure GMI is computed for this view
+    if (view_id >= gradient_magnitude_images_.size() ||
+        gradient_magnitude_images_[view_id].isNull()) {
+        // Compute GMI on-demand if not yet done
+        if (view_id < texture_views_.size()) {
+            const auto& view = texture_views_[view_id];
+            if (view && view->image_data && !view->image_data->isNull()) {
+                if (view_id >= gradient_magnitude_images_.size()) {
+                    gradient_magnitude_images_.resize(texture_views_.size());
+                }
+                gradient_magnitude_images_[view_id] = 
+                    ComputeGradientMagnitudeImage(*view->image_data);
+            } else {
+                return 0.0f;  // Image not loaded
+            }
+        } else {
+            return 0.0f;
+        }
+    }
+    
+    const QImage& gmi = gradient_magnitude_images_[view_id];
+    if (gmi.isNull()) {
+        return 0.0f;
+    }
+    
+    // Calculate bounding box of triangle
+    float min_x = std::min({p1.x(), p2.x(), p3.x()});
+    float max_x = std::max({p1.x(), p2.x(), p3.x()});
+    float min_y = std::min({p1.y(), p2.y(), p3.y()});
+    float max_y = std::max({p1.y(), p2.y(), p3.y()});
+    
+    // Clamp to image bounds
+    min_x = std::max(0.0f, min_x);
+    max_x = std::min(static_cast<float>(gmi.width() - 1), max_x);
+    min_y = std::max(0.0f, min_y);
+    max_y = std::min(static_cast<float>(gmi.height() - 1), max_y);
+    
+    // Sample GMI values in the triangle region
+    std::vector<float> samples;
+    samples.reserve(static_cast<size_t>((max_x - min_x + 1) * (max_y - min_y + 1)));
+    
+    for (int y = static_cast<int>(std::floor(min_y)); y <= static_cast<int>(std::ceil(max_y)); y++) {
+        if (y < 0 || y >= gmi.height()) continue;
+        const uchar* row = gmi.constScanLine(y);
+        
+        for (int x = static_cast<int>(std::floor(min_x)); x <= static_cast<int>(std::ceil(max_x)); x++) {
+            if (x < 0 || x >= gmi.width()) continue;
+            
+            // Check if point is inside triangle
+            if (IsPointInTriangle(static_cast<float>(x), static_cast<float>(y), p1, p2, p3)) {
+                float gmi_value = static_cast<float>(row[x]) / 255.0f;
+                samples.push_back(gmi_value);
+            }
+        }
+    }
+    
+    if (samples.empty()) {
+        return 0.0f;
+    }
+    
+    // Use median for robustness against outliers (like OpenMVS)
+    std::sort(samples.begin(), samples.end());
+    float median_gmi = samples[samples.size() / 2];
+    
+    // Calculate projected triangle area
+    float area = 0.5f * std::abs((p2.x() - p1.x()) * (p3.y() - p1.y()) -
+                                  (p3.x() - p1.x()) * (p2.y() - p1.y()));
+    
+    // Combine GMI with area: quality = GMI_median * sqrt(area)
+    // Following OpenMVS approach: higher gradient = better texture quality
+    // Scale by sqrt(area) to balance resolution vs coverage
+    return median_gmi * std::sqrt(std::max(area, 1.0f));
+}
+
 bool MvsTexturing::SaveOBJModel(const std::string& output_path,
                                 const ccMesh& mesh) {
-    // Following mvs-texturing's build_model implementation exactly
     if (options_.verbose) {
-        CVLog::Print("Building OBJ model...");
+        std::cout << StringPrintf("Exporting OBJ model with ObjFilter...\n");
     }
 
-    obj_model_ = std::make_unique<ObjModel>();
-
-    ccPointCloud* cloud =
-            ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
-    if (!cloud) {
-        CVLog::Error("Mesh has no associated cloud!");
-        return false;
-    }
-
-    // Copy vertices with global shift/scale handling (following mvs-texturing:
-    // mesh->get_vertices())
-    obj_model_->vertices.reserve(cloud->size());
-    bool is_shifted = cloud->isShifted();
-
-    for (unsigned i = 0; i < cloud->size(); ++i) {
-        const CCVector3* pt = cloud->getPoint(i);
-        if (is_shifted) {
-            CCVector3d global_pt = cloud->toGlobal3d(*pt);
-            obj_model_->vertices.emplace_back(static_cast<float>(global_pt.x),
-                                              static_cast<float>(global_pt.y),
-                                              static_cast<float>(global_pt.z));
-        } else {
-            obj_model_->vertices.emplace_back(pt->x, pt->y, pt->z);
-        }
-    }
-
-    // Copy normals (following mvs-texturing: mesh->get_vertex_normals())
-    obj_model_->normals.reserve(cloud->size());
-    if (cloud->hasNormals()) {
-        for (unsigned i = 0; i < cloud->size(); ++i) {
-            const CCVector3& n = cloud->getPointNormal(i);
-            obj_model_->normals.emplace_back(n.x, n.y, n.z);
-        }
-    } else {
-        CVLog::Warning("Mesh has no normals, using default normals");
-        obj_model_->normals.resize(cloud->size(), Eigen::Vector3f(0, 0, 1));
-    }
-
-    // Process texture atlases (following mvs-texturing: build_model)
     if (texture_atlases_.empty()) {
-        CVLog::Warning("No texture atlases to save!");
+        std::cerr << "WARNING: No texture atlases to save!\n";
         return false;
     }
 
-    // Helper function to format material name (material0000, material0001,
-    // etc.)
+    ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
+    if (!cloud) {
+        std::cerr << "ERROR: Mesh has no associated cloud!\n";
+        return false;
+    }
+
+    // Parse output path
+    std::string root, ext;
+    colmap::SplitFileExtension(output_path, &root, &ext);
+    std::string prefix = (ext == ".obj" || ext == ".OBJ") ? root : output_path;
+    std::string output_dir = colmap::GetParentDir(prefix);
+    std::string base_name = colmap::GetPathBaseName(prefix);
+
+    // Helper to format material names (material0000, material0001, ...)
     auto format_material_name = [](size_t n) -> std::string {
         std::string name = "material";
         std::string num_str = std::to_string(n);
-        // Pad with zeros to 4 digits (mvs-texturing uses get_filled(n, 4))
         while (num_str.length() < 4) {
             num_str = "0" + num_str;
         }
         return name + num_str;
     };
 
-    for (size_t atlas_idx = 0; atlas_idx < texture_atlases_.size();
-         ++atlas_idx) {
+    // Step 1: Create ccMesh directly from original data
+    // Clone the point cloud (preserve vertices and normals)
+    ccPointCloud* export_cloud = cloud->cloneThis();
+    if (!export_cloud) {
+        std::cerr << "ERROR: Failed to clone point cloud\n";
+        return false;
+    }
+    export_cloud->setEnabled(false);
+
+    // Create mesh
+    ccMesh* export_mesh = new ccMesh(export_cloud);
+    export_mesh->setName("textured-mesh");
+    export_mesh->addChild(export_cloud);
+
+    // Count total faces
+    size_t total_faces = 0;
+    for (const auto& atlas : texture_atlases_) {
+        total_faces += atlas.face_ids.size();
+    }
+
+    if (!export_mesh->reserve(total_faces)) {
+        std::cerr << "ERROR: Failed to reserve memory for export mesh\n";
+        delete export_mesh;
+        return false;
+    }
+
+    // Step 2: Create materials and save texture images
+    ccMaterialSet* materials = new ccMaterialSet("materials");
+
+    for (size_t atlas_idx = 0; atlas_idx < texture_atlases_.size(); ++atlas_idx) {
         const auto& atlas = texture_atlases_[atlas_idx];
-
-        // Create material (following mvs-texturing: material.name = "material"
-        // + get_filled(n, 4))
         std::string material_name = format_material_name(atlas_idx);
-        obj_model_->materials[material_name] =
-                material_name;  // Store material name
 
-        // Save texture atlas image (following mvs-texturing:
-        // prefix_materialname_map_Kd.png)
-        std::string prefix = output_path;
-        std::string root, ext;
-        colmap::SplitFileExtension(output_path, &root, &ext);
-        if (ext == ".obj" || ext == ".OBJ") {
-            prefix = root;
+        // Build texture path (ObjFilter's saveAsMTL will save it automatically)
+        std::string texture_filename = base_name + "_" + material_name + "_map_Kd.png";
+        std::string texture_path = colmap::JoinPaths(output_dir, texture_filename);
+
+        // Create material
+        ccMaterial::Shared mat(new ccMaterial(QString::fromStdString(material_name)));
+        mat->setAmbient(ecvColor::Rgbaf(1.0f, 1.0f, 1.0f, 1.0f));
+        mat->setDiffuse(ecvColor::Rgbaf(1.0f, 1.0f, 1.0f, 1.0f));
+        mat->setSpecular(ecvColor::Rgbaf(0.0f, 0.0f, 0.0f, 1.0f));
+        mat->setShininess(1.0f);
+
+        // Register texture into ccMaterial's static database
+        // ObjFilter will automatically save it when calling saveAsMTL()
+        mat->setTexture(*atlas.image, QString::fromStdString(texture_path), false);
+
+        materials->addMaterial(mat);
+    }
+
+    export_mesh->setMaterialSet(materials);
+
+    // Step 3: Build texture coordinates table (all atlases combined)
+    TextureCoordsContainer* texCoords = new TextureCoordsContainer();
+    
+    size_t total_texcoords = 0;
+    for (const auto& atlas : texture_atlases_) {
+        total_texcoords += atlas.texcoords.size();
+    }
+    texCoords->reserve(total_texcoords);
+
+    for (const auto& atlas : texture_atlases_) {
+        for (const auto& tc : atlas.texcoords) {
+            // CRITICAL FIX: Flip Y axis to match ObjModel::SaveToFiles behavior
+            // ObjModel writes: vt.x(), (1.0 - vt.y()) - flips Y when writing
+            // ObjFilter writes: tc.tx, tc.ty - NO flip when writing
+            // Therefore, we must flip Y here before storing
+            texCoords->addElement(TexCoords2D(tc.x(), 1.0f - tc.y()));
         }
-        std::string name = colmap::GetPathBaseName(prefix);
-        std::string texture_path =
-                colmap::JoinPaths(colmap::GetParentDir(prefix),
-                                  name + "_" + material_name + "_map_Kd.png");
-        if (!atlas.image->save(QString::fromStdString(texture_path))) {
-            CVLog::Warning("Failed to save texture atlas %zu to %s", atlas_idx,
-                           texture_path.c_str());
-        }
+    }
 
-        // Add texture coordinates (following mvs-texturing:
-        // texcoords.insert(...))
-        size_t texcoord_id_offset = obj_model_->texcoords.size();
-        obj_model_->texcoords.insert(obj_model_->texcoords.end(),
-                                     atlas.texcoords.begin(),
-                                     atlas.texcoords.end());
+    export_mesh->setTexCoordinatesTable(texCoords);
 
-        // Create group (following mvs-texturing:
-        // groups.push_back(ObjModel::Group()))
-        ObjModel::Group group;
-        group.material_name = material_name;
+    // Step 4: Reserve per-triangle data
+    if (!export_mesh->reservePerTriangleMtlIndexes() ||
+        !export_mesh->reservePerTriangleTexCoordIndexes()) {
+        std::cerr << "ERROR: Failed to reserve per-triangle data\n";
+        delete export_mesh;
+        return false;
+    }
 
-        // Add faces (following mvs-texturing: for each atlas face)
+    // Step 5: Add faces by atlas order (naturally groups by material!)
+    // This is the key: processing atlases in order means faces are naturally grouped
+    size_t texcoord_offset = 0;
+    
+    for (size_t atlas_idx = 0; atlas_idx < texture_atlases_.size(); ++atlas_idx) {
+        const auto& atlas = texture_atlases_[atlas_idx];
+        int material_idx = static_cast<int>(atlas_idx);
+
         const auto& atlas_faces = atlas.face_ids;
         const auto& atlas_texcoord_ids = atlas.texcoord_ids;
 
         for (size_t i = 0; i < atlas_faces.size(); ++i) {
-            size_t mesh_face_pos = atlas_faces[i];
-            Eigen::Vector3i tri_idx;
-            mesh.getTriangleVertIndexes(mesh_face_pos, tri_idx);
-
-            // Vertex IDs (following mvs-texturing: mesh_faces[mesh_face_pos])
-            size_t vertex_ids[3] = {static_cast<size_t>(tri_idx(0)),
-                                    static_cast<size_t>(tri_idx(1)),
-                                    static_cast<size_t>(tri_idx(2))};
-            size_t* normal_ids =
-                    vertex_ids;  // Same as vertex_ids (following mvs-texturing)
-
-            // Texture coordinate IDs (following mvs-texturing:
-            // texcoord_id_offset + atlas_texcoord_ids[i * 3])
-            size_t texcoord_ids[3] = {
-                    texcoord_id_offset + atlas_texcoord_ids[i * 3 + 0],
-                    texcoord_id_offset + atlas_texcoord_ids[i * 3 + 1],
-                    texcoord_id_offset + atlas_texcoord_ids[i * 3 + 2]};
-
-            ObjModel::Face face;
-            std::copy(vertex_ids, vertex_ids + 3, face.vertex_ids);
-            std::copy(texcoord_ids, texcoord_ids + 3, face.texcoord_ids);
-            std::copy(normal_ids, normal_ids + 3, face.normal_ids);
-
-            group.faces.push_back(face);
+            size_t mesh_face_idx = atlas_faces[i];
+            
+            // Get vertex indices from original mesh
+            const cloudViewer::VerticesIndexes* tri = mesh.getTriangleVertIndexes(mesh_face_idx);
+            
+            // Add triangle
+            export_mesh->addTriangle(tri->i1, tri->i2, tri->i3);
+            
+            // Add material index (all faces in this loop have same material!)
+            export_mesh->addTriangleMtlIndex(material_idx);
+            
+            // Add texture coordinate indices (offset by accumulated texcoords)
+            int tc_idx0 = static_cast<int>(texcoord_offset + atlas_texcoord_ids[i * 3 + 0]);
+            int tc_idx1 = static_cast<int>(texcoord_offset + atlas_texcoord_ids[i * 3 + 1]);
+            int tc_idx2 = static_cast<int>(texcoord_offset + atlas_texcoord_ids[i * 3 + 2]);
+            
+            export_mesh->addTriangleTexCoordIndexes(tc_idx0, tc_idx1, tc_idx2);
         }
 
-        obj_model_->groups.push_back(group);
+        texcoord_offset += atlas.texcoords.size();
     }
 
-    // Save model (following mvs-texturing: Model::save(model, prefix))
-    std::string prefix = output_path;
-    std::string root, ext;
-    colmap::SplitFileExtension(output_path, &root, &ext);
-    if (ext == ".obj" || ext == ".OBJ") {
-        prefix = root;
+    // Step 6: Use ObjFilter to save
+    if (options_.verbose) {
+        std::cout << StringPrintf("  Saving with ObjFilter (%zu materials, %zu usemtl switches)...\n",
+                                  texture_atlases_.size(), texture_atlases_.size());
     }
 
-    bool success = obj_model_->SaveToFiles(prefix);
-    if (success && options_.verbose) {
-        CVLog::Print("Saved OBJ model to %s (vertices: %zu, faces: %zu)",
-                     prefix.c_str(), obj_model_->vertices.size(),
-                     obj_model_->groups.empty()
-                             ? 0
-                             : std::accumulate(obj_model_->groups.begin(),
-                                               obj_model_->groups.end(), 0,
-                                               [](size_t sum,
-                                                  const ObjModel::Group& g) {
-                                                   return sum + g.faces.size();
-                                               }));
+    ObjFilter obj_filter;
+    FileIOFilter::SaveParameters params;
+    params.alwaysDisplaySaveDialog = false;
+    params.parentWidget = nullptr;
+
+    QString qpath = QString::fromStdString(output_path);
+    CC_FILE_ERROR result = obj_filter.saveToFile(export_mesh, qpath, params);
+
+    // Clean up
+    if (export_mesh) {
+        delete export_mesh;
+        export_mesh = nullptr;
     }
 
-    return success;
+    if (result == CC_FERR_NO_ERROR) {
+        if (options_.verbose) {
+            std::cout << StringPrintf(
+                    "Saved OBJ model to %s\n"
+                    "  Vertices: %u, Faces: %zu, Materials: %zu, usemtl switches: %zu\n",
+                    output_path.c_str(), cloud->size(), total_faces,
+                    texture_atlases_.size(), texture_atlases_.size());
+        }
+        return true;
+    } else {
+        std::cerr << "ERROR: ObjFilter failed to save, error code: " << result << std::endl;
+        return false;
+    }
 }
 
-}  // namespace cloudViewer
+}  // namespace mvs
+}  // namespace colmap

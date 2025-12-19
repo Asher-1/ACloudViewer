@@ -12,10 +12,11 @@
 
 #include "OptionsWidget.h"
 #include "base/reconstruction.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 
-class OptionManager;
+using OptionManager = colmap::OptionManager;
 class ReconstructionWidget;
 class ThreadControlWidget;
 

@@ -16,9 +16,11 @@ namespace colmap {
 class Bitmap;
 }
 
+#include "util/option_manager.h"
+
 namespace cloudViewer {
 
-class OptionManager;
+using OptionManager = colmap::OptionManager;
 class ModelViewerWidget;
 
 class ImageViewerGraphicsScene : public QGraphicsScene {

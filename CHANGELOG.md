@@ -11,6 +11,7 @@ v3.9.4-Beta (Asher) - 10/17/2025
     -   Add Excellent Texture mesh rendering support
     -   Add 2D Image Rendering support with transparency feature
     -   Add Qt6 compatible interface strategy support
+    -   Add Cork plugin for linux and macos
 
 - Bug fixes:
     -   Fix code style

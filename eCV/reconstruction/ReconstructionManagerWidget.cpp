@@ -7,7 +7,7 @@
 
 #include "ReconstructionManagerWidget.h"
 
-#include "ReconstructionManager.h"
+#include "base/reconstruction_manager.h"
 
 namespace cloudViewer {
 
@@ -17,7 +17,8 @@ const std::size_t ReconstructionManagerWidget::kNewestReconstructionIdx =
         std::numeric_limits<size_t>::max();
 
 ReconstructionManagerWidget::ReconstructionManagerWidget(
-        QWidget* parent, const ReconstructionManager* reconstruction_manager)
+        QWidget* parent,
+        const colmap::ReconstructionManager* reconstruction_manager)
     : QComboBox(parent), reconstruction_manager_(reconstruction_manager) {
     QFont font;
     font.setPointSize(10);

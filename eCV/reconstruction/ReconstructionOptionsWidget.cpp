@@ -7,7 +7,7 @@
 
 #include "ReconstructionOptionsWidget.h"
 
-#include "controllers/IncrementalMapperController.h"
+#include "controllers/incremental_mapper.h"
 
 namespace cloudViewer {
 

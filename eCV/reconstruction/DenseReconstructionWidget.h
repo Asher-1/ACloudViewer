@@ -18,9 +18,11 @@ namespace colmap {
 class Reconstruction;
 }
 
+#include "util/option_manager.h"
+
 namespace cloudViewer {
 
-class OptionManager;
+using OptionManager = colmap::OptionManager;
 class ReconstructionWidget;
 class DenseReconstructionOptionsWidget : public QWidget {
 public:

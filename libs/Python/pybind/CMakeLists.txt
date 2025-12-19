@@ -148,19 +148,37 @@ endif ()
 if (BUILD_PYTORCH_OPS)
     list(APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:cloudViewer_torch_ops>)
     set(DEPENDENCIES_DIR "$<TARGET_FILE_DIR:TBB::tbb>")
+    # Set KMP_DUPLICATE_LIB_OK to avoid OpenMP initialization errors when loading torch ops library
     add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:cloudViewer_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../../cloudViewer/ml/tensorflow" --dependencies_dir "${DEPENDENCIES_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E env KMP_DUPLICATE_LIB_OK=TRUE ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:cloudViewer_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../../cloudViewer/ml/tensorflow" --dependencies_dir "${DEPENDENCIES_DIR}"
             DEPENDS cloudViewer_torch_ops
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMENT "Generating python ops.py and return_types.py")
 
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py")
-    # get the pytorch version information again here for _build_config.py
-    # because it is not safe to call find_package(Pytorch) again.
-    execute_process(
-            COMMAND ${Python3_EXECUTABLE} "-c"
-            "import torch; print(torch.__version__, end='')"
-            OUTPUT_VARIABLE Pytorch_VERSION)
+    
+    # Pytorch_VERSION should be available from FindPytorch.cmake (set as cache variable)
+    # Verify it's set correctly for _build_config.py
+    if(NOT DEFINED Pytorch_VERSION OR Pytorch_VERSION STREQUAL "")
+        message(WARNING "Pytorch_VERSION is not set or empty!")
+        message(WARNING "This should have been set by FindPytorch.cmake")
+        message(WARNING "Attempting to get PyTorch version directly...")
+        
+        execute_process(
+                COMMAND ${Python3_EXECUTABLE} "-c"
+                "import torch; print(torch.__version__, end='')"
+                OUTPUT_VARIABLE Pytorch_VERSION
+                RESULT_VARIABLE Pytorch_VERSION_RESULT
+                ERROR_VARIABLE Pytorch_VERSION_ERROR
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+        
+        if(NOT Pytorch_VERSION_RESULT EQUAL "0" OR Pytorch_VERSION STREQUAL "")
+            message(FATAL_ERROR "Cannot determine PyTorch version. Error: ${Pytorch_VERSION_ERROR}")
+        endif()
+        message(STATUS "PyTorch version (from Python): ${Pytorch_VERSION}")
+    else()
+        message(STATUS "PyTorch version (from FindPytorch): ${Pytorch_VERSION}")
+    endif()
 endif ()
 
 if (BUNDLE_CLOUDVIEWER_ML)

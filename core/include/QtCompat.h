@@ -64,6 +64,16 @@
 // Qt6: Use QRegularExpression
 using QtCompatRegExp = QRegularExpression;
 
+// Qt6 RegExp options
+namespace QtCompatRegExpOption {
+constexpr QRegularExpression::PatternOption CaseInsensitive =
+        QRegularExpression::CaseInsensitiveOption;
+constexpr QRegularExpression::PatternOption DotMatchesEverything =
+        QRegularExpression::DotMatchesEverythingOption;
+constexpr QRegularExpression::PatternOption Multiline =
+        QRegularExpression::MultilineOption;
+}  // namespace QtCompatRegExpOption
+
 // Helper function to convert QRegExp pattern to QRegularExpression
 inline QRegularExpression qtCompatRegExp(const QString& pattern) {
     return QRegularExpression(pattern);
@@ -79,6 +89,12 @@ inline QStringList qtCompatSplit(
 #else
 // Qt5: Use QRegExp
 using QtCompatRegExp = QRegExp;
+
+// Qt5 RegExp options (using Qt namespace values)
+namespace QtCompatRegExpOption {
+constexpr Qt::CaseSensitivity CaseInsensitive = Qt::CaseInsensitive;
+constexpr Qt::CaseSensitivity CaseSensitive = Qt::CaseSensitive;
+}  // namespace QtCompatRegExpOption
 
 // Helper function for Qt5 compatibility
 inline QRegExp qtCompatRegExp(const QString& pattern) {
@@ -309,5 +325,25 @@ inline QList<QStringView> qtCompatSplitRefChar(const QString& str, QChar sep) {
 #else
 inline QVector<QStringRef> qtCompatSplitRefChar(const QString& str, QChar sep) {
     return str.splitRef(sep);
+}
+#endif
+
+// ----------------------------------------------------------------------------
+// QRegExp / QRegularExpression Match Compatibility
+// ----------------------------------------------------------------------------
+// Qt5: QRegExp::indexIn() returns match position or -1
+// Qt6: QRegularExpression::match() returns QRegularExpressionMatch
+// ----------------------------------------------------------------------------
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+// Qt6: Use QRegularExpression::match()
+inline bool qtCompatRegExpMatch(const QRegularExpression& regex,
+                                const QString& str) {
+    return regex.match(str).hasMatch();
+}
+#else
+// Qt5: Use QRegExp::indexIn()
+inline bool qtCompatRegExpMatch(const QRegExp& regex, const QString& str) {
+    return regex.indexIn(str) >= 0;
 }
 #endif

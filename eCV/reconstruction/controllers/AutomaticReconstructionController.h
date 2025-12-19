@@ -7,102 +7,62 @@
 
 #pragma once
 
-#include <string>
+// Thin wrapper around colmap::AutomaticReconstructionController
+// This allows eCV to reuse the implementation from libs/Reconstruction
+// while adding visualization-specific data collection
 
-#include "../OptionManager.h"
+#include "controllers/automatic_reconstruction.h"
 #include "util/ply.h"
-#include "util/threading.h"
+
+namespace colmap {
+class Reconstruction;
+}
+
+namespace colmap {
+class ReconstructionManager;
+}
 
 namespace cloudViewer {
 
-class ReconstructionManager;
-class AutomaticReconstructionController : public colmap::Thread {
+// eCV-specific wrapper that extends colmap's AutomaticReconstructionController
+// Main additions:
+// 1. Data collection for UI visualization via hook methods
+// 2. autoVisualization option for automatic scene integration
+class AutomaticReconstructionController
+    : public colmap::AutomaticReconstructionController {
 public:
-    enum class DataType { INDIVIDUAL, VIDEO, INTERNET };
-    enum class Quality { LOW, MEDIUM, HIGH, EXTREME };
-    enum class Mesher { POISSON, DELAUNAY };
-
-    struct Options {
-        // The path to the workspace folder in which all results are stored.
-        std::string workspace_path;
-
-        // The path to the image folder which are used as input.
-        std::string image_path;
-
-        // The path to the mask folder which are used as input.
-        std::string mask_path;
-
-        // The path to the vocabulary tree for feature matching.
-        std::string vocab_tree_path;
-
-        // The type of input data used to choose optimal mapper settings.
-        DataType data_type = DataType::INDIVIDUAL;
-
-        // Whether to perform low- or high-quality reconstruction.
-        Quality quality = Quality::HIGH;
-
-        // Whether to use shared intrinsics or not.
-        bool single_camera = false;
-
-        // Which camera model to use for images.
-        std::string camera_model = "SIMPLE_RADIAL";
-
-        // Whether to perform sparse mapping.
-        bool sparse = true;
-
-// Whether to perform dense mapping.
-#ifdef CUDA_ENABLED
-        bool dense = true;
-#else
-        bool dense = false;
-#endif
-
-        // The meshing algorithm to be used.
-        Mesher mesher = Mesher::POISSON;
-
-        // The number of threads to use in all stages.
-        int num_threads = -1;
-
-        // Whether to use the GPU in feature extraction and matching.
-#ifdef CUDA_ENABLED
-        bool use_gpu = true;
-#else
-        bool use_gpu = false;
-#endif
-
-        // Whether to add the reconstruction results to DBRoot.
+    // Extend Options with eCV-specific settings
+    struct Options : public colmap::AutomaticReconstructionController::Options {
+        // Whether to add the reconstruction results to DBRoot automatically
         bool autoVisualization = true;
-
-        // Index of the GPU used for GPU stages. For multi-GPU computation,
-        // you should separate multiple GPU indices by comma, e.g., "0,1,2,3".
-        // By default, all GPUs will be used in all stages.
-        std::string gpu_index = "-1";
     };
 
     AutomaticReconstructionController(
             const Options& options,
-            ReconstructionManager* reconstruction_manager);
+            colmap::ReconstructionManager* reconstruction_manager);
 
-    void Stop() override;
-
+    // eCV-specific: Public data for UI visualization
+    // These collect results during reconstruction for display
     std::vector<std::vector<colmap::PlyPoint>> fused_points_;
     std::vector<std::string> meshing_paths_;
+    std::vector<std::string> textured_paths_;
+    bool texturing_success_ = false;
+
+protected:
+    // Override hook methods to collect data for visualization
+    void OnFusedPointsGenerated(
+            size_t reconstruction_idx,
+            const std::vector<colmap::PlyPoint>& points) override;
+    void OnMeshGenerated(size_t reconstruction_idx,
+                         const std::string& mesh_path) override;
+    void OnTexturedMeshGenerated(size_t reconstruction_idx,
+                                 const std::string& textured_path) override;
+
+    // Override to initialize data containers
+    void RunDenseMapper() override;
 
 private:
-    void Run() override;
-    void RunFeatureExtraction();
-    void RunFeatureMatching();
-    void RunSparseMapper();
-    void RunDenseMapper();
-
-    const Options options_;
-    OptionManager option_manager_;
-    ReconstructionManager* reconstruction_manager_;
-    Thread* active_thread_;
-    std::unique_ptr<Thread> feature_extractor_;
-    std::unique_ptr<Thread> exhaustive_matcher_;
-    std::unique_ptr<Thread> sequential_matcher_;
-    std::unique_ptr<Thread> vocab_tree_matcher_;
+    const Options ecv_options_;
 };
 
 }  // namespace cloudViewer

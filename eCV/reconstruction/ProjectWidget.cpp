@@ -7,8 +7,8 @@
 
 #include "ProjectWidget.h"
 
-#include "OptionManager.h"
 #include "base/database.h"
+#include "util/option_manager.h"
 
 // CV_CORE_LIB
 #include <CVTools.h>

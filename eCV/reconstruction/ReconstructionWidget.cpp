@@ -11,8 +11,8 @@
 
 #include "MainWindow.h"
 #include "ReconstructionOptionsWidget.h"
-#include "RenderOptions.h"
 #include "RenderOptionsWidget.h"
+#include "ui/render_options.h"
 #include "util/version.h"
 
 namespace cloudViewer {
@@ -31,6 +31,11 @@ ReconstructionWidget::ReconstructionWidget(MainWindow* app)
     CreateStatusbar();
     CreateControllers();
     options_.AddAllOptions();
+
+    // CloudViewer default: use ORTHOGRAPHIC projection (colmap default is
+    // PERSPECTIVE)
+    options_.render->projection_type =
+            colmap::RenderOptions::ProjectionType::ORTHOGRAPHIC;
 
     hideLog();
     iniEnvironment();
