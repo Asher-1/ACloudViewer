@@ -7,11 +7,11 @@
 
 #include "FeatureMatchingWidget.h"
 
-#include "OptionManager.h"
 #include "OptionsWidget.h"
 #include "ThreadControlWidget.h"
 #include "feature/matching.h"
 #include "util/misc.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 

@@ -7,9 +7,9 @@
 
 #include "DatabaseManagementWidget.h"
 
-#include "OptionManager.h"
 #include "base/camera_models.h"
 #include "util/misc.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 

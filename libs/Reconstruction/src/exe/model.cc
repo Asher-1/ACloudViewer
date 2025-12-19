@@ -231,7 +231,7 @@ int RunModelAligner(int argc, char** argv) {
     }
 
     if (robust_alignment && ransac_options.max_error <= 0) {
-        std::cout << "ERROR: You must provide a maximum alignment error > 0"
+        std::cout << "WARNING: You must provide a maximum alignment error > 0"
                   << std::endl;
         return EXIT_FAILURE;
     }
@@ -257,7 +257,7 @@ int RunModelAligner(int argc, char** argv) {
 
     if (alignment_type != "plane" &&
         static_cast<int>(ref_locations.size()) < min_common_images) {
-        std::cout << "ERROR: Cannot align with insufficient reference locations."
+        std::cout << "WARNING: Cannot align with insufficient reference locations."
                   << std::endl;
         return EXIT_FAILURE;
     }
@@ -644,7 +644,7 @@ int RunModelOrientationAligner(int argc, char** argv) {
 
     StringToLower(&method);
     if (method != "manhattan-world" && method != "image-orientation") {
-        std::cout << "ERROR: Invalid `method` - supported values are "
+        std::cout << "WARNING: Invalid `method` - supported values are "
                      "'MANHATTAN-WORLD' or 'IMAGE-ORIENTATION'."
                   << std::endl;
         return EXIT_FAILURE;
@@ -809,7 +809,7 @@ int RunModelSplitter(int argc, char** argv) {
         }
         exact_bounds = ComputeEqualPartsBounds(reconstruction, split);
     } else {
-        std::cout << "ERROR: Invalid split type: " << split_type << std::endl;
+        std::cout << "WARNING: Invalid split type: " << split_type << std::endl;
         return EXIT_FAILURE;
     }
 

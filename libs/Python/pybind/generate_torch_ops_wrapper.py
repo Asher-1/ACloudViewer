@@ -1,6 +1,11 @@
 """This script inspects the cloudViewer_torch_ops library and generates function wrappers"""
 import os
 import sys
+
+# Set KMP_DUPLICATE_LIB_OK to avoid OpenMP initialization errors
+# This MUST be set before importing torch, especially on Windows
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
 import inspect
 import argparse
 import textwrap
@@ -56,7 +61,7 @@ def parse_schema_from_docstring(docstring):
     """
     m = re.search('with schema: cloudViewer::(.*)$', docstring)
     fn_signature = m.group(1)
-    m = re.match('^(.*)\((.*)\) -> (.*)', fn_signature)
+    m = re.match(r'^(.*)\((.*)\) -> (.*)', fn_signature)
     fn_name, arguments, returns = m.group(1), m.group(2), m.group(3)
     arguments = [tuple(x.strip().split(' ')) for x in arguments.split(',')]
     arguments = [Argument(x[0], *x[1].split('=')) for x in arguments]
@@ -83,7 +88,7 @@ def get_tensorflow_docstring_from_file(path):
     with open(path, 'r') as f:
         tf_reg_op_file = f.read()
     # docstring must use raw string with R"doc( ... )doc"
-    m = re.search('R"doc\((.*?)\)doc"',
+    m = re.search(r'R"doc\((.*?)\)doc"',
                   tf_reg_op_file,
                   flags=re.MULTILINE | re.DOTALL)
     return m.group(1).strip()

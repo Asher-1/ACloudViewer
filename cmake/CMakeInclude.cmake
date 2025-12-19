@@ -76,8 +76,11 @@ function(cloudViewer_install_ext)
         if(EXISTS "${ARGV1}")
             set(INSTALL_OPTIONS FILES)
         else()
-            message(WARNING "File does not exist: ${ARGV1}")
-            return()
+            # For external project files that may not exist yet at configure time, 
+            # skip the existence check - they will be built before install
+            # message(WARNING "File does not exist at configure time (may be built later): ${ARGV1}")
+            # message(WARNING "File does not exist: ${ARGV1}")
+            set(INSTALL_OPTIONS FILES)
         endif()
     else ()
         set(INSTALL_OPTIONS "")

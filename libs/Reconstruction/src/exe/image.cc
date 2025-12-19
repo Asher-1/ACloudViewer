@@ -33,6 +33,7 @@
 
 #include "base/reconstruction.h"
 #include "base/undistortion.h"
+#include "controllers/texturing_controller.h"
 #include "controllers/incremental_mapper.h"
 #include "sfm/incremental_mapper.h"
 #include "util/misc.h"
@@ -227,9 +228,9 @@ int RunImageRectifier(int argc, char** argv) {
   const auto stereo_pairs =
       ReadStereoImagePairs(stereo_pairs_list, reconstruction);
 
-  StereoImageRectifier rectifier(undistort_camera_options, reconstruction,
-                                 *options.image_path, output_path,
-                                 stereo_pairs);
+  StereoImageRectifier rectifier(undistort_camera_options, &reconstruction,
+                                  *options.image_path, output_path,
+                                  stereo_pairs);
   rectifier.Start();
   rectifier.Wait();
 
@@ -381,15 +382,15 @@ int RunImageUndistorter(int argc, char** argv) {
   std::unique_ptr<Thread> undistorter;
   if (output_type == "COLMAP") {
     undistorter.reset(new COLMAPUndistorter(
-        undistort_camera_options, reconstruction, *options.image_path,
+        undistort_camera_options, &reconstruction, *options.image_path,
         output_path, num_patch_match_src_images, copy_type, image_ids));
   } else if (output_type == "PMVS") {
     undistorter.reset(new PMVSUndistorter(undistort_camera_options,
-                                          reconstruction, *options.image_path,
+                                          &reconstruction, *options.image_path,
                                           output_path));
   } else if (output_type == "CMP-MVS") {
     undistorter.reset(new CMPMVSUndistorter(undistort_camera_options,
-                                            reconstruction, *options.image_path,
+                                            &reconstruction, *options.image_path,
                                             output_path));
   } else {
     std::cerr << "ERROR: Invalid `output_type` - supported values are "
@@ -493,4 +494,47 @@ int RunImageUndistorterStandalone(int argc, char** argv) {
   return EXIT_SUCCESS;
 }
 
+int RunImageTexturer(int argc, char** argv) {
+  std::string input_path;
+  std::string output_path;
+  std::string mesh_path;
+
+  OptionManager options;
+  options.AddRequiredOption("input_path", &input_path);
+  options.AddRequiredOption("output_path", &output_path);
+  options.AddRequiredOption("mesh_path", &mesh_path);
+  options.AddTexturingOptions();
+  options.Parse(argc, argv);
+
+  if (!ExistsDir(input_path)) {
+    std::cerr << "ERROR: `input_path` does not exist" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  if (!ExistsFile(mesh_path)) {
+    std::cerr << "ERROR: `mesh_path` does not exist" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  CreateDirIfNotExists(output_path);
+
+  PrintHeading1("Reading reconstruction");
+  Reconstruction reconstruction;
+  reconstruction.Read(JoinPaths(input_path, "sparse"));
+  std::cout << StringPrintf(" => Reconstruction with %d images and %d points",
+                            reconstruction.NumImages(),
+                            reconstruction.NumPoints3D())
+            << std::endl;
+
+  options.texturing->meshed_file_path = mesh_path;
+  options.texturing->textured_file_path = 
+      JoinPaths(output_path, "textured_mesh.obj");
+
+  TexturingReconstruction texturer(*options.texturing, reconstruction,
+                                   *options.image_path, input_path);
+  texturer.Start();
+  texturer.Wait();
+
+  return EXIT_SUCCESS;
+}
 }  // namespace colmap

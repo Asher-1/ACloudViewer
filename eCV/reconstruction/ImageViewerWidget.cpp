@@ -8,12 +8,12 @@
 #include "ImageViewerWidget.h"
 
 #include "ModelViewerWidget.h"
-#include "OptionManager.h"
-#include "QtUtils.h"
 #include "base/database.h"
 #include "base/projection.h"
 #include "base/reconstruction.h"
+#include "ui/qt_utils.h"
 #include "util/misc.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 

@@ -36,4 +36,5 @@ COLMAP_ADD_SOURCES(
     bundle_adjustment.h bundle_adjustment.cc
     hierarchical_mapper.h hierarchical_mapper.cc
     incremental_mapper.h incremental_mapper.cc
+    texturing_controller.h texturing_controller.cc
 )

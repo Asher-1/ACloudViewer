@@ -11,11 +11,12 @@
 #include <QtWidgets>
 
 #include "base/reconstruction.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 
 class ModelViewerWidget;
-class OptionManager;
+using OptionManager = colmap::OptionManager;
 
 class PointViewerWidget : public QWidget {
 public:

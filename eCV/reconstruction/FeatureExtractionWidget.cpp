@@ -7,13 +7,13 @@
 
 #include "FeatureExtractionWidget.h"
 
-#include "OptionManager.h"
 #include "OptionsWidget.h"
-#include "QtUtils.h"
 #include "ThreadControlWidget.h"
 #include "base/camera_models.h"
 #include "feature/extraction.h"
+#include "ui/qt_utils.h"
 #include "util/misc.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 

@@ -63,6 +63,7 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     AddOptionBool(&options_.single_camera, "Shared intrinsics");
     AddOptionBool(&options_.sparse, "Sparse model");
     AddOptionBool(&options_.dense, "Dense model");
+    AddOptionBool(&options_.texturing, "Mesh texturing");
     AddOptionBool(&options_.autoVisualization, "Auto visualization");
 
     QLabel* mesher_label = new QLabel(tr("Mesher"), this);
@@ -173,8 +174,11 @@ void AutomaticReconstructionWidget::Run() {
     controller->AddCallback(Thread::FINISHED_CALLBACK, [this, controller]() {
         fused_points_ = controller->fused_points_;
         meshing_paths_ = controller->meshing_paths_;
+        textured_paths_ = controller->textured_paths_;
+        texturing_success_ = controller->texturing_success_;
         controller->fused_points_.clear();
         controller->meshing_paths_.clear();
+        controller->textured_paths_.clear();
         render_result_->trigger();
     });
 
@@ -254,10 +258,32 @@ void AutomaticReconstructionWidget::RenderResult() {
                 }
             }
 
-            // add meshed model
-            if (!meshing_paths_.empty()) {
-                if (main_window_->app_) {
-                    QStringList filenames;
+            // Add meshed model or textured model
+            if (main_window_->app_) {
+                QStringList filenames;
+
+                // If texturing was enabled and successful, add only textured
+                // meshes
+                if (options_.texturing && texturing_success_ &&
+                    !textured_paths_.empty()) {
+                    for (const std::string& path : textured_paths_) {
+                        if (!ExistsFile(path)) {
+                            CVLog::Warning(
+                                    "[RenderResult] Ignore invalid textured "
+                                    "mesh for file [%s]",
+                                    path.c_str());
+                            continue;
+                        }
+                        filenames.push_back(path.c_str());
+                    }
+                    if (!filenames.isEmpty()) {
+                        CVLog::Print("Adding %d textured mesh(es) to scene",
+                                     filenames.size());
+                        main_window_->app_->addToDBAuto(filenames, false);
+                    }
+                }
+                // Otherwise, add non-textured meshes
+                else if (!meshing_paths_.empty()) {
                     for (const std::string& path : meshing_paths_) {
                         if (!ExistsFile(path)) {
                             CVLog::Warning(
@@ -268,7 +294,11 @@ void AutomaticReconstructionWidget::RenderResult() {
                         }
                         filenames.push_back(path.c_str());
                     }
-                    main_window_->app_->addToDBAuto(filenames, false);
+                    if (!filenames.isEmpty()) {
+                        CVLog::Print("Adding %d mesh(es) to scene",
+                                     filenames.size());
+                        main_window_->app_->addToDBAuto(filenames, false);
+                    }
                 }
             }
         } else {

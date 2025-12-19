@@ -13,8 +13,13 @@
 #include "ModelViewerWidget.h"
 #include "OptionsWidget.h"
 #include "sfm/incremental_mapper.h"
+#include "ui/colormaps.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
+
+using OptionManager = colmap::OptionManager;
+using ImageColormapNameFilter = colmap::ImageColormapNameFilter;
 
 class RenderOptionsWidget : public OptionsWidget {
 public:

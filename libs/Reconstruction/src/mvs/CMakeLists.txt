@@ -39,6 +39,7 @@ COLMAP_ADD_SOURCES(
     meshing.h meshing.cc
     model.h model.cc
     normal_map.h normal_map.cc
+    texturing.h texturing.cc
     workspace.h workspace.cc
 )
 

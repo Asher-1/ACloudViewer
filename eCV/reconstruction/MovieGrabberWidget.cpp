@@ -12,11 +12,11 @@
 #include <ecvHObjectCaster.h>
 
 #include "ModelViewerWidget.h"
-#include "QtUtils.h"
-#include "RenderOptions.h"
 #include "base/pose.h"
 #include "base/projection.h"
 #include "controllers/ViewInterpolate.h"
+#include "ui/qt_utils.h"
+#include "ui/render_options.h"
 
 namespace cloudViewer {
 
@@ -224,7 +224,7 @@ void MovieGrabberWidget::Assemble() {
     }
 
     if (model_viewer_widget_->GetProjectionType() !=
-        RenderOptions::ProjectionType::PERSPECTIVE) {
+        colmap::RenderOptions::ProjectionType::PERSPECTIVE) {
         QMessageBox::critical(this, tr("Error"),
                               tr("You must use perspective projection."));
         return;

@@ -8,10 +8,10 @@
 #include "PointViewerWidget.h"
 
 #include "ModelViewerWidget.h"
-#include "OptionManager.h"
-#include "QtUtils.h"
+#include "ui/qt_utils.h"
 #include "util/bitmap.h"
 #include "util/misc.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 

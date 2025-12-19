@@ -32,7 +32,9 @@ private:
     QAction* render_result_;
 
     std::vector<std::string> meshing_paths_;
+    std::vector<std::string> textured_paths_;
     std::vector<std::vector<colmap::PlyPoint>> fused_points_;
+    bool texturing_success_ = false;
 };
 
 }  // namespace cloudViewer

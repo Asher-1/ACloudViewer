@@ -10,10 +10,12 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "OptionManager.h"
 #include "OptionsWidget.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
+
+using OptionManager = colmap::OptionManager;
 
 class MapperGeneralOptionsWidget : public OptionsWidget {
 public:
