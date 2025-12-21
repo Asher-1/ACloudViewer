@@ -12,11 +12,12 @@
 #endif
 
 // LOCAL
+#include <Utils/PCLCloud.h>
+
 #include <map>
 #include <mutex>
 #include <thread>
 
-#include "PCLCloud.h"
 #include "WidgetMap.h"
 #include "qPCL.h"
 
@@ -120,6 +121,12 @@ public:
 
     void addActorToRenderer(const vtkSmartPointer<vtkProp>& actor,
                             int viewport = 0);
+
+    /**
+     * @brief UpdateScreen - Updates/refreshes the render window
+     * This method forces a render update after actor changes
+     */
+    void UpdateScreen();
 
     /**
      * @brief setupInteractor override to init interactor_

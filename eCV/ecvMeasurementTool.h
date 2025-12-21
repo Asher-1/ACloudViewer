@@ -23,6 +23,7 @@
 
 class ccHObject;
 class ccPickingHub;
+class ecvFontPropertyWidget;
 
 //! Dialog for managing measurement tools (Distance, Contour, Protractor)
 class ecvMeasurementTool : public ccOverlayDialog,
@@ -68,6 +69,8 @@ protected slots:
     void removeInstance();
     void onPointPickingRequested(int pointIndex);
     void onPointPickingCancelled();
+    void onColorButtonClicked();
+    void onFontPropertiesChanged();
 
 protected:
     //! Updates the measurement result display
@@ -92,6 +95,16 @@ protected:
     //! Switches to the specified tool's UI
     void switchToToolUI(ecvGenericMeasurementTools* tool);
 
+    //! Updates color button appearance based on current color
+    void updateColorButtonAppearance();
+
+    //! Applies current color to all tool instances
+    void applyColorToAllTools();
+
+    //! Applies font properties to tool instances (all or current based on
+    //! checkbox)
+    void applyFontToTools();
+
     //! Current measurement tool
     ecvGenericMeasurementTools* m_tool;
 
@@ -113,4 +126,14 @@ protected:
 
     //! Current point selection mode (0=none, 1=point1, 2=point2, 3=center)
     int m_pickPointMode;
+
+    //! Current measurement color (default: green)
+    QColor m_currentColor;
+
+    //! Font property widget
+    ecvFontPropertyWidget* m_fontPropertyWidget = nullptr;
+
+    //! VTK widget reference from linkWith (for creating shortcuts in new
+    //! instances)
+    QWidget* m_linkedWidget = nullptr;
 };

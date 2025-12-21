@@ -8,9 +8,9 @@
 #include "PCLDisplayTools.h"
 
 // PCLModules
-#include "PCLConv.h"
-#include "cc2sm.h"
-#include "sm2cc.h"
+#include <Utils/PCLConv.h>
+#include <Utils/cc2sm.h>
+#include <Utils/sm2cc.h>
 
 // CV_CORE_LIB
 #include <CVGeom.h>
@@ -38,7 +38,10 @@
 #include <pcl/point_types.h>
 
 // VTK
+#include <vtkFieldData.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkPolyData.h>
+#include <vtkStringArray.h>
 
 // SYSTEM
 #include <assert.h>
@@ -231,6 +234,30 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                         cc2smReader(ecvCloud, true).getPclMesh(mesh);
                 if (!pclMesh) return;
                 m_visualizer3D->draw(context, pclMesh);
+
+                // Add mesh name to VTK FieldData after PCL creates the actor
+                // (for tooltip display, ParaView style)
+                std::string viewID = CVTools::FromQString(context.viewID);
+                vtkActor* actor = m_visualizer3D->getActorById(viewID);
+                if (actor && actor->GetMapper() &&
+                    mesh->getName().length() > 0) {
+                    vtkPolyData* polyData = vtkPolyData::SafeDownCast(
+                            actor->GetMapper()->GetInput());
+                    if (polyData) {
+                        QString meshName = mesh->getName();
+                        CVLog::Print(QString("[PCLDisplayTools::drawMesh] "
+                                             "Adding DatasetName to "
+                                             "non-textured mesh: '%1'")
+                                             .arg(meshName));
+
+                        vtkSmartPointer<vtkStringArray> datasetNameArray =
+                                vtkSmartPointer<vtkStringArray>::New();
+                        datasetNameArray->SetName("DatasetName");
+                        datasetNameArray->SetNumberOfTuples(1);
+                        datasetNameArray->SetValue(0, meshName.toStdString());
+                        polyData->GetFieldData()->AddArray(datasetNameArray);
+                    }
+                }
             }
         } else {
             // Non-first display and no need for complete rebuild: only update

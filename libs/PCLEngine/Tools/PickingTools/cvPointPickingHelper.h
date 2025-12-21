@@ -7,16 +7,20 @@
 
 #pragma once
 
+#include <vtkSmartPointer.h>
+
 #include <QKeySequence>
 #include <QObject>
 #include <QPointer>
 #include <QShortcut>
 
-#include <vtkSmartPointer.h>
-
 class QWidget;
+class vtkCell;
 class vtkCellPicker;
+class vtkDataSet;
 class vtkPointPicker;
+class vtkPropPicker;
+class vtkHardwareSelector;
 class vtkRenderWindowInteractor;
 class vtkRenderer;
 
@@ -39,20 +43,21 @@ class cvPointPickingHelper : public QObject {
 
 public:
     enum PickOption {
-        Coordinates,       ///< Pick point coordinates only
-        Normal,            ///< Pick normal only
+        Coordinates,          ///< Pick point coordinates only
+        Normal,               ///< Pick normal only
         CoordinatesAndNormal  ///< Pick both coordinates and normal
     };
 
     /**
      * @brief Constructor
      * @param keySequence The keyboard shortcut to trigger picking
-     * @param pickOnMesh If true, snap to the closest mesh point; otherwise pick on surface
+     * @param pickOnPoint If true, snap to the closest mesh point; otherwise
+     * pick on surface
      * @param parent Parent widget that receives the shortcut
      * @param pickOpt What to pick (coordinates, normal, or both)
      */
     cvPointPickingHelper(const QKeySequence& keySequence,
-                         bool pickOnMesh,
+                         bool pickOnPoint,
                          QWidget* parent = nullptr,
                          PickOption pickOpt = Coordinates);
     ~cvPointPickingHelper() override;
@@ -60,7 +65,7 @@ public:
     /**
      * @brief Returns whether picking snaps to mesh points
      */
-    bool pickOnMesh() const { return m_pickOnMesh; }
+    bool pickOnPoint() const { return m_pickOnPoint; }
 
     /**
      * @brief Returns the pick option
@@ -85,7 +90,8 @@ public:
     /**
      * @brief Enable or disable the shortcut
      * @param enabled Whether to enable the shortcut
-     * @param setFocus If true and enabling, set focus to the shortcut's parent widget
+     * @param setFocus If true and enabling, set focus to the shortcut's parent
+     * widget
      */
     void setEnabled(bool enabled, bool setFocus = false);
 
@@ -93,6 +99,12 @@ public:
      * @brief Check if shortcut is enabled
      */
     bool isEnabled() const;
+
+    /**
+     * @brief Clear the selection cache (ParaView-style optimization)
+     * Call this when the scene changes to invalidate cached picks
+     */
+    void clearSelectionCache();
 
 Q_SIGNALS:
     /**
@@ -112,8 +124,8 @@ Q_SIGNALS:
      * @param ny Normal Y component
      * @param nz Normal Z component
      */
-    void pickNormal(double px, double py, double pz,
-                    double nx, double ny, double nz);
+    void pickNormal(
+            double px, double py, double pz, double nx, double ny, double nz);
 
 private Q_SLOTS:
     void pickPoint();
@@ -121,15 +133,35 @@ private Q_SLOTS:
 private:
     Q_DISABLE_COPY(cvPointPickingHelper)
 
+    //! Helper function to compute cell normal
+    void getCellNormal(vtkDataSet* dataset,
+                       vtkIdType cellId,
+                       vtkCell* cell,
+                       double normal[3]);
+
     QPointer<QShortcut> m_shortcut;
     QPointer<QWidget> m_contextWidget;
     vtkRenderWindowInteractor* m_interactor = nullptr;
     vtkRenderer* m_renderer = nullptr;
-    bool m_pickOnMesh;
+    bool m_pickOnPoint;
     PickOption m_pickOption;
-    
+
     // Reusable pickers to avoid creating new objects on each pick
     vtkSmartPointer<vtkPointPicker> m_pointPicker;
     vtkSmartPointer<vtkCellPicker> m_cellPicker;
-};
+    vtkSmartPointer<vtkPropPicker>
+            m_propPicker;  // Fast hardware-accelerated picker
+    vtkSmartPointer<vtkHardwareSelector>
+            m_hardwareSelector;  // Ultra-fast GPU-based picking
 
+    // Selection cache (ParaView-style optimization)
+    struct SelectionCache {
+        int displayX = -1;
+        int displayY = -1;
+        bool pickOnPoint = false;
+        double position[3] = {0, 0, 0};
+        double normal[3] = {0, 0, 1};
+        bool valid = false;
+        vtkIdType id = -1;
+    } m_selectionCache;
+};

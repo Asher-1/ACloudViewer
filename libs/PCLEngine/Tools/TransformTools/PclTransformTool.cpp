@@ -8,8 +8,9 @@
 #include "PclTransformTool.h"
 
 // Local
+#include <Utils/vtk2cc.h>
+
 #include "PclUtils/PCLVis.h"
-#include "PclUtils/vtk2cc.h"
 #include "VTKExtensions/CallbackTools/vtkCallbackTools.h"
 #include "VTKExtensions/Widgets/CustomVtkBoxWidget.h"
 #include "VtkUtils/vtkutils.h"
@@ -51,8 +52,7 @@ void PclTransformTool::setVisualizer(ecvGenericVisualizer3D* viewer) {
     if (viewer) {
         m_viewer = reinterpret_cast<PCLVis*>(viewer);
         if (!m_viewer) {
-            CVLog::Warning(
-                    "[PclTransformTool::setVisualizer] viewer is Null!");
+            CVLog::Warning("[PclTransformTool::setVisualizer] viewer is Null!");
         }
     } else {
         CVLog::Warning("[PclTransformTool::setVisualizer] viewer is Null!");
@@ -350,4 +350,3 @@ void PclTransformTool::getOutput(std::vector<ccHObject*>& out) {
         index++;
     }
 }
-

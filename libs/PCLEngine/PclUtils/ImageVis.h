@@ -8,7 +8,8 @@
 #pragma once
 
 // LOCAL
-#include "PCLCloud.h"
+#include <Utils/PCLCloud.h>
+
 #include "PclUtils/CustomContextItem.h"
 #include "qPCL.h"
 

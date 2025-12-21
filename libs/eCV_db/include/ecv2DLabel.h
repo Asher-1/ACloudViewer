@@ -307,7 +307,6 @@ protected:
 
     //! Draws the entity only (not its children) - 2D version
     void drawMeOnly2D(CC_DRAW_CONTEXT& context);
-    void drawMeOnly2D_(CC_DRAW_CONTEXT& context);
     void clear2Dviews();
     //! Draws the entity only (not its children) - 3D version
     void drawMeOnly3D(CC_DRAW_CONTEXT& context);

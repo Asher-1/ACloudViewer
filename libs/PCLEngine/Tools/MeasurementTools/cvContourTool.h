@@ -26,6 +26,10 @@ public:
     virtual void reset() override;
     virtual void showWidget(bool state) override;
     virtual ccHObject* getOutput() override;
+    virtual void setColor(double r, double g, double b) override;
+    virtual void lockInteraction() override;
+    virtual void unlockInteraction() override;
+    virtual void setInstanceLabel(const QString& label) override;
 
 protected:
     virtual void initTool() override;
@@ -46,14 +50,23 @@ private:
     // Map of ID to ContourWidget
     std::map<int, vtkSmartPointer<vtkContourWidget>> m_contours;
     int m_currentContourId = -1;
-    
+
     // Static counter for contour IDs (global)
     static int s_contourIdCounter;
-    
+
     // Instance ID for this tool
     int m_toolId;
-    
+
     // Export counter
     int m_exportCounter;
-};
 
+    //! Current color (RGB, normalized to [0, 1])
+    double m_currentColor[3] = {0.0, 1.0, 0.0};  // Default green
+
+    //! Instance label (for multi-instance identification)
+    QString m_instanceLabel;
+
+    //! Helper to apply font properties to VTK text property
+    //! Uses font properties from base class (cvGenericMeasurementTool)
+    void applyFontProperties() override;
+};

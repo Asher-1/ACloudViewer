@@ -40,6 +40,14 @@ cvGenericMeasurementTool::cvGenericMeasurementTool(QWidget* parent)
 }
 
 cvGenericMeasurementTool::~cvGenericMeasurementTool() {
+    // Disable all picking helpers before deletion to prevent shortcuts from
+    // triggering after tool is destroyed
+    for (cvPointPickingHelper* helper : m_pickingHelpers) {
+        if (helper) {
+            helper->setEnabled(false, false);
+        }
+    }
+
     // Clean up picking helpers
     qDeleteAll(m_pickingHelpers);
     m_pickingHelpers.clear();
@@ -62,22 +70,52 @@ void cvGenericMeasurementTool::start() {
     // according to data type
     initTool();
 
+    // Clear selection cache when starting tool (new session)
+    clearPickingCache();
+
     // update screen
     update();
 }
 
 void cvGenericMeasurementTool::setupShortcuts(QWidget* win) {
     if (!win) {
-        CVLog::Warning("[cvGenericMeasurementTool] Widget is null, shortcuts not setup");
+        CVLog::Warning(
+                "[cvGenericMeasurementTool] Widget is null, shortcuts not "
+                "setup");
         return;
     }
-    
-    // Setup keyboard shortcuts for point picking
-    setupPointPickingShortcuts(win);
-    
-    // Update picking helpers with current interactor/renderer
-    updatePickingHelpers();
-    
+
+    // Save the widget reference for later use (e.g., when unlocking after being
+    // locked)
+    m_vtkWidget = win;
+
+    // Only create shortcuts if they don't already exist
+    if (m_pickingHelpers.isEmpty()) {
+        CVLog::PrintDebug(QString("[cvGenericMeasurementTool::setupShortcuts] "
+                                  "Tool=%1, creating shortcuts...")
+                                  .arg((quintptr)this, 0, 16));
+
+        // Setup keyboard shortcuts for point picking
+        setupPointPickingShortcuts(win);
+
+        // Update picking helpers with current interactor/renderer
+        updatePickingHelpers();
+
+        CVLog::PrintDebug(QString("[cvGenericMeasurementTool::setupShortcuts] "
+                                  "Tool=%1, created %2 shortcuts")
+                                  .arg((quintptr)this, 0, 16)
+                                  .arg(m_pickingHelpers.size()));
+    } else {
+        CVLog::PrintDebug(
+                QString("[cvGenericMeasurementTool::setupShortcuts] Tool=%1, "
+                        "shortcuts already exist (%2), updating only")
+                        .arg((quintptr)this, 0, 16)
+                        .arg(m_pickingHelpers.size()));
+
+        // Just update the interactor/renderer
+        updatePickingHelpers();
+    }
+
     // Enable all shortcuts and set focus to the widget
     for (cvPointPickingHelper* helper : m_pickingHelpers) {
         if (helper) {
@@ -123,6 +161,8 @@ void cvGenericMeasurementTool::update() {
     if (m_viewer && m_renderer) {
         if (m_viewer->getRenderWindow()) {
             m_viewer->getRenderWindow()->Render();
+            // Clear picking cache after render as scene may have changed
+            clearPickingCache();
         }
     }
 }
@@ -187,3 +227,73 @@ void cvGenericMeasurementTool::updatePickingHelpers() {
     }
 }
 
+void cvGenericMeasurementTool::disableShortcuts() {
+    CVLog::PrintDebug(QString("[cvGenericMeasurementTool::disableShortcuts] "
+                              "Tool=%1, disabling %2 shortcuts")
+                              .arg((quintptr)this, 0, 16)
+                              .arg(m_pickingHelpers.size()));
+
+    // Disable all picking helpers to prevent shortcuts from triggering
+    for (cvPointPickingHelper* helper : m_pickingHelpers) {
+        if (helper) {
+            helper->setEnabled(false, false);
+        }
+    }
+}
+
+void cvGenericMeasurementTool::clearPickingCache() {
+    // Clear selection cache in all picking helpers
+    // Call this when scene changes, camera moves significantly, or data updates
+    for (cvPointPickingHelper* helper : m_pickingHelpers) {
+        if (helper) {
+            helper->clearSelectionCache();
+        }
+    }
+}
+
+void cvGenericMeasurementTool::setFontFamily(const QString& family) {
+    m_fontFamily = family;
+    applyFontProperties();
+}
+
+void cvGenericMeasurementTool::setFontSize(int size) {
+    m_fontSize = size;
+    applyFontProperties();
+}
+
+void cvGenericMeasurementTool::setBold(bool bold) {
+    m_fontBold = bold;
+    applyFontProperties();
+}
+
+void cvGenericMeasurementTool::setItalic(bool italic) {
+    m_fontItalic = italic;
+    applyFontProperties();
+}
+
+void cvGenericMeasurementTool::setShadow(bool shadow) {
+    m_fontShadow = shadow;
+    applyFontProperties();
+}
+
+void cvGenericMeasurementTool::setFontOpacity(double opacity) {
+    m_fontOpacity = opacity;
+    applyFontProperties();
+}
+
+void cvGenericMeasurementTool::setFontColor(double r, double g, double b) {
+    m_fontColor[0] = r;
+    m_fontColor[1] = g;
+    m_fontColor[2] = b;
+    applyFontProperties();
+}
+
+void cvGenericMeasurementTool::setHorizontalJustification(const QString& justification) {
+    m_horizontalJustification = justification;
+    applyFontProperties();
+}
+
+void cvGenericMeasurementTool::setVerticalJustification(const QString& justification) {
+    m_verticalJustification = justification;
+    applyFontProperties();
+}

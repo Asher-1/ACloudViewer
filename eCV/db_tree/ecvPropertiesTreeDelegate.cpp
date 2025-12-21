@@ -20,6 +20,13 @@
 #include "matrixDisplayDlg.h"
 #include "sfEditDlg.h"
 
+#ifdef USE_PCL_BACKEND
+// PCL Selection Tools
+#include <PCLEngine/Tools/SelectionTools/cvSelectionData.h>
+#include <PCLEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.h>
+#include <PCLEngine/Tools/SelectionTools/cvViewSelectionManager.h>
+#endif
+
 // ECV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
@@ -125,7 +132,15 @@ ccPropertiesTreeDelegate::ccPropertiesTreeDelegate(QStandardItemModel* model,
     : QStyledItemDelegate(parent),
       m_currentObject(nullptr),
       m_model(model),
-      m_view(view) {
+      m_view(view),
+      m_selectionToolsActive(false),
+      m_viewer(nullptr)
+#ifdef USE_PCL_BACKEND
+      ,
+      m_highlighter(nullptr),
+      m_selectionPropertiesWidget(nullptr)
+#endif
+{
     assert(m_model && m_view);
 }
 
@@ -245,6 +260,13 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
                 static_cast<ccIndexedTransformationBuffer*>(m_currentObject));
     }
 
+    // Selection Tools Properties (ParaView-style)
+    // Show selection properties when any selection tool is active
+    // Place BEFORE transformation history for better visibility
+    if (m_selectionToolsActive) {
+        fillWithSelectionProperties();
+    }
+
     // transformation history
     if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD) ||
         m_currentObject->isKindOf(CV_TYPES::MESH) ||
@@ -343,6 +365,29 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
         }
 
         appendRow(ITEM(it.key()), ITEM(value));
+    }
+}
+
+void ccPropertiesTreeDelegate::fillWithSelectionProperties() {
+    assert(m_model);
+
+#ifdef USE_PCL_BACKEND
+    // Add separator for selection tools section
+    addSeparator(tr("Selection Tools"));
+
+    // Add wide row for selection properties widget (ParaView-style)
+    // This will display the cvSelectionPropertiesWidget with all tabs
+    appendWideRow(PERSISTENT_EDITOR(OBJECT_SELECTION_PROPERTIES));
+#endif
+}
+
+void ccPropertiesTreeDelegate::setSelectionToolsActive(bool active) {
+    if (m_selectionToolsActive != active) {
+        m_selectionToolsActive = active;
+        // Refresh the model if we have a current object
+        if (m_currentObject) {
+            updateModel();
+        }
     }
 }
 
@@ -1104,6 +1149,8 @@ bool ccPropertiesTreeDelegate::isWideEditor(int itemData) const {
         case OBJECT_SENSOR_MATRIX_EDITOR:
         case OBJECT_HISTORY_MATRIX_EDITOR:
         case OBJECT_GLTRANS_MATRIX_EDITOR:
+        case OBJECT_SELECTION_PROPERTIES:  // Selection properties widget spans
+                                           // both columns
         case TREE_VIEW_HEADER:
             return true;
         default:
@@ -1525,14 +1572,25 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = spinBox;
         } break;
+        case OBJECT_SELECTION_PROPERTIES: {
+#ifdef USE_PCL_BACKEND
+            // Create selection properties widget (ParaView-style)
+            cvSelectionPropertiesWidget* selectionWidget =
+                    new cvSelectionPropertiesWidget(parent);
+
+            // Widget will be configured by MainWindow with visualizer and
+            // highlighter This is done in setEditorData
+
+            outputWidget = selectionWidget;
+#endif
+        } break;
         default:
             return QStyledItemDelegate::createEditor(parent, option, index);
     }
 
     if (outputWidget) {
-        outputWidget->setFocusPolicy(
-                Qt::StrongFocus);  // Qt doc: << The returned editor widget
-                                   // should have Qt::StrongFocus >>
+        // Qt doc: << The returned editor widget should have Qt::StrongFocus >>
+        outputWidget->setFocusPolicy(Qt::StrongFocus);
     } else {
         // shouldn't happen
         assert(false);
@@ -1906,6 +1964,58 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             SetComboBoxIndex(editor, currentIndex);
             break;
         }
+        case OBJECT_SELECTION_PROPERTIES: {
+#ifdef USE_PCL_BACKEND
+            cvSelectionPropertiesWidget* selectionWidget =
+                    qobject_cast<cvSelectionPropertiesWidget*>(editor);
+            if (selectionWidget) {
+                // Configure widget with visualizer and highlighter if available
+                // No need to cast - both use ecvGenericVisualizer3D interface
+                if (m_viewer) {
+                    selectionWidget->setVisualizer(m_viewer);
+                }
+                if (m_highlighter) {
+                    selectionWidget->setHighlighter(m_highlighter);
+                }
+
+                // Store widget reference for later updates
+                // This allows us to update the widget when selection changes
+                m_selectionPropertiesWidget = selectionWidget;
+
+                // Connect signals to MainWindow
+                MainWindow* mainWindow = MainWindow::TheInstance();
+                if (mainWindow) {
+                    // Tooltip settings
+                    connect(selectionWidget,
+                            &cvSelectionPropertiesWidget::
+                                    tooltipSettingsChanged,
+                            mainWindow, &MainWindow::onTooltipSettingsChanged);
+
+                    // Get current selection from MainWindow and update the
+                    // widget This ensures export buttons are enabled if there's
+                    // already a selection
+                    cvViewSelectionManager* selectionManager =
+                            mainWindow->getSelectionManager();
+                    if (selectionManager && selectionManager->hasSelection()) {
+                        const cvSelectionData& currentSelection =
+                                selectionManager->currentSelection();
+                        selectionWidget->updateSelection(currentSelection);
+                        CVLog::Print(QString("[ecvPropertiesTreeDelegate] "
+                                             "Initialized with existing "
+                                             "selection: %1 %2")
+                                             .arg(currentSelection.count())
+                                             .arg(currentSelection
+                                                          .fieldTypeString()));
+                    }
+                }
+
+                CVLog::Print(
+                        "[ecvPropertiesTreeDelegate] Selection properties "
+                        "widget configured");
+            }
+#endif
+            break;
+        }
         default:
             QStyledItemDelegate::setEditorData(editor, index);
             break;
@@ -2240,6 +2350,20 @@ void ccPropertiesTreeDelegate::updateModel() {
     // simply re-fill model!
     fillModel(m_currentObject);
 }
+
+#ifdef USE_PCL_BACKEND
+void ccPropertiesTreeDelegate::updateSelectionProperties(
+        const cvSelectionData& selectionData) {
+    if (m_selectionPropertiesWidget) {
+        // Update the widget with new selection data
+        m_selectionPropertiesWidget->updateSelection(selectionData);
+        CVLog::PrintDebug(QString("[ccPropertiesTreeDelegate] Updated "
+                                  "selection properties: %1 %2")
+                                  .arg(selectionData.count())
+                                  .arg(selectionData.fieldTypeString()));
+    }
+}
+#endif
 
 QMap<QString, QString> ccPropertiesTreeDelegate::getCurrentMeshTexturePathMap()
         const {

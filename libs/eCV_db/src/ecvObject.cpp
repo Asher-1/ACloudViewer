@@ -18,7 +18,7 @@
 // System
 #include <stdint.h>
 
-const unsigned c_currentDBVersion = 48;  // 4.8
+const unsigned c_currentDBVersion = 49;  // 4.9 - Added m_relMarkerScale serialization for cc2DLabel
 
 //! Default unique ID generator (using the system persistent settings as we did
 //! previously proved to be not reliable)

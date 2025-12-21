@@ -61,4 +61,3 @@ private:
     vtkSmartPointer<vtkTransform> m_originTrans;
     PclUtils::PCLVis* m_viewer;
 };
-

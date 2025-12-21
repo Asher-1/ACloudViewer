@@ -13,6 +13,12 @@
 // Qt
 #include <QStyledItemDelegate>
 
+// Forward declarations
+class ecvGenericVisualizer3D;
+#ifdef USE_PCL_BACKEND
+class cvSelectionHighlighter;
+#endif
+
 class ccHObject;
 class ccGenericPointCloud;
 class ccPolyline;
@@ -37,6 +43,11 @@ class ccCoordinateSystem;
 class QStandardItemModel;
 class QStandardItem;
 class QAbstractItemView;
+
+#ifdef USE_PCL_BACKEND
+class cvSelectionPropertiesWidget;
+class cvSelectionData;
+#endif
 
 //! GUI properties list dialog element
 class ccPropertiesTreeDelegate : public QStyledItemDelegate {
@@ -96,6 +107,20 @@ public:
         OBJECT_COORDINATE_SYSTEM_DISP_AXES,
         OBJECT_COORDINATE_SYSTEM_AXES_WIDTH,
         OBJECT_COORDINATE_SYSTEM_DISP_SCALE,
+        // Selection Tool Properties (ParaView-style)
+        OBJECT_SELECTION_PROPERTIES,   // Wide editor for selection properties
+                                       // widget
+        OBJECT_SELECTION_HOVER_COLOR,  // Color picker for hover highlight
+        OBJECT_SELECTION_PRESELECTED_COLOR,  // Color picker for preselected
+                                             // highlight
+        OBJECT_SELECTION_SELECTED_COLOR,  // Color picker for selected highlight
+        OBJECT_SELECTION_BOUNDARY_COLOR,  // Color picker for boundary highlight
+        OBJECT_SELECTION_HOVER_OPACITY,   // Opacity for hover
+        OBJECT_SELECTION_PRESELECTED_OPACITY,  // Opacity for preselected
+        OBJECT_SELECTION_SELECTED_OPACITY,     // Opacity for selected
+        OBJECT_SELECTION_BOUNDARY_OPACITY,     // Opacity for boundary
+        OBJECT_SELECTION_SHOW_TOOLTIPS,        // Checkbox for tooltip display
+        OBJECT_SELECTION_MAX_ATTRIBUTES,  // Spinbox for max tooltip attributes
         TREE_VIEW_HEADER,
     };
 
@@ -126,6 +151,24 @@ public:
 
     //! Returns currently bound object
     ccHObject* getCurrentObject();
+
+    //! Set whether selection tools are active (to show selection properties)
+    void setSelectionToolsActive(bool active);
+
+    //! Check if selection tools are active
+    bool areSelectionToolsActive() const { return m_selectionToolsActive; }
+
+    //! Set visualizer for selection properties widget
+    void setVisualizer(ecvGenericVisualizer3D* viewer) { m_viewer = viewer; }
+#ifdef USE_PCL_BACKEND
+    //! Set highlighter for selection properties widget
+    void setHighlighter(cvSelectionHighlighter* highlighter) {
+        m_highlighter = highlighter;
+    }
+
+    //! Update selection properties widget with new selection data
+    void updateSelectionProperties(const cvSelectionData& selectionData);
+#endif
 
 signals:
     void ccObjectPropertiesChanged(ccHObject* hObject) const;
@@ -202,6 +245,7 @@ protected:
     void fillWithMetaData(ccObject*);
     void fillWithShifted(ccShiftedObject*);
     void fillWithCoordinateSystem(const ccCoordinateSystem*);
+    void fillWithSelectionProperties();
     template <class Type, int N, class ComponentType>
     void fillWithCCArray(ccArray<Type, N, ComponentType>*);
 
@@ -223,4 +267,15 @@ protected:
     //! Maps mesh object -> (texture name -> texture path)
     //! Mutable to allow modification in const methods (setEditorData)
     mutable QMap<ccHObject*, QMap<QString, QString>> m_meshTexturePathMaps;
+    //! Flag indicating if selection tools are currently active
+    bool m_selectionToolsActive;
+    //! Visualizer for selection properties widget (abstract interface)
+    ecvGenericVisualizer3D* m_viewer;
+#ifdef USE_PCL_BACKEND
+    //! Highlighter for selection properties widget
+    cvSelectionHighlighter* m_highlighter;
+    //! Selection properties widget reference (for direct updates)
+    //! Mutable because it needs to be set in const setEditorData method
+    mutable cvSelectionPropertiesWidget* m_selectionPropertiesWidget;
+#endif
 };

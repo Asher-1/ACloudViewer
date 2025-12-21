@@ -16,7 +16,4 @@ ecvGenericMeasurementTools::~ecvGenericMeasurementTools() {
     // Empty destructor - required for vtable generation
 }
 
-void ecvGenericMeasurementTools::update() { 
-    ecvDisplayTools::UpdateScreen(); 
-}
-
+void ecvGenericMeasurementTools::update() { ecvDisplayTools::UpdateScreen(); }

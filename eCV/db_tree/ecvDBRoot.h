@@ -88,6 +88,11 @@ public:
     //! Updates properties view
     void updatePropertiesView();
 
+    //! Get properties tree delegate
+    ccPropertiesTreeDelegate* getPropertiesDelegate() {
+        return m_ccPropDelegate;
+    }
+
     //! Adds an element to the DB tree
     void addElement(ccHObject* object, bool autoExpand = true);
 

@@ -4,8 +4,20 @@ project(ECV_DB_LIB)
 
 add_library(${PROJECT_NAME} SHARED)
 
-# Enable AUTOMOC for this target as we now use QObject based classes
-set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
+# Enable AUTOMOC and AUTOUIC for this target as we now use QObject based classes
+set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON AUTOUIC ON)
+
+# UI files
+file(GLOB_RECURSE UI_FILES ${CMAKE_CURRENT_SOURCE_DIR}/ui_templates/*.ui)
+target_sources(${PROJECT_NAME} PRIVATE ${UI_FILES})
+
+# Add ui_templates directory for AUTOUIC search path
+set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY AUTOUIC_SEARCH_PATHS
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui_templates
+)
+
+# Include the generated UI headers directory
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(include)
 add_subdirectory(src)
@@ -27,7 +39,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${NANOFLANN_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC CVCoreLib)
 # Qt
 # Qt5/Qt6 compatibility - use unified Qt:: prefix
-target_link_libraries(${PROJECT_NAME} PUBLIC Qt::OpenGL)
+target_link_libraries(${PROJECT_NAME} PUBLIC Qt::OpenGL Qt::Widgets)
 
 # Enforce 3rd party dependencies
 if (USE_SIMD)

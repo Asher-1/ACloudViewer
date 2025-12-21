@@ -58,14 +58,31 @@ class ccHObject;
 class ccPickingHub;
 class ccPluginUIManager;
 class ccDBRoot;
-class ecvFilterTool;
 class ecvRecentFiles;
-class ecvAnnotationsTool;
-class ecvMeasurementTool;
 class ccTracePolylineTool;
 class ccGraphicalSegmentationTool;
 class ccGraphicalTransformationTool;
 class ecvDeepSemanticSegmentationTool;
+class ecvFilterTool;
+class ecvAnnotationsTool;
+class ecvMeasurementTool;
+
+#if defined(USE_PCL_BACKEND)
+class cvZoomToBoxTool;
+class cvSurfaceSelectionTool;
+class cvFrustumSelectionTool;
+class cvPolygonSelectionTool;
+class cvBlockSelectionTool;
+class cvTooltipSelectionTool;
+class cvViewSelectionManager;
+class cvSelectionData;
+class cvSelectionHighlighter;
+class cvSelectionHistory;
+class cvSelectionBookmarks;
+class cvSelectionFilter;
+class cvSelectionAlgebra;
+class cvSelectionAnnotationManager;
+#endif
 
 class ecvUpdateDlg;
 class ccOverlayDialog;
@@ -250,6 +267,13 @@ public:  // inherited from ecvMainAppInterface
     void zoomOnSelectedEntities() override;
     void zoomOnEntities(ccHObject* obj) override;
     void setGlobalZoom() override;
+
+#ifdef USE_PCL_BACKEND
+    //! Get the selection manager instance
+    cvViewSelectionManager* getSelectionManager() const {
+        return m_selectionManager;
+    }
+#endif
 
 private:
     /***** Utils Methods ***/
@@ -553,6 +577,41 @@ private slots:
     void doActionExportPlaneInfo();
     void doActionExportCloudInfo();
 
+    void toggleZoomToBox(bool checked);
+    void toggleSelectSurfaceCells(bool checked);
+    void toggleSelectSurfacePoints(bool checked);
+    void toggleSelectFrustumCells(bool checked);
+    void toggleSelectFrustumPoints(bool checked);
+    void toggleSelectPolygonCells(bool checked);
+    void toggleSelectPolygonPoints(bool checked);
+    void toggleSelectBlocks(bool checked);
+    void toggleSelectFrustumBlocks(bool checked);
+    void toggleInteractiveSelectCells(bool checked);
+    void toggleInteractiveSelectPoints(bool checked);
+    void toggleHoverCells(bool checked);
+    void toggleHoverPoints(bool checked);
+    void toggleAddSelection(bool checked);
+    void toggleSubtractSelection(bool checked);
+    void toggleToggleSelection(bool checked);
+    void growSelection();
+    void shrinkSelection();
+    void clearSelection();
+#ifdef USE_PCL_BACKEND
+    void onSelectionFinished(const cvSelectionData& selectionData);
+    void onSelectionRestored(const cvSelectionData& selection);
+#endif
+
+    // Selection system slots
+    void onSelectionToolActivated(QAction* action);
+    void onSelectionHistoryChanged();
+    void onBookmarksChanged();
+    void undoSelection();
+    void redoSelection();
+
+public slots:  // Make this public so it can be connected from delegate
+    void onTooltipSettingsChanged(bool showTooltips, int maxAttributes);
+
+private slots:
     void doActionCloudCloudDist();
     void doActionCloudMeshDist();
     void doActionCloudPrimitiveDist();
@@ -573,6 +632,11 @@ private slots:
     void doComputeGeometricFeature();
 
 private:
+    //! Disable all active selection tools
+    //! \param except Pointer to the tool that should NOT be disabled (nullptr
+    //! to disable all)
+    void disableAllSelectionTools(void* except = nullptr);
+
     //! Apply transformation to the selected entities
     void applyTransformation(const ccGLMatrixd& transMat);
 
@@ -669,7 +733,8 @@ private:
     ccPointPairRegistrationDlg* m_pprDlg;
     //! Primitive factory dialog
     ecvPrimitiveFactoryDlg* m_pfDlg;
-
+    //! Deep Semantic Segmentation tool dialog
+    ecvDeepSemanticSegmentationTool* m_dssTool;
     //! filter tool dialog
     ecvFilterTool* m_filterTool;
     //! Annotation tool dialog
@@ -678,8 +743,51 @@ private:
     ecvFilterByLabelDlg* m_filterLabelTool;
     //! Measurement Tool dialog (Distance, Contour, Protractor)
     ecvMeasurementTool* m_measurementTool;
-    //! Deep Semantic Segmentation tool dialog
-    ecvDeepSemanticSegmentationTool* m_dssTool;
+
+#if defined(USE_PCL_BACKEND)
+    //! Zoom to box tool
+    cvZoomToBoxTool* m_zoomToBoxTool;
+    //! Surface cell selection tool
+    cvSurfaceSelectionTool* m_surfaceCellsTool;
+    //! Surface point selection tool
+    cvSurfaceSelectionTool* m_surfacePointsTool;
+    //! Frustum cell selection tool
+    cvFrustumSelectionTool* m_frustumCellsTool;
+    //! Frustum point selection tool
+    cvFrustumSelectionTool* m_frustumPointsTool;
+    //! Polygon cell selection tool
+    cvPolygonSelectionTool* m_polygonCellsTool;
+    //! Polygon point selection tool
+    cvPolygonSelectionTool* m_polygonPointsTool;
+    //! Block selection tool
+    cvBlockSelectionTool* m_blockSelectionTool;
+    //! Frustum block selection tool
+    cvBlockSelectionTool* m_frustumBlockSelectionTool;
+    //! Interactive cell selection tool (now using unified
+    //! cvTooltipSelectionTool)
+    cvTooltipSelectionTool* m_interactiveCellsTool;
+    //! Interactive point selection tool (now using unified
+    //! cvTooltipSelectionTool)
+    cvTooltipSelectionTool* m_interactivePointsTool;
+    //! Hover cells tooltip tool
+    cvTooltipSelectionTool* m_hoverCellsTool;
+    //! Hover points tooltip tool
+    cvTooltipSelectionTool* m_hoverPointsTool;
+    //! Selection modifier action group
+    QActionGroup* m_selectionModifierGroup;
+    //! Selection tool action group (for mutually exclusive selection tools)
+    QActionGroup* m_selectionToolGroup;
+    //! Selection manager (encapsulates all selection state and VTK interaction)
+    cvViewSelectionManager* m_selectionManager;
+    cvSelectionHighlighter* m_selectionHighlighter;
+
+    // Selection system components
+    cvSelectionHistory* m_selectionHistory;
+    cvSelectionBookmarks* m_selectionBookmarks;
+    cvSelectionFilter* m_selectionFilter;
+    cvSelectionAlgebra* m_selectionAlgebra;
+    cvSelectionAnnotationManager* m_selectionAnnotations;
+#endif
 
     QVBoxLayout* m_layout;
     QUIWidget* m_uiManager;

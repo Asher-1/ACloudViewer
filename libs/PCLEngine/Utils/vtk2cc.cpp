@@ -5,18 +5,18 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "vtk2cc.h"
+#include <Utils/vtk2cc.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
 
 // Local
-#include "PclUtils/PCLCloud.h"
-#include "PclUtils/PCLConv.h"
-#include "PclUtils/cc2sm.h"
-#include "PclUtils/sm2cc.h"
-#include "my_point_types.h"
+#include <Utils/PCLCloud.h>
+#include <Utils/PCLConv.h>
+#include <Utils/cc2sm.h>
+#include <Utils/my_point_types.h>
+#include <Utils/sm2cc.h>
 
 // PCL
 #include <pcl/common/io.h>
@@ -35,6 +35,9 @@
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
+
+// CV_CORE_LIB
+#include <CVLog.h>
 
 // VTK
 #include <vtkFloatArray.h>
@@ -124,11 +127,102 @@ ccPointCloud* vtk2cc::ConvertToPointCloud(vtkPolyData* polydata, bool silent) {
         cloud->showColors(true);
     }
 
+    // Copy scalar fields (labels, intensity, etc.) from point data
+    vtkPointData* pointData = polydata->GetPointData();
+    if (pointData) {
+        int numArrays = pointData->GetNumberOfArrays();
+        for (int i = 0; i < numArrays; ++i) {
+            vtkDataArray* dataArray = pointData->GetArray(i);
+
+            // Only handle single-component (scalar) arrays
+            if (!dataArray || dataArray->GetNumberOfComponents() != 1) {
+                continue;
+            }
+
+            // Skip arrays already handled as colors/normals
+            if (dataArray == colors || dataArray == normals) {
+                continue;
+            }
+
+            const char* arrayName = dataArray->GetName();
+            if (!arrayName || strlen(arrayName) == 0) {
+                continue;  // Skip unnamed arrays
+            }
+
+            // Create new scalar field
+            ccScalarField* scalarField = new ccScalarField(arrayName);
+            if (!scalarField->reserveSafe(static_cast<unsigned>(pointCount))) {
+                if (!silent) {
+                    CVLog::Warning(QString("[vtk2cc] Failed to allocate scalar "
+                                           "field: %1")
+                                           .arg(arrayName));
+                }
+                scalarField->release();
+                continue;
+            }
+
+            // Copy data
+            for (vtkIdType j = 0; j < pointCount; ++j) {
+                double value = dataArray->GetTuple1(j);
+                scalarField->setValue(static_cast<unsigned>(j),
+                                      static_cast<ScalarType>(value));
+            }
+
+            scalarField->computeMinAndMax();
+
+            // Add to point cloud
+            int sfIdx = cloud->addScalarField(scalarField);
+            if (sfIdx < 0) {
+                if (!silent) {
+                    CVLog::Warning(
+                            QString("[vtk2cc] Failed to add scalar field: %1")
+                                    .arg(arrayName));
+                }
+                scalarField->release();
+            } else {
+                if (!silent) {
+                    CVLog::Print(QString("[vtk2cc] Added scalar field '%1' [%2 "
+                                         "- %3]")
+                                         .arg(arrayName)
+                                         .arg(scalarField->getMin())
+                                         .arg(scalarField->getMax()));
+                }
+
+                // Auto-detect and display label fields
+                QString fieldName = QString(arrayName).toLower();
+                if (fieldName.contains("label") ||
+                    fieldName.contains("class") ||
+                    fieldName.contains("segment") ||
+                    fieldName.contains("cluster")) {
+                    cloud->setCurrentDisplayedScalarField(sfIdx);
+                    cloud->showSF(true);
+                    if (!silent) {
+                        CVLog::Print(QString("[vtk2cc] Label field '%1' "
+                                             "auto-displayed")
+                                             .arg(arrayName));
+                    }
+                }
+            }
+        }
+    }
+
     return cloud;
 }
 
 ccMesh* vtk2cc::ConvertToMesh(vtkPolyData* polydata, bool silent) {
+    if (!polydata) {
+        return nullptr;
+    }
+
     vtkSmartPointer<vtkPoints> mesh_points = polydata->GetPoints();
+    if (!mesh_points) {
+        if (!silent) {
+            CVLog::Warning(
+                    QString("[getMeshFromPolyData] polydata has no points!"));
+        }
+        return nullptr;
+    }
+
     unsigned nr_points =
             static_cast<unsigned>(mesh_points->GetNumberOfPoints());
     unsigned nr_polygons = static_cast<unsigned>(polydata->GetNumberOfPolys());
@@ -157,6 +251,7 @@ ccMesh* vtk2cc::ConvertToMesh(vtkPolyData* polydata, bool silent) {
         if (!silent) {
             CVLog::Warning(QString("[getMeshFromPolyData] not enough memory!"));
         }
+        delete mesh;
         return nullptr;
     }
 
@@ -168,20 +263,39 @@ ccMesh* vtk2cc::ConvertToMesh(vtkPolyData* polydata, bool silent) {
     vtkIdType nr_cell_points;
     vtkCellArray* mesh_polygons = polydata->GetPolys();
     mesh_polygons->InitTraversal();
-    int id_poly = 0;
+    unsigned int validTriangles = 0;
+    unsigned int skippedCells = 0;
+
     while (mesh_polygons->GetNextCell(nr_cell_points, cell_points)) {
         if (nr_cell_points != 3) {
-            if (!silent) {
-                CVLog::Warning(QString(
-                        "[getMeshFromPolyData] only support triangles!"));
-            }
-            break;
+            // Skip non-triangle cells but continue processing
+            ++skippedCells;
+            continue;
         }
 
         mesh->addTriangle(static_cast<unsigned>(cell_points[0]),
                           static_cast<unsigned>(cell_points[1]),
                           static_cast<unsigned>(cell_points[2]));
-        ++id_poly;
+        ++validTriangles;
+    }
+
+    // Check if we have any valid triangles
+    if (validTriangles == 0) {
+        if (!silent) {
+            CVLog::Warning(QString(
+                    "[getMeshFromPolyData] No triangles found in polydata"));
+        }
+        delete mesh;
+        return nullptr;
+    }
+
+    // Log skipped cells if any
+    if (skippedCells > 0 && !silent) {
+        CVLog::Warning(QString("[getMeshFromPolyData] Skipped %1 non-triangle "
+                               "cell(s), "
+                               "added %2 triangle(s)")
+                               .arg(skippedCells)
+                               .arg(validTriangles));
     }
 
     // do some cleaning

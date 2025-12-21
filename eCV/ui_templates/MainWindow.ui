@@ -174,6 +174,7 @@
      <addaction name="actionDisplayMainTools"/>
      <addaction name="actionDisplayScalarFieldsTools"/>
      <addaction name="actionDisplayViewTools"/>
+     <addaction name="actionDisplaySelectionTools"/>
      <addaction name="actionDisplayFilterTools"/>
      <addaction name="actionDisplayMeasurementsTools"/>
      <addaction name="actionDisplayAnnotationTools"/>
@@ -197,7 +198,9 @@
     <addaction name="menuAngle_view"/>
     <addaction name="actionSaveViewportAsObject"/>
     <addaction name="actionConsole"/>
+    <addaction name="actionZoomToBox"/>
     <addaction name="actionZoomAndCenter"/>
+    <addaction name="actionGlobalZoom"/>
     <addaction name="actionResetGUIElementsPos"/>
     <addaction name="actionScreenShot"/>
     <addaction name="actionToggleOrientationMarker"/>
@@ -905,6 +908,38 @@ QTreeView::branch:open:has-children:has-siblings  {
    <addaction name="actionGlyphFilter"/>
    <addaction name="actionStreamlineFilter"/>
   </widget>
+  <widget class="QToolBar" name="SelectionToolBar">
+   <property name="windowTitle">
+    <string>Selection Tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Selection Tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionAddSelection"/>
+   <addaction name="actionSubtractSelection"/>
+   <addaction name="actionToggleSelection"/>
+   <addaction name="actionSelectSurfaceCells"/>
+   <addaction name="actionSelectSurfacePoints"/>
+   <addaction name="actionSelectFrustumCells"/>
+   <addaction name="actionSelectFrustumPoints"/>
+   <addaction name="actionSelectPolygonCells"/>
+   <addaction name="actionSelectPolygonPoints"/>
+   <addaction name="actionSelectBlocks"/>
+   <addaction name="actionSelectFrustumBlocks"/>
+   <addaction name="actionInteractiveSelectCells"/>
+   <addaction name="actionInteractiveSelectPoints"/>
+   <addaction name="actionHoverCells"/>
+   <addaction name="actionHoverPoints"/>
+   <addaction name="actionGrowSelection"/>
+   <addaction name="actionShrinkSelection"/>
+   <addaction name="actionClearSelection"/>
+  </widget>
   <widget class="QToolBar" name="MeasurementsToolBar">
    <property name="windowTitle">
     <string>Measurement Tools</string>
@@ -965,8 +1000,11 @@ QTreeView::branch:open:has-children:has-siblings  {
    <addaction name="actionShowPivot"/>
    <addaction name="actionResetPivot"/>
    <addaction name="actionAutoPickPivot"/>
+   <addaction name="separator"/>
+   <addaction name="actionZoomToBox"/>
    <addaction name="actionZoomAndCenter"/>
    <addaction name="actionGlobalZoom"/>
+   <addaction name="separator"/>
    <addaction name="actionSetViewTop"/>
    <addaction name="actionSetViewFront"/>
    <addaction name="actionSetViewLeft"/>
@@ -1117,7 +1155,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set Background color</string>
    </property>
    <property name="shortcut">
-    <string>Alt+B</string>
+    <string>Ctrl+B</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1415,7 +1453,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Set a unique color</string>
    </property>
    <property name="shortcut">
-    <string>Alt+C</string>
+    <string>Ctrl+Shift+C</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1523,10 +1561,34 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Clear colors</string>
    </property>
   </action>
+  <action name="actionZoomToBox">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/pqZoomToBox@2x.png</normaloff>:/Resources/images/pqZoomToBox@2x.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom to Box</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom to Box - Draw a rubber band to zoom into a region (Alt+Z)</string>
+   </property>
+   <property name="statusTip">
+    <string>Zoom to Box - Draw a rubber band to zoom into a region</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Z</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
   <action name="actionZoomAndCenter">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/pqZoomToSelection@2x.png</normaloff>:/Resources/images/pqZoomToSelection@2x.png</iconset>
+     <normaloff>:/Resources/images/svg/pqZoomToData.svg</normaloff>:/Resources/images/svg/pqZoomToData.svg</iconset>
    </property>
    <property name="text">
     <string>Zoom &amp; Center</string>
@@ -1543,6 +1605,9 @@ QTreeView::branch:open:has-children:has-siblings  {
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
    </property>
+   <property name="shortcut">
+    <string>Z</string>
+   </property>
   </action>
   <action name="actionGlobalZoom">
    <property name="icon">
@@ -1554,6 +1619,399 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Global Zoom</string>
+   </property>
+  </action>
+  <action name="actionAddSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSelectPlus.svg</normaloff>:/Resources/images/svg/pqSelectPlus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Add Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Add selection (Ctrl) - Add new selection to existing selection</string>
+   </property>
+   <property name="statusTip">
+    <string>Add selection modifier</string>
+   </property>
+  </action>
+  <action name="actionSubtractSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSelectMinus.svg</normaloff>:/Resources/images/svg/pqSelectMinus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Subtract Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Subtract selection (Shift) - Remove new selection from existing selection</string>
+   </property>
+   <property name="statusTip">
+    <string>Subtract selection modifier</string>
+   </property>
+  </action>
+  <action name="actionToggleSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSelectToggle.svg</normaloff>:/Resources/images/svg/pqSelectToggle.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle selection (Ctrl+Shift) - Toggle selection state of new items</string>
+   </property>
+   <property name="statusTip">
+    <string>Toggle selection modifier</string>
+   </property>
+  </action>
+  <action name="actionSelectSurfaceCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceSelectionCell.svg</normaloff>:/Resources/images/svg/pqSurfaceSelectionCell.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Cells On</string>
+   </property>
+   <property name="toolTip">
+    <string>Select cells on surface (Alt+C)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select cells on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+C</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectSurfacePoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceSelectionPoint.svg</normaloff>:/Resources/images/svg/pqSurfaceSelectionPoint.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Points On</string>
+   </property>
+   <property name="toolTip">
+    <string>Select points on surface (Alt+D)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select points on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+D</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectFrustumCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqFrustumSelectionCell.svg</normaloff>:/Resources/images/svg/pqFrustumSelectionCell.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Cells Through</string>
+   </property>
+   <property name="toolTip">
+    <string>Select cells through (in frustum) (Alt+F)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select cells through (in frustum)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectFrustumPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqFrustumSelectionPoint.svg</normaloff>:/Resources/images/svg/pqFrustumSelectionPoint.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Points Through</string>
+   </property>
+   <property name="toolTip">
+    <string>Select points through (in frustum) (Alt+G)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select points through (in frustum)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+G</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectPolygonCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqPolygonSelectSurfaceCell.svg</normaloff>:/Resources/images/svg/pqPolygonSelectSurfaceCell.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Cells With Polygon</string>
+   </property>
+   <property name="toolTip">
+    <string>Select cells with polygon (Ctrl+Alt+P)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select cells with polygon</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+P</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectPolygonPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqPolygonSelectSurfacePoint.svg</normaloff>:/Resources/images/svg/pqPolygonSelectSurfacePoint.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Points With Polygon</string>
+   </property>
+   <property name="toolTip">
+    <string>Select points with polygon (Alt+P)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select points with polygon</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+P</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectBlocks">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSelectBlock.svg</normaloff>:/Resources/images/svg/pqSelectBlock.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Block</string>
+   </property>
+   <property name="toolTip">
+    <string>Select block on surface (Alt+B)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select block on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+B</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectFrustumBlocks">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqFrustumSelectionBlock.svg</normaloff>:/Resources/images/svg/pqFrustumSelectionBlock.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Blocks Through</string>
+   </property>
+   <property name="toolTip">
+    <string>Select blocks through (in frustum) (Alt+N)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select blocks through (in frustum)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+N</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionInteractiveSelectCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceSelectionCellInteractive.svg</normaloff>:/Resources/images/svg/pqSurfaceSelectionCellInteractive.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Interactive Select Cells On</string>
+   </property>
+   <property name="toolTip">
+    <string>Interactive select cells on surface(Ctrl+Alt+I)</string>
+   </property>
+   <property name="statusTip">
+    <string>Interactive select cells on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+I</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionInteractiveSelectPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceSelectionPointInteractive.svg</normaloff>:/Resources/images/svg/pqSurfaceSelectionPointInteractive.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Interactive Select Points On</string>
+   </property>
+   <property name="toolTip">
+    <string>Interactive select points on surface(Alt+I)</string>
+   </property>
+   <property name="statusTip">
+    <string>Interactive select points on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+I</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionGrowSelection">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqPlus.svg</normaloff>:/Resources/images/svg/pqPlus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Grow Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Grow selection - Expand selection by one layer of neighbors (Alt++)</string>
+   </property>
+   <property name="statusTip">
+    <string>Grow selection</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt++</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionShrinkSelection">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqMinus.svg</normaloff>:/Resources/images/svg/pqMinus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Shrink Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Shrink selection - Contract selection by removing boundary items (Alt+-)</string>
+   </property>
+   <property name="statusTip">
+    <string>Shrink selection</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+-</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionClearSelection">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqClearSort.svg</normaloff>:/Resources/images/svg/pqClearSort.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Clear Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear selection - Remove all selected items (Esc)</string>
+   </property>
+   <property name="statusTip">
+    <string>Clear selection</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionHoverCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceHoveringCell.svg</normaloff>:/Resources/images/svg/pqSurfaceHoveringCell.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Hover Cells On</string>
+   </property>
+   <property name="toolTip">
+    <string>Hover Cells On - Show cell information on mouse hover. Use Ctrl-C/Cmd-C to copy content to clipboard.</string>
+   </property>
+   <property name="statusTip">
+    <string>Tooltip selection for cells</string>
+   </property>
+  </action>
+  <action name="actionHoverPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceHoveringPoint.svg</normaloff>:/Resources/images/svg/pqSurfaceHoveringPoint.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Hover Points On</string>
+   </property>
+   <property name="toolTip">
+    <string>Hover Points On - Show point information on mouse hover. Use Ctrl-C/Cmd-C to copy content to clipboard.</string>
+   </property>
+   <property name="statusTip">
+    <string>Tooltip selection for points</string>
    </property>
   </action>
   <action name="actionDisplayOptions">
@@ -1829,6 +2287,23 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Show/hide view toolbar</string>
+   </property>
+  </action>
+  <action name="actionDisplaySelectionTools">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Show/hide selection toolbar</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/hide selection toolbar</string>
    </property>
   </action>
   <action name="actionAboutPlugins">
@@ -3782,6 +4257,22 @@ QTreeView::branch:open:has-children:has-siblings  {
     <hint type="destinationlabel">
      <x>14</x>
      <y>397</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDisplaySelectionTools</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>SelectionToolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>400</x>
+     <y>33</y>
     </hint>
    </hints>
   </connection>

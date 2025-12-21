@@ -118,7 +118,7 @@ cc2DLabel::cc2DLabel(QString name /*=QString()*/)
       m_showFullBody(true),
       m_dispPointsLegend(false),
       m_dispIn2D(true),
-      m_relMarkerScale(1.0f),
+      m_relMarkerScale(0.15f),  // Reduced from 1.0f for better visualization - prevents sphere from obscuring points
       m_historyMessage(QStringList()) {
     m_screenPos[0] = m_screenPos[1] = 0.05f;
 
@@ -481,6 +481,12 @@ bool cc2DLabel::toFile_MeOnly(QFile& out) const {
     if (out.write((const char*)&m_dispPointsLegend, sizeof(bool)) < 0)
         return WriteError();
 
+    // Relative marker scale (dataVersion >= 49) - IMPORTANT for sphere size!
+    // This is always written when saving, but only read when dataVersion >= 49
+    // to maintain backward compatibility with version 48 and earlier
+    if (out.write((const char*)&m_relMarkerScale, sizeof(float)) < 0)
+        return WriteError();
+
     return true;
 }
 
@@ -529,6 +535,15 @@ bool cc2DLabel::fromFile_MeOnly(QFile& in,
         if (in.read((char*)&m_dispPointsLegend, sizeof(bool)) < 0)
             return ReadError();
     }
+
+    if (dataVersion > 48) {
+        // Relative marker scale (dataVersion >= 49) - IMPORTANT for sphere size!
+        // Read the saved value to preserve custom sphere sizes
+        if (in.read((char*)&m_relMarkerScale, sizeof(float)) < 0)
+            return ReadError();
+    }
+    // else: use constructor default value (0.15f) for old files (version <= 48)
+    // This automatically fixes sphere size for old labels
 
     return true;
 }
@@ -1056,8 +1071,8 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
 
                     WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_SPHERE,
                                             QString::number(i) + m_sphereIdfix);
-                    param.radius = scale / 2;
-                    m_pickedPoints[i].markerScale = scale / 2;
+                    param.radius = scale * m_relMarkerScale;  // Use relative scale for consistent sphere size
+                    m_pickedPoints[i].markerScale = scale * m_relMarkerScale;
                     param.center = CCVector3(P->x, P->y, P->z);
                     param.color = ecvColor::FromRgba(ecvColor::ored);
                     ecvDisplayTools::DrawWidgets(param, false);
@@ -1544,10 +1559,39 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         m_historyMessage << title;
 
         if (m_showFullBody) {
+            // Create QFontMetrics for text alignment calculations
+            QFontMetrics bodyFontMetrics(bodyFont);
+            
             for (int r = 0; r < tab.rowCount; ++r) {
                 QString str;
                 for (int c = 0; c < tab.colCount; ++c) {
-                    str += tab.colContent[c][r];
+                    QString cellContent = tab.colContent[c][r];
+                    // Calculate actual text width
+#if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
+                    int textWidth = bodyFontMetrics.width(cellContent);
+#else
+                    int textWidth = bodyFontMetrics.horizontalAdvance(cellContent);
+#endif
+                    // Calculate target width (column width + margin for spacing)
+                    int targetWidth = tab.colWidth[c];
+                    if (c < tab.colCount - 1) {
+                        // Add margin after each column except the last
+                        targetWidth += tabMarginX;
+                    }
+                    // Add spaces to align text
+                    int spaceWidth = textWidth < targetWidth ? targetWidth - textWidth : 0;
+                    if (spaceWidth > 0) {
+                        // Calculate number of spaces needed (approximate)
+                        // Use average character width for spacing
+#if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
+                        int spaceCharWidth = bodyFontMetrics.width(' ');
+#else
+                        int spaceCharWidth = bodyFontMetrics.horizontalAdvance(' ');
+#endif
+                        int numSpaces = spaceCharWidth > 0 ? (spaceWidth + spaceCharWidth - 1) / spaceCharWidth : 0;
+                        cellContent += QString(numSpaces, ' ');
+                    }
+                    str += cellContent;
                 }
                 m_historyMessage << str;
             }
@@ -1645,656 +1689,4 @@ bool cc2DLabel::pointPicking(const CCVector2d& clickPos,
     }
 
     return (nearestPointIndex >= 0);
-}
-
-//! deprecated
-void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
-    if (ecvDisplayTools::GetCurrentScreen() == nullptr) {
-        assert(false);
-        return;
-    }
-
-    // clear history
-    clear2Dviews();
-    if (!isVisible() || !isEnabled()) {
-        return;
-    }
-
-    if (m_pickedPoints.empty()) {
-        return;
-    }
-
-    // standard case: list names pushing
-    bool entityPickingMode = MACRO_EntityPicking(context);
-
-    float halfW = context.glW / 2.0f;
-    float halfH = context.glH / 2.0f;
-
-    size_t count = m_pickedPoints.size();
-    assert(count != 0);
-
-    // hack: we display the label connecting 'segments' and the point(s) legend
-    // in 2D so that they always appear above the entities
-    {
-        // don't do this in picking mode!
-        if (!entityPickingMode) {
-            // we always project the points in 2D (maybe useful later, even when
-            // displaying the label during the 2D pass!)
-            ccGLCameraParameters camera;
-            // we can't use the context 'ccGLCameraParameters' (viewport,
-            // modelView matrix, etc. ) because it doesn't take the temporary
-            // 'GL transformation' into account!
-            ecvDisplayTools::GetGLCameraParameters(camera);
-            for (size_t i = 0; i < count; i++) {
-                // project the point in 2D
-                const CCVector3* P3D = m_pickedPoints[i].cloud->getPoint(
-                        m_pickedPoints[i].index);
-                camera.project(*P3D, m_pickedPoints[i].pos2D);
-            }
-        }
-
-        // test if the label points are visible
-        size_t visibleCount = 0;
-        for (unsigned j = 0; j < count; ++j) {
-            if (m_pickedPoints[j].pos2D.z >= 0.0 &&
-                m_pickedPoints[j].pos2D.z <= 1.0) {
-                ++visibleCount;
-            }
-        }
-
-        if (visibleCount) {
-            // no need to display the point(s) legend in picking mode
-            if (m_dispPointsLegend && !entityPickingMode) {
-                QFont font(ecvDisplayTools::
-                                   GetTextDisplayFont());  // takes rendering
-                                                           // zoom into account!
-                // font.setPointSize(font.pointSize() + 2);
-                font.setBold(true);
-                static const QChar ABC[3] = {'A', 'B', 'C'};
-
-                // draw the label 'legend(s)'
-                for (size_t j = 0; j < count; j++) {
-                    QString title;
-                    if (count == 1)
-                        title = getName();  // for single-point labels we prefer
-                                            // the name
-                    else if (count == 3)
-                        title = ABC[j];  // for triangle-labels, we only display
-                                         // "A","B","C"
-                    else
-                        title = QString("P#%0").arg(m_pickedPoints[j].index);
-
-                    m_historyMessage << title;
-                    ecvDisplayTools::DisplayText(
-                            title,
-                            static_cast<int>(m_pickedPoints[j].pos2D.x) +
-                                    context.labelMarkerTextShift_pix,
-                            static_cast<int>(m_pickedPoints[j].pos2D.y) +
-                                    context.labelMarkerTextShift_pix,
-                            ecvDisplayTools::ALIGN_DEFAULT,
-                            context.labelOpacity / 100.0f, ecvColor::red.rgb,
-                            &font, this->getViewId());
-                }
-            }
-        } else {
-            // no need to draw anything (might be confusing)
-            if (entityPickingMode) {
-                // glFunc->glPopName();
-            }
-            return;
-        }
-    }
-
-    if (!m_dispIn2D) {
-        // nothing to do
-        if (entityPickingMode) {
-            // glFunc->glPopName();
-        }
-        return;
-    }
-
-    // label title
-    const int precision = context.dispNumberPrecision;
-    QString title = getTitle(precision);
-
-#define DRAW_CONTENT_AS_TAB
-#ifdef DRAW_CONTENT_AS_TAB
-    // draw contents as an array
-    Tab tab(4);
-    int rowHeight = 0;
-#else
-    // simply display the content as text
-    QStringList body;
-#endif
-
-    // render zoom
-    int margin = static_cast<int>(c_margin * context.renderZoom);
-    int tabMarginX = static_cast<int>(c_tabMarginX * context.renderZoom);
-    int tabMarginY = static_cast<int>(c_tabMarginY * context.renderZoom);
-    int arrowBaseSize = static_cast<int>(c_arrowBaseSize * context.renderZoom);
-
-    int titleHeight = 0;
-    QFont bodyFont, titleFont;
-    if (!entityPickingMode) {
-        /*** label border ***/
-        bodyFont =
-                ecvDisplayTools::GetLabelDisplayFont();  // takes rendering zoom
-                                                         // into account!
-        titleFont = bodyFont;  // takes rendering zoom into account!
-        // titleFont.setBold(true);
-
-        QFontMetrics titleFontMetrics(titleFont);
-        titleHeight = titleFontMetrics.height();
-
-        QFontMetrics bodyFontMetrics(bodyFont);
-        rowHeight = bodyFontMetrics.height();
-
-        // get label box dimension
-        int dx = 100;
-        int dy = 0;
-        // int buttonSize    = static_cast<int>(c_buttonSize *
-        // context.renderZoom);
-        {
-            // base box dimension
-            dx = std::max(dx,
-                          QTCOMPAT_FONTMETRICS_WIDTH(titleFontMetrics, title));
-
-            dy += margin;       // top vertical margin
-            dy += titleHeight;  // title
-
-            if (m_showFullBody) {
-#ifdef DRAW_CONTENT_AS_TAB
-                try {
-                    if (count == 1) {
-                        LabelInfo1 info;
-                        getLabelInfo1(info);
-
-                        bool isShifted = info.cloud->isShifted();
-                        // 1st block: X, Y, Z (local)
-                        {
-                            int c = tab.add2x3Block();
-                            QChar suffix;
-                            if (isShifted) {
-                                suffix = 'l';  //'l' for local
-                            }
-                            const CCVector3* P =
-                                    info.cloud->getPoint(info.pointIndex);
-                            tab.colContent[c] << QString("X") + suffix;
-                            tab.colContent[c + 1]
-                                    << QString::number(P->x, 'f', precision);
-                            tab.colContent[c] << QString("Y") + suffix;
-                            tab.colContent[c + 1]
-                                    << QString::number(P->y, 'f', precision);
-                            tab.colContent[c] << QString("Z") + suffix;
-                            tab.colContent[c + 1]
-                                    << QString::number(P->z, 'f', precision);
-                        }
-                        // next block:  X, Y, Z (global)
-                        if (isShifted) {
-                            int c = tab.add2x3Block();
-                            CCVector3d P = info.cloud->toGlobal3d(
-                                    *info.cloud->getPoint(info.pointIndex));
-                            tab.colContent[c] << "Xg";
-                            tab.colContent[c + 1]
-                                    << QString::number(P.x, 'f', precision);
-                            tab.colContent[c] << "Yg";
-                            tab.colContent[c + 1]
-                                    << QString::number(P.y, 'f', precision);
-                            tab.colContent[c] << "Zg";
-                            tab.colContent[c + 1]
-                                    << QString::number(P.z, 'f', precision);
-                        }
-                        // next block: normal
-                        if (info.hasNormal) {
-                            int c = tab.add2x3Block();
-                            tab.colContent[c] << "Nx";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.normal.x, 'f', precision);
-                            tab.colContent[c] << "Ny";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.normal.y, 'f', precision);
-                            tab.colContent[c] << "Nz";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.normal.z, 'f', precision);
-                        }
-
-                        // next block: RGB color
-                        if (info.hasRGB) {
-                            int c = tab.add2x3Block();
-                            tab.colContent[c] << "R";
-                            tab.colContent[c + 1]
-                                    << QString::number(info.rgb.r);
-                            tab.colContent[c] << "G";
-                            tab.colContent[c + 1]
-                                    << QString::number(info.rgb.g);
-                            tab.colContent[c] << "B";
-                            tab.colContent[c + 1]
-                                    << QString::number(info.rgb.b);
-                        }
-                    } else if (count == 2) {
-                        LabelInfo2 info;
-                        getLabelInfo2(info);
-
-                        // 1st block: dX, dY, dZ
-                        {
-                            int c = tab.add2x3Block();
-                            tab.colContent[c] << MathSymbolDelta + QString("X");
-                            tab.colContent[c + 1] << QString::number(
-                                    info.diff.x, 'f', precision);
-                            tab.colContent[c] << MathSymbolDelta + QString("Y");
-                            tab.colContent[c + 1] << QString::number(
-                                    info.diff.y, 'f', precision);
-                            tab.colContent[c] << MathSymbolDelta + QString("Z");
-                            tab.colContent[c + 1] << QString::number(
-                                    info.diff.z, 'f', precision);
-                        }
-                        // 2nd block: dXY, dXZ, dZY
-                        {
-                            int c = tab.add2x3Block();
-                            PointCoordinateType dXY =
-                                    sqrt(info.diff.x * info.diff.x +
-                                         info.diff.y * info.diff.y);
-                            PointCoordinateType dXZ =
-                                    sqrt(info.diff.x * info.diff.x +
-                                         info.diff.z * info.diff.z);
-                            PointCoordinateType dZY =
-                                    sqrt(info.diff.z * info.diff.z +
-                                         info.diff.y * info.diff.y);
-                            tab.colContent[c]
-                                    << MathSymbolDelta + QString("XY");
-                            tab.colContent[c + 1]
-                                    << QString::number(dXY, 'f', precision);
-                            tab.colContent[c]
-                                    << MathSymbolDelta + QString("XZ");
-                            tab.colContent[c + 1]
-                                    << QString::number(dXZ, 'f', precision);
-                            tab.colContent[c]
-                                    << MathSymbolDelta + QString("ZY");
-                            tab.colContent[c + 1]
-                                    << QString::number(dZY, 'f', precision);
-                        }
-                    } else if (count == 3) {
-                        LabelInfo3 info;
-                        getLabelInfo3(info);
-                        tab.setMaxBlockPerRow(2);  // square tab (2x2 blocks)
-
-                        // next block: indexes
-                        {
-                            int c = tab.add2x3Block();
-                            tab.colContent[c] << "index.A";
-                            tab.colContent[c + 1]
-                                    << QString::number(info.point1Index);
-                            tab.colContent[c] << "index.B";
-                            tab.colContent[c + 1]
-                                    << QString::number(info.point2Index);
-                            tab.colContent[c] << "index.C";
-                            tab.colContent[c + 1]
-                                    << QString::number(info.point3Index);
-                        }
-                        // next block: edges length
-                        {
-                            int c = tab.add2x3Block();
-                            tab.colContent[c] << "AB";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.edges.u[0], 'f', precision);
-                            tab.colContent[c] << "BC";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.edges.u[1], 'f', precision);
-                            tab.colContent[c] << "CA";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.edges.u[2], 'f', precision);
-                        }
-                        // next block: angles
-                        {
-                            int c = tab.add2x3Block();
-                            tab.colContent[c] << "angle.A";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.angles.u[0], 'f', precision);
-                            tab.colContent[c] << "angle.B";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.angles.u[1], 'f', precision);
-                            tab.colContent[c] << "angle.C";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.angles.u[2], 'f', precision);
-                        }
-                        // next block: normal
-                        {
-                            int c = tab.add2x3Block();
-                            tab.colContent[c] << "Nx";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.normal.x, 'f', precision);
-                            tab.colContent[c] << "Ny";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.normal.y, 'f', precision);
-                            tab.colContent[c] << "Nz";
-                            tab.colContent[c + 1] << QString::number(
-                                    info.normal.z, 'f', precision);
-                        }
-                    }
-                } catch (const std::bad_alloc&) {
-                    // not enough memory
-                    assert(!entityPickingMode);
-                    return;
-                }
-
-                // compute min width of each column
-                int totalWidth = tab.updateColumnsWidthTable(bodyFontMetrics);
-
-                int tabWidth =
-                        totalWidth +
-                        tab.colCount * (2 * tabMarginX);  // add inner margins
-                dx = std::max(dx, tabWidth);
-                dy += tab.rowCount *
-                      (rowHeight + 2 * tabMarginY);  // add inner margins
-                // we also add a margin every 3 rows
-                dy += std::max(0, (tab.rowCount / 3) - 1) * margin;
-                dy += margin;  // bottom vertical margin
-#else
-                body = getLabelContent(precision);
-                if (!body.empty()) {
-                    dy += margin;  // vertical margin above separator
-                    for (int j = 0; j < body.size(); ++j) {
-                        dx = std::max(dx, QTCOMPAT_FONTMETRICS_WIDTH(
-                                                  bodyFontMetrics, body[j]));
-                        dy += rowHeight;  // body line height
-                    }
-                    dy += margin;  // vertical margin below text
-                }
-#endif  // DRAW_CONTENT_AS_TAB
-            }
-
-            dx += margin * 2;  // horizontal margins
-        }
-
-        // main rectangle
-        m_labelROI = QRect(0, 0, dx, dy);
-    }
-
-    // draw label rectangle
-    const int xStart = static_cast<int>(context.glW * m_screenPos[0]);
-    const int yStart = static_cast<int>(context.glH * (1.0f - m_screenPos[1]));
-
-    m_lastScreenPos[0] = xStart;
-    m_lastScreenPos[1] = yStart - m_labelROI.height();
-
-    // colors
-    bool highlighted = (!entityPickingMode && isSelected());
-    // default background color
-    unsigned char alpha =
-            static_cast<unsigned char>((context.labelOpacity / 100.0) * 255);
-    ecvColor::Rgbaub defaultBkgColor(context.labelDefaultBkgCol, alpha);
-    // default border color (mustn't be totally transparent!)
-    ecvColor::Rgbaub defaultBorderColor(ecvColor::red, 255);
-    if (!highlighted) {
-        // apply only half of the transparency
-        unsigned char halfAlpha = static_cast<unsigned char>(
-                (50.0 + context.labelOpacity / 200.0) * 255);
-        defaultBorderColor =
-                ecvColor::Rgbaub(context.labelDefaultBkgCol, halfAlpha);
-    }
-
-    m_labelROI = QRect(xStart, yStart - m_labelROI.height(), m_labelROI.width(),
-                       m_labelROI.height());
-
-    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D,
-                            this->getViewId());
-
-    if (!entityPickingMode) {
-        // compute arrow base position relatively to the label rectangle (for 0
-        // to 8)
-        int arrowBaseConfig = 0;
-
-        // compute arrow head position
-        CCVector3d arrowDest2D(0, 0, 0);
-        for (size_t i = 0; i < count; ++i) {
-            arrowDest2D += m_pickedPoints[i].pos2D;
-        }
-        arrowDest2D /= static_cast<PointCoordinateType>(count);
-
-        int iArrowDestX = static_cast<int>(arrowDest2D.x - xStart);
-        int iArrowDestY = static_cast<int>(arrowDest2D.y - yStart);
-        {
-            if (iArrowDestX < 0 /*m_labelROI.left()*/)  // left
-                arrowBaseConfig += 0;
-            else if (iArrowDestX >
-                     m_labelROI.width() /*m_labelROI.right()*/)  // Right
-                arrowBaseConfig += 2;
-            else  // Middle
-                arrowBaseConfig += 1;
-
-            if (iArrowDestY > 0 /*-m_labelROI.top()*/)  // Top
-                arrowBaseConfig += 0;
-            else if (iArrowDestY <
-                     -m_labelROI.height() /*-m_labelROI.bottom()*/)  // Bottom
-                arrowBaseConfig += 6;
-            else  // Middle
-                arrowBaseConfig += 3;
-        }
-
-        // we make the arrow base start from the nearest corner
-        if (arrowBaseConfig != 4)  // 4 = label above point!
-        {
-            // glFunc->glColor4ubv(defaultBorderColor.rgba);
-            // glFunc->glBegin(GL_TRIANGLE_FAN);
-            // glFunc->glVertex2i(iArrowDestX, iArrowDestY);
-
-            WIDGETS_PARAMETER triangleParam(WIDGETS_TYPE::WIDGET_LINE_2D,
-                                            this->getViewId());
-            triangleParam.color = ecvColor::FromRgba(defaultBorderColor);
-            triangleParam.p1 = QPoint(arrowDest2D.x, arrowDest2D.y);
-            int newTop = m_labelROI.bottom();
-            int newBottom = m_labelROI.top();
-            switch (arrowBaseConfig) {
-                case 0:  // top-left corner
-                {
-                    triangleParam.p2 = QPoint(m_labelROI.left(), newTop);
-                }
-                // triangleParam.p2 = QPoint(m_labelROI.left(), newTop - 2 *
-                // arrowBaseSize); triangleParam.p3 = QPoint(m_labelROI.left(),
-                // newTop); triangleParam.p4 = QPoint(m_labelROI.left() + 2 *
-                // arrowBaseSize, newTop);
-                break;
-                case 1:  // top-middle edge
-                {
-                    triangleParam.p2 = QPoint(m_labelROI.center().x(), newTop);
-                }
-                // triangleParam.p2 = QPoint(std::max(m_labelROI.left(),
-                // iArrowDestX - arrowBaseSize), newTop); triangleParam.p3 =
-                // QPoint(std::min(m_labelROI.right(), iArrowDestX +
-                // arrowBaseSize), newTop);
-                break;
-                case 2:  // top-right corner
-                {
-                    triangleParam.p2 = QPoint(m_labelROI.right(), newTop);
-                }
-                // triangleParam.p2 = QPoint(m_labelROI.right(), newTop - 2 *
-                // arrowBaseSize); triangleParam.p3 = QPoint(m_labelROI.right(),
-                // newTop); triangleParam.p4 = QPoint(m_labelROI.right() - 2 *
-                // arrowBaseSize, newTop);
-                break;
-                case 3:  // middle-left edge
-                {
-                    triangleParam.p2 =
-                            QPoint(m_labelROI.left(), m_labelROI.center().y());
-                }
-                // triangleParam.p2 = QPoint(m_labelROI.left(), std::min(newTop,
-                // iArrowDestY + arrowBaseSize)); triangleParam.p3 =
-                // QPoint(m_labelROI.left(), std::max(newBottom, iArrowDestY -
-                // arrowBaseSize));
-                break;
-                case 4:  // middle of rectangle!
-                    break;
-                case 5:  // middle-right edge
-                {
-                    triangleParam.p2 =
-                            QPoint(m_labelROI.right(), m_labelROI.center().y());
-                }
-                // triangleParam.p2 = QPoint(m_labelROI.right(),
-                // std::min(newTop, iArrowDestY + arrowBaseSize));
-                // triangleParam.p3 = QPoint(m_labelROI.right(),
-                // std::max(newBottom, iArrowDestY - arrowBaseSize));
-                break;
-                case 6:  // bottom-left corner
-                {
-                    triangleParam.p2 = QPoint(m_labelROI.left(), newBottom);
-                }
-                // triangleParam.p2 = QPoint(m_labelROI.left(), newBottom + 2 *
-                // arrowBaseSize); triangleParam.p3 = QPoint(m_labelROI.left(),
-                // newBottom); triangleParam.p4 = QPoint(m_labelROI.left() + 2 *
-                // arrowBaseSize, newBottom);
-                break;
-                case 7:  // bottom-middle edge
-                {
-                    triangleParam.p2 =
-                            QPoint(m_labelROI.center().x(), newBottom);
-                }
-                /*triangleParam.p2 = QPoint(std::max(m_labelROI.left(),
-                iArrowDestX - arrowBaseSize), newBottom); triangleParam.p3 =
-                QPoint(std::min(m_labelROI.right(), iArrowDestX +
-                arrowBaseSize), newBottom);*/
-                break;
-                case 8:  // bottom-right corner
-                {
-                    triangleParam.p2 = QPoint(m_labelROI.right(), newBottom);
-                }
-                // triangleParam.p2 = QPoint(m_labelROI.right(), newBottom + 2 *
-                // arrowBaseSize); triangleParam.p3 = QPoint(m_labelROI.right(),
-                // newBottom); triangleParam.p4 = QPoint(m_labelROI.right() - 2
-                // * arrowBaseSize, newBottom);
-                break;
-            }
-
-            ecvDisplayTools::DrawWidgets(triangleParam, false);
-        }
-    }
-
-    // main rectangle
-    param.color.r = defaultBkgColor.r / 255.0f;
-    param.color.g = defaultBkgColor.g / 255.0f;
-    param.color.b = defaultBkgColor.b / 255.0f;
-    param.color.a = defaultBkgColor.a / 255.0f;
-    param.filled = true;
-    param.rect = m_labelROI;
-    ecvDisplayTools::DrawWidgets(param, false);
-
-    if (highlighted) {
-        param.color.r = defaultBorderColor.r / 255.0f;
-        param.color.g = defaultBorderColor.g / 255.0f;
-        param.color.b = defaultBorderColor.b / 255.0f;
-        param.color.a = defaultBorderColor.a / 255.0f;
-        param.filled = false;
-        ecvDisplayTools::DrawWidgets(param, false);
-    }
-
-    // display text
-    if (!entityPickingMode) {
-        int xStartRel = margin;
-        int yStartRel = 0;
-        yStartRel -= titleHeight;
-
-        ecvColor::Rgbub defaultTextColor;
-        if (context.labelOpacity < 40) {
-            // under a given opacity level, we use the default text color
-            // instead!
-            defaultTextColor = context.textDefaultCol;
-        } else {
-            defaultTextColor =
-                    ecvColor::Rgbub(255 - context.labelDefaultBkgCol.r,
-                                    255 - context.labelDefaultBkgCol.g,
-                                    255 - context.labelDefaultBkgCol.b);
-        }
-
-        // label title
-        m_historyMessage << title;
-        ecvDisplayTools::DisplayText(
-                title, xStart + xStartRel, yStart + yStartRel,
-                ecvDisplayTools::ALIGN_DEFAULT, 0, defaultTextColor.rgb,
-                &titleFont, this->getViewId());
-        yStartRel -= margin;
-
-        if (m_showFullBody) {
-#ifdef DRAW_CONTENT_AS_TAB
-            int xCol = xStartRel;
-            for (int c = 0; c < tab.colCount; ++c) {
-                int width = tab.colWidth[c] + 2 * tabMarginX;
-                int height = rowHeight + 2 * tabMarginY;
-
-                int yRow = yStartRel;
-                int actualRowCount =
-                        std::min(tab.rowCount, tab.colContent[c].size());
-
-                bool labelCol = ((c & 1) == 0);
-                const unsigned char* textColor =
-                        labelCol ? ecvColor::white.rgb : defaultTextColor.rgb;
-
-                for (int r = 0; r < actualRowCount; ++r) {
-                    if (r && (r % 3) == 0) yRow -= margin;
-
-                    if (labelCol) {
-                        // draw background
-                        int rgbIndex = (r % 3);
-                        ecvColor::Rgb tempColor;
-                        if (rgbIndex == 0)
-                            tempColor = ecvColor::red;
-                        else if (rgbIndex == 1)
-                            tempColor = c_darkGreen;
-                        else if (rgbIndex == 2)
-                            tempColor = ecvColor::blue;
-
-                        param.color.r = tempColor.r / 255.0f;
-                        param.color.g = tempColor.g / 255.0f;
-                        param.color.b = tempColor.b / 255.0f;
-                        param.color.a = 1.0f;
-                        param.filled = true;
-                        param.rect =
-                                QRect(m_labelROI.x() + xCol,
-                                      m_labelROI.y() + m_labelROI.height() +
-                                              yRow - height,
-                                      width, height);
-                        ecvDisplayTools::DrawWidgets(param, false);
-                    }
-
-                    const QString& str = tab.colContent[c][r];
-
-                    int xShift = 0;
-                    if (labelCol) {
-                        // align characters in the middle
-                        xShift = (tab.colWidth[c] -
-                                  QTCOMPAT_FONTMETRICS_WIDTH(
-                                          QFontMetrics(bodyFont), str)) /
-                                 2;
-                    } else {
-                        // align digits on the right
-                        xShift = tab.colWidth[c] -
-                                 QTCOMPAT_FONTMETRICS_WIDTH(
-                                         QFontMetrics(bodyFont), str);
-                    }
-
-                    m_historyMessage << str;
-                    ecvDisplayTools::DisplayText(
-                            str, xStart + xCol + tabMarginX + xShift,
-                            yStart + yRow - rowHeight,
-                            ecvDisplayTools::ALIGN_DEFAULT, 0, textColor,
-                            &bodyFont, this->getViewId());
-
-                    yRow -= height;
-                }
-
-                xCol += width;
-            }
-#else
-            if (!body.empty()) {
-                // display body
-                yStartRel -= margin;
-                for (int i = 0; i < body.size(); ++i) {
-                    yStartRel -= rowHeight;
-                    context.display->displayText(
-                            body[i], xStart + xStartRel, yStart + yStartRel,
-                            ecvGenericDisplayTools::ALIGN_DEFAULT, 0,
-                            defaultTextColor.rgb, &bodyFont);
-                }
-            }
-#endif  // DRAW_CONTENT_AS_TAB
-        }
-    }
 }

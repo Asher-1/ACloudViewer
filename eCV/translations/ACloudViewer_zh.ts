@@ -7758,7 +7758,7 @@ Parameter</source>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="670"/>
-        <source>[about] Asher, Welcome to corporation Erow: http://erow.cn !</source>
+        <source>[about] Asher, Welcome to corporation ACloudViewer: http://asher-1.github.io !</source>
         <translation></translation>
     </message>
     <message>

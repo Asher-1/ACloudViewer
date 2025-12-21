@@ -7,7 +7,7 @@
 
 #include "cvIsoSurfaceFilter.h"
 
-#include <PclUtils/vtk2cc.h>
+#include <Utils/vtk2cc.h>
 #include <VtkUtils/gradientcombobox.h>
 #include <VtkUtils/signalblocker.h>
 #include <VtkUtils/vtkutils.h>

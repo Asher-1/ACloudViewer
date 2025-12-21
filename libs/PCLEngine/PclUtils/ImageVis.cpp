@@ -12,7 +12,8 @@
 // Local
 #include "ImageVis.h"
 
-#include "PCLConv.h"
+#include <Utils/PCLConv.h>
+
 #include "PclUtils/CustomContextItem.h"
 #include "Tools/Common/PclTools.h"
 #include "Tools/Common/ecvTools.h"

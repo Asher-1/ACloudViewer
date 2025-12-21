@@ -5,12 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "cc2sm.h"
+#include <Utils/cc2sm.h>
 
 // Local
-#include "PCLConv.h"
-#include "PCLDisplayTools.h"
-#include "my_point_types.h"
+#include <PclUtils/PCLDisplayTools.h>
+#include <Utils/PCLConv.h>
+#include <Utils/my_point_types.h>
 
 // PCL
 #include <pcl/common/io.h>
@@ -25,6 +25,7 @@
 #include <vtkMatrix4x4.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
+#include <vtkStringArray.h>
 #include <vtkUnsignedCharArray.h>
 
 // Support for VTK 7.1 upwards
@@ -505,40 +506,30 @@ PCLCloud::Ptr cc2smReader::getFloatScalarField(
     PCLCloud::Ptr sm_cloud(new PCLCloud);
     try {
         if (m_showMode) {
-            // only convert first scalar field to rgb color data
+            // In showMode: Convert scalar field to RGB colors for visualization
+            // Note: Original scalar values will be added separately to VTK for tooltip
             if (m_cc_cloud->sfShown() &&
                 sfIdx == m_cc_cloud->getCurrentDisplayedScalarFieldIndex()) {
                 PointCloud<OnlyRGB>::Ptr pcl_cloud(new PointCloud<OnlyRGB>);
 
                 unsigned pointCount = m_cc_cloud->size();
-                unsigned realNum = m_partialVisibility ? m_visibilityNum
-                                                       : m_cc_cloud->size();
+                unsigned realNum = m_partialVisibility ? m_visibilityNum : m_cc_cloud->size();
                 pcl_cloud->resize(realNum);
                 unsigned index = 0;
 
                 for (unsigned i = 0; i < pointCount; ++i) {
                     if (m_partialVisibility) {
-                        if (m_cc_cloud->getTheVisibilityArray().at(i) ==
-                            POINT_VISIBLE) {
+                        if (m_cc_cloud->getTheVisibilityArray().at(i) == POINT_VISIBLE) {
                             ScalarType scalar = scalar_field->getValue(i);
-                            // pcl_cloud->at(index).S5c4laR =
-                            // static_cast<float>(scalar);
-                            const ecvColor::Rgb* col =
-                                    m_cc_cloud->getScalarValueColor(scalar);
-                            pcl_cloud->at(index).r =
-                                    static_cast<uint8_t>(col->r);
-                            pcl_cloud->at(index).g =
-                                    static_cast<uint8_t>(col->g);
-                            pcl_cloud->at(index).b =
-                                    static_cast<uint8_t>(col->b);
+                            const ecvColor::Rgb* col = m_cc_cloud->getScalarValueColor(scalar);
+                            pcl_cloud->at(index).r = static_cast<uint8_t>(col->r);
+                            pcl_cloud->at(index).g = static_cast<uint8_t>(col->g);
+                            pcl_cloud->at(index).b = static_cast<uint8_t>(col->b);
                             ++index;
                         }
                     } else {
                         ScalarType scalar = scalar_field->getValue(i);
-                        // pcl_cloud->at(i).S5c4laR =
-                        // static_cast<float>(scalar);
-                        const ecvColor::Rgb* col =
-                                m_cc_cloud->getScalarValueColor(scalar);
+                        const ecvColor::Rgb* col = m_cc_cloud->getScalarValueColor(scalar);
                         pcl_cloud->at(i).r = static_cast<uint8_t>(col->r);
                         pcl_cloud->at(i).g = static_cast<uint8_t>(col->g);
                         pcl_cloud->at(i).b = static_cast<uint8_t>(col->b);
@@ -613,8 +604,9 @@ PCLCloud::Ptr cc2smReader::getAsSM(
                      requested_fields.begin();
              it != requested_fields.end(); ++it) {
             bool exists = checkIfFieldExists(*it);
-            if (!exists)  // all check results must be true
+            if (!exists) { // all check results must be true
                 return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
+            }
         }
     }
 
@@ -1304,230 +1296,43 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
     polydata->SetPoints(poly_points);
     polydata->SetPolys(polys);
     if (showColors) {
+        // Set scalar array name for tooltip display
+        // If showing scalar field, use the scalar field name; otherwise use "Colors"
+        if (showSF && mesh->hasDisplayedScalarField()) {
+            // Cast to ccPointCloud to access scalar field methods
+            ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(
+                const_cast<ccGenericPointCloud*>(mesh->getAssociatedCloud()));
+            if (cloud) {
+                int sfIdx = cloud->getCurrentDisplayedScalarFieldIndex();
+                if (sfIdx >= 0) {
+                    QString sfName = cloud->getScalarFieldName(sfIdx);
+                    colors->SetName(sfName.toStdString().c_str());
+                    CVLog::PrintDebug(QString("[cc2smReader::getVtkPolyDataFromMeshCloud] "
+                                            "Set scalar array name: %1").arg(sfName));
+                } else {
+                    colors->SetName("Colors");
+                }
+            } else {
+                colors->SetName("Colors");
+            }
+        } else {
+            colors->SetName("Colors");
+        }
         polydata->GetPointData()->SetScalars(colors);
     }
     if (showNorms) {
         polydata->GetPointData()->SetNormals(normals);
     }
 
-    return true;
-}
-
-bool cc2smReader::getVtkPolyDataFromMesh(ccGenericMesh* mesh,
-                                         vtkPolyData*& polydata,
-                                         vtkMatrix4x4*& transformation) const {
-    if (!mesh) {
-        return false;
-    }
-
-    // Use the same logic as getPclCloud2 to ensure consistency
-    unsigned int triNum = mesh->size();
-    if (triNum <= 0) {
-        CVLog::Warning(
-                "[cc2smReader::getVtkPolyDataFromMesh] No triangles found!");
-        return false;
-    }
-
-    std::size_t dimension = static_cast<std::size_t>(
-            mesh->getTriangleVertIndexes(0)->getDimension());
-
-    const ccGenericPointCloud::VisibilityTableType& verticesVisibility =
-            mesh->getAssociatedCloud()->getTheVisibilityArray();
-    bool visFiltering =
-            (verticesVisibility.size() >= mesh->getAssociatedCloud()->size());
-
-    bool showSF = mesh->hasDisplayedScalarField() && mesh->sfShown();
-    bool showColors = showSF || (mesh->hasColors() && mesh->colorsShown());
-
-    // per-triangle normals?
-    bool showTriNormals = (mesh->hasTriNormals() && mesh->triNormsShown());
-    // fix 'showNorms'
-    bool showNorms =
-            showTriNormals || (mesh->hasNormals() && mesh->normalsShown());
-
-    // Count visible triangles first for efficient memory allocation
-    unsigned int visibleTriNum = triNum;
-    if (visFiltering) {
-        visibleTriNum = 0;
-        for (unsigned n = 0; n < triNum; ++n) {
-            const cloudViewer::VerticesIndexes* tsi =
-                    mesh->getTriangleVertIndexes(n);
-            if ((verticesVisibility[tsi->i1] == POINT_VISIBLE) &&
-                (verticesVisibility[tsi->i2] == POINT_VISIBLE) &&
-                (verticesVisibility[tsi->i3] == POINT_VISIBLE)) {
-                visibleTriNum++;
-            }
-        }
-    }
-
-    // Pre-allocate VTK data structures for efficiency
-    // Each triangle has 'dimension' vertices (typically 3)
-    std::size_t totalPoints =
-            static_cast<std::size_t>(visibleTriNum) * dimension;
-    vtkSmartPointer<vtkPoints> poly_points = vtkSmartPointer<vtkPoints>::New();
-    poly_points->SetNumberOfPoints(static_cast<vtkIdType>(totalPoints));
-
-    vtkSmartPointer<vtkUnsignedCharArray> colors = nullptr;
-    if (showColors) {
-        colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
-        colors->SetNumberOfComponents(3);
-        colors->SetNumberOfTuples(static_cast<vtkIdType>(totalPoints));
-        colors->SetName("Colors");
-    }
-
-    vtkSmartPointer<vtkFloatArray> normals = nullptr;
-    if (showNorms) {
-        normals = vtkSmartPointer<vtkFloatArray>::New();
-        normals->SetNumberOfComponents(3);
-        normals->SetNumberOfTuples(static_cast<vtkIdType>(totalPoints));
-    }
-
-    vtkSmartPointer<vtkCellArray> polys = vtkSmartPointer<vtkCellArray>::New();
-    polys->AllocateEstimate(static_cast<vtkIdType>(visibleTriNum), 3);
-
-    // Initialize transformation matrix (identity for now, can be extended
-    // later)
-    transformation = vtkMatrix4x4::New();
-    transformation->Identity();
-
-    // per-triangle normals
-    const NormsIndexesTableType* triNormals = mesh->getTriNormsTable();
-
-    // in the case we need normals (i.e. lighting)
-    NormsIndexesTableType* normalsIndexesTable = nullptr;
-    ccNormalVectors* compressedNormals = nullptr;
-    if (showNorms) {
-        normalsIndexesTable = m_cc_cloud->normals();
-        compressedNormals = ccNormalVectors::GetUniqueInstance();
-    }
-
-    // Process triangles (same logic as getPclCloud2)
-    // Note: getPclCloud2 creates triNum * dimension points (expanded, not
-    // shared) We follow the same pattern for consistency, even though VTK
-    // typically shares vertices
-    vtkIdType currentPointId = 0;
-
-    for (unsigned n = 0; n < triNum; ++n) {
-        const cloudViewer::VerticesIndexes* tsi =
-                mesh->getTriangleVertIndexes(n);
-        if (visFiltering) {
-            // we skip the triangle if at least one vertex is hidden
-            if ((verticesVisibility[tsi->i1] != POINT_VISIBLE) ||
-                (verticesVisibility[tsi->i2] != POINT_VISIBLE) ||
-                (verticesVisibility[tsi->i3] != POINT_VISIBLE))
-                continue;
-        }
-
-        // Pre-compute triangle normal indexes if needed (only once per
-        // triangle)
-        int n1 = 0, n2 = 0, n3 = 0;
-        const PointCoordinateType* N1_ptr = nullptr;
-        const PointCoordinateType* N2_ptr = nullptr;
-        const PointCoordinateType* N3_ptr = nullptr;
-        if (showNorms && showTriNormals) {
-            assert(triNormals);
-            mesh->getTriangleNormalIndexes(n, n1, n2, n3);
-            N1_ptr = (n1 >= 0 ? ccNormalVectors::GetNormal(triNormals->at(n1)).u
-                              : nullptr);
-            N2_ptr = (n1 == n2 ? N1_ptr
-                      : n2 >= 0
-                              ? ccNormalVectors::GetNormal(triNormals->at(n2)).u
-                              : nullptr);
-            N3_ptr = (n1 == n3 ? N1_ptr
-                      : n3 >= 0
-                              ? ccNormalVectors::GetNormal(triNormals->at(n3)).u
-                              : nullptr);
-        } else if (showNorms && !showTriNormals) {
-            N1_ptr = compressedNormals
-                             ->getNormal(normalsIndexesTable->at(tsi->i1))
-                             .u;
-            N2_ptr = compressedNormals
-                             ->getNormal(normalsIndexesTable->at(tsi->i2))
-                             .u;
-            N3_ptr = compressedNormals
-                             ->getNormal(normalsIndexesTable->at(tsi->i3))
-                             .u;
-        }
-
-        // Process each vertex of the triangle (same as getPclCloud2: expanded
-        // points)
-        vtkIdType vertexIds[3];
-        for (std::size_t vertexIndex = 0; vertexIndex < dimension;
-             ++vertexIndex) {
-            unsigned vertexIdx = tsi->i[vertexIndex];
-            vertexIds[vertexIndex] = currentPointId;
-
-            // Set point directly (more efficient than InsertNextPoint)
-            const CCVector3* p = m_cc_cloud->getPoint(vertexIdx);
-            poly_points->SetPoint(currentPointId, p->x, p->y, p->z);
-
-            // Set color if needed (direct assignment is faster)
-            if (showColors) {
-                const ecvColor::Rgb* rgb = nullptr;
-                if (showSF) {
-                    rgb = m_cc_cloud->getCurrentDisplayedScalarField()
-                                  ->getValueColor(vertexIdx);
-                } else {
-                    rgb = &m_cc_cloud->rgbColors()->at(vertexIdx);
-                }
-                unsigned char* colorPtr = colors->GetPointer(
-                        static_cast<vtkIdType>(currentPointId) * 3);
-                colorPtr[0] = rgb->r;
-                colorPtr[1] = rgb->g;
-                colorPtr[2] = rgb->b;
-            }
-
-            // Set normal if needed (direct assignment is faster)
-            if (showNorms) {
-                const PointCoordinateType* N = nullptr;
-                if (showTriNormals) {
-                    // Use pre-computed normal pointers
-                    if (vertexIndex == 0) {
-                        N = N1_ptr;
-                    } else if (vertexIndex == 1) {
-                        N = N2_ptr;
-                    } else {
-                        N = N3_ptr;
-                    }
-                } else {
-                    N = (vertexIndex == 0   ? N1_ptr
-                         : vertexIndex == 1 ? N2_ptr
-                                            : N3_ptr);
-                }
-
-                float* normalPtr = normals->GetPointer(
-                        static_cast<vtkIdType>(currentPointId) * 3);
-                if (N) {
-                    normalPtr[0] = static_cast<float>(N[0]);
-                    normalPtr[1] = static_cast<float>(N[1]);
-                    normalPtr[2] = static_cast<float>(N[2]);
-                } else {
-                    normalPtr[0] = 0.0f;
-                    normalPtr[1] = 0.0f;
-                    normalPtr[2] = 0.0f;
-                }
-            }
-
-            currentPointId++;
-        }
-
-        // Add polygon
-        polys->InsertNextCell(3);
-        polys->InsertCellPoint(vertexIds[0]);
-        polys->InsertCellPoint(vertexIds[1]);
-        polys->InsertCellPoint(vertexIds[2]);
-    }
-
-    // Create polydata
-    polydata = vtkPolyData::New();
-    polydata->SetPoints(poly_points);
-    polydata->SetPolys(polys);
-    if (showColors) {
-        colors->SetName("Colors");
-        polydata->GetPointData()->SetScalars(colors);
-    }
-    if (showNorms) {
-        polydata->GetPointData()->SetNormals(normals);
+    // Add dataset name to field data (ParaView style)
+    QString meshName = mesh->getName();
+    if (meshName.length() > 0) {
+        vtkSmartPointer<vtkStringArray> datasetNameArray =
+                vtkSmartPointer<vtkStringArray>::New();
+        datasetNameArray->SetName("DatasetName");
+        datasetNameArray->SetNumberOfTuples(1);
+        datasetNameArray->SetValue(0, meshName.toStdString());
+        polydata->GetFieldData()->AddArray(datasetNameArray);
     }
 
     return true;
@@ -1888,6 +1693,46 @@ bool cc2smReader::getVtkPolyDataWithTextures(
             }
         }
     }
+
+    // Add material library information (ParaView-style)
+    // MaterialLibraries should contain the MTL filename(s), not individual
+    // material names
+    if (materials && materials->size() > 0) {
+        // Try to get MTL filename from mesh metadata (stored during OBJ
+        // loading)
+        QString mtlFilename;
+        QVariant mtlData = mesh->getMetaData("MTL_FILENAME");
+        if (mtlData.isValid() && !mtlData.toString().isEmpty()) {
+            mtlFilename = mtlData.toString();
+        } else {
+            // Fallback: use first material's name
+            mtlFilename = materials->at(0)->getName();
+        }
+
+        vtkSmartPointer<vtkStringArray> materialLibArray =
+                vtkSmartPointer<vtkStringArray>::New();
+        materialLibArray->SetName("MaterialLibraries");
+        materialLibArray->SetNumberOfTuples(1);  // ParaView shows one MTL file
+        materialLibArray->SetValue(0, mtlFilename.toStdString());
+        polydata->GetFieldData()->AddArray(materialLibArray);
+
+        // Add MaterialNames array (ParaView-style)
+        // This contains individual material names for texture coordinate naming
+        vtkSmartPointer<vtkStringArray> materialNamesArray =
+                vtkSmartPointer<vtkStringArray>::New();
+        materialNamesArray->SetName("MaterialNames");
+        materialNamesArray->SetNumberOfComponents(1);
+        materialNamesArray->SetNumberOfTuples(materials->size());
+        for (size_t i = 0; i < materials->size(); ++i) {
+            QString matName = materials->at(i)->getName();
+            materialNamesArray->SetValue(i, matName.toStdString());
+        }
+        polydata->GetFieldData()->AddArray(materialNamesArray);
+    }
+
+    // Note: Texture coordinates are returned via tex_coordinates parameter
+    // and will be applied later by
+    // MeshTextureApplier::ApplyTexturesFromMaterialSet
 
     // Create transformation matrix (identity for now)
     transformation = vtkSmartPointer<vtkMatrix4x4>::New();

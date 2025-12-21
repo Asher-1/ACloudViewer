@@ -13,10 +13,17 @@
 #include <vtkOrientedGlyphContourRepresentation.h>
 #include <vtkPolyData.h>
 #include <vtkProperty.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
 
 // LOCAL
-#include "PclUtils/vtk2cc.h"
+#include <Utils/vtk2cc.h>
+
+#include "Tools/PickingTools/cvPointPickingHelper.h"
+#include "VTKExtensions/ConstrainedWidgets/cvConstrainedContourRepresentation.h"
 
 // ECV_DB_LIB
 #include <CVLog.h>
@@ -35,13 +42,35 @@ cvContourTool::cvContourTool(QWidget* parent)
 }
 
 cvContourTool::~cvContourTool() {
+    // CRITICAL: Explicitly cleanup all contour widgets and their
+    // representations
     for (auto& pair : m_contours) {
         if (pair.second) {
+            // Hide representation first
+            if (auto* rep = vtkContourRepresentation::SafeDownCast(
+                        pair.second->GetRepresentation())) {
+                rep->SetVisibility(0);
+
+                // If using custom representation with label, hide it too
+                if (auto* customRep =
+                            cvConstrainedContourRepresentation::SafeDownCast(
+                                    rep)) {
+                    if (auto* labelActor = customRep->GetLabelActor()) {
+                        labelActor->SetVisibility(0);
+                    }
+                }
+            }
+
             pair.second->SetInteractor(nullptr);
             pair.second->Off();
         }
     }
     m_contours.clear();
+
+    // Force immediate render to clear visual elements
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
+    }
 
     if (m_configUi) {
         delete m_configUi;
@@ -60,24 +89,42 @@ void cvContourTool::createNewContour() {
             vtkSmartPointer<vtkContourWidget>::New();
     VtkUtils::vtkInitOnce(newContour);
 
-    // Create and set the representation
-    vtkSmartPointer<vtkOrientedGlyphContourRepresentation> rep =
-            vtkSmartPointer<vtkOrientedGlyphContourRepresentation>::New();
+    // Create and set the custom representation with label support
+    vtkSmartPointer<cvConstrainedContourRepresentation> rep =
+            vtkSmartPointer<cvConstrainedContourRepresentation>::New();
     newContour->SetRepresentation(rep);
 
     // Set default node visibility
     rep->SetShowSelectedNodes(true);
 
+    // Set default color
+    if (auto* linesProp = rep->GetLinesProperty()) {
+        linesProp->SetColor(m_currentColor[0], m_currentColor[1],
+                            m_currentColor[2]);
+    }
+    if (auto* nodesProp = rep->GetProperty()) {
+        nodesProp->SetColor(m_currentColor[0], m_currentColor[1],
+                            m_currentColor[2]);
+    }
+    if (auto* activeNodesProp = rep->GetActiveProperty()) {
+        activeNodesProp->SetColor(m_currentColor[0], m_currentColor[1],
+                                  m_currentColor[2]);
+    }
+
     if (m_interactor) {
         newContour->SetInteractor(m_interactor);
     }
     if (m_renderer) {
+        rep->SetRenderer(m_renderer);
         newContour->SetCurrentRenderer(m_renderer);
     }
     newContour->On();
 
     m_currentContourId++;
     m_contours[m_currentContourId] = newContour;
+    
+    // Apply font properties to the newly created contour
+    applyFontProperties();
 }
 
 void cvContourTool::createUi() {
@@ -100,9 +147,7 @@ void cvContourTool::createUi() {
             &cvContourTool::on_lineWidthSpinBox_valueChanged);
 }
 
-void cvContourTool::start() {
-    cvGenericMeasurementTool::start();
-}
+void cvContourTool::start() { cvGenericMeasurementTool::start(); }
 
 void cvContourTool::reset() {
     // Clear only the current contour
@@ -126,6 +171,267 @@ void cvContourTool::showWidget(bool state) {
             }
         }
     }
+    update();
+}
+
+void cvContourTool::setColor(double r, double g, double b) {
+    // Store current color
+    m_currentColor[0] = r;
+    m_currentColor[1] = g;
+    m_currentColor[2] = b;
+
+    // Set color for all contour widgets
+    for (auto& pair : m_contours) {
+        if (pair.second) {
+            vtkContourRepresentation* rep =
+                    vtkContourRepresentation::SafeDownCast(
+                            pair.second->GetRepresentation());
+            if (rep) {
+                vtkOrientedGlyphContourRepresentation* orientedRep =
+                        vtkOrientedGlyphContourRepresentation::SafeDownCast(
+                                rep);
+                if (orientedRep) {
+                    if (auto* prop = orientedRep->GetLinesProperty()) {
+                        prop->SetColor(r, g, b);
+                    }
+                    if (auto* activeNodeProp =
+                                orientedRep->GetActiveProperty()) {
+                        activeNodeProp->SetColor(r, g, b);
+                    }
+                    rep->BuildRepresentation();
+                }
+            }
+        }
+    }
+    update();
+}
+
+void cvContourTool::lockInteraction() {
+    CVLog::PrintDebug(QString("[cvContourTool::lockInteraction] Tool=%1, "
+                              "m_contours.size()=%2")
+                              .arg((quintptr)this, 0, 16)
+                              .arg(m_contours.size()));
+
+    // Disable all contour widgets' interaction
+    for (auto& pair : m_contours) {
+        if (pair.second) {
+            pair.second->SetProcessEvents(0);  // Disable event processing
+        }
+    }
+
+    // Change widget color to indicate locked state (very dimmed, 10%
+    // brightness)
+    for (auto& pair : m_contours) {
+        if (pair.second) {
+            vtkContourRepresentation* rep =
+                    vtkContourRepresentation::SafeDownCast(
+                            pair.second->GetRepresentation());
+            if (rep) {
+                vtkOrientedGlyphContourRepresentation* orientedRep =
+                        vtkOrientedGlyphContourRepresentation::SafeDownCast(
+                                rep);
+                if (orientedRep) {
+                    // Use a very dimmed color to indicate locked state (10%
+                    // brightness, 50% opacity)
+                    if (auto* prop = orientedRep->GetLinesProperty()) {
+                        prop->SetColor(m_currentColor[0] * 0.1,
+                                       m_currentColor[1] * 0.1,
+                                       m_currentColor[2] * 0.1);
+                        prop->SetOpacity(0.5);
+                    }
+                    if (auto* activeNodeProp =
+                                orientedRep->GetActiveProperty()) {
+                        activeNodeProp->SetColor(m_currentColor[0] * 0.1,
+                                                 m_currentColor[1] * 0.1,
+                                                 m_currentColor[2] * 0.1);
+                        activeNodeProp->SetOpacity(0.5);
+                    }
+                    if (auto* nodeProp = orientedRep->GetProperty()) {
+                        nodeProp->SetOpacity(0.5);
+                    }
+
+                    // Dim the label if using custom representation
+                    cvConstrainedContourRepresentation* customRep =
+                            cvConstrainedContourRepresentation::SafeDownCast(
+                                    orientedRep);
+                    if (customRep) {
+                        if (auto* labelActor = customRep->GetLabelActor()) {
+                            if (auto* textProp =
+                                        labelActor->GetTextProperty()) {
+                                textProp->SetOpacity(0.5);
+                                textProp->SetColor(
+                                        0.5, 0.5,
+                                        0.5);  // Dark gray for locked state
+                            }
+                        }
+                    }
+
+                    rep->BuildRepresentation();
+                }
+            }
+        }
+    }
+
+    // Disable UI controls
+    if (m_configUi) {
+        m_configUi->widgetVisibilityCheckBox->setEnabled(false);
+        m_configUi->showNodesCheckBox->setEnabled(false);
+        m_configUi->closedLoopCheckBox->setEnabled(false);
+        m_configUi->lineWidthSpinBox->setEnabled(false);
+    }
+
+    // Disable keyboard shortcuts
+    disableShortcuts();
+
+    // Force render window update
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
+    }
+
+    update();
+}
+
+void cvContourTool::unlockInteraction() {
+    CVLog::PrintDebug(QString("[cvContourTool::unlockInteraction] Tool=%1, "
+                              "m_contours.size()=%2")
+                              .arg((quintptr)this, 0, 16)
+                              .arg(m_contours.size()));
+
+    // Enable all contour widgets' interaction
+    for (auto& pair : m_contours) {
+        if (pair.second) {
+            pair.second->SetProcessEvents(1);  // Enable event processing
+        }
+    }
+
+    // Restore widget color to indicate active/unlocked state
+    for (auto& pair : m_contours) {
+        if (pair.second) {
+            vtkContourRepresentation* rep =
+                    vtkContourRepresentation::SafeDownCast(
+                            pair.second->GetRepresentation());
+            if (rep) {
+                vtkOrientedGlyphContourRepresentation* orientedRep =
+                        vtkOrientedGlyphContourRepresentation::SafeDownCast(
+                                rep);
+                if (orientedRep) {
+                    // Restore original color (full brightness and opacity)
+                    if (auto* prop = orientedRep->GetLinesProperty()) {
+                        prop->SetColor(m_currentColor[0], m_currentColor[1],
+                                       m_currentColor[2]);
+                        prop->SetOpacity(1.0);
+                    }
+                    if (auto* activeNodeProp =
+                                orientedRep->GetActiveProperty()) {
+                        activeNodeProp->SetColor(m_currentColor[0],
+                                                 m_currentColor[1],
+                                                 m_currentColor[2]);
+                        activeNodeProp->SetOpacity(1.0);
+                    }
+                    if (auto* nodeProp = orientedRep->GetProperty()) {
+                        nodeProp->SetOpacity(1.0);
+                    }
+
+                    // Restore the label to user-configured settings
+                    cvConstrainedContourRepresentation* customRep =
+                            cvConstrainedContourRepresentation::SafeDownCast(
+                                    orientedRep);
+                    if (customRep) {
+                        if (auto* labelActor = customRep->GetLabelActor()) {
+                            if (auto* textProp =
+                                        labelActor->GetTextProperty()) {
+                                textProp->SetOpacity(m_fontOpacity);
+                                textProp->SetColor(m_fontColor[0], m_fontColor[1],
+                                                   m_fontColor[2]);
+                            }
+                        }
+                    }
+
+                    rep->BuildRepresentation();
+                }
+            }
+        }
+    }
+
+    // Re-enable keyboard shortcuts
+    if (m_pickingHelpers.isEmpty()) {
+        // Shortcuts haven't been created yet - create them now
+        if (m_vtkWidget) {
+            CVLog::PrintDebug(
+                    QString("[cvContourTool::unlockInteraction] Creating "
+                            "shortcuts for tool=%1, using saved vtkWidget=%2")
+                            .arg((quintptr)this, 0, 16)
+                            .arg((quintptr)m_vtkWidget, 0, 16));
+            setupShortcuts(m_vtkWidget);
+            CVLog::PrintDebug(
+                    QString("[cvContourTool::unlockInteraction] After "
+                            "setupShortcuts, m_pickingHelpers.size()=%1")
+                            .arg(m_pickingHelpers.size()));
+        } else {
+            CVLog::PrintDebug(
+                    QString("[cvContourTool::unlockInteraction] m_vtkWidget is "
+                            "null for tool=%1, cannot create shortcuts")
+                            .arg((quintptr)this, 0, 16));
+        }
+    } else {
+        // Shortcuts already exist - just enable them
+        CVLog::PrintDebug(QString("[cvContourTool::unlockInteraction] Enabling "
+                                  "%1 existing shortcuts for tool=%2")
+                                  .arg(m_pickingHelpers.size())
+                                  .arg((quintptr)this, 0, 16));
+        for (cvPointPickingHelper* helper : m_pickingHelpers) {
+            if (helper) {
+                helper->setEnabled(true,
+                                   false);  // Enable without setting focus
+            }
+        }
+    }
+
+    // Enable UI controls
+    if (m_configUi) {
+        m_configUi->widgetVisibilityCheckBox->setEnabled(true);
+        m_configUi->showNodesCheckBox->setEnabled(true);
+        m_configUi->closedLoopCheckBox->setEnabled(true);
+        m_configUi->lineWidthSpinBox->setEnabled(true);
+    }
+
+    // Force render window update
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
+    }
+
+    update();
+}
+
+void cvContourTool::setInstanceLabel(const QString& label) {
+    // Store the instance label
+    m_instanceLabel = label;
+
+    // Update window title to show the instance label
+    QString title = tr("Contour Measurement Tool");
+    if (!m_instanceLabel.isEmpty()) {
+        title += QString(" %1").arg(m_instanceLabel);
+    }
+    setWindowTitle(title);
+
+    // Update VTK representation's label suffix for all contours
+    for (auto& pair : m_contours) {
+        if (pair.second) {
+            vtkContourRepresentation* rep =
+                    vtkContourRepresentation::SafeDownCast(
+                            pair.second->GetRepresentation());
+            if (rep) {
+                cvConstrainedContourRepresentation* customRep =
+                        cvConstrainedContourRepresentation::SafeDownCast(rep);
+                if (customRep) {
+                    customRep->SetLabelSuffix(
+                            m_instanceLabel.toUtf8().constData());
+                    customRep->BuildRepresentation();
+                }
+            }
+        }
+    }
+
     update();
 }
 
@@ -326,6 +632,64 @@ void cvContourTool::on_lineWidthSpinBox_valueChanged(double value) {
                 rep->BuildRepresentation();
             }
         }
+    }
+
+    update();
+}
+
+void cvContourTool::applyFontProperties() {
+    // Apply font properties to all contour label actors
+    for (auto& pair : m_contours) {
+        if (pair.second) {
+            vtkContourRepresentation* rep =
+                    vtkContourRepresentation::SafeDownCast(
+                            pair.second->GetRepresentation());
+            if (rep) {
+                // Check if using custom representation with label support
+                cvConstrainedContourRepresentation* customRep =
+                        cvConstrainedContourRepresentation::SafeDownCast(rep);
+                if (customRep) {
+                    if (auto* labelActor = customRep->GetLabelActor()) {
+                        if (auto* textProp = labelActor->GetTextProperty()) {
+                            textProp->SetFontFamilyAsString(
+                                    m_fontFamily.toUtf8().constData());
+                            textProp->SetFontSize(m_fontSize);
+                            textProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+                            textProp->SetBold(m_fontBold ? 1 : 0);
+                            textProp->SetItalic(m_fontItalic ? 1 : 0);
+                            textProp->SetShadow(m_fontShadow ? 1 : 0);
+                            textProp->SetOpacity(m_fontOpacity);
+                            
+                            // Apply justification
+                            if (m_horizontalJustification == "Left") {
+                                textProp->SetJustificationToLeft();
+                            } else if (m_horizontalJustification == "Center") {
+                                textProp->SetJustificationToCentered();
+                            } else if (m_horizontalJustification == "Right") {
+                                textProp->SetJustificationToRight();
+                            }
+                            
+                            if (m_verticalJustification == "Top") {
+                                textProp->SetVerticalJustificationToTop();
+                            } else if (m_verticalJustification == "Center") {
+                                textProp->SetVerticalJustificationToCentered();
+                            } else if (m_verticalJustification == "Bottom") {
+                                textProp->SetVerticalJustificationToBottom();
+                            }
+                            
+                            textProp->Modified();  // Mark as modified to ensure VTK updates
+                        }
+                        labelActor->Modified();  // Mark actor as modified to trigger re-render
+                    }
+                }
+                rep->BuildRepresentation();
+            }
+        }
+    }
+
+    // Force render window update
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
     }
 
     update();
