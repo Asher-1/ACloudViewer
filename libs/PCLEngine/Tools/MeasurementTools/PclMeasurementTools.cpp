@@ -193,10 +193,101 @@ void PclMeasurementTools::setCenter(double pos[3]) {
     }
 }
 
+void PclMeasurementTools::setColor(double r, double g, double b) {
+    if (m_tool) {
+        m_tool->setColor(r, g, b);
+    }
+}
+
+void PclMeasurementTools::lockInteraction() {
+    if (m_tool) {
+        m_tool->lockInteraction();
+    }
+}
+
+void PclMeasurementTools::unlockInteraction() {
+    if (m_tool) {
+        m_tool->unlockInteraction();
+    }
+}
+
+void PclMeasurementTools::setInstanceLabel(const QString& label) {
+    if (m_tool) {
+        m_tool->setInstanceLabel(label);
+    }
+}
+
+void PclMeasurementTools::setFontFamily(const QString& family) {
+    if (m_tool) {
+        m_tool->setFontFamily(family);
+    }
+}
+
+void PclMeasurementTools::setFontSize(int size) {
+    if (m_tool) {
+        m_tool->setFontSize(size);
+    }
+}
+
+void PclMeasurementTools::setBold(bool bold) {
+    if (m_tool) {
+        m_tool->setBold(bold);
+    }
+}
+
+void PclMeasurementTools::setItalic(bool italic) {
+    if (m_tool) {
+        m_tool->setItalic(italic);
+    }
+}
+
+void PclMeasurementTools::setShadow(bool shadow) {
+    if (m_tool) {
+        m_tool->setShadow(shadow);
+    }
+}
+
+void PclMeasurementTools::setFontOpacity(double opacity) {
+    if (m_tool) {
+        m_tool->setFontOpacity(opacity);
+    }
+}
+
+void PclMeasurementTools::setFontColor(double r, double g, double b) {
+    if (m_tool) {
+        m_tool->setFontColor(r, g, b);
+    }
+}
+
+void PclMeasurementTools::setHorizontalJustification(const QString& justification) {
+    if (m_tool) {
+        m_tool->setHorizontalJustification(justification);
+    }
+}
+
+void PclMeasurementTools::setVerticalJustification(const QString& justification) {
+    if (m_tool) {
+        m_tool->setVerticalJustification(justification);
+    }
+}
+
 void PclMeasurementTools::setupShortcuts(QWidget* win) {
     if (m_tool && win) {
         m_tool->setupShortcuts(win);
     } else {
-        CVLog::Warning("[PclMeasurementTools::setupShortcuts] tool or win is Null!");
+        CVLog::Warning(
+                "[PclMeasurementTools::setupShortcuts] tool or win is Null!");
+    }
+}
+
+void PclMeasurementTools::disableShortcuts() {
+    if (m_tool) {
+        m_tool->disableShortcuts();
+    }
+}
+
+void PclMeasurementTools::clearPickingCache() {
+    if (m_tool) {
+        m_tool->clearPickingCache();
     }
 }

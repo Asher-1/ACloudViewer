@@ -7,6 +7,7 @@
 
 #include "cvSliceFilter.h"
 
+#include <Utils/vtk2cc.h>
 #include <VtkUtils/utils.h>
 #include <VtkUtils/vtkutils.h>
 #include <vtkBox.h>
@@ -21,7 +22,6 @@
 #include <vtkSphere.h>
 #include <vtkStripper.h>
 
-#include "PclUtils/vtk2cc.h"
 #include "ui_cvCutFilterDlg.h"
 #include "ui_cvGenericFilterDlg.h"
 

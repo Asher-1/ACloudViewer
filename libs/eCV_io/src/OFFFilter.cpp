@@ -7,6 +7,9 @@
 
 #include "OFFFilter.h"
 
+// Qt
+#include <QFileInfo>
+
 // CV_CORE_LIB
 #include <CVLog.h>
 
@@ -205,6 +208,8 @@ CC_FILE_ERROR OFFFilter::loadFile(const QString& filename,
     }
 
     ccMesh* mesh = new ccMesh(vertices);
+    // Set mesh name to filename (ParaView-style)
+    mesh->setName(QFileInfo(filename).fileName());
     mesh->addChild(vertices);
     if (!mesh->reserve(triCount)) {
         delete mesh;

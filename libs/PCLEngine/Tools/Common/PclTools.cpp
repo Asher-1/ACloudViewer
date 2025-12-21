@@ -7,8 +7,9 @@
 
 #include "PclTools.h"
 
-#include "PclUtils/cc2sm.h"
-#include "PclUtils/sm2cc.h"
+#include <Utils/cc2sm.h>
+#include <Utils/sm2cc.h>
+
 #include "VtkUtils/vtkutils.h"
 
 // CV_CORE_LIB

@@ -8,7 +8,8 @@
 #pragma once
 
 // LOCAL
-#include "PclUtils/PCLCloud.h"
+#include <Utils/PCLCloud.h>
+
 #include "qPCL.h"
 
 // ECV_DB_LIB
@@ -49,7 +50,22 @@ public:  // implemented from ecvGenericMeasurementTools interface
     virtual void setPoint1(double pos[3]) override;
     virtual void setPoint2(double pos[3]) override;
     virtual void setCenter(double pos[3]) override;
+    virtual void setColor(double r, double g, double b) override;
+    virtual void lockInteraction() override;
+    virtual void unlockInteraction() override;
+    virtual void setInstanceLabel(const QString& label) override;
+    virtual void setFontFamily(const QString& family) override;
+    virtual void setFontSize(int size) override;
+    virtual void setBold(bool bold) override;
+    virtual void setItalic(bool italic) override;
+    virtual void setShadow(bool shadow) override;
+    virtual void setFontOpacity(double opacity) override;
+    virtual void setFontColor(double r, double g, double b) override;
+    virtual void setHorizontalJustification(const QString& justification) override;
+    virtual void setVerticalJustification(const QString& justification) override;
     virtual void setupShortcuts(QWidget* win) override;
+    virtual void disableShortcuts() override;
+    virtual void clearPickingCache() override;
 
 protected:
     virtual void initialize() override;

@@ -7,28 +7,30 @@
 
 #include "cvDistanceTool.h"
 
-#include "Tools/PickingTools/cvPointPickingHelper.h"
-
-#include <QShortcut>
-
-#include <algorithm>
-
 #include <VtkUtils/distancewidgetobserver.h>
 #include <VtkUtils/signalblocker.h>
 #include <VtkUtils/vtkutils.h>
 #include <vtkAxisActor2D.h>
 #include <vtkCommand.h>
-#include <vtkDistanceRepresentation2D.h>
-#include <vtkDistanceRepresentation3D.h>
-#include <vtkDistanceWidget.h>
 #include <vtkHandleRepresentation.h>
+#include <vtkLineRepresentation.h>
 #include <vtkMath.h>
-#include <vtkPointHandleRepresentation2D.h>
 #include <vtkPointHandleRepresentation3D.h>
 #include <vtkProperty.h>
 #include <vtkProperty2D.h>
-#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkRenderer.h>
+#include <vtkTextProperty.h>
+
+#include <QShortcut>
+#include <algorithm>
+
+#include "Tools/PickingTools/cvPointPickingHelper.h"
+#include "VTKExtensions/ConstrainedWidgets/cvConstrainedDistanceWidget.h"
+#include "VTKExtensions/ConstrainedWidgets/cvConstrainedLineRepresentation.h"
+#include "VTKExtensions/ConstrainedWidgets/cvCustomAxisHandleRepresentation.h"
+#include "cvMeasurementToolsCommon.h"
 
 // ECV_DB_LIB
 #include <ecvBBox.h>
@@ -36,80 +38,62 @@
 
 namespace {
 
-// ParaView-style colors
-constexpr double FOREGROUND_COLOR[3] = {1.0, 1.0, 1.0};  // White for normal state
-constexpr double INTERACTION_COLOR[3] = {0.0, 1.0, 0.0}; // Green for selected/interactive state
+using namespace cvMeasurementTools;
 
-//! Configure 2D handle representation with ParaView-style properties
-void configureHandle2D(vtkPointHandleRepresentation2D* handle) {
-    if (!handle) return;
-    
-    // Set normal (foreground) color - white
-    if (auto* prop = handle->GetProperty()) {
-        prop->SetColor(FOREGROUND_COLOR[0], FOREGROUND_COLOR[1], FOREGROUND_COLOR[2]);
-    }
-    
-    // Set selected (interaction) color - green
-    if (auto* selectedProp = handle->GetSelectedProperty()) {
-        selectedProp->SetColor(INTERACTION_COLOR[0], INTERACTION_COLOR[1], INTERACTION_COLOR[2]);
-    }
-}
-
-//! Configure 3D handle representation with ParaView-style properties
-void configureHandle3D(vtkPointHandleRepresentation3D* handle) {
-    if (!handle) return;
-    
-    // Set normal (foreground) color - white
-    if (auto* prop = handle->GetProperty()) {
-        prop->SetColor(FOREGROUND_COLOR[0], FOREGROUND_COLOR[1], FOREGROUND_COLOR[2]);
-    }
-    
-    // Set selected (interaction) color - green
-    if (auto* selectedProp = handle->GetSelectedProperty()) {
-        selectedProp->SetColor(INTERACTION_COLOR[0], INTERACTION_COLOR[1], INTERACTION_COLOR[2]);
-    }
-    
-    // Configure cursor appearance - show only the crosshair axes, no outline/shadows
-    handle->AllOff();  // Turn off outline and all shadows
-    
-    // Enable smooth motion and translation mode for better handle movement
-    handle->SmoothMotionOn();
-    handle->TranslationModeOn();
-}
-
-//! Configure distance representation 2D with ParaView-style properties
-void configureDistanceRep2D(vtkDistanceRepresentation2D* rep) {
+//! Configure line representation with ParaView-style properties (3D only)
+void configureLineRepresentation(cvConstrainedLineRepresentation* rep) {
     if (!rep) return;
-    
-    // Configure handles
-    auto* h1 = vtkPointHandleRepresentation2D::SafeDownCast(rep->GetPoint1Representation());
-    auto* h2 = vtkPointHandleRepresentation2D::SafeDownCast(rep->GetPoint2Representation());
-    configureHandle2D(h1);
-    configureHandle2D(h2);
-    
-    // The axis (line) color is already set to green (0,1,0) by default in VTK
-    // which matches ParaView's style
-}
 
-//! Configure distance representation 3D with ParaView-style properties
-void configureDistanceRep3D(vtkDistanceRepresentation3D* rep) {
-    if (!rep) return;
-    
-    // Configure handles
-    auto* h1 = vtkPointHandleRepresentation3D::SafeDownCast(rep->GetPoint1Representation());
-    auto* h2 = vtkPointHandleRepresentation3D::SafeDownCast(rep->GetPoint2Representation());
+    // Configure 3D handles
+    auto* h1 = vtkPointHandleRepresentation3D::SafeDownCast(
+            rep->GetPoint1Representation());
+    auto* h2 = vtkPointHandleRepresentation3D::SafeDownCast(
+            rep->GetPoint2Representation());
+    auto* hLine = vtkPointHandleRepresentation3D::SafeDownCast(
+            rep->GetLineHandleRepresentation());
     configureHandle3D(h1);
     configureHandle3D(h2);
-    
+    configureHandle3D(hLine);
+
     // Configure line properties (matching ParaView's LineProperty)
     if (auto* lineProp = rep->GetLineProperty()) {
-        lineProp->SetColor(FOREGROUND_COLOR[0], FOREGROUND_COLOR[1], FOREGROUND_COLOR[2]);
+        lineProp->SetColor(FOREGROUND_COLOR[0], FOREGROUND_COLOR[1],
+                           FOREGROUND_COLOR[2]);
         lineProp->SetLineWidth(2.0);  // ParaView default line width
-        lineProp->SetAmbient(1.0);     // ParaView sets ambient to 1.0
+        lineProp->SetAmbient(1.0);    // ParaView sets ambient to 1.0
     }
+
+    // Configure distance label text properties for better readability
+    if (auto* axis = rep->GetAxisActor()) {
+        // Configure the Title text property (this displays the distance value)
+        if (auto* titleProp = axis->GetTitleTextProperty()) {
+            titleProp->SetFontSize(
+                    6);  // Default font size for distance display
+            titleProp->SetBold(0);    // Not bold for better readability
+            titleProp->SetShadow(1);  // Add shadow for better visibility
+            titleProp->SetColor(1.0, 1.0, 1.0);  // White text
+        }
+        
+        // Configure the Label text property (for ruler tick labels)
+        if (auto* labelProp = axis->GetLabelTextProperty()) {
+            labelProp->SetFontSize(
+                    5);  // Slightly smaller font size for tick labels
+            labelProp->SetBold(0);
+            labelProp->SetShadow(1);
+            labelProp->SetColor(1.0, 1.0, 1.0);
+        }
+    }
+
+    // Configure distance display and ruler features (custom functionality)
+    rep->SetShowLabel(1);            // Show distance label by default
+    rep->SetLabelFormat("%-#6.3g");  // Distance format (ParaView default)
+    rep->SetRulerMode(0);            // Ruler mode off by default
+    rep->SetRulerDistance(1.0);      // Default tick spacing
+    rep->SetNumberOfRulerTicks(5);   // Default number of ticks
+    rep->SetScale(1.0);              // Default scale factor
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 cvDistanceTool::cvDistanceTool(QWidget* parent)
     : cvGenericMeasurementTool(parent), m_configUi(nullptr) {
@@ -117,6 +101,23 @@ cvDistanceTool::cvDistanceTool(QWidget* parent)
 }
 
 cvDistanceTool::~cvDistanceTool() {
+    // CRITICAL: Explicitly hide and cleanup widget/representation before
+    // destruction
+    if (m_widget) {
+        m_widget->Off();          // Turn off widget
+        m_widget->SetEnabled(0);  // Disable widget
+    }
+
+    // Explicitly hide all representation elements
+    if (m_rep) {
+        m_rep->SetVisibility(0);  // Hide everything
+
+        // Force immediate render to clear visual elements
+        if (m_interactor && m_interactor->GetRenderWindow()) {
+            m_interactor->GetRenderWindow()->Render();
+        }
+    }
+
     if (m_configUi) {
         delete m_configUi;
         m_configUi = nullptr;
@@ -124,51 +125,110 @@ cvDistanceTool::~cvDistanceTool() {
 }
 
 void cvDistanceTool::initTool() {
-    // Initialize only 2D widget as default (matching UI currentIndex=0)
-    // 3D widget will be lazily initialized when user switches to it
-    
-    VtkUtils::vtkInitOnce(m_2dRep);
-    VtkUtils::vtkInitOnce(m_2dWidget);
-    
+    VtkUtils::vtkInitOnce(m_rep);
+
+    // Use constrained widget - automatically supports XYZL shortcuts
+    m_widget = vtkSmartPointer<cvConstrainedDistanceWidget>::New();
+
     // Set representation BEFORE calling SetInteractor/SetRenderer
-    m_2dWidget->SetRepresentation(m_2dRep);
-    
+    m_widget->SetRepresentation(m_rep);
+
     if (m_interactor) {
-        m_2dWidget->SetInteractor(m_interactor);
+        m_widget->SetInteractor(m_interactor);
     }
     if (m_renderer) {
-        m_2dRep->SetRenderer(m_renderer);
+        m_rep->SetRenderer(m_renderer);
     }
-    
-    // Initialize ruler mode settings from UI
-    if (m_configUi) {
-        m_2dRep->SetRulerMode(m_configUi->rulerModeCheckBox->isChecked() ? 1 : 0);
-        m_2dRep->SetRulerDistance(m_configUi->rulerDistanceSpinBox->value());
-        m_2dRep->SetNumberOfRulerTicks(m_configUi->numberOfTicksSpinBox->value());
-        m_2dRep->SetScale(m_configUi->scaleSpinBox->value());
-        
-        // Enable/disable appropriate controls based on ruler mode
-        bool rulerMode = m_configUi->rulerModeCheckBox->isChecked();
-        m_configUi->rulerDistanceSpinBox->setEnabled(rulerMode);
-        m_configUi->numberOfTicksSpinBox->setEnabled(!rulerMode);
-    }
-    
-    // Following ParaView's approach:
-    // 1. InstantiateHandleRepresentation (done in CreateDefaultRepresentation)
-    m_2dRep->InstantiateHandleRepresentation();
-    
-    // 2. Configure appearance AFTER instantiation but BEFORE enabling
-    configureDistanceRep2D(m_2dRep);
-    
-    // 3. Build representation
-    m_2dRep->BuildRepresentation();
-    
-    // 4. Enable widget - this will internally handle the handle widgets
-    m_2dWidget->On();
-    
-    hookWidget(m_2dWidget); // Hook observer for 2D widget
-}
 
+    // Following ParaView's approach:
+    // 1. InstantiateHandleRepresentation is already called in
+    // vtkLineRepresentation constructor
+    // 2. Replace the default handles with custom axis handles for full XYZL
+    // support Use template version for type-safe creation
+    m_rep->ReplaceHandleRepresentationsTyped<
+            cvCustomAxisHandleRepresentation>();
+
+    // 2. Configure appearance AFTER instantiation but BEFORE enabling
+    configureLineRepresentation(m_rep);  // 3D mode only
+
+    // 3. Apply default green color (override configure defaults)
+    if (auto* lineProp = m_rep->GetLineProperty()) {
+        lineProp->SetColor(m_currentColor[0], m_currentColor[1],
+                           m_currentColor[2]);
+    }
+    if (auto* selectedLineProp = m_rep->GetSelectedLineProperty()) {
+        selectedLineProp->SetColor(m_currentColor[0], m_currentColor[1],
+                                   m_currentColor[2]);
+    }
+
+    // 4. Set initial positions before building representation
+    // This ensures the widget is visible outside the object from the start
+    double defaultPos1[3] = {0.0, 0.0, 0.0};
+    double defaultPos2[3] = {1.0, 0.0, 0.0};
+
+    if (m_entity && m_entity->getBB_recursive().isValid()) {
+        const ccBBox& bbox = m_entity->getBB_recursive();
+        CCVector3 center = bbox.getCenter();
+        CCVector3 diag = bbox.getDiagVec();
+
+        // Calculate offset based on the bounding box diagonal length
+        // Use a larger offset (30%) to ensure visibility outside any object
+        // orientation
+        double diagLength = diag.norm();
+        double offset = diagLength * 0.3;
+
+        // Ensure minimum offset for very small objects
+        if (offset < 0.5) {
+            offset = 0.5;
+        }
+
+        // Place the ruler above and in front of the object for better
+        // visibility Use offset in Y and Z directions to avoid objects in any
+        // orientation
+        defaultPos1[0] = center.x - diag.x * 0.25;
+        defaultPos1[1] = center.y + offset;  // Offset in Y direction
+        defaultPos1[2] = center.z + offset;  // Offset in Z direction
+
+        defaultPos2[0] = center.x + diag.x * 0.25;
+        defaultPos2[1] = center.y + offset;  // Offset in Y direction
+        defaultPos2[2] = center.z + offset;  // Offset in Z direction
+    }
+
+    m_rep->SetPoint1WorldPosition(defaultPos1);
+    m_rep->SetPoint2WorldPosition(defaultPos2);
+
+    // 5. Build representation (before updating UI)
+    m_rep->BuildRepresentation();
+
+    // 6. Apply font properties to override configureLineRepresentation defaults
+    // This ensures user-configured font properties (size, bold, italic, etc.) are applied
+    applyFontProperties();
+
+    // 7. Update UI controls with initial positions (if UI is already created)
+    if (m_configUi) {
+        VtkUtils::SignalBlocker blocker1(m_configUi->point1XSpinBox);
+        VtkUtils::SignalBlocker blocker2(m_configUi->point1YSpinBox);
+        VtkUtils::SignalBlocker blocker3(m_configUi->point1ZSpinBox);
+        VtkUtils::SignalBlocker blocker4(m_configUi->point2XSpinBox);
+        VtkUtils::SignalBlocker blocker5(m_configUi->point2YSpinBox);
+        VtkUtils::SignalBlocker blocker6(m_configUi->point2ZSpinBox);
+
+        m_configUi->point1XSpinBox->setValue(defaultPos1[0]);
+        m_configUi->point1YSpinBox->setValue(defaultPos1[1]);
+        m_configUi->point1ZSpinBox->setValue(defaultPos1[2]);
+        m_configUi->point2XSpinBox->setValue(defaultPos2[0]);
+        m_configUi->point2YSpinBox->setValue(defaultPos2[1]);
+        m_configUi->point2ZSpinBox->setValue(defaultPos2[2]);
+
+        // Update distance display to show initial distance
+        updateDistanceDisplay();
+    }
+
+    // 7. Enable widget
+    m_widget->On();
+
+    hookWidget(m_widget);
+}
 
 void cvDistanceTool::createUi() {
     m_configUi = new Ui::DistanceToolDlg;
@@ -177,91 +237,107 @@ void cvDistanceTool::createUi() {
     m_ui->setupUi(this);
     m_ui->configLayout->addWidget(configWidget);
     m_ui->groupBox->setTitle(tr("Distance Parameters"));
+    m_configUi->distanceSpinBox->setValue(1.0);
 
 #ifdef Q_OS_MAC
     m_configUi->instructionLabel->setText(
-        m_configUi->instructionLabel->text().replace("Ctrl", "Cmd"));
+            m_configUi->instructionLabel->text().replace("Ctrl", "Cmd"));
 #endif
 
-    connect(m_configUi->typeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &cvDistanceTool::on_typeCombo_currentIndexChanged);
-    connect(m_configUi->point1XSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &cvDistanceTool::on_point1XSpinBox_valueChanged);
-    connect(m_configUi->point1YSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &cvDistanceTool::on_point1YSpinBox_valueChanged);
-    connect(m_configUi->point1ZSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &cvDistanceTool::on_point1ZSpinBox_valueChanged);
-    connect(m_configUi->point2XSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &cvDistanceTool::on_point2XSpinBox_valueChanged);
-    connect(m_configUi->point2YSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &cvDistanceTool::on_point2YSpinBox_valueChanged);
-    connect(m_configUi->point2ZSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &cvDistanceTool::on_point2ZSpinBox_valueChanged);
-    
+    connect(m_configUi->point1XSpinBox,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &cvDistanceTool::on_point1XSpinBox_valueChanged);
+    connect(m_configUi->point1YSpinBox,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &cvDistanceTool::on_point1YSpinBox_valueChanged);
+    connect(m_configUi->point1ZSpinBox,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &cvDistanceTool::on_point1ZSpinBox_valueChanged);
+    connect(m_configUi->point2XSpinBox,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &cvDistanceTool::on_point2XSpinBox_valueChanged);
+    connect(m_configUi->point2YSpinBox,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &cvDistanceTool::on_point2YSpinBox_valueChanged);
+    connect(m_configUi->point2ZSpinBox,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &cvDistanceTool::on_point2ZSpinBox_valueChanged);
+
     // Connect point picking buttons
-    connect(m_configUi->pickPoint1ToolButton, &QToolButton::toggled,
-            this, &cvDistanceTool::on_pickPoint1_toggled);
-    connect(m_configUi->pickPoint2ToolButton, &QToolButton::toggled,
-            this, &cvDistanceTool::on_pickPoint2_toggled);
-    
+    connect(m_configUi->pickPoint1ToolButton, &QToolButton::toggled, this,
+            &cvDistanceTool::on_pickPoint1_toggled);
+    connect(m_configUi->pickPoint2ToolButton, &QToolButton::toggled, this,
+            &cvDistanceTool::on_pickPoint2_toggled);
+
     // Connect ruler mode controls
-    connect(m_configUi->rulerModeCheckBox, &QCheckBox::toggled,
-            this, &cvDistanceTool::on_rulerModeCheckBox_toggled);
-    connect(m_configUi->rulerDistanceSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &cvDistanceTool::on_rulerDistanceSpinBox_valueChanged);
-    connect(m_configUi->numberOfTicksSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &cvDistanceTool::on_numberOfTicksSpinBox_valueChanged);
-    connect(m_configUi->scaleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &cvDistanceTool::on_scaleSpinBox_valueChanged);
-    
+    connect(m_configUi->rulerModeCheckBox, &QCheckBox::toggled, this,
+            &cvDistanceTool::on_rulerModeCheckBox_toggled);
+    connect(m_configUi->rulerDistanceSpinBox,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &cvDistanceTool::on_rulerDistanceSpinBox_valueChanged);
+    connect(m_configUi->numberOfTicksSpinBox,
+            QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &cvDistanceTool::on_numberOfTicksSpinBox_valueChanged);
+    connect(m_configUi->scaleSpinBox,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &cvDistanceTool::on_scaleSpinBox_valueChanged);
+    connect(m_configUi->labelFormatLineEdit, &QLineEdit::textChanged, this,
+            &cvDistanceTool::on_labelFormatLineEdit_textChanged);
+
     // Connect display options
-    connect(m_configUi->widgetVisibilityCheckBox, &QCheckBox::toggled,
-            this, &cvDistanceTool::on_widgetVisibilityCheckBox_toggled);
-    connect(m_configUi->labelVisibilityCheckBox, &QCheckBox::toggled,
-            this, &cvDistanceTool::on_labelVisibilityCheckBox_toggled);
-    connect(m_configUi->lineWidthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &cvDistanceTool::on_lineWidthSpinBox_valueChanged);
+    connect(m_configUi->widgetVisibilityCheckBox, &QCheckBox::toggled, this,
+            &cvDistanceTool::on_widgetVisibilityCheckBox_toggled);
+    connect(m_configUi->labelVisibilityCheckBox, &QCheckBox::toggled, this,
+            &cvDistanceTool::on_labelVisibilityCheckBox_toggled);
+    connect(m_configUi->lineWidthSpinBox,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &cvDistanceTool::on_lineWidthSpinBox_valueChanged);
 }
 
-void cvDistanceTool::start() {
-    cvGenericMeasurementTool::start();
-    // if (m_renderer) {
-    //     m_renderer->ResetCamera();
-    // }
-}
+void cvDistanceTool::start() { cvGenericMeasurementTool::start(); }
 
 void cvDistanceTool::reset() {
-    // Reset points to default positions (center of bounding box if available)
+    // Reset points to default positions (above the bounding box for better
+    // visibility and accessibility)
     double defaultPos1[3] = {0.0, 0.0, 0.0};
     double defaultPos2[3] = {1.0, 0.0, 0.0};
-    
+
     if (m_entity && m_entity->getBB_recursive().isValid()) {
         const ccBBox& bbox = m_entity->getBB_recursive();
         CCVector3 center = bbox.getCenter();
         CCVector3 diag = bbox.getDiagVec();
-        
+
+        // Calculate offset based on the bounding box diagonal length
+        // Use a larger offset (30%) to ensure visibility outside any object
+        // orientation
+        double diagLength = diag.norm();
+        double offset = diagLength * 0.3;
+
+        // Ensure minimum offset for very small objects
+        if (offset < 0.5) {
+            offset = 0.5;
+        }
+
+        // Place the ruler above and in front of the object for better
+        // visibility Use offset in Y and Z directions to avoid objects in any
+        // orientation
         defaultPos1[0] = center.x - diag.x * 0.25;
-        defaultPos1[1] = center.y;
-        defaultPos1[2] = center.z;
-        
+        defaultPos1[1] = center.y + offset;  // Offset in Y direction
+        defaultPos1[2] = center.z + offset;  // Offset in Z direction
+
         defaultPos2[0] = center.x + diag.x * 0.25;
-        defaultPos2[1] = center.y;
-        defaultPos2[2] = center.z;
+        defaultPos2[1] = center.y + offset;  // Offset in Y direction
+        defaultPos2[2] = center.z + offset;  // Offset in Z direction
     }
-    
+
     // Reset widget points
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->SetPoint1WorldPosition(defaultPos1);
-        m_2dRep->SetPoint2WorldPosition(defaultPos2);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->SetPoint1WorldPosition(defaultPos1);
-        m_3dRep->SetPoint2WorldPosition(defaultPos2);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->SetPoint1WorldPosition(defaultPos1);
+        m_rep->SetPoint2WorldPosition(defaultPos2);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
     }
-    
+
     // Update UI
     if (m_configUi) {
         VtkUtils::SignalBlocker blocker1(m_configUi->point1XSpinBox);
@@ -270,7 +346,7 @@ void cvDistanceTool::reset() {
         VtkUtils::SignalBlocker blocker4(m_configUi->point2XSpinBox);
         VtkUtils::SignalBlocker blocker5(m_configUi->point2YSpinBox);
         VtkUtils::SignalBlocker blocker6(m_configUi->point2ZSpinBox);
-        
+
         m_configUi->point1XSpinBox->setValue(defaultPos1[0]);
         m_configUi->point1YSpinBox->setValue(defaultPos1[1]);
         m_configUi->point1ZSpinBox->setValue(defaultPos1[2]);
@@ -278,32 +354,23 @@ void cvDistanceTool::reset() {
         m_configUi->point2YSpinBox->setValue(defaultPos2[1]);
         m_configUi->point2ZSpinBox->setValue(defaultPos2[2]);
     }
-    
+
     update();
     emit measurementValueChanged();
 }
 
 void cvDistanceTool::showWidget(bool state) {
-    if (m_2dWidget) {
+    if (m_widget) {
         if (state) {
-            m_2dWidget->On();
+            m_widget->On();
         } else {
-            m_2dWidget->Off();
-        }
-    }
-    if (m_3dWidget) {
-        if (state) {
-            m_3dWidget->On();
-        } else {
-            m_3dWidget->Off();
+            m_widget->Off();
         }
     }
     update();
 }
 
-ccHObject* cvDistanceTool::getOutput() {
-    return nullptr;
-}
+ccHObject* cvDistanceTool::getOutput() { return nullptr; }
 
 double cvDistanceTool::getMeasurementValue() const {
     if (m_configUi) {
@@ -333,17 +400,16 @@ void cvDistanceTool::getPoint2(double pos[3]) const {
 }
 
 void cvDistanceTool::setPoint1(double pos[3]) {
-
     if (!m_configUi) {
         CVLog::Warning("[cvDistanceTool] setPoint1: m_configUi or pos is null");
         return;
     }
-    
+
     // Uncheck the pick button
     if (m_configUi->pickPoint1ToolButton->isChecked()) {
         m_configUi->pickPoint1ToolButton->setChecked(false);
     }
-    
+
     // Update spinboxes without triggering signals
     VtkUtils::SignalBlocker blocker1(m_configUi->point1XSpinBox);
     VtkUtils::SignalBlocker blocker2(m_configUi->point1YSpinBox);
@@ -351,37 +417,31 @@ void cvDistanceTool::setPoint1(double pos[3]) {
     m_configUi->point1XSpinBox->setValue(pos[0]);
     m_configUi->point1YSpinBox->setValue(pos[1]);
     m_configUi->point1ZSpinBox->setValue(pos[2]);
-    
+
     // Update widget directly
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->SetPoint1WorldPosition(pos);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-        m_2dWidget->Render(); // Ensure render
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->SetPoint1WorldPosition(pos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render(); // Ensure render
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->SetPoint1WorldPosition(pos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
-    
+
     // Update distance display
     updateDistanceDisplay();
     update();
 }
 
 void cvDistanceTool::setPoint2(double pos[3]) {
-
     if (!m_configUi) {
         CVLog::Warning("[cvDistanceTool] setPoint2: m_configUi or pos is null");
         return;
     }
-    
+
     // Uncheck the pick button
     if (m_configUi->pickPoint2ToolButton->isChecked()) {
         m_configUi->pickPoint2ToolButton->setChecked(false);
     }
-    
+
     // Update spinboxes without triggering signals
     VtkUtils::SignalBlocker blocker1(m_configUi->point2XSpinBox);
     VtkUtils::SignalBlocker blocker2(m_configUi->point2YSpinBox);
@@ -389,114 +449,295 @@ void cvDistanceTool::setPoint2(double pos[3]) {
     m_configUi->point2XSpinBox->setValue(pos[0]);
     m_configUi->point2YSpinBox->setValue(pos[1]);
     m_configUi->point2ZSpinBox->setValue(pos[2]);
-    
+
     // Update widget directly
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->SetPoint2WorldPosition(pos);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-        m_2dWidget->Render(); // Ensure render
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->SetPoint2WorldPosition(pos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render(); // Ensure render
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->SetPoint2WorldPosition(pos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
-    
+
     // Update distance display
     updateDistanceDisplay();
     update();
 }
 
-void cvDistanceTool::on_typeCombo_currentIndexChanged(int index) {
-    if (index == 0) {
-        // Switch to 2D widget
-        if (!m_2dWidget) {
-            // Lazy initialization of 2D widget (shouldn't happen as it's default)
-            VtkUtils::vtkInitOnce(m_2dRep);
-            VtkUtils::vtkInitOnce(m_2dWidget);
-            
-            // Set representation BEFORE SetInteractor/SetRenderer
-            m_2dWidget->SetRepresentation(m_2dRep);
-            
-            if (m_interactor) {
-                m_2dWidget->SetInteractor(m_interactor);
-            }
-            if (m_renderer) {
-                m_2dRep->SetRenderer(m_renderer);
-            }
-            
-            // Initialize ruler mode settings for 2D widget from UI
-            if (m_configUi) {
-                m_2dRep->SetRulerMode(m_configUi->rulerModeCheckBox->isChecked() ? 1 : 0);
-                m_2dRep->SetRulerDistance(m_configUi->rulerDistanceSpinBox->value());
-                m_2dRep->SetNumberOfRulerTicks(m_configUi->numberOfTicksSpinBox->value());
-                m_2dRep->SetScale(m_configUi->scaleSpinBox->value());
-            }
-            
-            // Following ParaView's approach:
-            // 1. InstantiateHandleRepresentation
-            m_2dRep->InstantiateHandleRepresentation();
-            
-            // 2. Configure appearance AFTER instantiation but BEFORE enabling
-            configureDistanceRep2D(m_2dRep);
-            
-            // 3. Build representation
-            m_2dRep->BuildRepresentation();
-            
-            hookWidget(m_2dWidget); // Hook observer for 2D widget
+void cvDistanceTool::setColor(double r, double g, double b) {
+    // Store current color
+    m_currentColor[0] = r;
+    m_currentColor[1] = g;
+    m_currentColor[2] = b;
+
+    // Set color for line representation
+    if (m_rep) {
+        if (auto* lineProp = m_rep->GetLineProperty()) {
+            lineProp->SetColor(r, g, b);
         }
-        if (m_2dWidget) {
-            m_2dWidget->On();
+        if (auto* selectedLineProp = m_rep->GetSelectedLineProperty()) {
+            selectedLineProp->SetColor(r, g, b);
         }
-        if (m_3dWidget) {
-            m_3dWidget->Off();
-        }
-    } else {
-        // Switch to 3D widget
-        if (!m_3dWidget) {
-            // Lazy initialization of 3D widget
-            VtkUtils::vtkInitOnce(m_3dRep);
-            VtkUtils::vtkInitOnce(m_3dWidget);
-            
-            // Set representation BEFORE SetInteractor/SetRenderer
-            m_3dWidget->SetRepresentation(m_3dRep);
-            
-            if (m_interactor) {
-                m_3dWidget->SetInteractor(m_interactor);
-            }
-            if (m_renderer) {
-                m_3dRep->SetRenderer(m_renderer);
-            }
-            
-            // Initialize ruler mode settings for 3D widget from UI
-            if (m_configUi) {
-                m_3dRep->SetRulerMode(m_configUi->rulerModeCheckBox->isChecked() ? 1 : 0);
-                m_3dRep->SetRulerDistance(m_configUi->rulerDistanceSpinBox->value());
-                m_3dRep->SetNumberOfRulerTicks(m_configUi->numberOfTicksSpinBox->value());
-                m_3dRep->SetScale(m_configUi->scaleSpinBox->value());
-            }
-            
-            // Following ParaView's approach:
-            // 1. InstantiateHandleRepresentation
-            m_3dRep->InstantiateHandleRepresentation();
-            
-            // 2. Configure appearance AFTER instantiation but BEFORE enabling
-            configureDistanceRep3D(m_3dRep);
-            
-            // 3. Build representation
-            m_3dRep->BuildRepresentation();
-    
-            hookWidget(m_3dWidget); // Hook observer for 3D widget
-        }
-        if (m_3dWidget) {
-            m_3dWidget->On();
-        }
-        if (m_2dWidget) {
-            m_2dWidget->Off();
+        m_rep->BuildRepresentation();
+        if (m_widget) {
+            m_widget->Modified();
         }
     }
     update();
+}
+
+void cvDistanceTool::lockInteraction() {
+    CVLog::PrintDebug(QString("[cvDistanceTool::lockInteraction] Tool=%1, "
+                              "m_pickingHelpers.size()=%2")
+                              .arg((quintptr)this, 0, 16)
+                              .arg(m_pickingHelpers.size()));
+
+    // Disable VTK widget interaction (handles cannot be moved)
+    if (m_widget) {
+        m_widget->SetProcessEvents(0);  // Disable event processing
+    }
+
+    // Change widget color to indicate locked state (very dimmed, 10%
+    // brightness)
+    if (m_rep) {
+        // Use a very dimmed color to indicate locked state (10% brightness, 50%
+        // opacity)
+        if (auto* lineProp = m_rep->GetLineProperty()) {
+            lineProp->SetColor(m_currentColor[0] * 0.1, m_currentColor[1] * 0.1,
+                               m_currentColor[2] * 0.1);
+            lineProp->SetOpacity(0.5);  // Make it semi-transparent
+        }
+        if (auto* selectedLineProp = m_rep->GetSelectedLineProperty()) {
+            selectedLineProp->SetColor(m_currentColor[0] * 0.1,
+                                       m_currentColor[1] * 0.1,
+                                       m_currentColor[2] * 0.1);
+            selectedLineProp->SetOpacity(0.5);
+        }
+
+        // Dim handles (points) by accessing them through Point1Representation
+        // and Point2Representation
+        if (auto* point1Rep = dynamic_cast<vtkPointHandleRepresentation3D*>(
+                    m_rep->GetPoint1Representation())) {
+            if (auto* prop = point1Rep->GetProperty()) {
+                prop->SetOpacity(0.5);
+            }
+            if (auto* selectedProp = point1Rep->GetSelectedProperty()) {
+                selectedProp->SetOpacity(0.5);
+            }
+        }
+        if (auto* point2Rep = dynamic_cast<vtkPointHandleRepresentation3D*>(
+                    m_rep->GetPoint2Representation())) {
+            if (auto* prop = point2Rep->GetProperty()) {
+                prop->SetOpacity(0.5);
+            }
+            if (auto* selectedProp = point2Rep->GetSelectedProperty()) {
+                selectedProp->SetOpacity(0.5);
+            }
+        }
+
+        m_rep->BuildRepresentation();
+
+        // Set distance text (title) and axis properties AFTER
+        // BuildRepresentation
+        if (auto* axis = m_rep->GetAxisActor()) {
+            // Dim the axis line
+            if (auto* axisProp = axis->GetProperty()) {
+                axisProp->SetOpacity(0.5);
+            }
+
+            // Dim the distance text (title)
+            if (auto* titleProp = axis->GetTitleTextProperty()) {
+                titleProp->SetOpacity(0.5);
+                titleProp->SetColor(0.5, 0.5,
+                                    0.5);  // Dark gray for locked state
+            }
+
+            // Dim axis labels (if visible)
+            if (auto* labelProp = axis->GetLabelTextProperty()) {
+                labelProp->SetOpacity(0.5);
+            }
+        }
+
+        if (m_widget) {
+            m_widget->Modified();
+            m_widget->Render();
+        }
+    }
+
+    // Force render window update
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
+    }
+
+    // Disable UI controls
+    if (m_configUi) {
+        m_configUi->point1XSpinBox->setEnabled(false);
+        m_configUi->point1YSpinBox->setEnabled(false);
+        m_configUi->point1ZSpinBox->setEnabled(false);
+        m_configUi->point2XSpinBox->setEnabled(false);
+        m_configUi->point2YSpinBox->setEnabled(false);
+        m_configUi->point2ZSpinBox->setEnabled(false);
+        m_configUi->pickPoint1ToolButton->setEnabled(false);
+        m_configUi->pickPoint2ToolButton->setEnabled(false);
+        m_configUi->rulerModeCheckBox->setEnabled(false);
+        m_configUi->rulerDistanceSpinBox->setEnabled(false);
+        m_configUi->numberOfTicksSpinBox->setEnabled(false);
+        m_configUi->scaleSpinBox->setEnabled(false);
+        m_configUi->labelFormatLineEdit->setEnabled(false);
+        m_configUi->widgetVisibilityCheckBox->setEnabled(false);
+        m_configUi->labelVisibilityCheckBox->setEnabled(false);
+        m_configUi->lineWidthSpinBox->setEnabled(false);
+    }
+
+    // Disable keyboard shortcuts
+    disableShortcuts();
+}
+
+void cvDistanceTool::unlockInteraction() {
+    // Enable VTK widget interaction
+    if (m_widget) {
+        m_widget->SetProcessEvents(1);  // Enable event processing
+    }
+
+    // Restore widget color to indicate active/unlocked state
+    if (m_rep) {
+        // Restore original color (full brightness and opacity)
+        if (auto* lineProp = m_rep->GetLineProperty()) {
+            lineProp->SetColor(m_currentColor[0], m_currentColor[1],
+                               m_currentColor[2]);
+            lineProp->SetOpacity(1.0);  // Fully opaque
+        }
+        if (auto* selectedLineProp = m_rep->GetSelectedLineProperty()) {
+            selectedLineProp->SetColor(m_currentColor[0], m_currentColor[1],
+                                       m_currentColor[2]);
+            selectedLineProp->SetOpacity(1.0);
+        }
+
+        // Restore handles (points) by accessing them through
+        // Point1Representation and Point2Representation
+        if (auto* point1Rep = dynamic_cast<vtkPointHandleRepresentation3D*>(
+                    m_rep->GetPoint1Representation())) {
+            if (auto* prop = point1Rep->GetProperty()) {
+                prop->SetOpacity(1.0);
+            }
+            if (auto* selectedProp = point1Rep->GetSelectedProperty()) {
+                selectedProp->SetOpacity(1.0);
+            }
+        }
+        if (auto* point2Rep = dynamic_cast<vtkPointHandleRepresentation3D*>(
+                    m_rep->GetPoint2Representation())) {
+            if (auto* prop = point2Rep->GetProperty()) {
+                prop->SetOpacity(1.0);
+            }
+            if (auto* selectedProp = point2Rep->GetSelectedProperty()) {
+                selectedProp->SetOpacity(1.0);
+            }
+        }
+
+        m_rep->BuildRepresentation();
+
+        // Restore distance text (title) and axis properties AFTER
+        // BuildRepresentation
+        if (auto* axis = m_rep->GetAxisActor()) {
+            // Restore axis line
+            if (auto* axisProp = axis->GetProperty()) {
+                axisProp->SetOpacity(1.0);
+            }
+
+            // Restore distance text (title) to user-configured settings
+            if (auto* titleProp = axis->GetTitleTextProperty()) {
+                titleProp->SetOpacity(m_fontOpacity);
+                titleProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+            }
+
+            // Restore axis labels (if visible) to user-configured settings
+            if (auto* labelProp = axis->GetLabelTextProperty()) {
+                labelProp->SetOpacity(m_fontOpacity);
+                labelProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+            }
+        }
+
+        if (m_widget) {
+            m_widget->Modified();
+            m_widget->Render();
+        }
+    }
+
+    // Force render window update
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
+    }
+
+    // Enable UI controls
+    if (m_configUi) {
+        m_configUi->point1XSpinBox->setEnabled(true);
+        m_configUi->point1YSpinBox->setEnabled(true);
+        m_configUi->point1ZSpinBox->setEnabled(true);
+        m_configUi->point2XSpinBox->setEnabled(true);
+        m_configUi->point2YSpinBox->setEnabled(true);
+        m_configUi->point2ZSpinBox->setEnabled(true);
+        m_configUi->pickPoint1ToolButton->setEnabled(true);
+        m_configUi->pickPoint2ToolButton->setEnabled(true);
+        m_configUi->rulerModeCheckBox->setEnabled(true);
+
+        // Ruler distance is only enabled when ruler mode is on
+        bool rulerMode = m_configUi->rulerModeCheckBox->isChecked();
+        m_configUi->rulerDistanceSpinBox->setEnabled(rulerMode);
+        m_configUi->numberOfTicksSpinBox->setEnabled(!rulerMode);
+
+        m_configUi->scaleSpinBox->setEnabled(true);
+        m_configUi->labelFormatLineEdit->setEnabled(true);
+        m_configUi->widgetVisibilityCheckBox->setEnabled(true);
+        m_configUi->labelVisibilityCheckBox->setEnabled(true);
+        m_configUi->lineWidthSpinBox->setEnabled(true);
+    }
+
+    if (m_pickingHelpers.isEmpty()) {
+        // Shortcuts haven't been created yet - create them now
+        if (m_vtkWidget) {
+            CVLog::PrintDebug(
+                    QString("[cvDistanceTool::unlockInteraction] Creating "
+                            "shortcuts for tool=%1, using saved vtkWidget=%2")
+                            .arg((quintptr)this, 0, 16)
+                            .arg((quintptr)m_vtkWidget, 0, 16));
+            setupShortcuts(m_vtkWidget);
+            CVLog::PrintDebug(
+                    QString("[cvDistanceTool::unlockInteraction] After "
+                            "setupShortcuts, m_pickingHelpers.size()=%1")
+                            .arg(m_pickingHelpers.size()));
+        } else {
+            CVLog::PrintDebug(
+                    QString("[cvDistanceTool::unlockInteraction] m_vtkWidget "
+                            "is null for tool=%1, cannot create shortcuts")
+                            .arg((quintptr)this, 0, 16));
+        }
+    } else {
+        // Shortcuts already exist - just enable them
+        CVLog::PrintDebug(QString("[cvDistanceTool::unlockInteraction] "
+                                  "Enabling %1 existing shortcuts for tool=%2")
+                                  .arg(m_pickingHelpers.size())
+                                  .arg((quintptr)this, 0, 16));
+        for (cvPointPickingHelper* helper : m_pickingHelpers) {
+            if (helper) {
+                helper->setEnabled(true,
+                                   false);  // Enable without setting focus
+            }
+        }
+    }
+}
+
+void cvDistanceTool::setInstanceLabel(const QString& label) {
+    // Store the instance label
+    m_instanceLabel = label;
+
+    // Update the VTK representation's label suffix
+    if (m_rep) {
+        m_rep->SetLabelSuffix(m_instanceLabel.toUtf8().constData());
+        m_rep->BuildRepresentation();
+        if (m_widget) {
+            m_widget->Modified();
+        }
+        update();
+    }
 }
 
 void cvDistanceTool::on_point1XSpinBox_valueChanged(double arg1) {
@@ -504,26 +745,16 @@ void cvDistanceTool::on_point1XSpinBox_valueChanged(double arg1) {
     double pos[3];
     double newPos[3];
     newPos[0] = arg1;
-    
+
     VtkUtils::SignalBlocker blocker(m_configUi->point1XSpinBox);
-    
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint1WorldPosition(pos);
+
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint1WorldPosition(pos);
         newPos[1] = pos[1];
         newPos[2] = pos[2];
-        m_2dRep->SetPoint1WorldPosition(newPos);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-        // Update distance display
-        updateDistanceDisplay();
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint1WorldPosition(pos);
-        newPos[1] = pos[1];
-        newPos[2] = pos[2];
-        m_3dRep->SetPoint1WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        // Update distance display
+        m_rep->SetPoint1WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
         updateDistanceDisplay();
     }
     update();
@@ -534,24 +765,16 @@ void cvDistanceTool::on_point1YSpinBox_valueChanged(double arg1) {
     double pos[3];
     double newPos[3];
     newPos[1] = arg1;
-    
+
     VtkUtils::SignalBlocker blocker(m_configUi->point1YSpinBox);
-    
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint1WorldPosition(pos);
+
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint1WorldPosition(pos);
         newPos[0] = pos[0];
         newPos[2] = pos[2];
-        m_2dRep->SetPoint1WorldPosition(newPos);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-        updateDistanceDisplay();
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint1WorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[2] = pos[2];
-        m_3dRep->SetPoint1WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
+        m_rep->SetPoint1WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
         updateDistanceDisplay();
     }
     update();
@@ -562,24 +785,16 @@ void cvDistanceTool::on_point1ZSpinBox_valueChanged(double arg1) {
     double pos[3];
     double newPos[3];
     newPos[2] = arg1;
-    
+
     VtkUtils::SignalBlocker blocker(m_configUi->point1ZSpinBox);
-    
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint1WorldPosition(pos);
+
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint1WorldPosition(pos);
         newPos[0] = pos[0];
         newPos[1] = pos[1];
-        m_2dRep->SetPoint1WorldPosition(newPos);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-        updateDistanceDisplay();
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint1WorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[1] = pos[1];
-        m_3dRep->SetPoint1WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
+        m_rep->SetPoint1WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
         updateDistanceDisplay();
     }
     update();
@@ -590,24 +805,16 @@ void cvDistanceTool::on_point2XSpinBox_valueChanged(double arg1) {
     double pos[3];
     double newPos[3];
     newPos[0] = arg1;
-    
+
     VtkUtils::SignalBlocker blocker(m_configUi->point2XSpinBox);
-    
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint2WorldPosition(pos);
+
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint2WorldPosition(pos);
         newPos[1] = pos[1];
         newPos[2] = pos[2];
-        m_2dRep->SetPoint2WorldPosition(newPos);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-        updateDistanceDisplay();
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint2WorldPosition(pos);
-        newPos[1] = pos[1];
-        newPos[2] = pos[2];
-        m_3dRep->SetPoint2WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
+        m_rep->SetPoint2WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
         updateDistanceDisplay();
     }
     update();
@@ -618,24 +825,16 @@ void cvDistanceTool::on_point2YSpinBox_valueChanged(double arg1) {
     double pos[3];
     double newPos[3];
     newPos[1] = arg1;
-    
+
     VtkUtils::SignalBlocker blocker(m_configUi->point2YSpinBox);
-    
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint2WorldPosition(pos);
+
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint2WorldPosition(pos);
         newPos[0] = pos[0];
         newPos[2] = pos[2];
-        m_2dRep->SetPoint2WorldPosition(newPos);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-        updateDistanceDisplay();
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint2WorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[2] = pos[2];
-        m_3dRep->SetPoint2WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
+        m_rep->SetPoint2WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
         updateDistanceDisplay();
     }
     update();
@@ -646,24 +845,16 @@ void cvDistanceTool::on_point2ZSpinBox_valueChanged(double arg1) {
     double pos[3];
     double newPos[3];
     newPos[2] = arg1;
-    
+
     VtkUtils::SignalBlocker blocker(m_configUi->point2ZSpinBox);
-    
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint2WorldPosition(pos);
+
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint2WorldPosition(pos);
         newPos[0] = pos[0];
         newPos[1] = pos[1];
-        m_2dRep->SetPoint2WorldPosition(newPos);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-        updateDistanceDisplay();
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint2WorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[1] = pos[1];
-        m_3dRep->SetPoint2WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
+        m_rep->SetPoint2WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
         updateDistanceDisplay();
     }
     update();
@@ -671,8 +862,14 @@ void cvDistanceTool::on_point2ZSpinBox_valueChanged(double arg1) {
 
 void cvDistanceTool::onDistanceChanged(double dist) {
     if (!m_configUi) return;
+
+    // Apply scale factor (following ParaView - scale is applied to display
+    // value)
+    double scale = m_configUi->scaleSpinBox->value();
+    double scaledDistance = dist * scale;
+
     VtkUtils::SignalBlocker blocker(m_configUi->distanceSpinBox);
-    m_configUi->distanceSpinBox->setValue(dist);
+    m_configUi->distanceSpinBox->setValue(scaledDistance);
     emit measurementValueChanged();
 }
 
@@ -698,11 +895,13 @@ void cvDistanceTool::onWorldPoint2Changed(double* pos) {
     emit measurementValueChanged();
 }
 
-void cvDistanceTool::hookWidget(const vtkSmartPointer<vtkDistanceWidget>& widget) {
-    VtkUtils::DistanceWidgetObserver* observer = new VtkUtils::DistanceWidgetObserver(this);
-    observer->attach(widget);
-    connect(observer, &VtkUtils::DistanceWidgetObserver::distanceChanged,
-            this, &cvDistanceTool::onDistanceChanged);
+void cvDistanceTool::hookWidget(
+        const vtkSmartPointer<cvConstrainedDistanceWidget>& widget) {
+    VtkUtils::DistanceWidgetObserver* observer =
+            new VtkUtils::DistanceWidgetObserver(this);
+    observer->attach(widget.Get());
+    connect(observer, &VtkUtils::DistanceWidgetObserver::distanceChanged, this,
+            &cvDistanceTool::onDistanceChanged);
     connect(observer, &VtkUtils::DistanceWidgetObserver::worldPoint1Changed,
             this, &cvDistanceTool::onWorldPoint1Changed);
     connect(observer, &VtkUtils::DistanceWidgetObserver::worldPoint2Changed,
@@ -711,14 +910,15 @@ void cvDistanceTool::hookWidget(const vtkSmartPointer<vtkDistanceWidget>& widget
 
 void cvDistanceTool::updateDistanceDisplay() {
     if (!m_configUi) return;
-    
+
     double distance = 0.0;
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        distance = m_2dRep->GetDistance();
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        distance = m_3dRep->GetDistance();
+    double scale = m_configUi->scaleSpinBox->value();
+
+    if (m_rep) {
+        // Get unscaled distance and apply scale (following ParaView)
+        distance = m_rep->GetDistance() * scale;
     }
-    
+
     VtkUtils::SignalBlocker blocker(m_configUi->distanceSpinBox);
     m_configUi->distanceSpinBox->setValue(distance);
     emit measurementValueChanged();
@@ -754,212 +954,189 @@ void cvDistanceTool::on_pickPoint2_toggled(bool checked) {
 
 void cvDistanceTool::on_rulerModeCheckBox_toggled(bool checked) {
     if (!m_configUi) return;
-    
-    // Update both 2D and 3D representations
-    if (m_2dRep) {
-        m_2dRep->SetRulerMode(checked ? 1 : 0);
-        m_2dRep->BuildRepresentation();
+
+    // Use cvConstrainedLineRepresentation's ruler mode functionality
+    if (m_rep) {
+        m_rep->SetRulerMode(checked ? 1 : 0);
+        m_rep->BuildRepresentation();
     }
-    if (m_3dRep) {
-        m_3dRep->SetRulerMode(checked ? 1 : 0);
-        m_3dRep->BuildRepresentation();
-    }
-    
+
     // Enable/disable appropriate controls
     m_configUi->rulerDistanceSpinBox->setEnabled(checked);
     m_configUi->numberOfTicksSpinBox->setEnabled(!checked);
-    
+
     update();
 }
 
 void cvDistanceTool::on_rulerDistanceSpinBox_valueChanged(double value) {
     if (!m_configUi) return;
-    
-    // Update both 2D and 3D representations
-    if (m_2dRep) {
-        m_2dRep->SetRulerDistance(value);
-        m_2dRep->BuildRepresentation();
+
+    // Use cvConstrainedLineRepresentation's ruler distance functionality
+    if (m_rep) {
+        m_rep->SetRulerDistance(value);
+        m_rep->BuildRepresentation();
     }
-    if (m_3dRep) {
-        m_3dRep->SetRulerDistance(value);
-        m_3dRep->BuildRepresentation();
-    }
-    
     update();
 }
 
 void cvDistanceTool::on_numberOfTicksSpinBox_valueChanged(int value) {
     if (!m_configUi) return;
-    
-    // Update both 2D and 3D representations
-    if (m_2dRep) {
-        m_2dRep->SetNumberOfRulerTicks(value);
-        m_2dRep->BuildRepresentation();
+
+    // Use cvConstrainedLineRepresentation's ruler ticks functionality
+    if (m_rep) {
+        m_rep->SetNumberOfRulerTicks(value);
+        m_rep->BuildRepresentation();
     }
-    if (m_3dRep) {
-        m_3dRep->SetNumberOfRulerTicks(value);
-        m_3dRep->BuildRepresentation();
-    }
-    
     update();
 }
 
 void cvDistanceTool::on_scaleSpinBox_valueChanged(double value) {
     if (!m_configUi) return;
-    
-    // Update both 2D and 3D representations
-    if (m_2dRep) {
-        m_2dRep->SetScale(value);
-        m_2dRep->BuildRepresentation();
+
+    // Use cvConstrainedLineRepresentation's scale functionality
+    if (m_rep) {
+        m_rep->SetScale(value);
+        m_rep->BuildRepresentation();
     }
-    if (m_3dRep) {
-        m_3dRep->SetScale(value);
-        m_3dRep->BuildRepresentation();
-    }
-    
+
     // Update distance display to reflect the scaled value
     updateDistanceDisplay();
     update();
 }
 
+void cvDistanceTool::on_labelFormatLineEdit_textChanged(const QString& text) {
+    if (!m_configUi) return;
+
+    // Use cvConstrainedLineRepresentation's label format functionality
+    std::string formatStr = text.toStdString();
+
+    // Basic validation: check if format specifier is present
+    if (formatStr.find('%') == std::string::npos) {
+        CVLog::Warning(
+                "[cvDistanceTool] Invalid label format: missing '%' specifier");
+        return;
+    }
+
+    if (m_rep) {
+        m_rep->SetLabelFormat(formatStr.c_str());
+        m_rep->BuildRepresentation();
+    }
+
+    update();
+}
+
 void cvDistanceTool::on_widgetVisibilityCheckBox_toggled(bool checked) {
     if (!m_configUi) return;
-    
+
     // Show or hide the widget
-    if (m_2dWidget) {
+    if (m_widget) {
         if (checked) {
-            m_2dWidget->On();
+            m_widget->On();
         } else {
-            m_2dWidget->Off();
+            m_widget->Off();
         }
     }
-    if (m_3dWidget) {
-        if (checked) {
-            m_3dWidget->On();
-        } else {
-            m_3dWidget->Off();
-        }
-    }
-    
     update();
 }
 
 void cvDistanceTool::on_labelVisibilityCheckBox_toggled(bool checked) {
     if (!m_configUi) return;
-    
-    // Show or hide the distance label
-    if (m_2dRep) {
-        vtkAxisActor2D* axis = m_2dRep->GetAxis();
-        if (axis) {
-            axis->SetLabelVisibility(checked);
-            // axis->SetTitleVisibility(checked);
-        }
-        m_2dRep->BuildRepresentation();
+
+    // Use cvConstrainedLineRepresentation's ShowLabel functionality
+    if (m_rep) {
+        m_rep->SetShowLabel(checked ? 1 : 0);
+        m_rep->BuildRepresentation();
     }
-    if (m_3dRep) {
-        // vtkDistanceRepresentation3D doesn't have GetAxis(), use SetLabelVisibility directly
-        // Note: 3D representation may not support label visibility control the same way
-        m_3dRep->BuildRepresentation();
-    }
-    
     update();
 }
 
 void cvDistanceTool::on_lineWidthSpinBox_valueChanged(double value) {
     if (!m_configUi) return;
-    
-    // Update line width for both 2D and 3D representations
-    if (m_2dRep) {
-        vtkProperty2D* prop = m_2dRep->GetAxisProperty();
-        if (prop) {
+
+    // vtkLineRepresentation 使用 GetLineProperty (与 ParaView vtkLineWidget2
+    // 一致)
+    if (m_rep) {
+        if (auto* prop = m_rep->GetLineProperty()) {
             prop->SetLineWidth(value);
         }
-        m_2dRep->BuildRepresentation();
+        m_rep->BuildRepresentation();
     }
-    if (m_3dRep) {
-        // vtkDistanceRepresentation3D uses GetLineProperty() instead of GetAxisProperty()
-        vtkProperty* prop = m_3dRep->GetLineProperty();
-        if (prop) {
-            prop->SetLineWidth(value);
-        }
-        m_3dRep->BuildRepresentation();
-    }
-    
+
     update();
 }
 
 void cvDistanceTool::setupPointPickingShortcuts(QWidget* vtkWidget) {
     if (!vtkWidget) return;
-    
+
     // 'P' - Pick alternating points on surface cell
-    cvPointPickingHelper* pickHelper = new cvPointPickingHelper(
-        QKeySequence(tr("P")), false, vtkWidget);
+    cvPointPickingHelper* pickHelper =
+            new cvPointPickingHelper(QKeySequence(tr("P")), false, vtkWidget);
     pickHelper->setInteractor(m_interactor);
     pickHelper->setRenderer(m_renderer);
     pickHelper->setContextWidget(this);
-    connect(pickHelper, &cvPointPickingHelper::pick,
-            this, &cvDistanceTool::pickAlternatingPoint);
+    connect(pickHelper, &cvPointPickingHelper::pick, this,
+            &cvDistanceTool::pickAlternatingPoint);
     m_pickingHelpers.append(pickHelper);
 
     // 'Ctrl+P' - Pick alternating points, snap to mesh points
     cvPointPickingHelper* pickHelper2 = new cvPointPickingHelper(
-        QKeySequence(tr("Ctrl+P")), true, vtkWidget);
+            QKeySequence(tr("Ctrl+P")), true, vtkWidget);
     pickHelper2->setInteractor(m_interactor);
     pickHelper2->setRenderer(m_renderer);
     pickHelper2->setContextWidget(this);
-    connect(pickHelper2, &cvPointPickingHelper::pick,
-            this, &cvDistanceTool::pickAlternatingPoint);
+    connect(pickHelper2, &cvPointPickingHelper::pick, this,
+            &cvDistanceTool::pickAlternatingPoint);
     m_pickingHelpers.append(pickHelper2);
 
     // '1' - Pick point 1 on surface cell
-    cvPointPickingHelper* pickHelper3 = new cvPointPickingHelper(
-        QKeySequence(tr("1")), false, vtkWidget);
+    cvPointPickingHelper* pickHelper3 =
+            new cvPointPickingHelper(QKeySequence(tr("1")), false, vtkWidget);
     pickHelper3->setInteractor(m_interactor);
     pickHelper3->setRenderer(m_renderer);
     pickHelper3->setContextWidget(this);
-    connect(pickHelper3, &cvPointPickingHelper::pick,
-            this, &cvDistanceTool::pickKeyboardPoint1);
+    connect(pickHelper3, &cvPointPickingHelper::pick, this,
+            &cvDistanceTool::pickKeyboardPoint1);
     m_pickingHelpers.append(pickHelper3);
 
     // 'Ctrl+1' - Pick point 1, snap to mesh points
     cvPointPickingHelper* pickHelper4 = new cvPointPickingHelper(
-        QKeySequence(tr("Ctrl+1")), true, vtkWidget);
+            QKeySequence(tr("Ctrl+1")), true, vtkWidget);
     pickHelper4->setInteractor(m_interactor);
     pickHelper4->setRenderer(m_renderer);
     pickHelper4->setContextWidget(this);
-    connect(pickHelper4, &cvPointPickingHelper::pick,
-            this, &cvDistanceTool::pickKeyboardPoint1);
+    connect(pickHelper4, &cvPointPickingHelper::pick, this,
+            &cvDistanceTool::pickKeyboardPoint1);
     m_pickingHelpers.append(pickHelper4);
 
     // '2' - Pick point 2 on surface cell
-    cvPointPickingHelper* pickHelper5 = new cvPointPickingHelper(
-        QKeySequence(tr("2")), false, vtkWidget);
+    cvPointPickingHelper* pickHelper5 =
+            new cvPointPickingHelper(QKeySequence(tr("2")), false, vtkWidget);
     pickHelper5->setInteractor(m_interactor);
     pickHelper5->setRenderer(m_renderer);
     pickHelper5->setContextWidget(this);
-    connect(pickHelper5, &cvPointPickingHelper::pick,
-            this, &cvDistanceTool::pickKeyboardPoint2);
+    connect(pickHelper5, &cvPointPickingHelper::pick, this,
+            &cvDistanceTool::pickKeyboardPoint2);
     m_pickingHelpers.append(pickHelper5);
 
     // 'Ctrl+2' - Pick point 2, snap to mesh points
     cvPointPickingHelper* pickHelper6 = new cvPointPickingHelper(
-        QKeySequence(tr("Ctrl+2")), true, vtkWidget);
+            QKeySequence(tr("Ctrl+2")), true, vtkWidget);
     pickHelper6->setInteractor(m_interactor);
     pickHelper6->setRenderer(m_renderer);
     pickHelper6->setContextWidget(this);
-    connect(pickHelper6, &cvPointPickingHelper::pick,
-            this, &cvDistanceTool::pickKeyboardPoint2);
+    connect(pickHelper6, &cvPointPickingHelper::pick, this,
+            &cvDistanceTool::pickKeyboardPoint2);
     m_pickingHelpers.append(pickHelper6);
 
     // 'N' - Pick point and set normal direction
     cvPointPickingHelper* pickHelperNormal = new cvPointPickingHelper(
-        QKeySequence(tr("N")), false, vtkWidget,
-        cvPointPickingHelper::CoordinatesAndNormal);
+            QKeySequence(tr("N")), false, vtkWidget,
+            cvPointPickingHelper::CoordinatesAndNormal);
     pickHelperNormal->setInteractor(m_interactor);
     pickHelperNormal->setRenderer(m_renderer);
     pickHelperNormal->setContextWidget(this);
-    connect(pickHelperNormal, &cvPointPickingHelper::pickNormal,
-            this, &cvDistanceTool::pickNormalDirection);
+    connect(pickHelperNormal, &cvPointPickingHelper::pickNormal, this,
+            &cvDistanceTool::pickNormalDirection);
     m_pickingHelpers.append(pickHelperNormal);
 }
 
@@ -982,14 +1159,116 @@ void cvDistanceTool::pickKeyboardPoint2(double x, double y, double z) {
     setPoint2(pos);
 }
 
-void cvDistanceTool::pickNormalDirection(double px, double py, double pz,
-                                          double nx, double ny, double nz) {
+void cvDistanceTool::pickNormalDirection(
+        double px, double py, double pz, double nx, double ny, double nz) {
     // Set point 1 at the picked position
     double p1[3] = {px, py, pz};
     setPoint1(p1);
-    
+
     // Set point 2 along the normal direction
     double p2[3] = {px + nx, py + ny, pz + nz};
     setPoint2(p2);
 }
 
+void cvDistanceTool::applyFontProperties() {
+    if (!m_rep) return;
+
+    // Apply font properties to the axis actor's text properties
+    if (auto* axis = m_rep->GetAxisActor()) {
+        // CRITICAL: vtkAxisActor2D uses automatic font scaling based on FontFactor
+        // We need to disable automatic adjustment and set properties correctly
+        
+        // Disable automatic label adjustment to prevent font size override
+        axis->AdjustLabelsOff();
+        
+        // Calculate font factor based on desired font size
+        // vtkAxisActor2D internally scales fonts, so we adjust the factor accordingly
+        // Base reference size is typically around 12-14 in VTK
+        double baseFontSize = 12.0;
+        double fontFactor = static_cast<double>(m_fontSize) / baseFontSize;
+        if (fontFactor < 0.1) fontFactor = 0.1;  // Prevent too small values
+        if (fontFactor > 10.0) fontFactor = 10.0;  // Prevent too large values
+        
+        // Set font factors for both title and labels
+        axis->SetFontFactor(fontFactor);
+        axis->SetLabelFactor(fontFactor * 0.8);  // Labels slightly smaller
+        
+        // Apply to title text property (distance display)
+        // The Title is what shows the distance value
+        if (auto* titleProp = axis->GetTitleTextProperty()) {
+            titleProp->SetFontFamilyAsString(m_fontFamily.toUtf8().constData());
+            titleProp->SetFontSize(m_fontSize);
+            titleProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+            titleProp->SetBold(m_fontBold ? 1 : 0);
+            titleProp->SetItalic(m_fontItalic ? 1 : 0);
+            titleProp->SetShadow(m_fontShadow ? 1 : 0);
+            titleProp->SetOpacity(m_fontOpacity);
+            
+            // Apply justification
+            if (m_horizontalJustification == "Left") {
+                titleProp->SetJustificationToLeft();
+            } else if (m_horizontalJustification == "Center") {
+                titleProp->SetJustificationToCentered();
+            } else if (m_horizontalJustification == "Right") {
+                titleProp->SetJustificationToRight();
+            }
+            
+            if (m_verticalJustification == "Top") {
+                titleProp->SetVerticalJustificationToTop();
+            } else if (m_verticalJustification == "Center") {
+                titleProp->SetVerticalJustificationToCentered();
+            } else if (m_verticalJustification == "Bottom") {
+                titleProp->SetVerticalJustificationToBottom();
+            }
+            
+            titleProp->Modified();  // Mark as modified to ensure VTK updates
+        }
+
+        // Apply to label text property (tick labels for ruler mode)
+        if (auto* labelProp = axis->GetLabelTextProperty()) {
+            labelProp->SetFontFamilyAsString(m_fontFamily.toUtf8().constData());
+            labelProp->SetFontSize(m_fontSize);
+            labelProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+            labelProp->SetBold(m_fontBold ? 1 : 0);
+            labelProp->SetItalic(m_fontItalic ? 1 : 0);
+            labelProp->SetShadow(m_fontShadow ? 1 : 0);
+            labelProp->SetOpacity(m_fontOpacity);
+            
+            // Apply justification
+            if (m_horizontalJustification == "Left") {
+                labelProp->SetJustificationToLeft();
+            } else if (m_horizontalJustification == "Center") {
+                labelProp->SetJustificationToCentered();
+            } else if (m_horizontalJustification == "Right") {
+                labelProp->SetJustificationToRight();
+            }
+            
+            if (m_verticalJustification == "Top") {
+                labelProp->SetVerticalJustificationToTop();
+            } else if (m_verticalJustification == "Center") {
+                labelProp->SetVerticalJustificationToCentered();
+            } else if (m_verticalJustification == "Bottom") {
+                labelProp->SetVerticalJustificationToBottom();
+            }
+            
+            labelProp->Modified();  // Mark as modified to ensure VTK updates
+        }
+        
+        // Mark axis actor as modified to trigger re-render
+        axis->Modified();
+    }
+
+    // Rebuild representation and update display
+    m_rep->BuildRepresentation();
+    if (m_widget) {
+        m_widget->Modified();
+        m_widget->Render();
+    }
+
+    // Force render window update
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
+    }
+
+    update();
+}

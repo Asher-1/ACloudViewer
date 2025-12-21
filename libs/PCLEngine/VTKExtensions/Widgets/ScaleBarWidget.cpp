@@ -246,8 +246,8 @@ double ScaleBarWidget::getPlatformAwareDPIScale() {
 }
 
 vtkSmartPointer<vtkActor2D> ScaleBarWidget::createTickActor(double x,
-                                                      double y,
-                                                      double length) {
+                                                            double y,
+                                                            double length) {
     auto lineSource = vtkSmartPointer<vtkLineSource>::New();
     lineSource->SetPoint1(x, y, 0.0);
     lineSource->SetPoint2(x, y + length, 0.0);  // Vertical tick mark
@@ -264,7 +264,7 @@ vtkSmartPointer<vtkActor2D> ScaleBarWidget::createTickActor(double x,
 }
 
 void ScaleBarWidget::update(vtkRenderer* renderer,
-                      vtkRenderWindowInteractor* interactor) {
+                            vtkRenderWindowInteractor* interactor) {
     if (!visible || !renderer || !renderer->GetRenderWindow()) return;
 
     // Dynamically update DPI scaling (in case window moves to different DPI

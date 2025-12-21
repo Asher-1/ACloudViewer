@@ -10,11 +10,15 @@
 // LOCAL
 #include "MainWindow.h"
 
+// ECV_DB_LIB
+#include <widgets/ecvFontPropertyWidget.h>
+
 // ECV_CORE_LIB
 #include <ecvGenericMeasurementTools.h>
 #include <ecvPointCloud.h>
 
 // ECV_DB_LIB
+#include <ecvDisplayTools.h>
 #include <ecvPolyline.h>
 
 // CV_CORE_LIB
@@ -24,6 +28,7 @@
 #include <ecvPickingHub.h>
 
 // QT
+#include <QColorDialog>
 #include <QMessageBox>
 
 #ifdef USE_PCL_BACKEND
@@ -36,7 +41,9 @@ ecvMeasurementTool::ecvMeasurementTool(QWidget* parent)
       m_tool(nullptr),
       m_updatingFromTool(false),
       m_pickingHub(nullptr),
-      m_pickPointMode(0) {
+      m_pickPointMode(0),
+      m_currentColor(QColor(0, 255, 0))  // Default green color
+{
     setupUi(this);
 
     // Get picking hub from MainWindow
@@ -62,8 +69,30 @@ ecvMeasurementTool::ecvMeasurementTool(QWidget* parent)
     connect(removeInstanceButton, &QToolButton::clicked, this,
             &ecvMeasurementTool::removeInstance);
 
+    // Color selection
+    connect(colorButton, &QPushButton::clicked, this,
+            &ecvMeasurementTool::onColorButtonClicked);
+
+    // Create and add font property widget
+    // Color picker is now visible in the font widget (ParaView style)
+    m_fontPropertyWidget = new ecvFontPropertyWidget(this);
+    m_fontPropertyWidget->setColorPickerVisible(true);  // Show color picker in font widget
+    fontLayout->addWidget(m_fontPropertyWidget);
+    connect(m_fontPropertyWidget, &ecvFontPropertyWidget::fontPropertiesChanged,
+            this, &ecvMeasurementTool::onFontPropertiesChanged);
+
+    addOverridenShortcut(Qt::Key_Escape);
+    connect(this, &ccOverlayDialog::shortcutTriggered, this, [this](int key) {
+        if (key == Qt::Key_Escape) {
+            closeDialog();
+        }
+    });
+
     // Initially disable instance management buttons
     removeInstanceButton->setEnabled(false);
+
+    // Set initial color button appearance
+    updateColorButtonAppearance();
 }
 
 ecvMeasurementTool::~ecvMeasurementTool() {
@@ -97,6 +126,32 @@ ecvGenericMeasurementTools* ecvMeasurementTool::createMeasurementTool(
         }
         tool->start();
 
+        // Apply default color (green)
+        tool->setColor(m_currentColor.redF(), m_currentColor.greenF(),
+                       m_currentColor.blueF());
+
+        // Apply font properties from widget
+        if (m_fontPropertyWidget) {
+            auto props = m_fontPropertyWidget->fontProperties();
+            tool->setFontFamily(props.family);
+            
+            // Special handling for Protractor: use tool's default font size (20)
+            // instead of widget's default (6), then update widget to match
+            if (type == ecvGenericMeasurementTools::MeasurementType::PROTRACTOR_WIDGET) {
+                // Protractor has its own default font size (20) set in constructor
+                // Update the widget to reflect this
+                m_fontPropertyWidget->setFontSize(20, true);  // blockSignal=true
+            } else {
+                // For other tools, use widget's font size
+                tool->setFontSize(props.size);
+            }
+            
+            tool->setBold(props.bold);
+            tool->setItalic(props.italic);
+            tool->setShadow(props.shadow);
+            tool->setFontOpacity(props.opacity);
+        }
+
         // Connect measurement changed signal
         connect(tool, &ecvGenericMeasurementTools::measurementChanged, this,
                 &ecvMeasurementTool::updateMeasurementDisplay);
@@ -118,6 +173,35 @@ void ecvMeasurementTool::setMeasurementTool(ecvGenericMeasurementTools* tool) {
 
         // Hide the widget initially - we'll show it when it becomes active
         tool->getMeasurementWidget()->setVisible(false);
+
+        // Lock the tool initially - it will be unlocked when it becomes active
+        tool->lockInteraction();
+
+        // Apply current color
+        tool->setColor(m_currentColor.redF(), m_currentColor.greenF(),
+                       m_currentColor.blueF());
+
+        // Apply font properties from widget
+        if (m_fontPropertyWidget) {
+            auto props = m_fontPropertyWidget->fontProperties();
+            tool->setFontFamily(props.family);
+            
+            // Special handling for Protractor: use tool's default font size (20)
+            // instead of widget's default (6), then update widget to match
+            if (tool->getMeasurementType() == ecvGenericMeasurementTools::MeasurementType::PROTRACTOR_WIDGET) {
+                // Protractor has its own default font size (20) set in constructor
+                // Update the widget to reflect this
+                m_fontPropertyWidget->setFontSize(20, true);  // blockSignal=true
+            } else {
+                // For other tools, use widget's font size
+                tool->setFontSize(props.size);
+            }
+            
+            tool->setBold(props.bold);
+            tool->setItalic(props.italic);
+            tool->setShadow(props.shadow);
+            tool->setFontOpacity(props.opacity);
+        }
 
         // Connect measurement changed signal
         connect(tool, &ecvGenericMeasurementTools::measurementChanged, this,
@@ -145,7 +229,7 @@ void ecvMeasurementTool::setMeasurementTool(ecvGenericMeasurementTools* tool) {
 void ecvMeasurementTool::switchToToolUI(ecvGenericMeasurementTools* tool) {
     if (!tool) return;
 
-    // Hide all tool widgets
+    // Lock non-active tools and hide their widgets
     for (ecvGenericMeasurementTools* t : m_toolInstances) {
         if (t && t->getMeasurementWidget()) {
             QWidget* widget = t->getMeasurementWidget();
@@ -155,14 +239,24 @@ void ecvMeasurementTool::switchToToolUI(ecvGenericMeasurementTools* tool) {
                 parametersLayout->removeWidget(widget);
             }
             widget->setVisible(false);
+
+            // Lock non-active tools (disable interaction, shortcuts, and UI
+            // controls)
+            if (t != tool) {
+                t->lockInteraction();
+            }
         }
     }
 
-    // Show and add the current tool's widget
+    // Show current tool's widget and unlock it
     QWidget* currentWidget = tool->getMeasurementWidget();
     if (currentWidget) {
         parametersLayout->addWidget(currentWidget);
         currentWidget->setVisible(true);
+
+        // Unlock the active tool (enable interaction, shortcuts, and UI
+        // controls)
+        tool->unlockInteraction();
     }
 }
 
@@ -183,7 +277,14 @@ void ecvMeasurementTool::updateInstancesComboBox() {
                 typeName = "Contour";
                 break;
         }
-        instancesComboBox->addItem(QString("%1 #%2").arg(typeName).arg(i + 1));
+        QString instanceName = QString("%1 #%2").arg(typeName).arg(i + 1);
+        instancesComboBox->addItem(instanceName);
+
+        // Update tool's instance label for display in 3D view (e.g., " #1", "
+        // #2") Important: When instances are added/removed, labels are
+        // automatically updated
+        QString label = QString(" #%1").arg(i + 1);
+        m_toolInstances[i]->setInstanceLabel(label);
     }
 
     // Set current index
@@ -215,7 +316,27 @@ void ecvMeasurementTool::addInstance() {
     ecvGenericMeasurementTools* newTool =
             createMeasurementTool(m_measurementType);
     if (newTool) {
+        // Set up the VTK widget reference for the new tool
+        // This ensures new instances can create shortcuts when unlocked
+        if (m_linkedWidget) {
+            // Directly set the m_vtkWidget for the new tool
+            // This will be used by unlockInteraction() to create shortcuts
+            CVLog::PrintDebug(QString("[ecvMeasurementTool::addInstance] "
+                                      "Setting m_vtkWidget=%1 for new tool")
+                                      .arg((quintptr)m_linkedWidget, 0, 16));
+            // We need to access the tool's internal member
+            // Since we can't access it directly (it's in
+            // cvGenericMeasurementTool), we'll call setupShortcuts which will
+            // save the widget reference
+            newTool->setupShortcuts(m_linkedWidget);
+        } else {
+            CVLog::Warning(
+                    "[ecvMeasurementTool::addInstance] m_linkedWidget is null, "
+                    "new tool may not have shortcuts");
+        }
+
         setMeasurementTool(newTool);
+        removeInstanceButton->setEnabled(true);
     }
 }
 
@@ -241,8 +362,9 @@ void ecvMeasurementTool::removeInstance() {
     // Remove from list
     m_toolInstances.removeAt(index);
 
-    // Delete tool
+    // Delete tool (CRITICAL: disable shortcuts first to prevent crash)
     if (toolToRemove) {
+        toolToRemove->disableShortcuts();  // Disable shortcuts before deletion
         toolToRemove->clear();
         delete toolToRemove;
     }
@@ -263,7 +385,9 @@ void ecvMeasurementTool::removeInstance() {
     } else {
         m_tool = nullptr;
         updateInstancesComboBox();
+        removeInstanceButton->setEnabled(false);
     }
+    ecvDisplayTools::UpdateScreen();
 }
 
 bool ecvMeasurementTool::addAssociatedEntity(ccHObject* entity) {
@@ -309,14 +433,17 @@ bool ecvMeasurementTool::linkWith(QWidget* win) {
     if (!ccOverlayDialog::linkWith(win)) {
         return false;
     }
-    
+
+    // Save the widget reference for later use (when creating new instances)
+    m_linkedWidget = win;
+
     // Setup keyboard shortcuts bound to the VTK widget
     for (ecvGenericMeasurementTools* tool : m_toolInstances) {
         if (tool) {
             tool->setupShortcuts(win);
         }
     }
-    
+
     return true;
 }
 
@@ -339,7 +466,19 @@ bool ecvMeasurementTool::start() {
             if (m_entityContainer.getChildrenNumber() > 0) {
                 tool->setInputData(m_entityContainer.getFirstChild());
             }
-            tool->start();
+            tool->start();  // This initializes VTK widgets and m_interactor
+
+            // CRITICAL: After start() initializes m_interactor, manage
+            // shortcuts:
+            // - Lock non-active tools (disable shortcuts if they exist)
+            // - Unlock the active tool (create and enable shortcuts)
+            if (tool != m_tool) {
+                tool->lockInteraction();
+            } else {
+                // Unlock the active tool to ensure shortcuts are created
+                // (m_interactor is now available after start())
+                tool->unlockInteraction();
+            }
         }
     }
 
@@ -357,6 +496,11 @@ void ecvMeasurementTool::stop(bool state) {
     // Clean up all tool instances
     for (ecvGenericMeasurementTools* tool : m_toolInstances) {
         if (tool) {
+            // Disable shortcuts before deleting the tool
+            // This prevents keyboard shortcuts from triggering after the tool
+            // is closed
+            tool->disableShortcuts();
+
             parametersLayout->removeWidget(tool->getMeasurementWidget());
             tool->clear();
             delete tool;
@@ -453,10 +597,11 @@ void ecvMeasurementTool::releaseAssociatedEntities() {
 void ecvMeasurementTool::onItemPicked(const PickedItem& pi) {
     // Check if processing and valid pick mode
     if (!m_processing || !m_tool || m_pickPointMode == 0) {
-        CVLog::Warning(QString("[ecvMeasurementTool] Ignoring pick: m_processing=%1, m_tool=%2, m_pickPointMode=%3")
-                       .arg(m_processing)
-                       .arg(m_tool ? "valid" : "null")
-                       .arg(m_pickPointMode));
+        CVLog::Warning(QString("[ecvMeasurementTool] Ignoring pick: "
+                               "m_processing=%1, m_tool=%2, m_pickPointMode=%3")
+                               .arg(m_processing)
+                               .arg(m_tool ? "valid" : "null")
+                               .arg(m_pickPointMode));
         return;
     }
 
@@ -548,5 +693,90 @@ void ecvMeasurementTool::onPointPickingCancelled() {
     m_pickPointMode = 0;
     if (m_pickingHub) {
         m_pickingHub->removeListener(this, true);
+    }
+}
+
+void ecvMeasurementTool::onColorButtonClicked() {
+    QColor newColor = QColorDialog::getColor(m_currentColor, this,
+                                             tr("Select Measurement Color"));
+
+    if (newColor.isValid() && newColor != m_currentColor) {
+        m_currentColor = newColor;
+        updateColorButtonAppearance();
+        applyColorToAllTools();
+    }
+}
+
+void ecvMeasurementTool::updateColorButtonAppearance() {
+    if (colorButton) {
+        QString styleSheet =
+                QString("QPushButton { background-color: rgb(%1, %2, %3); }")
+                        .arg(m_currentColor.red())
+                        .arg(m_currentColor.green())
+                        .arg(m_currentColor.blue());
+        colorButton->setStyleSheet(styleSheet);
+    }
+}
+
+void ecvMeasurementTool::applyColorToAllTools() {
+    // Convert QColor to normalized RGB [0.0, 1.0]
+    double r = m_currentColor.redF();
+    double g = m_currentColor.greenF();
+    double b = m_currentColor.blueF();
+
+    // Check if we should apply to all instances or just the current one
+    if (applyToAllCheckBox && applyToAllCheckBox->isChecked()) {
+        // Apply to all tool instances
+        for (ecvGenericMeasurementTools* tool : m_toolInstances) {
+            if (tool) {
+                tool->setColor(r, g, b);
+            }
+        }
+    } else {
+        // Apply only to the current active tool (combo box selection)
+        if (m_tool) {
+            m_tool->setColor(r, g, b);
+        }
+    }
+}
+
+void ecvMeasurementTool::onFontPropertiesChanged() {
+    applyFontToTools();
+}
+
+void ecvMeasurementTool::applyFontToTools() {
+    if (!m_fontPropertyWidget) return;
+
+    auto props = m_fontPropertyWidget->fontProperties();
+
+    // Check if we should apply to all instances or just the current one
+    if (applyToAllCheckBox && applyToAllCheckBox->isChecked()) {
+        // Apply to all tool instances
+        for (ecvGenericMeasurementTools* tool : m_toolInstances) {
+            if (tool) {
+                tool->setFontFamily(props.family);
+                tool->setFontSize(props.size);
+                tool->setFontColor(props.color.redF(), props.color.greenF(), props.color.blueF());
+                tool->setBold(props.bold);
+                tool->setItalic(props.italic);
+                tool->setShadow(props.shadow);
+                tool->setFontOpacity(props.opacity);
+                tool->setHorizontalJustification(props.horizontalJustification);
+                tool->setVerticalJustification(props.verticalJustification);
+            }
+        }
+    } else {
+        // Apply only to the current active tool (combo box selection)
+        if (m_tool) {
+            m_tool->setFontFamily(props.family);
+            m_tool->setFontSize(props.size);
+            m_tool->setFontColor(props.color.redF(), props.color.greenF(), props.color.blueF());
+            m_tool->setBold(props.bold);
+            m_tool->setItalic(props.italic);
+            m_tool->setShadow(props.shadow);
+            m_tool->setFontOpacity(props.opacity);
+            m_tool->setHorizontalJustification(props.horizontalJustification);
+            m_tool->setVerticalJustification(props.verticalJustification);
+        }
     }
 }

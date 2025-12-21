@@ -226,7 +226,27 @@
         <file>Resources/images/pqPickCenter@2x.png</file>
         <file>Resources/images/pqResetCenter@2x.png</file>
         <file>Resources/images/pqShowOrientationAxes@2x.png</file>
-        <file>Resources/images/pqZoomToSelection@2x.png</file>
+        <file>Resources/images/svg/pqZoomToData.svg</file>
+        <file>Resources/images/pqZoomToBox@2x.png</file>
+        <file>Resources/images/svg/pqSurfaceHoveringCell.svg</file>
+        <file>Resources/images/svg/pqSurfaceHoveringPoint.svg</file>
+        <file>Resources/images/svg/pqSurfaceSelectionCell.svg</file>
+        <file>Resources/images/svg/pqSurfaceSelectionPoint.svg</file>
+        <file>Resources/images/svg/pqFrustumSelectionCell.svg</file>
+        <file>Resources/images/svg/pqFrustumSelectionPoint.svg</file>
+        <file>Resources/images/svg/pqPolygonSelectSurfaceCell.svg</file>
+        <file>Resources/images/svg/pqPolygonSelectSurfacePoint.svg</file>
+        <file>Resources/images/svg/pqSurfaceSelectionCellInteractive.svg</file>
+        <file>Resources/images/svg/pqSurfaceSelectionPointInteractive.svg</file>
+        <file>Resources/images/svg/pqFrustumSelectionBlock.svg</file>
+        <file>Resources/images/svg/pqSelectBlock.svg</file>
+        <file>Resources/images/svg/pqSelectPlus.svg</file>
+        <file>Resources/images/svg/pqSelectMinus.svg</file>
+        <file>Resources/images/svg/pqSelectToggle.svg</file>
+        <file>Resources/images/svg/pqSelectChartPolygon.svg</file>
+        <file>Resources/images/svg/pqPlus.svg</file>
+        <file>Resources/images/svg/pqMinus.svg</file>
+        <file>Resources/images/svg/pqClearSort.svg</file>
         <file>Resources/images/pqShowCenterAxes@2x.png</file>
         <file>Resources/images/svg/pqEditCamera.png</file>
         <file>Resources/images/others/pqXMinus.png</file>

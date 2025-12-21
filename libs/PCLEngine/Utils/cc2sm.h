@@ -8,7 +8,8 @@
 #pragma once
 
 // Local
-#include "PCLCloud.h"
+#include <Utils/PCLCloud.h>
+
 #include "qPCL.h"
 
 // ECV_DB_LIB
@@ -106,20 +107,6 @@ public:
      */
     bool getVtkPolyDataFromMeshCloud(
             ccGenericMesh* mesh, vtkSmartPointer<vtkPolyData>& polydata) const;
-
-    /**
-     * @brief Convert ccGenericMesh to vtkPolyData with proper handling of
-     * colors, normals, and visibility
-     * @param mesh Input mesh
-     * @param polydata Output VTK polydata (will be created)
-     * @param transformation Output transformation matrix (will be created)
-     * @return true on success
-     * @note This method reuses the same logic as getPclCloud2 to ensure
-     * consistency
-     */
-    bool getVtkPolyDataFromMesh(ccGenericMesh* mesh,
-                                vtkPolyData*& polydata,
-                                vtkMatrix4x4*& transformation) const;
 
     /**
      * @brief Convert ccGenericMesh to vtkPolyData with texture coordinates

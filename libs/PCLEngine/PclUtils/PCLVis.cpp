@@ -7,14 +7,15 @@
 
 #include "PCLVis.h"
 
-#include "PCLConv.h"
+#include <Utils/PCLConv.h>
+#include <Utils/cc2sm.h>
+#include <Utils/sm2cc.h>
+
 #include "Tools/Common/PclTools.h"
 #include "Tools/Common/ecvTools.h"
 #include "VtkUtils/vtkutils.h"
-#include "cc2sm.h"
 #include "renders/TextureRenderManager.h"
 #include "renders/utils/MeshTextureApplier.h"
-#include "sm2cc.h"
 
 // SYSTEM
 #include <cmath>
@@ -798,7 +799,7 @@ void PCLVis::setCameraViewAngle(double viewAngle, int viewport) {
     }
 
     this->resetCameraClippingRange(viewport);
-    getRenderWindow()->Render();
+    UpdateScreen();
 }
 
 /********************************Draw Entities*********************************/
@@ -2236,7 +2237,7 @@ void PCLVis::setOrthoProjection(int viewport) {
     if (!flag) {
         cam->SetParallelProjection(true);
         getCurrentRenderer()->SetActiveCamera(cam);
-        getRenderWindow()->Render();
+        UpdateScreen();
     }
 }
 
@@ -2246,7 +2247,7 @@ void PCLVis::setPerspectiveProjection(int viewport) {
     if (flag) {
         cam->SetParallelProjection(false);
         getCurrentRenderer()->SetActiveCamera(cam);
-        getRenderWindow()->Render();
+        UpdateScreen();
     }
 }
 
@@ -2589,6 +2590,14 @@ void PCLVis::addActorToRenderer(const vtkSmartPointer<vtkProp>& actor,
             renderer->AddActor(actor);
         }
         ++i;
+    }
+}
+
+void PCLVis::UpdateScreen() {
+    // Force render window to update after actor changes
+    // Similar to QVTKWidgetCustom::updateScene()
+    if (getRenderWindow()) {
+        getRenderWindow()->Render();
     }
 }
 

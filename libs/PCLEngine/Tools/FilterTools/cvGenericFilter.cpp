@@ -12,8 +12,9 @@
 #endif
 
 // LOCAL
+#include <Utils/vtk2cc.h>
+
 #include "PclUtils/PCLVis.h"
-#include "PclUtils/vtk2cc.h"
 #include "VtkUtils/vtkutils.h"
 
 // CV_CORE_LIB

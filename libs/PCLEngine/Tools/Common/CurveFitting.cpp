@@ -7,7 +7,7 @@
 
 #include "CurveFitting.h"
 
-#include "PclUtils/vtk2cc.h"
+#include <Utils/vtk2cc.h>
 
 // ECV_DB_LIB
 #include <ecvPointCloud.h>

@@ -11,9 +11,10 @@
 #endif
 
 // Local
-#include "PclUtils/PCLConv.h"
+#include <Utils/PCLConv.h>
+#include <Utils/cc2sm.h>
+
 #include "PclUtils/PCLVis.h"
-#include "PclUtils/cc2sm.h"
 #include "Tools/Common/ecvTools.h"
 
 // Vtk Filters

@@ -36,7 +36,8 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 #include <vtkSmartPointer.h>
 
 // QPCL_ENGINE_LIB
-#include "PclUtils/PCLCloud.h"
+#include <Utils/PCLCloud.h>
+
 #include "ScaleBarWidget.h"
 
 // SYSTEM

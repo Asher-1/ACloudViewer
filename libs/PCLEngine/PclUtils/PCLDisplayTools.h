@@ -8,8 +8,9 @@
 #pragma once
 
 // Local
+#include <Utils/PCLCloud.h>
+
 #include "ImageVis.h"
-#include "PCLCloud.h"
 #include "PCLVis.h"
 #include "Tools/Common/ecvTools.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"

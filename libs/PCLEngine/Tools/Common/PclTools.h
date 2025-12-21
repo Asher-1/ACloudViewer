@@ -8,8 +8,9 @@
 #pragma once
 
 // LOCAL
-#include "PclUtils/PCLCloud.h"
-#include "PclUtils/PCLConv.h"
+#include <Utils/PCLCloud.h>
+#include <Utils/PCLConv.h>
+
 #include "qPCL.h"
 
 // CV_CORE_LIB

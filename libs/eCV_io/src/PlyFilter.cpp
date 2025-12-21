@@ -1623,6 +1623,8 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
         assert(pp.type == 16);  // we only accept PLY_LIST here!
 
         mesh = new ccMesh(cloud);
+        // Set mesh name to filename (ParaView-style, same as OBJ filter)
+        mesh->setName(QFileInfo(filename).fileName());
 
         numberOfFacets = meshElements[pp.elemIndex].elementInstances;
 

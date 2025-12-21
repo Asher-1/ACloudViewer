@@ -7,29 +7,32 @@
 
 #include "cvProtractorTool.h"
 
-#include "Tools/PickingTools/cvPointPickingHelper.h"
-
-#include <QShortcut>
-
 #include <VtkUtils/anglewidgetobserver.h>
 #include <VtkUtils/signalblocker.h>
 #include <VtkUtils/vtkutils.h>
-#include <vtkAngleRepresentation2D.h>
-#include <vtkAngleRepresentation3D.h>
-#include <vtkAngleWidget.h>
+#include <vtkActor2D.h>
+#include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
-#include <vtkFollower.h>
 #include <vtkHandleRepresentation.h>
 #include <vtkMath.h>
-#include <vtkPointHandleRepresentation2D.h>
 #include <vtkPointHandleRepresentation3D.h>
+#include <vtkPolyLineRepresentation.h>
 #include <vtkProperty.h>
 #include <vtkProperty2D.h>
-#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkRenderer.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
 
+#include <QShortcut>
 #include <algorithm>
 #include <cmath>
+
+#include "Tools/PickingTools/cvPointPickingHelper.h"
+#include "VTKExtensions/ConstrainedWidgets/cvConstrainedPolyLineRepresentation.h"
+#include "VTKExtensions/ConstrainedWidgets/cvConstrainedPolyLineWidget.h"
+#include "cvMeasurementToolsCommon.h"
 
 // ECV_DB_LIB
 #include <ecvBBox.h>
@@ -37,115 +40,86 @@
 
 namespace {
 
-// ParaView-style colors
-constexpr double FOREGROUND_COLOR[3] = {1.0, 1.0, 1.0};  // White for normal state
-constexpr double INTERACTION_COLOR[3] = {0.0, 1.0, 0.0}; // Green for selected/interactive state
-constexpr double RAY_COLOR[3] = {1.0, 0.0, 0.0};         // Red for angle rays (ParaView default)
-constexpr double ARC_COLOR[3] = {1.0, 0.1, 0.0};         // Orange-red for arc and text (ParaView default)
+using namespace cvMeasurementTools;
 
-//! Configure 2D handle representation with ParaView-style properties
-void configureHandle2D(vtkPointHandleRepresentation2D* handle) {
-    if (!handle) return;
-    
-    // Set normal (foreground) color - white
-    if (auto* prop = handle->GetProperty()) {
-        prop->SetColor(FOREGROUND_COLOR[0], FOREGROUND_COLOR[1], FOREGROUND_COLOR[2]);
-    }
-    
-    // Set selected (interaction) color - green
-    if (auto* selectedProp = handle->GetSelectedProperty()) {
-        selectedProp->SetColor(INTERACTION_COLOR[0], INTERACTION_COLOR[1], INTERACTION_COLOR[2]);
-    }
-}
-
-//! Configure 3D handle representation with ParaView-style properties
-void configureHandle3D(vtkPointHandleRepresentation3D* handle) {
-    if (!handle) return;
-    
-    // Set normal (foreground) color - white
-    if (auto* prop = handle->GetProperty()) {
-        prop->SetColor(FOREGROUND_COLOR[0], FOREGROUND_COLOR[1], FOREGROUND_COLOR[2]);
-    }
-    
-    // Set selected (interaction) color - green
-    if (auto* selectedProp = handle->GetSelectedProperty()) {
-        selectedProp->SetColor(INTERACTION_COLOR[0], INTERACTION_COLOR[1], INTERACTION_COLOR[2]);
-    }
-    
-    // Configure cursor appearance - show only the crosshair axes, no outline/shadows
-    handle->AllOff();  // Turn off outline and all shadows
-    
-    // Enable smooth motion and translation mode for better handle movement
-    handle->SmoothMotionOn();
-    handle->TranslationModeOn();
-}
-
-//! Configure angle representation 2D with ParaView-style properties
-void configureAngleRep2D(vtkAngleRepresentation2D* rep) {
+//! Configure PolyLine representation for angle measurement with ParaView-style
+//! properties
+void configurePolyLineRepresentation(cvConstrainedPolyLineRepresentation* rep,
+                                     bool use3DHandles = true) {
     if (!rep) return;
-    
-    // Configure handles
-    auto* h1 = vtkPointHandleRepresentation2D::SafeDownCast(rep->GetPoint1Representation());
-    auto* hc = vtkPointHandleRepresentation2D::SafeDownCast(rep->GetCenterRepresentation());
-    auto* h2 = vtkPointHandleRepresentation2D::SafeDownCast(rep->GetPoint2Representation());
-    configureHandle2D(h1);
-    configureHandle2D(hc);
-    configureHandle2D(h2);
-    
-    // 2D representation uses vtkLeaderActor2D for rays and arc
-    // The default colors are already reasonable for 2D
+
+    // Set number of handles to 3 for angle measurement (Point1, Center, Point2)
+    rep->SetNumberOfHandles(3);
+
+    // Configure line properties (matching ParaView's LineProperty)
+    if (auto* lineProp = rep->GetLineProperty()) {
+        lineProp->SetColor(RAY_COLOR[0], RAY_COLOR[1],
+                           RAY_COLOR[2]);  // Red lines
+        lineProp->SetLineWidth(2.0);       // ParaView default line width
+        lineProp->SetAmbient(1.0);         // ParaView sets ambient to 1.0
+    }
+
+    // Configure handle properties (matching ParaView)
+    if (auto* handleProp = rep->GetHandleProperty()) {
+        handleProp->SetColor(FOREGROUND_COLOR[0], FOREGROUND_COLOR[1],
+                             FOREGROUND_COLOR[2]);
+    }
+    if (auto* selectedHandleProp = rep->GetSelectedHandleProperty()) {
+        selectedHandleProp->SetColor(INTERACTION_COLOR[0], INTERACTION_COLOR[1],
+                                     INTERACTION_COLOR[2]);
+    }
+
+    // Configure angle label text properties for better readability
+    if (auto* labelActor = rep->GetAngleLabelActor()) {
+        if (auto* textProp = labelActor->GetTextProperty()) {
+            textProp->SetFontSize(20);  // Default font size for angle display
+            textProp->SetBold(0);       // Not bold for better readability
+            textProp->SetShadow(1);     // Add shadow for better visibility
+            textProp->SetColor(1.0, 1.0, 1.0);  // White text
+        }
+    }
+
+    // Configure angle display features
+    rep->SetShowAngleLabel(1);  // Show angle label by default
+    rep->SetShowAngleArc(1);    // Show angle arc by default
+    rep->SetArcRadius(1.0);     // Default arc radius
 }
 
-//! Configure angle representation 3D with ParaView-style properties
-void configureAngleRep3D(vtkAngleRepresentation3D* rep) {
-    if (!rep) return;
-    
-    // Configure handles
-    auto* h1 = vtkPointHandleRepresentation3D::SafeDownCast(rep->GetPoint1Representation());
-    auto* hc = vtkPointHandleRepresentation3D::SafeDownCast(rep->GetCenterRepresentation());
-    auto* h2 = vtkPointHandleRepresentation3D::SafeDownCast(rep->GetPoint2Representation());
-    configureHandle3D(h1);
-    configureHandle3D(hc);
-    configureHandle3D(h2);
-    
-    // Configure ray actors (matching ParaView's red color)
-    if (auto* ray1 = rep->GetRay1()) {
-        if (auto* prop = ray1->GetProperty()) {
-            prop->SetColor(RAY_COLOR[0], RAY_COLOR[1], RAY_COLOR[2]);
-            prop->SetLineWidth(2.0);
-        }
-    }
-    if (auto* ray2 = rep->GetRay2()) {
-        if (auto* prop = ray2->GetProperty()) {
-            prop->SetColor(RAY_COLOR[0], RAY_COLOR[1], RAY_COLOR[2]);
-            prop->SetLineWidth(2.0);
-        }
-    }
-    
-    // Configure arc actor (matching ParaView's orange-red color)
-    if (auto* arc = rep->GetArc()) {
-        if (auto* prop = arc->GetProperty()) {
-            prop->SetColor(ARC_COLOR[0], ARC_COLOR[1], ARC_COLOR[2]);
-            prop->SetLineWidth(2.0);
-        }
-    }
-    
-    // Configure text actor (matching ParaView's orange-red color)
-    if (auto* textActor = rep->GetTextActor()) {
-        if (auto* prop = textActor->GetProperty()) {
-            prop->SetColor(ARC_COLOR[0], ARC_COLOR[1], ARC_COLOR[2]);
-        }
-    }
-}
-
-} // anonymous namespace
+}  // anonymous namespace
 
 cvProtractorTool::cvProtractorTool(QWidget* parent)
     : cvGenericMeasurementTool(parent), m_configUi(nullptr) {
     setWindowTitle(tr("Protractor Measurement Tool"));
+    
+    // Override base class font size default for angle measurements
+    // Angles need larger font for better readability
+    m_fontSize = 20;
 }
 
 cvProtractorTool::~cvProtractorTool() {
+    // CRITICAL: Explicitly hide and cleanup widget/representation before
+    // destruction
+    if (m_widget) {
+        m_widget->Off();          // Turn off widget
+        m_widget->SetEnabled(0);  // Disable widget
+    }
+
+    // Explicitly hide all representation elements
+    if (m_rep) {
+        m_rep->SetVisibility(0);  // Hide everything
+        if (auto* labelActor = m_rep->GetAngleLabelActor()) {
+            labelActor->SetVisibility(0);
+        }
+        if (auto* arcActor = m_rep->GetAngleArcActor()) {
+            arcActor->SetVisibility(0);
+        }
+
+        // Force immediate render to clear visual elements
+        if (m_interactor && m_interactor->GetRenderWindow()) {
+            m_interactor->GetRenderWindow()->Render();
+        }
+    }
+
     if (m_configUi) {
         delete m_configUi;
         m_configUi = nullptr;
@@ -153,36 +127,115 @@ cvProtractorTool::~cvProtractorTool() {
 }
 
 void cvProtractorTool::initTool() {
-    // Initialize only 3D widget as default (matching UI currentIndex=1)
-    // 2D widget will be lazily initialized when user switches to it
-    
-    VtkUtils::vtkInitOnce(m_3dRep);
-    VtkUtils::vtkInitOnce(m_3dWidget);
-    
-    // Set representation BEFORE SetInteractor/SetRenderer
-    m_3dWidget->SetRepresentation(m_3dRep);
-    
+    // Initialize 3D widget only (simplified - no 2D/3D switching)
+    VtkUtils::vtkInitOnce(m_rep);
+
+    // Use constrained PolyLine widget - automatically supports XYZ shortcuts
+    // (ParaView way)
+    m_widget = vtkSmartPointer<cvConstrainedPolyLineWidget>::New();
+
+    // Set representation BEFORE calling SetInteractor/SetRenderer
+    m_widget->SetRepresentation(m_rep);
+
     if (m_interactor) {
-        m_3dWidget->SetInteractor(m_interactor);
+        m_widget->SetInteractor(m_interactor);
     }
     if (m_renderer) {
-        m_3dRep->SetRenderer(m_renderer);
+        m_rep->SetRenderer(m_renderer);
     }
-    
+
     // Following ParaView's approach:
-    // 1. InstantiateHandleRepresentation (done in CreateDefaultRepresentation)
-    m_3dRep->InstantiateHandleRepresentation();
-    
-    // 2. Configure appearance AFTER instantiation but BEFORE enabling
-    configureAngleRep3D(m_3dRep);
-    
-    // 3. Build representation
-    m_3dRep->BuildRepresentation();
-    
-    // 4. Enable widget - this will internally handle the handle widgets
-    m_3dWidget->On();
-    
-    hookWidget(m_3dWidget);  // Hook observer for 3D widget
+    // 1. Configure appearance (set 3 handles for angle measurement)
+    configurePolyLineRepresentation(m_rep, true);  // 3D mode
+
+    // 2. Apply default green color (override configure defaults)
+    if (auto* lineProp = m_rep->GetLineProperty()) {
+        lineProp->SetColor(m_currentColor[0], m_currentColor[1],
+                           m_currentColor[2]);
+    }
+    if (auto* selectedLineProp = m_rep->GetSelectedLineProperty()) {
+        selectedLineProp->SetColor(m_currentColor[0], m_currentColor[1],
+                                   m_currentColor[2]);
+    }
+
+    // 3. Initialize handle positions based on bounding box
+    // This ensures the protractor is visible outside the object from the start
+    double defaultPos1[3] = {0.0, 0.0, 0.0};
+    double defaultCenter[3] = {1.0, 0.0, 0.0};
+    double defaultPos2[3] = {1.0, 1.0, 0.0};
+
+    if (m_entity && m_entity->getBB_recursive().isValid()) {
+        const ccBBox& bbox = m_entity->getBB_recursive();
+        CCVector3 center = bbox.getCenter();
+        CCVector3 diag = bbox.getDiagVec();
+
+        // Calculate offset based on the bounding box diagonal length
+        // Use a larger offset (30%) to ensure visibility outside any object
+        // orientation
+        double diagLength = diag.norm();
+        double offset = diagLength * 0.3;
+
+        // Ensure minimum offset for very small objects
+        if (offset < 0.5) {
+            offset = 0.5;
+        }
+
+        // Place the protractor above and in front of the object for better
+        // visibility Use offset in Y and Z directions to avoid objects in any
+        // orientation
+        defaultCenter[0] = center.x;
+        defaultCenter[1] = center.y + offset;  // Offset in Y direction
+        defaultCenter[2] = center.z + offset;  // Offset in Z direction
+
+        defaultPos1[0] = center.x - diag.x * 0.25;
+        defaultPos1[1] = center.y + offset;  // Offset in Y direction
+        defaultPos1[2] = center.z + offset;  // Offset in Z direction
+
+        defaultPos2[0] = center.x + diag.x * 0.25;
+        defaultPos2[1] = center.y + offset;  // Offset in Y direction
+        defaultPos2[2] = center.z + offset;  // Offset in Z direction
+    }
+
+    m_rep->SetHandlePosition(0, defaultPos1);
+    m_rep->SetHandlePosition(1, defaultCenter);
+    m_rep->SetHandlePosition(2, defaultPos2);
+
+    // 4. Build representation (before updating UI)
+    m_rep->BuildRepresentation();
+
+    // 5. Apply font properties to ensure user-configured font properties are applied
+    applyFontProperties();
+
+    // 6. Update UI controls with initial positions (if UI is already created)
+    if (m_configUi) {
+        VtkUtils::SignalBlocker blocker1(m_configUi->centerXSpinBox);
+        VtkUtils::SignalBlocker blocker2(m_configUi->centerYSpinBox);
+        VtkUtils::SignalBlocker blocker3(m_configUi->centerZSpinBox);
+        VtkUtils::SignalBlocker blocker4(m_configUi->point1XSpinBox);
+        VtkUtils::SignalBlocker blocker5(m_configUi->point1YSpinBox);
+        VtkUtils::SignalBlocker blocker6(m_configUi->point1ZSpinBox);
+        VtkUtils::SignalBlocker blocker7(m_configUi->point2XSpinBox);
+        VtkUtils::SignalBlocker blocker8(m_configUi->point2YSpinBox);
+        VtkUtils::SignalBlocker blocker9(m_configUi->point2ZSpinBox);
+
+        m_configUi->centerXSpinBox->setValue(defaultCenter[0]);
+        m_configUi->centerYSpinBox->setValue(defaultCenter[1]);
+        m_configUi->centerZSpinBox->setValue(defaultCenter[2]);
+        m_configUi->point1XSpinBox->setValue(defaultPos1[0]);
+        m_configUi->point1YSpinBox->setValue(defaultPos1[1]);
+        m_configUi->point1ZSpinBox->setValue(defaultPos1[2]);
+        m_configUi->point2XSpinBox->setValue(defaultPos2[0]);
+        m_configUi->point2YSpinBox->setValue(defaultPos2[1]);
+        m_configUi->point2ZSpinBox->setValue(defaultPos2[2]);
+
+        // Update angle display to show initial angle
+        updateAngleDisplay();
+    }
+
+    // 6. Enable widget
+    m_widget->On();
+
+    hookWidget(m_widget);
 }
 
 void cvProtractorTool::createUi() {
@@ -195,12 +248,9 @@ void cvProtractorTool::createUi() {
 
 #ifdef Q_OS_MAC
     m_configUi->instructionLabel->setText(
-        m_configUi->instructionLabel->text().replace("Ctrl", "Cmd"));
+            m_configUi->instructionLabel->text().replace("Ctrl", "Cmd"));
 #endif
 
-    connect(m_configUi->typeCombo,
-            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &cvProtractorTool::on_typeCombo_currentIndexChanged);
     connect(m_configUi->point1XSpinBox,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
             &cvProtractorTool::on_point1XSpinBox_valueChanged);
@@ -240,10 +290,6 @@ void cvProtractorTool::createUi() {
     // Connect display options
     connect(m_configUi->widgetVisibilityCheckBox, &QCheckBox::toggled, this,
             &cvProtractorTool::on_widgetVisibilityCheckBox_toggled);
-    connect(m_configUi->ray1VisibilityCheckBox, &QCheckBox::toggled, this,
-            &cvProtractorTool::on_ray1VisibilityCheckBox_toggled);
-    connect(m_configUi->ray2VisibilityCheckBox, &QCheckBox::toggled, this,
-            &cvProtractorTool::on_ray2VisibilityCheckBox_toggled);
     connect(m_configUi->arcVisibilityCheckBox, &QCheckBox::toggled, this,
             &cvProtractorTool::on_arcVisibilityCheckBox_toggled);
 }
@@ -256,7 +302,8 @@ void cvProtractorTool::start() {
 }
 
 void cvProtractorTool::reset() {
-    // Reset points to default positions (center of bounding box if available)
+    // Reset points to default positions (above the bounding box for better
+    // visibility and accessibility)
     double defaultCenter[3] = {0.0, 0.0, 0.0};
     double defaultPos1[3] = {-0.5, 0.0, 0.0};
     double defaultPos2[3] = {0.5, 0.0, 0.0};
@@ -266,58 +313,44 @@ void cvProtractorTool::reset() {
         CCVector3 center = bbox.getCenter();
         CCVector3 diag = bbox.getDiagVec();
 
+        // Calculate offset based on the bounding box diagonal length
+        // Use a larger offset (30%) to ensure visibility outside any object
+        // orientation
+        double diagLength = diag.norm();
+        double offset = diagLength * 0.3;
+
+        // Ensure minimum offset for very small objects
+        if (offset < 0.5) {
+            offset = 0.5;
+        }
+
+        // Place the protractor above and in front of the object for better
+        // visibility Use offset in Y and Z directions to avoid objects in any
+        // orientation
         defaultCenter[0] = center.x;
-        defaultCenter[1] = center.y;
-        defaultCenter[2] = center.z;
+        defaultCenter[1] = center.y + offset;  // Offset in Y direction
+        defaultCenter[2] = center.z + offset;  // Offset in Z direction
 
         defaultPos1[0] = center.x - diag.x * 0.25;
-        defaultPos1[1] = center.y;
-        defaultPos1[2] = center.z;
+        defaultPos1[1] = center.y + offset;  // Offset in Y direction
+        defaultPos1[2] = center.z + offset;  // Offset in Z direction
 
         defaultPos2[0] = center.x + diag.x * 0.25;
-        defaultPos2[1] = center.y;
-        defaultPos2[2] = center.z;
+        defaultPos2[1] = center.y + offset;  // Offset in Y direction
+        defaultPos2[2] = center.z + offset;  // Offset in Z direction
     }
 
     // Reset widget points
-    if (m_2dWidget && m_2dWidget->GetEnabled() && m_renderer) {
-        double displayCenter[3], displayPos1[3], displayPos2[3];
-
-        m_renderer->SetWorldPoint(defaultCenter[0], defaultCenter[1],
-                                  defaultCenter[2], 1.0);
-        m_renderer->WorldToDisplay();
-        const double* display = m_renderer->GetDisplayPoint();
-        displayCenter[0] = display[0];
-        displayCenter[1] = display[1];
-        displayCenter[2] = display[2];
-
-        m_renderer->SetWorldPoint(defaultPos1[0], defaultPos1[1],
-                                  defaultPos1[2], 1.0);
-        m_renderer->WorldToDisplay();
-        display = m_renderer->GetDisplayPoint();
-        displayPos1[0] = display[0];
-        displayPos1[1] = display[1];
-        displayPos1[2] = display[2];
-
-        m_renderer->SetWorldPoint(defaultPos2[0], defaultPos2[1],
-                                  defaultPos2[2], 1.0);
-        m_renderer->WorldToDisplay();
-        display = m_renderer->GetDisplayPoint();
-        displayPos2[0] = display[0];
-        displayPos2[1] = display[1];
-        displayPos2[2] = display[2];
-
-        m_2dRep->SetCenterDisplayPosition(displayCenter);
-        m_2dRep->SetPoint1DisplayPosition(displayPos1);
-        m_2dRep->SetPoint2DisplayPosition(displayPos2);
-        m_2dRep->BuildRepresentation();
-        m_2dWidget->Modified();
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->SetCenterWorldPosition(defaultCenter);
-        m_3dRep->SetPoint1WorldPosition(defaultPos1);
-        m_3dRep->SetPoint2WorldPosition(defaultPos2);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->SetCenterWorldPosition(defaultCenter);
+        m_rep->SetPoint1WorldPosition(defaultPos1);
+        m_rep->SetPoint2WorldPosition(defaultPos2);
+        m_rep->BuildRepresentation();
+        
+        // Reapply text properties after BuildRepresentation
+        applyTextPropertiesToLabel();
+        
+        m_widget->Modified();
     }
 
     // Update UI
@@ -347,21 +380,96 @@ void cvProtractorTool::reset() {
     emit measurementValueChanged();
 }
 
+void cvProtractorTool::setupPointPickingShortcuts(QWidget* vtkWidget) {
+    if (!vtkWidget) return;
+
+    // '1' - Pick point 1 on surface
+    cvPointPickingHelper* pickHelper1 =
+            new cvPointPickingHelper(QKeySequence(tr("1")), false, vtkWidget);
+    pickHelper1->setInteractor(m_interactor);
+    pickHelper1->setRenderer(m_renderer);
+    pickHelper1->setContextWidget(this);
+    connect(pickHelper1, &cvPointPickingHelper::pick, this,
+            &cvProtractorTool::pickKeyboardPoint1);
+    m_pickingHelpers.append(pickHelper1);
+
+    // 'Ctrl+1' - Pick point 1, snap to mesh points
+    cvPointPickingHelper* pickHelper1Snap = new cvPointPickingHelper(
+            QKeySequence(tr("Ctrl+1")), true, vtkWidget);
+    pickHelper1Snap->setInteractor(m_interactor);
+    pickHelper1Snap->setRenderer(m_renderer);
+    pickHelper1Snap->setContextWidget(this);
+    connect(pickHelper1Snap, &cvPointPickingHelper::pick, this,
+            &cvProtractorTool::pickKeyboardPoint1);
+    m_pickingHelpers.append(pickHelper1Snap);
+
+    // 'C' - Pick center on surface
+    cvPointPickingHelper* pickHelperCenter =
+            new cvPointPickingHelper(QKeySequence(tr("C")), false, vtkWidget);
+    pickHelperCenter->setInteractor(m_interactor);
+    pickHelperCenter->setRenderer(m_renderer);
+    pickHelperCenter->setContextWidget(this);
+    connect(pickHelperCenter, &cvPointPickingHelper::pick, this,
+            &cvProtractorTool::pickKeyboardCenter);
+    m_pickingHelpers.append(pickHelperCenter);
+
+    // 'Ctrl+C' - Pick center, snap to mesh points
+    cvPointPickingHelper* pickHelperCenterSnap = new cvPointPickingHelper(
+            QKeySequence(tr("Ctrl+C")), true, vtkWidget);
+    pickHelperCenterSnap->setInteractor(m_interactor);
+    pickHelperCenterSnap->setRenderer(m_renderer);
+    pickHelperCenterSnap->setContextWidget(this);
+    connect(pickHelperCenterSnap, &cvPointPickingHelper::pick, this,
+            &cvProtractorTool::pickKeyboardCenter);
+    m_pickingHelpers.append(pickHelperCenterSnap);
+
+    // '2' - Pick point 2 on surface
+    cvPointPickingHelper* pickHelper2 =
+            new cvPointPickingHelper(QKeySequence(tr("2")), false, vtkWidget);
+    pickHelper2->setInteractor(m_interactor);
+    pickHelper2->setRenderer(m_renderer);
+    pickHelper2->setContextWidget(this);
+    connect(pickHelper2, &cvPointPickingHelper::pick, this,
+            &cvProtractorTool::pickKeyboardPoint2);
+    m_pickingHelpers.append(pickHelper2);
+
+    // 'Ctrl+2' - Pick point 2, snap to mesh points
+    cvPointPickingHelper* pickHelper2Snap = new cvPointPickingHelper(
+            QKeySequence(tr("Ctrl+2")), true, vtkWidget);
+    pickHelper2Snap->setInteractor(m_interactor);
+    pickHelper2Snap->setRenderer(m_renderer);
+    pickHelper2Snap->setContextWidget(this);
+    connect(pickHelper2Snap, &cvPointPickingHelper::pick, this,
+            &cvProtractorTool::pickKeyboardPoint2);
+    m_pickingHelpers.append(pickHelper2Snap);
+}
+
 void cvProtractorTool::showWidget(bool state) {
-    if (m_2dWidget) {
+    if (m_widget) {
         if (state) {
-            m_2dWidget->On();
+            m_widget->On();
         } else {
-            m_2dWidget->Off();
+            m_widget->Off();
         }
     }
-    if (m_3dWidget) {
+
+    // Explicitly control representation visibility to ensure arc and label are
+    // hidden/shown
+    if (m_rep) {
+        m_rep->SetVisibility(state ? 1 : 0);
+        m_rep->BuildRepresentation();
+        
+        // Reapply text properties after BuildRepresentation
         if (state) {
-            m_3dWidget->On();
-        } else {
-            m_3dWidget->Off();
+            applyTextPropertiesToLabel();
+        }
+        
+        if (m_widget) {
+            m_widget->Modified();
+            m_widget->Render();
         }
     }
+
     update();
 }
 
@@ -420,27 +528,16 @@ void cvProtractorTool::setPoint1(double pos[3]) {
     m_configUi->point1YSpinBox->setValue(pos[1]);
     m_configUi->point1ZSpinBox->setValue(pos[2]);
 
-    // Update widget directly
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(pos[0], pos[1], pos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetPoint1DisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-            m_2dWidget->Render();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->SetPoint1WorldPosition(pos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();  // Ensure render
+    // Update 3D widget directly
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->SetPoint1WorldPosition(pos);
+        m_rep->BuildRepresentation();
+        
+        // Reapply text properties after BuildRepresentation
+        applyTextPropertiesToLabel();
+        
+        m_widget->Modified();
+        m_widget->Render();
     }
 
     // Update angle display
@@ -464,27 +561,16 @@ void cvProtractorTool::setPoint2(double pos[3]) {
     m_configUi->point2YSpinBox->setValue(pos[1]);
     m_configUi->point2ZSpinBox->setValue(pos[2]);
 
-    // Update widget directly
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(pos[0], pos[1], pos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetPoint2DisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-            m_2dWidget->Render();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->SetPoint2WorldPosition(pos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();  // Ensure render
+    // Update 3D widget directly
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->SetPoint2WorldPosition(pos);
+        m_rep->BuildRepresentation();
+        
+        // Reapply text properties after BuildRepresentation
+        applyTextPropertiesToLabel();
+        
+        m_widget->Modified();
+        m_widget->Render();
     }
 
     // Update angle display
@@ -508,27 +594,16 @@ void cvProtractorTool::setCenter(double pos[3]) {
     m_configUi->centerYSpinBox->setValue(pos[1]);
     m_configUi->centerZSpinBox->setValue(pos[2]);
 
-    // Update widget directly
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(pos[0], pos[1], pos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetCenterDisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-            m_2dWidget->Render();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->SetCenterWorldPosition(pos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();  // Ensure render
+    // Update 3D widget directly
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->SetCenterWorldPosition(pos);
+        m_rep->BuildRepresentation();
+        
+        // Reapply text properties after BuildRepresentation
+        applyTextPropertiesToLabel();
+        
+        m_widget->Modified();
+        m_widget->Render();
     }
 
     // Update angle display
@@ -536,79 +611,257 @@ void cvProtractorTool::setCenter(double pos[3]) {
     update();
 }
 
-void cvProtractorTool::on_typeCombo_currentIndexChanged(int index) {
-    if (index == 0) {
-        // Switch to 2D widget
-        if (!m_2dWidget) {
-            // Lazy initialization of 2D widget
-            VtkUtils::vtkInitOnce(m_2dRep);
-            VtkUtils::vtkInitOnce(m_2dWidget);
-            
-            // Set representation BEFORE SetInteractor/SetRenderer
-            m_2dWidget->SetRepresentation(m_2dRep);
-            
-            if (m_interactor) {
-                m_2dWidget->SetInteractor(m_interactor);
-            }
-            if (m_renderer) {
-                m_2dRep->SetRenderer(m_renderer);
-            }
-            
-            // Following ParaView's approach:
-            // 1. InstantiateHandleRepresentation
-            m_2dRep->InstantiateHandleRepresentation();
-            
-            // 2. Configure appearance AFTER instantiation but BEFORE enabling
-            configureAngleRep2D(m_2dRep);
-            
-            // 3. Build representation
-            m_2dRep->BuildRepresentation();
-            
-            hookWidget(m_2dWidget);  // Hook observer for 2D widget
+void cvProtractorTool::setColor(double r, double g, double b) {
+    // Store current color
+    m_currentColor[0] = r;
+    m_currentColor[1] = g;
+    m_currentColor[2] = b;
+
+    // Set color for poly line representation (rays)
+    if (m_rep) {
+        if (auto* lineProp = m_rep->GetLineProperty()) {
+            lineProp->SetColor(r, g, b);
         }
-        if (m_2dWidget) {
-            m_2dWidget->On();
+        if (auto* selectedLineProp = m_rep->GetSelectedLineProperty()) {
+            selectedLineProp->SetColor(r, g, b);
         }
-        if (m_3dWidget) {
-            m_3dWidget->Off();
-        }
-    } else {
-        // Switch to 3D widget
-        if (!m_3dWidget) {
-            // Lazy initialization of 3D widget (shouldn't happen as it's default)
-            VtkUtils::vtkInitOnce(m_3dRep);
-            VtkUtils::vtkInitOnce(m_3dWidget);
-            
-            // Set representation BEFORE SetInteractor/SetRenderer
-            m_3dWidget->SetRepresentation(m_3dRep);
-            
-            if (m_interactor) {
-                m_3dWidget->SetInteractor(m_interactor);
-            }
-            if (m_renderer) {
-                m_3dRep->SetRenderer(m_renderer);
-            }
-            
-            // Following ParaView's approach:
-            // 1. InstantiateHandleRepresentation
-            m_3dRep->InstantiateHandleRepresentation();
-            
-            // 2. Configure appearance AFTER instantiation but BEFORE enabling
-            configureAngleRep3D(m_3dRep);
-            
-            // 3. Build representation
-            m_3dRep->BuildRepresentation();
-            
-            hookWidget(m_3dWidget);  // Hook observer for 3D widget
-        }
-        if (m_3dWidget) {
-            m_3dWidget->On();
-        }
-        if (m_2dWidget) {
-            m_2dWidget->Off();
+        m_rep->BuildRepresentation();
+        
+        // Reapply text properties after BuildRepresentation
+        applyTextPropertiesToLabel();
+        
+        if (m_widget) {
+            m_widget->Modified();
         }
     }
     update();
+}
+
+void cvProtractorTool::lockInteraction() {
+    // Disable VTK widget interaction (handles cannot be moved)
+    if (m_widget) {
+        m_widget->SetProcessEvents(0);  // Disable event processing
+    }
+
+    // Change all widget elements to indicate locked state (very dimmed, 10%
+    // brightness)
+    if (m_rep) {
+        // 1. Dim rays (10% brightness, 50% opacity for very obvious locked
+        // effect)
+        if (auto* lineProp = m_rep->GetLineProperty()) {
+            lineProp->SetColor(m_currentColor[0] * 0.1, m_currentColor[1] * 0.1,
+                               m_currentColor[2] * 0.1);
+            lineProp->SetOpacity(0.5);
+        }
+        if (auto* selectedLineProp = m_rep->GetSelectedLineProperty()) {
+            selectedLineProp->SetColor(m_currentColor[0] * 0.1,
+                                       m_currentColor[1] * 0.1,
+                                       m_currentColor[2] * 0.1);
+            selectedLineProp->SetOpacity(0.5);
+        }
+
+        // 2. Dim handles (points) - 50% opacity
+        if (auto* handleProp = m_rep->GetHandleProperty()) {
+            handleProp->SetOpacity(0.5);
+        }
+        if (auto* selectedHandleProp = m_rep->GetSelectedHandleProperty()) {
+            selectedHandleProp->SetOpacity(0.5);
+        }
+
+        // First build representation to update geometry
+        m_rep->BuildRepresentation();
+
+        // Then set locked state properties AFTER BuildRepresentation
+        // (BuildRepresentation may reset some properties, so we override them
+        // here)
+
+        // 3. Dim angle label - 50% opacity with dark gray
+        if (auto* labelActor = m_rep->GetAngleLabelActor()) {
+            if (auto* textProp = labelActor->GetTextProperty()) {
+                textProp->SetOpacity(0.5);
+                textProp->SetColor(0.5, 0.5,
+                                   0.5);  // Very dark gray for locked state
+                textProp->Modified();     // Mark as modified
+            }
+            labelActor->Modified();  // Mark actor as modified
+        }
+
+        // 4. Dim angle arc - 50% opacity with very dark yellow
+        if (auto* arcActor = m_rep->GetAngleArcActor()) {
+            if (auto* arcProp = arcActor->GetProperty()) {
+                arcProp->SetOpacity(0.5);
+                arcProp->SetColor(0.5, 0.5,
+                                  0.0);  // Very dark yellow for locked state
+                arcProp->Modified();     // Mark as modified
+            }
+            arcActor->Modified();  // Mark actor as modified
+        }
+
+        if (m_widget) {
+            m_widget->Modified();
+            m_widget->Render();  // Force render to apply visual changes
+        }
+    }
+
+    // Force render window update to show locked state
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
+    }
+
+    // Disable UI controls
+    if (m_configUi) {
+        m_configUi->point1XSpinBox->setEnabled(false);
+        m_configUi->point1YSpinBox->setEnabled(false);
+        m_configUi->point1ZSpinBox->setEnabled(false);
+        m_configUi->centerXSpinBox->setEnabled(false);
+        m_configUi->centerYSpinBox->setEnabled(false);
+        m_configUi->centerZSpinBox->setEnabled(false);
+        m_configUi->point2XSpinBox->setEnabled(false);
+        m_configUi->point2YSpinBox->setEnabled(false);
+        m_configUi->point2ZSpinBox->setEnabled(false);
+        m_configUi->pickPoint1ToolButton->setEnabled(false);
+        m_configUi->pickCenterToolButton->setEnabled(false);
+        m_configUi->pickPoint2ToolButton->setEnabled(false);
+        m_configUi->widgetVisibilityCheckBox->setEnabled(false);
+        m_configUi->arcVisibilityCheckBox->setEnabled(false);
+    }
+
+    // Disable keyboard shortcuts
+    disableShortcuts();
+}
+
+void cvProtractorTool::unlockInteraction() {
+    // Enable VTK widget interaction
+    if (m_widget) {
+        m_widget->SetProcessEvents(1);  // Enable event processing
+    }
+
+    // Restore all widget elements to active/unlocked state (full color and
+    // opacity)
+    if (m_rep) {
+        // 1. Restore rays (full brightness and opacity)
+        if (auto* lineProp = m_rep->GetLineProperty()) {
+            lineProp->SetColor(m_currentColor[0], m_currentColor[1],
+                               m_currentColor[2]);
+            lineProp->SetOpacity(1.0);
+        }
+        if (auto* selectedLineProp = m_rep->GetSelectedLineProperty()) {
+            selectedLineProp->SetColor(m_currentColor[0], m_currentColor[1],
+                                       m_currentColor[2]);
+            selectedLineProp->SetOpacity(1.0);
+        }
+
+        // 2. Restore handles (points)
+        if (auto* handleProp = m_rep->GetHandleProperty()) {
+            handleProp->SetOpacity(1.0);
+        }
+        if (auto* selectedHandleProp = m_rep->GetSelectedHandleProperty()) {
+            selectedHandleProp->SetOpacity(1.0);
+        }
+
+        // First build representation to update geometry
+        m_rep->BuildRepresentation();
+
+        // Then set unlocked state properties AFTER BuildRepresentation
+        // (BuildRepresentation may reset some properties, so we override them
+        // here)
+
+        // 3. Restore angle label to user-configured settings
+        if (auto* labelActor = m_rep->GetAngleLabelActor()) {
+            if (auto* textProp = labelActor->GetTextProperty()) {
+                textProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+                textProp->SetOpacity(m_fontOpacity);
+                textProp->Modified();  // Mark as modified
+            }
+            labelActor->Modified();  // Mark actor as modified
+        }
+
+        // 4. Restore angle arc (full opacity and yellow color)
+        if (auto* arcActor = m_rep->GetAngleArcActor()) {
+            if (auto* arcProp = arcActor->GetProperty()) {
+                arcProp->SetOpacity(1.0);
+                arcProp->SetColor(1.0, 1.0, 0.0);  // Yellow color
+                arcProp->Modified();               // Mark as modified
+            }
+            arcActor->Modified();  // Mark actor as modified
+        }
+
+        if (m_widget) {
+            m_widget->Modified();
+            m_widget->Render();  // Force render to apply visual changes
+        }
+    }
+
+    // Force render window update to show unlocked state
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
+    }
+
+    // Enable UI controls
+    if (m_configUi) {
+        m_configUi->point1XSpinBox->setEnabled(true);
+        m_configUi->point1YSpinBox->setEnabled(true);
+        m_configUi->point1ZSpinBox->setEnabled(true);
+        m_configUi->centerXSpinBox->setEnabled(true);
+        m_configUi->centerYSpinBox->setEnabled(true);
+        m_configUi->centerZSpinBox->setEnabled(true);
+        m_configUi->point2XSpinBox->setEnabled(true);
+        m_configUi->point2YSpinBox->setEnabled(true);
+        m_configUi->point2ZSpinBox->setEnabled(true);
+        m_configUi->pickPoint1ToolButton->setEnabled(true);
+        m_configUi->pickCenterToolButton->setEnabled(true);
+        m_configUi->pickPoint2ToolButton->setEnabled(true);
+        m_configUi->widgetVisibilityCheckBox->setEnabled(true);
+        m_configUi->arcVisibilityCheckBox->setEnabled(true);
+    }
+
+    // Re-enable keyboard shortcuts
+    if (m_pickingHelpers.isEmpty()) {
+        // Shortcuts haven't been created yet - create them now
+        if (m_vtkWidget) {
+            CVLog::PrintDebug(
+                    QString("[cvProtractorTool::unlockInteraction] Creating "
+                            "shortcuts for tool=%1, using saved vtkWidget=%2")
+                            .arg((quintptr)this, 0, 16)
+                            .arg((quintptr)m_vtkWidget, 0, 16));
+            setupShortcuts(m_vtkWidget);
+            CVLog::PrintDebug(
+                    QString("[cvProtractorTool::unlockInteraction] After "
+                            "setupShortcuts, m_pickingHelpers.size()=%1")
+                            .arg(m_pickingHelpers.size()));
+        } else {
+            CVLog::PrintDebug(
+                    QString("[cvProtractorTool::unlockInteraction] m_vtkWidget "
+                            "is null for tool=%1, cannot create shortcuts")
+                            .arg((quintptr)this, 0, 16));
+        }
+    } else {
+        // Shortcuts already exist - just enable them
+        CVLog::PrintDebug(QString("[cvProtractorTool::unlockInteraction] "
+                                  "Enabling %1 existing shortcuts for tool=%2")
+                                  .arg(m_pickingHelpers.size())
+                                  .arg((quintptr)this, 0, 16));
+        for (cvPointPickingHelper* helper : m_pickingHelpers) {
+            if (helper) {
+                helper->setEnabled(true,
+                                   false);  // Enable without setting focus
+            }
+        }
+    }
+}
+
+void cvProtractorTool::setInstanceLabel(const QString& label) {
+    // Store the instance label
+    m_instanceLabel = label;
+
+    // Update the VTK representation's label suffix
+    if (m_rep) {
+        m_rep->SetLabelSuffix(m_instanceLabel.toUtf8().constData());
+        
+        // Call applyFontProperties() which will rebuild representation
+        // and reapply font properties correctly
+        applyFontProperties();
+    }
 }
 
 void cvProtractorTool::on_point1XSpinBox_valueChanged(double arg1) {
@@ -619,31 +872,14 @@ void cvProtractorTool::on_point1XSpinBox_valueChanged(double arg1) {
 
     VtkUtils::SignalBlocker blocker(m_configUi->point1XSpinBox);
 
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint1WorldPosition(pos);
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint1WorldPosition(pos);
         newPos[1] = pos[1];
         newPos[2] = pos[2];
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(newPos[0], newPos[1], newPos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetPoint1DisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint1WorldPosition(pos);
-        newPos[1] = pos[1];
-        newPos[2] = pos[2];
-        m_3dRep->SetPoint1WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();
+        m_rep->SetPoint1WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
     updateAngleDisplay();
     update();
@@ -657,31 +893,14 @@ void cvProtractorTool::on_point1YSpinBox_valueChanged(double arg1) {
 
     VtkUtils::SignalBlocker blocker(m_configUi->point1YSpinBox);
 
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint1WorldPosition(pos);
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint1WorldPosition(pos);
         newPos[0] = pos[0];
         newPos[2] = pos[2];
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(newPos[0], newPos[1], newPos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetPoint1DisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint1WorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[2] = pos[2];
-        m_3dRep->SetPoint1WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();
+        m_rep->SetPoint1WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
     updateAngleDisplay();
     update();
@@ -695,31 +914,14 @@ void cvProtractorTool::on_point1ZSpinBox_valueChanged(double arg1) {
 
     VtkUtils::SignalBlocker blocker(m_configUi->point1ZSpinBox);
 
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint1WorldPosition(pos);
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint1WorldPosition(pos);
         newPos[0] = pos[0];
         newPos[1] = pos[1];
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(newPos[0], newPos[1], newPos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetPoint1DisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint1WorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[1] = pos[1];
-        m_3dRep->SetPoint1WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();
+        m_rep->SetPoint1WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
     updateAngleDisplay();
     update();
@@ -733,31 +935,14 @@ void cvProtractorTool::on_centerXSpinBox_valueChanged(double arg1) {
 
     VtkUtils::SignalBlocker blocker(m_configUi->centerXSpinBox);
 
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetCenterWorldPosition(pos);
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetCenterWorldPosition(pos);
         newPos[1] = pos[1];
         newPos[2] = pos[2];
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(newPos[0], newPos[1], newPos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetCenterDisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetCenterWorldPosition(pos);
-        newPos[1] = pos[1];
-        newPos[2] = pos[2];
-        m_3dRep->SetCenterWorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();
+        m_rep->SetCenterWorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
     updateAngleDisplay();
     update();
@@ -771,31 +956,14 @@ void cvProtractorTool::on_centerYSpinBox_valueChanged(double arg1) {
 
     VtkUtils::SignalBlocker blocker(m_configUi->centerYSpinBox);
 
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetCenterWorldPosition(pos);
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetCenterWorldPosition(pos);
         newPos[0] = pos[0];
         newPos[2] = pos[2];
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(newPos[0], newPos[1], newPos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetCenterDisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetCenterWorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[2] = pos[2];
-        m_3dRep->SetCenterWorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();
+        m_rep->SetCenterWorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
     updateAngleDisplay();
     update();
@@ -809,31 +977,14 @@ void cvProtractorTool::on_centerZSpinBox_valueChanged(double arg1) {
 
     VtkUtils::SignalBlocker blocker(m_configUi->centerZSpinBox);
 
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetCenterWorldPosition(pos);
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetCenterWorldPosition(pos);
         newPos[0] = pos[0];
         newPos[1] = pos[1];
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(newPos[0], newPos[1], newPos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetCenterDisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetCenterWorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[1] = pos[1];
-        m_3dRep->SetCenterWorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();
+        m_rep->SetCenterWorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
     updateAngleDisplay();
     update();
@@ -847,31 +998,14 @@ void cvProtractorTool::on_point2XSpinBox_valueChanged(double arg1) {
 
     VtkUtils::SignalBlocker blocker(m_configUi->point2XSpinBox);
 
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint2WorldPosition(pos);
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint2WorldPosition(pos);
         newPos[1] = pos[1];
         newPos[2] = pos[2];
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(newPos[0], newPos[1], newPos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetPoint2DisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint2WorldPosition(pos);
-        newPos[1] = pos[1];
-        newPos[2] = pos[2];
-        m_3dRep->SetPoint2WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();
+        m_rep->SetPoint2WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
     updateAngleDisplay();
     update();
@@ -885,31 +1019,14 @@ void cvProtractorTool::on_point2YSpinBox_valueChanged(double arg1) {
 
     VtkUtils::SignalBlocker blocker(m_configUi->point2YSpinBox);
 
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint2WorldPosition(pos);
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint2WorldPosition(pos);
         newPos[0] = pos[0];
         newPos[2] = pos[2];
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(newPos[0], newPos[1], newPos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetPoint2DisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint2WorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[2] = pos[2];
-        m_3dRep->SetPoint2WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();
+        m_rep->SetPoint2WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
     updateAngleDisplay();
     update();
@@ -923,31 +1040,14 @@ void cvProtractorTool::on_point2ZSpinBox_valueChanged(double arg1) {
 
     VtkUtils::SignalBlocker blocker(m_configUi->point2ZSpinBox);
 
-    if (m_2dWidget && m_2dWidget->GetEnabled()) {
-        m_2dRep->GetPoint2WorldPosition(pos);
+    if (m_widget && m_widget->GetEnabled()) {
+        m_rep->GetPoint2WorldPosition(pos);
         newPos[0] = pos[0];
         newPos[1] = pos[1];
-        // For 2D representation, convert world to display coordinates
-        if (m_renderer) {
-            double displayPos[3];
-            m_renderer->SetWorldPoint(newPos[0], newPos[1], newPos[2], 1.0);
-            m_renderer->WorldToDisplay();
-            const double* display = m_renderer->GetDisplayPoint();
-            displayPos[0] = display[0];
-            displayPos[1] = display[1];
-            displayPos[2] = display[2];
-            m_2dRep->SetPoint2DisplayPosition(displayPos);
-            m_2dRep->BuildRepresentation();
-            m_2dWidget->Modified();
-        }
-    } else if (m_3dWidget && m_3dWidget->GetEnabled()) {
-        m_3dRep->GetPoint2WorldPosition(pos);
-        newPos[0] = pos[0];
-        newPos[1] = pos[1];
-        m_3dRep->SetPoint2WorldPosition(newPos);
-        m_3dRep->BuildRepresentation();
-        m_3dWidget->Modified();
-        m_3dWidget->Render();
+        m_rep->SetPoint2WorldPosition(newPos);
+        m_rep->BuildRepresentation();
+        m_widget->Modified();
+        m_widget->Render();
     }
     updateAngleDisplay();
     update();
@@ -994,41 +1094,61 @@ void cvProtractorTool::onWorldCenterChanged(double* pos) {
 }
 
 void cvProtractorTool::hookWidget(
-        const vtkSmartPointer<vtkAngleWidget>& widget) {
-    VtkUtils::AngleWidgetObserver* observer =
-            new VtkUtils::AngleWidgetObserver(this);
-    observer->attach(widget);
-    connect(observer, &VtkUtils::AngleWidgetObserver::angleChanged, this,
-            &cvProtractorTool::onAngleChanged);
-    connect(observer, &VtkUtils::AngleWidgetObserver::worldPoint1Changed, this,
-            &cvProtractorTool::onWorldPoint1Changed);
-    connect(observer, &VtkUtils::AngleWidgetObserver::worldPoint2Changed, this,
-            &cvProtractorTool::onWorldPoint2Changed);
-    connect(observer, &VtkUtils::AngleWidgetObserver::worldCenterChanged, this,
-            &cvProtractorTool::onWorldCenterChanged);
+        const vtkSmartPointer<cvConstrainedPolyLineWidget>& widget) {
+    // TODO: Create a PolyLineWidgetObserver similar to AngleWidgetObserver
+    // For now, we'll use direct callbacks via vtkCommand::InteractionEvent
+
+    vtkNew<vtkCallbackCommand> callback;
+    callback->SetCallback([](vtkObject* caller, unsigned long /*eid*/,
+                             void* clientData, void* /*callData*/) {
+        cvProtractorTool* self = static_cast<cvProtractorTool*>(clientData);
+        self->updateAngleDisplay();
+    });
+    callback->SetClientData(this);
+
+    widget->AddObserver(vtkCommand::InteractionEvent, callback);
 }
 
 void cvProtractorTool::updateAngleDisplay() {
     if (!m_configUi) {
-        CVLog::Warning("[cvProtractorTool] updateAngleDisplay: m_configUi is null!");
+        CVLog::Warning(
+                "[cvProtractorTool] updateAngleDisplay: m_configUi is null!");
         return;
     }
-    
-    // IMPORTANT: vtkAngleRepresentation2D::GetAngle() returns DEGREES
-    //            vtkAngleRepresentation3D::GetAngle() returns RADIANS
+
+    // cvConstrainedPolyLineRepresentation::GetAngle() returns DEGREES
     double angleDegrees = 0.0;
-    bool is2D = m_2dWidget && m_2dWidget->GetEnabled();
-    bool is3D = m_3dWidget && m_3dWidget->GetEnabled();
-    
-    if (is2D && m_2dRep) {
-        // 2D representation returns degrees directly
-        angleDegrees = m_2dRep->GetAngle();
-    } else if (is3D && m_3dRep) {
-        // 3D representation returns radians, convert to degrees
-        double angleRadians = m_3dRep->GetAngle();
-        angleDegrees = vtkMath::DegreesFromRadians(angleRadians);
+
+    if (m_rep) {
+        angleDegrees = m_rep->GetAngle();
+
+        // Also update the point coordinates in the UI
+        double p1[3], center[3], p2[3];
+        m_rep->GetHandlePosition(0, p1);
+        m_rep->GetHandlePosition(1, center);
+        m_rep->GetHandlePosition(2, p2);
+
+        VtkUtils::SignalBlocker blocker1(m_configUi->point1XSpinBox);
+        VtkUtils::SignalBlocker blocker2(m_configUi->point1YSpinBox);
+        VtkUtils::SignalBlocker blocker3(m_configUi->point1ZSpinBox);
+        VtkUtils::SignalBlocker blocker4(m_configUi->centerXSpinBox);
+        VtkUtils::SignalBlocker blocker5(m_configUi->centerYSpinBox);
+        VtkUtils::SignalBlocker blocker6(m_configUi->centerZSpinBox);
+        VtkUtils::SignalBlocker blocker7(m_configUi->point2XSpinBox);
+        VtkUtils::SignalBlocker blocker8(m_configUi->point2YSpinBox);
+        VtkUtils::SignalBlocker blocker9(m_configUi->point2ZSpinBox);
+
+        m_configUi->point1XSpinBox->setValue(p1[0]);
+        m_configUi->point1YSpinBox->setValue(p1[1]);
+        m_configUi->point1ZSpinBox->setValue(p1[2]);
+        m_configUi->centerXSpinBox->setValue(center[0]);
+        m_configUi->centerYSpinBox->setValue(center[1]);
+        m_configUi->centerZSpinBox->setValue(center[2]);
+        m_configUi->point2XSpinBox->setValue(p2[0]);
+        m_configUi->point2YSpinBox->setValue(p2[1]);
+        m_configUi->point2ZSpinBox->setValue(p2[2]);
     }
-    
+
     VtkUtils::SignalBlocker blocker(m_configUi->angleSpinBox);
     m_configUi->angleSpinBox->setValue(angleDegrees);
     emit measurementValueChanged();
@@ -1089,51 +1209,34 @@ void cvProtractorTool::on_widgetVisibilityCheckBox_toggled(bool checked) {
     if (!m_configUi) return;
 
     // Show or hide the widget
-    if (m_2dWidget) {
+    if (m_widget) {
         if (checked) {
-            m_2dWidget->On();
+            m_widget->On();
         } else {
-            m_2dWidget->Off();
-        }
-    }
-    if (m_3dWidget) {
-        if (checked) {
-            m_3dWidget->On();
-        } else {
-            m_3dWidget->Off();
+            m_widget->Off();
         }
     }
 
-    update();
-}
-
-void cvProtractorTool::on_ray1VisibilityCheckBox_toggled(bool checked) {
-    if (!m_configUi) return;
-
-    // Show or hide ray 1
-    if (m_2dRep) {
-        m_2dRep->SetRay1Visibility(checked);
-        m_2dRep->BuildRepresentation();
+    // Explicitly control representation visibility to ensure arc and label are
+    // hidden/shown
+    if (m_rep) {
+        m_rep->SetVisibility(checked ? 1 : 0);
+        m_rep->BuildRepresentation();
+        
+        // Reapply text properties after BuildRepresentation
+        if (checked) {
+            applyTextPropertiesToLabel();
+        }
+        
+        if (m_widget) {
+            m_widget->Modified();
+            m_widget->Render();
+        }
     }
-    if (m_3dRep) {
-        m_3dRep->SetRay1Visibility(checked);
-        m_3dRep->BuildRepresentation();
-    }
 
-    update();
-}
-
-void cvProtractorTool::on_ray2VisibilityCheckBox_toggled(bool checked) {
-    if (!m_configUi) return;
-
-    // Show or hide ray 2
-    if (m_2dRep) {
-        m_2dRep->SetRay2Visibility(checked);
-        m_2dRep->BuildRepresentation();
-    }
-    if (m_3dRep) {
-        m_3dRep->SetRay2Visibility(checked);
-        m_3dRep->BuildRepresentation();
+    // Force render window update
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
     }
 
     update();
@@ -1143,80 +1246,25 @@ void cvProtractorTool::on_arcVisibilityCheckBox_toggled(bool checked) {
     if (!m_configUi) return;
 
     // Show or hide the arc
-    if (m_2dRep) {
-        m_2dRep->SetArcVisibility(checked);
-        m_2dRep->BuildRepresentation();
-    }
-    if (m_3dRep) {
-        m_3dRep->SetArcVisibility(checked);
-        m_3dRep->BuildRepresentation();
+    if (m_rep) {
+        m_rep->SetShowAngleArc(checked ? 1 : 0);
+        m_rep->BuildRepresentation();
+        
+        // Reapply text properties after BuildRepresentation
+        applyTextPropertiesToLabel();
+
+        // Explicitly control arc actor visibility
+        if (auto* arcActor = m_rep->GetAngleArcActor()) {
+            arcActor->SetVisibility(checked);
+        }
+
+        if (m_widget) {
+            m_widget->Modified();
+            m_widget->Render();
+        }
     }
 
     update();
-}
-
-void cvProtractorTool::setupPointPickingShortcuts(QWidget* vtkWidget) {
-    if (!vtkWidget) return;
-    
-    // '1' - Pick point 1 on surface
-    cvPointPickingHelper* pickHelper1 = new cvPointPickingHelper(
-        QKeySequence(tr("1")), false, vtkWidget);
-    pickHelper1->setInteractor(m_interactor);
-    pickHelper1->setRenderer(m_renderer);
-    pickHelper1->setContextWidget(this);
-    connect(pickHelper1, &cvPointPickingHelper::pick,
-            this, &cvProtractorTool::pickKeyboardPoint1);
-    m_pickingHelpers.append(pickHelper1);
-
-    // 'Ctrl+1' - Pick point 1, snap to mesh points
-    cvPointPickingHelper* pickHelper1Snap = new cvPointPickingHelper(
-        QKeySequence(tr("Ctrl+1")), true, vtkWidget);
-    pickHelper1Snap->setInteractor(m_interactor);
-    pickHelper1Snap->setRenderer(m_renderer);
-    pickHelper1Snap->setContextWidget(this);
-    connect(pickHelper1Snap, &cvPointPickingHelper::pick,
-            this, &cvProtractorTool::pickKeyboardPoint1);
-    m_pickingHelpers.append(pickHelper1Snap);
-
-    // 'C' - Pick center on surface
-    cvPointPickingHelper* pickHelperCenter = new cvPointPickingHelper(
-        QKeySequence(tr("C")), false, vtkWidget);
-    pickHelperCenter->setInteractor(m_interactor);
-    pickHelperCenter->setRenderer(m_renderer);
-    pickHelperCenter->setContextWidget(this);
-    connect(pickHelperCenter, &cvPointPickingHelper::pick,
-            this, &cvProtractorTool::pickKeyboardCenter);
-    m_pickingHelpers.append(pickHelperCenter);
-
-    // 'Ctrl+C' - Pick center, snap to mesh points
-    cvPointPickingHelper* pickHelperCenterSnap = new cvPointPickingHelper(
-        QKeySequence(tr("Ctrl+C")), true, vtkWidget);
-    pickHelperCenterSnap->setInteractor(m_interactor);
-    pickHelperCenterSnap->setRenderer(m_renderer);
-    pickHelperCenterSnap->setContextWidget(this);
-    connect(pickHelperCenterSnap, &cvPointPickingHelper::pick,
-            this, &cvProtractorTool::pickKeyboardCenter);
-    m_pickingHelpers.append(pickHelperCenterSnap);
-
-    // '2' - Pick point 2 on surface
-    cvPointPickingHelper* pickHelper2 = new cvPointPickingHelper(
-        QKeySequence(tr("2")), false, vtkWidget);
-    pickHelper2->setInteractor(m_interactor);
-    pickHelper2->setRenderer(m_renderer);
-    pickHelper2->setContextWidget(this);
-    connect(pickHelper2, &cvPointPickingHelper::pick,
-            this, &cvProtractorTool::pickKeyboardPoint2);
-    m_pickingHelpers.append(pickHelper2);
-
-    // 'Ctrl+2' - Pick point 2, snap to mesh points
-    cvPointPickingHelper* pickHelper2Snap = new cvPointPickingHelper(
-        QKeySequence(tr("Ctrl+2")), true, vtkWidget);
-    pickHelper2Snap->setInteractor(m_interactor);
-    pickHelper2Snap->setRenderer(m_renderer);
-    pickHelper2Snap->setContextWidget(this);
-    connect(pickHelper2Snap, &cvPointPickingHelper::pick,
-            this, &cvProtractorTool::pickKeyboardPoint2);
-    m_pickingHelpers.append(pickHelper2Snap);
 }
 
 void cvProtractorTool::pickKeyboardPoint1(double x, double y, double z) {
@@ -1234,3 +1282,76 @@ void cvProtractorTool::pickKeyboardPoint2(double x, double y, double z) {
     setPoint2(pos);
 }
 
+void cvProtractorTool::applyTextPropertiesToLabel() {
+    if (!m_rep) return;
+    
+    // Apply font properties to the angle label actor
+    // This does NOT call BuildRepresentation()
+    if (auto* labelActor = m_rep->GetAngleLabelActor()) {
+        if (auto* textProp = labelActor->GetTextProperty()) {
+            // Set font family and size
+            textProp->SetFontFamilyAsString(m_fontFamily.toUtf8().constData());
+            textProp->SetFontSize(m_fontSize);
+            
+            // Set color and opacity
+            textProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+            textProp->SetOpacity(m_fontOpacity);
+            
+            // Set style properties
+            textProp->SetBold(m_fontBold ? 1 : 0);
+            textProp->SetItalic(m_fontItalic ? 1 : 0);
+            textProp->SetShadow(m_fontShadow ? 1 : 0);
+            
+            // Apply horizontal justification
+            if (m_horizontalJustification == "Left") {
+                textProp->SetJustificationToLeft();
+            } else if (m_horizontalJustification == "Center") {
+                textProp->SetJustificationToCentered();
+            } else if (m_horizontalJustification == "Right") {
+                textProp->SetJustificationToRight();
+            }
+            
+            // Apply vertical justification
+            if (m_verticalJustification == "Top") {
+                textProp->SetVerticalJustificationToTop();
+            } else if (m_verticalJustification == "Center") {
+                textProp->SetVerticalJustificationToCentered();
+            } else if (m_verticalJustification == "Bottom") {
+                textProp->SetVerticalJustificationToBottom();
+            }
+            
+            // Mark text property as modified to ensure VTK updates
+            textProp->Modified();
+        }
+        
+        // Mark label actor as modified to trigger re-render
+        labelActor->Modified();
+    }
+}
+
+void cvProtractorTool::applyFontProperties() {
+    if (!m_rep) return;
+
+    // CRITICAL: First rebuild representation to update geometry
+    // Then set text properties AFTER BuildRepresentation()
+    // BuildRepresentation() may reset some text properties to defaults,
+    // so we must set them AFTER, not before (like cvDistanceTool does)
+    m_rep->BuildRepresentation();
+    
+    // Apply text properties AFTER BuildRepresentation
+    applyTextPropertiesToLabel();
+    
+    // Mark widget as modified and trigger render
+    if (m_widget) {
+        m_widget->Modified();
+        m_widget->Render();
+    }
+
+    // Force render window update to apply changes immediately
+    if (m_interactor && m_interactor->GetRenderWindow()) {
+        m_interactor->GetRenderWindow()->Render();
+    }
+
+    // Update Qt widget
+    update();
+}

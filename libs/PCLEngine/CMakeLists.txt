@@ -43,6 +43,9 @@ if (USE_PCL_BACKEND)
     # Utility module
     file(GLOB_RECURSE VtkExtensions_Utility_List ${QVTK_EXTENSIONS}/Utility/*)
     source_group("VTKExtensions\\Utility" FILES ${VtkExtensions_Utility_List})
+    # ConstrainedWidgets module
+    file(GLOB_RECURSE VtkExtensions_ConstrainedWidgets_List ${QVTK_EXTENSIONS}/ConstrainedWidgets/*)
+    source_group("VTKExtensions\\ConstrainedWidgets" FILES ${VtkExtensions_ConstrainedWidgets_List})
 
     set(VtkExtensions_list
             ${VtkExtensions_Core_List}
@@ -53,6 +56,7 @@ if (USE_PCL_BACKEND)
             ${VtkExtensions_InteractionStyle_List}
             ${VtkExtensions_Views_List}
             ${VtkExtensions_Utility_List}
+            ${VtkExtensions_ConstrainedWidgets_List}
             )
 
     # VTK UTILS MODULE
@@ -80,6 +84,8 @@ if (USE_PCL_BACKEND)
     source_group("Tools\\PickingTools" FILES ${PickingTools_list})
     file(GLOB_RECURSE TransformTools_list ${QPCL_TOOLS}/TransformTools/*)
     source_group("Tools\\TransformTools" FILES ${TransformTools_list})
+    file(GLOB_RECURSE SelectionTools_list ${QPCL_TOOLS}/SelectionTools/*)
+    source_group("Tools\\SelectionTools" FILES ${SelectionTools_list})
 
     set(Tools_list
             ${Basic_list}
@@ -90,7 +96,8 @@ if (USE_PCL_BACKEND)
             ${FilterTools_list}
             ${MeasurementTools_list}
             ${PickingTools_list}
-            ${TransformTools_list})
+            ${TransformTools_list}
+            ${SelectionTools_list})
 
     # PCL VISUALIZATION MODULE
     if (WIN32 OR UNIX)
@@ -100,7 +107,12 @@ if (USE_PCL_BACKEND)
         source_group("visualization" FILES ${PclVis_list})
     endif ()
 
-    # PCL UTILS MODULE
+    # UTILS MODULE (Core conversion utilities)
+    SET(QPCL_CORE_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/Utils)
+    file(GLOB_RECURSE Utils_list ${QPCL_CORE_UTILS}/*)
+    source_group("Utils" FILES ${Utils_list})
+
+    # PCL UTILS MODULE (Legacy utilities)
     SET(QPCL_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/PclUtils)
     file(GLOB_RECURSE PclUtils_list ${QPCL_UTILS}/*)
     source_group("PclUtils" FILES ${PclUtils_list})
@@ -112,6 +124,7 @@ if (USE_PCL_BACKEND)
             ${VtkExtensions_list}
             ${Tools_list}
             ${PclVis_list}
+            ${Utils_list}
             ${PclUtils_list})
 
     if (MSVC)
@@ -120,7 +133,10 @@ if (USE_PCL_BACKEND)
     endif ()
 
     target_include_directories(${PROJECT_NAME} PUBLIC
-            ${PCL_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/PclUtils")
+            ${PCL_INCLUDE_DIRS}
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/Utils"
+            "${CMAKE_CURRENT_SOURCE_DIR}/PclUtils")
 
     if (CMAKE_VERSION VERSION_LESS 3.13)
         link_directories(${PCL_LIBRARY_DIRS})

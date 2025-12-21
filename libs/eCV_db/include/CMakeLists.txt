@@ -105,6 +105,10 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraIntrinsic.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraParameters.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraTrajectory.h
+		${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvKeySequences.h
+		${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvModalShortcut.h
+		${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvShortcutDecorator.h
+		${CMAKE_CURRENT_LIST_DIR}/widgets/ecvFontPropertyWidget.h
 )
 
 target_include_directories( ${PROJECT_NAME}

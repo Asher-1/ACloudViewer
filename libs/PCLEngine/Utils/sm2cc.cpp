@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "sm2cc.h"
+#include <Utils/sm2cc.h>
 
 // Local
-#include "PCLConv.h"
-#include "my_point_types.h"
+#include <Utils/PCLConv.h>
+#include <Utils/my_point_types.h>
 
 // PCL
 #include <pcl/common/io.h>

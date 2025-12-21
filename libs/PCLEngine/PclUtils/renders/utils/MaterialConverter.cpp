@@ -9,11 +9,10 @@
 
 #include <CVLog.h>
 #include <CVTools.h>
+#include <Utils/sm2cc.h>
 #include <ecvMaterial.h>
 #include <ecvMaterialSet.h>
 #include <pcl/io/obj_io.h>  // For pcl::TexMaterial
-
-#include "sm2cc.h"
 
 namespace PclUtils {
 namespace renders {

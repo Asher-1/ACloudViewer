@@ -104,4 +104,8 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraIntrinsic.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraParameters.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraTrajectory.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvKeySequences.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvModalShortcut.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvShortcutDecorator.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/widgets/ecvFontPropertyWidget.cpp
 )
