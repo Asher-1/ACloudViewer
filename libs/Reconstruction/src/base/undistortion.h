@@ -44,7 +44,7 @@ class COLMAPUndistorter : public Thread {
 public:
     COLMAPUndistorter(
             const UndistortCameraOptions& options,
-            const Reconstruction& reconstruction,
+            Reconstruction* reconstruction,
             const std::string& image_path,
             const std::string& output_path,
             const int num_related_images = 20,
@@ -64,7 +64,7 @@ private:
     const std::string output_path_;
     const CopyType copy_type_;
     const int num_patch_match_src_images_;
-    const Reconstruction& reconstruction_;
+    Reconstruction* reconstruction_;
     const std::vector<image_t> image_ids_;
     std::vector<std::string> image_names_;
 };
@@ -73,7 +73,7 @@ private:
 class PMVSUndistorter : public Thread {
 public:
     PMVSUndistorter(const UndistortCameraOptions& options,
-                    const Reconstruction& reconstruction,
+                    Reconstruction* reconstruction,
                     const std::string& image_path,
                     const std::string& output_path);
 
@@ -91,14 +91,14 @@ private:
     UndistortCameraOptions options_;
     std::string image_path_;
     std::string output_path_;
-    const Reconstruction& reconstruction_;
+    Reconstruction* reconstruction_;
 };
 
 // Undistort images and prepare data for CMP-MVS.
 class CMPMVSUndistorter : public Thread {
 public:
     CMPMVSUndistorter(const UndistortCameraOptions& options,
-                      const Reconstruction& reconstruction,
+                      Reconstruction* reconstruction,
                       const std::string& image_path,
                       const std::string& output_path);
 
@@ -110,7 +110,7 @@ private:
     UndistortCameraOptions options_;
     std::string image_path_;
     std::string output_path_;
-    const Reconstruction& reconstruction_;
+    Reconstruction* reconstruction_;
 };
 
 // Undistort images and export undistorted cameras without the need for a
@@ -140,7 +140,7 @@ class StereoImageRectifier : public Thread {
 public:
     StereoImageRectifier(
             const UndistortCameraOptions& options,
-            const Reconstruction& reconstruction,
+            Reconstruction* reconstruction,
             const std::string& image_path,
             const std::string& output_path,
             const std::vector<std::pair<image_t, image_t>>& stereo_pairs);
@@ -154,7 +154,7 @@ private:
     std::string image_path_;
     std::string output_path_;
     const std::vector<std::pair<image_t, image_t>>& stereo_pairs_;
-    const Reconstruction& reconstruction_;
+    Reconstruction* reconstruction_;
 };
 
 // Undistort camera by resizing the image and shifting the principal point.

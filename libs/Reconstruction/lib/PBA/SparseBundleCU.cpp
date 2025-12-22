@@ -92,7 +92,7 @@ SparseBundleCU::SparseBundleCU(int device)
 size_t SparseBundleCU::GetMemCapacity() {
   if (__selected_device != __current_device) SetCudaDevice(__selected_device);
   size_t sz = ProgramCU::GetCudaMemoryCap();
-  if (sz < 1024) std::cout << "ERROR: CUDA is unlikely to be supported!\n";
+  if (sz < 1024) std::cout << "WARNING: CUDA is unlikely to be supported!\n";
   return sz < 1024 ? 0 : sz;
 }
 
@@ -721,7 +721,7 @@ void SparseBundleCU::NormalizeDataF() {
   }
 
   if (incompatible_radial_distortion) {
-    std::cout << "ERROR: incompatible radial distortion input; reset to 0;\n";
+    std::cout << "WARNING: incompatible radial distortion input; reset to 0;\n";
   }
 }
 

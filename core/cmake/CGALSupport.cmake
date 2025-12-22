@@ -9,9 +9,39 @@ if (BUILD_WITH_CONDA)
 		set(CGAL_DIR "${CONDA_PREFIX}/Library/lib/cmake/CGAL")
 	else()
 		set(CGAL_DIR "${CONDA_PREFIX}/lib/cmake/CGAL")
+		# Set include directories for GMP/MPFR in conda environment
 		set(GMPXX_INCLUDE_DIR "${CONDA_PREFIX}/include")
 		set(GMP_INCLUDE_DIR "${CONDA_PREFIX}/include")
 		set(MPFR_INCLUDE_DIR "${CONDA_PREFIX}/include")
+		
+		# Use find_library to get proper library paths (handles .so, .dylib, .a automatically)
+		find_library(GMP_LIBRARY_CONDA
+			NAMES gmp libgmp
+			PATHS ${CONDA_PREFIX}/lib
+			NO_DEFAULT_PATH
+		)
+		find_library(GMPXX_LIBRARY_CONDA
+			NAMES gmpxx libgmpxx
+			PATHS ${CONDA_PREFIX}/lib
+			NO_DEFAULT_PATH
+		)
+		find_library(MPFR_LIBRARY_CONDA
+			NAMES mpfr libmpfr
+			PATHS ${CONDA_PREFIX}/lib
+			NO_DEFAULT_PATH
+		)
+		
+		# Set library variables if found in conda
+		if(GMP_LIBRARY_CONDA)
+			set(GMP_LIBRARIES "${GMP_LIBRARY_CONDA}" CACHE FILEPATH "GMP library from conda" FORCE)
+			message(STATUS "Using GMP from conda: ${GMP_LIBRARY_CONDA}")
+		endif()
+		if(GMPXX_LIBRARY_CONDA)
+			set(GMPXX_LIBRARIES "${GMPXX_LIBRARY_CONDA}" CACHE FILEPATH "GMPXX library from conda" FORCE)
+		endif()
+		if(MPFR_LIBRARY_CONDA)
+			set(MPFR_LIBRARIES "${MPFR_LIBRARY_CONDA}" CACHE FILEPATH "MPFR library from conda" FORCE)
+		endif()
 	endif()
 endif()
 find_package( CGAL QUIET COMPONENTS Core ) # implies findGMP

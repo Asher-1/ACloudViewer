@@ -324,7 +324,7 @@ build_gui_app() {
                 "-DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=$BUILD_RIEGL"
                 "-DPLUGIN_IO_QFBX=OFF"
                 "-DPLUGIN_IO_QSTEP=OFF"
-                "-DPLUGIN_STANDARD_QCORK=OFF"
+                "-DPLUGIN_STANDARD_QCORK=ON"
                 "-DPLUGIN_STANDARD_QJSONRPC=ON"
                 "-DPLUGIN_STANDARD_QCLOUDLAYERS=ON"
                 "-DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON"

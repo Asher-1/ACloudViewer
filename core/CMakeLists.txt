@@ -211,21 +211,18 @@ endif ()
 
 # QT (optional)
 if (CVCORELIB_USE_QT_CONCURRENT)
-    find_package(Qt5
-            COMPONENTS
-            Concurrent
-            REQUIRED
+    # Qt5/Qt6 compatibility
+    # Note: Concurrent is already found in CMakeExternalLibs.cmake
+    # Use unified Qt:: prefix
+    target_link_libraries(${PROJECT_NAME}
+            PUBLIC
+            Qt::Concurrent
             )
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
             AUTOMOC OFF
             AUTORCC OFF
             AUTOUIC OFF
-            )
-
-    target_link_libraries(${PROJECT_NAME}
-            PUBLIC
-            Qt5::Concurrent
             )
 
     target_compile_definitions(${PROJECT_NAME}

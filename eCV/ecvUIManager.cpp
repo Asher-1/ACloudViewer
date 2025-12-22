@@ -14,6 +14,9 @@
 #include "ecvPersistentSettings.h"
 #include "ecvSettingManager.h"
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 int QUIWidget::deskWidth() {
     // return qApp->desktop()->availableGeometry().width();
     return qApp->primaryScreen()->geometry().width();
@@ -233,7 +236,10 @@ void QUIWidget::getQssColor(const QString &qss,
 void QUIWidget::setFormInCenter(QWidget *frm) {
     int frmX = frm->width();
     int frmY = frm->height();
+    // Qt5/Qt6 Compatibility: QDesktopWidget removed in Qt6
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QDesktopWidget w;
+#endif
     // int deskWidth = w.availableGeometry().width();
     int deskWidth = qApp->primaryScreen()->geometry().width();
     // int deskHeight = w.availableGeometry().height();
@@ -333,15 +339,27 @@ void QUIWidget::runWithSystem(const QString &strName,
 }
 
 bool QUIWidget::isIP(const QString &ip) {
-    QRegExp RegExp(
+    // Use QtCompat for Qt5/Qt6 compatibility
+    QtCompatRegExp RegExp(
             "((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?"
             "\\d\\d?)");
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QRegularExpressionMatch match = RegExp.match(ip);
+    return match.hasMatch();
+#else
     return RegExp.exactMatch(ip);
+#endif
 }
 
 bool QUIWidget::isMac(const QString &mac) {
-    QRegExp RegExp("^[A-F0-9]{2}(-[A-F0-9]{2}){5}$");
+    // Use QtCompat for Qt5/Qt6 compatibility
+    QtCompatRegExp RegExp("^[A-F0-9]{2}(-[A-F0-9]{2}){5}$");
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QRegularExpressionMatch match = RegExp.match(mac);
+    return match.hasMatch();
+#else
     return RegExp.exactMatch(mac);
+#endif
 }
 
 bool QUIWidget::isTel(const QString &tel) {
@@ -1308,7 +1326,12 @@ void QUIWidget::createTrayMenu() {
     connect(quitAction, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
 
     // 添加菜单
+    // Qt5/Qt6 Compatibility: QDesktopWidget removed in Qt6
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    trayMenu = new QMenu(nullptr);
+#else
     trayMenu = new QMenu((QWidget *)QApplication::desktop());
+#endif
     trayMenu->addAction(restoreWinAction);  // 将控件绑定到菜单
 
     // 添加分隔符

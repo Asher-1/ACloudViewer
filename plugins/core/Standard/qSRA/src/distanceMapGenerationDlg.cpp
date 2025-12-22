@@ -26,6 +26,9 @@
 // common
 #include <ecvQtHelpers.h>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>
@@ -1473,8 +1476,8 @@ void DistanceMapGenerationDlg::loadOverlaySymbols() {
         QString currentLine = stream.readLine();
         bool error = false;
         while (!currentLine.isNull()) {
-            QStringList tokens =
-                    currentLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+            QStringList tokens = qtCompatSplitRegex(currentLine, "\\s+",
+                                                    QtCompat::SkipEmptyParts);
             if (tokens.size() == 4) {
                 bool okX, okY, okZ;
                 CCVector3 P(static_cast<PointCoordinateType>(

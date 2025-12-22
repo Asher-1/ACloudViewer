@@ -63,11 +63,12 @@ function(cloudViewer_install_files) # 2 (or 3) arguments:
 endfunction(cloudViewer_install_files)
 
 # Extended 'install' command depending on the build configuration and OS
-# 4 arguments:
-#   - ARGV0 = signature
+# 4-5 arguments:
+#   - ARGV0 = signature ("DIRECTORY" or "FILES")
 #   - ARGV1 = target (warning: one project or one file at a time)
 #   - ARGV2 = base install destination (_debug or _withDebInfo will be automatically appended if multi-conf is supported)
 #   - ARGV3 = install destination suffix (optional)
+#   - ARGV4 = exclusion patterns (optional, list of PATTERN "pattern" EXCLUDE)
 function(cloudViewer_install_ext)
     if ("${ARGV0}" STREQUAL "DIRECTORY")
         set(INSTALL_OPTIONS FILES_MATCHING PATTERN "*")
@@ -75,8 +76,11 @@ function(cloudViewer_install_ext)
         if(EXISTS "${ARGV1}")
             set(INSTALL_OPTIONS FILES)
         else()
-            message(WARNING "File does not exist: ${ARGV1}")
-            return()
+            # For external project files that may not exist yet at configure time, 
+            # skip the existence check - they will be built before install
+            # message(WARNING "File does not exist at configure time (may be built later): ${ARGV1}")
+            # message(WARNING "File does not exist: ${ARGV1}")
+            set(INSTALL_OPTIONS FILES)
         endif()
     else ()
         set(INSTALL_OPTIONS "")
@@ -84,6 +88,11 @@ function(cloudViewer_install_ext)
 
     list(APPEND INSTALL_OPTIONS PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                 GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+    # Add exclusion patterns if provided (ARGV4)
+    if(${ARGC} GREATER 4)
+        list(APPEND INSTALL_OPTIONS ${ARGV4})
+    endif()
 
     if (APPLE)
         install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3}

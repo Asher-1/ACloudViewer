@@ -7,333 +7,53 @@
 
 #include "AutomaticReconstructionController.h"
 
-#include "../ReconstructionManager.h"
-#include "IncrementalMapperController.h"
-#include "base/undistortion.h"
-#include "feature/extraction.h"
-#include "feature/matching.h"
-#include "mvs/fusion.h"
-#include "mvs/meshing.h"
-#include "mvs/patch_match.h"
-#include "util/misc.h"
+#include "base/reconstruction_manager.h"
 
 namespace cloudViewer {
 
 using namespace colmap;
 
 AutomaticReconstructionController::AutomaticReconstructionController(
-        const Options& options, ReconstructionManager* reconstruction_manager)
-    : options_(options),
-      reconstruction_manager_(reconstruction_manager),
-      active_thread_(nullptr) {
-    CHECK(ExistsDir(options_.workspace_path));
-    CHECK(ExistsDir(options_.image_path));
-    CHECK_NOTNULL(reconstruction_manager_);
-
-    option_manager_.AddAllOptions();
-
-    *option_manager_.image_path = options_.image_path;
-    *option_manager_.database_path =
-            JoinPaths(options_.workspace_path, "database.db");
-
-    if (options_.data_type == DataType::VIDEO) {
-        option_manager_.ModifyForVideoData();
-    } else if (options_.data_type == DataType::INDIVIDUAL) {
-        option_manager_.ModifyForIndividualData();
-    } else if (options_.data_type == DataType::INTERNET) {
-        option_manager_.ModifyForInternetData();
-    } else {
-        LOG(FATAL) << "Data type not supported";
-    }
-
-    CHECK(ExistsCameraModelWithName(options_.camera_model));
-
-    if (options_.quality == Quality::LOW) {
-        option_manager_.ModifyForLowQuality();
-    } else if (options_.quality == Quality::MEDIUM) {
-        option_manager_.ModifyForMediumQuality();
-    } else if (options_.quality == Quality::HIGH) {
-        option_manager_.ModifyForHighQuality();
-    } else if (options_.quality == Quality::EXTREME) {
-        option_manager_.ModifyForExtremeQuality();
-    }
-
-    option_manager_.sift_extraction->num_threads = options_.num_threads;
-    option_manager_.sift_matching->num_threads = options_.num_threads;
-    option_manager_.mapper->num_threads = options_.num_threads;
-    option_manager_.poisson_meshing->num_threads = options_.num_threads;
-
-    ImageReaderOptions reader_options = *option_manager_.image_reader;
-    reader_options.database_path = *option_manager_.database_path;
-    reader_options.image_path = *option_manager_.image_path;
-    if (!options_.mask_path.empty()) {
-        reader_options.mask_path = options_.mask_path;
-        option_manager_.image_reader->mask_path = options_.mask_path;
-    }
-    reader_options.single_camera = options_.single_camera;
-    reader_options.camera_model = options_.camera_model;
-
-    option_manager_.sift_extraction->use_gpu = options_.use_gpu;
-    option_manager_.sift_matching->use_gpu = options_.use_gpu;
-    option_manager_.mapper->ba_use_gpu = options_.use_gpu;
-    option_manager_.bundle_adjustment->use_gpu = options_.use_gpu;
-
-    option_manager_.sift_extraction->gpu_index = options_.gpu_index;
-    option_manager_.sift_matching->gpu_index = options_.gpu_index;
-    option_manager_.patch_match_stereo->gpu_index = options_.gpu_index;
-    option_manager_.mapper->ba_gpu_index = options_.gpu_index;
-    option_manager_.bundle_adjustment->gpu_index = options_.gpu_index;
-
-    feature_extractor_.reset(new SiftFeatureExtractor(
-            reader_options, *option_manager_.sift_extraction));
-
-    exhaustive_matcher_.reset(new ExhaustiveFeatureMatcher(
-            *option_manager_.exhaustive_matching,
-            *option_manager_.sift_matching, *option_manager_.database_path));
-
-    if (!options_.vocab_tree_path.empty()) {
-        option_manager_.sequential_matching->loop_detection = true;
-        option_manager_.sequential_matching->vocab_tree_path =
-                options_.vocab_tree_path;
-    }
-
-    sequential_matcher_.reset(new SequentialFeatureMatcher(
-            *option_manager_.sequential_matching,
-            *option_manager_.sift_matching, *option_manager_.database_path));
-
-    if (!options_.vocab_tree_path.empty()) {
-        option_manager_.vocab_tree_matching->vocab_tree_path =
-                options_.vocab_tree_path;
-        vocab_tree_matcher_.reset(new VocabTreeFeatureMatcher(
-                *option_manager_.vocab_tree_matching,
-                *option_manager_.sift_matching,
-                *option_manager_.database_path));
-    }
-}
-
-void AutomaticReconstructionController::Stop() {
-    if (active_thread_ != nullptr) {
-        active_thread_->Stop();
-    }
-    Thread::Stop();
-}
-
-void AutomaticReconstructionController::Run() {
-    if (IsStopped()) {
-        return;
-    }
-
-    RunFeatureExtraction();
-
-    if (IsStopped()) {
-        return;
-    }
-
-    RunFeatureMatching();
-
-    if (IsStopped()) {
-        return;
-    }
-
-    if (options_.sparse) {
-        RunSparseMapper();
-    }
-
-    if (IsStopped()) {
-        return;
-    }
-
-    if (options_.dense) {
-        RunDenseMapper();
-    }
-}
-
-void AutomaticReconstructionController::RunFeatureExtraction() {
-    CHECK(feature_extractor_);
-    active_thread_ = feature_extractor_.get();
-    feature_extractor_->Start();
-    feature_extractor_->Wait();
-    feature_extractor_.reset();
-    active_thread_ = nullptr;
-}
-
-void AutomaticReconstructionController::RunFeatureMatching() {
-    Thread* matcher = nullptr;
-    if (options_.data_type == DataType::VIDEO) {
-        matcher = sequential_matcher_.get();
-    } else if (options_.data_type == DataType::INDIVIDUAL ||
-               options_.data_type == DataType::INTERNET) {
-        Database database(*option_manager_.database_path);
-        const size_t num_images = database.NumImages();
-        if (options_.vocab_tree_path.empty() || num_images < 200) {
-            matcher = exhaustive_matcher_.get();
-        } else {
-            matcher = vocab_tree_matcher_.get();
-        }
-    }
-
-    CHECK(matcher);
-    active_thread_ = matcher;
-    matcher->Start();
-    matcher->Wait();
-    exhaustive_matcher_.reset();
-    sequential_matcher_.reset();
-    vocab_tree_matcher_.reset();
-    active_thread_ = nullptr;
-}
-
-void AutomaticReconstructionController::RunSparseMapper() {
-    const auto sparse_path = JoinPaths(options_.workspace_path, "sparse");
-    if (ExistsDir(sparse_path)) {
-        auto dir_list = GetDirList(sparse_path);
-        std::sort(dir_list.begin(), dir_list.end());
-        if (dir_list.size() > 0) {
-            std::cout
-                    << std::endl
-                    << "WARNING: Skipping sparse reconstruction because it is "
-                       "already computed"
-                    << std::endl;
-            for (const auto& dir : dir_list) {
-                reconstruction_manager_->Read(dir);
-            }
-            return;
-        }
-    }
-
-    IncrementalMapperController mapper(
-            option_manager_.mapper.get(), *option_manager_.image_path,
-            *option_manager_.database_path, reconstruction_manager_);
-    active_thread_ = &mapper;
-    mapper.Start();
-    mapper.Wait();
-    active_thread_ = nullptr;
-
-    CreateDirIfNotExists(sparse_path);
-    reconstruction_manager_->Write(sparse_path, &option_manager_);
+        const Options& options,
+        colmap::ReconstructionManager* reconstruction_manager)
+    : colmap::AutomaticReconstructionController(
+              static_cast<const colmap::AutomaticReconstructionController::
+                                  Options&>(options),
+              reconstruction_manager),
+      ecv_options_(options) {
+    // eCV-specific initialization if needed
 }
 
 void AutomaticReconstructionController::RunDenseMapper() {
-    CreateDirIfNotExists(JoinPaths(options_.workspace_path, "dense"));
-
+    // Clear eCV-specific data containers before reconstruction
     fused_points_.clear();
     meshing_paths_.clear();
-    for (size_t i = 0; i < reconstruction_manager_->Size(); ++i) {
-        if (IsStopped()) {
-            return;
-        }
+    textured_paths_.clear();
+    texturing_success_ = false;
 
-        const std::string dense_path =
-                JoinPaths(options_.workspace_path, "dense", std::to_string(i));
-        const std::string fused_path = JoinPaths(dense_path, "fused.ply");
+    // Call base class implementation
+    // It will call our hook methods to collect data
+    colmap::AutomaticReconstructionController::RunDenseMapper();
+}
 
-        std::string meshing_path;
-        if (options_.mesher == Mesher::POISSON) {
-            meshing_path = JoinPaths(dense_path, "meshed-poisson.ply");
-        } else if (options_.mesher == Mesher::DELAUNAY) {
-            meshing_path = JoinPaths(dense_path, "meshed-delaunay.ply");
-        }
+void AutomaticReconstructionController::OnFusedPointsGenerated(
+        size_t reconstruction_idx,
+        const std::vector<colmap::PlyPoint>& points) {
+    // eCV-specific: Collect fused points for visualization
+    fused_points_.push_back(points);
+}
 
-        if (ExistsFile(fused_path) && ExistsFile(meshing_path)) {
-            continue;
-        }
+void AutomaticReconstructionController::OnMeshGenerated(
+        size_t reconstruction_idx, const std::string& mesh_path) {
+    // eCV-specific: Collect mesh path for visualization
+    meshing_paths_.push_back(mesh_path);
+}
 
-        // Image undistortion.
-
-        if (!ExistsDir(dense_path)) {
-            CreateDirIfNotExists(dense_path);
-
-            UndistortCameraOptions undistortion_options;
-            undistortion_options.max_image_size =
-                    option_manager_.patch_match_stereo->max_image_size;
-            COLMAPUndistorter undistorter(
-                    undistortion_options, reconstruction_manager_->Get(i),
-                    *option_manager_.image_path, dense_path);
-            active_thread_ = &undistorter;
-            undistorter.Start();
-            undistorter.Wait();
-            active_thread_ = nullptr;
-        }
-
-        if (IsStopped()) {
-            return;
-        }
-
-        // Patch match stereo.
-
-#ifdef CUDA_ENABLED
-        {
-            mvs::PatchMatchController patch_match_controller(
-                    *option_manager_.patch_match_stereo, dense_path, "COLMAP",
-                    "");
-            active_thread_ = &patch_match_controller;
-            patch_match_controller.Start();
-            patch_match_controller.Wait();
-            active_thread_ = nullptr;
-        }
-#else   // CUDA_ENABLED
-        std::cout << std::endl
-                  << "WARNING: Skipping patch match stereo because CUDA is not "
-                     "available."
-                  << std::endl;
-        return;
-#endif  // CUDA_ENABLED
-
-        if (IsStopped()) {
-            return;
-        }
-
-        // Stereo fusion.
-
-        if (!ExistsFile(fused_path)) {
-            auto fusion_options = *option_manager_.stereo_fusion;
-            const int num_reg_images =
-                    reconstruction_manager_->Get(i).NumRegImages();
-            fusion_options.min_num_pixels =
-                    std::min(num_reg_images + 1, fusion_options.min_num_pixels);
-            mvs::StereoFusion fuser(fusion_options, dense_path, "COLMAP", "",
-                                    options_.quality == Quality::HIGH
-                                            ? "geometric"
-                                            : "photometric");
-            active_thread_ = &fuser;
-            fuser.Start();
-            fuser.Wait();
-            active_thread_ = nullptr;
-
-            std::cout << "Writing output: " << fused_path << std::endl;
-            fused_points_.push_back(fuser.GetFusedPoints());
-            WriteBinaryPlyPoints(fused_path, fuser.GetFusedPoints());
-            mvs::WritePointsVisibility(fused_path + ".vis",
-                                       fuser.GetFusedPointsVisibility());
-        }
-
-        if (IsStopped()) {
-            return;
-        }
-
-        // Surface meshing.
-
-        if (!ExistsFile(meshing_path)) {
-            if (options_.mesher == Mesher::POISSON) {
-                mvs::PoissonMeshing(*option_manager_.poisson_meshing,
-                                    fused_path, meshing_path);
-                meshing_paths_.push_back(meshing_path);
-            } else if (options_.mesher == Mesher::DELAUNAY) {
-#ifdef CGAL_ENABLED
-                mvs::DenseDelaunayMeshing(*option_manager_.delaunay_meshing,
-                                          dense_path, meshing_path);
-                meshing_paths_.push_back(meshing_path);
-#else  // CGAL_ENABLED
-                std::cout
-                        << std::endl
-                        << "WARNING: Skipping Delaunay meshing because CGAL is "
-                           "not available."
-                        << std::endl;
-                return;
-
-#endif  // CGAL_ENABLED
-            }
-        }
-    }
+void AutomaticReconstructionController::OnTexturedMeshGenerated(
+        size_t reconstruction_idx, const std::string& textured_path) {
+    // eCV-specific: Collect textured mesh path and mark success
+    textured_paths_.push_back(textured_path);
+    texturing_success_ = true;
 }
 
 }  // namespace cloudViewer

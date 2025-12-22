@@ -12,6 +12,9 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // cloudViewer
 #include <CVGeom.h>
 #include <CVLog.h>
@@ -483,7 +486,7 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
             if (!stream.readNextStartElement()) {
                 break;
             }
-            QStringRef itemName = stream.name();
+            QtCompatStringRef itemName = stream.name();
             QString itemValue = stream.readElementText();
             CVLog::Print(QString("[XML] Item '%1': '%2'")
                                  .arg(itemName.toString(), itemValue));

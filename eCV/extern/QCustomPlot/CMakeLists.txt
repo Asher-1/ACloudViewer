@@ -18,6 +18,7 @@ target_include_directories( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Qt5/Qt6 compatibility - use unified Qt:: prefix
 target_link_libraries( ${PROJECT_NAME}
-    Qt5::Gui
+    Qt::Gui
 )

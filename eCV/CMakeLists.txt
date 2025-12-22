@@ -43,8 +43,14 @@ endif ()
 
 add_subdirectory(extern/QCustomPlot EXCLUDE_FROM_ALL)
 
-qt5_wrap_ui(generated_ui_list ${ui_list})
-qt5_add_resources(generated_qrc_list ${qrc_list})
+# Qt5/Qt6 compatibility
+if(USE_QT6)
+    qt6_wrap_ui(generated_ui_list ${ui_list})
+    qt6_add_resources(generated_qrc_list ${qrc_list})
+else()
+    qt5_wrap_ui(generated_ui_list ${ui_list})
+    qt5_add_resources(generated_qrc_list ${qrc_list})
+endif()
 
 if (MSVC)
     # App icon with MSVC
@@ -56,14 +62,26 @@ if (MSVC)
     # generate or update translation files(ts)
     if (UPDATE_TRANSLATION_FILES)
         file(GLOB_RECURSE SOURCE_LIST ${CMAKE_CURRENT_SOURCE_DIR}/../*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../*.h ${CMAKE_CURRENT_SOURCE_DIR}/../*.ui)
-        find_package(Qt5Core REQUIRED)
-        find_package(Qt5LinguistTools REQUIRED)
-        set(TRANSLATION_FILES ${CMAKE_CURRENT_SOURCE_DIR}/translations/ACloudViewer_zh.ts)
-        foreach (TRANSLATION_FILE ${TRANSLATION_FILES})
-            message("TRANSLATION_FILE : ${TRANSLATION_FILE}")
-            qt5_update_translation(QMs ${PROJECT_NAME} ${SOURCE_LIST} ${TRANSLATION_FILE})
-            message("QMs: ${QMs}")
-        endforeach ()
+        # Qt5/Qt6 compatibility
+        # Note: Core is already found in CMakeExternalLibs.cmake
+        # LinguistTools needs to be found separately (it's a tool package)
+        if(USE_QT6)
+            find_package(Qt6 COMPONENTS LinguistTools REQUIRED)
+            set(TRANSLATION_FILES ${CMAKE_CURRENT_SOURCE_DIR}/translations/ACloudViewer_zh.ts)
+            foreach (TRANSLATION_FILE ${TRANSLATION_FILES})
+                message("TRANSLATION_FILE : ${TRANSLATION_FILE}")
+                qt6_update_translation(QMs ${PROJECT_NAME} ${SOURCE_LIST} ${TRANSLATION_FILE})
+                message("QMs: ${QMs}")
+            endforeach ()
+        else()
+            find_package(Qt5LinguistTools REQUIRED)
+            set(TRANSLATION_FILES ${CMAKE_CURRENT_SOURCE_DIR}/translations/ACloudViewer_zh.ts)
+            foreach (TRANSLATION_FILE ${TRANSLATION_FILES})
+                message("TRANSLATION_FILE : ${TRANSLATION_FILE}")
+                qt5_update_translation(QMs ${PROJECT_NAME} ${SOURCE_LIST} ${TRANSLATION_FILE})
+                message("QMs: ${QMs}")
+            endforeach ()
+        endif()
     endif ()
 elseif (APPLE)
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${header_list} ${source_list} ${generated_ui_list} ${generated_qrc_list} ${txt_list})
@@ -119,21 +137,20 @@ if (BUILD_RECONSTRUCTION)
     target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_RECONSTRUCTION)
 endif ()
 
+# Qt5/Qt6 compatibility - use unified Qt:: prefix
 target_link_libraries(${PROJECT_NAME}
         CVAppCommon
         QCustomPlot
-        Qt5::Network
-        Qt5::WebSockets
-        Qt5::PrintSupport
+        Qt::Network
+        Qt::WebSockets
+        Qt::PrintSupport
         )
 
 if (CVCORELIB_USE_QT_CONCURRENT)
-    # We want *deployqt to handle this dependency, so instead of just copying the file
-    # link to the target.
     target_link_libraries(${PROJECT_NAME}
-            Qt5::Concurrent
+            Qt::Concurrent
             )
-endif ()
+endif()
 
 # running gui app from the build folder needs tbb.dll to be in the same folder.
 if (WIN32)

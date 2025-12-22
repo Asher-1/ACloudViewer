@@ -116,6 +116,7 @@ int main(int argc, char** argv) {
     commands.emplace_back("image_filterer", &RunImageFilterer);
     commands.emplace_back("image_rectifier", &RunImageRectifier);
     commands.emplace_back("image_registrator", &RunImageRegistrator);
+    commands.emplace_back("image_texturer", &RunImageTexturer);
     commands.emplace_back("image_undistorter", &RunImageUndistorter);
     commands.emplace_back("image_undistorter_standalone",
                           &RunImageUndistorterStandalone);

@@ -13,7 +13,8 @@ include_directories(${EXTERNAL_LIBS_INCLUDE_DIR})
 
 project(QPCL_PLUGIN_ALGORIGHM_LIB)
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+# Qt5/Qt6 compatibility
+# Note: Widgets is already found in CMakeExternalLibs.cmake
 
 if (USE_PCL_BACKEND)
     include_directories(${QPCL_ENGINE_LIB_SOURCE_DIR})
@@ -22,7 +23,12 @@ if (USE_PCL_BACKEND)
     file(GLOB header_list *.h)
     file(GLOB source_list *.cpp)
     file(GLOB_RECURSE ui_list ${CMAKE_CURRENT_SOURCE_DIR}/*.ui)
-    qt5_wrap_ui(ui_list_all ${ui_list})
+    # Qt5/Qt6 compatibility
+    if(USE_QT6)
+        qt6_wrap_ui(ui_list_all ${ui_list})
+    else()
+        qt5_wrap_ui(ui_list_all ${ui_list})
+    endif()
 
     # PCL FILTERS
     file(GLOB_RECURSE filter_list ${CMAKE_CURRENT_SOURCE_DIR}/Filters/*)

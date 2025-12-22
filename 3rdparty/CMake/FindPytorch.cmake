@@ -36,23 +36,68 @@ if(NOT Pytorch_FOUND)
 
     message(STATUS "Getting PyTorch properties ...")
 
+    # Set KMP_DUPLICATE_LIB_OK to avoid OpenMP initialization errors when importing torch
+    # This is needed when multiple OpenMP runtimes are linked (e.g., PyTorch and system OpenMP)
+    # Handle CPU-only PyTorch where torch.version.cuda returns None - convert to string 'None' to ensure list length is always 4
     set(PyTorch_FETCH_PROPERTIES
         "import os"
+        "os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'"
         "import torch"
         "print(torch.__version__, end=';')"
         "print(os.path.dirname(torch.__file__), end=';')"
         "print(torch._C._GLIBCXX_USE_CXX11_ABI, end=';')"
-        "print(torch.version.cuda, end=';')"
+        "cuda_ver = getattr(torch.version, 'cuda', None)"
+        "print(str(cuda_ver) if cuda_ver is not None else 'None')"
     )
     execute_process(
         COMMAND ${Python3_EXECUTABLE} "-c" "${PyTorch_FETCH_PROPERTIES}"
         OUTPUT_VARIABLE PyTorch_PROPERTIES
+        ERROR_VARIABLE PyTorch_PROPERTIES_ERROR
+        RESULT_VARIABLE PyTorch_PROPERTIES_RESULT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+
+    if(NOT PyTorch_PROPERTIES_RESULT EQUAL "0")
+        message(FATAL_ERROR "Failed to get PyTorch properties. Error: ${PyTorch_PROPERTIES_ERROR}\nOutput: ${PyTorch_PROPERTIES}")
+    endif()
+
+    if("${PyTorch_PROPERTIES}" STREQUAL "")
+        message(FATAL_ERROR "PyTorch properties output is empty. Make sure PyTorch is installed in the Python environment.")
+    endif()
+
+    # CMake automatically treats semicolon-separated strings as lists
+    # Remove any trailing semicolons and empty elements that might be created
+    string(STRIP "${PyTorch_PROPERTIES}" PyTorch_PROPERTIES_STRIPPED)
+    if(PyTorch_PROPERTIES_STRIPPED MATCHES ";$")
+        string(REGEX REPLACE ";$" "" PyTorch_PROPERTIES_STRIPPED "${PyTorch_PROPERTIES_STRIPPED}")
+    endif()
+    
+    # Filter out empty elements from the list
+    set(PyTorch_PROPERTIES_FILTERED "")
+    foreach(item IN LISTS PyTorch_PROPERTIES_STRIPPED)
+        if(NOT "${item}" STREQUAL "")
+            list(APPEND PyTorch_PROPERTIES_FILTERED "${item}")
+        endif()
+    endforeach()
+    set(PyTorch_PROPERTIES "${PyTorch_PROPERTIES_FILTERED}")
+    
+    # Verify we have the expected number of properties
+    list(LENGTH PyTorch_PROPERTIES PyTorch_PROPERTIES_COUNT)
+    if(NOT PyTorch_PROPERTIES_COUNT EQUAL 4)
+        message(FATAL_ERROR "Expected 4 PyTorch properties, got ${PyTorch_PROPERTIES_COUNT}. Output: ${PyTorch_PROPERTIES}")
+    endif()
 
     list(GET PyTorch_PROPERTIES 0 Pytorch_VERSION)
     list(GET PyTorch_PROPERTIES 1 Pytorch_ROOT)
     list(GET PyTorch_PROPERTIES 2 Pytorch_CXX11_ABI)
     list(GET PyTorch_PROPERTIES 3 Pytorch_CUDA_VERSION)
+    
+    # Set these as cache variables so they persist across CMake invocations
+    # This is especially important for Windows multi-config builds
+    set(Pytorch_VERSION "${Pytorch_VERSION}" CACHE STRING "PyTorch version" FORCE)
+    set(Pytorch_ROOT "${Pytorch_ROOT}" CACHE PATH "PyTorch root directory" FORCE)
+    set(Pytorch_CXX11_ABI "${Pytorch_CXX11_ABI}" CACHE BOOL "PyTorch C++11 ABI" FORCE)
+    set(Pytorch_CUDA_VERSION "${Pytorch_CUDA_VERSION}" CACHE STRING "PyTorch CUDA version" FORCE)
 
     unset(PyTorch_FETCH_PROPERTIES)
     unset(PyTorch_PROPERTIES)

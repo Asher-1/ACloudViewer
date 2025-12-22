@@ -17,6 +17,9 @@
 #include <QStringList>
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // ECV_DB_LIB
 #include <CVLog.h>
 #include <ecvHObjectCaster.h>
@@ -383,7 +386,7 @@ CC_FILE_ERROR STLFilter::loadASCIIFile(QFile& fp,
             return CC_FERR_READING;
         }
         QStringList tokens = currentLine.simplified().split(
-                QChar(' '), QString::SkipEmptyParts);
+                QChar(' '), QtCompat::SkipEmptyParts);
         if (tokens.empty() || tokens[0].toUpper() != "SOLID") {
             CVLog::Warning("[STL] File should begin by 'solid [name]'!");
             return CC_FERR_MALFORMED_FILE;
@@ -436,7 +439,7 @@ CC_FILE_ERROR STLFilter::loadASCIIFile(QFile& fp,
             ++lineCount;
 
             QStringList tokens = currentLine.simplified().split(
-                    QChar(' '), QString::SkipEmptyParts);
+                    QChar(' '), QtCompat::SkipEmptyParts);
             if (tokens.empty() || tokens[0].toUpper() != "FACET") {
                 if (tokens[0].toUpper() != "ENDSOLID") {
                     CVLog::Warning(
@@ -523,7 +526,7 @@ CC_FILE_ERROR STLFilter::loadASCIIFile(QFile& fp,
             QStringList tokens =
                     QString(currentLine)
                             .simplified()
-                            .split(QChar(' '), QString::SkipEmptyParts);
+                            .split(QChar(' '), QtCompat::SkipEmptyParts);
             if (tokens.size() < 4) {
                 CVLog::Warning(
                         "[STL] Error on line #%i: incomplete 'vertex' "

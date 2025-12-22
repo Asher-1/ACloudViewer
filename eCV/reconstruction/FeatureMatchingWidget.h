@@ -10,9 +10,11 @@
 #include <QtCore>
 #include <QtWidgets>
 
+#include "util/option_manager.h"
+
 namespace cloudViewer {
 
-class OptionManager;
+using OptionManager = colmap::OptionManager;
 class FeatureMatchingWidget : public QWidget {
 public:
     FeatureMatchingWidget(QWidget* parent, OptionManager* options);

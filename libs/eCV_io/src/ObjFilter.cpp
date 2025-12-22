@@ -17,6 +17,9 @@
 #include <QStringList>
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // CV_CORE_LIB
 #include <CVLog.h>
 #include <Delaunay2dMesh.h>
@@ -524,9 +527,8 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename,
                 }
             }
 
-            QStringList tokens =
-                    QString(currentLine)
-                            .split(QRegExp("\\s+"), QString::SkipEmptyParts);
+            QStringList tokens = qtCompatSplitRegex(currentLine, "\\s+",
+                                                    QtCompat::SkipEmptyParts);
 
             // skip comments & empty lines
             if (tokens.empty() ||

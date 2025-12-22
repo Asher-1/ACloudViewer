@@ -7,9 +7,9 @@
 
 #include "UndistortionWidget.h"
 
-#include "OptionManager.h"
 #include "base/reconstruction.h"
 #include "util/misc.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 
@@ -68,15 +68,18 @@ void UndistortionWidget::Undistort() {
 
         if (output_format_->currentIndex() == 0) {
             undistorter = new COLMAPUndistorter(
-                    undistortion_options_, *reconstruction_,
+                    undistortion_options_,
+                    const_cast<colmap::Reconstruction*>(reconstruction_),
                     *options_->image_path, output_path_);
         } else if (output_format_->currentIndex() == 1) {
-            undistorter =
-                    new PMVSUndistorter(undistortion_options_, *reconstruction_,
-                                        *options_->image_path, output_path_);
+            undistorter = new PMVSUndistorter(
+                    undistortion_options_,
+                    const_cast<colmap::Reconstruction*>(reconstruction_),
+                    *options_->image_path, output_path_);
         } else if (output_format_->currentIndex() == 2) {
             undistorter = new CMPMVSUndistorter(
-                    undistortion_options_, *reconstruction_,
+                    undistortion_options_,
+                    const_cast<colmap::Reconstruction*>(reconstruction_),
                     *options_->image_path, output_path_);
         } else {
             QMessageBox::critical(this, "", tr("Invalid output format"));

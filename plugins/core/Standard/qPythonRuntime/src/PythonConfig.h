@@ -10,6 +10,9 @@
 #include <QString>
 #include <QtGlobal>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 #include <memory>
 
 #undef slots
@@ -30,7 +33,7 @@ struct Version
     {
     }
 
-    explicit Version(const QStringRef &versionStr);
+    explicit Version(const QtCompatStringRef &versionStr);
 
     /// Checks whether the Python version number described by
     /// this instance is compatible with the Python version the plugin

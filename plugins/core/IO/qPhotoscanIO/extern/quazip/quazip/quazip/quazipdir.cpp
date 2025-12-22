@@ -27,6 +27,9 @@ see quazip/(un)zip.h files for details. Basically it's the zlib license.
 #include <QSet>
 #include <QSharedData>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 #pragma warning(disable : 4996)
 
 /// \cond internal
@@ -95,7 +98,7 @@ bool QuaZipDir::cd(const QString &directoryName) {
 #endif
             if (!dir.cd("/")) return false;
         }
-        QStringList path = dirName.split('/', QString::SkipEmptyParts);
+        QStringList path = dirName.split('/', QtCompat::SkipEmptyParts);
         for (QStringList::const_iterator i = path.constBegin(); i != path.end();
              ++i) {
             const QString &step = *i;

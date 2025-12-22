@@ -2275,7 +2275,6 @@ if (BUILD_RECONSTRUCTION)
                 LIBRARIES ${EXT_GLOG_LIBRARIES}
                 DEPENDS ext_glog
                 )
-        set(GLOG_TARGET "3rdparty_glog")
         add_dependencies(ext_glog ext_gflags)
 
         if (NOT WIN32) # alread done on suitesparse lib on windows
@@ -2356,7 +2355,6 @@ if (BUILD_RECONSTRUCTION)
                 LIB_DIR ${GLOG_LIB_DIR}
                 LIBRARIES ${EXT_GLOG_LIBRARIES}
                 )
-        set(GLOG_TARGET "3rdparty_glog")
         add_dependencies(3rdparty_glog ext_glog)
         add_dependencies(3rdparty_glog ext_gflags)
 
@@ -2395,9 +2393,9 @@ if (BUILD_RECONSTRUCTION)
         add_dependencies(3rdparty_ceres 3rdparty_lapack)
         add_dependencies(3rdparty_ceres 3rdparty_suitesparse)
 
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${CERES_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GLOG_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GFLAGS_TARGET}")
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_gflags)
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_glog)
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)
     endif ()
 endif ()
 

@@ -9,6 +9,9 @@
 
 #include <qcustomplot.h>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // Eigen
 #include <Eigen/Geometry>
 
@@ -59,7 +62,8 @@ protected:
                 QPointF Pstart = P;
                 if (m_textOnTheLeft)
                     Pstart.setX(P.x() -
-                                painter->fontMetrics().width(m_text[i]));
+                                QTCOMPAT_FONTMETRICS_WIDTH(
+                                        painter->fontMetrics(), m_text[i]));
                 painter->drawText(Pstart, m_text[i]);
                 P.setY(P.y() + fontHeight);
             }

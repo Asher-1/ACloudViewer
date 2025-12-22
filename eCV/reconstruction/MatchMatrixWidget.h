@@ -8,10 +8,11 @@
 #pragma once
 
 #include "ImageViewerWidget.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 
-class OptionManager;
+using OptionManager = colmap::OptionManager;
 
 // Widget to visualize match matrix.
 class MatchMatrixWidget : public ImageViewerWidget {

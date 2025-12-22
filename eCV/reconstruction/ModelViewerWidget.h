@@ -13,20 +13,26 @@
 #include <QtCore>
 #include <QtOpenGL>
 
-#include "ColorMaps.h"
 #include "ImageViewerWidget.h"
 #include "MovieGrabberWidget.h"
-#include "OptionManager.h"
 #include "PointViewerWidget.h"
-#include "RenderOptions.h"
 #include "base/database.h"
 #include "base/reconstruction.h"
+#include "ui/colormaps.h"
+#include "ui/render_options.h"
+#include "util/option_manager.h"
 
 class ccPointCloud;
 class ccCameraSensor;
 class MainWindow;
 
 namespace cloudViewer {
+
+// Use colmap's colormap types
+using PointColormapBase = colmap::PointColormapBase;
+using ImageColormapBase = colmap::ImageColormapBase;
+using OptionManager = colmap::OptionManager;
+using RenderOptions = colmap::RenderOptions;
 
 class ModelViewerWidget : public QWidget {
 public:

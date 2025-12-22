@@ -22,6 +22,9 @@
 #include <QStringList>
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // ECV_DB_LIB
 #include <CVLog.h>
 
@@ -163,7 +166,7 @@ bool ecvShiftAndScaleCloudDlg::loadInfoFromFile(QString filename) {
         if (line.startsWith("//")) continue;
 
         // split line in 5 items
-        QStringList tokens = line.split(";", QString::SkipEmptyParts);
+        QStringList tokens = line.split(";", QtCompat::SkipEmptyParts);
         if (tokens.size() != 5) {
             // invalid file
             CVLog::Warning(
