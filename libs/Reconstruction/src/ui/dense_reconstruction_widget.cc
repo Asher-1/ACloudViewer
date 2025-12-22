@@ -522,6 +522,7 @@ void DenseReconstructionWidget::PoissonMeshing() {
               *options_->poisson_meshing,
               JoinPaths(workspace_path, kFusedFileName),
               JoinPaths(workspace_path, kPoissonMeshedFileName));
+          refresh_workspace_action_->trigger();
           show_meshing_info_action_->trigger();
         });
   }
@@ -540,6 +541,7 @@ void DenseReconstructionWidget::DelaunayMeshing() {
           mvs::DenseDelaunayMeshing(
               *options_->delaunay_meshing, workspace_path,
               JoinPaths(workspace_path, kDelaunayMeshedFileName));
+          refresh_workspace_action_->trigger();
           show_meshing_info_action_->trigger();
         });
   }
@@ -774,9 +776,6 @@ void DenseReconstructionWidget::WriteFusedPoints() {
 }
 
 void DenseReconstructionWidget::ShowMeshingInfo() {
-  // Enable texturing button after meshing completes
-  texturing_button_->setEnabled(true);
-  
   QMessageBox::information(
       this, "",
       tr("To visualize the meshed model, you must use an external viewer such "

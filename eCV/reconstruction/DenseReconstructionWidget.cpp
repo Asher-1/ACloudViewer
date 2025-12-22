@@ -540,6 +540,7 @@ void DenseReconstructionWidget::PoissonMeshing() {
                             JoinPaths(workspace_path, kPoissonMeshedFileName));
                     out_mesh_path_ =
                             JoinPaths(workspace_path, kPoissonMeshedFileName);
+                    refresh_workspace_action_->trigger();
                     show_meshing_info_action_->trigger();
                 });
     }
@@ -821,7 +822,6 @@ void DenseReconstructionWidget::ShowMeshingInfo() {
         return;
     }
 
-    texturing_button_->setEnabled(true);
     const int reply = QMessageBox::question(
             this, "",
             tr("Do you want to add the meshed model to DBRoot, Otherwise, to "
