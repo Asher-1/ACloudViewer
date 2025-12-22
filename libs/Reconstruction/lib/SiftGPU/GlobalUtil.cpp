@@ -423,7 +423,7 @@ void GlobalUtil::SelectDisplay()
 	_WindowDisplay = NULL;
 	if(hdc == NULL)
 	{
-		std::cout << "ERROR: invalid dispaly specified\n";
+		std::cout << "WARNING: invalid dispaly specified\n";
 		return;
 	}
 

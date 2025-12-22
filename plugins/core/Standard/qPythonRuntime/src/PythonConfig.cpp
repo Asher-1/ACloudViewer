@@ -13,9 +13,15 @@
 #include <QDir>
 #include <QMessageBox>
 #include <QProcess>
-#include <QTextCodec>
 #include <QVector>
 #include <QtGlobal>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include <QTextCodec>
+#endif
 
 #if defined(USE_EMBEDDED_MODULES)
 #if defined(Q_OS_WINDOWS)
@@ -41,14 +47,21 @@ static QString BundledSitePackagesPath()
 
 //================================================================================
 
-Version::Version(const QStringRef &versionStr) : Version()
+Version::Version(const QtCompatStringRef &versionStr) : Version()
 {
-    QVector<QStringRef> parts = versionStr.split('.');
+    QString str = qtCompatStringRefToString(versionStr);
+    auto parts = qtCompatSplitRefChar(str, '.');
     if (parts.size() == 3)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        versionMajor = parts[0].toString().toUInt();
+        versionMinor = parts[1].toString().toUInt();
+        versionPatch = parts[2].toString().toUInt();
+#else
         versionMajor = parts[0].toUInt();
         versionMinor = parts[1].toUInt();
         versionPatch = parts[2].toUInt();
+#endif
     }
 }
 
@@ -70,12 +83,22 @@ static Version GetPythonExeVersion(QProcess &pythonProcess)
     pythonProcess.waitForFinished();
 
     const QString versionStr =
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QString::fromUtf8(pythonProcess.readAllStandardOutput());
+#else
         QTextCodec::codecForName("utf-8")->toUnicode(pythonProcess.readAllStandardOutput());
+#endif
 
-    QVector<QStringRef> splits = versionStr.splitRef(" ");
+    auto splits = qtCompatSplitRefChar(versionStr, ' ');
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    if (splits.size() == 2 && splits[0].toString().contains("Python"))
+    {
+        return Version(qtCompatStringRef(splits[1].toString()));
+#else
     if (splits.size() == 2 && splits[0].contains("Python"))
     {
-        return Version(splits[1]);
+        return Version(qtCompatStringRef(splits[1].toString()));
+#endif
     }
     return Version{};
 }
@@ -119,7 +142,7 @@ PyVenvCfg PyVenvCfg::FromFile(const QString &path)
                 }
                 else if (name == "version")
                 {
-                    cfg.version = Version(QStringRef(&value));
+                    cfg.version = Version(qtCompatStringRef(value));
                 }
             }
         }
@@ -406,7 +429,11 @@ void PythonConfig::initFromPythonExecutable(const QString &pythonExecutable)
     pythonProcess.waitForFinished();
 
     const QString result =
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QString::fromUtf8(pythonProcess.readAllStandardOutput());
+#else
         QTextCodec::codecForName("utf-8")->toUnicode(pythonProcess.readAllStandardOutput());
+#endif
 
     QStringList pathsAndHome = result.split('\n');
 

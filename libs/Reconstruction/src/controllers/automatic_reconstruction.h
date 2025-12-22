@@ -59,6 +59,9 @@ public:
         // The meshing algorithm to be used.
         Mesher mesher = Mesher::POISSON;
 
+        // Whether to perform surface texturing.
+        bool texturing = true;
+
         // The number of threads to use in all stages.
         int num_threads = -1;
 
@@ -81,17 +84,29 @@ public:
 
     void Stop() override;
 
+protected:
+    virtual void RunDenseMapper();
+
+    // Hook methods for derived classes to customize behavior
+    virtual void OnFusedPointsGenerated(size_t reconstruction_idx,
+                                        const std::vector<PlyPoint>& points) {}
+    virtual void OnMeshGenerated(size_t reconstruction_idx,
+                                 const std::string& mesh_path) {}
+    virtual void OnTexturedMeshGenerated(size_t reconstruction_idx,
+                                         const std::string& textured_path) {}
+
+    // Protected members for derived classes
+    const Options options_;
+    OptionManager option_manager_;
+    ReconstructionManager* reconstruction_manager_;
+    Thread* active_thread_;
+
 private:
     void Run() override;
     void RunFeatureExtraction();
     void RunFeatureMatching();
     void RunSparseMapper();
-    void RunDenseMapper();
 
-    const Options options_;
-    OptionManager option_manager_;
-    ReconstructionManager* reconstruction_manager_;
-    Thread* active_thread_;
     std::unique_ptr<Thread> feature_extractor_;
     std::unique_ptr<Thread> exhaustive_matcher_;
     std::unique_ptr<Thread> sequential_matcher_;

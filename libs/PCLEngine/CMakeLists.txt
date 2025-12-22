@@ -10,7 +10,12 @@ if (USE_PCL_BACKEND)
     file(GLOB header_list *.h)
     file(GLOB_RECURSE ui_list ${CMAKE_CURRENT_SOURCE_DIR}/*.ui)
 
-    qt5_wrap_ui(ui_list_all ${ui_list})
+    # Qt5/Qt6 compatibility
+    if(USE_QT6)
+        qt6_wrap_ui(ui_list_all ${ui_list})
+    else()
+        qt5_wrap_ui(ui_list_all ${ui_list})
+    endif()
 
     # VTK EXTENSIONS MODULE
     SET(QVTK_EXTENSIONS ${CMAKE_CURRENT_SOURCE_DIR}/VTKExtensions)
@@ -160,12 +165,17 @@ if (USE_PCL_BACKEND)
             ECV_IO_LIB)
 
     # Qt
+    # Qt5/Qt6 compatibility - use unified Qt:: prefix
+    # QVTKOpenGLNativeWidget inherits from QOpenGLWidget, which requires OpenGLWidgets in Qt6
     target_link_libraries(${PROJECT_NAME}
-            Qt5::Core
-            Qt5::Gui
-            Qt5::Widgets
-            Qt5::PrintSupport
-            Qt5::OpenGL)
+            Qt::Core
+            Qt::Gui
+            Qt::Widgets
+            Qt::PrintSupport
+            Qt::OpenGL)
+    if(USE_QT6)
+        target_link_libraries(${PROJECT_NAME} Qt::OpenGLWidgets)
+    endif()
 
     if (NOT APPLE) # no need to copy targets on macos due to rpath
         # install (shared) lib to specified destinations

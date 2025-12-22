@@ -13,7 +13,7 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
   include(cmake/PythonEnvHelper.cmake)
   include(cmake/ACloudViewerVariables.cmake)
 
-  project(PythonRuntime)
+  project( QPYTHONRUNTIME_PLUGIN )
 
   addplugin(NAME ${PROJECT_NAME})
 
@@ -43,6 +43,12 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
 
   target_link_libraries(${PROJECT_NAME} pybind11::embed)
   set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON CXX_VISIBILITY_PRESET hidden)
+  
+  # Suppress ODR (One Definition Rule) warnings from pybind11 template instantiations
+  # These warnings are common with pybind11 and typically don't indicate real issues
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "9.0")
+    target_link_options(${PROJECT_NAME} PRIVATE -Wno-odr)
+  endif()
 
   add_subdirectory(tests)
   add_subdirectory(docs)

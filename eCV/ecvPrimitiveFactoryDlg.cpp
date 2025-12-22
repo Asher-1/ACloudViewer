@@ -12,6 +12,9 @@
 // Qt
 #include <QClipboard>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // ECV_DB_LIB
 #include <CVConst.h>
 #include <ecvBox.h>
@@ -159,8 +162,9 @@ void ecvPrimitiveFactoryDlg::createPrimitive() {
 void ecvPrimitiveFactoryDlg::setSpherePositionFromClipboard() {
     QClipboard* clipboard = QApplication::clipboard();
     if (clipboard != nullptr) {
-        QStringList valuesStr = clipboard->text().split(
-                QRegExp("\\s+"), QString::SkipEmptyParts);
+        // Use QtCompat for Qt5/Qt6 compatibility
+        QStringList valuesStr = qtCompatSplitRegex(clipboard->text(), "\\s+",
+                                                   QtCompat::SkipEmptyParts);
         if (valuesStr.size() == 3) {
             CCVector3d vec;
             bool success;
@@ -213,7 +217,9 @@ ccGLMatrix ecvPrimitiveFactoryDlg::getCSMatrix(bool& valid) {
     QString text = csMatrixTextEdit->toPlainText();
     if (text.contains("[")) {
         // automatically remove anything between square brackets
-        static const QRegExp squareBracketsFilter("\\[([^]]+)\\]");
+        // Use QtCompat for Qt5/Qt6 compatibility
+        // Use static const for efficiency (regex compiled only once)
+        static const QtCompatRegExp squareBracketsFilter("\\[([^]]+)\\]");
         text.replace(squareBracketsFilter, "");
         csMatrixTextEdit->blockSignals(true);
         csMatrixTextEdit->setPlainText(text);

@@ -51,6 +51,12 @@ template <enum CVLog::MessageLevelFlags level> class ccLogger
         return *this;
     }
 
+    inline ccLogger &operator<<(const qsizetype value)
+    {
+        m_message += QString::number(value);
+        return *this;
+    }
+
     void flush()
     {
         CVLog::LogMessage(m_message, level);

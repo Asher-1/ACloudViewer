@@ -7,7 +7,7 @@
 
 #include "RenderOptionsWidget.h"
 
-#include "ColorMaps.h"
+#include "ui/colormaps.h"
 
 namespace cloudViewer {
 
@@ -170,23 +170,23 @@ void RenderOptionsWidget::ApplyProjection() {
     switch (projection_cb_->currentIndex()) {
         case 0:
             options_->render->projection_type =
-                    RenderOptions::ProjectionType::PERSPECTIVE;
+                    colmap::RenderOptions::ProjectionType::PERSPECTIVE;
             break;
         case 1:
             options_->render->projection_type =
-                    RenderOptions::ProjectionType::ORTHOGRAPHIC;
+                    colmap::RenderOptions::ProjectionType::ORTHOGRAPHIC;
             break;
         default:
             options_->render->projection_type =
-                    RenderOptions::ProjectionType::PERSPECTIVE;
+                    colmap::RenderOptions::ProjectionType::PERSPECTIVE;
             break;
     }
     if (options_->render->projection_type ==
-        RenderOptions::ProjectionType::PERSPECTIVE) {
+        colmap::RenderOptions::ProjectionType::PERSPECTIVE) {
         model_viewer_widget_->SetPerspectiveProjection();
     }
     if (options_->render->projection_type ==
-        RenderOptions::ProjectionType::ORTHOGRAPHIC) {
+        colmap::RenderOptions::ProjectionType::ORTHOGRAPHIC) {
         model_viewer_widget_->SetOrthogonalProjection();
     }
 }

@@ -27,6 +27,9 @@
 #include <QMessageBox>
 #include <QSettings>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 static QString s_lastMatrix(
         "1.00000000 0.00000000 0.00000000 0.00000000\n0.00000000 1.00000000 "
         "0.00000000 0.00000000\n0.00000000 0.00000000 1.00000000 "
@@ -130,7 +133,8 @@ void ccApplyTransformationDlg::onMatrixTextChange() {
     QString text = matrixTextEdit->toPlainText();
     if (text.contains("[")) {
         // automatically remove anything between square brackets
-        static const QRegExp squareBracketsFilter("\\[([^]]+)\\]");
+        // Use QtCompat for Qt5/Qt6 compatibility
+        static const QtCompatRegExp squareBracketsFilter("\\[([^]]+)\\]");
         text.replace(squareBracketsFilter, "");
         matrixTextEdit->blockSignals(true);
         matrixTextEdit->setPlainText(text);

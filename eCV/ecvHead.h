@@ -32,5 +32,11 @@
 
 #define AppName "QUI"
 #define AppPath qApp->applicationDirPath()
+// Qt5/Qt6 Compatibility: QDesktopWidget removed in Qt6, use QScreen instead
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#define AppDeskWidth qApp->primaryScreen()->availableGeometry().width()
+#define AppDeskHeight qApp->primaryScreen()->availableGeometry().height()
+#else
 #define AppDeskWidth qApp->desktop()->availableGeometry().width()
 #define AppDeskHeight qApp->desktop()->availableGeometry().height()
+#endif

@@ -13,6 +13,9 @@
 
 #include "PythonStdErrOutRedirect.h"
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 namespace py = pybind11;
 
 /// REPL special starting characters
@@ -166,7 +169,8 @@ void PythonRepl::setupUI()
 
     codeEdit()->installEventFilter(keyPressEater);
     codeEdit()->resize(codeEdit()->width(), 20);
-    codeEdit()->setTabStopWidth(codeEdit()->fontMetrics().width(' ') * 8);
+    codeEdit()->setTabStopWidth(
+        QTCOMPAT_FONTMETRICS_WIDTH(codeEdit()->fontMetrics(), QString(' ')) * 8);
 
     QFont font("Monospace");
     font.setStyleHint(QFont::TypeWriter);

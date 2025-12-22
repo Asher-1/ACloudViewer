@@ -3278,7 +3278,7 @@ void SparseBundleCPU<Float>::NormalizeDataF() {
   }
 
   if (incompatible_radial_distortion) {
-    std::cout << "ERROR: incompatible radial distortion input; reset to 0;\n";
+    std::cout << "WARNING: incompatible radial distortion input; reset to 0;\n";
   }
 }
 

@@ -7,48 +7,40 @@ project(QuaZip)
 # and producing a warning when unset since 3.8.0)
 cmake_policy(SET CMP0042 NEW)
 
-option(BUILD_WITH_QT4 "Build QuaZip with Qt4 no matter if Qt5 was found" OFF)
-
-if( NOT BUILD_WITH_QT4 )
-    # try Qt5 first, and prefer that if found
-    find_package(Qt5Core QUIET)
-endif()
-
-if(Qt5Core_FOUND)
-    set(QTCORE_LIBRARIES ${Qt5Core_LIBRARIES})
+# Qt5/Qt6 compatibility - use unified Qt:: prefix
+# Note: Core is already found in CMakeExternalLibs.cmake
+if(USE_QT6)
+    set(QUAZIP_LIB_VERSION_SUFFIX 6)
+    macro(qt_wrap_cpp)
+        qt6_wrap_cpp(${ARGN})
+    endmacro()
+else()
     set(QUAZIP_LIB_VERSION_SUFFIX 5)
-    # if there is no QT_ROOT, try to deduce it from Qt QtCore include
-    if("${QT_ROOT}" STREQUAL "")
-        set(QT_ROOT ${QT_QTCORE_INCLUDE_DIR}/../..)
-    endif()
-    include_directories(${Qt5Core_INCLUDE_DIRS})
-
     macro(qt_wrap_cpp)
         qt5_wrap_cpp(${ARGN})
     endmacro()
-else()
-    set(qt_min_version "4.5.0")
-    find_package(Qt4 REQUIRED)
-    set(QT_USE_QTGUI false)
-    include(${QT_USE_FILE})
-    include_directories(${QT_INCLUDES})
-    set(QTCORE_LIBRARIES ${QT_QTCORE_LIBRARY})
-
-    macro(qt_wrap_cpp)
-        qt4_wrap_cpp(${ARGN})
-    endmacro()
 endif()
 
-# Use system zlib on unix and Qt ZLIB on Windows
+# Use system zlib on unix/mingw and Qt ZLIB on Windows (MSVC)
 if(UNIX OR MINGW)
     find_package(ZLIB REQUIRED)
-else(UNIX OR MINGW)
-    set(ZLIB_INCLUDE_DIRS "${QT_ROOT}/src/3rdparty/zlib" CACHE STRING "Path to ZLIB headers of Qt")
+elseif(WIN32 AND MSVC)
+    # Try to use Qt's bundled zlib on Windows MSVC (Qt5/Qt6 compatibility)
+    # QT_ROOT_PATH is set in CMakeExternalLibs.cmake
+    if(DEFINED QT_ROOT_PATH)
+        set(ZLIB_INCLUDE_DIRS "${QT_ROOT_PATH}/src/3rdparty/zlib" CACHE STRING "Path to ZLIB headers of Qt")
+    endif()
     set(ZLIB_LIBRARIES "")
     if(NOT EXISTS "${ZLIB_INCLUDE_DIRS}/zlib.h")
-        message("Please specify a valid zlib include dir")
-    endif(NOT EXISTS "${ZLIB_INCLUDE_DIRS}/zlib.h")
-endif(UNIX OR MINGW)
+        message(WARNING "Could not find Qt's bundled zlib at ${ZLIB_INCLUDE_DIRS}. Please specify a valid zlib include dir or install system zlib.")
+    endif()
+else()
+    # Fallback: try to find system zlib
+    find_package(ZLIB QUIET)
+    if(NOT ZLIB_FOUND)
+        message(WARNING "Could not find zlib. Please install zlib or specify ZLIB_INCLUDE_DIRS.")
+    endif()
+endif()
 
 # All build libraries are moved to this directory
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})

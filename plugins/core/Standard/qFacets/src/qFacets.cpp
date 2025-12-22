@@ -26,6 +26,9 @@
 #include <QSettings>
 #include <QtGui>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // CV_CORE_LIB
 #include <CVLog.h>
 
@@ -609,7 +612,7 @@ void GetFacetMetaData(ccFacet* facet, FacetMetaData& data) {
     // try to get the facet index from the facet name!
     {
         QStringList tokens =
-                facet->getName().split(" ", QString::SkipEmptyParts);
+                facet->getName().split(" ", QtCompat::SkipEmptyParts);
         if (tokens.size() > 1 && tokens[0] == QString("facet")) {
             bool ok = true;
             data.facetIndex = tokens[1].toInt(&ok);

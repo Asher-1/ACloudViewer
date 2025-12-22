@@ -19,6 +19,9 @@
 #include <QSettings>
 #include <QThread>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // system
 #include <limits>
 
@@ -155,7 +158,7 @@ bool TemplateAlignmentDialog::getScales(std::vector<float>& scales) const {
                 scales[i] = static_cast<float>(maxScale - i * step);
         } else if (scalesListRadioButton->isChecked()) {
             QStringList scaleList = scalesListLineEdit->text().split(
-                    ' ', QString::SkipEmptyParts);
+                    ' ', QtCompat::SkipEmptyParts);
 
             int listSize = scaleList.size();
             scales.resize(listSize);

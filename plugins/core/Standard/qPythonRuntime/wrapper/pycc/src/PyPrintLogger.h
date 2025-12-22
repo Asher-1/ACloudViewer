@@ -8,6 +8,7 @@
 #pragma once
 #include <CVLog.h>
 
+#undef slots
 #include <pybind11/pybind11.h>
 
 #include <mutex>

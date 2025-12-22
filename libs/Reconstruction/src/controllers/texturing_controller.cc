@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "TexturingController.h"
+#include "controllers/texturing_controller.h"
 
 #include <cmath>
 #include <fstream>
@@ -15,6 +15,8 @@
 #include "util/logging.h"
 
 // CV_CORE_LIB
+#include <CVLog.h>
+#include <CVTools.h>
 #include <FileSystem.h>
 
 // ECV_DB_LIB
@@ -22,16 +24,15 @@
 
 // ECV_IO_LIB
 #include <AutoIO.h>
+#include <ImageIO.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
 // Local
-#include "MvsTexturing.h"
+#include "mvs/texturing.h"
 
-namespace cloudViewer {
-
-using namespace colmap;
+namespace colmap {
 
 TexturingReconstruction::TexturingReconstruction(
         const TexturingOptions& options,
@@ -44,11 +45,15 @@ TexturingReconstruction::TexturingReconstruction(
       output_path_(output_path),
       image_ids_(image_ids),
       reconstruction_(reconstruction) {
-    camera_trajectory_ = std::make_shared<camera::PinholeCameraTrajectory>();
+    camera_trajectory_ = std::make_shared<cloudViewer::camera::PinholeCameraTrajectory>();
 }
 
 void TexturingReconstruction::Run() {
     PrintHeading1("Mesh Texturing");
+
+    if (options_.verbose) {
+        options_.Print();
+    }
 
     CreateDirIfNotExists(JoinPaths(output_path_, "images"));
     CreateDirIfNotExists(JoinPaths(output_path_, "sparse"));
@@ -70,7 +75,7 @@ void TexturingReconstruction::Run() {
         workspace_ = std::make_unique<colmap::mvs::CachedWorkspace>(
                 workspace_options);
     }
-    std::string parent_path = utility::filesystem::GetFileParentDirectory(
+    std::string parent_path = cloudViewer::utility::filesystem::GetFileParentDirectory(
             options_.textured_file_path);
     CreateDirIfNotExists(parent_path);
     CreateDirIfNotExists(JoinPaths(parent_path, "images"));
@@ -106,10 +111,7 @@ void TexturingReconstruction::Run() {
         }
 
         if (options_.verbose) {
-            std::cout << StringPrintf("texture image [%d/%d]", i + 1,
-                                      futures.size())
-                      << std::endl;
-            CVLog::Print("texture image [%d/%d]", i + 1, futures.size());
+            std::cout << StringPrintf("texture image [%d/%d]\n", i + 1, futures.size());
         }
 
         if (futures[i].get()) {
@@ -124,12 +126,12 @@ void TexturingReconstruction::Run() {
     }
 
     // check camera trajectory validation
-    for (int i = 0; i < camera_trajectory_->parameters_.size(); ++i) {
+    for (size_t i = 0; i < camera_trajectory_->parameters_.size(); ++i) {
         auto& cameraParams = camera_trajectory_->parameters_[i];
         if (!cameraParams.intrinsic_.IsValid()) {
-            CVLog::Error(
+            std::cerr << "ERROR: " << StringPrintf(
                     "Invalid camera intrinsic parameters found and ignore "
-                    "texturing!");
+                    "texturing!\n");
             return;
         }
     }
@@ -140,7 +142,7 @@ void TexturingReconstruction::Run() {
     if (!options_.meshed_file_path.empty() &&
         ExistsFile(options_.meshed_file_path)) {
         if (!mesh.CreateInternalCloud()) {
-            CVLog::Error("creating internal cloud failed!");
+            std::cerr << "ERROR: " << StringPrintf("creating internal cloud failed!\n");
             return;
         }
         cloudViewer::io::ReadTriangleMeshOptions mesh_options;
@@ -152,7 +154,7 @@ void TexturingReconstruction::Run() {
                 mesh.computeNormals(true);
             }
             if (options_.verbose) {
-                CVLog::Print("Loaded mesh: %zu vertices, %zu triangles",
+                std::cout << StringPrintf("Loaded mesh: %zu vertices, %zu triangles\n",
                              mesh.getAssociatedCloud()
                                      ? mesh.getAssociatedCloud()->size()
                                      : 0,
@@ -160,31 +162,31 @@ void TexturingReconstruction::Run() {
             }
         } else {
             if (options_.verbose) {
-                CVLog::Warning("Failed to load mesh from %s",
+                std::cerr << "WARNING: " << StringPrintf("Failed to load mesh from %s\n",
                                options_.meshed_file_path.c_str());
             }
         }
     } else {
-        CVLog::Error("Mesh file path is empty or mesh file does not exist: %s",
+        std::cerr << "ERROR: " << StringPrintf("Mesh file path is empty or mesh file does not exist: %s\n",
                      options_.meshed_file_path.c_str());
         return;
     }
 
     // Filter camera trajectory based on depth/normal maps if enabled
-    std::shared_ptr<camera::PinholeCameraTrajectory> filtered_trajectory =
+    std::shared_ptr<cloudViewer::camera::PinholeCameraTrajectory> filtered_trajectory =
             camera_trajectory_;
     if (options_.use_depth_normal_maps && workspace_) {
         filtered_trajectory = FilterCameraTrajectory(&mesh);
         if (options_.verbose) {
-            CVLog::Print("Filtered camera trajectory: %zu -> %zu cameras",
+            std::cout << StringPrintf("Filtered camera trajectory: %zu -> %zu cameras\n",
                          camera_trajectory_->parameters_.size(),
                          filtered_trajectory->parameters_.size());
         }
 
         // Additional safety check: ensure filtered trajectory is valid
         if (filtered_trajectory->parameters_.empty()) {
-            CVLog::Error(
-                    "No valid cameras after filtering! Aborting texturing.");
+            std::cerr << "ERROR: " << StringPrintf(
+                    "No valid cameras after filtering! Aborting texturing.\n");
             return;
         }
 
@@ -192,9 +194,9 @@ void TexturingReconstruction::Run() {
         for (size_t i = 0; i < filtered_trajectory->parameters_.size(); ++i) {
             const auto& params = filtered_trajectory->parameters_[i];
             if (!params.intrinsic_.IsValid()) {
-                CVLog::Error(
+                std::cerr << "ERROR: " << StringPrintf(
                         "Camera %zu in filtered trajectory has invalid "
-                        "intrinsics!",
+                        "intrinsics!\n",
                         i);
                 return;
             }
@@ -202,9 +204,9 @@ void TexturingReconstruction::Run() {
             for (int row = 0; row < 4; ++row) {
                 for (int col = 0; col < 4; ++col) {
                     if (!std::isfinite(params.extrinsic_(row, col))) {
-                        CVLog::Error(
+                        std::cerr << "ERROR: " << StringPrintf(
                                 "Camera %zu in filtered trajectory has invalid "
-                                "extrinsics!",
+                                "extrinsics!\n",
                                 i);
                         return;
                     }
@@ -214,42 +216,42 @@ void TexturingReconstruction::Run() {
     }
 
     // Use mvs-texturing approach
-    MvsTexturing::Options mvs_options;
+    mvs::MvsTexturing::Options mvs_options;
     mvs_options.verbose = options_.verbose;
     mvs_options.max_depth_error = options_.max_depth_error;
     mvs_options.max_viewing_angle_deg = 75.0f;  // mvs-texturing uses 75 degrees
     mvs_options.use_depth_normal_maps = options_.use_depth_normal_maps;
-    mvs_options.use_gradient_magnitude =
-            false;  // Use area for now, can enable GMI later
+    // Use area for now, can enable GMI later
+    mvs_options.use_gradient_magnitude = false;
 
-    MvsTexturing texturing(mvs_options, reconstruction_, workspace_.get(),
+    mvs::MvsTexturing texturing(mvs_options, reconstruction_, workspace_.get(),
                            image_path_);
 
     // Pass loaded mesh (must be loaded at this point)
     if (!mesh_loaded) {
-        CVLog::Error("Mesh must be loaded before texturing!");
+        std::cerr << "ERROR: " << StringPrintf("Mesh must be loaded before texturing!\n");
         return;
     }
     if (texturing.TextureMesh(mesh, *filtered_trajectory,
                               options_.textured_file_path)) {
-        CVLog::Print("Save textured mesh to %s successfully!",
+        std::cout << StringPrintf("Save textured mesh to %s successfully!\n",
                      options_.textured_file_path.c_str());
     } else {
-        CVLog::Warning("Texturing reconstruction failed!");
+        std::cerr << "WARNING: " << StringPrintf("Texturing reconstruction failed!\n");
     }
     GetTimer().PrintMinutes();
 }
 
 bool TexturingReconstruction::Texturing(const image_t image_id,
                                         std::size_t index) {
-    const Image& image = reconstruction_.Image(image_id);
-    const Camera& camera = reconstruction_.Camera(image.CameraId());
+    const colmap::Image& image = reconstruction_.Image(image_id);
+    const colmap::Camera& camera = reconstruction_.Camera(image.CameraId());
 
     const std::string input_image_path = JoinPaths(image_path_, image.Name());
     const std::string texture_file = JoinPaths("images", image.Name());
 
     std::string target_file_path =
-            JoinPaths(utility::filesystem::GetFileParentDirectory(
+            JoinPaths(cloudViewer::utility::filesystem::GetFileParentDirectory(
                               options_.textured_file_path),
                       texture_file);
     if (!ExistsFile(target_file_path) &&
@@ -260,9 +262,9 @@ bool TexturingReconstruction::Texturing(const image_t image_id,
     // Check if workspace is available and has depth/normal maps
     int workspace_image_idx = GetWorkspaceImageIdx(image_id);
 
-    CVLog::Print(
+    std::cout << StringPrintf(
             "[Texturing] Processing image_id=%u, image_name='%s', "
-            "workspace_image_idx=%d",
+            "workspace_image_idx=%d\n",
             image_id, image.Name().c_str(), workspace_image_idx);
 
     // Store workspace_image_idx for later use in visibility checking
@@ -317,37 +319,53 @@ bool TexturingReconstruction::Texturing(const image_t image_id,
                 "undistorted images and corresponding camera models without "
                 "radial "
                 "distortion.";
-        CVLog::Error(msg.c_str());
+        std::cerr << "ERROR: " << StringPrintf(msg.c_str()) << "\n";
         return false;
     }
     return true;
 }
 
 bool TexturingOptions::Check() const {
-    CHECK_OPTION_GT(save_precision, 0);
     CHECK_GT(max_depth_error, 0.0f);
     CHECK_GE(min_normal_consistency, -1.0f);
     CHECK_LE(min_normal_consistency, 1.0f);
     return true;
 }
 
+void TexturingOptions::Print() const {
+#define PrintOption(option) \
+    std::cout << "  " << #option ": " << option << std::endl
+    PrintHeading2("TexturingOptions");
+    PrintOption(verbose);
+    PrintOption(meshed_file_path);
+    PrintOption(textured_file_path);
+    PrintOption(use_depth_normal_maps);
+    PrintOption(depth_map_type);
+    PrintOption(max_depth_error);
+    PrintOption(min_normal_consistency);
+    PrintOption(max_viewing_angle_deg);
+    PrintOption(use_gradient_magnitude);
+    PrintOption(mesh_source);
+#undef PrintOption
+}
+
 int TexturingReconstruction::GetWorkspaceImageIdx(
         const image_t image_id) const {
     if (!workspace_) {
-        CVLog::Warning(
-                "[GetWorkspaceImageIdx] workspace_ is null for image_id=%u",
+        std::cerr << "WARNING: " << StringPrintf(
+                "[GetWorkspaceImageIdx] workspace_ is null for image_id=%u\n",
                 image_id);
         return -1;
     }
 
-    const Image& image = reconstruction_.Image(image_id);
+    const colmap::Image& image = reconstruction_.Image(image_id);
     const std::string& image_name = image.Name();
 
     const auto& model = workspace_->GetModel();
 
     CVLog::PrintDebug(
             "[GetWorkspaceImageIdx] Looking up image_name='%s' (image_id=%u) "
-            "in workspace model (model has %zu images)",
+            "in workspace model (model has %zu images)\n",
             image_name.c_str(), image_id, model.images.size());
 
     // GetImageIdx uses CHECK_GT and .at() which throws exception if not found
@@ -357,22 +375,22 @@ int TexturingReconstruction::GetWorkspaceImageIdx(
 
         CVLog::PrintDebug(
                 "[GetWorkspaceImageIdx] Found workspace_image_idx=%d for "
-                "image_name='%s'",
+                "image_name='%s'\n",
                 workspace_image_idx, image_name.c_str());
 
         // Validate the index is within valid range
         if (workspace_image_idx < 0) {
-            CVLog::Warning(
+            std::cerr << "WARNING: " << StringPrintf(
                     "[GetWorkspaceImageIdx] Invalid negative "
-                    "workspace_image_idx=%d for image_name='%s'",
+                    "workspace_image_idx=%d for image_name='%s'\n",
                     workspace_image_idx, image_name.c_str());
             return -1;
         }
 
         if (static_cast<size_t>(workspace_image_idx) >= model.images.size()) {
-            CVLog::Warning(
+            std::cerr << "WARNING: " << StringPrintf(
                     "[GetWorkspaceImageIdx] workspace_image_idx=%d >= "
-                    "model.images.size()=%zu for image_name='%s'",
+                    "model.images.size()=%zu for image_name='%s'\n",
                     workspace_image_idx, model.images.size(),
                     image_name.c_str());
             return -1;
@@ -380,14 +398,14 @@ int TexturingReconstruction::GetWorkspaceImageIdx(
 
         CVLog::PrintDebug(
                 "[GetWorkspaceImageIdx] Successfully mapped image_name='%s' -> "
-                "workspace_image_idx=%d",
+                "workspace_image_idx=%d\n",
                 image_name.c_str(), workspace_image_idx);
         return workspace_image_idx;
     } catch (const std::exception& e) {
         // Image not found in workspace model or index out of range
-        CVLog::Warning(
+        std::cerr << "WARNING: " << StringPrintf(
                 "[GetWorkspaceImageIdx] Exception when looking up "
-                "image_name='%s': %s",
+                "image_name='%s': %s\n",
                 image_name.c_str(), e.what());
         return -1;
     }
@@ -568,15 +586,15 @@ float TexturingReconstruction::ComputeViewQuality(
     }
 }
 
-std::shared_ptr<camera::PinholeCameraTrajectory>
+std::shared_ptr<cloudViewer::camera::PinholeCameraTrajectory>
 TexturingReconstruction::FilterCameraTrajectory(ccMesh* mesh) const {
     auto filtered_trajectory =
-            std::make_shared<camera::PinholeCameraTrajectory>();
+            std::make_shared<::cloudViewer::camera::PinholeCameraTrajectory>();
 
     // Sample mesh vertices for visibility testing
     std::vector<Eigen::Vector3d> mesh_vertices;
     if (!mesh || !mesh->getAssociatedCloud()) {
-        CVLog::Error("Mesh is null or has no associated cloud!");
+        std::cerr << "ERROR: " << StringPrintf("Mesh is null or has no associated cloud!\n");
         return filtered_trajectory;
     }
 
@@ -605,13 +623,13 @@ TexturingReconstruction::FilterCameraTrajectory(ccMesh* mesh) const {
         }
 
         if (options_.verbose) {
-            CVLog::Print(
-                    "Sampled %zu vertices from mesh for visibility testing",
+            std::cout << StringPrintf(
+                    "Sampled %zu vertices from mesh for visibility testing\n",
                     mesh_vertices.size());
         }
     } else {
         if (options_.verbose) {
-            CVLog::Warning("Mesh has no valid vertices for visibility testing");
+            std::cerr << "WARNING: " << StringPrintf("Mesh has no valid vertices for visibility testing\n");
         }
     }
 
@@ -634,8 +652,8 @@ TexturingReconstruction::FilterCameraTrajectory(ccMesh* mesh) const {
             continue;
         }
 
-        const Image& image = reconstruction_.Image(image_id);
-        const Camera& camera = reconstruction_.Camera(image.CameraId());
+        const colmap::Image& image = reconstruction_.Image(image_id);
+        const colmap::Camera& camera = reconstruction_.Camera(image.CameraId());
         int workspace_image_idx = GetWorkspaceImageIdx(image_id);
 
         // Check if camera has valid depth/normal maps
@@ -653,9 +671,9 @@ TexturingReconstruction::FilterCameraTrajectory(ccMesh* mesh) const {
             if (!has_valid_maps) {
                 should_include = false;
                 if (options_.verbose) {
-                    CVLog::Warning(
+                    std::cerr << "WARNING: " << StringPrintf(
                             "Excluding camera %s from texturing (no "
-                            "depth/normal maps)",
+                            "depth/normal maps)\n",
                             image.Name().c_str());
                 }
             } else if (!mesh_vertices.empty()) {
@@ -727,15 +745,15 @@ TexturingReconstruction::FilterCameraTrajectory(ccMesh* mesh) const {
 
                 if (options_.verbose) {
                     if (should_include) {
-                        CVLog::Print(
+                        std::cout << StringPrintf(
                                 "Camera %s: visibility=%.2f%%, quality=%.2f%% "
-                                "(included)",
+                                "(included)\n",
                                 image.Name().c_str(), visibility_ratio * 100.0,
                                 quality_ratio * 100.0);
                     } else {
-                        CVLog::Warning(
+                        std::cout << "WARNING: " << StringPrintf(
                                 "Camera %s: visibility=%.2f%%, quality=%.2f%% "
-                                "(excluded)",
+                                "(excluded)\n",
                                 image.Name().c_str(), visibility_ratio * 100.0,
                                 quality_ratio * 100.0);
                     }
@@ -747,9 +765,9 @@ TexturingReconstruction::FilterCameraTrajectory(ccMesh* mesh) const {
             // Validate camera parameters before adding
             if (!cameraParams.intrinsic_.IsValid()) {
                 if (options_.verbose) {
-                    CVLog::Warning(
+                    std::cerr << "WARNING: " << StringPrintf(
                             "Excluding camera %s from texturing (invalid "
-                            "intrinsic parameters)",
+                            "intrinsic parameters)\n",
                             image.Name().c_str());
                 }
                 continue;
@@ -770,9 +788,9 @@ TexturingReconstruction::FilterCameraTrajectory(ccMesh* mesh) const {
 
             if (!extrinsic_valid) {
                 if (options_.verbose) {
-                    CVLog::Warning(
+                    std::cerr << "WARNING: " << StringPrintf(
                             "Excluding camera %s from texturing (invalid "
-                            "extrinsic matrix)",
+                            "extrinsic matrix)\n",
                             image.Name().c_str());
                 }
                 continue;
@@ -784,13 +802,13 @@ TexturingReconstruction::FilterCameraTrajectory(ccMesh* mesh) const {
 
     // Final validation: ensure we have at least one valid camera
     if (filtered_trajectory->parameters_.empty()) {
-        CVLog::Warning(
+        std::cerr << "WARNING: " << StringPrintf(
                 "No valid cameras found after filtering! Using original "
-                "trajectory.");
+                "trajectory.\n");
         return camera_trajectory_;
     }
 
     return filtered_trajectory;
 }
 
-}  // namespace cloudViewer
+}  // namespace colmap

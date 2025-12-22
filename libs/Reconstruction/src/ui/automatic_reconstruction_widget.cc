@@ -81,6 +81,7 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
   AddOptionBool(&options_.single_camera, "Shared intrinsics");
   AddOptionBool(&options_.sparse, "Sparse model");
   AddOptionBool(&options_.dense, "Dense model");
+  AddOptionBool(&options_.texturing, "Mesh texturing");
 
   QLabel* mesher_label = new QLabel(tr("Mesher"), this);
   mesher_label->setFont(font());

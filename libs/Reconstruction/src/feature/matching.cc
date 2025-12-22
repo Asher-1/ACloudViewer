@@ -438,7 +438,7 @@ void SiftGPUFeatureMatcher::Run() {
   // This prevents double free caused by assignment operator
   SiftMatchGPU sift_match_gpu(options_.max_num_matches);
   if (!CreateSiftGPUMatcher(options_, &sift_match_gpu)) {
-    std::cout << "ERROR: SiftGPU not fully supported" << std::endl;
+    std::cout << "WARNING: SiftGPU not fully supported" << std::endl;
     SignalInvalidSetup();
     return;
   }
@@ -577,7 +577,7 @@ void GuidedSiftGPUFeatureMatcher::Run() {
   // This prevents double free caused by assignment operator
   SiftMatchGPU sift_match_gpu(options_.max_num_matches);
   if (!CreateSiftGPUMatcher(options_, &sift_match_gpu)) {
-    std::cout << "ERROR: SiftGPU not fully supported" << std::endl;
+    std::cout << "WARNING: SiftGPU not fully supported" << std::endl;
     SignalInvalidSetup();
     return;
   }

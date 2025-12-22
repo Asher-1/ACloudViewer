@@ -15,6 +15,9 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // ECV_DB_LIB
 #include <CVLog.h>
 #include <ecvHObject.h>
@@ -92,7 +95,7 @@ CC_FILE_ERROR CSVMatrixFilter::loadFile(const QString& filename,
         }
 
         // we split the current line
-        QStringList parts = line.split(s_separator, QString::SkipEmptyParts);
+        QStringList parts = line.split(s_separator, QtCompat::SkipEmptyParts);
 
         // if we have reached the max. number of points per cloud
         if (width < 0) {

@@ -38,6 +38,9 @@
 #include <QDialog>
 #include <QFileInfo>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 static const char COMMAND_3DMASC_CLASSIFY[] = "3DMASC_CLASSIFY";
 static const char COMMAND_3DMASC_KEEP_ATTRIBS[] = "KEEP_ATTRIBUTES";
 static const char COMMAND_3DMASC_ONLY_FEATURES[] = "ONLY_FEATURES";
@@ -140,7 +143,7 @@ struct Command3DMASCClassif : public ccCommandLineInterface::Command {
 
             // process the cloud roles description
             QStringList tokens = cloudRolesStr.simplified().split(
-                    QChar(' '), QString::SkipEmptyParts);
+                    QChar(' '), QtCompat::SkipEmptyParts);
 
             masc::Tools::NamedClouds cloudPerRole;
             QString mainCloudRole;

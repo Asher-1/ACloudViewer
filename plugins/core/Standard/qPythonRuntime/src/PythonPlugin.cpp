@@ -106,10 +106,16 @@ PythonPlugin::PythonPlugin(QObject *parent)
             this,
             &PythonPlugin::handlePythonExecutionFinished);
 
-    connect(QCoreApplication::instance(),
-            &QCoreApplication::aboutToQuit,
-            this,
-            &PythonPlugin::finalizeInterpreter);
+    // Note: We do NOT call py::finalize_interpreter() on quit anymore.
+    // With embedded Python modules (PYBIND11_EMBEDDED_MODULE), calling finalize
+    // can cause crashes due to static destruction order issues. It's safer to let
+    // the OS clean up the Python interpreter when the process exits.
+    // See: https://github.com/pybind/pybind11/issues/1598
+    //
+    // connect(QCoreApplication::instance(),
+    //         &QCoreApplication::aboutToQuit,
+    //         this,
+    //         &PythonPlugin::finalizeInterpreter);
 }
 
 static std::unique_ptr<QSettings> LoadSettings()

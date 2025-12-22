@@ -33,6 +33,7 @@
 
 #include "base/undistortion.h"
 #include "controllers/incremental_mapper.h"
+#include "controllers/texturing_controller.h"
 #include "feature/extraction.h"
 #include "feature/matching.h"
 #include "mvs/fusion.h"
@@ -167,6 +168,8 @@ void AutomaticReconstructionController::Run() {
   if (options_.dense) {
     RunDenseMapper();
   }
+
+  GetTimer().PrintMinutes();
 }
 
 void AutomaticReconstructionController::RunFeatureExtraction() {
@@ -264,7 +267,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
       undistortion_options.max_image_size =
           option_manager_.patch_match_stereo->max_image_size;
       COLMAPUndistorter undistorter(undistortion_options,
-                                    reconstruction_manager_->Get(i),
+                                    &reconstruction_manager_->Get(i),
                                     *option_manager_.image_path, dense_path);
       active_thread_ = &undistorter;
       undistorter.Start();
@@ -314,10 +317,14 @@ void AutomaticReconstructionController::RunDenseMapper() {
       fuser.Wait();
       active_thread_ = nullptr;
 
-      std::cout << "Writing output: " << fused_path << std::endl;
-      WriteBinaryPlyPoints(fused_path, fuser.GetFusedPoints());
-      mvs::WritePointsVisibility(fused_path + ".vis",
-                                 fuser.GetFusedPointsVisibility());
+            std::cout << "Writing output: " << fused_path << std::endl;
+            const auto fused_points = fuser.GetFusedPoints();
+            WriteBinaryPlyPoints(fused_path, fused_points);
+            mvs::WritePointsVisibility(fused_path + ".vis",
+                                       fuser.GetFusedPointsVisibility());
+            
+            // Hook for derived classes
+            OnFusedPointsGenerated(i, fused_points);
     }
 
     if (IsStopped()) {
@@ -342,6 +349,54 @@ void AutomaticReconstructionController::RunDenseMapper() {
         return;
 
 #endif  // CGAL_ENABLED
+      }
+      
+      // Hook for derived classes
+      if (ExistsFile(meshing_path)) {
+        OnMeshGenerated(i, meshing_path);
+      }
+    } else {
+      // Mesh already exists, notify derived classes
+      OnMeshGenerated(i, meshing_path);
+    }
+
+    if (IsStopped()) {
+      return;
+    }
+
+    // Surface texturing.
+    if (options_.texturing) {
+      const std::string textured_path =
+              JoinPaths(dense_path, "textured-mesh.obj");
+      if (!ExistsFile(textured_path) && ExistsFile(meshing_path)) {
+        option_manager_.texturing->meshed_file_path = meshing_path;
+        option_manager_.texturing->textured_file_path = textured_path;
+
+        // Set mesh_source based on which mesher was used
+        if (options_.mesher == Mesher::POISSON) {
+          option_manager_.texturing->mesh_source = "poisson";
+        } else if (options_.mesher == Mesher::DELAUNAY) {
+          option_manager_.texturing->mesh_source = "delaunay";
+        }
+
+        TexturingReconstruction texturing(
+                *option_manager_.texturing,
+                reconstruction_manager_->Get(i),
+                *option_manager_.image_path, dense_path);
+        active_thread_ = &texturing;
+        texturing.Start();
+        texturing.Wait();
+        active_thread_ = nullptr;
+
+        if (ExistsFile(textured_path)) {
+          std::cout << "Writing textured mesh: " << textured_path
+                    << std::endl;
+          // Hook for derived classes
+          OnTexturedMeshGenerated(i, textured_path);
+        }
+      } else if (ExistsFile(textured_path)) {
+        // Textured mesh already exists, notify derived classes
+        OnTexturedMeshGenerated(i, textured_path);
       }
     }
   }

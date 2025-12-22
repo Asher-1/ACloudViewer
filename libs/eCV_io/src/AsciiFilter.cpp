@@ -29,6 +29,9 @@
 #include <QSharedPointer>
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // Semi-persistent parameters
 static int s_defaultSkippedLineCount = 0;
 static int s_outputCoordPrecision = 8;
@@ -875,7 +878,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiStream(
 
         // we split current line
         QStringList parts = currentLine.simplified().split(
-                separator, QString::SkipEmptyParts);
+                separator, QtCompat::SkipEmptyParts);
 
         int nParts = parts.size();
         if (nParts > maxPartIndex)  // fake loop for easy break

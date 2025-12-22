@@ -7,9 +7,9 @@
 
 #include "MatchMatrixWidget.h"
 
-#include "OptionManager.h"
 #include "base/database.h"
 #include "util/bitmap.h"
+#include "util/option_manager.h"
 
 namespace cloudViewer {
 

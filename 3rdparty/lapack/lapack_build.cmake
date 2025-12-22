@@ -32,7 +32,7 @@ ExternalProject_Add(ext_lapack
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-        DEPENDS ${GLOG_TARGET}
+        DEPENDS 3rdparty_glog
 )
 
 ExternalProject_Get_Property(ext_lapack INSTALL_DIR)

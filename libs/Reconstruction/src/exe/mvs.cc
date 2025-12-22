@@ -68,7 +68,7 @@ int RunDelaunayMesher(int argc, char** argv) {
     mvs::DenseDelaunayMeshing(*options.delaunay_meshing, input_path,
                               output_path);
   } else {
-    std::cout << "ERROR: Invalid input type - "
+    std::cout << "WARNING: Invalid input type - "
                  "supported values are 'sparse' and 'dense'."
               << std::endl;
     return EXIT_FAILURE;
@@ -103,7 +103,7 @@ int RunPatchMatchStereo(int argc, char** argv) {
 
   StringToLower(&workspace_format);
   if (workspace_format != "colmap" && workspace_format != "pmvs") {
-    std::cout << "ERROR: Invalid `workspace_format` - supported values are "
+    std::cout << "WARNING: Invalid `workspace_format` - supported values are "
                  "'COLMAP' or 'PMVS'."
               << std::endl;
     return EXIT_FAILURE;
@@ -159,7 +159,7 @@ int RunStereoFuser(int argc, char** argv) {
 
   StringToLower(&workspace_format);
   if (workspace_format != "colmap" && workspace_format != "pmvs") {
-    std::cout << "ERROR: Invalid `workspace_format` - supported values are "
+    std::cout << "WARNING: Invalid `workspace_format` - supported values are "
                  "'COLMAP' or 'PMVS'."
               << std::endl;
     return EXIT_FAILURE;
@@ -167,7 +167,7 @@ int RunStereoFuser(int argc, char** argv) {
 
   StringToLower(&input_type);
   if (input_type != "photometric" && input_type != "geometric") {
-    std::cout << "ERROR: Invalid input type - supported values are "
+    std::cout << "WARNING: Invalid input type - supported values are "
                  "'photometric' and 'geometric'."
               << std::endl;
     return EXIT_FAILURE;

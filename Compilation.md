@@ -30,6 +30,19 @@ or
 
 Linux:(Manually)
 
+# python evn setup
+
+export PYENV_ROOT=~/.pyenv PYTHON_VERSION=3.11
+export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+
+curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+python --version && pip --version
+
 ```
 (Linux whl)
 sudo apt install libxxf86vm-dev
@@ -84,6 +97,7 @@ python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+
 (Linux APP)
 cd ACloudViewer
 mkdir build_app
@@ -127,7 +141,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPLUGIN_IO_QRDB=ON \
         -DPLUGIN_IO_QFBX=OFF \
         -DPLUGIN_IO_QSTEP=OFF \
-        -DPLUGIN_STANDARD_QCORK=OFF \
+        -DPLUGIN_STANDARD_QCORK=ON \
         -DPLUGIN_STANDARD_QJSONRPC=ON \
         -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
         -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
@@ -276,7 +290,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPLUGIN_IO_QRDB=OFF \
         -DPLUGIN_IO_QFBX=OFF \
         -DPLUGIN_IO_QSTEP=OFF \
-        -DPLUGIN_STANDARD_QCORK=OFF \
+        -DPLUGIN_STANDARD_QCORK=ON \
         -DPLUGIN_STANDARD_QJSONRPC=ON \
         -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
         -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=OFF \

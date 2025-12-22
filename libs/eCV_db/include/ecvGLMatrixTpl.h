@@ -20,6 +20,9 @@
 // Qt
 #include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 //! Model view matrix size (OpenGL)
 static const unsigned OPENGL_MATRIX_SIZE = 16;
 
@@ -476,7 +479,7 @@ public:
     **/
     static ccGLMatrixTpl<T> FromString(const QString& matText, bool& success) {
         QStringList valuesStr =
-                matText.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+                qtCompatSplitRegex(matText, "\\s+", QtCompat::SkipEmptyParts);
         if (valuesStr.size() != OPENGL_MATRIX_SIZE) {
             success = false;
             return ccGLMatrixTpl<T>();
