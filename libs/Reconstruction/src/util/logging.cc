@@ -31,6 +31,11 @@
 
 #include "util/logging.h"
 
+#ifdef GUI_ENABLED
+#include <QCoreApplication>
+#include <QThread>
+#endif
+
 namespace colmap {
 
 void InitializeGlog(char** argv) {
@@ -53,9 +58,9 @@ bool __CheckOptionImpl(const char* file, const int line, const bool result,
   if (result) {
     return true;
   } else {
-    std::cerr << StringPrintf("[%s:%d] Check failed: %s",
+    std::cerr << StringPrintf("[WARNING %s:%d] Check failed: %s",
                               __GetConstFileBaseName(file), line, expr_str)
-              << std::endl;
+              << "\n";
     return false;
   }
 }

@@ -57,7 +57,11 @@ public:
 #endif
 
         // The meshing algorithm to be used.
+#ifdef CGAL_ENABLED
+        Mesher mesher = Mesher::DELAUNAY;
+#else
         Mesher mesher = Mesher::POISSON;
+#endif
 
         // Whether to perform surface texturing.
         bool texturing = true;

@@ -158,9 +158,9 @@ class TexturingOptionsTab : public OptionsWidget {
 
     // Add mesh source selection combobox
     mesh_source_combo_ = new QComboBox(this);
-    mesh_source_combo_->addItem("Auto (Poisson preferred)", "auto");
-    mesh_source_combo_->addItem("Poisson", "poisson");
+    mesh_source_combo_->addItem("Auto (Delaunay preferred)", "auto");
     mesh_source_combo_->addItem("Delaunay", "delaunay");
+    mesh_source_combo_->addItem("Poisson", "poisson");
 
     // Connect signal to update option value
     connect(mesh_source_combo_,
@@ -182,8 +182,8 @@ class TexturingOptionsTab : public OptionsWidget {
     
     // Add depth_map_type selection
     QComboBox* depth_type_combo = new QComboBox(this);
-    depth_type_combo->addItem("Photometric", "photometric");
     depth_type_combo->addItem("Geometric", "geometric");
+    depth_type_combo->addItem("Photometric", "photometric");
     connect(depth_type_combo,
             QOverload<int>::of(&QComboBox::currentIndexChanged),
             [this, depth_type_combo, options](int index) {
@@ -192,9 +192,9 @@ class TexturingOptionsTab : public OptionsWidget {
             });
     // Set initial value
     if (options->texturing->depth_map_type == "geometric") {
-      depth_type_combo->setCurrentIndex(1);
-    } else {
       depth_type_combo->setCurrentIndex(0);
+    } else {
+      depth_type_combo->setCurrentIndex(1);
     }
     AddWidgetRow("depth_map_type", depth_type_combo);
     
@@ -215,9 +215,9 @@ class TexturingOptionsTab : public OptionsWidget {
     if (mesh_source_combo_) {
       std::string current_source = options_->texturing->mesh_source;
       if (current_source == "poisson") {
-        mesh_source_combo_->setCurrentIndex(1);
-      } else if (current_source == "delaunay") {
         mesh_source_combo_->setCurrentIndex(2);
+      } else if (current_source == "delaunay") {
+        mesh_source_combo_->setCurrentIndex(1);
       } else {
         mesh_source_combo_->setCurrentIndex(0);
       }
@@ -573,16 +573,7 @@ void DenseReconstructionWidget::Texturing() {
     const bool poisson_exists = ExistsFile(poisson_path);
     const bool delaunay_exists = ExistsFile(delaunay_path);
 
-    if (options_->texturing->mesh_source == "poisson") {
-      if (poisson_exists) {
-        options_->texturing->meshed_file_path = poisson_path;
-      } else {
-        QMessageBox::critical(this, "",
-                              tr("Poisson mesh file not found. Please "
-                                 "run Poisson meshing first."));
-        return;
-      }
-    } else if (options_->texturing->mesh_source == "delaunay") {
+    if (options_->texturing->mesh_source == "delaunayx") {
       if (delaunay_exists) {
         options_->texturing->meshed_file_path = delaunay_path;
       } else {
@@ -591,11 +582,20 @@ void DenseReconstructionWidget::Texturing() {
                                  "run Delaunay meshing first."));
         return;
       }
-    } else {  // "auto" - prefer Poisson, fallback to Delaunay
+    } else if (options_->texturing->mesh_source == "poisson") {
       if (poisson_exists) {
         options_->texturing->meshed_file_path = poisson_path;
-      } else if (delaunay_exists) {
+      } else {
+        QMessageBox::critical(this, "",
+                              tr("Poisson mesh file not found. Please "
+                                 "run Poisson meshing first."));
+        return;
+      }
+    } else {  // "auto" - prefer Delaunay, fallback to Poisson
+      if (delaunay_exists) {
         options_->texturing->meshed_file_path = delaunay_path;
+      } else if (poisson_exists) {
+        options_->texturing->meshed_file_path = poisson_path;
       } else {
         QMessageBox::critical(this, "",
                               tr("No mesh file found. Please run "

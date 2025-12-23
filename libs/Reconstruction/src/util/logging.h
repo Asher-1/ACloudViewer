@@ -11,6 +11,11 @@
 
 #include <iostream>
 
+#ifdef GUI_ENABLED
+#include <QCoreApplication>
+#include <QThread>
+#endif
+
 #include "util/string.h"
 
 // Option checker macros. In contrast to glog, this function does not abort the
@@ -61,12 +66,13 @@ bool __CheckOptionOpImpl(const char* file,
     if (result) {
         return true;
     } else {
-        std::cerr << StringPrintf("[%s:%d] Check failed: %s %s %s (%s vs. %s)",
-                                  __GetConstFileBaseName(file), line, val1_str,
-                                  op_str, val2_str,
-                                  std::to_string(val1).c_str(),
-                                  std::to_string(val2).c_str())
-                  << std::endl;
+        std::cerr
+                << StringPrintf(
+                           "[WARNING %s:%d] Check failed: %s %s %s (%s vs. %s)",
+                           __GetConstFileBaseName(file), line, val1_str, op_str,
+                           val2_str, std::to_string(val1).c_str(),
+                           std::to_string(val2).c_str())
+                << "\n";
         return false;
     }
 }

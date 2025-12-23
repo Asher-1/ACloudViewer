@@ -45,7 +45,7 @@ struct TexturingOptions {
     bool use_depth_normal_maps = true;
 
     // Depth map type: "photometric" or "geometric"
-    std::string depth_map_type = "photometric";
+    std::string depth_map_type = "geometric";
 
     // Maximum depth error threshold for visibility check (relative)
     double max_depth_error = 0.01;
