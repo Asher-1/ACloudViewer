@@ -165,27 +165,16 @@
 #include <PclUtils/PCLDisplayTools.h>
 #include <Tools/AnnotationTools/PclAnnotationTool.h>
 #include <Tools/CameraTools/EditCameraTool.h>
-#include <Tools/CameraTools/cvZoomToBoxTool.h>
 #include <Tools/Common/CurveFitting.h>
 #include <Tools/FilterTools/PclFiltersTool.h>
 #include <Tools/MeasurementTools/PclMeasurementTools.h>
-#include <Tools/SelectionTools/cvBlockSelectionTool.h>
-#include <Tools/SelectionTools/cvFrustumSelectionTool.h>
-#include <Tools/SelectionTools/cvPolygonSelectionTool.h>
+// Selection Tools - Using centralized controller (ParaView-style architecture)
 #include <Tools/SelectionTools/cvSelectionData.h>
 #include <Tools/SelectionTools/cvSelectionHighlighter.h>
-#include <Tools/SelectionTools/cvSelectionManipulationTool.h>
-#include <Tools/SelectionTools/cvSelectionPropertiesWidget.h>
-#include <Tools/SelectionTools/cvSurfaceSelectionTool.h>
-#include <Tools/SelectionTools/cvTooltipSelectionTool.h>
-#include <Tools/SelectionTools/cvViewSelectionManager.h>
-
-// Additional selection system components
-#include <Tools/SelectionTools/cvSelectionAlgebra.h>
-#include <Tools/SelectionTools/cvSelectionAnnotation.h>
-#include <Tools/SelectionTools/cvSelectionBookmarks.h>
-#include <Tools/SelectionTools/cvSelectionFilter.h>
 #include <Tools/SelectionTools/cvSelectionHistory.h>
+#include <Tools/SelectionTools/cvSelectionManipulationTool.h>
+#include <Tools/SelectionTools/cvSelectionToolController.h>
+#include <Tools/SelectionTools/cvViewSelectionManager.h>
 #include <Tools/TransformTools/PclTransformTool.h>
 #endif
 
@@ -294,27 +283,9 @@ MainWindow::MainWindow()
       m_filterLabelTool(nullptr),
       m_measurementTool(nullptr),
       m_dssTool(nullptr),
-      m_zoomToBoxTool(nullptr),
-      m_surfaceCellsTool(nullptr),
-      m_surfacePointsTool(nullptr),
-      m_frustumCellsTool(nullptr),
-      m_frustumPointsTool(nullptr),
-      m_polygonCellsTool(nullptr),
-      m_blockSelectionTool(nullptr),
-      m_frustumBlockSelectionTool(nullptr),
-      m_interactiveCellsTool(nullptr),
-      m_interactivePointsTool(nullptr),
-      m_hoverCellsTool(nullptr),
-      m_hoverPointsTool(nullptr),
-      m_selectionModifierGroup(nullptr),
-      m_selectionManager(nullptr),
-      m_selectionHighlighter(nullptr),
-      m_selectionHistory(nullptr),
-      m_selectionBookmarks(nullptr),
-      m_selectionFilter(nullptr),
-      m_selectionAlgebra(nullptr),
-      m_selectionAnnotations(nullptr),
-      m_polygonPointsTool(nullptr),
+#ifdef USE_PCL_BACKEND
+      m_selectionController(nullptr),
+#endif
       m_layout(nullptr),
       m_uiManager(nullptr),
       m_mousePosLabel(nullptr),
@@ -351,34 +322,6 @@ MainWindow::MainWindow()
 
     // connect actions
     connectActions();
-
-#if defined(USE_PCL_BACKEND)
-    // Initialize selection system components
-    m_selectionHistory = new cvSelectionHistory(this);
-    m_selectionBookmarks = new cvSelectionBookmarks(this);
-    m_selectionFilter = new cvSelectionFilter(this);
-    m_selectionAlgebra = new cvSelectionAlgebra(this);
-    m_selectionAnnotations = new cvSelectionAnnotationManager(this);
-
-    // Connect selection history signals
-    connect(m_selectionHistory, &cvSelectionHistory::historyChanged, this,
-            &MainWindow::onSelectionHistoryChanged);
-    connect(m_selectionHistory, &cvSelectionHistory::selectionRestored, this,
-            &MainWindow::onSelectionRestored);
-
-    // Connect bookmark signals
-    connect(m_selectionBookmarks, &cvSelectionBookmarks::bookmarksChanged, this,
-            &MainWindow::onBookmarksChanged);
-
-    // Selection undo/redo shortcuts
-    QShortcut* undoShortcut = new QShortcut(QKeySequence("Ctrl+Z"), this);
-    connect(undoShortcut, &QShortcut::activated, this,
-            &MainWindow::undoSelection);
-
-    QShortcut* redoShortcut = new QShortcut(QKeySequence("Ctrl+Y"), this);
-    connect(redoShortcut, &QShortcut::activated, this,
-            &MainWindow::redoSelection);
-#endif
 
     // Reconstruction
 #ifdef BUILD_RECONSTRUCTION
@@ -507,22 +450,14 @@ MainWindow::~MainWindow() {
 
     m_measurementTool = nullptr;
     m_gsTool = nullptr;
-
-    // Clean up selection highlighter
-    if (m_selectionHighlighter) {
-        m_selectionHighlighter->clearHighlights();
-        delete m_selectionHighlighter;
-        m_selectionHighlighter = nullptr;
-    }
-
     m_transTool = nullptr;
     m_filterTool = nullptr;
     m_annoTool = nullptr;
     m_dssTool = nullptr;
     m_filterLabelTool = nullptr;
-    m_zoomToBoxTool = nullptr;
 
-    // Selection data is now managed by cvViewSelectionManager
+    // Selection tools are now managed by cvSelectionToolController
+    // The controller is a singleton and handles its own cleanup
 
     m_compDlg = nullptr;
     m_ppDlg = nullptr;
@@ -598,6 +533,10 @@ void MainWindow::initial() {
     QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
     viewWidget->setMinimumSize(400, 300);
     m_mdiArea->addSubWindow(viewWidget);
+
+    // Install event filter on the VTK render widget to capture ESC key
+    // VTK render window doesn't pass key events to Qt by default
+    viewWidget->installEventFilter(this);
 
     // picking hub
     {
@@ -996,84 +935,16 @@ void MainWindow::connectActions() {
             &MainWindow::toggle3DView);
     connect(m_ui->actionResetGUIElementsPos, &QAction::triggered, this,
             &MainWindow::doActionResetGUIElementsPos);
-    connect(m_ui->actionZoomToBox, &QAction::toggled, this,
-            &MainWindow::toggleZoomToBox);
     connect(m_ui->actionZoomAndCenter, &QAction::triggered, this,
             &MainWindow::zoomOnSelectedEntities);
     connect(m_ui->actionGlobalZoom, &QAction::triggered, this,
             &MainWindow::setGlobalZoom);
 
-    // "Edit > Selection" menu
-    connect(m_ui->actionAddSelection, &QAction::toggled, this,
-            &MainWindow::toggleAddSelection);
-    connect(m_ui->actionSubtractSelection, &QAction::toggled, this,
-            &MainWindow::toggleSubtractSelection);
-    connect(m_ui->actionToggleSelection, &QAction::toggled, this,
-            &MainWindow::toggleToggleSelection);
-    connect(m_ui->actionSelectSurfaceCells, &QAction::toggled, this,
-            &MainWindow::toggleSelectSurfaceCells);
-    connect(m_ui->actionSelectSurfacePoints, &QAction::toggled, this,
-            &MainWindow::toggleSelectSurfacePoints);
-    connect(m_ui->actionSelectFrustumCells, &QAction::toggled, this,
-            &MainWindow::toggleSelectFrustumCells);
-    connect(m_ui->actionSelectFrustumPoints, &QAction::toggled, this,
-            &MainWindow::toggleSelectFrustumPoints);
-    connect(m_ui->actionSelectPolygonCells, &QAction::toggled, this,
-            &MainWindow::toggleSelectPolygonCells);
-    connect(m_ui->actionSelectPolygonPoints, &QAction::toggled, this,
-            &MainWindow::toggleSelectPolygonPoints);
-    connect(m_ui->actionSelectBlocks, &QAction::toggled, this,
-            &MainWindow::toggleSelectBlocks);
-    connect(m_ui->actionSelectFrustumBlocks, &QAction::toggled, this,
-            &MainWindow::toggleSelectFrustumBlocks);
-    connect(m_ui->actionInteractiveSelectCells, &QAction::toggled, this,
-            &MainWindow::toggleInteractiveSelectCells);
-    connect(m_ui->actionInteractiveSelectPoints, &QAction::toggled, this,
-            &MainWindow::toggleInteractiveSelectPoints);
-    connect(m_ui->actionHoverCells, &QAction::toggled, this,
-            &MainWindow::toggleHoverCells);
-    connect(m_ui->actionHoverPoints, &QAction::toggled, this,
-            &MainWindow::toggleHoverPoints);
-    connect(m_ui->actionGrowSelection, &QAction::triggered, this,
-            &MainWindow::growSelection);
-    connect(m_ui->actionShrinkSelection, &QAction::triggered, this,
-            &MainWindow::shrinkSelection);
-    connect(m_ui->actionClearSelection, &QAction::triggered, this,
-            &MainWindow::clearSelection);
-
-    // Create Selection Modifier QActionGroup (mutually exclusive)
-    m_selectionModifierGroup = new QActionGroup(this);
-    m_selectionModifierGroup->addAction(m_ui->actionAddSelection);
-    m_selectionModifierGroup->addAction(m_ui->actionSubtractSelection);
-    m_selectionModifierGroup->addAction(m_ui->actionToggleSelection);
-    m_selectionModifierGroup->setExclusive(true);
-
-    // Create Selection Tool QActionGroup (non-exclusive to allow unchecking)
-    // Mutual exclusion is handled by disableAllSelectionTools()
-    m_selectionToolGroup = new QActionGroup(this);
-    m_selectionToolGroup->addAction(m_ui->actionSelectSurfaceCells);
-    m_selectionToolGroup->addAction(m_ui->actionSelectSurfacePoints);
-    m_selectionToolGroup->addAction(m_ui->actionSelectFrustumCells);
-    m_selectionToolGroup->addAction(m_ui->actionSelectFrustumPoints);
-    m_selectionToolGroup->addAction(m_ui->actionSelectPolygonCells);
-    m_selectionToolGroup->addAction(m_ui->actionSelectPolygonPoints);
-    m_selectionToolGroup->addAction(m_ui->actionSelectBlocks);
-    m_selectionToolGroup->addAction(m_ui->actionSelectFrustumBlocks);
-    m_selectionToolGroup->addAction(m_ui->actionInteractiveSelectCells);
-    m_selectionToolGroup->addAction(m_ui->actionInteractiveSelectPoints);
-    m_selectionToolGroup->addAction(m_ui->actionHoverCells);
-    m_selectionToolGroup->addAction(m_ui->actionHoverPoints);
-    m_selectionToolGroup->setExclusive(false);  // Allow manual unchecking
-
-    // Connect selection tool activation to properties delegate
-    connect(m_selectionToolGroup, &QActionGroup::triggered, this,
-            &MainWindow::onSelectionToolActivated);
-
-    // Initially disable selection manipulation actions (enabled when selection
-    // is made) ParaView-style: all disabled until selection exists
-    m_ui->actionGrowSelection->setEnabled(false);
-    m_ui->actionShrinkSelection->setEnabled(false);
-    m_ui->actionClearSelection->setEnabled(false);
+    // "Edit > Selection" menu - Initialize selection controller
+    // (ParaView-style)
+#ifdef USE_PCL_BACKEND
+    initSelectionController();
+#endif
 
     connect(m_ui->actionLockRotationAxis, &QAction::triggered, this,
             &MainWindow::toggleLockRotationAxis);
@@ -3162,6 +3033,24 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
         case QEvent::Move:
             updateOverlayDialogsPlacement();
             break;
+        case QEvent::KeyPress: {
+            // Handle ESC key globally to exit selection tools
+            // This is needed because VTK render window captures key events
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+            CVLog::Print(
+                    "[MainWindow::eventFilter] KeyPress key: %d from object: "
+                    "%s",
+                    keyEvent->key(), obj->objectName().toStdString().c_str());
+            if (keyEvent->key() == Qt::Key_Escape) {
+                CVLog::Print(
+                        "[MainWindow::eventFilter] ESC key detected, calling "
+                        "handleEscapeKey");
+                // Handle ESC key the same way as keyPressEvent
+                handleEscapeKey();
+                return true;  // Event handled
+            }
+            break;
+        }
         default:
             // nothing to do
             break;
@@ -3171,53 +3060,60 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
     return QObject::eventFilter(obj, event);
 }
 
-void MainWindow::keyPressEvent(QKeyEvent* event) {
-    switch (event->key()) {
-        case Qt::Key_Escape: {
-            // First, stop any active measurement tool and uncheck its button
-            if (m_measurementTool && m_measurementTool->started()) {
-                m_measurementTool->stop(false);
+void MainWindow::handleEscapeKey() {
+    // First, stop any active measurement tool and uncheck its button
+    if (m_measurementTool && m_measurementTool->started()) {
+        m_measurementTool->stop(false);
 
-                // Uncheck measurement tool actions if they are checkable
-                if (m_ui->actionDistanceWidget &&
-                    m_ui->actionDistanceWidget->isCheckable()) {
-                    m_ui->actionDistanceWidget->setChecked(false);
-                }
-                if (m_ui->actionProtractorWidget &&
-                    m_ui->actionProtractorWidget->isCheckable()) {
-                    m_ui->actionProtractorWidget->setChecked(false);
-                }
-                if (m_ui->actionContourWidget &&
-                    m_ui->actionContourWidget->isCheckable()) {
-                    m_ui->actionContourWidget->setChecked(false);
-                }
-
-                return;  // Handled, don't process further
-            }
-
-            // Second, disable all active selection tools (SelectionTools
-            // module) This ensures ESC exits selection modes like Rectangle
-            // Select, Polygon Select, etc.
-            disableAllSelectionTools();
-
-            // Uncheck all selection tool actions (since group is non-exclusive)
-            if (m_selectionToolGroup) {
-                for (QAction* action : m_selectionToolGroup->actions()) {
-                    if (action && action->isChecked()) {
-                        action->blockSignals(true);
-                        action->setChecked(false);
-                        action->blockSignals(false);
-                    }
-                }
-            }
-
-            // Then handle picking and fullscreen
-            cancelPreviousPickingOperation(true);
-            if (this->isFullScreen()) {
-                this->showNormal();
-            }
-            break;
+        // Uncheck measurement tool actions if they are checkable
+        if (m_ui->actionDistanceWidget &&
+            m_ui->actionDistanceWidget->isCheckable()) {
+            m_ui->actionDistanceWidget->setChecked(false);
         }
+        if (m_ui->actionProtractorWidget &&
+            m_ui->actionProtractorWidget->isCheckable()) {
+            m_ui->actionProtractorWidget->setChecked(false);
+        }
+        if (m_ui->actionContourWidget &&
+            m_ui->actionContourWidget->isCheckable()) {
+            m_ui->actionContourWidget->setChecked(false);
+        }
+    }
+
+    // Second, disable all active selection tools (SelectionTools
+    // module) This ensures ESC exits selection modes like Rectangle
+    // Select, Polygon Select, etc.
+    CVLog::Print("[MainWindow] Disabling all selection tools");
+    // Disable all selection tools via controller
+    // The controller handles unchecking all actions
+#ifdef USE_PCL_BACKEND
+    if (m_selectionController) {
+        m_selectionController->handleEscapeKey();
+    }
+#endif
+
+    // Then handle picking and fullscreen
+    cancelPreviousPickingOperation(true);
+    
+    // Handle exclusive fullscreen mode (when a sub-widget is fullscreen, not MainWindow itself)
+    if (m_exclusiveFullscreen) {
+        toggleExclusiveFullScreen(false);
+    }
+    // Handle normal fullscreen mode (when MainWindow itself is fullscreen)
+    else if (this->isFullScreen()) {
+        this->showNormal();
+    }
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event) {
+    CVLog::Print("[MainWindow::keyPressEvent] Key: %d", event->key());
+    switch (event->key()) {
+        case Qt::Key_Escape:
+            CVLog::Print(
+                    "[MainWindow::keyPressEvent] ESC key received, calling "
+                    "handleEscapeKey");
+            handleEscapeKey();
+            break;
         default:
             QMainWindow::keyPressEvent(event);
     }
@@ -3386,13 +3282,18 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
             if (m_currentFullWidget) {
                 m_formerGeometry = m_currentFullWidget->saveGeometry();
                 m_currentFullWidget->setWindowFlags(Qt::Dialog);
+                // Install event filter to capture ESC key in fullscreen mode
+                m_currentFullWidget->installEventFilter(this);
             }
 
             m_exclusiveFullscreen = true;
-            if (m_currentFullWidget)
+            if (m_currentFullWidget) {
                 m_currentFullWidget->showFullScreen();
-            else
+                // Ensure the widget has keyboard focus to receive ESC key
+                m_currentFullWidget->setFocus();
+            } else {
                 showFullScreen();
+            }
 
             onExclusiveFullScreenToggled(state);
             ecvDisplayTools::DisplayNewMessage(
@@ -4166,186 +4067,116 @@ void MainWindow::setGlobalZoom() {
     }
 }
 
-void MainWindow::toggleZoomToBox(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        // Create zoom to box tool if not exists
-        if (!m_zoomToBoxTool) {
-            m_zoomToBoxTool = new cvZoomToBoxTool(this);
+//=============================================================================
+// SELECTION TOOLS - Using centralized cvSelectionToolController
+// (ParaView-style)
+//=============================================================================
 
-            // Set visualizer
-            m_zoomToBoxTool->setVisualizer(ecvDisplayTools::GetVisualizer3D());
+#if defined(USE_PCL_BACKEND)
+void MainWindow::initSelectionController() {
+    // Get the singleton controller
+    m_selectionController = cvSelectionToolController::instance();
+    m_selectionController->initialize(this);
 
-            // Connect signals
-            // Following ParaView pattern: no delay, direct endSelection
-            connect(m_zoomToBoxTool, &cvZoomToBoxTool::zoomCompleted, this,
-                    [this]() {
-                        // ParaView approach: directly end selection
-                        // When this callback is called, VTK's Zoom() has
-                        // already completed because InteractorStyle processes
-                        // events before custom observers
-
-                        // Disable zoom to box mode (this will emit
-                        // enabledChanged signal)
-                        m_zoomToBoxTool->disable();
-
-                        // Uncheck the action when zoom is completed
-                        m_ui->actionZoomToBox->setChecked(false);
-
-                        // Restore cursor
-                        if (ecvDisplayTools::GetCurrentScreen()) {
-                            ecvDisplayTools::GetCurrentScreen()->setCursor(
-                                    Qt::ArrowCursor);
-                        }
-                        ecvDisplayTools::UpdateScreen();
-                    });
-
-            connect(m_zoomToBoxTool, &cvZoomToBoxTool::enabledChanged, this,
-                    [this](bool enabled) {
-                        if (!enabled) {
-                            // Sync action state with tool state
-                            m_ui->actionZoomToBox->setChecked(false);
-                        }
-                    });
-        }
-
-        disableAllSelectionTools(m_zoomToBoxTool);
-
-        // Enable zoom to box mode
-        m_zoomToBoxTool->enable();
-
-        // Set cursor
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(
-                    m_zoomToBoxTool->getZoomCursor());
-        }
-    } else {
-        // Disable zoom to box mode
-        if (m_zoomToBoxTool) {
-            m_zoomToBoxTool->disable();
-        }
-
-        // Restore cursor
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
+    // Set visualizer
+    ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+    if (viewer) {
+        m_selectionController->setVisualizer(viewer);
     }
-#else
-    CVLog::Warning("Zoom to box requires PCL backend!");
-    m_ui->actionZoomToBox->setChecked(false);
-#endif
+
+    // Setup all actions using the SelectionActions struct
+    cvSelectionToolController::SelectionActions actions;
+    actions.selectSurfaceCells = m_ui->actionSelectSurfaceCells;
+    actions.selectSurfacePoints = m_ui->actionSelectSurfacePoints;
+    actions.selectFrustumCells = m_ui->actionSelectFrustumCells;
+    actions.selectFrustumPoints = m_ui->actionSelectFrustumPoints;
+    actions.selectPolygonCells = m_ui->actionSelectPolygonCells;
+    actions.selectPolygonPoints = m_ui->actionSelectPolygonPoints;
+    actions.selectBlocks = m_ui->actionSelectBlocks;
+    actions.selectFrustumBlocks = m_ui->actionSelectFrustumBlocks;
+    actions.interactiveSelectCells = m_ui->actionInteractiveSelectCells;
+    actions.interactiveSelectPoints = m_ui->actionInteractiveSelectPoints;
+    actions.hoverCells = m_ui->actionHoverCells;
+    actions.hoverPoints = m_ui->actionHoverPoints;
+    actions.addSelection = m_ui->actionAddSelection;
+    actions.subtractSelection = m_ui->actionSubtractSelection;
+    actions.toggleSelection = m_ui->actionToggleSelection;
+    actions.growSelection = m_ui->actionGrowSelection;
+    actions.shrinkSelection = m_ui->actionShrinkSelection;
+    actions.clearSelection = m_ui->actionClearSelection;
+    actions.zoomToBox = m_ui->actionZoomToBox;
+
+    m_selectionController->setupActions(actions);
+
+    // Connect controller signals to MainWindow slots
+    connect(m_selectionController,
+            &cvSelectionToolController::selectionFinished, this,
+            &MainWindow::onSelectionFinished);
+
+    connect(m_selectionController,
+            &cvSelectionToolController::selectionToolStateChanged, this,
+            [this](bool active) {
+                if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+                    m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(
+                            active);
+                    m_ccRoot->updatePropertiesView();
+                }
+            });
+
+    connect(m_selectionController,
+            &cvSelectionToolController::selectionPropertiesUpdateRequested,
+            this, [this](const cvSelectionData& data) {
+                if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+                    m_ccRoot->getPropertiesDelegate()
+                            ->updateSelectionProperties(data);
+                }
+            });
+    
+    // CRITICAL FIX: Connect properties delegate's clear request to selection manager
+    // This prevents crashes from dangling pointers when objects are deleted
+    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+        connect(m_ccRoot->getPropertiesDelegate(),
+                &ccPropertiesTreeDelegate::requestClearSelection, this,
+                [this]() {
+                    CVLog::Print("[MainWindow] Clearing selection data due to object changes");
+                    auto* manager = getSelectionManager();
+                    if (manager) {
+                        manager->clearCurrentSelection();
+                    }
+                    // Also clear highlights
+                    if (m_selectionController && m_selectionController->highlighter()) {
+                        m_selectionController->highlighter()->clearHighlights();
+                    }
+                });
+    }
+
+    // Connect zoom to box signal for notification (zoom is handled by cvZoomToBoxTool)
+    connect(m_selectionController,
+            &cvSelectionToolController::zoomToBoxRequested, this,
+            [this](int xmin, int ymin, int xmax, int ymax) {
+                CVLog::Print(QString("[MainWindow] Zoom to box completed: [%1, %2, %3, %4]")
+                                     .arg(xmin).arg(ymin).arg(xmax).arg(ymax));
+                // Zoom is already performed by cvZoomToBoxTool using VTK
+                // This signal is for notification/logging purposes
+                ecvDisplayTools::UpdateScreen();
+            });
+
+    // Set the properties delegate for the controller
+    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+        m_selectionController->setPropertiesDelegate(
+                m_ccRoot->getPropertiesDelegate());
+    }
+
+    CVLog::Print(
+            "[MainWindow] Selection controller initialized (ParaView-style "
+            "architecture)");
 }
 
 void MainWindow::disableAllSelectionTools(void* except) {
-#ifdef USE_PCL_BACKEND
-    // Disable all selection tools to prevent interference
-    // Also uncheck corresponding actions to keep UI state synchronized
-    // Use blockSignals to prevent triggering toggle slots during cleanup
-    // Skip the tool specified by 'except' parameter to keep it active
-
-    // Note: We always update action state, but only disable tool if it's
-    // enabled This ensures action state is always synchronized
-    if (m_surfaceCellsTool != except) {
-        if (m_surfaceCellsTool && m_surfaceCellsTool->isEnabled()) {
-            m_surfaceCellsTool->disable();
-        }
-        m_ui->actionSelectSurfaceCells->blockSignals(true);
-        m_ui->actionSelectSurfaceCells->setChecked(false);
-        m_ui->actionSelectSurfaceCells->blockSignals(false);
-    }
-    if (m_surfacePointsTool != except) {
-        if (m_surfacePointsTool && m_surfacePointsTool->isEnabled()) {
-            m_surfacePointsTool->disable();
-        }
-        m_ui->actionSelectSurfacePoints->blockSignals(true);
-        m_ui->actionSelectSurfacePoints->setChecked(false);
-        m_ui->actionSelectSurfacePoints->blockSignals(false);
-    }
-    if (m_frustumCellsTool != except) {
-        if (m_frustumCellsTool && m_frustumCellsTool->isEnabled()) {
-            m_frustumCellsTool->disable();
-        }
-        m_ui->actionSelectFrustumCells->blockSignals(true);
-        m_ui->actionSelectFrustumCells->setChecked(false);
-        m_ui->actionSelectFrustumCells->blockSignals(false);
-    }
-    if (m_frustumPointsTool != except) {
-        if (m_frustumPointsTool && m_frustumPointsTool->isEnabled()) {
-            m_frustumPointsTool->disable();
-        }
-        m_ui->actionSelectFrustumPoints->blockSignals(true);
-        m_ui->actionSelectFrustumPoints->setChecked(false);
-        m_ui->actionSelectFrustumPoints->blockSignals(false);
-    }
-    if (m_polygonCellsTool != except) {
-        if (m_polygonCellsTool && m_polygonCellsTool->isEnabled()) {
-            m_polygonCellsTool->disable();
-        }
-        m_ui->actionSelectPolygonCells->blockSignals(true);
-        m_ui->actionSelectPolygonCells->setChecked(false);
-        m_ui->actionSelectPolygonCells->blockSignals(false);
-    }
-    if (m_polygonPointsTool != except) {
-        if (m_polygonPointsTool && m_polygonPointsTool->isEnabled()) {
-            m_polygonPointsTool->disable();
-        }
-        m_ui->actionSelectPolygonPoints->blockSignals(true);
-        m_ui->actionSelectPolygonPoints->setChecked(false);
-        m_ui->actionSelectPolygonPoints->blockSignals(false);
-    }
-    if (m_blockSelectionTool != except) {
-        if (m_blockSelectionTool && m_blockSelectionTool->isEnabled()) {
-            m_blockSelectionTool->disable();
-        }
-        m_ui->actionSelectBlocks->blockSignals(true);
-        m_ui->actionSelectBlocks->setChecked(false);
-        m_ui->actionSelectBlocks->blockSignals(false);
-    }
-    if (m_frustumBlockSelectionTool != except) {
-        if (m_frustumBlockSelectionTool &&
-            m_frustumBlockSelectionTool->isEnabled()) {
-            m_frustumBlockSelectionTool->disable();
-        }
-        m_ui->actionSelectFrustumBlocks->blockSignals(true);
-        m_ui->actionSelectFrustumBlocks->setChecked(false);
-        m_ui->actionSelectFrustumBlocks->blockSignals(false);
-    }
-    if (m_interactiveCellsTool != except) {
-        if (m_interactiveCellsTool && m_interactiveCellsTool->isEnabled()) {
-            m_interactiveCellsTool->disable();
-        }
-        m_ui->actionInteractiveSelectCells->blockSignals(true);
-        m_ui->actionInteractiveSelectCells->setChecked(false);
-        m_ui->actionInteractiveSelectCells->blockSignals(false);
-    }
-    if (m_interactivePointsTool != except) {
-        if (m_interactivePointsTool && m_interactivePointsTool->isEnabled()) {
-            m_interactivePointsTool->disable();
-        }
-        m_ui->actionInteractiveSelectPoints->blockSignals(true);
-        m_ui->actionInteractiveSelectPoints->setChecked(false);
-        m_ui->actionInteractiveSelectPoints->blockSignals(false);
-    }
-    if (m_hoverCellsTool != except) {
-        if (m_hoverCellsTool && m_hoverCellsTool->isEnabled()) {
-            m_hoverCellsTool->disable();
-        }
-        m_ui->actionHoverCells->blockSignals(true);
-        m_ui->actionHoverCells->setChecked(false);
-        m_ui->actionHoverCells->blockSignals(false);
-    }
-    if (m_hoverPointsTool != except) {
-        if (m_hoverPointsTool && m_hoverPointsTool->isEnabled()) {
-            m_hoverPointsTool->disable();
-        }
-        m_ui->actionHoverPoints->blockSignals(true);
-        m_ui->actionHoverPoints->setChecked(false);
-        m_ui->actionHoverPoints->blockSignals(false);
-    }
-    if (m_zoomToBoxTool != except) {
-        if (m_zoomToBoxTool && m_zoomToBoxTool->isEnabled()) {
-            m_zoomToBoxTool->disable();
-        }
+    // Delegate to the controller - it handles all tool management
+    if (m_selectionController) {
+        // Pass nullptr to disable all tools
+        m_selectionController->disableAllTools(nullptr);
     }
 
     // Hide selection properties when all tools are disabled
@@ -4353,957 +4184,164 @@ void MainWindow::disableAllSelectionTools(void* except) {
         m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(false);
         m_ccRoot->updatePropertiesView();
     }
-#endif
 }
 
-//-----------------------------------------------------------------------------
-void MainWindow::toggleAddSelection(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (!m_selectionManager) {
-        m_selectionManager = cvViewSelectionManager::instance();
+cvViewSelectionManager* MainWindow::getSelectionManager() const {
+    if (m_selectionController) {
+        return m_selectionController->manager();
     }
-
-    if (checked) {
-        m_selectionManager->setSelectionModifier(
-                cvViewSelectionManager::SELECTION_ADDITION);
-        CVLog::Print(
-                "Selection modifier: ADD (Ctrl) - New selection will be added "
-                "to existing selection");
-    } else {
-        m_selectionManager->setSelectionModifier(
-                cvViewSelectionManager::SELECTION_DEFAULT);
-    }
-#else
-    CVLog::Warning("Selection modifiers require PCL backend!");
-    m_ui->actionAddSelection->setChecked(false);
-#endif
+    return nullptr;
 }
 
-//-----------------------------------------------------------------------------
-void MainWindow::toggleSubtractSelection(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (!m_selectionManager) {
-        m_selectionManager = cvViewSelectionManager::instance();
-    }
-
-    if (checked) {
-        m_selectionManager->setSelectionModifier(
-                cvViewSelectionManager::SELECTION_SUBTRACTION);
-        CVLog::Print(
-                "Selection modifier: SUBTRACT (Shift) - New selection will be "
-                "removed from existing selection");
-    } else {
-        m_selectionManager->setSelectionModifier(
-                cvViewSelectionManager::SELECTION_DEFAULT);
-    }
-#else
-    CVLog::Warning("Selection modifiers require PCL backend!");
-    m_ui->actionSubtractSelection->setChecked(false);
-#endif
-}
-
-//-----------------------------------------------------------------------------
-void MainWindow::toggleToggleSelection(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (!m_selectionManager) {
-        m_selectionManager = cvViewSelectionManager::instance();
-    }
-
-    if (checked) {
-        m_selectionManager->setSelectionModifier(
-                cvViewSelectionManager::SELECTION_TOGGLE);
-        CVLog::Print(
-                "Selection modifier: TOGGLE (Ctrl+Shift) - Selection state "
-                "will be toggled");
-    } else {
-        m_selectionManager->setSelectionModifier(
-                cvViewSelectionManager::SELECTION_DEFAULT);
-    }
-#else
-    CVLog::Warning("Selection modifiers require PCL backend!");
-    m_ui->actionToggleSelection->setChecked(false);
-#endif
-}
-
-void MainWindow::toggleSelectSurfaceCells(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        // Create selection manager if not exists
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-
-            // Set visualizer
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            }
-        }
-
-        // Create surface cells selection tool if not exists
-        if (!m_surfaceCellsTool) {
-            m_surfaceCellsTool = new cvSurfaceSelectionTool(
-                    cvViewSelectionManager::SELECT_SURFACE_CELLS, this);
-
-            // Set visualizer
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_surfaceCellsTool->setVisualizer(viewer);
-            }
-
-            // Connect signals
-            connect(m_surfaceCellsTool,
-                    &cvSurfaceSelectionTool::selectionFinished, this,
-                    &MainWindow::onSelectionFinished);
-
-            connect(m_surfaceCellsTool,
-                    &cvSurfaceSelectionTool::selectionCompleted, this,
-                    [this]() {
-                        m_ui->actionSelectSurfaceCells->setChecked(false);
-                        ecvDisplayTools::UpdateScreen();
-                    });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_surfaceCellsTool);
-
-        m_surfaceCellsTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::CrossCursor);
-        }
-
-        CVLog::Print(
-                "Surface cells selection mode activated (press S to toggle)");
-    } else {
-        if (m_surfaceCellsTool) {
-            m_surfaceCellsTool->disable();
-        }
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Surface selection requires PCL backend!");
-    m_ui->actionSelectSurfaceCells->setChecked(false);
-#endif
-}
-
-void MainWindow::toggleSelectSurfacePoints(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            }
-        }
-
-        if (!m_surfacePointsTool) {
-            m_surfacePointsTool = new cvSurfaceSelectionTool(
-                    cvViewSelectionManager::SELECT_SURFACE_POINTS, this);
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_surfacePointsTool->setVisualizer(viewer);
-            }
-
-            connect(m_surfacePointsTool,
-                    &cvSurfaceSelectionTool::selectionFinished, this,
-                    &MainWindow::onSelectionFinished);
-
-            connect(m_surfacePointsTool,
-                    &cvSurfaceSelectionTool::selectionCompleted, this,
-                    [this]() {
-                        m_ui->actionSelectSurfacePoints->setChecked(false);
-                        ecvDisplayTools::UpdateScreen();
-                    });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_surfacePointsTool);
-
-        m_surfacePointsTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::CrossCursor);
-        }
-
-        CVLog::Print(
-                "Surface points selection mode activated (press D to toggle)");
-    } else {
-        if (m_surfacePointsTool) {
-            m_surfacePointsTool->disable();
-        }
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Surface selection requires PCL backend!");
-    m_ui->actionSelectSurfacePoints->setChecked(false);
-#endif
-}
-
-#ifdef USE_PCL_BACKEND
 void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
-    // Store selection in the manager
-    if (m_selectionManager) {
-        m_selectionManager->setCurrentSelection(selectionData);
+    // CRITICAL FIX: Don't call setCurrentSelection here!
+    // The tool has already set it via manager->setCurrentSelection()
+    // Calling it again causes infinite recursion:
+    //   setCurrentSelection → selectionChanged → selectionFinished → here → setCurrentSelection...
+    
+    // Get manager from controller
+    cvViewSelectionManager* manager = getSelectionManager();
+    if (!manager) {
+        return;
+    }
 
-        // Push to history
-        if (m_selectionHistory && !selectionData.isEmpty()) {
-            QString description = QString("%1 %2 selected")
-                                          .arg(selectionData.count())
-                                          .arg(selectionData.fieldTypeString());
-            m_selectionHistory->pushSelection(selectionData, description);
+    // NOTE: Selection is already stored by the tool/controller
+    // We just need to update the UI based on current selection state
+    bool hasSelection = !selectionData.isEmpty();
+    
+    // Enable/disable manipulation actions based on selection state
+    m_ui->actionGrowSelection->setEnabled(hasSelection);
+    m_ui->actionShrinkSelection->setEnabled(hasSelection);
+    m_ui->actionClearSelection->setEnabled(hasSelection);
+
+    // Update selection properties widget
+    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+        if (m_ccRoot->getPropertiesDelegate()->areSelectionToolsActive()) {
+            m_ccRoot->getPropertiesDelegate()->updateSelectionProperties(
+                    selectionData);
         }
+    }
 
-        // Enable/disable manipulation actions based on selection state
-        bool hasSelection = m_selectionManager->hasSelection();
-        m_ui->actionGrowSelection->setEnabled(hasSelection);
-        m_ui->actionShrinkSelection->setEnabled(hasSelection);
-        m_ui->actionClearSelection->setEnabled(hasSelection);
-
-        // IMPORTANT: Update selection properties widget with new selection data
-        // This ensures the selection statistics and info are refreshed in
-        // real-time
-        if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
-            if (m_ccRoot->getPropertiesDelegate()->areSelectionToolsActive()) {
-                // Directly update the selection properties widget
-                // This is more efficient than re-filling the entire model
-                m_ccRoot->getPropertiesDelegate()->updateSelectionProperties(
-                        selectionData);
-                CVLog::Print(QString("[MainWindow] Selection properties "
-                                     "updated: %1 %2")
-                                     .arg(selectionData.count())
-                                     .arg(selectionData.fieldTypeString()));
-            }
-        }
-
+    // Handle highlighting via the shared highlighter in the controller
+    cvSelectionHighlighter* highlighter =
+            m_selectionController ? m_selectionController->highlighter()
+                                  : nullptr;
+    if (highlighter) {
         if (!hasSelection) {
-            CVLog::Print("Selection cleared or empty");
-
-            // Clear highlights
-            if (m_selectionHighlighter) {
-                m_selectionHighlighter->clearHighlights();
-            }
+            highlighter->clearHighlights();
         } else {
-            // Initialize highlighter if needed
-            if (!m_selectionHighlighter) {
-                m_selectionHighlighter = new cvSelectionHighlighter();
-                ecvGenericVisualizer3D* viewer =
-                        ecvDisplayTools::GetVisualizer3D();
-                if (viewer) {
-                    m_selectionHighlighter->setVisualizer(viewer);
-                }
-            }
-
-            // Highlight selection (ParaView-aligned)
-            // Use high-level interface that accepts cvSelectionData directly
-            // This keeps MainWindow free from VTK types
-            if (m_selectionHighlighter) {
-                m_selectionHighlighter->highlightSelection(
-                        selectionData, cvSelectionHighlighter::SELECTED);
-
-                // Update display
-                ecvDisplayTools::UpdateScreen();
-            }
+            highlighter->highlightSelection(selectionData,
+                                            cvSelectionHighlighter::SELECTED);
         }
     }
 
     ecvDisplayTools::UpdateScreen();
-}
-#endif
-
-void MainWindow::toggleSelectFrustumCells(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            }
-        }
-
-        if (!m_frustumCellsTool) {
-            m_frustumCellsTool = new cvFrustumSelectionTool(
-                    cvViewSelectionManager::SELECT_FRUSTUM_CELLS, this);
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_frustumCellsTool->setVisualizer(viewer);
-            }
-
-            connect(m_frustumCellsTool,
-                    &cvFrustumSelectionTool::selectionFinished, this,
-                    &MainWindow::onSelectionFinished);
-
-            connect(m_frustumCellsTool,
-                    &cvFrustumSelectionTool::selectionCompleted, this,
-                    [this]() {
-                        m_ui->actionSelectFrustumCells->setChecked(false);
-                        ecvDisplayTools::UpdateScreen();
-                    });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_frustumCellsTool);
-
-        m_frustumCellsTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::CrossCursor);
-        }
-
-        CVLog::Print(
-                "Frustum cells selection mode activated (press F to toggle)");
-    } else {
-        if (m_frustumCellsTool) {
-            m_frustumCellsTool->disable();
-        }
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Frustum selection requires PCL backend!");
-    m_ui->actionSelectFrustumCells->setChecked(false);
-#endif
+    
+    CVLog::PrintDebug(QString("[MainWindow] Selection UI updated: %1 elements")
+                             .arg(selectionData.count()));
 }
 
-void MainWindow::toggleSelectFrustumPoints(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
+void MainWindow::onSelectionToolActivated(QAction* action) {
+    bool isSelectionTool = (action && action->isChecked());
 
+    CVLog::Print(QString("[MainWindow] Selection tool %1: %2")
+                         .arg(action ? action->text() : "unknown")
+                         .arg(isSelectionTool ? "activated" : "deactivated"));
+
+    // Notify properties delegate about selection tool state
+    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+        if (isSelectionTool) {
             ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
             if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
+                m_ccRoot->getPropertiesDelegate()->setVisualizer(viewer);
+            }
+
+            // Get shared highlighter from controller
+            if (m_selectionController) {
+                cvSelectionHighlighter* highlighter =
+                        m_selectionController->highlighter();
+                if (highlighter) {
+                    m_ccRoot->getPropertiesDelegate()->setHighlighter(
+                            highlighter);
+                }
             }
         }
 
-        if (!m_frustumPointsTool) {
-            m_frustumPointsTool = new cvFrustumSelectionTool(
-                    cvViewSelectionManager::SELECT_FRUSTUM_POINTS, this);
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_frustumPointsTool->setVisualizer(viewer);
-            }
-
-            connect(m_frustumPointsTool,
-                    &cvFrustumSelectionTool::selectionFinished, this,
-                    &MainWindow::onSelectionFinished);
-
-            connect(m_frustumPointsTool,
-                    &cvFrustumSelectionTool::selectionCompleted, this,
-                    [this]() {
-                        m_ui->actionSelectFrustumPoints->setChecked(false);
-                        ecvDisplayTools::UpdateScreen();
-                    });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_frustumPointsTool);
-
-        m_frustumPointsTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::CrossCursor);
-        }
-
-        CVLog::Print(
-                "Frustum points selection mode activated (press G to toggle)");
-    } else {
-        if (m_frustumPointsTool) {
-            m_frustumPointsTool->disable();
-        }
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Frustum selection requires PCL backend!");
-    m_ui->actionSelectFrustumPoints->setChecked(false);
-#endif
-}
-
-void MainWindow::toggleSelectPolygonCells(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            }
-        }
-
-        if (!m_polygonCellsTool) {
-            m_polygonCellsTool = new cvPolygonSelectionTool(
-                    cvViewSelectionManager::SELECT_SURFACE_CELLS_POLYGON, this);
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_polygonCellsTool->setVisualizer(viewer);
-            }
-
-            connect(m_polygonCellsTool,
-                    &cvPolygonSelectionTool::selectionFinished, this,
-                    &MainWindow::onSelectionFinished);
-
-            connect(m_polygonCellsTool,
-                    &cvPolygonSelectionTool::selectionCompleted, this,
-                    [this]() {
-                        m_ui->actionSelectPolygonCells->setChecked(false);
-                        ecvDisplayTools::UpdateScreen();
-                    });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_polygonCellsTool);
-
-        m_polygonCellsTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(
-                    Qt::PointingHandCursor);
-        }
-
-        CVLog::Print(
-                "Polygon cells selection mode activated (P) - Click to draw, "
-                "double-click to complete");
-    } else {
-        if (m_polygonCellsTool) {
-            m_polygonCellsTool->disable();
-        }
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Polygon selection requires PCL backend!");
-    m_ui->actionSelectPolygonCells->setChecked(false);
-#endif
-}
-
-void MainWindow::toggleSelectPolygonPoints(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            }
-        }
-
-        if (!m_polygonPointsTool) {
-            m_polygonPointsTool = new cvPolygonSelectionTool(
-                    cvViewSelectionManager::SELECT_SURFACE_POINTS_POLYGON,
-                    this);
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_polygonPointsTool->setVisualizer(viewer);
-            }
-
-            connect(m_polygonPointsTool,
-                    &cvPolygonSelectionTool::selectionFinished, this,
-                    &MainWindow::onSelectionFinished);
-
-            connect(m_polygonPointsTool,
-                    &cvPolygonSelectionTool::selectionCompleted, this,
-                    [this]() {
-                        m_ui->actionSelectPolygonPoints->setChecked(false);
-                        ecvDisplayTools::UpdateScreen();
-                    });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_polygonPointsTool);
-
-        m_polygonPointsTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(
-                    Qt::PointingHandCursor);
-        }
-
-        CVLog::Print(
-                "Polygon points selection mode activated (Ctrl+P) - Click to "
-                "draw, double-click to complete");
-    } else {
-        if (m_polygonPointsTool) {
-            m_polygonPointsTool->disable();
-        }
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Polygon selection requires PCL backend!");
-    m_ui->actionSelectPolygonPoints->setChecked(false);
-#endif
-}
-
-void MainWindow::toggleSelectBlocks(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            } else {
-                CVLog::Error(
-                        "[MainWindow::toggleSelectBlocks] No visualizer "
-                        "available!");
-                m_ui->actionSelectBlocks->setChecked(false);
-                return;
-            }
-        }
-
-        if (!m_blockSelectionTool) {
-            m_blockSelectionTool = new cvBlockSelectionTool(
-                    cvViewSelectionManager::SELECT_BLOCKS, this);
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_blockSelectionTool->setVisualizer(viewer);
-                connect(m_blockSelectionTool,
-                        &cvBlockSelectionTool::blockSelectionFinished, this,
-                        [this](const QVector<int>& blockIds) {
-                            CVLog::Print(QString("Block selection: %1 blocks "
-                                                 "selected")
-                                                 .arg(blockIds.size()));
-                            // TODO: Handle block selection
-                        });
-                connect(m_blockSelectionTool,
-                        &cvBlockSelectionTool::selectionCompleted, this,
-                        [this]() {
-                            m_ui->actionSelectBlocks->setChecked(false);
-                            ecvDisplayTools::UpdateScreen();
-                        });
-            }
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_blockSelectionTool);
-
-        m_blockSelectionTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::CrossCursor);
-        }
-        CVLog::Print(
-                "Block selection mode activated (B) - Draw a rectangle to "
-                "select blocks");
-    } else {
-        if (m_blockSelectionTool) {
-            m_blockSelectionTool->disable();
-        }
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Block selection requires PCL backend!");
-    m_ui->actionSelectBlocks->setChecked(false);
-#endif
-}
-
-void MainWindow::toggleSelectFrustumBlocks(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            } else {
-                CVLog::Error(
-                        "[MainWindow::toggleSelectFrustumBlocks] No visualizer "
-                        "available!");
-                m_ui->actionSelectFrustumBlocks->setChecked(false);
-                return;
-            }
-        }
-
-        if (!m_frustumBlockSelectionTool) {
-            m_frustumBlockSelectionTool = new cvBlockSelectionTool(
-                    cvViewSelectionManager::SELECT_FRUSTUM_BLOCKS, this);
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_frustumBlockSelectionTool->setVisualizer(viewer);
-                connect(m_frustumBlockSelectionTool,
-                        &cvBlockSelectionTool::blockSelectionFinished, this,
-                        [this](const QVector<int>& blockIds) {
-                            CVLog::Print(QString("Frustum block selection: %1 "
-                                                 "blocks selected")
-                                                 .arg(blockIds.size()));
-                            // TODO: Handle frustum block selection
-                        });
-                connect(m_frustumBlockSelectionTool,
-                        &cvBlockSelectionTool::selectionCompleted, this,
-                        [this]() {
-                            m_ui->actionSelectFrustumBlocks->setChecked(false);
-                            ecvDisplayTools::UpdateScreen();
-                        });
-            }
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_frustumBlockSelectionTool);
-
-        m_frustumBlockSelectionTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::CrossCursor);
-        }
-        CVLog::Print(
-                "Frustum block selection mode activated (N) - Draw a rectangle "
-                "to select blocks through");
-    } else {
-        if (m_frustumBlockSelectionTool) {
-            m_frustumBlockSelectionTool->disable();
-        }
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Frustum block selection requires PCL backend!");
-    m_ui->actionSelectFrustumBlocks->setChecked(false);
-#endif
-}
-
-void MainWindow::toggleInteractiveSelectCells(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            }
-        }
-
-        if (!m_interactiveCellsTool) {
-            m_interactiveCellsTool = new cvTooltipSelectionTool(
-                    cvViewSelectionManager::SELECT_SURFACE_CELLS_INTERACTIVELY,
-                    this);
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_interactiveCellsTool->setVisualizer(viewer);
-            }
-
-            connect(m_interactiveCellsTool,
-                    &cvTooltipSelectionTool::selectionFinished, this,
-                    &MainWindow::onSelectionFinished);
-
-            // Tooltip tool handles hover display internally
-            // connect(m_interactiveCellsTool,
-            //         &cvTooltipSelectionTool::hoverChanged, this,
-            //         [this](qint64 id, int fieldAssoc) {
-            //             // Tooltip display is handled by the tool itself
-            //         });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_interactiveCellsTool);
-
-        m_interactiveCellsTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(
-                    Qt::PointingHandCursor);
-        }
-    } else {
-        if (m_interactiveCellsTool) {
-            m_interactiveCellsTool->disable();
-        }
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Interactive selection requires PCL backend!");
-    m_ui->actionInteractiveSelectCells->setChecked(false);
-#endif
-}
-
-void MainWindow::toggleInteractiveSelectPoints(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            }
-        }
-
-        if (!m_interactivePointsTool) {
-            m_interactivePointsTool = new cvTooltipSelectionTool(
-                    cvViewSelectionManager::SELECT_SURFACE_POINTS_INTERACTIVELY,
-                    this);
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_interactivePointsTool->setVisualizer(viewer);
-            }
-
-            connect(m_interactivePointsTool,
-                    &cvTooltipSelectionTool::selectionFinished, this,
-                    &MainWindow::onSelectionFinished);
-
-            // Tooltip tool handles hover display internally
-            // connect(m_interactivePointsTool,
-            //         &cvTooltipSelectionTool::hoverChanged, this,
-            //         [this](qint64 id, int fieldAssoc) {
-            //             // Tooltip display is handled by the tool itself
-            //         });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_interactivePointsTool);
-
-        m_interactivePointsTool->enable();
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(
-                    Qt::PointingHandCursor);
-        }
-    } else {
-        if (m_interactivePointsTool) {
-            m_interactivePointsTool->disable();
-        }
-
-        if (ecvDisplayTools::GetCurrentScreen()) {
-            ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);
-        }
-    }
-#else
-    CVLog::Warning("Interactive selection requires PCL backend!");
-    m_ui->actionInteractiveSelectPoints->setChecked(false);
-#endif
-}
-
-//-----------------------------------------------------------------------------
-void MainWindow::toggleHoverCells(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
-            }
-        }
-
-        if (!m_hoverCellsTool) {
-            m_hoverCellsTool = new cvTooltipSelectionTool(
-                    cvViewSelectionManager::HOVER_CELLS_TOOLTIP, this);
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_hoverCellsTool->setVisualizer(viewer);
-            } else {
-                CVLog::Warning(
-                        "[MainWindow::toggleHoverCells] viewer is nullptr!");
-            }
-
-            connect(m_hoverCellsTool, &cvTooltipSelectionTool::tooltipChanged,
-                    this, [this](const QString& html, const QString& plain) {
-                        if (!plain.isEmpty()) {
-                            statusBar()->showMessage(
-                                    QString("Cell: %1").arg(plain.left(100)),
-                                    2000);
+        // Activate/deactivate selection tools display
+        m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(
+                isSelectionTool);
+
+        // Force refresh the properties view
+        if (isSelectionTool) {
+            ccHObject* currentObj =
+                    m_ccRoot->getPropertiesDelegate()->getCurrentObject();
+            if (!currentObj) {
+                ccHObject* root = m_ccRoot->getRootEntity();
+                if (root && root->getChildrenNumber() > 0) {
+                    for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {
+                        ccHObject* child = root->getChild(i);
+                        if (child && child->isEnabled()) {
+                            m_ccRoot->selectEntity(child);
+                            break;
                         }
-                    });
-
-            // Connect ESC key signal to disable the tool
-            connect(m_hoverCellsTool, &cvTooltipSelectionTool::requestDisable,
-                    this, [this]() {
-                        CVLog::Print(
-                                "[MainWindow::toggleHoverCells] Disabling tool "
-                                "via ESC key");
-                        m_ui->actionHoverCells->setChecked(false);
-                    });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_hoverCellsTool);
-
-        m_hoverCellsTool->enable();
-
-        CVLog::PrintDebug(
-                "Hover cells tooltip mode activated - "
-                "Move mouse to show cell information (Ctrl-C to copy)");
-    } else {
-        if (m_hoverCellsTool) {
-            m_hoverCellsTool->disable();
-        }
-    }
-#else
-    CVLog::Warning("Hover tooltip selection requires PCL backend!");
-    m_ui->actionHoverCells->setChecked(false);
-#endif
-}
-
-//-----------------------------------------------------------------------------
-void MainWindow::toggleHoverPoints(bool checked) {
-#ifdef USE_PCL_BACKEND
-    if (checked) {
-        if (!m_selectionManager) {
-            m_selectionManager = cvViewSelectionManager::instance();
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_selectionManager->setVisualizer(viewer);
+                    }
+                }
             }
-        }
-
-        if (!m_hoverPointsTool) {
-            m_hoverPointsTool = new cvTooltipSelectionTool(
-                    cvViewSelectionManager::HOVER_POINTS_TOOLTIP, this);
-
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_hoverPointsTool->setVisualizer(viewer);
-            } else {
-                CVLog::Warning(
-                        "[MainWindow::toggleHoverPoints] viewer is nullptr!");
-            }
-
-            connect(m_hoverPointsTool, &cvTooltipSelectionTool::tooltipChanged,
-                    this, [this](const QString& html, const QString& plain) {
-                        if (!plain.isEmpty()) {
-                            statusBar()->showMessage(
-                                    QString("Point: %1").arg(plain.left(100)),
-                                    2000);
-                        }
-                    });
-
-            // Connect ESC key signal to disable the tool
-            connect(m_hoverPointsTool, &cvTooltipSelectionTool::requestDisable,
-                    this, [this]() {
-                        CVLog::Print(
-                                "[MainWindow::toggleHoverPoints] Disabling "
-                                "tool via ESC key");
-                        m_ui->actionHoverPoints->setChecked(false);
-                    });
-        }
-
-        // Disable all other selection tools (now that this tool is created)
-        disableAllSelectionTools(m_hoverPointsTool);
-
-        m_hoverPointsTool->enable();
-
-    } else {
-        if (m_hoverPointsTool) {
-            m_hoverPointsTool->disable();
+            m_ccRoot->updatePropertiesView();
+        } else {
+            m_ccRoot->updatePropertiesView();
         }
     }
-#else
-    CVLog::Warning("Hover tooltip selection requires PCL backend!");
-    m_ui->actionHoverPoints->setChecked(false);
-#endif
 }
 
-void MainWindow::growSelection() {
-#ifdef USE_PCL_BACKEND
-    if (!m_selectionManager || !m_selectionManager->hasSelection()) {
-        CVLog::Warning("No selection to grow");
-        return;
+void MainWindow::onSelectionRestored(const cvSelectionData& selection) {
+    cvViewSelectionManager* manager = getSelectionManager();
+    if (manager) {
+        manager->setCurrentSelection(selection);
+        CVLog::Print(QString("[MainWindow] Selection restored: %1 %2")
+                             .arg(selection.count())
+                             .arg(selection.fieldTypeString()));
+        if (m_ccRoot) {
+            m_ccRoot->updatePropertiesView();
+        }
     }
-
-    CVLog::Print("Growing selection by one layer...");
-
-    // Get current selection
-    const cvSelectionData& currentData = m_selectionManager->currentSelection();
-
-    // Execute grow operation
-    cvSelectionManipulationTool* tool = new cvSelectionManipulationTool(
-            cvViewSelectionManager::GROW_SELECTION, this);
-
-    cvSelectionData grownSelection = tool->executeData(currentData);
-
-    if (!grownSelection.isEmpty()) {
-        onSelectionFinished(grownSelection);  // Will handle visualization
-    }
-
-    delete tool;
-#else
-    CVLog::Warning("Selection manipulation requires PCL backend!");
-#endif
 }
 
-void MainWindow::shrinkSelection() {
-#ifdef USE_PCL_BACKEND
-    if (!m_selectionManager || !m_selectionManager->hasSelection()) {
-        CVLog::Warning("No selection to shrink");
-        return;
+void MainWindow::onSelectionHistoryChanged() {
+    if (m_selectionController) {
+        cvSelectionHistory* history = m_selectionController->history();
+        if (history) {
+            CVLog::PrintDebug(
+                    QString("[MainWindow] Selection history changed - "
+                            "Can undo: %1, Can redo: %2")
+                            .arg(history->canUndo())
+                            .arg(history->canRedo()));
+        }
     }
-
-    CVLog::Print("Shrinking selection by one layer...");
-
-    // Get current selection
-    const cvSelectionData& currentData = m_selectionManager->currentSelection();
-
-    // Execute shrink operation
-    cvSelectionManipulationTool* tool = new cvSelectionManipulationTool(
-            cvViewSelectionManager::SHRINK_SELECTION, this);
-
-    cvSelectionData shrunkSelection = tool->executeData(currentData);
-
-    if (!shrunkSelection.isEmpty()) {
-        onSelectionFinished(shrunkSelection);  // Will handle visualization
-    }
-
-    delete tool;
-#else
-    CVLog::Warning("Selection manipulation requires PCL backend!");
-#endif
 }
 
-void MainWindow::clearSelection() {
-#ifdef USE_PCL_BACKEND
-    CVLog::Print("Clearing selection...");
-
-    cvSelectionData
-            emptySelection;  // Default constructor creates empty selection
-    onSelectionFinished(emptySelection);
-
-    // Uncheck all selection mode actions
-    m_ui->actionSelectSurfaceCells->setChecked(false);
-    m_ui->actionSelectSurfacePoints->setChecked(false);
-    m_ui->actionSelectFrustumCells->setChecked(false);
-    m_ui->actionSelectFrustumPoints->setChecked(false);
-    m_ui->actionSelectPolygonCells->setChecked(false);
-    m_ui->actionSelectPolygonPoints->setChecked(false);
-    m_ui->actionInteractiveSelectCells->setChecked(false);
-    m_ui->actionInteractiveSelectPoints->setChecked(false);
-#else
-    CVLog::Warning("Selection manipulation requires PCL backend!");
-#endif
+void MainWindow::onBookmarksChanged() {
+    CVLog::PrintDebug("[MainWindow] Selection bookmarks changed");
 }
+
+void MainWindow::undoSelection() {
+    if (m_selectionController) {
+        m_selectionController->undoSelection();
+    }
+}
+
+void MainWindow::redoSelection() {
+    if (m_selectionController) {
+        m_selectionController->redoSelection();
+    }
+}
+
+#endif
+
+//=============================================================================
+// SELECTION TOOLS - Using centralized cvSelectionToolController
+// (ParaView-style)
+//=============================================================================
 
 void MainWindow::increasePointSize() {
     ecvDisplayTools::SetPointSize(
@@ -11119,7 +10157,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                             }
                         }
                     }  // for each label
-                }  // if (cloud)
+                }      // if (cloud)
 
                 // we temporarily detach the entity, as it may undergo
                 //"severe" modifications (octree deletion, etc.) --> see
@@ -12648,203 +11686,4 @@ void MainWindow::doComputeGeometricFeature() {
 
     refreshSelected();
     updateUI();
-}
-
-//=============================================================================
-// Selection System Integration
-//=============================================================================
-
-//-----------------------------------------------------------------------------
-void MainWindow::onSelectionToolActivated(QAction* action) {
-#if defined(USE_PCL_BACKEND)
-    // Check if the action that triggered this is checked
-    // Note: We check the action directly instead of
-    // QActionGroup::checkedAction() because the latter may not be updated at
-    // signal trigger time
-    bool isSelectionTool = (action && action->isChecked());
-
-    CVLog::Print(QString("[MainWindow] Selection tool %1: %2")
-                         .arg(action ? action->text() : "unknown")
-                         .arg(isSelectionTool ? "activated" : "deactivated"));
-
-    // Notify properties delegate about selection tool state
-    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
-        // Set visualizer and highlighter BEFORE activating selection tools
-        // This ensures the properties widget can access them when created
-        if (isSelectionTool) {
-            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
-            if (viewer) {
-                m_ccRoot->getPropertiesDelegate()->setVisualizer(viewer);
-            }
-
-            // Initialize highlighter if not already done
-            if (!m_selectionHighlighter) {
-                m_selectionHighlighter = new cvSelectionHighlighter();
-                if (viewer) {
-                    m_selectionHighlighter->setVisualizer(viewer);
-                }
-            }
-
-            if (m_selectionHighlighter) {
-                m_ccRoot->getPropertiesDelegate()->setHighlighter(
-                        m_selectionHighlighter);
-            }
-        }
-
-        // Activate/deactivate selection tools display
-        m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(
-                isSelectionTool);
-
-        // Force refresh the properties view
-        ccHObject* currentObj =
-                m_ccRoot->getPropertiesDelegate()->getCurrentObject();
-
-        if (isSelectionTool) {
-            // If no object is currently selected, try to select the first
-            // visible object
-            if (!currentObj) {
-                ccHObject* root = m_ccRoot->getRootEntity();
-                if (root && root->getChildrenNumber() > 0) {
-                    // Find first visible child
-                    for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {
-                        ccHObject* child = root->getChild(i);
-                        if (child && child->isEnabled()) {
-                            m_ccRoot->selectEntity(child);
-                            currentObj = child;
-                            CVLog::PrintDebug(
-                                    QString("[MainWindow] Auto-selected '%1' "
-                                            "for selection tools display")
-                                            .arg(child->getName()));
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // If we now have a current object, show properties with selection
-            // tools
-            if (currentObj) {
-                m_ccRoot->getPropertiesDelegate()->fillModel(currentObj);
-            } else {
-                // No objects available - just update normally
-                m_ccRoot->updatePropertiesView();
-            }
-        } else {
-            // Selection tool deactivated - update properties view normally
-            m_ccRoot->updatePropertiesView();
-        }
-    }
-#else
-    CVLog::Warning(
-            "[MainWindow] please use pcl as backend and then try again!");
-    return;
-#endif  // USE_PCL_BACKEND
-}
-
-//-----------------------------------------------------------------------------
-void MainWindow::onSelectionHistoryChanged() {
-#if defined(USE_PCL_BACKEND)
-    // Update undo/redo action states if you have them
-    if (m_selectionHistory) {
-        // Future: enable/disable undo/redo menu actions
-        CVLog::PrintDebug(QString("[MainWindow] Selection history changed - "
-                                  "Can undo: %1, Can redo: %2")
-                                  .arg(m_selectionHistory->canUndo())
-                                  .arg(m_selectionHistory->canRedo()));
-    }
-#else
-    CVLog::Warning(
-            "[MainWindow] please use pcl as backend and then try again!");
-    return;
-#endif  // USE_PCL_BACKEND
-}
-
-//-----------------------------------------------------------------------------
-#if defined(USE_PCL_BACKEND)
-void MainWindow::onSelectionRestored(const cvSelectionData& selection) {
-    // Apply restored selection - delegate to selection manager
-    if (m_selectionManager) {
-        m_selectionManager->setCurrentSelection(selection);
-
-        CVLog::Print(QString("[MainWindow] Selection restored: %1 %2")
-                             .arg(selection.count())
-                             .arg(selection.fieldTypeString()));
-
-        // The selection manager will handle highlighting internally
-        // Refresh UI to reflect the restored selection
-        if (m_ccRoot) {
-            m_ccRoot->updatePropertiesView();
-        }
-    }
-}
-#endif  // USE_PCL_BACKEND
-
-//-----------------------------------------------------------------------------
-void MainWindow::onBookmarksChanged() {
-    // Update bookmarks UI if you have one
-    CVLog::PrintDebug("[MainWindow] Selection bookmarks changed");
-}
-
-//-----------------------------------------------------------------------------
-void MainWindow::undoSelection() {
-#if defined(USE_PCL_BACKEND)
-    if (m_selectionHistory && m_selectionHistory->canUndo()) {
-        CVLog::Print("[MainWindow] Undoing selection...");
-        cvSelectionData previous = m_selectionHistory->undo();
-        // Selection will be restored via onSelectionRestored signal
-    } else {
-        CVLog::Warning("[MainWindow] No selection to undo");
-    }
-#else
-    CVLog::Warning(
-            "[MainWindow] please use pcl as backend and then try again!");
-    return;
-#endif  // USE_PCL_BACKEND
-}
-
-//-----------------------------------------------------------------------------
-void MainWindow::redoSelection() {
-#if defined(USE_PCL_BACKEND)
-    if (m_selectionHistory && m_selectionHistory->canRedo()) {
-        CVLog::Print("[MainWindow] Redoing selection...");
-        cvSelectionData next = m_selectionHistory->redo();
-        // Selection will be restored via onSelectionRestored signal
-    } else {
-        CVLog::Warning("[MainWindow] No selection to redo");
-    }
-#else
-    CVLog::Warning(
-            "[MainWindow] please use pcl as backend and then try again!");
-    return;
-#endif  // USE_PCL_BACKEND
-}
-
-//-----------------------------------------------------------------------------
-void MainWindow::onTooltipSettingsChanged(bool showTooltips,
-                                          int maxAttributes) {
-#if defined(USE_PCL_BACKEND)
-    CVLog::Print(QString("[MainWindow] Tooltip settings changed: show=%1, "
-                         "maxAttrs=%2")
-                         .arg(showTooltips)
-                         .arg(maxAttributes));
-
-    // Update interactive selection tools (tooltip-based tools)
-    if (m_interactiveCellsTool) {
-        m_interactiveCellsTool->setTooltipEnabled(showTooltips);
-        m_interactiveCellsTool->setMaxTooltipAttributes(maxAttributes);
-    }
-
-    if (m_interactivePointsTool) {
-        m_interactivePointsTool->setTooltipEnabled(showTooltips);
-        m_interactivePointsTool->setMaxTooltipAttributes(maxAttributes);
-    }
-
-    // Update hover tools (also tooltip-based)
-    // Note: These might not exist yet, will be configured when created
-    CVLog::PrintDebug("[MainWindow] Tooltip settings applied to active tools");
-#else
-    CVLog::Warning(
-            "[MainWindow] please use pcl as backend and then try again!");
-    return;
-#endif  // USE_PCL_BACKEND
 }

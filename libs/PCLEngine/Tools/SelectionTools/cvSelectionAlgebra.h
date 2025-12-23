@@ -115,12 +115,19 @@ public:
      * @brief Grow selection by adding neighbors
      * @param polyData The mesh data
      * @param input Input selection (must be CELLS)
-     * @param iterations Number of growth iterations
+     * @param layers Number of growth layers (negative for shrink)
+     * @param removeSeed If true, removes the original seed cells (ParaView-aligned)
+     * @param removeIntermediateLayers If true, keeps only outermost layer (ParaView-aligned)
      * @return Grown selection
+     * 
+     * Reference: vtkPVRenderViewSettings::GrowSelectionRemoveSeed
+     *            vtkPVRenderViewSettings::GrowSelectionRemoveIntermediateLayers
      */
     static cvSelectionData growSelection(vtkPolyData* polyData,
                                          const cvSelectionData& input,
-                                         int iterations = 1);
+                                         int layers = 1,
+                                         bool removeSeed = false,
+                                         bool removeIntermediateLayers = false);
 
     /**
      * @brief Shrink selection by removing boundary elements
@@ -132,6 +139,23 @@ public:
     static cvSelectionData shrinkSelection(vtkPolyData* polyData,
                                            const cvSelectionData& input,
                                            int iterations = 1);
+    
+    /**
+     * @brief Expand selection (ParaView-compatible)
+     * @param polyData The mesh data
+     * @param input Input selection
+     * @param layers Number of layers to expand (positive = grow, negative = shrink)
+     * @param removeSeed If true, removes the original seed elements
+     * @param removeIntermediateLayers If true, keeps only the outermost layer
+     * @return Expanded selection
+     * 
+     * This is the ParaView-compatible API matching vtkSMSelectionHelper::ExpandSelection
+     */
+    static cvSelectionData expandSelection(vtkPolyData* polyData,
+                                           const cvSelectionData& input,
+                                           int layers,
+                                           bool removeSeed = false,
+                                           bool removeIntermediateLayers = false);
 
     /**
      * @brief Extract boundary elements of selection
@@ -149,6 +173,34 @@ public:
     static bool areCompatible(const cvSelectionData& a,
                               const cvSelectionData& b);
 
+    /**
+     * @brief Grow point selection by adding neighbor points
+     * @param polyData The mesh data
+     * @param input Input selection (must be POINTS)
+     * @param layers Number of growth layers
+     * @param removeSeed If true, removes the original seed points
+     * @param removeIntermediateLayers If true, keeps only outermost layer
+     * @return Grown selection
+     * 
+     * Point neighbors are determined by shared cells.
+     */
+    static cvSelectionData growPointSelection(vtkPolyData* polyData,
+                                               const cvSelectionData& input,
+                                               int layers = 1,
+                                               bool removeSeed = false,
+                                               bool removeIntermediateLayers = false);
+
+    /**
+     * @brief Shrink point selection by removing boundary points
+     * @param polyData The mesh data
+     * @param input Input selection (must be POINTS)
+     * @param iterations Number of shrink iterations
+     * @return Shrunk selection
+     */
+    static cvSelectionData shrinkPointSelection(vtkPolyData* polyData,
+                                                 const cvSelectionData& input,
+                                                 int iterations = 1);
+
 signals:
     /**
      * @brief Emitted when operation is complete
@@ -158,7 +210,12 @@ signals:
 private:
     static QSet<vtkIdType> getCellNeighbors(vtkPolyData* polyData,
                                             vtkIdType cellId);
+    static QSet<vtkIdType> getPointNeighbors(vtkPolyData* polyData,
+                                             vtkIdType pointId);
     static bool isBoundaryCell(vtkPolyData* polyData,
                                vtkIdType cellId,
                                const QSet<vtkIdType>& selectedSet);
+    static bool isBoundaryPoint(vtkPolyData* polyData,
+                                vtkIdType pointId,
+                                const QSet<vtkIdType>& selectedSet);
 };

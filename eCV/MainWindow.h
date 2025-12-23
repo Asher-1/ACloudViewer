@@ -68,20 +68,10 @@ class ecvAnnotationsTool;
 class ecvMeasurementTool;
 
 #if defined(USE_PCL_BACKEND)
-class cvZoomToBoxTool;
-class cvSurfaceSelectionTool;
-class cvFrustumSelectionTool;
-class cvPolygonSelectionTool;
-class cvBlockSelectionTool;
-class cvTooltipSelectionTool;
 class cvViewSelectionManager;
 class cvSelectionData;
 class cvSelectionHighlighter;
-class cvSelectionHistory;
-class cvSelectionBookmarks;
-class cvSelectionFilter;
-class cvSelectionAlgebra;
-class cvSelectionAnnotationManager;
+class cvSelectionToolController;
 #endif
 
 class ecvUpdateDlg;
@@ -270,8 +260,11 @@ public:  // inherited from ecvMainAppInterface
 
 #ifdef USE_PCL_BACKEND
     //! Get the selection manager instance
-    cvViewSelectionManager* getSelectionManager() const {
-        return m_selectionManager;
+    cvViewSelectionManager* getSelectionManager() const;
+
+    //! Get the selection tool controller instance
+    cvSelectionToolController* getSelectionController() const {
+        return m_selectionController;
     }
 #endif
 
@@ -285,6 +278,15 @@ private:
     void initStatusBar();
     void initDBRoot();
     void initConsole();
+
+#ifdef USE_PCL_BACKEND
+    //! Initialize selection tool controller (ParaView-style architecture)
+    void initSelectionController();
+    //! Disable all active selection tools
+    //! \param except Pointer to the tool that should NOT be disabled (nullptr
+    //! to disable all)
+    void disableAllSelectionTools(void* except = nullptr);
+#endif
 
     //! Adds the "Edit Plane" action to the given menu.
     /**
@@ -453,6 +455,9 @@ private slots:
     bool eventFilter(QObject* obj, QEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
 
+    // ESC key handler - called from both keyPressEvent and eventFilter
+    void handleEscapeKey();
+
     void toggleVisualDebugTraces();
 
     void updateUIWithSelection();
@@ -577,39 +582,23 @@ private slots:
     void doActionExportPlaneInfo();
     void doActionExportCloudInfo();
 
-    void toggleZoomToBox(bool checked);
-    void toggleSelectSurfaceCells(bool checked);
-    void toggleSelectSurfacePoints(bool checked);
-    void toggleSelectFrustumCells(bool checked);
-    void toggleSelectFrustumPoints(bool checked);
-    void toggleSelectPolygonCells(bool checked);
-    void toggleSelectPolygonPoints(bool checked);
-    void toggleSelectBlocks(bool checked);
-    void toggleSelectFrustumBlocks(bool checked);
-    void toggleInteractiveSelectCells(bool checked);
-    void toggleInteractiveSelectPoints(bool checked);
-    void toggleHoverCells(bool checked);
-    void toggleHoverPoints(bool checked);
-    void toggleAddSelection(bool checked);
-    void toggleSubtractSelection(bool checked);
-    void toggleToggleSelection(bool checked);
-    void growSelection();
-    void shrinkSelection();
-    void clearSelection();
 #ifdef USE_PCL_BACKEND
     void onSelectionFinished(const cvSelectionData& selectionData);
     void onSelectionRestored(const cvSelectionData& selection);
-#endif
-
-    // Selection system slots
     void onSelectionToolActivated(QAction* action);
     void onSelectionHistoryChanged();
     void onBookmarksChanged();
     void undoSelection();
     void redoSelection();
+#endif
 
 public slots:  // Make this public so it can be connected from delegate
-    void onTooltipSettingsChanged(bool showTooltips, int maxAttributes);
+    // Note: onTooltipSettingsChanged has been removed as tooltip settings
+    // are now managed through cvSelectionLabelPropertiesDialog
+    // Note: Highlight color/opacity changes are now handled directly via
+    // the shared highlighter in cvViewSelectionManager. All tooltip tools
+    // share this highlighter, so settings from cvSelectionPropertiesWidget
+    // are automatically synchronized.
 
 private slots:
     void doActionCloudCloudDist();
@@ -632,11 +621,6 @@ private slots:
     void doComputeGeometricFeature();
 
 private:
-    //! Disable all active selection tools
-    //! \param except Pointer to the tool that should NOT be disabled (nullptr
-    //! to disable all)
-    void disableAllSelectionTools(void* except = nullptr);
-
     //! Apply transformation to the selected entities
     void applyTransformation(const ccGLMatrixd& transMat);
 
@@ -745,48 +729,9 @@ private:
     ecvMeasurementTool* m_measurementTool;
 
 #if defined(USE_PCL_BACKEND)
-    //! Zoom to box tool
-    cvZoomToBoxTool* m_zoomToBoxTool;
-    //! Surface cell selection tool
-    cvSurfaceSelectionTool* m_surfaceCellsTool;
-    //! Surface point selection tool
-    cvSurfaceSelectionTool* m_surfacePointsTool;
-    //! Frustum cell selection tool
-    cvFrustumSelectionTool* m_frustumCellsTool;
-    //! Frustum point selection tool
-    cvFrustumSelectionTool* m_frustumPointsTool;
-    //! Polygon cell selection tool
-    cvPolygonSelectionTool* m_polygonCellsTool;
-    //! Polygon point selection tool
-    cvPolygonSelectionTool* m_polygonPointsTool;
-    //! Block selection tool
-    cvBlockSelectionTool* m_blockSelectionTool;
-    //! Frustum block selection tool
-    cvBlockSelectionTool* m_frustumBlockSelectionTool;
-    //! Interactive cell selection tool (now using unified
-    //! cvTooltipSelectionTool)
-    cvTooltipSelectionTool* m_interactiveCellsTool;
-    //! Interactive point selection tool (now using unified
-    //! cvTooltipSelectionTool)
-    cvTooltipSelectionTool* m_interactivePointsTool;
-    //! Hover cells tooltip tool
-    cvTooltipSelectionTool* m_hoverCellsTool;
-    //! Hover points tooltip tool
-    cvTooltipSelectionTool* m_hoverPointsTool;
-    //! Selection modifier action group
-    QActionGroup* m_selectionModifierGroup;
-    //! Selection tool action group (for mutually exclusive selection tools)
-    QActionGroup* m_selectionToolGroup;
-    //! Selection manager (encapsulates all selection state and VTK interaction)
-    cvViewSelectionManager* m_selectionManager;
-    cvSelectionHighlighter* m_selectionHighlighter;
-
-    // Selection system components
-    cvSelectionHistory* m_selectionHistory;
-    cvSelectionBookmarks* m_selectionBookmarks;
-    cvSelectionFilter* m_selectionFilter;
-    cvSelectionAlgebra* m_selectionAlgebra;
-    cvSelectionAnnotationManager* m_selectionAnnotations;
+    //! Selection tool controller (manages all selection tools, ParaView-style)
+    //! This is a singleton, but we keep a pointer for convenience
+    cvSelectionToolController* m_selectionController;
 #endif
 
     QVBoxLayout* m_layout;

@@ -123,14 +123,7 @@ bool cvSurfaceSelectionTool::performSelection(int region[4]) {
 //-----------------------------------------------------------------------------
 cvSelectionData cvSurfaceSelectionTool::applySelectionModifier(
         const cvSelectionData& newSelection, SelectionModifier modifier) {
-    // Phase 3: Use Pipeline's unified selection combination logic
-    // This eliminates code duplication and ensures consistent behavior
-
-    CVLog::PrintDebug(QString("[cvSurfaceSelectionTool] "
-                              "applySelectionModifier: modifier=%1")
-                              .arg(modifier));
-
-    // Get current selection
+    // Use base class unified method (eliminates code duplication)
     cvSelectionData::FieldAssociation assoc = (m_fieldAssociation == 0)
                                                       ? cvSelectionData::CELLS
                                                       : cvSelectionData::POINTS;
@@ -139,31 +132,9 @@ cvSelectionData cvSurfaceSelectionTool::applySelectionModifier(
         currentSel = cvSelectionData(m_currentSelection, assoc);
     }
 
-    // Map to Pipeline operation
-    cvSelectionPipeline::CombineOperation operation;
-    switch (modifier) {
-        case cvViewSelectionManager::SELECTION_DEFAULT:
-            operation = cvSelectionPipeline::OPERATION_DEFAULT;
-            break;
-        case cvViewSelectionManager::SELECTION_ADDITION:
-            operation = cvSelectionPipeline::OPERATION_ADDITION;
-            break;
-        case cvViewSelectionManager::SELECTION_SUBTRACTION:
-            operation = cvSelectionPipeline::OPERATION_SUBTRACTION;
-            break;
-        case cvViewSelectionManager::SELECTION_TOGGLE:
-            operation = cvSelectionPipeline::OPERATION_TOGGLE;
-            break;
-        default:
-            CVLog::Warning(
-                    QString("[cvSurfaceSelectionTool] Unknown modifier: %1")
-                            .arg(modifier));
-            return newSelection;
-    }
-
-    // Use Pipeline's unified combination logic
-    return cvSelectionPipeline::combineSelections(currentSel, newSelection,
-                                                  operation);
+    return applySelectionModifierUnified(newSelection, currentSel,
+                                         static_cast<int>(modifier),
+                                         m_fieldAssociation);
 }
 
 //-----------------------------------------------------------------------------

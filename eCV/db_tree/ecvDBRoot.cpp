@@ -1163,6 +1163,14 @@ void ccDBRoot::showPropertiesView(ccHObject* obj) {
 }
 
 void ccDBRoot::hidePropertiesView() {
+    // If selection tools are active, show only selection properties instead of hiding
+    if (m_ccPropDelegate->areSelectionToolsActive()) {
+        m_ccPropDelegate->showSelectionPropertiesOnly();
+        m_propertiesTreeWidget->setEnabled(true);
+        m_propertiesTreeWidget->setColumnWidth(0, c_propViewLeftColumnWidth);
+        return;
+    }
+    
     m_ccPropDelegate->unbind();
     m_propertiesModel->clear();
     m_propertiesTreeWidget->setEnabled(false);
@@ -1181,11 +1189,20 @@ void ccDBRoot::updatePropertiesView() {
     assert(m_dbTreeWidget);
     QItemSelectionModel* qism = m_dbTreeWidget->selectionModel();
     QModelIndexList selectedIndexes = qism->selectedIndexes();
-    if (selectedIndexes.size() == 1)
+    if (selectedIndexes.size() == 1) {
         showPropertiesView(
                 static_cast<ccHObject*>(selectedIndexes[0].internalPointer()));
-    else
-        hidePropertiesView();
+    } else {
+        // If selection tools are active, show only selection properties
+        // instead of hiding the panel completely
+        if (m_ccPropDelegate->areSelectionToolsActive()) {
+            m_ccPropDelegate->showSelectionPropertiesOnly();
+            m_propertiesTreeWidget->setEnabled(true);
+            m_propertiesTreeWidget->setColumnWidth(0, c_propViewLeftColumnWidth);
+        } else {
+            hidePropertiesView();
+        }
+    }
 }
 
 void ccDBRoot::updateCCObject(ccHObject* object) {

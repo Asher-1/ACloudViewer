@@ -284,16 +284,10 @@ vtkIdTypeArray* cvFrustumSelectionTool::extractFrustumSelection(
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkIdTypeArray> cvFrustumSelectionTool::applySelectionModifier(
         vtkIdTypeArray* newIds, SelectionModifier modifier) {
-    // Phase 3: Use Pipeline's unified selection combination logic
-    // This eliminates code duplication and ensures consistent behavior
-
+    // Use base class unified method (eliminates code duplication)
     if (!newIds) {
         return nullptr;
     }
-
-    CVLog::PrintDebug(QString("[cvFrustumSelectionTool] "
-                              "applySelectionModifier: modifier=%1")
-                              .arg(modifier));
 
     // Convert to cvSelectionData
     cvSelectionData::FieldAssociation assoc =
@@ -306,31 +300,9 @@ vtkSmartPointer<vtkIdTypeArray> cvFrustumSelectionTool::applySelectionModifier(
         currentSel = cvSelectionData(m_currentSelection, assoc);
     }
 
-    // Map to Pipeline operation
-    cvSelectionPipeline::CombineOperation operation;
-    switch (modifier) {
-        case cvViewSelectionManager::SELECTION_DEFAULT:
-            operation = cvSelectionPipeline::OPERATION_DEFAULT;
-            break;
-        case cvViewSelectionManager::SELECTION_ADDITION:
-            operation = cvSelectionPipeline::OPERATION_ADDITION;
-            break;
-        case cvViewSelectionManager::SELECTION_SUBTRACTION:
-            operation = cvSelectionPipeline::OPERATION_SUBTRACTION;
-            break;
-        case cvViewSelectionManager::SELECTION_TOGGLE:
-            operation = cvSelectionPipeline::OPERATION_TOGGLE;
-            break;
-        default:
-            CVLog::Warning(
-                    QString("[cvFrustumSelectionTool] Unknown modifier: %1")
-                            .arg(modifier));
-            return newIds;
-    }
-
-    // Use Pipeline's unified combination logic
-    cvSelectionData result = cvSelectionPipeline::combineSelections(
-            currentSel, newSel, operation);
+    // Use base class unified method
+    cvSelectionData result = applySelectionModifierUnified(
+            newSel, currentSel, static_cast<int>(modifier), m_fieldAssociation);
 
     // Return the vtkIdTypeArray
     if (result.isEmpty()) {

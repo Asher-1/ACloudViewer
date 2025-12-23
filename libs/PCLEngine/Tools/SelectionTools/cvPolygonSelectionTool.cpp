@@ -58,44 +58,25 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
         return false;
     }
 
+    vtkIdType numPoints = polygon->GetNumberOfTuples() / 2;
     CVLog::Print(QString("[cvPolygonSelectionTool] Perform polygon selection: "
                          "%1 vertices")
-                         .arg(polygon->GetNumberOfTuples()));
+                         .arg(numPoints));
 
-    // Convert polygon to bounding region for hardware selection
-    // (full polygon filtering will be done post-selection)
-    vtkIdType numPoints = polygon->GetNumberOfTuples() / 2;
     if (numPoints < 3) {
         CVLog::Warning(
                 "[cvPolygonSelectionTool] Polygon needs at least 3 points");
         return false;
     }
 
-    // Find bounding box of polygon
-    int minX = INT_MAX, minY = INT_MAX;
-    int maxX = INT_MIN, maxY = INT_MIN;
-
-    for (vtkIdType i = 0; i < numPoints; ++i) {
-        int x = polygon->GetValue(i * 2);
-        int y = polygon->GetValue(i * 2 + 1);
-
-        minX = std::min(minX, x);
-        minY = std::min(minY, y);
-        maxX = std::max(maxX, x);
-        maxY = std::max(maxY, y);
+    // ParaView-style: For custom polygon mode, just emit the polygon
+    // and don't perform selection (let the caller handle it)
+    // Reference: pqRenderViewSelectionReaction::selectionChanged() SELECT_CUSTOM_POLYGON case
+    if (m_mode == cvViewSelectionManager::SELECT_CUSTOM_POLYGON) {
+        CVLog::Print("[cvPolygonSelectionTool] Custom polygon mode - emitting polygonCompleted");
+        emit polygonCompleted(polygon);
+        return true;
     }
-
-    CVLog::Print(
-            QString("[cvPolygonSelectionTool] Polygon bounds: [%1, %2, %3, %4]")
-                    .arg(minX)
-                    .arg(minY)
-                    .arg(maxX)
-                    .arg(maxY));
-
-    // Use base class unified hardware selection (ParaView-aligned)
-    cvGenericSelectionTool::SelectionMode mode =
-            isSelectingCells() ? cvGenericSelectionTool::SELECT_SURFACE_CELLS
-                               : cvGenericSelectionTool::SELECT_SURFACE_POINTS;
 
     // Get selection modifier
     SelectionModifier modifier = getSelectionModifierFromKeyboard();
@@ -104,10 +85,63 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
         modifier = m_modifier;
     }
 
-    // Perform hardware selection using base class method
-    int region[4] = {minX, minY, maxX, maxY};
-    cvSelectionData newSelection = hardwareSelectInRegion(
-            region, mode, cvGenericSelectionTool::REPLACE);
+    cvSelectionData newSelection;
+
+    // ParaView-aligned: Use pipeline for pixel-precise polygon selection
+    // Reference: pqRenderView::selectPolygonPoints/selectPolygonCells
+    cvSelectionPipeline* pipeline = getSelectionPipeline();
+    if (pipeline) {
+        // Use pixel-precise polygon selection via vtkHardwareSelector::GeneratePolygonSelection
+        cvSelectionPipeline::SelectionType pipelineType =
+                isSelectingCells() ? cvSelectionPipeline::POLYGON_CELLS
+                                   : cvSelectionPipeline::POLYGON_POINTS;
+
+        vtkSmartPointer<vtkSelection> vtkSel =
+                pipeline->executePolygonSelection(polygon, pipelineType);
+
+        if (vtkSel) {
+            cvSelectionPipeline::FieldAssociation fieldAssoc =
+                    isSelectingCells() ? cvSelectionPipeline::FIELD_ASSOCIATION_CELLS
+                                       : cvSelectionPipeline::FIELD_ASSOCIATION_POINTS;
+
+            newSelection = cvSelectionPipeline::convertToCvSelectionData(
+                    vtkSel, fieldAssoc);
+            
+            CVLog::Print(QString("[cvPolygonSelectionTool] Pixel-precise "
+                                 "polygon selection: %1 items")
+                                 .arg(newSelection.count()));
+        }
+    } else {
+        // Fallback: Use bounding box selection (less accurate)
+        CVLog::Warning("[cvPolygonSelectionTool] Pipeline not available, "
+                       "using bounding box fallback");
+
+        // Find bounding box of polygon
+        int minX = INT_MAX, minY = INT_MAX;
+        int maxX = INT_MIN, maxY = INT_MIN;
+
+        for (vtkIdType i = 0; i < numPoints; ++i) {
+            int x = polygon->GetValue(i * 2);
+            int y = polygon->GetValue(i * 2 + 1);
+
+            minX = std::min(minX, x);
+            minY = std::min(minY, y);
+            maxX = std::max(maxX, x);
+            maxY = std::max(maxY, y);
+        }
+
+        CVLog::Print(
+                QString("[cvPolygonSelectionTool] Polygon bounds: [%1, %2, %3, %4]")
+                        .arg(minX).arg(minY).arg(maxX).arg(maxY));
+
+        cvGenericSelectionTool::SelectionMode mode =
+                isSelectingCells() ? cvGenericSelectionTool::SELECT_SURFACE_CELLS
+                                   : cvGenericSelectionTool::SELECT_SURFACE_POINTS;
+
+        int region[4] = {minX, minY, maxX, maxY};
+        newSelection = hardwareSelectInRegion(
+                region, mode, cvGenericSelectionTool::REPLACE);
+    }
 
     if (newSelection.isEmpty()) {
         CVLog::Print("[cvPolygonSelectionTool] No items selected");
@@ -115,10 +149,6 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
         emit selectionFinished(emptySelection);
         return true;
     }
-
-    // Note: Pixel-precise polygon filtering is now handled by
-    // cvSelectionPipeline::executePolygonSelection() using
-    // vtkHardwareSelector::GeneratePolygonSelection() (ParaView-aligned)
 
     CVLog::Print(QString("[cvPolygonSelectionTool] Selected %1 items")
                          .arg(newSelection.count()));
@@ -131,7 +161,6 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
     emit selectionFinished(finalSelection);
 
     // Store current selection for modifier operations
-    // Smart pointer handles cleanup automatically
     if (!finalSelection.isEmpty()) {
         m_currentSelection = finalSelection.vtkArray();
     } else {
@@ -148,14 +177,7 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
 //-----------------------------------------------------------------------------
 cvSelectionData cvPolygonSelectionTool::applySelectionModifier(
         const cvSelectionData& newSelection, SelectionModifier modifier) {
-    // Phase 3: Use Pipeline's unified selection combination logic
-    // This eliminates code duplication and ensures consistent behavior
-
-    CVLog::PrintDebug(QString("[cvPolygonSelectionTool] "
-                              "applySelectionModifier: modifier=%1")
-                              .arg(modifier));
-
-    // Get current selection
+    // Use base class unified method (eliminates code duplication)
     cvSelectionData::FieldAssociation assoc = (m_fieldAssociation == 0)
                                                       ? cvSelectionData::CELLS
                                                       : cvSelectionData::POINTS;
@@ -164,31 +186,9 @@ cvSelectionData cvPolygonSelectionTool::applySelectionModifier(
         currentSel = cvSelectionData(m_currentSelection, assoc);
     }
 
-    // Map to Pipeline operation
-    cvSelectionPipeline::CombineOperation operation;
-    switch (modifier) {
-        case cvViewSelectionManager::SELECTION_DEFAULT:
-            operation = cvSelectionPipeline::OPERATION_DEFAULT;
-            break;
-        case cvViewSelectionManager::SELECTION_ADDITION:
-            operation = cvSelectionPipeline::OPERATION_ADDITION;
-            break;
-        case cvViewSelectionManager::SELECTION_SUBTRACTION:
-            operation = cvSelectionPipeline::OPERATION_SUBTRACTION;
-            break;
-        case cvViewSelectionManager::SELECTION_TOGGLE:
-            operation = cvSelectionPipeline::OPERATION_TOGGLE;
-            break;
-        default:
-            CVLog::Warning(
-                    QString("[cvPolygonSelectionTool] Unknown modifier: %1")
-                            .arg(modifier));
-            return newSelection;
-    }
-
-    // Use Pipeline's unified combination logic
-    return cvSelectionPipeline::combineSelections(currentSel, newSelection,
-                                                  operation);
+    return applySelectionModifierUnified(newSelection, currentSel,
+                                         static_cast<int>(modifier),
+                                         m_fieldAssociation);
 }
 
 //-----------------------------------------------------------------------------

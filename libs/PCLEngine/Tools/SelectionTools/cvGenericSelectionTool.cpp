@@ -731,3 +731,43 @@ cvSelectionData cvGenericSelectionTool::createSelectionFromPick(
 
     return selection;
 }
+
+//-----------------------------------------------------------------------------
+cvSelectionData cvGenericSelectionTool::applySelectionModifierUnified(
+        const cvSelectionData& newSelection,
+        const cvSelectionData& currentSelection,
+        int modifier,
+        int fieldAssociation) {
+    // ParaView-aligned: Use cvSelectionPipeline::combineSelections()
+    // This eliminates code duplication between tools
+    
+    CVLog::PrintDebug(QString("[cvGenericSelectionTool] "
+                              "applySelectionModifierUnified: modifier=%1")
+                              .arg(modifier));
+
+    // Map view manager modifier to pipeline operation
+    cvSelectionPipeline::CombineOperation operation;
+    switch (modifier) {
+        case 0:  // SELECTION_DEFAULT
+            operation = cvSelectionPipeline::OPERATION_DEFAULT;
+            break;
+        case 1:  // SELECTION_ADDITION
+            operation = cvSelectionPipeline::OPERATION_ADDITION;
+            break;
+        case 2:  // SELECTION_SUBTRACTION
+            operation = cvSelectionPipeline::OPERATION_SUBTRACTION;
+            break;
+        case 3:  // SELECTION_TOGGLE
+            operation = cvSelectionPipeline::OPERATION_TOGGLE;
+            break;
+        default:
+            CVLog::Warning(
+                    QString("[cvGenericSelectionTool] Unknown modifier: %1")
+                            .arg(modifier));
+            return newSelection;
+    }
+
+    // Use Pipeline's unified combination logic
+    return cvSelectionPipeline::combineSelections(currentSelection, newSelection,
+                                                  operation);
+}

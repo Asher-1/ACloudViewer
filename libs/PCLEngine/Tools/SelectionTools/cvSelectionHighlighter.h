@@ -139,6 +139,12 @@ public:
     void clearHighlights();
 
     /**
+     * @brief Clear only hover highlight (keep selected/preselected)
+     * @note Used during hover to avoid clearing persistent selections
+     */
+    void clearHoverHighlight();
+
+    /**
      * @brief Set highlight color
      * @param r Red component (0-1)
      * @param g Green component (0-1)
@@ -170,6 +176,34 @@ public:
      * @return Opacity value (0-1)
      */
     double getHighlightOpacity(HighlightMode mode) const;
+
+    /**
+     * @brief Set point size for highlight rendering
+     * @param size Point size in pixels
+     * @param mode Which mode to set point size for
+     */
+    void setPointSize(int size, HighlightMode mode = SELECTED);
+
+    /**
+     * @brief Get point size for a specific mode
+     * @param mode Which mode to get point size for
+     * @return Point size in pixels
+     */
+    int getPointSize(HighlightMode mode) const;
+
+    /**
+     * @brief Set line width for highlight rendering
+     * @param width Line width in pixels
+     * @param mode Which mode to set line width for
+     */
+    void setLineWidth(int width, HighlightMode mode = SELECTED);
+
+    /**
+     * @brief Get line width for a specific mode
+     * @param mode Which mode to get line width for
+     * @return Line width in pixels
+     */
+    int getLineWidth(HighlightMode mode) const;
 
     /**
      * @brief Enable/disable highlight
@@ -228,6 +262,18 @@ private:
     double m_preselectedOpacity;  ///< 0.8 for preselect (highly visible)
     double m_selectedOpacity;     ///< 1.0 for selected (opaque)
     double m_boundaryOpacity;     ///< 0.85 for boundary (highly visible)
+
+    // Point sizes for different modes
+    int m_hoverPointSize;
+    int m_preselectedPointSize;
+    int m_selectedPointSize;
+    int m_boundaryPointSize;
+
+    // Line widths for different modes
+    int m_hoverLineWidth;
+    int m_preselectedLineWidth;
+    int m_selectedLineWidth;
+    int m_boundaryLineWidth;
 
     bool m_enabled;
     QString m_hoverActorId;

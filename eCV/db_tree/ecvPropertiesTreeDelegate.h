@@ -11,6 +11,7 @@
 #include <ecvArray.h>
 
 // Qt
+#include <QPointer>
 #include <QStyledItemDelegate>
 
 // Forward declarations
@@ -59,6 +60,7 @@ public:
         OBJECT_NO_PROPERTY = 0,
         OBJECT_NAME,
         OBJECT_VISIBILITY,
+        OBJECT_OPACITY,  // Object transparency/opacity [0.0, 1.0]
         OBJECT_CURRENT_DISPLAY,
         OBJECT_NORMALS_SHOWN,
         OBJECT_COLOR_SOURCE,
@@ -158,6 +160,12 @@ public:
     //! Check if selection tools are active
     bool areSelectionToolsActive() const { return m_selectionToolsActive; }
 
+    //! Show only selection properties (when no object is selected but selection tools are active)
+    void showSelectionPropertiesOnly();
+    
+    //! Clear the model completely
+    void clearModel();
+
     //! Set visualizer for selection properties widget
     void setVisualizer(ecvGenericVisualizer3D* viewer) { m_viewer = viewer; }
 #ifdef USE_PCL_BACKEND
@@ -176,6 +184,12 @@ signals:
                                    bool forceRedraw = true) const;
     void ccObjectAndChildrenAppearanceChanged(ccHObject* hObject,
                                               bool forceRedraw = true) const;
+    
+    /**
+     * @brief Request to clear all selection data (prevents crashes from stale references)
+     * @note Emitted when objects might have been deleted or selection tools state changes
+     */
+    void requestClearSelection() const;
 
 private:
     static const char* s_noneString;
@@ -215,6 +229,7 @@ private:
     void polyineWidthChanged(int);
     void coordinateSystemAxisWidthChanged(int);
     void trihedronsScaleChanged(double);
+    void opacityChanged(int);  // Opacity slider value changed [0, 100]
 
 protected:
     void addSeparator(QString title);
@@ -275,7 +290,8 @@ protected:
     //! Highlighter for selection properties widget
     cvSelectionHighlighter* m_highlighter;
     //! Selection properties widget reference (for direct updates)
+    //! Using QPointer to automatically become null when widget is destroyed
     //! Mutable because it needs to be set in const setEditorData method
-    mutable cvSelectionPropertiesWidget* m_selectionPropertiesWidget;
+    mutable QPointer<cvSelectionPropertiesWidget> m_selectionPropertiesWidget;
 #endif
 };

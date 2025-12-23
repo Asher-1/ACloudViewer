@@ -29,6 +29,9 @@ namespace PclUtils {
 class PCLVis;
 }
 
+// Include for LabelProperties struct (nested type requires full definition)
+#include "cvSelectionLabelPropertiesDialog.h"
+
 /**
  * @brief Annotation for a selection
  *
@@ -40,12 +43,22 @@ struct QPCL_ENGINE_LIB_API cvAnnotation {
     double position[3];    ///< 3D position
     QColor color;          ///< Text color
     int fontSize;          ///< Font size in points
+    QString fontFamily;    ///< Font family (e.g., "Arial")
+    bool bold;             ///< Bold flag
+    bool italic;           ///< Italic flag
+    bool shadow;           ///< Shadow flag
+    double opacity;        ///< Text opacity (0.0 to 1.0)
+    QString horizontalJustification;  ///< "Left", "Center", "Right"
+    QString verticalJustification;    ///< "Top", "Center", "Bottom"
     bool visible;          ///< Visibility flag
     bool followSelection;  ///< Auto-update position with selection
     qint64 timestamp;      ///< Creation timestamp
 
     cvAnnotation()
-        : fontSize(12), visible(true), followSelection(false), timestamp(0) {
+        : fontSize(12), fontFamily("Arial"), bold(false), italic(false),
+          shadow(true), opacity(1.0), horizontalJustification("Left"),
+          verticalJustification("Bottom"), visible(true), followSelection(false),
+          timestamp(0) {
         position[0] = position[1] = position[2] = 0.0;
         color = Qt::yellow;
     }
@@ -57,9 +70,9 @@ struct QPCL_ENGINE_LIB_API cvAnnotation {
           id(uid.isEmpty()
                      ? QString::number(QDateTime::currentMSecsSinceEpoch())
                      : uid),
-          fontSize(12),
-          visible(true),
-          followSelection(false),
+          fontSize(12), fontFamily("Arial"), bold(false), italic(false),
+          shadow(true), opacity(1.0), horizontalJustification("Left"),
+          verticalJustification("Bottom"), visible(true), followSelection(false),
           timestamp(QDateTime::currentMSecsSinceEpoch()) {
         position[0] = pos[0];
         position[1] = pos[1];
@@ -162,6 +175,22 @@ public:
     bool setAnnotationFontSize(const QString& id, int fontSize);
 
     /**
+     * @brief Apply label properties to all annotations (for cell or point labels)
+     * @param props Label properties from dialog
+     * @param isCellLabel If true, apply cell label properties; if false, apply point label properties
+     */
+    void applyLabelProperties(const cvSelectionLabelPropertiesDialog::LabelProperties& props,
+                              bool isCellLabel);
+
+    /**
+     * @brief Set default label properties for new annotations
+     * @param props Label properties from dialog
+     * @param isCellLabel If true, use cell label properties; if false, use point label properties
+     */
+    void setDefaultLabelProperties(const cvSelectionLabelPropertiesDialog::LabelProperties& props,
+                                   bool isCellLabel);
+
+    /**
      * @brief Get annotation
      * @param id Annotation ID
      * @return Annotation data
@@ -252,4 +281,8 @@ private:
     PclUtils::PCLVis* m_viewer;
     QMap<QString, cvAnnotation> m_annotations;
     QMap<QString, vtkSmartPointer<vtkTextActor>> m_textActors;
+    
+    // Default label properties for new annotations (applied from dialog)
+    cvSelectionLabelPropertiesDialog::LabelProperties m_defaultCellLabelProps;
+    cvSelectionLabelPropertiesDialog::LabelProperties m_defaultPointLabelProps;
 };

@@ -1,4 +1,3 @@
-// ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
@@ -10,6 +9,10 @@
 #include <Utils/PCLConv.h>
 #include <Utils/cc2sm.h>
 #include <Utils/sm2cc.h>
+
+// ECV_DB
+#include <ecvPointCloud.h>
+#include <ecvScalarField.h>
 
 #include "Tools/Common/PclTools.h"
 #include "Tools/Common/ecvTools.h"
@@ -85,6 +88,8 @@
 #include <vtkTransform.h>
 #include <vtkTubeFilter.h>
 #include <vtkUnsignedCharArray.h>
+#include <vtkStringArray.h>
+#include <vtkFieldData.h>
 #include <vtkWidgetEvent.h>
 #include <vtkWidgetEventTranslator.h>
 #include <vtkWindowToImageFilter.h>
@@ -1668,6 +1673,7 @@ bool PCLVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
     // vtkPolyData This reuses the proven logic from getPclTextureMesh and
     // addTextureMesh which ensures texture coordinates match point order
     // perfectly
+    // Note: getVtkPolyDataWithTextures already adds DatasetName to FieldData
     cc2smReader reader(cloud, true);
     vtkSmartPointer<vtkPolyData> polydata;
     vtkSmartPointer<vtkMatrix4x4> transformation;
@@ -2017,6 +2023,181 @@ void PCLVis::setPointSize(const unsigned char pointSize,
     }
 }
 
+void PCLVis::addScalarFieldToVTK(const std::string& viewID,
+                                 ccPointCloud* cloud,
+                                 int scalarFieldIndex,
+                                 int viewport) {
+    if (!contains(viewID) || !cloud) {
+        return;
+    }
+    
+    // Get scalar field
+    cloudViewer::ScalarField* scalarField = cloud->getScalarField(scalarFieldIndex);
+    if (!scalarField) {
+        CVLog::Warning("[PCLVis::addScalarFieldToVTK] Invalid scalar field index");
+        return;
+    }
+    
+    QString sfName = cloud->getScalarFieldName(scalarFieldIndex);
+    std::string scalarFieldName = sfName.toStdString();
+    
+    // Get actor from cloud actor map
+    pcl::visualization::CloudActorMap::iterator am_it = getCloudActorMap()->find(viewID);
+    if (am_it == getCloudActorMap()->end()) {
+        return;
+    }
+    
+    vtkActor* actor = am_it->second.actor;
+    if (!actor) {
+        return;
+    }
+    
+    // Get mapper and polydata
+    vtkMapper* mapper = actor->GetMapper();
+    if (!mapper) {
+        return;
+    }
+    
+    vtkPolyData* polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
+    if (!polyData) {
+        return;
+    }
+    
+    vtkPointData* pointData = polyData->GetPointData();
+    vtkDataArray* activeScalars = pointData->GetScalars();
+    
+    // Check if the correct array already exists
+    vtkDataArray* existingArray = pointData->GetArray(scalarFieldName.c_str());
+    if (existingArray && existingArray->GetNumberOfComponents() == 1) {
+        // Correct 1-component array already exists, no need to update
+        CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Scalar array '%1' already exists, skipping")
+            .arg(sfName));
+        return;
+    }
+    
+    // Remove all old tooltip scalar arrays (1-component, non-active)
+    // This ensures we don't accumulate arrays when switching between scalar fields
+    for (int i = pointData->GetNumberOfArrays() - 1; i >= 0; --i) {
+        vtkDataArray* array = pointData->GetArray(i);
+        if (array && 
+            array->GetNumberOfComponents() == 1 && 
+            array != activeScalars) {
+            // This is a 1-component non-active array (likely an old tooltip scalar)
+            const char* name = array->GetName();
+            pointData->RemoveArray(i);
+            CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Removed old tooltip scalar array '%1'")
+                .arg(name ? name : "(unnamed)"));
+        }
+    }
+    
+    // Extract scalar values directly from ccPointCloud
+    vtkIdType numPoints = polyData->GetNumberOfPoints();
+    vtkSmartPointer<vtkFloatArray> scalarArray = vtkSmartPointer<vtkFloatArray>::New();
+    scalarArray->SetName(scalarFieldName.c_str());
+    scalarArray->SetNumberOfComponents(1);
+    scalarArray->SetNumberOfTuples(numPoints);
+    
+    // Copy scalar values from ccPointCloud
+    unsigned cloudSize = cloud->size();
+    if (static_cast<vtkIdType>(cloudSize) != numPoints) {
+        CVLog::Warning(QString("[PCLVis::addScalarFieldToVTK] Size mismatch: ccCloud=%1, VTK=%2")
+            .arg(cloudSize).arg(numPoints));
+        return;
+    }
+    
+    for (vtkIdType i = 0; i < numPoints; ++i) {
+        float scalarValue = static_cast<float>(scalarField->getValue(static_cast<unsigned>(i)));
+        scalarArray->SetValue(i, scalarValue);
+    }
+    
+    // Add array to polydata (but do NOT set as active scalars to avoid overriding rendering)
+    // The tooltip can access this array by name without it being active
+    pointData->AddArray(scalarArray);
+    // NOTE: Do NOT call SetActiveScalars here - it would override PCL's RGB rendering!
+    
+    // Add DatasetName to field data for tooltip display (ParaView style)
+    vtkFieldData* fieldData = polyData->GetFieldData();
+    if (fieldData) {
+        vtkStringArray* datasetNameArray = vtkStringArray::SafeDownCast(
+            fieldData->GetAbstractArray("DatasetName"));
+        
+        if (!datasetNameArray) {
+            // DatasetName not yet added, create it
+            datasetNameArray = vtkStringArray::New();
+            datasetNameArray->SetName("DatasetName");
+            datasetNameArray->SetNumberOfTuples(1);
+            
+            // Use cloud name as dataset name
+            QString cloudName = cloud->getName();
+            if (cloudName.isEmpty()) {
+                cloudName = QString::fromStdString(viewID);
+            }
+            datasetNameArray->SetValue(0, cloudName.toStdString());
+            fieldData->AddArray(datasetNameArray);
+            datasetNameArray->Delete();
+            
+            CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Added DatasetName: %1")
+                .arg(cloudName));
+        }
+
+        CVLog::Print(QString("[PCLVis::addScalarFieldToVTK] Added scalar array '%1' with %2 values to VTK polydata")
+        .arg(sfName)
+        .arg(numPoints));
+    }
+}
+
+void PCLVis::setScalarFieldName(const std::string& viewID,
+                                const std::string& scalarName,
+                                int viewport) {
+    if (!contains(viewID)) {
+        return;
+    }
+    
+    // Get actor from cloud actor map
+    pcl::visualization::CloudActorMap::iterator am_it = getCloudActorMap()->find(viewID);
+    if (am_it == getCloudActorMap()->end()) {
+        return;
+    }
+    
+    vtkActor* actor = am_it->second.actor;
+    if (!actor) {
+        return;
+    }
+    
+    // Get mapper and polydata
+    vtkMapper* mapper = actor->GetMapper();
+    if (!mapper) {
+        return;
+    }
+    
+    vtkPolyData* polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
+    if (!polyData) {
+        return;
+    }
+    
+    vtkPointData* pointData = polyData->GetPointData();
+    
+    // Try to find an array with the scalar field name (actual scalar values)
+    // This should be separate from the RGB array used for rendering
+    vtkDataArray* scalarArray = pointData->GetArray(scalarName.c_str());
+    
+    if (scalarArray) {
+        // Found the scalar array, make it the active scalars for tooltip
+        pointData->SetActiveScalars(scalarName.c_str());
+        CVLog::PrintDebug(QString("[PCLVis::setScalarFieldName] Set active scalars to '%1' (%2 components, %3 tuples)")
+            .arg(QString::fromStdString(scalarName))
+            .arg(scalarArray->GetNumberOfComponents())
+            .arg(scalarArray->GetNumberOfTuples()));
+    } else {
+        // Scalar array not found, try to set name on default scalars as fallback
+        vtkDataArray* defaultScalars = pointData->GetScalars();
+        if (defaultScalars) {
+            CVLog::PrintDebug(QString("[PCLVis::setScalarFieldName] Scalar array '%1' not found, using default scalars")
+                .arg(QString::fromStdString(scalarName)));
+        }
+    }
+}
+
 void PCLVis::setPointCloudOpacity(double opacity,
                                   const std::string& viewID,
                                   int viewport) {
@@ -2042,6 +2223,72 @@ void PCLVis::setShapeOpacity(double opacity,
                 pcl::visualization::RenderingProperties::PCL_VISUALIZER_OPACITY,
                 opacity, viewID, viewport);
     }
+}
+
+void PCLVis::setMeshOpacity(double opacity,
+                            const std::string& viewID,
+                            int viewport) {
+    // Get the actor for this mesh - try vtkLODActor first, then vtkActor
+    vtkLODActor* lodActor = vtkLODActor::SafeDownCast(getActorById(viewID));
+    vtkActor* actor = lodActor;
+    if (!actor) {
+        // Fallback to vtkActor if not a LODActor
+        actor = vtkActor::SafeDownCast(getActorById(viewID));
+    }
+    if (!actor) {
+        CVLog::Warning("[PCLVis::setMeshOpacity] Mesh with id <%s> not found",
+                       viewID.c_str());
+        return;
+    }
+
+    // Check current opacity to avoid unnecessary updates
+    double currentOpacity = actor->GetProperty()->GetOpacity();
+    if (std::abs(currentOpacity - opacity) < 0.001) {
+        return;  // No change needed
+    }
+
+    // Set the opacity on the actor's property
+    // VTK automatically detects opacity < 1.0 in
+    // HasTranslucentPolygonalGeometry()
+    actor->GetProperty()->SetOpacity(opacity);
+
+    // Configure transparency rendering based on opacity value
+    // Following ParaView's vtkPVLODActor pattern (line 107-108)
+    if (opacity < 1.0) {
+        // Force actor to be treated as translucent for proper depth sorting
+        // This ensures VTK renders this actor in the translucent pass
+        actor->ForceTranslucentOn();
+        actor->ForceOpaqueOff();
+
+        // Configure renderer for transparency support (only once)
+        vtkRenderer* renderer = getCurrentRenderer();
+        if (renderer && !renderer->GetUseDepthPeeling()) {
+            vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
+            if (renderWindow) {
+                // Enable alpha bit planes for RGBA transparency
+                renderWindow->SetAlphaBitPlanes(1);
+            }
+
+            // Enable depth peeling for correct transparent object ordering
+            // This is the standard VTK technique for order-independent
+            // transparency
+            renderer->SetUseDepthPeeling(1);
+            // Quality/performance balance
+            renderer->SetMaximumNumberOfPeels(4);
+            // Full transparency support
+            renderer->SetOcclusionRatio(0.0);
+        }
+    } else {
+        // Opacity is 1.0 (fully opaque), render in opaque pass
+        actor->ForceTranslucentOff();
+        actor->ForceOpaqueOn();
+    }
+
+    // Mark the actor as modified to trigger re-render
+    actor->Modified();
+
+    CVLog::PrintDebug("[PCLVis::setMeshOpacity] Set opacity to %.3f for <%s>",
+                      opacity, viewID.c_str());
 }
 
 void PCLVis::setShapeShadingMode(SHADING_MODE mode,
