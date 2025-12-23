@@ -295,10 +295,21 @@
         <file>Resources/images/pcl/frustum_selection.png</file>
         <file>Resources/images/pcl/3dtree.png</file>
         <file>Resources/images/svg/pqPointData.png</file>
+        <file>Resources/images/svg/pqPointData.svg</file>
+        <file>Resources/images/svg/pqCellData.svg</file>
         <file>Resources/images/svg/pqPaste.png</file>
         <file>Resources/images/svg/pqNodeMapData.png</file>
         <file>Resources/images/svg/pqInvert.png</file>
         <file>Resources/images/svg/pqSolidColor.png</file>
+        <file>Resources/images/font/pqBold24.png</file>
+        <file>Resources/images/font/pqItalics24.png</file>
+        <file>Resources/images/font/pqShadow24.png</file>
+        <file>Resources/images/font/pqTextAlignLeft.svg</file>
+        <file>Resources/images/font/pqTextAlignCenter.svg</file>
+        <file>Resources/images/font/pqTextAlignRight.svg</file>
+        <file>Resources/images/font/pqTextVerticalAlignTop.svg</file>
+        <file>Resources/images/font/pqTextVerticalAlignCenter.svg</file>
+        <file>Resources/images/font/pqTextVerticalAlignBottom.svg</file>
     </qresource>
     <qresource prefix="/qt">
         <file>etc/qt.conf</file>

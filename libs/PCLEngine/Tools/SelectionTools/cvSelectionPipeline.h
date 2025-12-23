@@ -192,6 +192,132 @@ public:
     int getCacheHits() const;
     int getCacheMisses() const;
 
+    /**
+     * @brief Enter selection mode (ParaView-style cache optimization)
+     * 
+     * Call this before starting a selection operation to enable
+     * caching of selection render buffers. This prevents unnecessary
+     * re-renders during interactive selection.
+     * Reference: vtkPVRenderView::INTERACTION_MODE_SELECTION
+     */
+    void enterSelectionMode();
+
+    /**
+     * @brief Exit selection mode and release cached buffers
+     */
+    void exitSelectionMode();
+
+    /**
+     * @brief Check if currently in selection mode
+     */
+    bool isInSelectionMode() const { return m_inSelectionMode; }
+
+    /**
+     * @brief Clear selection cache and invalidate cached buffers
+     * 
+     * Call this when the scene changes (e.g., data update, camera change)
+     * to ensure stale selection data is not used.
+     * Reference: vtkPVRenderView::InvalidateCachedSelection
+     */
+    void invalidateCachedSelection();
+
+    ///@{
+    /**
+     * @brief Point Picking Radius support (ParaView-aligned)
+     * 
+     * When selecting a single point and no hit is found at the exact
+     * pixel location, the selector will search in a radius around the
+     * click point to find nearby points. This improves usability for
+     * point cloud selection.
+     * 
+     * Reference: vtkPVRenderViewSettings::GetPointPickingRadius()
+     *            vtkPVHardwareSelector::Select()
+     */
+    
+    /**
+     * @brief Set the point picking radius (in pixels)
+     * @param radius Radius in pixels (0 = disabled)
+     * 
+     * Default is 5 pixels. Set to 0 to disable radius-based picking.
+     */
+    void setPointPickingRadius(unsigned int radius);
+    
+    /**
+     * @brief Get the current point picking radius
+     * @return Radius in pixels
+     */
+    unsigned int getPointPickingRadius() const { return m_pointPickingRadius; }
+    ///@}
+    
+    ///@{
+    /**
+     * @brief Fast Pre-Selection API (ParaView-aligned)
+     * 
+     * These methods provide fast hover/preview selection using cached
+     * hardware selection buffers. Much faster than software picking
+     * for interactive selection modes.
+     * 
+     * Reference: pqRenderViewSelectionReaction::fastPreSelection()
+     */
+    
+    /**
+     * @brief Structure to hold complete pixel selection information
+     * Including actor and polyData for proper tooltip display
+     */
+    struct PixelSelectionInfo {
+        bool valid;              // Whether selection is valid
+        vtkIdType attributeID;   // Element ID (point or cell) within the actor
+        vtkProp* prop;           // The selected actor/prop
+        vtkPolyData* polyData;   // PolyData from the selected actor
+        
+        PixelSelectionInfo() : valid(false), attributeID(-1), prop(nullptr), polyData(nullptr) {}
+    };
+    
+    /**
+     * @brief Get complete pixel selection information at a screen position
+     * @param x Screen X coordinate
+     * @param y Screen Y coordinate
+     * @param selectCells True for cell selection, false for points
+     * @return Complete selection info including actor and polyData
+     * 
+     * This method returns full selection context needed for tooltips,
+     * including the specific actor and its polyData that was selected.
+     * This fixes the "Invalid cell ID" issue when multiple actors are present.
+     */
+    PixelSelectionInfo getPixelSelectionInfo(int x, int y, bool selectCells);
+    
+    /**
+     * @brief Perform fast pre-selection at a screen position
+     * @param x Screen X coordinate
+     * @param y Screen Y coordinate
+     * @param selectCells True for cell selection, false for points
+     * @return Selected element ID, or -1 if nothing found
+     * 
+     * This method uses cached hardware selection buffers when available,
+     * falling back to a single-pixel selection if no cache exists.
+     * Much faster than software picking for interactive hover.
+     * 
+     * NOTE: This only returns the ID. For tooltip display with multiple actors,
+     * use getPixelSelectionInfo() instead to get the correct polyData.
+     */
+    vtkIdType fastPreSelectAt(int x, int y, bool selectCells);
+    
+    /**
+     * @brief Check if fast pre-selection buffers are available
+     * @return True if buffers are cached and can be used for fast picking
+     */
+    bool hasCachedBuffers() const;
+    
+    /**
+     * @brief Capture buffers for fast pre-selection
+     * 
+     * Call this at the start of interactive selection mode to pre-cache
+     * the hardware selection buffers. Subsequent fastPreSelectAt() calls
+     * will be very fast until invalidateCachedSelection() is called.
+     */
+    bool captureBuffersForFastPreSelection();
+    ///@}
+
     ///@{
     /**
      * @brief High-level selection API (ParaView-style)
@@ -327,4 +453,11 @@ private:
 
     // Maximum cache size
     static const int MAX_CACHE_SIZE = 50;
+
+    // Selection mode state (for cache optimization)
+    bool m_inSelectionMode = false;
+    
+    // Point picking radius (ParaView-style)
+    // When selecting a single point, search in this radius if no direct hit
+    unsigned int m_pointPickingRadius = 5;
 };

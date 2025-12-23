@@ -41,6 +41,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkTriangle.h>
 #include <vtkUnstructuredGrid.h>
+#include <vtkGeometryFilter.h>
 
 // Qt
 #include <QDir>
@@ -268,9 +269,36 @@ vtkPolyData* cvSelectionExporter::extractSelection(
         return nullptr;
     }
 
-    // Convert to vtkPolyData
+    // Validate extracted data
+    vtkIdType numPoints = extracted->GetNumberOfPoints();
+    vtkIdType numCells = extracted->GetNumberOfCells();
+    
+    if (numPoints == 0) {
+        CVLog::Warning("[cvSelectionExporter] Extraction produced 0 points");
+        return nullptr;
+    }
+    
+    CVLog::PrintDebug(QString("[cvSelectionExporter] Extracted %1 points, %2 cells")
+                              .arg(numPoints)
+                              .arg(numCells));
+
+    // Convert vtkUnstructuredGrid to vtkPolyData using vtkGeometryFilter
+    // Note: ShallowCopy from vtkUnstructuredGrid to vtkPolyData doesn't work
+    // correctly for all cases, especially for point-only selections
+    vtkSmartPointer<vtkGeometryFilter> geometryFilter =
+            vtkSmartPointer<vtkGeometryFilter>::New();
+    geometryFilter->SetInputData(extracted);
+    geometryFilter->Update();
+
+    vtkPolyData* filteredOutput = geometryFilter->GetOutput();
+    if (!filteredOutput || filteredOutput->GetNumberOfPoints() == 0) {
+        CVLog::Warning("[cvSelectionExporter] Geometry filter produced no output");
+        return nullptr;
+    }
+
+    // Create result and deep copy to ensure proper memory management
     vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
-    result->ShallowCopy(extracted);
+    result->DeepCopy(filteredOutput);
 
     // Return raw pointer (caller must manage) - for backward compatibility
     // Note: Caller is responsible for calling Delete() on the returned pointer

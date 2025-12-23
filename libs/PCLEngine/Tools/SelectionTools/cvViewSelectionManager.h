@@ -25,6 +25,7 @@ class cvSelectionPipeline;
 class cvSelectionFilter;
 class cvSelectionBookmarks;
 class cvSelectionAnnotationManager;
+class cvSelectionHighlighter;
 class vtkIntArray;
 class vtkIdTypeArray;
 class vtkPolyData;
@@ -83,6 +84,9 @@ public:
 
         // Custom selection (emit signals with selection region)
         SELECT_CUSTOM_POLYGON,  ///< Custom polygon selection (signal only)
+
+        // Zoom mode (ParaView-aligned)
+        ZOOM_TO_BOX,  ///< Zoom to box region
 
         // Selection management
         CLEAR_SELECTION,  ///< Clear current selection
@@ -169,6 +173,12 @@ public:
      * Reference: pqRenderViewSelectionReaction.cxx, line 415-420
      */
     void clearSelection();
+    
+    /**
+     * @brief Clear the current selection data (prevents crashes from stale references)
+     * @note This is called when objects might have been deleted to avoid dangling pointers
+     */
+    void clearCurrentSelection();
 
     /**
      * @brief Grow the current selection by one layer
@@ -260,6 +270,15 @@ public:
      * @return Pointer to annotation manager
      */
     cvSelectionAnnotationManager* getAnnotations() { return m_annotations; }
+    
+    /**
+     * @brief Get the shared highlighter
+     * @return Pointer to the shared highlighter used by all tools
+     * 
+     * This is the single source of truth for highlight colors/opacity.
+     * Both cvSelectionPropertiesWidget and all tooltip tools share this instance.
+     */
+    cvSelectionHighlighter* getHighlighter() { return m_highlighter; }
 
     //-------------------------------------------------------------------------
     // Advanced selection operations (using utility modules)
@@ -304,6 +323,67 @@ public:
      * @return PolyData pointer or nullptr
      */
     vtkPolyData* getPolyData() const;
+
+    /**
+     * @brief Notify that scene data has been updated
+     * 
+     * Call this method when the 3D scene data changes (e.g., point cloud
+     * updated, mesh modified, actor added/removed). This invalidates
+     * cached selection buffers to ensure correct selection results.
+     * 
+     * Reference: ParaView connects this to pqActiveObjects::dataUpdated signal
+     */
+    void notifyDataUpdated();
+
+    /**
+     * @brief Set the point picking radius for single-point selection
+     * @param radius Radius in pixels (0 = disabled)
+     * 
+     * When selecting a single point and no exact hit is found,
+     * the selector will search in this radius around the click point.
+     * Default is 5 pixels.
+     */
+    void setPointPickingRadius(unsigned int radius);
+
+    /**
+     * @brief Get the current point picking radius
+     */
+    unsigned int getPointPickingRadius() const;
+
+    ///@{
+    /**
+     * @brief Grow/Shrink Selection Settings (ParaView-aligned)
+     * 
+     * Reference: vtkPVRenderViewSettings::GrowSelectionRemoveSeed
+     *            vtkPVRenderViewSettings::GrowSelectionRemoveIntermediateLayers
+     */
+    
+    /**
+     * @brief Set whether to remove seed elements when growing selection
+     */
+    void setGrowSelectionRemoveSeed(bool remove);
+    bool getGrowSelectionRemoveSeed() const { return m_growRemoveSeed; }
+    
+    /**
+     * @brief Set whether to remove intermediate layers when growing selection
+     */
+    void setGrowSelectionRemoveIntermediateLayers(bool remove);
+    bool getGrowSelectionRemoveIntermediateLayers() const { 
+        return m_growRemoveIntermediateLayers; 
+    }
+    
+    /**
+     * @brief Expand selection by given number of layers
+     * @param layers Positive for grow, negative for shrink
+     * @param removeSeed Override setting to remove seed
+     * @param removeIntermediateLayers Override setting to remove intermediate layers
+     * 
+     * This is the ParaView-compatible expand selection API.
+     */
+    void expandSelection(int layers, 
+                         bool removeSeed = false, 
+                         bool removeIntermediateLayers = false);
+    ///@}
 
 signals:
     /**
@@ -352,13 +432,26 @@ signals:
      */
     void customPolygonSelected(vtkIntArray* polygon);
 
-protected:
+    /**
+     * @brief Emitted for zoom to box
+     * @param region Box region [x1, y1, x2, y2] in screen coordinates
+     * 
+     * Reference: pqRenderViewSelectionReaction ZOOM_TO_BOX case
+     */
+    void zoomToBoxRequested(int region[4]);
+    void zoomToBoxRequested(int xmin, int ymin, int xmax, int ymax);
+
+public:
     /**
      * @brief Get or create a selection tool for the given mode
      * @param mode The selection mode
      * @return The selection tool (cached or newly created)
+     * 
+     * This is public to allow cvSelectionToolController to access it.
      */
     cvRenderViewSelectionTool* getOrCreateTool(SelectionMode mode);
+
+protected:
 
     /**
      * @brief Clean up inactive tools to free resources
@@ -416,4 +509,9 @@ private:
     cvSelectionFilter* m_filter;        ///< Advanced filtering
     cvSelectionBookmarks* m_bookmarks;  ///< Save/load selections
     cvSelectionAnnotationManager* m_annotations;  ///< Annotation system
+    cvSelectionHighlighter* m_highlighter;  ///< Shared highlighter for all tools
+    
+    // Grow selection settings (ParaView-style)
+    bool m_growRemoveSeed = false;
+    bool m_growRemoveIntermediateLayers = false;
 };

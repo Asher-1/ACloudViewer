@@ -94,6 +94,16 @@ public:
      * tools
      */
     void disable() override;
+    
+    /**
+     * @brief Get the hover highlighter instance
+     * @return Pointer to the shared highlighter from cvViewSelectionManager
+     * 
+     * All tooltip tools share the same highlighter instance via the manager.
+     * This ensures color settings from cvSelectionPropertiesWidget are
+     * automatically synchronized across all tools.
+     */
+    cvSelectionHighlighter* getHighlighter() const;
 
 signals:
     /**
@@ -109,11 +119,6 @@ signals:
      * @param fieldAssociation 0 for cells, 1 for points
      */
     void hoverChanged(qint64 hoveredId, int fieldAssociation);
-
-    /**
-     * @brief Emitted when user presses ESC to request disabling the tool
-     */
-    void requestDisable();
 
     /**
      * @brief Emitted when selection is finished (interactive mode only)
@@ -146,8 +151,9 @@ private slots:
 
 private:
     void onMouseMove();
-    void onLeftButtonPress();  // Interactive mode: handle click selection
-    void updateHighlight();    // ParaView-style: immediate highlight update
+    void onLeftButtonPress();   // Record press position (ParaView-style)
+    void onLeftButtonRelease(); // Check distance and select if it's a click (not drag)
+    void updateHighlight();     // ParaView-style: immediate highlight update
     // Note: pickAtCursor(), isSelectingCells() are
     // now in base class
     void updateTooltip(vtkIdType id);
@@ -166,10 +172,19 @@ private:
     int m_fieldAssociation;
     bool m_rightButtonPressed;
     bool m_mouseMoving;
+    
+    // Click vs Drag detection (ParaView-style)
+    // To avoid selecting when user is rotating camera
+    bool m_leftButtonPressed;
+    int m_leftButtonPressPos[2];  // Mouse position when left button was pressed
+    static const int CLICK_THRESHOLD = 3;  // Pixels - distance to distinguish click from drag
+    
+    // Cached polyData from current hover (fixes "Invalid cell ID" with multiple actors)
+    vtkPolyData* m_currentPolyData;
 
     // Tooltip helpers
     cvSelectionTooltipHelper* m_tooltipHelper;
-    cvSelectionHighlighter* m_hoverHighlighter;
+    // Note: Highlighter is now shared via cvViewSelectionManager::getHighlighter()
 
     // Tooltip text cache
     QString m_currentTooltipText;  // HTML format
@@ -185,13 +200,17 @@ private:
 
     // Shortcuts
     QShortcut* m_copyShortcut;    // Ctrl-C/Cmd-C for copying tooltip
-    QShortcut* m_escapeShortcut;  // ESC to exit/disable tool
+    // NOTE: ESC key handling is centralized in MainWindow::handleEscapeKey()
 
     // Interactive mode selection state
     // Current selected elements
     vtkSmartPointer<vtkIdTypeArray> m_currentSelection;
     // true: interactive mode (click to select), false: tooltip only
     bool m_enableSelection;
+    
+    // VTK callback that can call AbortFlagOn() to prevent interactor style
+    // from consuming mouse events
+    vtkSmartPointer<vtkCommand> m_vtkCallback;
 };
 
 #endif  // CV_TOOLTIP_SELECTION_TOOL_H

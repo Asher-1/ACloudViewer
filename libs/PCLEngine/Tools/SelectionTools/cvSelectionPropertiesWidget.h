@@ -12,15 +12,17 @@
 // LOCAL
 #include "cvSelectionBase.h"
 #include "cvSelectionData.h"
+#include "cvSelectionLabelPropertiesDialog.h"
 
 // Qt
+#include <QColor>
 #include <QGroupBox>
 #include <QLabel>
-#include <QListWidget>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSpinBox>
-#include <QTabWidget>
 #include <QTableWidget>
+#include <QToolButton>
 #include <QWidget>
 
 // Forward declarations
@@ -37,143 +39,125 @@ class QColorDialog;
 class QDoubleSpinBox;
 class QCheckBox;
 class QComboBox;
+class QLineEdit;
+class QMenu;
 class ccHObject;
+class QScrollArea;
 
 /**
  * @brief Comprehensive selection properties and management widget
- *
- * Inherits from QWidget and cvSelectionBase (lightweight) since it only needs
- * visualizer access for querying information. Does not need picking
- * functionality.
- *
- * This widget provides:
- * - Selection highlighting color/opacity configuration
- * - Tooltip display settings
- * - Selection statistics and detailed list
- * - Export functionality (to mesh/cloud/file)
- *
- * Based on ParaView's Selection Inspector panel:
- * - pqSelectionInspectorWidget
- * - pqSelectionManager
- * - pqOutputPort selection display
+ * 
+ * Based on ParaView's Find Data panel with:
+ * - pqFindDataSelectionDisplayFrame (Selection Display)
+ * - pqSelectionEditor (Selection Editor)
+ * - pqFindDataCurrentSelectionFrame (Selected Data spreadsheet)
+ * 
+ * Layout:
+ * 1. Selected Data header with action buttons
+ * 2. Selection Display (collapsible) - labels, colors, label properties
+ * 3. Selection Editor (collapsible) - data producer, expression, saved selections
+ * 4. Selected Data table (spreadsheet view with attributes)
  */
 class QPCL_ENGINE_LIB_API cvSelectionPropertiesWidget : public QWidget,
                                                         public cvSelectionBase {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Saved selection entry for Selection Editor
+     */
+    struct SavedSelection {
+        QString name;          // e.g., "s0", "s1"
+        QString type;          // e.g., "ID Selection"
+        QColor color;          // Display color
+        cvSelectionData data;  // The actual selection data
+    };
+
     explicit cvSelectionPropertiesWidget(QWidget* parent = nullptr);
     ~cvSelectionPropertiesWidget() override;
 
-    // Inherited from cvSelectionBase:
-    // void setVisualizer(ecvGenericVisualizer3D* viewer);
-    // ecvGenericVisualizer3D* getVisualizer() const;
-    // PclUtils::PCLVis* getPCLVis() const;
-
-    /**
-     * @brief Set the selection highlighter instance
-     * @param highlighter Pointer to the highlighter
-     */
+    // cvSelectionBase interface
     void setHighlighter(cvSelectionHighlighter* highlighter);
-
-    /**
-     * @brief Set the selection manager (provides access to utility modules)
-     * @param manager Pointer to the selection manager
-     */
     void setSelectionManager(cvViewSelectionManager* manager);
-
-    /**
-     * @brief Synchronize UI controls with highlighter's current settings
-     * Called automatically by setHighlighter()
-     */
     void syncUIWithHighlighter();
 
-    /**
-     * @brief Update with current selection data
-     * @param selectionData The selection data
-     * @param polyData The mesh data (optional, will be fetched if nullptr)
-     * @return True if update was successful
-     */
     bool updateSelection(const cvSelectionData& selectionData,
                          vtkPolyData* polyData = nullptr);
-
-    /**
-     * @brief Clear the selection information
-     */
     void clearSelection();
 
-    /**
-     * @brief Get current selection data
-     */
     const cvSelectionData& selectionData() const { return m_selectionData; }
+    cvViewSelectionManager* selectionManager() const { return m_selectionManager; }
 
     /**
-     * @brief Get the selection manager
+     * @brief Set the data producer name (source of selection)
      */
-    cvViewSelectionManager* selectionManager() const {
-        return m_selectionManager;
-    }
+    void setDataProducerName(const QString& name);
 
 signals:
-    /**
-     * @brief Emitted when highlight color changes
-     */
-    void highlightColorChanged(double r,
-                               double g,
-                               double b,
-                               int mode);  // HighlightMode
-
-    /**
-     * @brief Emitted when highlight opacity changes
-     */
+    // Highlight/opacity changes
+    void highlightColorChanged(double r, double g, double b, int mode);
     void highlightOpacityChanged(double opacity, int mode);
 
-    /**
-     * @brief Emitted when tooltip display settings change
-     */
-    void tooltipSettingsChanged(bool showTooltips, int maxAttributes);
+    // Selection Editor signals
+    void expressionChanged(const QString& expression);
+    void activateCombinedSelectionsRequested();
+    void selectionAdded(const cvSelectionData& selection);
+    void selectionRemoved(int index);
+    void allSelectionsRemoved();
 
-    /**
-     * @brief Emitted when user requests algebra operation
-     */
+    // Find Data actions
+    void freezeSelectionRequested();
+    void extractSelectionRequested();
+    void plotOverTimeRequested();
+    void invertSelectionRequested();
+
+    // Legacy signals
     void algebraOperationRequested(int operation);
-
-    /**
-     * @brief Emitted when user requests to save bookmark
-     */
     void bookmarkRequested(const QString& name);
-
-    /**
-     * @brief Emitted when user requests to add annotation
-     */
     void annotationRequested(const QString& text);
 
 private slots:
-    // Highlight configuration
+    // === Selection Display slots ===
+    void onCellLabelsClicked();
+    void onPointLabelsClicked();
+    void onEditLabelPropertiesClicked();
+    void onSelectionColorClicked();
+    void onInteractiveSelectionColorClicked();
+    void onEditInteractiveLabelPropertiesClicked();
+    void onLabelPropertiesApplied(const cvSelectionLabelPropertiesDialog::LabelProperties& props);
+    void onInteractiveLabelPropertiesApplied(const cvSelectionLabelPropertiesDialog::LabelProperties& props);
+
+    // === Selection Editor slots ===
+    void onExpressionChanged(const QString& text);
+    void onAddActiveSelectionClicked();
+    void onRemoveSelectedSelectionClicked();
+    void onRemoveAllSelectionsClicked();
+    void onActivateCombinedSelectionsClicked();
+    void onSelectionEditorTableSelectionChanged();
+
+    // === Find Data / Selected Data slots ===
+    void onAttributeTypeChanged(int index);
+    void onInvertSelectionToggled(bool checked);
+    void onFreezeClicked();
+    void onExtractClicked();
+    void onPlotOverTimeClicked();
+    void onToggleColumnVisibility();
+    void onSpreadsheetItemClicked(QTableWidgetItem* item);
+
+    // Legacy slots (existing functionality)
     void onHoverColorClicked();
     void onPreselectedColorClicked();
     void onSelectedColorClicked();
     void onBoundaryColorClicked();
-
     void onHoverOpacityChanged(double value);
     void onPreselectedOpacityChanged(double value);
     void onSelectedOpacityChanged(double value);
     void onBoundaryOpacityChanged(double value);
-
-    // Export actions
     void onExportToMeshClicked();
     void onExportToPointCloudClicked();
     void onExportToFileClicked();
     void onCopyIDsClicked();
-
-    // Tooltip settings
-    void onShowTooltipsToggled(bool checked);
-    void onMaxAttributesChanged(int value);
-
-    // List interaction
-    void onSelectionListItemClicked(QListWidgetItem* item);
-
-    // Advanced operations (new)
+    void onSelectionTableItemClicked(QTableWidgetItem* item);
     void onAlgebraOperationTriggered();
     void onFilterOperationTriggered();
     void onSaveBookmarkClicked();
@@ -184,81 +168,114 @@ private slots:
 
 private:
     void setupUi();
-    void setupHighlightTab();
+    
+    // ParaView-style sections
+    void setupSelectedDataHeader();
+    void setupSelectionDisplaySection();
+    void setupSelectionEditorSection();
+    void setupSelectedDataSpreadsheet();
+    
+    // Legacy tabs (for backwards compatibility)
     void setupStatisticsTab();
     void setupExportTab();
-    void setupAdvancedTab();  // New: algebra, filter, bookmarks, annotations
+    void setupAdvancedTab();
 
     void updateStatistics(vtkPolyData* polyData);
     void updateSelectionList(vtkPolyData* polyData);
+    void updateSpreadsheetData(vtkPolyData* polyData);
     void computeBoundingBox(vtkPolyData* polyData, double bounds[6]);
     QString formatBounds(const double bounds[6]);
-
-    void showColorDialog(const QString& title,
-                         double currentColor[3],
-                         int mode);
-
-    /**
-     * @brief Highlight a single item temporarily in the 3D view
-     * @param id The ID of the item to highlight
-     */
+    void showColorDialog(const QString& title, double currentColor[3], int mode);
     void highlightSingleItem(qint64 id);
-
-    /**
-     * @brief Extract ID from list item text
-     * @param itemText Text in format "ID: 123" or "ID: 123 (x, y, z)"
-     * @return Extracted ID or -1 if parsing failed
-     */
     qint64 extractIdFromItemText(const QString& itemText);
-
-    /**
-     * @brief Update bookmark combo box with current bookmarks
-     */
     void updateBookmarkCombo();
+    void updateSelectionEditorTable();
+    QString generateSelectionName();
+    QColor generateSelectionColor() const;
 
 private:
-    // Helpers (m_viewer is inherited from cvGenericSelectionTool)
+    // Core components
     cvSelectionHighlighter* m_highlighter;
     cvSelectionTooltipHelper* m_tooltipHelper;
-    cvViewSelectionManager* m_selectionManager;  // Access to utility modules
-
-    // Current selection data
+    cvViewSelectionManager* m_selectionManager;
     cvSelectionData m_selectionData;
 
-    // UI components
-    QTabWidget* m_tabWidget;
+    // Label properties (ParaView-style)
+    cvSelectionLabelPropertiesDialog::LabelProperties m_labelProperties;
+    cvSelectionLabelPropertiesDialog::LabelProperties m_interactiveLabelProperties;
 
-    // === Highlight Configuration Tab ===
-    QWidget* m_highlightTab;
-    // Color buttons (show current color, click to change)
+    // Saved selections for Selection Editor
+    QList<SavedSelection> m_savedSelections;
+    QString m_dataProducerName;
+
+    // Main scroll area
+    QScrollArea* m_scrollArea;
+    QWidget* m_scrollContent;
+
+    // === Selected Data Header ===
+    QLabel* m_selectedDataLabel;
+    QPushButton* m_freezeButton;
+    QPushButton* m_extractButton;
+    QPushButton* m_plotOverTimeButton;
+
+    // === Selection Display Section ===
+    QGroupBox* m_selectionDisplayGroup;
+    // Selection Labels
+    QPushButton* m_cellLabelsButton;
+    QPushButton* m_pointLabelsButton;
+    QMenu* m_cellLabelsMenu;
+    QMenu* m_pointLabelsMenu;
+    QPushButton* m_editLabelPropertiesButton;
+    // Selection Appearance
+    QPushButton* m_selectionColorButton;
+    // Interactive Selection
+    QPushButton* m_interactiveSelectionColorButton;
+    QPushButton* m_editInteractiveLabelPropertiesButton;
+
+    // === Selection Editor Section ===
+    QGroupBox* m_selectionEditorGroup;
+    QLabel* m_dataProducerLabel;
+    QLabel* m_dataProducerValue;
+    QLabel* m_elementTypeLabel;
+    QLabel* m_elementTypeValue;  // ParaView-style: shows element type in a styled label
+    QLabel* m_expressionLabel;
+    QLineEdit* m_expressionEdit;
+    QTableWidget* m_selectionEditorTable;  // Name, Type, Color columns
+    QToolButton* m_addSelectionButton;
+    QToolButton* m_removeSelectionButton;
+    QToolButton* m_removeAllSelectionsButton;
+    QPushButton* m_activateCombinedSelectionsButton;
+
+    // === Selected Data Spreadsheet ===
+    QGroupBox* m_selectedDataGroup;
+    QComboBox* m_attributeTypeCombo;
+    QToolButton* m_toggleColumnVisibilityButton;
+    QToolButton* m_toggleFieldDataButton;  // ParaView-style: toggle field data visibility
+    QCheckBox* m_invertSelectionCheck;
+    QTableWidget* m_spreadsheetTable;
+
+    // === Legacy UI (for backwards compatibility) ===
+    QTabWidget* m_tabWidget;
     QPushButton* m_hoverColorButton;
     QPushButton* m_preselectedColorButton;
     QPushButton* m_selectedColorButton;
     QPushButton* m_boundaryColorButton;
-    // Opacity spinboxes
     QDoubleSpinBox* m_hoverOpacitySpin;
     QDoubleSpinBox* m_preselectedOpacitySpin;
     QDoubleSpinBox* m_selectedOpacitySpin;
     QDoubleSpinBox* m_boundaryOpacitySpin;
-    // Tooltip settings
-    QCheckBox* m_showTooltipsCheckBox;
-    QSpinBox* m_maxAttributesSpin;
-    // Line width / point size
     QSpinBox* m_lineWidthSpin;
     QSpinBox* m_pointSizeSpin;
 
-    // === Statistics Tab ===
     QWidget* m_statisticsTab;
     QLabel* m_countLabel;
     QLabel* m_typeLabel;
     QLabel* m_boundsLabel;
     QLabel* m_centerLabel;
     QLabel* m_volumeLabel;
-    // Detailed list
-    QListWidget* m_selectionListWidget;
+    QTableWidget* m_selectionTableWidget;
     QLabel* m_listInfoLabel;
 
-    // === Export Tab ===
     QWidget* m_exportTab;
     QPushButton* m_exportToMeshButton;
     QPushButton* m_exportToPointCloudButton;
@@ -266,28 +283,25 @@ private:
     QPushButton* m_copyIDsButton;
     QLabel* m_exportInfoLabel;
 
-    // === Advanced Tab === (new)
     QWidget* m_advancedTab;
-    // Algebra operations
     QComboBox* m_algebraOpCombo;
     QPushButton* m_applyAlgebraButton;
     QPushButton* m_extractBoundaryButton;
-    // Filtering
     QComboBox* m_filterTypeCombo;
     QPushButton* m_applyFilterButton;
-    // Bookmarks
     QComboBox* m_bookmarkCombo;
     QPushButton* m_saveBookmarkButton;
     QPushButton* m_loadBookmarkButton;
     QPushButton* m_batchExportBookmarksButton;
-    // Annotations
     QPushButton* m_addAnnotationButton;
 
-    // Color storage (for color buttons)
+    // Color storage
     double m_hoverColor[3];
     double m_preselectedColor[3];
     double m_selectedColor[3];
     double m_boundaryColor[3];
+    QColor m_selectionColor;
+    QColor m_interactiveSelectionColor;
 
     // Statistics
     int m_selectionCount;
@@ -295,4 +309,19 @@ private:
     double m_bounds[6];
     double m_center[3];
     double m_volume;
+
+    // Selection name counter
+    int m_selectionNameCounter;
+
+    // Selection colors palette (like ParaView)
+    static const QColor s_selectionColors[];
+    static const int s_selectionColorsCount;
+
+    // Current label array selections (for Cell/Point Labels menus)
+    QString m_currentCellLabelArray;
+    QString m_currentPointLabelArray;
+
+    // For single item highlighting with RED color
+    double m_savedPreselectedColor[3];
+    qint64 m_lastHighlightedId;
 };

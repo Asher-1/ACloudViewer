@@ -24,8 +24,20 @@ cvSelectionData::cvSelectionData(vtkIdTypeArray* vtkArray, int association)
     : m_vtkArray(nullptr),
       m_fieldAssociation(static_cast<FieldAssociation>(association)) {
     if (vtkArray) {
-        m_vtkArray = vtkSmartPointer<vtkIdTypeArray>::New();
-        m_vtkArray->DeepCopy(vtkArray);
+        // CRITICAL FIX: Validate array before DeepCopy
+        try {
+            vtkIdType numTuples = vtkArray->GetNumberOfTuples();
+            if (numTuples < 0) {
+                // Invalid array
+                return;
+            }
+            
+            m_vtkArray = vtkSmartPointer<vtkIdTypeArray>::New();
+            m_vtkArray->DeepCopy(vtkArray);
+        } catch (...) {
+            // DeepCopy failed - leave m_vtkArray as nullptr
+            m_vtkArray = nullptr;
+        }
     }
 }
 
@@ -48,8 +60,20 @@ cvSelectionData::cvSelectionData(const cvSelectionData& other)
       m_fieldAssociation(other.m_fieldAssociation),
       m_actorInfos(other.m_actorInfos) {
     if (other.m_vtkArray) {
-        m_vtkArray = vtkSmartPointer<vtkIdTypeArray>::New();
-        m_vtkArray->DeepCopy(other.m_vtkArray);
+        // CRITICAL FIX: Validate array before DeepCopy
+        try {
+            vtkIdType numTuples = other.m_vtkArray->GetNumberOfTuples();
+            if (numTuples < 0) {
+                // Invalid array
+                return;
+            }
+            
+            m_vtkArray = vtkSmartPointer<vtkIdTypeArray>::New();
+            m_vtkArray->DeepCopy(other.m_vtkArray);
+        } catch (...) {
+            // DeepCopy failed - leave m_vtkArray as nullptr
+            m_vtkArray = nullptr;
+        }
     }
 }
 
@@ -61,8 +85,19 @@ cvSelectionData& cvSelectionData::operator=(const cvSelectionData& other) {
         m_actorInfos = other.m_actorInfos;
 
         if (other.m_vtkArray) {
-            m_vtkArray = vtkSmartPointer<vtkIdTypeArray>::New();
-            m_vtkArray->DeepCopy(other.m_vtkArray);
+            // CRITICAL FIX: Validate array before DeepCopy
+            try {
+                vtkIdType numTuples = other.m_vtkArray->GetNumberOfTuples();
+                if (numTuples >= 0) {
+                    m_vtkArray = vtkSmartPointer<vtkIdTypeArray>::New();
+                    m_vtkArray->DeepCopy(other.m_vtkArray);
+                } else {
+                    m_vtkArray = nullptr;
+                }
+            } catch (...) {
+                // DeepCopy failed - leave m_vtkArray as nullptr
+                m_vtkArray = nullptr;
+            }
         } else {
             m_vtkArray = nullptr;
         }

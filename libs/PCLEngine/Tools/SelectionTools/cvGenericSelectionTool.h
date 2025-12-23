@@ -335,6 +335,23 @@ protected:
     cvSelectionData createSelectionFromPick(vtkIdType pickedId,
                                             bool selectCells);
 
+    /**
+     * @brief Apply selection modifier to combine selections
+     * @param newSelection New selection to combine
+     * @param currentSelection Current selection (or empty for replace)
+     * @param modifier Modifier defining combination operation
+     * @param fieldAssociation Field association (0=cells, 1=points)
+     * @return Combined selection result
+     *
+     * ParaView-aligned: Uses cvSelectionPipeline::combineSelections()
+     * Reference: pqRenderViewSelectionReaction selection modifier handling
+     */
+    cvSelectionData applySelectionModifierUnified(
+            const cvSelectionData& newSelection,
+            const cvSelectionData& currentSelection,
+            int modifier,
+            int fieldAssociation);
+
     ///@}
 
 private:
