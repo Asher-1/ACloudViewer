@@ -7,7 +7,7 @@
 
 #include "FeatureMatchingWidget.h"
 
-#include "OptionsWidget.h"
+#include "ui/options_widget.h"
 #include "ThreadControlWidget.h"
 #include "feature/matching.h"
 #include "util/misc.h"

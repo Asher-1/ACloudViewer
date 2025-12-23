@@ -11,7 +11,7 @@
 #include <QtWidgets>
 
 #include "ModelViewerWidget.h"
-#include "OptionsWidget.h"
+#include "ui/options_widget.h"
 #include "sfm/incremental_mapper.h"
 #include "ui/colormaps.h"
 #include "util/option_manager.h"
@@ -21,7 +21,7 @@ namespace cloudViewer {
 using OptionManager = colmap::OptionManager;
 using ImageColormapNameFilter = colmap::ImageColormapNameFilter;
 
-class RenderOptionsWidget : public OptionsWidget {
+class RenderOptionsWidget : public colmap::OptionsWidget {
 public:
     RenderOptionsWidget(QWidget* parent,
                         OptionManager* options,

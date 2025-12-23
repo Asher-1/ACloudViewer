@@ -7,7 +7,7 @@
 
 #include "FeatureExtractionWidget.h"
 
-#include "OptionsWidget.h"
+#include "ui/options_widget.h"
 #include "ThreadControlWidget.h"
 #include "base/camera_models.h"
 #include "feature/extraction.h"
@@ -19,7 +19,7 @@ namespace cloudViewer {
 
 using namespace colmap;
 
-class ExtractionWidget : public OptionsWidget {
+class ExtractionWidget : public colmap::OptionsWidget {
 public:
     ExtractionWidget(QWidget* parent, OptionManager* options);
 
