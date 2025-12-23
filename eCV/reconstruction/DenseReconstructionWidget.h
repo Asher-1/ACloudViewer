@@ -11,7 +11,7 @@
 #include <QtWidgets>
 
 #include "ImageViewerWidget.h"
-#include "OptionsWidget.h"
+#include "ui/options_widget.h"
 #include "util/ply.h"
 
 namespace colmap {
