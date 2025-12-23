@@ -87,71 +87,85 @@ LogWidget::~LogWidget() {
 }
 
 void LogWidget::Append(const std::string& text) {
-    QMutexLocker locker(&mutex_);
-    text_queue_ += text;
+    // Collect CVLog messages to send after releasing the lock
+    // to avoid deadlock when CVLog::LogMessage triggers GUI dialogs
+    QList<QPair<QString, int>> cvlog_messages;
 
-    // Dump to log file and flush immediately to avoid data loss on crash
-    if (log_file_.is_open()) {
-        log_file_ << text;
-        log_file_.flush();  // Immediate flush for crash safety
-    }
+    {
+        QMutexLocker locker(&mutex_);
+        text_queue_ += text;
 
-    // Also output to CVLog for unified logging (accumulate by lines)
-    cvlog_buffer_ += text;
+        // Dump to log file and flush immediately to avoid data loss on crash
+        if (log_file_.is_open()) {
+            log_file_ << text;
+            log_file_.flush();  // Immediate flush for crash safety
+        }
 
-    // Process complete lines in buffer
-    size_t pos;
-    while ((pos = cvlog_buffer_.find('\n')) != std::string::npos) {
-        std::string line = cvlog_buffer_.substr(0, pos);
-        cvlog_buffer_.erase(0, pos + 1);
+        // Also output to CVLog for unified logging (accumulate by lines)
+        cvlog_buffer_ += text;
 
-        if (!line.empty()) {
-            QString qline = QString::fromStdString(line);
-            qline = qline.trimmed();
+        // Process complete lines in buffer
+        size_t pos;
+        while ((pos = cvlog_buffer_.find('\n')) != std::string::npos) {
+            std::string line = cvlog_buffer_.substr(0, pos);
+            cvlog_buffer_.erase(0, pos + 1);
 
-            if (!qline.isEmpty()) {
-                // Determine log level based on content
-                int logLevel = CVLog::LOG_STANDARD;
-                QString lowerLine = qline.toLower();
+            if (!line.empty()) {
+                QString qline = QString::fromStdString(line);
+                qline = qline.trimmed();
 
-                // Use QtCompatRegExp for Qt5/Qt6 compatibility
-                static const QtCompatRegExp errorPattern(
-                        "\\b(error|failed|failure|fatal|exception|crash)\\b",
-                        QtCompatRegExpOption::CaseInsensitive);
-                static const QtCompatRegExp warningPattern(
-                        "\\b(warning|warn|caution)\\b",
-                        QtCompatRegExpOption::CaseInsensitive);
+                if (!qline.isEmpty()) {
+                    // Determine log level based on content
+                    int logLevel = CVLog::LOG_STANDARD;
+                    QString lowerLine = qline.toLower();
 
-                // Use qtCompatRegExpMatch for cross-version compatibility
-                bool hasError = qtCompatRegExpMatch(errorPattern, lowerLine);
-                bool hasWarning =
-                        qtCompatRegExpMatch(warningPattern, lowerLine);
+                    // Use QtCompatRegExp for Qt5/Qt6 compatibility
+                    static const QtCompatRegExp errorPattern(
+                            "\\b(error|fatal|exception|crash)"
+                            "\\b",
+                            QtCompatRegExpOption::CaseInsensitive);
+                    static const QtCompatRegExp warningPattern(
+                            "\\b(warning|warn|caution)\\b",
+                            QtCompatRegExpOption::CaseInsensitive);
 
-                // Also check for common log format prefixes
-                if (lowerLine.startsWith("error") ||
-                    lowerLine.startsWith("[error") ||
-                    lowerLine.startsWith("e ") || hasError) {
-                    logLevel = CVLog::LOG_ERROR;
-                } else if (lowerLine.startsWith("warning") ||
-                           lowerLine.startsWith("[warning") ||
-                           lowerLine.startsWith("w ") || hasWarning) {
-                    logLevel = CVLog::LOG_WARNING;
+                    // Use qtCompatRegExpMatch for cross-version compatibility
+                    bool hasError =
+                            qtCompatRegExpMatch(errorPattern, lowerLine);
+                    bool hasWarning =
+                            qtCompatRegExpMatch(warningPattern, lowerLine);
+
+                    // Also check for common log format prefixes
+                    if (lowerLine.startsWith("error") ||
+                        lowerLine.startsWith("[error") ||
+                        lowerLine.startsWith("e ") || hasError) {
+                        logLevel = CVLog::LOG_ERROR;
+                    } else if (lowerLine.startsWith("warning") ||
+                               lowerLine.startsWith("[warning") ||
+                               lowerLine.startsWith("w ") || hasWarning) {
+                        logLevel = CVLog::LOG_WARNING;
+                    }
+
+                    // Collect message to send after releasing lock
+                    cvlog_messages.append(qMakePair(qline, logLevel));
                 }
-
-                // Output to CVLog immediately (CVLog handles its own flushing)
-                CVLog::LogMessage(qline, logLevel);
             }
         }
-    }
-
-    // Also flush incomplete buffer periodically for crash safety
-    // If buffer is getting large (>1KB) without newline, flush it anyway
-    if (cvlog_buffer_.size() > 1024) {
-        QString remaining = QString::fromStdString(cvlog_buffer_).trimmed();
-        if (!remaining.isEmpty()) {
-            CVLog::LogMessage(remaining, CVLog::LOG_STANDARD);
+        // Also flush incomplete buffer periodically for crash safety
+        // If buffer is getting large (>1KB) without newline, flush it anyway
+        if (cvlog_buffer_.size() > 1024) {
+            QString remaining = QString::fromStdString(cvlog_buffer_).trimmed();
+            if (!remaining.isEmpty()) {
+                cvlog_messages.append(
+                        qMakePair(remaining, CVLog::LOG_STANDARD));
+            }
+            cvlog_buffer_.clear();
         }
-        cvlog_buffer_.clear();
+    }  // Release lock here
+
+    // Now send CVLog messages without holding the lock
+    // This prevents deadlock when CVLog::LogMessage triggers GUI dialogs
+    for (const auto& msg : cvlog_messages) {
+        CVLog::LogMessage(msg.first, msg.second);
     }
 }
 
