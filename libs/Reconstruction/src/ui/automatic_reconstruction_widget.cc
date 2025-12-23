@@ -89,8 +89,8 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
   grid_layout_->addWidget(mesher_label, grid_layout_->rowCount(), 0);
 
   mesher_cb_ = new QComboBox(this);
-  mesher_cb_->addItem("Poisson");
   mesher_cb_->addItem("Delaunay");
+  mesher_cb_->addItem("Poisson");
   mesher_cb_->setCurrentIndex(0);
   grid_layout_->addWidget(mesher_cb_, grid_layout_->rowCount() - 1, 1);
 
@@ -163,15 +163,18 @@ void AutomaticReconstructionWidget::Run() {
 
   switch (mesher_cb_->currentIndex()) {
     case 0:
-      options_.mesher = AutomaticReconstructionController::Mesher::POISSON;
-      break;
+        options_.mesher =
+        AutomaticReconstructionController::Mesher::DELAUNAY;
+        break;
     case 1:
-      options_.mesher = AutomaticReconstructionController::Mesher::DELAUNAY;
-      break;
+        options_.mesher =
+        AutomaticReconstructionController::Mesher::POISSON;
+        break;
     default:
-      options_.mesher = AutomaticReconstructionController::Mesher::POISSON;
-      break;
-  }
+        options_.mesher =
+                AutomaticReconstructionController::Mesher::DELAUNAY;
+        break;
+}
 
   main_window_->reconstruction_manager_.Clear();
   main_window_->reconstruction_manager_widget_->Update();
