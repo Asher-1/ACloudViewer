@@ -252,7 +252,7 @@ bool ecvCameraParamEditDlg::start() {
 }
 
 void ecvCameraParamEditDlg::linkWith(QMdiSubWindow* qWin) {
-    // corresponding ccGLWindow
+    // corresponding MainWindow
     QWidget* associatedWin =
             (qWin ? static_cast<QWidget*>(qWin->widget()) : nullptr);
 

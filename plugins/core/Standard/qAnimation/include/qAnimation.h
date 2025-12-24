@@ -13,8 +13,6 @@
 // Qt
 #include <QObject>
 
-class ccGLWindow;
-
 // Animation plugin
 class qAnimation : public QObject, public ccStdPluginInterface {
     Q_OBJECT

@@ -1395,15 +1395,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = new QComboBox(parent);
 
-            // std::vector<ccGLWindow*> glWindows;
-            // MainWindow::GetGLWindows(glWindows);
-
             comboBox->addItem(s_noneString);
-
-            // for (unsigned i = 0; i < glWindows.size(); ++i)
-            //{
-            //	comboBox->addItem(glWindows[i]->windowTitle());
-            // }
 
             connect(comboBox,
                     static_cast<void (QComboBox::*)(const QString&)>(

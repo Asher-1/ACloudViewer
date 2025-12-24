@@ -210,6 +210,15 @@
     <addaction name="actionLockRotationAxis"/>
     <addaction name="menuActiveScalarField"/>
     <addaction name="menuToolbars"/>
+    <widget class="QMenu" name="menuLayout">
+     <property name="title">
+      <string>Layout</string>
+     </property>
+     <addaction name="actionSaveCustomLayout"/>
+     <addaction name="actionRestoreDefaultLayout"/>
+     <addaction name="actionRestoreCustomLayout"/>
+    </widget>
+    <addaction name="menuLayout"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -1379,6 +1388,39 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>reset all GUI element positions (after restart)</string>
+   </property>
+  </action>
+  <action name="actionSaveCustomLayout">
+   <property name="text">
+    <string>Save Current Layout</string>
+   </property>
+   <property name="toolTip">
+    <string>Save current layout as custom layout</string>
+   </property>
+   <property name="statusTip">
+    <string>Save current layout as custom layout</string>
+   </property>
+  </action>
+  <action name="actionRestoreDefaultLayout">
+   <property name="text">
+    <string>Restore Default Layout</string>
+   </property>
+   <property name="toolTip">
+    <string>Restore Qt default layout</string>
+   </property>
+   <property name="statusTip">
+    <string>Restore Qt default layout</string>
+   </property>
+  </action>
+  <action name="actionRestoreCustomLayout">
+   <property name="text">
+    <string>Restore Custom Layout</string>
+   </property>
+   <property name="toolTip">
+    <string>Restore previously saved custom layout</string>
+   </property>
+   <property name="statusTip">
+    <string>Restore previously saved custom layout</string>
    </property>
   </action>
   <action name="actionConsole">

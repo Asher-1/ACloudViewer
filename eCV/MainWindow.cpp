@@ -8,6 +8,7 @@
 #include "MainWindow.h"
 
 // Qt
+#include <QSettings>
 #include <QThread>
 
 #include "ecvAnnotationsTool.h"
@@ -319,6 +320,12 @@ MainWindow::MainWindow()
 
     // Initialization
     initial();
+
+    // Register ViewToolBar as a left-side toolbar
+    m_leftSideToolBars.insert(m_ui->ViewToolBar);
+
+    // Register Console dock widget as a bottom dock widget
+    m_bottomDockWidgets.insert(m_ui->consoleDock);
 
     // connect actions
     connectActions();
@@ -935,6 +942,12 @@ void MainWindow::connectActions() {
             &MainWindow::toggle3DView);
     connect(m_ui->actionResetGUIElementsPos, &QAction::triggered, this,
             &MainWindow::doActionResetGUIElementsPos);
+    connect(m_ui->actionSaveCustomLayout, &QAction::triggered, this,
+            &MainWindow::doActionSaveCustomLayout);
+    connect(m_ui->actionRestoreDefaultLayout, &QAction::triggered, this,
+            &MainWindow::doActionRestoreDefaultLayout);
+    connect(m_ui->actionRestoreCustomLayout, &QAction::triggered, this,
+            &MainWindow::doActionRestoreCustomLayout);
     connect(m_ui->actionZoomAndCenter, &QAction::triggered, this,
             &MainWindow::zoomOnSelectedEntities);
     connect(m_ui->actionGlobalZoom, &QAction::triggered, this,
@@ -1016,8 +1029,7 @@ void MainWindow::connectActions() {
     connect(m_ui->consoleWidget,
             &ecvCustomQListWidget::customContextMenuRequested, this,
             &MainWindow::popMenuInConsole);
-    // DGM: we don't want to block the 'dropEvent' method of ccGLWindow
-    // instances!
+    // DGM: we don't want to block the 'dropEvent' method of MainWindow!
     connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::filesDropped,
             this, &MainWindow::addToDBAuto, Qt::QueuedConnection);
 
@@ -1157,11 +1169,37 @@ void MainWindow::initPlugins() {
     m_pluginUIManager->init();
 
     // Set up dynamic tool bars
-    addToolBar(Qt::RightToolBarArea, m_pluginUIManager->glPclToolbar());
-    addToolBar(Qt::RightToolBarArea, m_pluginUIManager->mainPluginToolbar());
+    QToolBar* glPclToolbar = m_pluginUIManager->glPclToolbar();
+    QToolBar* mainPluginToolbar = m_pluginUIManager->mainPluginToolbar();
+    addToolBar(Qt::RightToolBarArea, glPclToolbar);
+    addToolBar(Qt::RightToolBarArea, mainPluginToolbar);
+    // Register plugin toolbars as right-side toolbars
+    m_rightSideToolBars.insert(glPclToolbar);
+    m_rightSideToolBars.insert(mainPluginToolbar);
 
-    for (QToolBar* toolbar : m_pluginUIManager->additionalPluginToolbars()) {
-        addToolBar(Qt::TopToolBarArea, toolbar);
+    // Combine all additional plugin toolbars into a single unified toolbar
+    QList<QToolBar*> additionalToolbars =
+            m_pluginUIManager->additionalPluginToolbars();
+    if (!additionalToolbars.isEmpty()) {
+        QToolBar* unifiedPluginToolbar = new QToolBar(tr("Plugins"), this);
+        unifiedPluginToolbar->setObjectName("UnifiedPluginToolbar");
+
+        // Add all actions from all additional plugin toolbars to the unified
+        // toolbar
+        for (QToolBar* toolbar : additionalToolbars) {
+            QList<QAction*> actions = toolbar->actions();
+            for (QAction* action : actions) {
+                unifiedPluginToolbar->addAction(action);
+            }
+            // Remove the original toolbar from the main window and hide it
+            // (don't delete it as actions still reference it)
+            removeToolBar(toolbar);
+            toolbar->setVisible(false);
+        }
+
+        // Add the unified toolbar to the top
+        addToolBar(Qt::TopToolBarArea, unifiedPluginToolbar);
+        unifiedPluginToolbar->setVisible(true);
     }
 
     // Set up dynamic menus
@@ -1241,7 +1279,8 @@ void MainWindow::initReconstructions() {
     m_ui->menuBar->insertMenu(m_ui->menuDisplay->menuAction(), rc_menu);
 
     // Set docker widget
-    this->addDockWidget(Qt::RightDockWidgetArea, m_rcw->getLogWidget());
+    QDockWidget* logWidget = m_rcw->getLogWidget();
+    this->addDockWidget(Qt::RightDockWidgetArea, logWidget);
 
     // Set reconstruction status bar
     m_ui->statusBar->insertPermanentWidget(1, m_rcw->getImageStatusBar(), 0);
@@ -3257,6 +3296,115 @@ void MainWindow::doActionResetGUIElementsPos() {
     s_autoSaveGuiElementPos = false;
 }
 
+void MainWindow::doActionSaveCustomLayout() {
+    QSettings settings;
+    settings.setValue(ecvPS::CustomLayoutGeom(), saveGeometry());
+    settings.setValue(ecvPS::CustomLayoutState(), saveState());
+
+    QMessageBox::information(
+            this, tr("Save Custom Layout"),
+            tr("Current layout has been saved as custom layout. You can "
+               "restore it later using the 'Restore Custom Layout' action."));
+}
+
+void MainWindow::doActionRestoreDefaultLayout() {
+    // Restore Qt default layout - clear all toolbar and dock widget states
+    QSettings settings;
+
+    // Clear main window state to restore default layout
+    settings.remove(ecvPS::MainWinGeom());
+    settings.remove(ecvPS::MainWinState());
+
+    setupDefaultLayout();
+
+    QMessageBox::information(this, tr("Restore Default Layout"),
+                             tr("Qt default layout has been restored"));
+}
+
+void MainWindow::doActionRestoreCustomLayout() {
+    QSettings settings;
+    QVariant geometry = settings.value(ecvPS::CustomLayoutGeom());
+    QVariant state = settings.value(ecvPS::CustomLayoutState());
+
+    if (!geometry.isValid() || !state.isValid()) {
+        QMessageBox::warning(this, tr("Restore Custom Layout"),
+                             tr("No saved custom layout found. Please save "
+                                "current layout first."));
+        return;
+    }
+
+    // Restore custom layout
+    restoreGeometry(geometry.toByteArray());
+    restoreState(state.toByteArray());
+
+    QMessageBox::information(this, tr("Restore Custom Layout"),
+                             tr("Custom layout has been restored"));
+}
+
+void MainWindow::setupDefaultLayout() {
+    // Setup default layout as shown in the reference image:
+    // - Toolbars at the top
+    // - DB Tree dock widget on the left
+    // - Plugin/Reconstruction dock widgets on the right
+    // - Main workspace in the center
+
+    // Reset toolbars - plugin toolbars go to right, left-side toolbars go to
+    // left, others to top
+    QList<QToolBar*> toolBars = findChildren<QToolBar*>();
+    for (QToolBar* toolbar : toolBars) {
+        // Skip hidden toolbars that are not attached to the main window
+        // (e.g., original plugin toolbars that were unified)
+        if (!toolbar->isVisible() && toolbar->parent() == this) {
+            continue;
+        }
+        removeToolBar(toolbar);
+        // Check if this is a plugin toolbar (registered in m_rightSideToolBars)
+        if (m_rightSideToolBars.contains(toolbar)) {
+            addToolBar(Qt::RightToolBarArea, toolbar);
+        } else if (m_leftSideToolBars.contains(toolbar)) {
+            // Left-side toolbars (e.g., Viewing tools) go to left
+            addToolBar(Qt::LeftToolBarArea, toolbar);
+        } else {
+            addToolBar(Qt::TopToolBarArea, toolbar);
+        }
+        toolbar->setVisible(true);
+    }
+
+    // Reset dock widgets go to right, bottom widgets go to bottom, others to
+    // left
+    QList<QDockWidget*> dockWidgets = findChildren<QDockWidget*>();
+
+    for (QDockWidget* dock : dockWidgets) {
+        if (!dock->isVisible() && dock->parent() == this) {
+            continue;
+        }
+        if (dock->objectName() == "Log") {
+            continue;
+        }
+        removeDockWidget(dock);
+        // Check if this is a bottom dock widget (e.g., Console)
+        if (m_bottomDockWidgets.contains(dock)) {
+            addDockWidget(Qt::BottomDockWidgetArea, dock);
+        } else if (m_rightSideDockWidgets.contains(dock)) {
+            // Plugin/reconstruction dock widgets go to right
+            addDockWidget(Qt::RightDockWidgetArea, dock);
+        } else {
+            // Regular dock widgets (like DB Tree) go to left
+            addDockWidget(Qt::LeftDockWidgetArea, dock);
+        }
+        dock->setVisible(true);
+    }
+
+    // Maximize window
+    if (this->m_uiManager) {
+        this->m_uiManager->showMaximized();
+    } else {
+        showMaximized();
+    }
+    // Save this as the default layout
+    saveGUIElementsPos();
+}
+
 void MainWindow::toggleFullScreen(bool state) {
     if (m_uiManager != nullptr) {
         m_uiManager->toggleFullScreen(state);
@@ -4649,17 +4797,12 @@ void MainWindow::showEvent(QShowEvent* event) {
     if (geometry.isValid()) {
         restoreGeometry(geometry.toByteArray());
         restoreState(settings.value(ecvPS::MainWinState()).toByteArray());
+    } else {
+        // First time user - setup default layout as shown in reference image
+        setupDefaultLayout();
     }
 
     m_FirstShow = false;
-
-    if (!geometry.isValid()) {
-        if (this->m_uiManager) {
-            this->m_uiManager->showMaximized();
-        } else {
-            showMaximized();
-        }
-    }
 
     if (isFullScreen()) {
         m_ui->actionFullScreen->setChecked(true);

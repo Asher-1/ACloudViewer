@@ -539,7 +539,7 @@ void ccTracePolylineTool::restart(bool reset) {
     // enable picking
     if (m_pickingHub &&
         !m_pickingHub->addListener(
-                this, true /*, true, ccGLWindow::POINT_PICKING*/)) {
+                this, true /*, true, ecvDisplayTools::POINT_PICKING*/)) {
         CVLog::Error(
                 "The picking mechanism is already in use. Close the tool using "
                 "it first.");

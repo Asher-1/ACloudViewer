@@ -21,7 +21,6 @@
 
 class ccPolyline;
 class ccPointCloud;
-class ccGLWindow;
 class ecvMainAppInterface;
 
 //! Graphical segmentation mechanism (with polyline)

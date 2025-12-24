@@ -13,7 +13,6 @@
 #include <ecvRasterGrid.h>
 
 class ccBoundingBoxEditorDlg;
-class ccGLWindow;
 class QWidget;
 class QFrame;
 class QComboBox;

@@ -7,14 +7,17 @@
 
 #pragma once
 
-#include "cvSelectionFilter.h"
-#include "qPCL.h"
-
-// Qt
+// clang-format off
+// Qt - must be included before qPCL.h for MOC to work correctly
 #include <QDialog>
 #include <QMap>
+#include <QObject>
 #include <QString>
 #include <QVariant>
+// clang-format on
+
+#include "cvSelectionFilter.h"
+#include "qPCL.h"
 
 // Forward declarations
 class QComboBox;

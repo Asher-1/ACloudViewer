@@ -466,27 +466,17 @@ void ReconstructionWidget::CreateMenus() {
 }
 
 void ReconstructionWidget::CreateToolbar() {
-    file_toolbar_ = new QToolBar(tr("ProjectFile"), this);
-    file_toolbar_->setObjectName(QString::fromUtf8("ProjectFile"));
-    file_toolbar_->addAction(action_project_new_);
-    file_toolbar_->addAction(action_project_open_);
-    file_toolbar_->addAction(action_project_edit_);
-    file_toolbar_->addAction(action_project_save_);
-    file_toolbar_->addAction(action_import_);
-    file_toolbar_->addAction(action_export_);
-    file_toolbar_->setIconSize(QSize(16, 16));
-    toolbar_list_.push_back(file_toolbar_);
-
-    preprocessing_toolbar_ = new QToolBar(tr("Processing"), this);
-    preprocessing_toolbar_->setObjectName(QString::fromUtf8("Processing"));
-    preprocessing_toolbar_->addAction(action_feature_extraction_);
-    preprocessing_toolbar_->addAction(action_feature_matching_);
-    preprocessing_toolbar_->addAction(action_database_management_);
-    preprocessing_toolbar_->setIconSize(QSize(16, 16));
-    toolbar_list_.push_back(preprocessing_toolbar_);
-
     reconstruction_toolbar_ = new QToolBar(tr("Reconstruction"), this);
     reconstruction_toolbar_->setObjectName(QString::fromUtf8("Reconstruction"));
+    reconstruction_toolbar_->addAction(action_project_new_);
+    reconstruction_toolbar_->addAction(action_project_open_);
+    reconstruction_toolbar_->addAction(action_project_edit_);
+    reconstruction_toolbar_->addAction(action_project_save_);
+    reconstruction_toolbar_->addAction(action_import_);
+    reconstruction_toolbar_->addAction(action_export_);
+    reconstruction_toolbar_->addAction(action_feature_extraction_);
+    reconstruction_toolbar_->addAction(action_feature_matching_);
+    reconstruction_toolbar_->addAction(action_database_management_);
     reconstruction_toolbar_->addAction(action_automatic_reconstruction_);
     reconstruction_toolbar_->addAction(action_reconstruction_start_);
     reconstruction_toolbar_->addAction(action_reconstruction_step_);
@@ -496,27 +486,17 @@ void ReconstructionWidget::CreateToolbar() {
     reconstruction_toolbar_->addAction(action_reconstruction_options_);
     reconstruction_toolbar_->addAction(action_bundle_adjustment_);
     reconstruction_toolbar_->addAction(action_dense_reconstruction_);
+    reconstruction_toolbar_->addAction(action_render_toggle_);
+    reconstruction_toolbar_->addAction(action_render_reset_view_);
+    reconstruction_toolbar_->addAction(action_render_options_);
+    reconstruction_toolbar_->addWidget(reconstruction_manager_widget_);
+    reconstruction_toolbar_->addAction(action_log_show_);
+    reconstruction_toolbar_->addAction(action_match_matrix_);
+    reconstruction_toolbar_->addAction(action_reconstruction_stats_);
+    reconstruction_toolbar_->addAction(action_grab_image_);
+    reconstruction_toolbar_->addAction(action_grab_movie_);
     reconstruction_toolbar_->setIconSize(QSize(16, 16));
     toolbar_list_.push_back(reconstruction_toolbar_);
-
-    render_toolbar_ = new QToolBar(tr("Render"), this);
-    render_toolbar_->setObjectName(QString::fromUtf8("Render"));
-    render_toolbar_->addAction(action_render_toggle_);
-    render_toolbar_->addAction(action_render_reset_view_);
-    render_toolbar_->addAction(action_render_options_);
-    render_toolbar_->addWidget(reconstruction_manager_widget_);
-    render_toolbar_->setIconSize(QSize(16, 16));
-    toolbar_list_.push_back(render_toolbar_);
-
-    extras_toolbar_ = new QToolBar(tr("Extras"), this);
-    extras_toolbar_->setObjectName(QString::fromUtf8("Extras"));
-    extras_toolbar_->addAction(action_log_show_);
-    extras_toolbar_->addAction(action_match_matrix_);
-    extras_toolbar_->addAction(action_reconstruction_stats_);
-    extras_toolbar_->addAction(action_grab_image_);
-    extras_toolbar_->addAction(action_grab_movie_);
-    extras_toolbar_->setIconSize(QSize(16, 16));
-    toolbar_list_.push_back(extras_toolbar_);
 }
 
 void ReconstructionWidget::CreateStatusbar() {
