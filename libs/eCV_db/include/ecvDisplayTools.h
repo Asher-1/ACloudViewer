@@ -68,8 +68,6 @@ public:
     void scheduleFullRedraw(unsigned maxDelay_ms);
 
     //! Cancels any scheduled redraw
-    /** See ccGLWindow::scheduleFullRedraw.
-     **/
     void cancelScheduledRedraw();
 
 public:

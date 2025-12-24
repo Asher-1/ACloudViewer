@@ -21,6 +21,7 @@
 #include <QColorDialog>
 #include <QDebug>
 #include <QDesktopServices>
+#include <QDockWidget>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -29,6 +30,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QSet>
 #include <QStatusBar>
 #include <QString>
 #include <QTextEdit>
@@ -336,6 +338,10 @@ private slots:
     void changeLanguage();
     void doActionGlobalShiftSeetings();
     void doActionResetGUIElementsPos();
+    void doActionSaveCustomLayout();
+    void doActionRestoreDefaultLayout();
+    void doActionRestoreCustomLayout();
+    void setupDefaultLayout();
     void doShowPrimitiveFactory();
 
     void doCheckForUpdate();
@@ -753,6 +759,19 @@ private:
     /*** plugins ***/
     //! Manages plugins - menus, toolbars, and the about dialog
     ccPluginUIManager* m_pluginUIManager;
+
+    //! Dock widgets that should be placed on the right side
+    //! (plugins/reconstruction)
+    QSet<QDockWidget*> m_rightSideDockWidgets;
+
+    //! Dock widgets that should be placed on the bottom (e.g., Console)
+    QSet<QDockWidget*> m_bottomDockWidgets;
+
+    //! Toolbars that should be placed on the right side (plugins)
+    QSet<QToolBar*> m_rightSideToolBars;
+
+    //! Toolbars that should be placed on the left side (e.g., Viewing tools)
+    QSet<QToolBar*> m_leftSideToolBars;
 
     //! 3D mouse
     cc3DMouseManager* m_3DMouseManager;

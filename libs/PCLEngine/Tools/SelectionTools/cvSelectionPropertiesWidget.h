@@ -7,23 +7,26 @@
 
 #pragma once
 
-#include "qPCL.h"
-
-// LOCAL
-#include "cvSelectionBase.h"
-#include "cvSelectionData.h"
-#include "cvSelectionLabelPropertiesDialog.h"
-
-// Qt
+// clang-format off
+// Qt - must be included before qPCL.h for MOC to work correctly
 #include <QColor>
 #include <QGroupBox>
 #include <QLabel>
+#include <QObject>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
 #include <QTableWidget>
 #include <QToolButton>
 #include <QWidget>
+// clang-format on
+
+#include "qPCL.h"
+
+// LOCAL
+#include "cvSelectionBase.h"
+#include "cvSelectionData.h"
+#include "cvSelectionLabelPropertiesDialog.h"
 
 // Forward declarations
 class cvSelectionHighlighter;

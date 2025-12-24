@@ -12,6 +12,7 @@
 #include <QColor>
 #include <QDialog>
 #include <QFont>
+#include <QObject>
 // clang-format on
 
 #include "qPCL.h"

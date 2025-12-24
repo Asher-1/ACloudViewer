@@ -7,12 +7,8 @@
 
 #pragma once
 
-#include "qPCL.h"
-
-// LOCAL
-#include "cvSelectionData.h"
-
-// Qt
+// clang-format off
+// Qt - must be included before qPCL.h for MOC to work correctly
 #include <QColor>
 #include <QDateTime>
 #include <QFont>
@@ -20,6 +16,12 @@
 #include <QMap>
 #include <QObject>
 #include <QString>
+// clang-format on
+
+#include "qPCL.h"
+
+// LOCAL
+#include "cvSelectionData.h"
 
 // Forward declarations
 class vtkActor2D;

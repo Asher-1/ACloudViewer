@@ -7,15 +7,17 @@
 
 #pragma once
 
+// clang-format off
+// Qt - must be included before qPCL.h for MOC to work correctly
+#include <QObject>
+#include <QSet>
+#include <QString>
+// clang-format on
+
 #include "qPCL.h"
 
 // LOCAL
 #include "cvSelectionData.h"
-
-// Qt
-#include <QObject>
-#include <QSet>
-#include <QString>
 
 // VTK
 #include <vtkType.h>

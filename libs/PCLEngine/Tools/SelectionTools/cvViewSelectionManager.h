@@ -7,14 +7,16 @@
 
 #pragma once
 
-// LOCAL
-#include "cvGenericSelectionTool.h"
-#include "qPCL.h"
-
-// QT
+// clang-format off
+// Qt - must be included before qPCL.h for MOC to work correctly
 #include <QMap>
 #include <QObject>
 #include <QPointer>
+// clang-format on
+
+// LOCAL
+#include "cvGenericSelectionTool.h"
+#include "qPCL.h"
 
 // Forward declarations
 class cvRenderViewSelectionTool;
