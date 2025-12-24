@@ -62,17 +62,20 @@ cvConstrainedLineRepresentation::cvConstrainedLineRepresentation()
     this->AxisActor->TickVisibilityOff();  // Hide tick marks
 
     // Configure title text property (compact appearance)
-    this->AxisActor->GetTitleTextProperty()->SetFontSize(8);  // Default font size (will be overridden by user settings)
-    this->AxisActor->GetTitleTextProperty()->SetBold(0);      // Not bold
-    this->AxisActor->GetTitleTextProperty()->SetItalic(0);    // Not italic
+    this->AxisActor->GetTitleTextProperty()->SetFontSize(
+            8);  // Default font size (will be overridden by user settings)
+    this->AxisActor->GetTitleTextProperty()->SetBold(0);    // Not bold
+    this->AxisActor->GetTitleTextProperty()->SetItalic(0);  // Not italic
     this->AxisActor->GetTitleTextProperty()->SetShadow(1);
     this->AxisActor->GetTitleTextProperty()->SetFontFamilyToArial();
     this->AxisActor->GetTitleTextProperty()->SetColor(1.0, 1.0, 1.0);
 
-    // Use vtkAxisActor2D's font scaling mechanism (affects both title and labels)
-    // Set font factors once during initialization - these should not be changed
-    // in BuildRepresentation() as they would interfere with user font size settings
-    this->AxisActor->SetFontFactor(1.0);   // Use 1.0 to respect user's font size settings
+    // Use vtkAxisActor2D's font scaling mechanism (affects both title and
+    // labels) Set font factors once during initialization - these should not be
+    // changed in BuildRepresentation() as they would interfere with user font
+    // size settings
+    this->AxisActor->SetFontFactor(
+            1.0);  // Use 1.0 to respect user's font size settings
     this->AxisActor->SetLabelFactor(0.8);  // Slightly smaller for axis labels
 
     // Default label format (ParaView default)
@@ -161,12 +164,12 @@ void cvConstrainedLineRepresentation::BuildRepresentation() {
         this->AxisActor->SetTitle(labelString);
     }
 
-    // NOTE: Font properties (size, bold, italic, shadow, color) and font factors 
-    // should NOT be set here as they would override user customizations set via 
-    // applyFontProperties(). Font properties are initialized in the constructor 
-    // and can be customized by the user. BuildRepresentation() is called frequently 
-    // (on every render), so setting font properties here would continuously reset 
-    // user preferences.
+    // NOTE: Font properties (size, bold, italic, shadow, color) and font
+    // factors should NOT be set here as they would override user customizations
+    // set via applyFontProperties(). Font properties are initialized in the
+    // constructor and can be customized by the user. BuildRepresentation() is
+    // called frequently (on every render), so setting font properties here
+    // would continuously reset user preferences.
 
     // Control visibility (ShowLabel controls the entire AxisActor visibility)
     this->AxisActor->SetVisibility(this->ShowLabel);

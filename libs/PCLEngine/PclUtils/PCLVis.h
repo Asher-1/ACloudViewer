@@ -426,9 +426,9 @@ public:
                       const std::string& viewID,
                       int viewport = 0);
     void setScalarFieldName(const std::string& viewID,
-                           const std::string& scalarName,
-                           int viewport = 0);
-    
+                            const std::string& scalarName,
+                            int viewport = 0);
+
     /**
      * @brief Add scalar field data from ccPointCloud to VTK polydata
      * @param viewID The cloud ID
@@ -437,10 +437,10 @@ public:
      * @param viewport Viewport ID
      */
     void addScalarFieldToVTK(const std::string& viewID,
-                            ccPointCloud* cloud,
-                            int scalarFieldIndex,
-                            int viewport = 0);
-    
+                             ccPointCloud* cloud,
+                             int scalarFieldIndex,
+                             int viewport = 0);
+
     void setPointCloudUniqueColor(double r,
                                   double g,
                                   double b,
@@ -467,23 +467,24 @@ public:
     void setShapeOpacity(double opacity,
                          const std::string& viewID,
                          int viewport = 0);
-    
+
     /**
      * @brief Set opacity for mesh (textured or non-textured)
-     * 
+     *
      * This method properly handles transparency for meshes, including:
      * - Meshes with textures: enables depth peeling and alpha blending
      * - Meshes without textures: simple opacity setting
      * - Automatic transparency rendering configuration when opacity < 1.0
-     * 
-     * @param opacity Opacity value [0.0, 1.0] where 0.0 = fully transparent, 1.0 = opaque
+     *
+     * @param opacity Opacity value [0.0, 1.0] where 0.0 = fully
+     * transparent, 1.0 = opaque
      * @param viewID The unique identifier of the mesh
      * @param viewport The viewport ID (default: 0)
      */
     void setMeshOpacity(double opacity,
                         const std::string& viewID,
                         int viewport = 0);
-    
+
     /*
      * value = 0, PCL_VISUALIZER_SHADING_FLAT
      * value = 1, PCL_VISUALIZER_SHADING_GOURAUD

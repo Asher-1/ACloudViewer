@@ -160,9 +160,10 @@ public:
     //! Check if selection tools are active
     bool areSelectionToolsActive() const { return m_selectionToolsActive; }
 
-    //! Show only selection properties (when no object is selected but selection tools are active)
+    //! Show only selection properties (when no object is selected but selection
+    //! tools are active)
     void showSelectionPropertiesOnly();
-    
+
     //! Clear the model completely
     void clearModel();
 
@@ -184,10 +185,12 @@ signals:
                                    bool forceRedraw = true) const;
     void ccObjectAndChildrenAppearanceChanged(ccHObject* hObject,
                                               bool forceRedraw = true) const;
-    
+
     /**
-     * @brief Request to clear all selection data (prevents crashes from stale references)
-     * @note Emitted when objects might have been deleted or selection tools state changes
+     * @brief Request to clear all selection data (prevents crashes from stale
+     * references)
+     * @note Emitted when objects might have been deleted or selection tools
+     * state changes
      */
     void requestClearSelection() const;
 

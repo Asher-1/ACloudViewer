@@ -592,13 +592,14 @@ private slots:
     void redoSelection();
 #endif
 
-public slots:  // Make this public so it can be connected from delegate
-    // Note: onTooltipSettingsChanged has been removed as tooltip settings
-    // are now managed through cvSelectionLabelPropertiesDialog
-    // Note: Highlight color/opacity changes are now handled directly via
-    // the shared highlighter in cvViewSelectionManager. All tooltip tools
-    // share this highlighter, so settings from cvSelectionPropertiesWidget
-    // are automatically synchronized.
+public slots
+    :  // Make this public so it can be connected from delegate
+       // Note: onTooltipSettingsChanged has been removed as tooltip settings
+       // are now managed through cvSelectionLabelPropertiesDialog
+       // Note: Highlight color/opacity changes are now handled directly via
+       // the shared highlighter in cvViewSelectionManager. All tooltip tools
+       // share this highlighter, so settings from cvSelectionPropertiesWidget
+       // are automatically synchronized.
 
 private slots:
     void doActionCloudCloudDist();

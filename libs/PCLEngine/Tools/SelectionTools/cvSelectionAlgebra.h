@@ -116,10 +116,12 @@ public:
      * @param polyData The mesh data
      * @param input Input selection (must be CELLS)
      * @param layers Number of growth layers (negative for shrink)
-     * @param removeSeed If true, removes the original seed cells (ParaView-aligned)
-     * @param removeIntermediateLayers If true, keeps only outermost layer (ParaView-aligned)
+     * @param removeSeed If true, removes the original seed cells
+     * (ParaView-aligned)
+     * @param removeIntermediateLayers If true, keeps only outermost layer
+     * (ParaView-aligned)
      * @return Grown selection
-     * 
+     *
      * Reference: vtkPVRenderViewSettings::GrowSelectionRemoveSeed
      *            vtkPVRenderViewSettings::GrowSelectionRemoveIntermediateLayers
      */
@@ -139,23 +141,26 @@ public:
     static cvSelectionData shrinkSelection(vtkPolyData* polyData,
                                            const cvSelectionData& input,
                                            int iterations = 1);
-    
+
     /**
      * @brief Expand selection (ParaView-compatible)
      * @param polyData The mesh data
      * @param input Input selection
-     * @param layers Number of layers to expand (positive = grow, negative = shrink)
+     * @param layers Number of layers to expand (positive = grow, negative =
+     * shrink)
      * @param removeSeed If true, removes the original seed elements
      * @param removeIntermediateLayers If true, keeps only the outermost layer
      * @return Expanded selection
-     * 
-     * This is the ParaView-compatible API matching vtkSMSelectionHelper::ExpandSelection
+     *
+     * This is the ParaView-compatible API matching
+     * vtkSMSelectionHelper::ExpandSelection
      */
-    static cvSelectionData expandSelection(vtkPolyData* polyData,
-                                           const cvSelectionData& input,
-                                           int layers,
-                                           bool removeSeed = false,
-                                           bool removeIntermediateLayers = false);
+    static cvSelectionData expandSelection(
+            vtkPolyData* polyData,
+            const cvSelectionData& input,
+            int layers,
+            bool removeSeed = false,
+            bool removeIntermediateLayers = false);
 
     /**
      * @brief Extract boundary elements of selection
@@ -181,14 +186,15 @@ public:
      * @param removeSeed If true, removes the original seed points
      * @param removeIntermediateLayers If true, keeps only outermost layer
      * @return Grown selection
-     * 
+     *
      * Point neighbors are determined by shared cells.
      */
-    static cvSelectionData growPointSelection(vtkPolyData* polyData,
-                                               const cvSelectionData& input,
-                                               int layers = 1,
-                                               bool removeSeed = false,
-                                               bool removeIntermediateLayers = false);
+    static cvSelectionData growPointSelection(
+            vtkPolyData* polyData,
+            const cvSelectionData& input,
+            int layers = 1,
+            bool removeSeed = false,
+            bool removeIntermediateLayers = false);
 
     /**
      * @brief Shrink point selection by removing boundary points
@@ -198,8 +204,8 @@ public:
      * @return Shrunk selection
      */
     static cvSelectionData shrinkPointSelection(vtkPolyData* polyData,
-                                                 const cvSelectionData& input,
-                                                 int iterations = 1);
+                                                const cvSelectionData& input,
+                                                int iterations = 1);
 
 signals:
     /**

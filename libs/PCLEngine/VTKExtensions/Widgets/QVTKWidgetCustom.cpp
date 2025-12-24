@@ -1354,16 +1354,20 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
             // This ensures ESC works to exit selection tools
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);
             if (keyEvent->key() == Qt::Key_Escape) {
-                CVLog::Print("[QVTKWidgetCustom] ESC key pressed, forwarding to MainWindow");
-                
+                CVLog::Print(
+                        "[QVTKWidgetCustom] ESC key pressed, forwarding to "
+                        "MainWindow");
+
                 // Handle fullscreen toggle
                 emit m_tools->exclusiveFullScreenToggled(false);
-                
+
                 // Forward ESC to MainWindow to handle selection tools
                 if (m_win) {
-                    // Use postEvent to ensure it goes through MainWindow's event loop
-                    QKeyEvent* newEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape, 
-                                                        keyEvent->modifiers());
+                    // Use postEvent to ensure it goes through MainWindow's
+                    // event loop
+                    QKeyEvent* newEvent =
+                            new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
+                                          keyEvent->modifiers());
                     QCoreApplication::postEvent(m_win, newEvent);
                 }
                 evt->accept();

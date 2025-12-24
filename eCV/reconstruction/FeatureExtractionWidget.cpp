@@ -7,10 +7,10 @@
 
 #include "FeatureExtractionWidget.h"
 
-#include "ui/options_widget.h"
 #include "ThreadControlWidget.h"
 #include "base/camera_models.h"
 #include "feature/extraction.h"
+#include "ui/options_widget.h"
 #include "ui/qt_utils.h"
 #include "util/misc.h"
 #include "util/option_manager.h"

@@ -41,19 +41,16 @@ cvSelectionReaction::cvSelectionReaction(QAction* parentAction,
         m_mode == SelectionMode::SHRINK_SELECTION) {
         cvViewSelectionManager* manager = cvViewSelectionManager::instance();
         // Use the overload that takes no arguments for simple state updates
-        connect(manager, 
-                QOverload<>::of(&cvViewSelectionManager::selectionChanged), 
-                this,
-                &cvSelectionReaction::updateEnableState);
+        connect(manager,
+                QOverload<>::of(&cvViewSelectionManager::selectionChanged),
+                this, &cvSelectionReaction::updateEnableState);
     }
 
     updateEnableState();
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionReaction::~cvSelectionReaction() {
-    endSelection();
-}
+cvSelectionReaction::~cvSelectionReaction() { endSelection(); }
 
 //-----------------------------------------------------------------------------
 void cvSelectionReaction::setVisualizer(ecvGenericVisualizer3D* viewer) {
@@ -61,9 +58,7 @@ void cvSelectionReaction::setVisualizer(ecvGenericVisualizer3D* viewer) {
 }
 
 //-----------------------------------------------------------------------------
-bool cvSelectionReaction::isActive() const {
-    return ActiveReaction == this;
-}
+bool cvSelectionReaction::isActive() const { return ActiveReaction == this; }
 
 //-----------------------------------------------------------------------------
 void cvSelectionReaction::actionTriggered(bool val) {
@@ -132,9 +127,10 @@ void cvSelectionReaction::beginSelection() {
     // Get or create the tool
     cvRenderViewSelectionTool* tool = getOrCreateTool();
     if (!tool) {
-        CVLog::Warning(QString("[cvSelectionReaction] Failed to create tool for "
-                               "mode %1")
-                               .arg(static_cast<int>(m_mode)));
+        CVLog::Warning(
+                QString("[cvSelectionReaction] Failed to create tool for "
+                        "mode %1")
+                        .arg(static_cast<int>(m_mode)));
         return;
     }
 
@@ -186,8 +182,9 @@ void cvSelectionReaction::beginSelection() {
     // Mark this as the active reaction
     ActiveReaction = this;
 
-    CVLog::PrintDebug(QString("[cvSelectionReaction] Selection mode %1 activated")
-                              .arg(static_cast<int>(m_mode)));
+    CVLog::PrintDebug(
+            QString("[cvSelectionReaction] Selection mode %1 activated")
+                    .arg(static_cast<int>(m_mode)));
 }
 
 //-----------------------------------------------------------------------------
@@ -216,8 +213,9 @@ void cvSelectionReaction::endSelection() {
 
     ActiveReaction = nullptr;
 
-    CVLog::PrintDebug(QString("[cvSelectionReaction] Selection mode %1 deactivated")
-                              .arg(static_cast<int>(m_mode)));
+    CVLog::PrintDebug(
+            QString("[cvSelectionReaction] Selection mode %1 deactivated")
+                    .arg(static_cast<int>(m_mode)));
 }
 
 //-----------------------------------------------------------------------------
@@ -263,25 +261,31 @@ cvRenderViewSelectionTool* cvSelectionReaction::getOrCreateTool() {
 
     if (m_tool) {
         // Connect selection completed signal
-        // Note: cvRenderViewSelectionTool emits selectionCompleted, not selectionFinished
-        // We need to get the selection data from the manager when this happens
+        // Note: cvRenderViewSelectionTool emits selectionCompleted, not
+        // selectionFinished We need to get the selection data from the manager
+        // when this happens
         connect(m_tool, &cvRenderViewSelectionTool::selectionCompleted, this,
                 [this]() {
-                    cvViewSelectionManager* manager = cvViewSelectionManager::instance();
+                    cvViewSelectionManager* manager =
+                            cvViewSelectionManager::instance();
                     if (manager) {
-                        const cvSelectionData& data = manager->currentSelection();
+                        const cvSelectionData& data =
+                                manager->currentSelection();
                         emit selectionFinished(data);
                     }
                 });
 
         // For zoom to box mode, connect the zoomToBoxCompleted signal
         if (m_mode == SelectionMode::ZOOM_TO_BOX) {
-            cvZoomBoxSelectionTool* zoomTool = qobject_cast<cvZoomBoxSelectionTool*>(m_tool);
+            cvZoomBoxSelectionTool* zoomTool =
+                    qobject_cast<cvZoomBoxSelectionTool*>(m_tool);
             if (zoomTool) {
                 connect(zoomTool, &cvZoomBoxSelectionTool::zoomToBoxCompleted,
                         this, &cvSelectionReaction::zoomToBoxRequested);
-                // Auto-exit zoom mode after zoom is completed (ParaView behavior)
-                // Reference: pqRenderViewSelectionReaction::selectionChanged() calls endSelection()
+                // Auto-exit zoom mode after zoom is completed (ParaView
+                // behavior) Reference:
+                // pqRenderViewSelectionReaction::selectionChanged() calls
+                // endSelection()
                 connect(zoomTool, &cvZoomBoxSelectionTool::zoomToBoxCompleted,
                         this, &cvSelectionReaction::endSelection);
             }
@@ -290,4 +294,3 @@ cvRenderViewSelectionTool* cvSelectionReaction::getOrCreateTool() {
 
     return m_tool;
 }
-

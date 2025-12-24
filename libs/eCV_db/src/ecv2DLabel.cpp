@@ -118,7 +118,8 @@ cc2DLabel::cc2DLabel(QString name /*=QString()*/)
       m_showFullBody(true),
       m_dispPointsLegend(false),
       m_dispIn2D(true),
-      m_relMarkerScale(0.15f),  // Reduced from 1.0f for better visualization - prevents sphere from obscuring points
+      m_relMarkerScale(0.15f),  // Reduced from 1.0f for better visualization -
+                                // prevents sphere from obscuring points
       m_historyMessage(QStringList()) {
     m_screenPos[0] = m_screenPos[1] = 0.05f;
 
@@ -537,8 +538,8 @@ bool cc2DLabel::fromFile_MeOnly(QFile& in,
     }
 
     if (dataVersion > 48) {
-        // Relative marker scale (dataVersion >= 49) - IMPORTANT for sphere size!
-        // Read the saved value to preserve custom sphere sizes
+        // Relative marker scale (dataVersion >= 49) - IMPORTANT for sphere
+        // size! Read the saved value to preserve custom sphere sizes
         if (in.read((char*)&m_relMarkerScale, sizeof(float)) < 0)
             return ReadError();
     }
@@ -1071,7 +1072,9 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
 
                     WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_SPHERE,
                                             QString::number(i) + m_sphereIdfix);
-                    param.radius = scale * m_relMarkerScale;  // Use relative scale for consistent sphere size
+                    param.radius =
+                            scale * m_relMarkerScale;  // Use relative scale for
+                                                       // consistent sphere size
                     m_pickedPoints[i].markerScale = scale * m_relMarkerScale;
                     param.center = CCVector3(P->x, P->y, P->z);
                     param.color = ecvColor::FromRgba(ecvColor::ored);
@@ -1561,7 +1564,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         if (m_showFullBody) {
             // Create QFontMetrics for text alignment calculations
             QFontMetrics bodyFontMetrics(bodyFont);
-            
+
             for (int r = 0; r < tab.rowCount; ++r) {
                 QString str;
                 for (int c = 0; c < tab.colCount; ++c) {
@@ -1570,25 +1573,33 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 #if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
                     int textWidth = bodyFontMetrics.width(cellContent);
 #else
-                    int textWidth = bodyFontMetrics.horizontalAdvance(cellContent);
+                    int textWidth =
+                            bodyFontMetrics.horizontalAdvance(cellContent);
 #endif
-                    // Calculate target width (column width + margin for spacing)
+                    // Calculate target width (column width + margin for
+                    // spacing)
                     int targetWidth = tab.colWidth[c];
                     if (c < tab.colCount - 1) {
                         // Add margin after each column except the last
                         targetWidth += tabMarginX;
                     }
                     // Add spaces to align text
-                    int spaceWidth = textWidth < targetWidth ? targetWidth - textWidth : 0;
+                    int spaceWidth = textWidth < targetWidth
+                                             ? targetWidth - textWidth
+                                             : 0;
                     if (spaceWidth > 0) {
                         // Calculate number of spaces needed (approximate)
                         // Use average character width for spacing
 #if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
                         int spaceCharWidth = bodyFontMetrics.width(' ');
 #else
-                        int spaceCharWidth = bodyFontMetrics.horizontalAdvance(' ');
+                        int spaceCharWidth =
+                                bodyFontMetrics.horizontalAdvance(' ');
 #endif
-                        int numSpaces = spaceCharWidth > 0 ? (spaceWidth + spaceCharWidth - 1) / spaceCharWidth : 0;
+                        int numSpaces = spaceCharWidth > 0
+                                                ? (spaceWidth + spaceCharWidth -
+                                                   1) / spaceCharWidth
+                                                : 0;
                         cellContent += QString(numSpaces, ' ');
                     }
                     str += cellContent;

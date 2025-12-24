@@ -20,14 +20,16 @@ class vtkInteractorStyleRubberBandZoom;
  * @brief Tool for zoom-to-box functionality in the selection framework
  *
  * This tool allows the user to draw a rectangular region on the screen
- * and zooms the camera to fit that region. Uses vtkInteractorStyleRubberBandZoom
- * for rubber band interaction.
+ * and zooms the camera to fit that region. Uses
+ * vtkInteractorStyleRubberBandZoom for rubber band interaction.
  *
- * This class integrates with the selection tool framework (cvRenderViewSelectionTool)
- * while providing zoom functionality similar to ParaView.
+ * This class integrates with the selection tool framework
+ * (cvRenderViewSelectionTool) while providing zoom functionality similar to
+ * ParaView.
  *
- * Note: This is different from CameraTools/cvZoomToBoxTool which is a standalone tool.
- * This class is designed to work within the selection system architecture.
+ * Note: This is different from CameraTools/cvZoomToBoxTool which is a
+ * standalone tool. This class is designed to work within the selection system
+ * architecture.
  *
  * Based on ParaView's ZOOM_TO_BOX implementation.
  *
@@ -37,10 +39,12 @@ class vtkInteractorStyleRubberBandZoom;
 // Forward declare callback class
 class cvZoomBoxCallback;
 
-class QPCL_ENGINE_LIB_API cvZoomBoxSelectionTool : public cvRenderViewSelectionTool {
+class QPCL_ENGINE_LIB_API cvZoomBoxSelectionTool
+    : public cvRenderViewSelectionTool {
     Q_OBJECT
 
-    friend class cvZoomBoxCallback;  // Allow callback to access protected methods
+    friend class cvZoomBoxCallback;  // Allow callback to access protected
+                                     // methods
 
 public:
     /**
@@ -130,4 +134,3 @@ private:
      */
     bool m_useDollyForPerspective;
 };
-

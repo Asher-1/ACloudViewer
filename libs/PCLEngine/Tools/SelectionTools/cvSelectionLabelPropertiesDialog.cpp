@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "cvSelectionLabelPropertiesDialog.h"
+
 #include <widgets/ecvFontPropertyWidget.h>
 
 #include <QCheckBox>
@@ -65,8 +66,7 @@ void cvSelectionLabelPropertiesDialog::setupUi() {
     opacityLayout->addWidget(m_opacitySpin);
     connect(m_opacitySlider, &QSlider::valueChanged, this,
             &cvSelectionLabelPropertiesDialog::onOpacitySliderChanged);
-    connect(m_opacitySpin,
-            QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(m_opacitySpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             [this](double value) {
                 m_opacitySlider->blockSignals(true);
                 m_opacitySlider->setValue(static_cast<int>(value * 100));
@@ -102,7 +102,8 @@ void cvSelectionLabelPropertiesDialog::setupUi() {
     m_cellFontWidget->setFontProperties(
             labelPropertiesToFontProperties(m_properties, true));
     connect(m_cellFontWidget, &ecvFontPropertyWidget::fontPropertiesChanged,
-            this, &cvSelectionLabelPropertiesDialog::onCellFontPropertiesChanged);
+            this,
+            &cvSelectionLabelPropertiesDialog::onCellFontPropertiesChanged);
     cellFontLayout->addWidget(m_cellFontWidget);
 
     // Cell Label Format
@@ -112,7 +113,9 @@ void cvSelectionLabelPropertiesDialog::setupUi() {
     m_cellFormatEdit->setText(m_properties.cellLabelFormat);
     m_cellFormatEdit->setPlaceholderText(tr("e.g., ID: %s"));
     connect(m_cellFormatEdit, &QLineEdit::textChanged,
-            [this](const QString& text) { m_properties.cellLabelFormat = text; });
+            [this](const QString& text) {
+                m_properties.cellLabelFormat = text;
+            });
     cellFormatLayout->addWidget(cellFormatLabel);
     cellFormatLayout->addWidget(m_cellFormatEdit, 1);
     cellFontLayout->addLayout(cellFormatLayout);
@@ -129,7 +132,8 @@ void cvSelectionLabelPropertiesDialog::setupUi() {
     m_pointFontWidget->setFontProperties(
             labelPropertiesToFontProperties(m_properties, false));
     connect(m_pointFontWidget, &ecvFontPropertyWidget::fontPropertiesChanged,
-            this, &cvSelectionLabelPropertiesDialog::onPointFontPropertiesChanged);
+            this,
+            &cvSelectionLabelPropertiesDialog::onPointFontPropertiesChanged);
     pointFontLayout->addWidget(m_pointFontWidget);
 
     // Point Label Format
@@ -139,7 +143,9 @@ void cvSelectionLabelPropertiesDialog::setupUi() {
     m_pointFormatEdit->setText(m_properties.pointLabelFormat);
     m_pointFormatEdit->setPlaceholderText(tr("e.g., ID: %s"));
     connect(m_pointFormatEdit, &QLineEdit::textChanged,
-            [this](const QString& text) { m_properties.pointLabelFormat = text; });
+            [this](const QString& text) {
+                m_properties.pointLabelFormat = text;
+            });
     pointFormatLayout->addWidget(pointFormatLabel);
     pointFormatLayout->addWidget(m_pointFormatEdit, 1);
     pointFontLayout->addLayout(pointFormatLayout);
@@ -161,7 +167,8 @@ void cvSelectionLabelPropertiesDialog::setupUi() {
     m_maxTooltipAttributesSpin = new QSpinBox();
     m_maxTooltipAttributesSpin->setRange(1, 50);
     m_maxTooltipAttributesSpin->setValue(m_properties.maxTooltipAttributes);
-    connect(m_maxTooltipAttributesSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+    connect(m_maxTooltipAttributesSpin,
+            QOverload<int>::of(&QSpinBox::valueChanged),
             [this](int value) { m_properties.maxTooltipAttributes = value; });
     tooltipLayout->addRow(tr("Max attributes:"), m_maxTooltipAttributesSpin);
 
@@ -198,7 +205,8 @@ void cvSelectionLabelPropertiesDialog::setupUi() {
     buttonLayout->addWidget(m_resetButton);
 
     m_cancelButton = new QPushButton(tr("Cancel"));
-    m_cancelButton->setIcon(style()->standardIcon(QStyle::SP_DialogCancelButton));
+    m_cancelButton->setIcon(
+            style()->standardIcon(QStyle::SP_DialogCancelButton));
     connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
     buttonLayout->addWidget(m_cancelButton);
 
@@ -316,7 +324,8 @@ cvSelectionLabelPropertiesDialog::labelPropertiesToFontProperties(
         fontProps.bold = props.cellLabelBold;
         fontProps.italic = props.cellLabelItalic;
         fontProps.shadow = props.cellLabelShadow;
-        fontProps.horizontalJustification = props.cellLabelHorizontalJustification;
+        fontProps.horizontalJustification =
+                props.cellLabelHorizontalJustification;
         fontProps.verticalJustification = props.cellLabelVerticalJustification;
     } else {
         fontProps.family = props.pointLabelFontFamily;
@@ -326,7 +335,8 @@ cvSelectionLabelPropertiesDialog::labelPropertiesToFontProperties(
         fontProps.bold = props.pointLabelBold;
         fontProps.italic = props.pointLabelItalic;
         fontProps.shadow = props.pointLabelShadow;
-        fontProps.horizontalJustification = props.pointLabelHorizontalJustification;
+        fontProps.horizontalJustification =
+                props.pointLabelHorizontalJustification;
         fontProps.verticalJustification = props.pointLabelVerticalJustification;
     }
     return fontProps;
@@ -335,7 +345,8 @@ cvSelectionLabelPropertiesDialog::labelPropertiesToFontProperties(
 //-----------------------------------------------------------------------------
 void cvSelectionLabelPropertiesDialog::fontPropertiesToLabelProperties(
         const ecvFontPropertyWidget::FontProperties& fontProps,
-        LabelProperties& props, bool isCellLabel) {
+        LabelProperties& props,
+        bool isCellLabel) {
     if (isCellLabel) {
         props.cellLabelFontFamily = fontProps.family;
         props.cellLabelFontSize = fontProps.size;
@@ -344,7 +355,8 @@ void cvSelectionLabelPropertiesDialog::fontPropertiesToLabelProperties(
         props.cellLabelBold = fontProps.bold;
         props.cellLabelItalic = fontProps.italic;
         props.cellLabelShadow = fontProps.shadow;
-        props.cellLabelHorizontalJustification = fontProps.horizontalJustification;
+        props.cellLabelHorizontalJustification =
+                fontProps.horizontalJustification;
         props.cellLabelVerticalJustification = fontProps.verticalJustification;
     } else {
         props.pointLabelFontFamily = fontProps.family;
@@ -354,7 +366,8 @@ void cvSelectionLabelPropertiesDialog::fontPropertiesToLabelProperties(
         props.pointLabelBold = fontProps.bold;
         props.pointLabelItalic = fontProps.italic;
         props.pointLabelShadow = fontProps.shadow;
-        props.pointLabelHorizontalJustification = fontProps.horizontalJustification;
+        props.pointLabelHorizontalJustification =
+                fontProps.horizontalJustification;
         props.pointLabelVerticalJustification = fontProps.verticalJustification;
     }
 }

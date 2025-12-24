@@ -32,6 +32,7 @@
 #include <vtkCellData.h>
 #include <vtkDataArray.h>
 #include <vtkExtractSelection.h>
+#include <vtkGeometryFilter.h>
 #include <vtkIdTypeArray.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
@@ -41,7 +42,6 @@
 #include <vtkSmartPointer.h>
 #include <vtkTriangle.h>
 #include <vtkUnstructuredGrid.h>
-#include <vtkGeometryFilter.h>
 
 // Qt
 #include <QDir>
@@ -272,15 +272,16 @@ vtkPolyData* cvSelectionExporter::extractSelection(
     // Validate extracted data
     vtkIdType numPoints = extracted->GetNumberOfPoints();
     vtkIdType numCells = extracted->GetNumberOfCells();
-    
+
     if (numPoints == 0) {
         CVLog::Warning("[cvSelectionExporter] Extraction produced 0 points");
         return nullptr;
     }
-    
-    CVLog::PrintDebug(QString("[cvSelectionExporter] Extracted %1 points, %2 cells")
-                              .arg(numPoints)
-                              .arg(numCells));
+
+    CVLog::PrintDebug(
+            QString("[cvSelectionExporter] Extracted %1 points, %2 cells")
+                    .arg(numPoints)
+                    .arg(numCells));
 
     // Convert vtkUnstructuredGrid to vtkPolyData using vtkGeometryFilter
     // Note: ShallowCopy from vtkUnstructuredGrid to vtkPolyData doesn't work
@@ -292,7 +293,8 @@ vtkPolyData* cvSelectionExporter::extractSelection(
 
     vtkPolyData* filteredOutput = geometryFilter->GetOutput();
     if (!filteredOutput || filteredOutput->GetNumberOfPoints() == 0) {
-        CVLog::Warning("[cvSelectionExporter] Geometry filter produced no output");
+        CVLog::Warning(
+                "[cvSelectionExporter] Geometry filter produced no output");
         return nullptr;
     }
 

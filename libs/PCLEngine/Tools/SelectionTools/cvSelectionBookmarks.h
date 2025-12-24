@@ -7,18 +7,20 @@
 
 #pragma once
 
-#include "qPCL.h"
-
-// LOCAL
-#include "cvSelectionData.h"
-
-// Qt
+// clang-format off
+// Qt - must be included before qPCL.h for MOC to work correctly
 #include <QDateTime>
 #include <QList>
 #include <QMap>
 #include <QObject>
 #include <QString>
 #include <QStringList>
+// clang-format on
+
+#include "qPCL.h"
+
+// LOCAL
+#include "cvSelectionData.h"
 
 /**
  * @brief Selection bookmarks manager

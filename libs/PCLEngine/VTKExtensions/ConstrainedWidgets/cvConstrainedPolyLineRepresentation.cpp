@@ -35,15 +35,18 @@ cvConstrainedPolyLineRepresentation::cvConstrainedPolyLineRepresentation()
       Angle(0.0),
       LabelSuffix(nullptr) {
     // Initialize angle label actor with default properties
-    // These will be overridden by cvProtractorTool::applyTextPropertiesToLabel()
+    // These will be overridden by
+    // cvProtractorTool::applyTextPropertiesToLabel()
     this->AngleLabelActor = vtkTextActor::New();
     this->AngleLabelActor->SetTextScaleModeToNone();
     this->AngleLabelActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0);  // White
     this->AngleLabelActor->GetTextProperty()->SetFontSize(
             20);  // Default font size for angle display
-    this->AngleLabelActor->GetTextProperty()->SetBold(0);  // Not bold by default
+    this->AngleLabelActor->GetTextProperty()->SetBold(
+            0);  // Not bold by default
     this->AngleLabelActor->GetTextProperty()->SetItalic(0);  // Not italic
-    this->AngleLabelActor->GetTextProperty()->SetShadow(1);  // Shadow for visibility
+    this->AngleLabelActor->GetTextProperty()->SetShadow(
+            1);  // Shadow for visibility
     this->AngleLabelActor->GetTextProperty()->SetFontFamilyToArial();
     this->AngleLabelActor->SetVisibility(1);
 
@@ -143,9 +146,10 @@ void cvConstrainedPolyLineRepresentation::BuildRepresentation() {
     this->AngleLabelActor->SetInput(labelStream.str().c_str());
 
     // DO NOT set text properties here!
-    // Text properties should be set by cvProtractorTool::applyTextPropertiesToLabel()
-    // after BuildRepresentation() is called.
-    // Setting properties here would override user-configured settings.
+    // Text properties should be set by
+    // cvProtractorTool::applyTextPropertiesToLabel() after
+    // BuildRepresentation() is called. Setting properties here would override
+    // user-configured settings.
 
     // Position label at the arc's center (bisector of the angle)
     // ALWAYS place label on the acute angle side (< 180 degrees)

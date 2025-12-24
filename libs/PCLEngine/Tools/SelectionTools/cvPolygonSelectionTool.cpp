@@ -71,9 +71,12 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
 
     // ParaView-style: For custom polygon mode, just emit the polygon
     // and don't perform selection (let the caller handle it)
-    // Reference: pqRenderViewSelectionReaction::selectionChanged() SELECT_CUSTOM_POLYGON case
+    // Reference: pqRenderViewSelectionReaction::selectionChanged()
+    // SELECT_CUSTOM_POLYGON case
     if (m_mode == cvViewSelectionManager::SELECT_CUSTOM_POLYGON) {
-        CVLog::Print("[cvPolygonSelectionTool] Custom polygon mode - emitting polygonCompleted");
+        CVLog::Print(
+                "[cvPolygonSelectionTool] Custom polygon mode - emitting "
+                "polygonCompleted");
         emit polygonCompleted(polygon);
         return true;
     }
@@ -91,7 +94,8 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
     // Reference: pqRenderView::selectPolygonPoints/selectPolygonCells
     cvSelectionPipeline* pipeline = getSelectionPipeline();
     if (pipeline) {
-        // Use pixel-precise polygon selection via vtkHardwareSelector::GeneratePolygonSelection
+        // Use pixel-precise polygon selection via
+        // vtkHardwareSelector::GeneratePolygonSelection
         cvSelectionPipeline::SelectionType pipelineType =
                 isSelectingCells() ? cvSelectionPipeline::POLYGON_CELLS
                                    : cvSelectionPipeline::POLYGON_POINTS;
@@ -101,20 +105,22 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
 
         if (vtkSel) {
             cvSelectionPipeline::FieldAssociation fieldAssoc =
-                    isSelectingCells() ? cvSelectionPipeline::FIELD_ASSOCIATION_CELLS
-                                       : cvSelectionPipeline::FIELD_ASSOCIATION_POINTS;
+                    isSelectingCells()
+                            ? cvSelectionPipeline::FIELD_ASSOCIATION_CELLS
+                            : cvSelectionPipeline::FIELD_ASSOCIATION_POINTS;
 
             newSelection = cvSelectionPipeline::convertToCvSelectionData(
                     vtkSel, fieldAssoc);
-            
+
             CVLog::Print(QString("[cvPolygonSelectionTool] Pixel-precise "
                                  "polygon selection: %1 items")
                                  .arg(newSelection.count()));
         }
     } else {
         // Fallback: Use bounding box selection (less accurate)
-        CVLog::Warning("[cvPolygonSelectionTool] Pipeline not available, "
-                       "using bounding box fallback");
+        CVLog::Warning(
+                "[cvPolygonSelectionTool] Pipeline not available, "
+                "using bounding box fallback");
 
         // Find bounding box of polygon
         int minX = INT_MAX, minY = INT_MAX;
@@ -130,17 +136,21 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
             maxY = std::max(maxY, y);
         }
 
-        CVLog::Print(
-                QString("[cvPolygonSelectionTool] Polygon bounds: [%1, %2, %3, %4]")
-                        .arg(minX).arg(minY).arg(maxX).arg(maxY));
+        CVLog::Print(QString("[cvPolygonSelectionTool] Polygon bounds: [%1, "
+                             "%2, %3, %4]")
+                             .arg(minX)
+                             .arg(minY)
+                             .arg(maxX)
+                             .arg(maxY));
 
         cvGenericSelectionTool::SelectionMode mode =
-                isSelectingCells() ? cvGenericSelectionTool::SELECT_SURFACE_CELLS
-                                   : cvGenericSelectionTool::SELECT_SURFACE_POINTS;
+                isSelectingCells()
+                        ? cvGenericSelectionTool::SELECT_SURFACE_CELLS
+                        : cvGenericSelectionTool::SELECT_SURFACE_POINTS;
 
         int region[4] = {minX, minY, maxX, maxY};
-        newSelection = hardwareSelectInRegion(
-                region, mode, cvGenericSelectionTool::REPLACE);
+        newSelection = hardwareSelectInRegion(region, mode,
+                                              cvGenericSelectionTool::REPLACE);
     }
 
     if (newSelection.isEmpty()) {

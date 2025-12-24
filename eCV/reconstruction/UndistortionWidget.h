@@ -10,9 +10,9 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "ui/options_widget.h"
 #include "ThreadControlWidget.h"
 #include "base/undistortion.h"
+#include "ui/options_widget.h"
 
 namespace colmap {
 class Reconstruction;

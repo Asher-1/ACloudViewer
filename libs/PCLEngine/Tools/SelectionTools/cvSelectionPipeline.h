@@ -7,16 +7,18 @@
 
 #pragma once
 
+// clang-format off
+// Qt - must be included before qPCL.h for MOC to work correctly
+#include <QHash>
+#include <QMap>
+#include <QObject>
+// clang-format on
+
 #include "cvSelectionData.h"
 #include "qPCL.h"
 
 // VTK
 #include <vtkSmartPointer.h>
-
-// Qt
-#include <QHash>
-#include <QMap>
-#include <QObject>
 
 // Forward declarations
 class vtkSelection;
@@ -140,7 +142,7 @@ public:
      */
     static cvSelectionData convertToCvSelectionData(
             vtkSelection* selection, FieldAssociation fieldAssociation);
-    
+
     /**
      * @brief Test if a 2D point is inside a polygon (ParaView-aligned)
      * Uses the ray casting algorithm for robust point-in-polygon testing
@@ -150,9 +152,9 @@ public:
      * @return True if point is inside polygon
      */
     static bool pointInPolygon(const int point[2],
-                                vtkIntArray* polygon,
-                                vtkIdType numPoints);
-    
+                               vtkIntArray* polygon,
+                               vtkIdType numPoints);
+
     /**
      * @brief Refine polygon selection with point-in-polygon testing
      * @param selection Initial selection from hardware selector
@@ -161,9 +163,7 @@ public:
      * @return Refined selection with only points inside polygon
      */
     vtkSmartPointer<vtkSelection> refinePolygonSelection(
-            vtkSelection* selection,
-            vtkIntArray* polygon,
-            vtkIdType numPoints);
+            vtkSelection* selection, vtkIntArray* polygon, vtkIdType numPoints);
 
     /**
      * @brief Get the last selection result
@@ -194,7 +194,7 @@ public:
 
     /**
      * @brief Enter selection mode (ParaView-style cache optimization)
-     * 
+     *
      * Call this before starting a selection operation to enable
      * caching of selection render buffers. This prevents unnecessary
      * re-renders during interactive selection.
@@ -214,7 +214,7 @@ public:
 
     /**
      * @brief Clear selection cache and invalidate cached buffers
-     * 
+     *
      * Call this when the scene changes (e.g., data update, camera change)
      * to ensure stale selection data is not used.
      * Reference: vtkPVRenderView::InvalidateCachedSelection
@@ -224,93 +224,94 @@ public:
     ///@{
     /**
      * @brief Point Picking Radius support (ParaView-aligned)
-     * 
+     *
      * When selecting a single point and no hit is found at the exact
      * pixel location, the selector will search in a radius around the
      * click point to find nearby points. This improves usability for
      * point cloud selection.
-     * 
+     *
      * Reference: vtkPVRenderViewSettings::GetPointPickingRadius()
      *            vtkPVHardwareSelector::Select()
      */
-    
+
     /**
      * @brief Set the point picking radius (in pixels)
      * @param radius Radius in pixels (0 = disabled)
-     * 
+     *
      * Default is 5 pixels. Set to 0 to disable radius-based picking.
      */
     void setPointPickingRadius(unsigned int radius);
-    
+
     /**
      * @brief Get the current point picking radius
      * @return Radius in pixels
      */
     unsigned int getPointPickingRadius() const { return m_pointPickingRadius; }
     ///@}
-    
+
     ///@{
     /**
      * @brief Fast Pre-Selection API (ParaView-aligned)
-     * 
+     *
      * These methods provide fast hover/preview selection using cached
      * hardware selection buffers. Much faster than software picking
      * for interactive selection modes.
-     * 
+     *
      * Reference: pqRenderViewSelectionReaction::fastPreSelection()
      */
-    
+
     /**
      * @brief Structure to hold complete pixel selection information
      * Including actor and polyData for proper tooltip display
      */
     struct PixelSelectionInfo {
-        bool valid;              // Whether selection is valid
-        vtkIdType attributeID;   // Element ID (point or cell) within the actor
-        vtkProp* prop;           // The selected actor/prop
-        vtkPolyData* polyData;   // PolyData from the selected actor
-        
-        PixelSelectionInfo() : valid(false), attributeID(-1), prop(nullptr), polyData(nullptr) {}
+        bool valid;             // Whether selection is valid
+        vtkIdType attributeID;  // Element ID (point or cell) within the actor
+        vtkProp* prop;          // The selected actor/prop
+        vtkPolyData* polyData;  // PolyData from the selected actor
+
+        PixelSelectionInfo()
+            : valid(false), attributeID(-1), prop(nullptr), polyData(nullptr) {}
     };
-    
+
     /**
      * @brief Get complete pixel selection information at a screen position
      * @param x Screen X coordinate
      * @param y Screen Y coordinate
      * @param selectCells True for cell selection, false for points
      * @return Complete selection info including actor and polyData
-     * 
+     *
      * This method returns full selection context needed for tooltips,
      * including the specific actor and its polyData that was selected.
      * This fixes the "Invalid cell ID" issue when multiple actors are present.
      */
     PixelSelectionInfo getPixelSelectionInfo(int x, int y, bool selectCells);
-    
+
     /**
      * @brief Perform fast pre-selection at a screen position
      * @param x Screen X coordinate
      * @param y Screen Y coordinate
      * @param selectCells True for cell selection, false for points
      * @return Selected element ID, or -1 if nothing found
-     * 
+     *
      * This method uses cached hardware selection buffers when available,
      * falling back to a single-pixel selection if no cache exists.
      * Much faster than software picking for interactive hover.
-     * 
+     *
      * NOTE: This only returns the ID. For tooltip display with multiple actors,
      * use getPixelSelectionInfo() instead to get the correct polyData.
      */
     vtkIdType fastPreSelectAt(int x, int y, bool selectCells);
-    
+
     /**
      * @brief Check if fast pre-selection buffers are available
      * @return True if buffers are cached and can be used for fast picking
      */
     bool hasCachedBuffers() const;
-    
+
     /**
      * @brief Capture buffers for fast pre-selection
-     * 
+     *
      * Call this at the start of interactive selection mode to pre-cache
      * the hardware selection buffers. Subsequent fastPreSelectAt() calls
      * will be very fast until invalidateCachedSelection() is called.
@@ -423,7 +424,8 @@ private:
     FieldAssociation getFieldAssociation(SelectionType type) const;
 
     /**
-     * @brief Helper: Convert vtkSelection to cvSelectionData (reduces code duplication)
+     * @brief Helper: Convert vtkSelection to cvSelectionData (reduces code
+     * duplication)
      * @param vtkSel VTK selection object
      * @param fieldAssoc Field association (CELLS or POINTS)
      * @param errorContext Context string for error messages
@@ -456,7 +458,7 @@ private:
 
     // Selection mode state (for cache optimization)
     bool m_inSelectionMode = false;
-    
+
     // Point picking radius (ParaView-style)
     // When selecting a single point, search in this radius if no direct hit
     unsigned int m_pointPickingRadius = 5;

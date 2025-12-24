@@ -85,7 +85,8 @@ public:
     //! Set instance label suffix (e.g., "#1", "#2") for display in 3D view
     virtual void setInstanceLabel(const QString& label) = 0;
 
-    //! Set font family for measurement labels (e.g., "Arial", "Times New Roman")
+    //! Set font family for measurement labels (e.g., "Arial", "Times New
+    //! Roman")
     virtual void setFontFamily(const QString& family) = 0;
 
     //! Set font size for measurement labels
@@ -106,10 +107,12 @@ public:
     //! Set font color for measurement labels (RGB values 0.0-1.0)
     virtual void setFontColor(double r, double g, double b) = 0;
 
-    //! Set horizontal justification for measurement labels ("Left", "Center", "Right")
+    //! Set horizontal justification for measurement labels ("Left", "Center",
+    //! "Right")
     virtual void setHorizontalJustification(const QString& justification) = 0;
 
-    //! Set vertical justification for measurement labels ("Top", "Center", "Bottom")
+    //! Set vertical justification for measurement labels ("Top", "Center",
+    //! "Bottom")
     virtual void setVerticalJustification(const QString& justification) = 0;
 
     //! Setup keyboard shortcuts bound to the render window widget

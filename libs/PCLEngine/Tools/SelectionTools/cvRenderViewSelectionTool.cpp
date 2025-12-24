@@ -517,36 +517,46 @@ void cvRenderViewSelectionTool::onSelectionChanged(vtkObject* caller,
     // Handle based on event type
     if (eventId == vtkCommand::SelectionChangedEvent) {
         // ParaView-aligned event handling:
-        // For vtkInteractorStyleDrawPolygon: callData is vtkIntArray* (polygon vertices)
-        // For vtkInteractorStyleRubberBandPick: callData is int[4] (region)
-        // Reference: pqRenderViewSelectionReaction::selectionChanged()
-        
+        // For vtkInteractorStyleDrawPolygon: callData is vtkIntArray* (polygon
+        // vertices) For vtkInteractorStyleRubberBandPick: callData is int[4]
+        // (region) Reference: pqRenderViewSelectionReaction::selectionChanged()
+
         // Check mode to determine data type
-        bool isPolygonMode = 
-                (m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS_POLYGON ||
-                 m_mode == cvViewSelectionManager::SELECT_SURFACE_POINTS_POLYGON ||
+        bool isPolygonMode =
+                (m_mode ==
+                         cvViewSelectionManager::SELECT_SURFACE_CELLS_POLYGON ||
+                 m_mode == cvViewSelectionManager::
+                                   SELECT_SURFACE_POINTS_POLYGON ||
                  m_mode == cvViewSelectionManager::SELECT_CUSTOM_POLYGON);
 
         if (isPolygonMode) {
             // Polygon mode: callData is a vtkObject (vtkIntArray)
             vtkObject* obj = reinterpret_cast<vtkObject*>(callData);
             vtkIntArray* polygon = vtkIntArray::SafeDownCast(obj);
-            if (polygon && polygon->GetNumberOfTuples() >= 6) {  // At least 3 points (6 values)
-                CVLog::Print(QString("[cvRenderViewSelectionTool] Polygon selection: %1 vertices")
+            if (polygon && polygon->GetNumberOfTuples() >=
+                                   6) {  // At least 3 points (6 values)
+                CVLog::Print(QString("[cvRenderViewSelectionTool] Polygon "
+                                     "selection: %1 vertices")
                                      .arg(polygon->GetNumberOfTuples() / 2));
                 performPolygonSelection(polygon);
             } else {
-                CVLog::Warning("[cvRenderViewSelectionTool] Invalid polygon data");
+                CVLog::Warning(
+                        "[cvRenderViewSelectionTool] Invalid polygon data");
             }
         } else {
             // Rectangle mode: callData is int[4]
             int* region = reinterpret_cast<int*>(callData);
             if (region) {
-                CVLog::Print(QString("[cvRenderViewSelectionTool] Rectangle selection: [%1, %2, %3, %4]")
-                                     .arg(region[0]).arg(region[1]).arg(region[2]).arg(region[3]));
+                CVLog::Print(QString("[cvRenderViewSelectionTool] Rectangle "
+                                     "selection: [%1, %2, %3, %4]")
+                                     .arg(region[0])
+                                     .arg(region[1])
+                                     .arg(region[2])
+                                     .arg(region[3]));
                 performSelection(region);
             } else {
-                CVLog::Warning("[cvRenderViewSelectionTool] Invalid region data");
+                CVLog::Warning(
+                        "[cvRenderViewSelectionTool] Invalid region data");
             }
         }
 
@@ -635,8 +645,10 @@ bool cvRenderViewSelectionTool::isSelectingCells() const {
     // Reference: pqRenderViewSelectionReaction mode handling
     return (m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS ||
             m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS_POLYGON ||
-            m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS_INTERACTIVELY ||
-            m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLDATA_INTERACTIVELY ||
+            m_mode == cvViewSelectionManager::
+                              SELECT_SURFACE_CELLS_INTERACTIVELY ||
+            m_mode == cvViewSelectionManager::
+                              SELECT_SURFACE_CELLDATA_INTERACTIVELY ||
             m_mode == cvViewSelectionManager::SELECT_FRUSTUM_CELLS ||
             m_mode == cvViewSelectionManager::HOVER_CELLS_TOOLTIP ||
             m_mode == cvViewSelectionManager::SELECT_BLOCKS ||

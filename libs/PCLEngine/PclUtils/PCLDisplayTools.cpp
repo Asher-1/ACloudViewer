@@ -146,9 +146,11 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
             int sfIdx = ecvCloud->getCurrentDisplayedScalarFieldIndex();
             if (sfIdx >= 0) {
                 // Add/update scalar field to VTK for tooltip display
-                // Extract values directly from ccPointCloud (not from PCL cloud)
-                // Note: addScalarFieldToVTK has internal check to avoid unnecessary updates
-                m_visualizer3D->addScalarFieldToVTK(viewID, ecvCloud, sfIdx, viewport);
+                // Extract values directly from ccPointCloud (not from PCL
+                // cloud) Note: addScalarFieldToVTK has internal check to avoid
+                // unnecessary updates
+                m_visualizer3D->addScalarFieldToVTK(viewID, ecvCloud, sfIdx,
+                                                    viewport);
             }
         }
 
@@ -1166,8 +1168,8 @@ void PCLDisplayTools::changeEntityProperties(PROPERTY_PARAM& param) {
                                                          viewport);
                 } break;
                 case ENTITY_TYPE::ECV_MESH: {
-                    // Meshes (textured or not) use dedicated mesh opacity method
-                    // This properly handles:
+                    // Meshes (textured or not) use dedicated mesh opacity
+                    // method This properly handles:
                     // - Textured meshes with alpha blending
                     // - Non-textured meshes with simple opacity
                     // - Depth peeling for correct transparency rendering

@@ -76,7 +76,8 @@ ecvMeasurementTool::ecvMeasurementTool(QWidget* parent)
     // Create and add font property widget
     // Color picker is now visible in the font widget (ParaView style)
     m_fontPropertyWidget = new ecvFontPropertyWidget(this);
-    m_fontPropertyWidget->setColorPickerVisible(true);  // Show color picker in font widget
+    m_fontPropertyWidget->setColorPickerVisible(
+            true);  // Show color picker in font widget
     fontLayout->addWidget(m_fontPropertyWidget);
     connect(m_fontPropertyWidget, &ecvFontPropertyWidget::fontPropertiesChanged,
             this, &ecvMeasurementTool::onFontPropertiesChanged);
@@ -134,18 +135,20 @@ ecvGenericMeasurementTools* ecvMeasurementTool::createMeasurementTool(
         if (m_fontPropertyWidget) {
             auto props = m_fontPropertyWidget->fontProperties();
             tool->setFontFamily(props.family);
-            
-            // Special handling for Protractor: use tool's default font size (20)
-            // instead of widget's default (6), then update widget to match
-            if (type == ecvGenericMeasurementTools::MeasurementType::PROTRACTOR_WIDGET) {
-                // Protractor has its own default font size (20) set in constructor
-                // Update the widget to reflect this
-                m_fontPropertyWidget->setFontSize(20, true);  // blockSignal=true
+
+            // Special handling for Protractor: use tool's default font size
+            // (20) instead of widget's default (6), then update widget to match
+            if (type == ecvGenericMeasurementTools::MeasurementType::
+                                PROTRACTOR_WIDGET) {
+                // Protractor has its own default font size (20) set in
+                // constructor Update the widget to reflect this
+                m_fontPropertyWidget->setFontSize(20,
+                                                  true);  // blockSignal=true
             } else {
                 // For other tools, use widget's font size
                 tool->setFontSize(props.size);
             }
-            
+
             tool->setBold(props.bold);
             tool->setItalic(props.italic);
             tool->setShadow(props.shadow);
@@ -185,18 +188,21 @@ void ecvMeasurementTool::setMeasurementTool(ecvGenericMeasurementTools* tool) {
         if (m_fontPropertyWidget) {
             auto props = m_fontPropertyWidget->fontProperties();
             tool->setFontFamily(props.family);
-            
-            // Special handling for Protractor: use tool's default font size (20)
-            // instead of widget's default (6), then update widget to match
-            if (tool->getMeasurementType() == ecvGenericMeasurementTools::MeasurementType::PROTRACTOR_WIDGET) {
-                // Protractor has its own default font size (20) set in constructor
-                // Update the widget to reflect this
-                m_fontPropertyWidget->setFontSize(20, true);  // blockSignal=true
+
+            // Special handling for Protractor: use tool's default font size
+            // (20) instead of widget's default (6), then update widget to match
+            if (tool->getMeasurementType() ==
+                ecvGenericMeasurementTools::MeasurementType::
+                        PROTRACTOR_WIDGET) {
+                // Protractor has its own default font size (20) set in
+                // constructor Update the widget to reflect this
+                m_fontPropertyWidget->setFontSize(20,
+                                                  true);  // blockSignal=true
             } else {
                 // For other tools, use widget's font size
                 tool->setFontSize(props.size);
             }
-            
+
             tool->setBold(props.bold);
             tool->setItalic(props.italic);
             tool->setShadow(props.shadow);
@@ -740,9 +746,7 @@ void ecvMeasurementTool::applyColorToAllTools() {
     }
 }
 
-void ecvMeasurementTool::onFontPropertiesChanged() {
-    applyFontToTools();
-}
+void ecvMeasurementTool::onFontPropertiesChanged() { applyFontToTools(); }
 
 void ecvMeasurementTool::applyFontToTools() {
     if (!m_fontPropertyWidget) return;
@@ -756,7 +760,8 @@ void ecvMeasurementTool::applyFontToTools() {
             if (tool) {
                 tool->setFontFamily(props.family);
                 tool->setFontSize(props.size);
-                tool->setFontColor(props.color.redF(), props.color.greenF(), props.color.blueF());
+                tool->setFontColor(props.color.redF(), props.color.greenF(),
+                                   props.color.blueF());
                 tool->setBold(props.bold);
                 tool->setItalic(props.italic);
                 tool->setShadow(props.shadow);
@@ -770,7 +775,8 @@ void ecvMeasurementTool::applyFontToTools() {
         if (m_tool) {
             m_tool->setFontFamily(props.family);
             m_tool->setFontSize(props.size);
-            m_tool->setFontColor(props.color.redF(), props.color.greenF(), props.color.blueF());
+            m_tool->setFontColor(props.color.redF(), props.color.greenF(),
+                                 props.color.blueF());
             m_tool->setBold(props.bold);
             m_tool->setItalic(props.italic);
             m_tool->setShadow(props.shadow);

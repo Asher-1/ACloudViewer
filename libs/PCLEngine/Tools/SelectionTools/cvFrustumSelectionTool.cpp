@@ -226,11 +226,14 @@ vtkPlanes* cvFrustumSelectionTool::calculateFrustumPlanes(int region[4]) {
     vtkPlanes* result = vtkPlanes::New();
 
     // Frustum plane calculation from screen rectangle
-    // This converts 2D screen rectangle to 3D frustum planes in world coordinates
-    // The implementation uses camera parameters (position, focal point, view angle)
-    // Reference: VTK's vtkAreaPicker frustum extraction logic
+    // This converts 2D screen rectangle to 3D frustum planes in world
+    // coordinates The implementation uses camera parameters (position, focal
+    // point, view angle) Reference: VTK's vtkAreaPicker frustum extraction
+    // logic
 
-    CVLog::Print("[cvFrustumSelectionTool] Frustum planes calculated from screen rectangle");
+    CVLog::Print(
+            "[cvFrustumSelectionTool] Frustum planes calculated from screen "
+            "rectangle");
 
     return result;
 }

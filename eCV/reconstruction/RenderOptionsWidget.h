@@ -11,9 +11,9 @@
 #include <QtWidgets>
 
 #include "ModelViewerWidget.h"
-#include "ui/options_widget.h"
 #include "sfm/incremental_mapper.h"
 #include "ui/colormaps.h"
+#include "ui/options_widget.h"
 #include "util/option_manager.h"
 
 namespace cloudViewer {

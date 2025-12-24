@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "ui/options_widget.h"
 #include "controllers/AutomaticReconstructionController.h"
+#include "ui/options_widget.h"
 
 namespace cloudViewer {
 class ReconstructionWidget;

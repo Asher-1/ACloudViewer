@@ -92,16 +92,16 @@
 
 // ParaView-style selection colors palette
 const QColor cvSelectionPropertiesWidget::s_selectionColors[] = {
-    QColor(255, 0, 0),      // Red
-    QColor(0, 255, 0),      // Green
-    QColor(0, 0, 255),      // Blue
-    QColor(255, 255, 0),    // Yellow
-    QColor(255, 0, 255),    // Magenta
-    QColor(0, 255, 255),    // Cyan
-    QColor(255, 128, 0),    // Orange
-    QColor(128, 0, 255),    // Purple
-    QColor(0, 255, 128),    // Spring Green
-    QColor(255, 0, 128),    // Rose
+        QColor(255, 0, 0),    // Red
+        QColor(0, 255, 0),    // Green
+        QColor(0, 0, 255),    // Blue
+        QColor(255, 255, 0),  // Yellow
+        QColor(255, 0, 255),  // Magenta
+        QColor(0, 255, 255),  // Cyan
+        QColor(255, 128, 0),  // Orange
+        QColor(128, 0, 255),  // Purple
+        QColor(0, 255, 128),  // Spring Green
+        QColor(255, 0, 128),  // Rose
 };
 const int cvSelectionPropertiesWidget::s_selectionColorsCount = 10;
 
@@ -168,12 +168,14 @@ cvSelectionPropertiesWidget::cvSelectionPropertiesWidget(QWidget* parent)
     }
 
     setupUi();
-    
+
     // Set size policy to expand and fill available space
-    // This is especially important when the widget is displayed alone (no DB object selected)
+    // This is especially important when the widget is displayed alone (no DB
+    // object selected)
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    CVLog::PrintDebug("[cvSelectionPropertiesWidget] Initialized with ParaView-style UI");
+    CVLog::PrintDebug(
+            "[cvSelectionPropertiesWidget] Initialized with ParaView-style UI");
 }
 
 //-----------------------------------------------------------------------------
@@ -337,28 +339,36 @@ void cvSelectionPropertiesWidget::syncUIWithHighlighter() {
 
     // Sync label properties from highlighter
     m_labelProperties.opacity = selectedOpacity;
-    m_labelProperties.pointSize = m_highlighter->getPointSize(cvSelectionHighlighter::SELECTED);
-    m_labelProperties.lineWidth = m_highlighter->getLineWidth(cvSelectionHighlighter::SELECTED);
-    
+    m_labelProperties.pointSize =
+            m_highlighter->getPointSize(cvSelectionHighlighter::SELECTED);
+    m_labelProperties.lineWidth =
+            m_highlighter->getLineWidth(cvSelectionHighlighter::SELECTED);
+
     m_interactiveLabelProperties.opacity = hoverOpacity;
-    m_interactiveLabelProperties.pointSize = m_highlighter->getPointSize(cvSelectionHighlighter::HOVER);
-    m_interactiveLabelProperties.lineWidth = m_highlighter->getLineWidth(cvSelectionHighlighter::HOVER);
+    m_interactiveLabelProperties.pointSize =
+            m_highlighter->getPointSize(cvSelectionHighlighter::HOVER);
+    m_interactiveLabelProperties.lineWidth =
+            m_highlighter->getLineWidth(cvSelectionHighlighter::HOVER);
 
     // Sync ParaView-style selection colors
     if (selectedColor) {
-        m_selectionColor = QColor::fromRgbF(selectedColor[0], selectedColor[1], selectedColor[2]);
+        m_selectionColor = QColor::fromRgbF(selectedColor[0], selectedColor[1],
+                                            selectedColor[2]);
         if (m_selectionColorButton) {
             m_selectionColorButton->setStyleSheet(
-                QString("QPushButton { background-color: %1; color: white; }")
-                    .arg(m_selectionColor.name()));
+                    QString("QPushButton { background-color: %1; color: white; "
+                            "}")
+                            .arg(m_selectionColor.name()));
         }
     }
     if (hoverColor) {
-        m_interactiveSelectionColor = QColor::fromRgbF(hoverColor[0], hoverColor[1], hoverColor[2]);
+        m_interactiveSelectionColor =
+                QColor::fromRgbF(hoverColor[0], hoverColor[1], hoverColor[2]);
         if (m_interactiveSelectionColorButton) {
             m_interactiveSelectionColorButton->setStyleSheet(
-                QString("QPushButton { background-color: %1; color: white; }")
-                    .arg(m_interactiveSelectionColor.name()));
+                    QString("QPushButton { background-color: %1; color: white; "
+                            "}")
+                            .arg(m_interactiveSelectionColor.name()));
         }
     }
 
@@ -408,7 +418,8 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     // === Tab Widget with all features (Statistics, Export, Advanced) ===
     m_tabWidget = new QTabWidget();
-    m_tabWidget->setVisible(true);  // Always visible to provide access to all features
+    m_tabWidget->setVisible(
+            true);  // Always visible to provide access to all features
     setupStatisticsTab();
     setupExportTab();
     setupAdvancedTab();
@@ -428,35 +439,42 @@ void cvSelectionPropertiesWidget::setupSelectedDataHeader() {
     // Selected Data header label
     m_selectedDataLabel = new QLabel(tr("<b>Selected Data</b>"));
     m_selectedDataLabel->setStyleSheet(
-        "QLabel { background-color: #e0e0e0; padding: 5px; border-radius: 3px; }");
+            "QLabel { background-color: #e0e0e0; padding: 5px; border-radius: "
+            "3px; }");
 
     // Action buttons (ParaView-style with icons)
-    
+
     // Freeze button (ParaView: converts selection to a frozen representation)
-    m_freezeButton = new QPushButton(QIcon(":/Resources/images/svg/pqLock.png"), tr("Freeze"));
-    m_freezeButton->setToolTip(tr("Freeze the current selection (convert to independent dataset)"));
+    m_freezeButton = new QPushButton(QIcon(":/Resources/images/svg/pqLock.png"),
+                                     tr("Freeze"));
+    m_freezeButton->setToolTip(tr(
+            "Freeze the current selection (convert to independent dataset)"));
     m_freezeButton->setFixedHeight(25);
     m_freezeButton->setEnabled(false);  // Enabled when selection exists
     connect(m_freezeButton, &QPushButton::clicked, this,
             &cvSelectionPropertiesWidget::onFreezeClicked);
 
-    // Extract button (ParaView: pqExtractSelection.png/svg - creates new object from selection)
+    // Extract button (ParaView: pqExtractSelection.png/svg - creates new object
+    // from selection)
     QIcon extractIcon(":/Resources/images/svg/pqExtractSelection.png");
     if (extractIcon.isNull()) {
         extractIcon = QIcon(":/Resources/images/exportCloud.png");  // Fallback
     }
     m_extractButton = new QPushButton(extractIcon, tr("Extract"));
-    m_extractButton->setToolTip(tr("Extract selected elements to a new dataset and add to scene"));
+    m_extractButton->setToolTip(
+            tr("Extract selected elements to a new dataset and add to scene"));
     m_extractButton->setFixedHeight(25);
     m_extractButton->setEnabled(false);  // Enabled when selection exists
     connect(m_extractButton, &QPushButton::clicked, this,
             &cvSelectionPropertiesWidget::onExtractClicked);
 
     // Plot Over Time button (ParaView: pqPlotSelectionOverTime.png)
-    // For CloudViewer: shows attribute distribution/histogram instead of time-series
+    // For CloudViewer: shows attribute distribution/histogram instead of
+    // time-series
     QIcon plotIcon(":/Resources/images/svg/pqPlotSelectionOverTime.png");
     m_plotOverTimeButton = new QPushButton(plotIcon, tr("Plot Distribution"));
-    m_plotOverTimeButton->setToolTip(tr("Show distribution plots of selection attributes"));
+    m_plotOverTimeButton->setToolTip(
+            tr("Show distribution plots of selection attributes"));
     m_plotOverTimeButton->setFixedHeight(25);
     m_plotOverTimeButton->setEnabled(false);  // Enabled when selection exists
     connect(m_plotOverTimeButton, &QPushButton::clicked, this,
@@ -472,7 +490,9 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     // === Selection Labels === (ParaView-style header with separator line)
     QVBoxLayout* labelsHeaderLayout = new QVBoxLayout();
     labelsHeaderLayout->setSpacing(0);
-    QLabel* labelsHeader = new QLabel(tr("<html><body><p><span style=\"font-weight:600;\">Selection Labels</span></p></body></html>"));
+    QLabel* labelsHeader = new QLabel(
+            tr("<html><body><p><span style=\"font-weight:600;\">Selection "
+               "Labels</span></p></body></html>"));
     labelsHeaderLayout->addWidget(labelsHeader);
     QFrame* labelsSeparator = new QFrame();
     labelsSeparator->setFrameShape(QFrame::HLine);
@@ -480,14 +500,16 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     labelsHeaderLayout->addWidget(labelsSeparator);
     displayLayout->addLayout(labelsHeaderLayout);
 
-    // Cell Labels and Point Labels buttons (ParaView-style: horizontal, spacing=2)
+    // Cell Labels and Point Labels buttons (ParaView-style: horizontal,
+    // spacing=2)
     QHBoxLayout* labelsLayout = new QHBoxLayout();
     labelsLayout->setSpacing(2);
 
     // Cell Labels button with dropdown menu (ParaView: pqCellData.svg icon)
     m_cellLabelsButton = new QPushButton(tr("Cell Labels"));
     m_cellLabelsButton->setIcon(QIcon(":/Resources/images/svg/pqCellData.svg"));
-    m_cellLabelsButton->setToolTip(tr("Set the array to label selected cells with"));
+    m_cellLabelsButton->setToolTip(
+            tr("Set the array to label selected cells with"));
     m_cellLabelsMenu = new QMenu(this);
     m_cellLabelsMenu->addAction(tr("None"));
     m_cellLabelsMenu->addAction(tr("Cell ID"));
@@ -499,8 +521,10 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
 
     // Point Labels button with dropdown menu (ParaView: pqPointData.svg icon)
     m_pointLabelsButton = new QPushButton(tr("Point Labels"));
-    m_pointLabelsButton->setIcon(QIcon(":/Resources/images/svg/pqPointData.svg"));
-    m_pointLabelsButton->setToolTip(tr("Set the array to label selected points with"));
+    m_pointLabelsButton->setIcon(
+            QIcon(":/Resources/images/svg/pqPointData.svg"));
+    m_pointLabelsButton->setToolTip(
+            tr("Set the array to label selected points with"));
     m_pointLabelsMenu = new QMenu(this);
     m_pointLabelsMenu->addAction(tr("None"));
     m_pointLabelsMenu->addAction(tr("Point ID"));
@@ -514,8 +538,10 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
 
     // Edit Label Properties button (ParaView: pqAdvanced.svg icon)
     m_editLabelPropertiesButton = new QPushButton(tr("Edit Label Properties"));
-    m_editLabelPropertiesButton->setIcon(QIcon(":/Resources/images/svg/pqAdvanced.png"));
-    m_editLabelPropertiesButton->setToolTip(tr("Edit selection label properties"));
+    m_editLabelPropertiesButton->setIcon(
+            QIcon(":/Resources/images/svg/pqAdvanced.png"));
+    m_editLabelPropertiesButton->setToolTip(
+            tr("Edit selection label properties"));
     connect(m_editLabelPropertiesButton, &QPushButton::clicked, this,
             &cvSelectionPropertiesWidget::onEditLabelPropertiesClicked);
     displayLayout->addWidget(m_editLabelPropertiesButton);
@@ -523,7 +549,9 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     // === Selection Appearance === (ParaView-style header with separator line)
     QVBoxLayout* appearanceHeaderLayout = new QVBoxLayout();
     appearanceHeaderLayout->setSpacing(0);
-    QLabel* appearanceHeader = new QLabel(tr("<html><body><p><span style=\"font-weight:600;\">Selection Appearance</span></p></body></html>"));
+    QLabel* appearanceHeader = new QLabel(
+            tr("<html><body><p><span style=\"font-weight:600;\">Selection "
+               "Appearance</span></p></body></html>"));
     appearanceHeaderLayout->addWidget(appearanceHeader);
     QFrame* appearanceSeparator = new QFrame();
     appearanceSeparator->setFrameShape(QFrame::HLine);
@@ -533,11 +561,14 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
 
     // Selection Color button (ParaView: pqColorChooserButton style)
     m_selectionColorButton = new QPushButton(tr("Selection Color"));
-    m_selectionColorButton->setToolTip(tr("Set the color to use to show selected elements"));
-    m_selectionColorButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    m_selectionColorButton->setToolTip(
+            tr("Set the color to use to show selected elements"));
+    m_selectionColorButton->setSizePolicy(QSizePolicy::Minimum,
+                                          QSizePolicy::Fixed);
     m_selectionColorButton->setStyleSheet(
-        QString("QPushButton { background-color: %1; color: white; border: 1px solid gray; padding: 4px; }")
-            .arg(m_selectionColor.name()));
+            QString("QPushButton { background-color: %1; color: white; border: "
+                    "1px solid gray; padding: 4px; }")
+                    .arg(m_selectionColor.name()));
     connect(m_selectionColorButton, &QPushButton::clicked, this,
             &cvSelectionPropertiesWidget::onSelectionColorClicked);
     displayLayout->addWidget(m_selectionColorButton);
@@ -545,7 +576,9 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     // === Interactive Selection === (ParaView-style header with separator line)
     QVBoxLayout* interactiveHeaderLayout = new QVBoxLayout();
     interactiveHeaderLayout->setSpacing(0);
-    QLabel* interactiveHeader = new QLabel(tr("<html><body><p><span style=\"font-weight:600;\">Interactive Selection</span></p></body></html>"));
+    QLabel* interactiveHeader = new QLabel(
+            tr("<html><body><p><span style=\"font-weight:600;\">Interactive "
+               "Selection</span></p></body></html>"));
     interactiveHeaderLayout->addWidget(interactiveHeader);
     QFrame* interactiveSeparator = new QFrame();
     interactiveSeparator->setFrameShape(QFrame::HLine);
@@ -554,24 +587,33 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     displayLayout->addLayout(interactiveHeaderLayout);
 
     // Interactive Selection Color button (ParaView: pqColorChooserButton style)
-    m_interactiveSelectionColorButton = new QPushButton(tr("Interactive Selection Color"));
-    m_interactiveSelectionColorButton->setToolTip(tr("Set the color to use to show selected elements during interaction"));
-    m_interactiveSelectionColorButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    m_interactiveSelectionColorButton =
+            new QPushButton(tr("Interactive Selection Color"));
+    m_interactiveSelectionColorButton->setToolTip(
+            tr("Set the color to use to show selected elements during "
+               "interaction"));
+    m_interactiveSelectionColorButton->setSizePolicy(QSizePolicy::Minimum,
+                                                     QSizePolicy::Fixed);
     m_interactiveSelectionColorButton->setStyleSheet(
-        QString("QPushButton { background-color: %1; color: white; border: 1px solid gray; padding: 4px; }")
-            .arg(m_interactiveSelectionColor.name()));
+            QString("QPushButton { background-color: %1; color: white; border: "
+                    "1px solid gray; padding: 4px; }")
+                    .arg(m_interactiveSelectionColor.name()));
     connect(m_interactiveSelectionColorButton, &QPushButton::clicked, this,
             &cvSelectionPropertiesWidget::onInteractiveSelectionColorClicked);
     displayLayout->addWidget(m_interactiveSelectionColorButton);
 
     // Edit Interactive Label Properties button (ParaView: pqAdvanced.svg icon)
-    m_editInteractiveLabelPropertiesButton = new QPushButton(tr("Edit Interactive Label Properties"));
-    m_editInteractiveLabelPropertiesButton->setIcon(QIcon(":/Resources/images/svg/pqAdvanced.png"));
-    m_editInteractiveLabelPropertiesButton->setToolTip(tr("Edit interactive selection label properties"));
+    m_editInteractiveLabelPropertiesButton =
+            new QPushButton(tr("Edit Interactive Label Properties"));
+    m_editInteractiveLabelPropertiesButton->setIcon(
+            QIcon(":/Resources/images/svg/pqAdvanced.png"));
+    m_editInteractiveLabelPropertiesButton->setToolTip(
+            tr("Edit interactive selection label properties"));
     connect(m_editInteractiveLabelPropertiesButton, &QPushButton::clicked, this,
-            &cvSelectionPropertiesWidget::onEditInteractiveLabelPropertiesClicked);
+            &cvSelectionPropertiesWidget::
+                    onEditInteractiveLabelPropertiesClicked);
     displayLayout->addWidget(m_editInteractiveLabelPropertiesButton);
-    
+
     // Add vertical spacer at bottom (ParaView-style)
     displayLayout->addStretch();
 
@@ -588,13 +630,18 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     QHBoxLayout* producerLayout = new QHBoxLayout();
     producerLayout->setSpacing(5);
     m_dataProducerLabel = new QLabel(tr("Data Producer"));
-    m_dataProducerLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    m_dataProducerLabel->setToolTip(tr("The dataset for which selections are saved"));
+    m_dataProducerLabel->setSizePolicy(QSizePolicy::Maximum,
+                                       QSizePolicy::Preferred);
+    m_dataProducerLabel->setToolTip(
+            tr("The dataset for which selections are saved"));
     m_dataProducerValue = new QLabel();
     m_dataProducerValue->setStyleSheet(
-        "QLabel { background-color: snow; border: 1px inset grey; }");  // ParaView exact style
-    m_dataProducerValue->setToolTip(tr("The dataset for which selections are saved"));
-    m_dataProducerValue->setText(m_dataProducerName.isEmpty() ? QString() : m_dataProducerName);
+            "QLabel { background-color: snow; border: 1px inset grey; "
+            "}");  // ParaView exact style
+    m_dataProducerValue->setToolTip(
+            tr("The dataset for which selections are saved"));
+    m_dataProducerValue->setText(
+            m_dataProducerName.isEmpty() ? QString() : m_dataProducerName);
     producerLayout->addWidget(m_dataProducerLabel);
     producerLayout->addWidget(m_dataProducerValue, 1);
     editorLayout->addLayout(producerLayout);
@@ -603,12 +650,16 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     QHBoxLayout* elementTypeLayout = new QHBoxLayout();
     elementTypeLayout->setSpacing(9);
     m_elementTypeLabel = new QLabel(tr("Element Type"));
-    m_elementTypeLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    m_elementTypeLabel->setToolTip(tr("The element type of the saved selections"));
+    m_elementTypeLabel->setSizePolicy(QSizePolicy::Maximum,
+                                      QSizePolicy::Preferred);
+    m_elementTypeLabel->setToolTip(
+            tr("The element type of the saved selections"));
     m_elementTypeValue = new QLabel();
     m_elementTypeValue->setStyleSheet(
-        "QLabel { background-color: snow; border: 1px inset grey; }");  // ParaView exact style
-    m_elementTypeValue->setToolTip(tr("The element type of the saved selections"));
+            "QLabel { background-color: snow; border: 1px inset grey; "
+            "}");  // ParaView exact style
+    m_elementTypeValue->setToolTip(
+            tr("The element type of the saved selections"));
     elementTypeLayout->addWidget(m_elementTypeLabel);
     elementTypeLayout->addWidget(m_elementTypeValue, 1);
     editorLayout->addLayout(elementTypeLayout);
@@ -617,12 +668,17 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     QHBoxLayout* expressionLayout = new QHBoxLayout();
     expressionLayout->setSpacing(29);
     m_expressionLabel = new QLabel(tr("Expression"));
-    m_expressionLabel->setToolTip(tr("Specify the expression which defines the relation between "
-                                     "saved selections using boolean operators: !(NOT), &(AND), |(OR), ^(XOR) and ()."));
+    m_expressionLabel->setToolTip(
+            tr("Specify the expression which defines the relation between "
+               "saved selections using boolean operators: !(NOT), &(AND), "
+               "|(OR), ^(XOR) and ()."));
     m_expressionEdit = new QLineEdit();
-    m_expressionEdit->setPlaceholderText(tr("e.g., (s0|s1)&s2|(s3&s4)|s5|s6|s7"));
-    m_expressionEdit->setToolTip(tr("Specify the expression which defines the relation between "
-                                    "saved selections using boolean operators: !(NOT), &(AND), |(OR), ^(XOR) and ()."));
+    m_expressionEdit->setPlaceholderText(
+            tr("e.g., (s0|s1)&s2|(s3&s4)|s5|s6|s7"));
+    m_expressionEdit->setToolTip(
+            tr("Specify the expression which defines the relation between "
+               "saved selections using boolean operators: !(NOT), &(AND), "
+               "|(OR), ^(XOR) and ()."));
     connect(m_expressionEdit, &QLineEdit::textChanged, this,
             &cvSelectionPropertiesWidget::onExpressionChanged);
     expressionLayout->addWidget(m_expressionLabel);
@@ -636,15 +692,18 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     // Table: Name, Type, Color columns (ParaView: pqExpandableTableView)
     m_selectionEditorTable = new QTableWidget();
     m_selectionEditorTable->setColumnCount(3);
-    m_selectionEditorTable->setHorizontalHeaderLabels({tr("Name"), tr("Type"), tr("Color")});
+    m_selectionEditorTable->setHorizontalHeaderLabels(
+            {tr("Name"), tr("Type"), tr("Color")});
     m_selectionEditorTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_selectionEditorTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_selectionEditorTable->setSelectionMode(
+            QAbstractItemView::ExtendedSelection);
     m_selectionEditorTable->setAlternatingRowColors(true);
     m_selectionEditorTable->horizontalHeader()->setStretchLastSection(true);
     m_selectionEditorTable->verticalHeader()->setVisible(false);
     m_selectionEditorTable->setMinimumHeight(120);
     connect(m_selectionEditorTable, &QTableWidget::itemSelectionChanged, this,
-            &cvSelectionPropertiesWidget::onSelectionEditorTableSelectionChanged);
+            &cvSelectionPropertiesWidget::
+                    onSelectionEditorTableSelectionChanged);
     tableLayout->addWidget(m_selectionEditorTable);
 
     // Toolbar (vertical) - ParaView-style icons
@@ -659,7 +718,7 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
         addIcon = QIcon(":/Resources/images/svg/pqPlus.png");
     }
     if (addIcon.isNull()) {
-        addIcon = QIcon(":/Resources/images/ecvPlus.png"); // Final fallback
+        addIcon = QIcon(":/Resources/images/ecvPlus.png");  // Final fallback
     }
     m_addSelectionButton->setIcon(addIcon);
     m_addSelectionButton->setToolTip(tr("Add active selection"));
@@ -672,10 +731,12 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     m_removeSelectionButton = new QToolButton();
     QIcon removeIcon(":/Resources/images/svg/pqMinus.svg");
     if (removeIcon.isNull()) {
-        removeIcon = QIcon(":/Resources/images/ecvMinus.png"); // Fallback
+        removeIcon = QIcon(":/Resources/images/ecvMinus.png");  // Fallback
     }
     m_removeSelectionButton->setIcon(removeIcon);
-    m_removeSelectionButton->setToolTip(tr("Remove selected selection from the saved selections. Remember to edit the Expression."));
+    m_removeSelectionButton->setToolTip(
+            tr("Remove selected selection from the saved selections. Remember "
+               "to edit the Expression."));
     m_removeSelectionButton->setIconSize(QSize(16, 16));  // Ensure visible size
     m_removeSelectionButton->setEnabled(false);
     connect(m_removeSelectionButton, &QToolButton::clicked, this,
@@ -685,15 +746,17 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     // Vertical spacer between buttons (ParaView-style)
     toolbarLayout->addStretch();
 
-    // Remove all selections button (ParaView: pqDelete.svg - using smallTrash.png as alternative)
+    // Remove all selections button (ParaView: pqDelete.svg - using
+    // smallTrash.png as alternative)
     m_removeAllSelectionsButton = new QToolButton();
     QIcon trashIcon(":/Resources/images/smallTrash.png");
     if (trashIcon.isNull()) {
-        trashIcon = QIcon(":/Resources/images/ecvdelete.png"); // Fallback
+        trashIcon = QIcon(":/Resources/images/ecvdelete.png");  // Fallback
     }
     m_removeAllSelectionsButton->setIcon(trashIcon);
     m_removeAllSelectionsButton->setToolTip(tr("Remove all saved selections"));
-    m_removeAllSelectionsButton->setIconSize(QSize(16, 16));  // Ensure visible size
+    m_removeAllSelectionsButton->setIconSize(
+            QSize(16, 16));  // Ensure visible size
     m_removeAllSelectionsButton->setEnabled(false);
     connect(m_removeAllSelectionsButton, &QToolButton::clicked, this,
             &cvSelectionPropertiesWidget::onRemoveAllSelectionsClicked);
@@ -705,9 +768,12 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     // Activate Combined Selections button (ParaView: pqApply.svg icon)
     QHBoxLayout* activateLayout = new QHBoxLayout();
     activateLayout->setSpacing(2);
-    m_activateCombinedSelectionsButton = new QPushButton(tr("Activate Combined Selections"));
-    m_activateCombinedSelectionsButton->setIcon(QIcon(":/Resources/images/smallValidate.png"));
-    m_activateCombinedSelectionsButton->setToolTip(tr("Set the combined saved selections as the active selection"));
+    m_activateCombinedSelectionsButton =
+            new QPushButton(tr("Activate Combined Selections"));
+    m_activateCombinedSelectionsButton->setIcon(
+            QIcon(":/Resources/images/smallValidate.png"));
+    m_activateCombinedSelectionsButton->setToolTip(
+            tr("Set the combined saved selections as the active selection"));
     m_activateCombinedSelectionsButton->setFocusPolicy(Qt::TabFocus);
     m_activateCombinedSelectionsButton->setDefault(true);
     m_activateCombinedSelectionsButton->setEnabled(false);
@@ -723,24 +789,26 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
 void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
     m_selectedDataGroup = new QGroupBox(tr("Selected Data"));
     QGridLayout* dataLayout = new QGridLayout();  // ParaView uses QGridLayout
-    dataLayout->setSpacing(3);  // ParaView: spacing=3
+    dataLayout->setSpacing(3);                    // ParaView: spacing=3
 
-    // Row 0: Attribute label, combo, buttons, checkbox (ParaView: columnstretch="0,1,0")
-    // Column 0: Attribute label
-    QLabel* attributeLabel = new QLabel(tr("<html><body><p><span style=\"font-weight:600;\">Attribute:</span></p></body></html>"));
+    // Row 0: Attribute label, combo, buttons, checkbox (ParaView:
+    // columnstretch="0,1,0") Column 0: Attribute label
+    QLabel* attributeLabel = new QLabel(tr(
+            "<html><body><p><span "
+            "style=\"font-weight:600;\">Attribute:</span></p></body></html>"));
     attributeLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     dataLayout->addWidget(attributeLabel, 0, 0);
 
     // Column 1: Attribute combo box (ParaView-style with icons)
     m_attributeTypeCombo = new QComboBox();
-    
+
     // Point Data with icon (ParaView: pqPointData.svg)
     QIcon pointDataIcon(":/Resources/images/svg/pqPointData.svg");
     if (pointDataIcon.isNull()) {
         pointDataIcon = QIcon(":/Resources/images/svg/pqPointData.png");
     }
     m_attributeTypeCombo->addItem(pointDataIcon, tr("Point Data"), 0);
-    
+
     // Cell Data with icon (ParaView: pqCellData.svg)
     QIcon cellDataIcon(":/Resources/images/svg/pqCellData.svg");
     if (cellDataIcon.isNull()) {
@@ -748,23 +816,28 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
         cellDataIcon = QIcon(":/Resources/images/svg/pqCellData.png");
     }
     m_attributeTypeCombo->addItem(cellDataIcon, tr("Cell Data"), 1);
-    
+
     m_attributeTypeCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    m_attributeTypeCombo->setIconSize(QSize(16, 16));  // Ensure icons are visible
-    connect(m_attributeTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &cvSelectionPropertiesWidget::onAttributeTypeChanged);
+    m_attributeTypeCombo->setIconSize(
+            QSize(16, 16));  // Ensure icons are visible
+    connect(m_attributeTypeCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &cvSelectionPropertiesWidget::onAttributeTypeChanged);
     dataLayout->addWidget(m_attributeTypeCombo, 0, 1);
 
-    // Column 2: Toggle column visibility button (ParaView: pqRectilinearGrid16.png)
+    // Column 2: Toggle column visibility button (ParaView:
+    // pqRectilinearGrid16.png)
     m_toggleColumnVisibilityButton = new QToolButton();
     QIcon colVisIcon(":/Resources/images/interactors.png");
     if (colVisIcon.isNull()) {
-        colVisIcon = QIcon(":/Resources/images/settings.png"); // Fallback
+        colVisIcon = QIcon(":/Resources/images/settings.png");  // Fallback
     }
     m_toggleColumnVisibilityButton->setIcon(colVisIcon);
     m_toggleColumnVisibilityButton->setToolTip(tr("Toggle column visibility"));
-    m_toggleColumnVisibilityButton->setStatusTip(tr("Toggle column visibility"));
-    m_toggleColumnVisibilityButton->setIconSize(QSize(16, 16));  // Ensure visible size
+    m_toggleColumnVisibilityButton->setStatusTip(
+            tr("Toggle column visibility"));
+    m_toggleColumnVisibilityButton->setIconSize(
+            QSize(16, 16));  // Ensure visible size
     m_toggleColumnVisibilityButton->setPopupMode(QToolButton::InstantPopup);
     connect(m_toggleColumnVisibilityButton, &QToolButton::clicked, this,
             &cvSelectionPropertiesWidget::onToggleColumnVisibility);
@@ -774,7 +847,7 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
     m_toggleFieldDataButton = new QToolButton();
     QIcon fieldDataIcon(":/Resources/images/svg/pqSolidColor.png");
     if (fieldDataIcon.isNull()) {
-        fieldDataIcon = QIcon(":/Resources/images/color.png"); // Fallback
+        fieldDataIcon = QIcon(":/Resources/images/color.png");  // Fallback
     }
     m_toggleFieldDataButton->setIcon(fieldDataIcon);
     m_toggleFieldDataButton->setToolTip(tr("Toggle field data visibility"));
@@ -785,14 +858,17 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
     // Column 4: Invert selection checkbox
     m_invertSelectionCheck = new QCheckBox(tr("Invert selection"));
     m_invertSelectionCheck->setToolTip(tr("Invert the selection"));
-    m_invertSelectionCheck->setEnabled(false);  // ParaView: enabled=false by default
+    m_invertSelectionCheck->setEnabled(
+            false);  // ParaView: enabled=false by default
     connect(m_invertSelectionCheck, &QCheckBox::toggled, this,
             &cvSelectionPropertiesWidget::onInvertSelectionToggled);
     dataLayout->addWidget(m_invertSelectionCheck, 0, 4);
 
-    // Row 2: Spreadsheet table (ParaView: pqSpreadSheetViewWidget, spans all 5 columns)
+    // Row 2: Spreadsheet table (ParaView: pqSpreadSheetViewWidget, spans all 5
+    // columns)
     m_spreadsheetTable = new QTableWidget();
-    m_spreadsheetTable->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+    m_spreadsheetTable->setSizePolicy(QSizePolicy::Preferred,
+                                      QSizePolicy::MinimumExpanding);
     m_spreadsheetTable->setMinimumHeight(120);  // ParaView: minimumHeight=120
     m_spreadsheetTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_spreadsheetTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -802,7 +878,8 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
     m_spreadsheetTable->verticalHeader()->setDefaultSectionSize(20);
     connect(m_spreadsheetTable, &QTableWidget::itemClicked, this,
             &cvSelectionPropertiesWidget::onSpreadsheetItemClicked);
-    dataLayout->addWidget(m_spreadsheetTable, 2, 0, 1, 5);  // Row 2, spanning all 5 columns
+    dataLayout->addWidget(m_spreadsheetTable, 2, 0, 1,
+                          5);  // Row 2, spanning all 5 columns
 
     m_selectedDataGroup->setLayout(dataLayout);
 }
@@ -849,7 +926,8 @@ void cvSelectionPropertiesWidget::setupStatisticsTab() {
     // ParaView-style table with columns for ID and coordinates/attributes
     m_selectionTableWidget = new QTableWidget();
     m_selectionTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_selectionTableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_selectionTableWidget->setSelectionMode(
+            QAbstractItemView::ExtendedSelection);
     m_selectionTableWidget->setAlternatingRowColors(true);
     m_selectionTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_selectionTableWidget->horizontalHeader()->setStretchLastSection(true);
@@ -892,18 +970,20 @@ void cvSelectionPropertiesWidget::setupExportTab() {
         m_exportToMeshButton = new QPushButton(tr("Export to Mesh"));
         m_exportToMeshButton->setEnabled(false);
         m_exportToMeshButton->setToolTip(
-                tr("Create a ccMesh from the selected cells and add to the scene"));
+                tr("Create a ccMesh from the selected cells and add to the "
+                   "scene"));
         connect(m_exportToMeshButton, &QPushButton::clicked, this,
                 &cvSelectionPropertiesWidget::onExportToMeshClicked);
     }
     exportLayout->addWidget(m_exportToMeshButton);
 
     if (!m_exportToPointCloudButton) {
-        m_exportToPointCloudButton = new QPushButton(tr("Export to Point Cloud"));
+        m_exportToPointCloudButton =
+                new QPushButton(tr("Export to Point Cloud"));
         m_exportToPointCloudButton->setEnabled(false);
-        m_exportToPointCloudButton->setToolTip(
-                tr("Create a ccPointCloud from the selected points and add to the "
-                   "scene"));
+        m_exportToPointCloudButton->setToolTip(tr(
+                "Create a ccPointCloud from the selected points and add to the "
+                "scene"));
         connect(m_exportToPointCloudButton, &QPushButton::clicked, this,
                 &cvSelectionPropertiesWidget::onExportToPointCloudClicked);
     }
@@ -1051,7 +1131,7 @@ void cvSelectionPropertiesWidget::setupAdvancedTab() {
     bookmarkButtons->addWidget(m_loadBookmarkButton);
 
     bookmarksLayout->addLayout(bookmarkButtons);
-    
+
     // Batch export button
     m_batchExportBookmarksButton = new QPushButton(tr("Batch Export All..."));
     m_batchExportBookmarksButton->setEnabled(false);
@@ -1097,21 +1177,25 @@ void cvSelectionPropertiesWidget::setSelectionManager(
     if (m_selectionManager && m_selectionManager->getBookmarks()) {
         updateBookmarkCombo();
     }
-    
+
     // Always use the manager's shared highlighter
-    // This ensures all tools (including tooltip tools) share the same highlighter
-    // so color settings are automatically synchronized
+    // This ensures all tools (including tooltip tools) share the same
+    // highlighter so color settings are automatically synchronized
     if (m_selectionManager) {
-        cvSelectionHighlighter* sharedHighlighter = m_selectionManager->getHighlighter();
+        cvSelectionHighlighter* sharedHighlighter =
+                m_selectionManager->getHighlighter();
         if (sharedHighlighter && sharedHighlighter != m_highlighter) {
             setHighlighter(sharedHighlighter);
         }
-        
+
         // Initialize default label properties for annotations
-        cvSelectionAnnotationManager* annotations = m_selectionManager->getAnnotations();
+        cvSelectionAnnotationManager* annotations =
+                m_selectionManager->getAnnotations();
         if (annotations) {
-            annotations->setDefaultLabelProperties(m_labelProperties, true);  // cell labels
-            annotations->setDefaultLabelProperties(m_interactiveLabelProperties, false);  // point labels
+            annotations->setDefaultLabelProperties(m_labelProperties,
+                                                   true);  // cell labels
+            annotations->setDefaultLabelProperties(m_interactiveLabelProperties,
+                                                   false);  // point labels
         }
     }
 }
@@ -1146,7 +1230,7 @@ bool cvSelectionPropertiesWidget::updateSelection(
         if (manager) {
             polyData = manager->getPolyData();
         }
-        
+
         // Fallback to getPolyDataForSelection
         if (!polyData) {
             polyData = getPolyDataForSelection(&m_selectionData);
@@ -1159,7 +1243,7 @@ bool cvSelectionPropertiesWidget::updateSelection(
                 "statistics");
         return false;
     }
-    
+
     // Validate polyData before using
     try {
         vtkIdType numPoints = polyData->GetNumberOfPoints();
@@ -1169,7 +1253,8 @@ bool cvSelectionPropertiesWidget::updateSelection(
             return false;
         }
     } catch (...) {
-        CVLog::Warning("[cvSelectionPropertiesWidget] polyData validation failed");
+        CVLog::Warning(
+                "[cvSelectionPropertiesWidget] polyData validation failed");
         return false;
     }
 
@@ -1194,11 +1279,12 @@ bool cvSelectionPropertiesWidget::updateSelection(
     m_applyFilterButton->setEnabled(m_selectionCount > 0);
     m_saveBookmarkButton->setEnabled(m_selectionCount > 0);
     m_addAnnotationButton->setEnabled(m_selectionCount > 0);
-    
+
     // Enable header action buttons (ParaView-style)
     m_freezeButton->setEnabled(m_selectionCount > 0);
     m_extractButton->setEnabled(m_selectionCount > 0);
-    m_plotOverTimeButton->setEnabled(m_selectionCount > 0);  // Show distribution plots
+    m_plotOverTimeButton->setEnabled(m_selectionCount >
+                                     0);  // Show distribution plots
 
     return true;
 }
@@ -1228,7 +1314,7 @@ void cvSelectionPropertiesWidget::clearSelection() {
     m_exportToPointCloudButton->setEnabled(false);
     m_exportToFileButton->setEnabled(false);
     m_copyIDsButton->setEnabled(false);
-    
+
     // Disable header action buttons
     m_freezeButton->setEnabled(false);
     m_extractButton->setEnabled(false);
@@ -1238,19 +1324,26 @@ void cvSelectionPropertiesWidget::clearSelection() {
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::updateStatistics(vtkPolyData* polyData) {
     if (!polyData) {
-        CVLog::Warning("[cvSelectionPropertiesWidget::updateStatistics] polyData is nullptr");
+        CVLog::Warning(
+                "[cvSelectionPropertiesWidget::updateStatistics] polyData is "
+                "nullptr");
         return;
     }
-    
+
     // Validate polyData is still valid by checking basic properties
     // This helps catch use-after-free issues
     try {
-        if (polyData->GetNumberOfPoints() < 0 || polyData->GetNumberOfCells() < 0) {
-            CVLog::Warning("[cvSelectionPropertiesWidget::updateStatistics] Invalid polyData state");
+        if (polyData->GetNumberOfPoints() < 0 ||
+            polyData->GetNumberOfCells() < 0) {
+            CVLog::Warning(
+                    "[cvSelectionPropertiesWidget::updateStatistics] Invalid "
+                    "polyData state");
             return;
         }
     } catch (...) {
-        CVLog::Warning("[cvSelectionPropertiesWidget::updateStatistics] polyData access failed - possible dangling pointer");
+        CVLog::Warning(
+                "[cvSelectionPropertiesWidget::updateStatistics] polyData "
+                "access failed - possible dangling pointer");
         return;
     }
 
@@ -1303,8 +1396,9 @@ void cvSelectionPropertiesWidget::updateSelectionList(vtkPolyData* polyData) {
         return;
     }
 
-    bool isPoints = (m_selectionData.fieldAssociation() == cvSelectionData::POINTS);
-    
+    bool isPoints =
+            (m_selectionData.fieldAssociation() == cvSelectionData::POINTS);
+
     // Update info label (ParaView-style: "Selected Data (source.ply)")
     m_listInfoLabel->setText(
             tr("Showing %1 %2")
@@ -1344,7 +1438,7 @@ void cvSelectionPropertiesWidget::updateSelectionList(vtkPolyData* polyData) {
             }
         }
     }
-    
+
     m_selectionTableWidget->setColumnCount(headers.size());
     m_selectionTableWidget->setHorizontalHeaderLabels(headers);
 
@@ -1355,25 +1449,30 @@ void cvSelectionPropertiesWidget::updateSelectionList(vtkPolyData* polyData) {
     for (int row = 0; row < maxDisplay; ++row) {
         qint64 id = ids[row];
         int col = 0;
-        
+
         // ID column
         QTableWidgetItem* idItem = new QTableWidgetItem(QString::number(id));
-        idItem->setData(Qt::UserRole, QVariant::fromValue(id));  // Store ID for click handling
+        idItem->setData(
+                Qt::UserRole,
+                QVariant::fromValue(id));  // Store ID for click handling
         m_selectionTableWidget->setItem(row, col++, idItem);
 
         if (isPoints && polyData) {
             if (id >= 0 && id < polyData->GetNumberOfPoints()) {
                 double pt[3];
                 polyData->GetPoint(id, pt);
-                
+
                 // X, Y, Z columns
-                m_selectionTableWidget->setItem(row, col++, 
-                    new QTableWidgetItem(QString::number(pt[0], 'g', 6)));
-                m_selectionTableWidget->setItem(row, col++, 
-                    new QTableWidgetItem(QString::number(pt[1], 'g', 6)));
-                m_selectionTableWidget->setItem(row, col++, 
-                    new QTableWidgetItem(QString::number(pt[2], 'g', 6)));
-                
+                m_selectionTableWidget->setItem(
+                        row, col++,
+                        new QTableWidgetItem(QString::number(pt[0], 'g', 6)));
+                m_selectionTableWidget->setItem(
+                        row, col++,
+                        new QTableWidgetItem(QString::number(pt[1], 'g', 6)));
+                m_selectionTableWidget->setItem(
+                        row, col++,
+                        new QTableWidgetItem(QString::number(pt[2], 'g', 6)));
+
                 // Additional attributes
                 if (polyData->GetPointData()) {
                     vtkPointData* pd = polyData->GetPointData();
@@ -1383,8 +1482,10 @@ void cvSelectionPropertiesWidget::updateSelectionList(vtkPolyData* polyData) {
                             QString name = QString::fromUtf8(arr->GetName());
                             if (name != "Points" && name != "Normals") {
                                 double val = arr->GetComponent(id, 0);
-                                m_selectionTableWidget->setItem(row, col++,
-                                    new QTableWidgetItem(QString::number(val, 'g', 6)));
+                                m_selectionTableWidget->setItem(
+                                        row, col++,
+                                        new QTableWidgetItem(
+                                                QString::number(val, 'g', 6)));
                             }
                         }
                     }
@@ -1396,12 +1497,16 @@ void cvSelectionPropertiesWidget::updateSelectionList(vtkPolyData* polyData) {
                 vtkCell* cell = polyData->GetCell(id);
                 if (cell) {
                     // Cell type
-                    m_selectionTableWidget->setItem(row, col++,
-                        new QTableWidgetItem(QString::number(cell->GetCellType())));
+                    m_selectionTableWidget->setItem(
+                            row, col++,
+                            new QTableWidgetItem(
+                                    QString::number(cell->GetCellType())));
                     // Number of points
-                    m_selectionTableWidget->setItem(row, col++,
-                        new QTableWidgetItem(QString::number(cell->GetNumberOfPoints())));
-                    
+                    m_selectionTableWidget->setItem(
+                            row, col++,
+                            new QTableWidgetItem(QString::number(
+                                    cell->GetNumberOfPoints())));
+
                     // Additional cell attributes
                     if (polyData->GetCellData()) {
                         vtkCellData* cd = polyData->GetCellData();
@@ -1409,8 +1514,10 @@ void cvSelectionPropertiesWidget::updateSelectionList(vtkPolyData* polyData) {
                             vtkDataArray* arr = cd->GetArray(i);
                             if (arr && arr->GetName()) {
                                 double val = arr->GetComponent(id, 0);
-                                m_selectionTableWidget->setItem(row, col++,
-                                    new QTableWidgetItem(QString::number(val, 'g', 6)));
+                                m_selectionTableWidget->setItem(
+                                        row, col++,
+                                        new QTableWidgetItem(
+                                                QString::number(val, 'g', 6)));
                             }
                         }
                     }
@@ -1421,14 +1528,14 @@ void cvSelectionPropertiesWidget::updateSelectionList(vtkPolyData* polyData) {
 
     // Resize columns to contents
     m_selectionTableWidget->resizeColumnsToContents();
-    
+
     // Update info if truncated
     if (ids.size() > maxDisplay) {
         m_listInfoLabel->setText(
-            tr("Showing %1 of %2 %3")
-                .arg(maxDisplay)
-                .arg(ids.size())
-                .arg(m_selectionData.fieldTypeString().toLower()));
+                tr("Showing %1 of %2 %3")
+                        .arg(maxDisplay)
+                        .arg(ids.size())
+                        .arg(m_selectionData.fieldTypeString().toLower()));
     }
 }
 
@@ -1808,9 +1915,10 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
     }
 
     // Determine the data type and validate ID
-    bool isPointData = (m_selectionData.fieldAssociation() == cvSelectionData::POINTS);
+    bool isPointData =
+            (m_selectionData.fieldAssociation() == cvSelectionData::POINTS);
     QString dataType = isPointData ? tr("Point") : tr("Cell");
-    
+
     if (isPointData) {
         if (id < 0 || id >= polyData->GetNumberOfPoints()) {
             CVLog::Warning(QString("[cvSelectionPropertiesWidget] Point ID %1 "
@@ -1836,16 +1944,19 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
     // Store original PRESELECTED color to restore later
     const double* originalColor = m_highlighter->getHighlightColor(
             cvSelectionHighlighter::PRESELECTED);
-    double savedColor[3] = {originalColor[0], originalColor[1], originalColor[2]};
-    
-    // Set PRESELECTED mode to RED for emphasis (ParaView uses red for interactive selection)
-    m_highlighter->setHighlightColor(1.0, 0.0, 0.0, cvSelectionHighlighter::PRESELECTED);
-    
+    double savedColor[3] = {originalColor[0], originalColor[1],
+                            originalColor[2]};
+
+    // Set PRESELECTED mode to RED for emphasis (ParaView uses red for
+    // interactive selection)
+    m_highlighter->setHighlightColor(1.0, 0.0, 0.0,
+                                     cvSelectionHighlighter::PRESELECTED);
+
     // Highlight this single item with RED using PRESELECTED mode
     m_highlighter->highlightSelection(singleIdArray,
                                       m_selectionData.fieldAssociation(),
                                       cvSelectionHighlighter::PRESELECTED);
-    
+
     // Store for later restoration
     m_savedPreselectedColor[0] = savedColor[0];
     m_savedPreselectedColor[1] = savedColor[1];
@@ -1856,7 +1967,8 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
     if (isPointData) {
         double pt[3];
         polyData->GetPoint(id, pt);
-        CVLog::Print(QString("[cvSelectionPropertiesWidget] RED highlight: %1 ID=%2 at (%3, %4, %5)")
+        CVLog::Print(QString("[cvSelectionPropertiesWidget] RED highlight: %1 "
+                             "ID=%2 at (%3, %4, %5)")
                              .arg(dataType)
                              .arg(id)
                              .arg(pt[0], 0, 'f', 4)
@@ -1871,7 +1983,8 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
             int subId = 0;
             cell->EvaluateLocation(subId, pcoords, center, weights);
             delete[] weights;
-            CVLog::Print(QString("[cvSelectionPropertiesWidget] RED highlight: %1 ID=%2 "
+            CVLog::Print(QString("[cvSelectionPropertiesWidget] RED highlight: "
+                                 "%1 ID=%2 "
                                  "(Type:%3, Points:%4) center=(%5, %6, %7)")
                                  .arg(dataType)
                                  .arg(id)
@@ -1893,13 +2006,15 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
     QTimer::singleShot(3000, this, [this]() {
         if (m_highlighter) {
             // Restore original PRESELECTED color
-            m_highlighter->setHighlightColor(this->m_savedPreselectedColor[0], 
-                                             this->m_savedPreselectedColor[1], 
-                                             this->m_savedPreselectedColor[2],
-                                             cvSelectionHighlighter::PRESELECTED);
-            
+            m_highlighter->setHighlightColor(
+                    this->m_savedPreselectedColor[0],
+                    this->m_savedPreselectedColor[1],
+                    this->m_savedPreselectedColor[2],
+                    cvSelectionHighlighter::PRESELECTED);
+
             if (!m_selectionData.isEmpty()) {
-                // Restore original full selection highlight with SELECTED mode (green)
+                // Restore original full selection highlight with SELECTED mode
+                // (green)
                 m_highlighter->highlightSelection(
                         m_selectionData.vtkArray(),
                         m_selectionData.fieldAssociation(),
@@ -2099,9 +2214,9 @@ void cvSelectionPropertiesWidget::onBatchExportBookmarksClicked() {
     formats << "PLY (*.ply)" << "OBJ (*.obj)" << "STL (*.stl)"
             << "BIN (*.bin)";
     bool ok;
-    QString formatChoice = QInputDialog::getItem(
-            this, tr("Select Format"), tr("Export format:"), formats, 0, false,
-            &ok);
+    QString formatChoice =
+            QInputDialog::getItem(this, tr("Select Format"),
+                                  tr("Export format:"), formats, 0, false, &ok);
 
     if (!ok || formatChoice.isEmpty()) {
         return;  // User cancelled
@@ -2141,8 +2256,8 @@ void cvSelectionPropertiesWidget::onBatchExportBookmarksClicked() {
     }
 
     // Show progress dialog
-    QProgressDialog progress(tr("Exporting bookmarks..."), tr("Cancel"), 0,
-                             100, this);
+    QProgressDialog progress(tr("Exporting bookmarks..."), tr("Cancel"), 0, 100,
+                             this);
     progress.setWindowModality(Qt::WindowModal);
     progress.setMinimumDuration(0);
     progress.setValue(0);
@@ -2214,9 +2329,9 @@ void cvSelectionPropertiesWidget::onAddAnnotationClicked() {
 void cvSelectionPropertiesWidget::onCellLabelsClicked() {
     // Dynamically populate the menu with available cell data arrays
     if (!m_cellLabelsMenu) return;
-    
+
     m_cellLabelsMenu->clear();
-    
+
     // Add default options
     QAction* noneAction = m_cellLabelsMenu->addAction(tr("None"));
     noneAction->setCheckable(true);
@@ -2225,17 +2340,18 @@ void cvSelectionPropertiesWidget::onCellLabelsClicked() {
         m_currentCellLabelArray.clear();
         CVLog::PrintDebug("[cvSelectionPropertiesWidget] Cell labels disabled");
     });
-    
+
     QAction* idAction = m_cellLabelsMenu->addAction(tr("Cell ID"));
     idAction->setCheckable(true);
     idAction->setChecked(m_currentCellLabelArray == "CellID");
     connect(idAction, &QAction::triggered, [this]() {
         m_currentCellLabelArray = "CellID";
-        CVLog::PrintDebug("[cvSelectionPropertiesWidget] Cell labels set to Cell ID");
+        CVLog::PrintDebug(
+                "[cvSelectionPropertiesWidget] Cell labels set to Cell ID");
     });
-    
+
     m_cellLabelsMenu->addSeparator();
-    
+
     // Add available cell data arrays from current polyData
     vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
     if (polyData && polyData->GetCellData()) {
@@ -2249,12 +2365,14 @@ void cvSelectionPropertiesWidget::onCellLabelsClicked() {
                 action->setChecked(m_currentCellLabelArray == name);
                 connect(action, &QAction::triggered, [this, name]() {
                     m_currentCellLabelArray = name;
-                    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Cell labels set to %1").arg(name));
+                    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] "
+                                              "Cell labels set to %1")
+                                              .arg(name));
                 });
             }
         }
     }
-    
+
     m_cellLabelsMenu->exec(QCursor::pos());
 }
 
@@ -2262,28 +2380,30 @@ void cvSelectionPropertiesWidget::onCellLabelsClicked() {
 void cvSelectionPropertiesWidget::onPointLabelsClicked() {
     // Dynamically populate the menu with available point data arrays
     if (!m_pointLabelsMenu) return;
-    
+
     m_pointLabelsMenu->clear();
-    
+
     // Add default options
     QAction* noneAction = m_pointLabelsMenu->addAction(tr("None"));
     noneAction->setCheckable(true);
     noneAction->setChecked(m_currentPointLabelArray.isEmpty());
     connect(noneAction, &QAction::triggered, [this]() {
         m_currentPointLabelArray.clear();
-        CVLog::PrintDebug("[cvSelectionPropertiesWidget] Point labels disabled");
+        CVLog::PrintDebug(
+                "[cvSelectionPropertiesWidget] Point labels disabled");
     });
-    
+
     QAction* idAction = m_pointLabelsMenu->addAction(tr("Point ID"));
     idAction->setCheckable(true);
     idAction->setChecked(m_currentPointLabelArray == "PointID");
     connect(idAction, &QAction::triggered, [this]() {
         m_currentPointLabelArray = "PointID";
-        CVLog::PrintDebug("[cvSelectionPropertiesWidget] Point labels set to Point ID");
+        CVLog::PrintDebug(
+                "[cvSelectionPropertiesWidget] Point labels set to Point ID");
     });
-    
+
     m_pointLabelsMenu->addSeparator();
-    
+
     // Add available point data arrays from current polyData
     vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
     if (polyData && polyData->GetPointData()) {
@@ -2299,13 +2419,15 @@ void cvSelectionPropertiesWidget::onPointLabelsClicked() {
                     action->setChecked(m_currentPointLabelArray == name);
                     connect(action, &QAction::triggered, [this, name]() {
                         m_currentPointLabelArray = name;
-                        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Point labels set to %1").arg(name));
+                        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget"
+                                                  "] Point labels set to %1")
+                                                  .arg(name));
                     });
                 }
             }
         }
     }
-    
+
     m_pointLabelsMenu->exec(QCursor::pos());
 }
 
@@ -2313,8 +2435,8 @@ void cvSelectionPropertiesWidget::onPointLabelsClicked() {
 void cvSelectionPropertiesWidget::onEditLabelPropertiesClicked() {
     cvSelectionLabelPropertiesDialog dialog(this, false);
     dialog.setProperties(m_labelProperties);
-    connect(&dialog, &cvSelectionLabelPropertiesDialog::propertiesApplied,
-            this, &cvSelectionPropertiesWidget::onLabelPropertiesApplied);
+    connect(&dialog, &cvSelectionLabelPropertiesDialog::propertiesApplied, this,
+            &cvSelectionPropertiesWidget::onLabelPropertiesApplied);
     dialog.exec();
 }
 
@@ -2325,46 +2447,51 @@ void cvSelectionPropertiesWidget::onSelectionColorClicked() {
     if (color.isValid()) {
         m_selectionColor = color;
         m_selectionColorButton->setStyleSheet(
-            QString("QPushButton { background-color: %1; color: white; }")
-                .arg(color.name()));
-        
+                QString("QPushButton { background-color: %1; color: white; }")
+                        .arg(color.name()));
+
         // Apply to highlighter (Selected mode)
         if (m_highlighter) {
-            m_highlighter->setHighlightColor(color.redF(), color.greenF(), color.blueF(),
+            m_highlighter->setHighlightColor(color.redF(), color.greenF(),
+                                             color.blueF(),
                                              cvSelectionHighlighter::SELECTED);
             PclUtils::PCLVis* pclVis = getPCLVis();
             if (pclVis) {
                 pclVis->UpdateScreen();
             }
         }
-        
-        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Selection color changed to %1")
-                          .arg(color.name()));
+
+        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Selection "
+                                  "color changed to %1")
+                                  .arg(color.name()));
     }
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onInteractiveSelectionColorClicked() {
-    QColor color = QColorDialog::getColor(m_interactiveSelectionColor, this,
-                                          tr("Select Interactive Selection Color"));
+    QColor color =
+            QColorDialog::getColor(m_interactiveSelectionColor, this,
+                                   tr("Select Interactive Selection Color"));
     if (color.isValid()) {
         m_interactiveSelectionColor = color;
         m_interactiveSelectionColorButton->setStyleSheet(
-            QString("QPushButton { background-color: %1; color: white; }")
-                .arg(color.name()));
-        
+                QString("QPushButton { background-color: %1; color: white; }")
+                        .arg(color.name()));
+
         // Apply to highlighter (Hover mode for interactive)
         if (m_highlighter) {
-            m_highlighter->setHighlightColor(color.redF(), color.greenF(), color.blueF(),
+            m_highlighter->setHighlightColor(color.redF(), color.greenF(),
+                                             color.blueF(),
                                              cvSelectionHighlighter::HOVER);
             PclUtils::PCLVis* pclVis = getPCLVis();
             if (pclVis) {
                 pclVis->UpdateScreen();
             }
         }
-        
-        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Interactive selection color changed to %1")
-                          .arg(color.name()));
+
+        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Interactive "
+                                  "selection color changed to %1")
+                                  .arg(color.name()));
     }
 }
 
@@ -2372,8 +2499,8 @@ void cvSelectionPropertiesWidget::onInteractiveSelectionColorClicked() {
 void cvSelectionPropertiesWidget::onEditInteractiveLabelPropertiesClicked() {
     cvSelectionLabelPropertiesDialog dialog(this, true);
     dialog.setProperties(m_interactiveLabelProperties);
-    connect(&dialog, &cvSelectionLabelPropertiesDialog::propertiesApplied,
-            this, &cvSelectionPropertiesWidget::onInteractiveLabelPropertiesApplied);
+    connect(&dialog, &cvSelectionLabelPropertiesDialog::propertiesApplied, this,
+            &cvSelectionPropertiesWidget::onInteractiveLabelPropertiesApplied);
     dialog.exec();
 }
 
@@ -2381,88 +2508,109 @@ void cvSelectionPropertiesWidget::onEditInteractiveLabelPropertiesClicked() {
 void cvSelectionPropertiesWidget::onLabelPropertiesApplied(
         const cvSelectionLabelPropertiesDialog::LabelProperties& props) {
     m_labelProperties = props;
-    
+
     // Apply all properties to highlighter (SELECTED mode)
     if (m_highlighter) {
         // Apply opacity
-        m_highlighter->setHighlightOpacity(props.opacity, cvSelectionHighlighter::SELECTED);
-        
+        m_highlighter->setHighlightOpacity(props.opacity,
+                                           cvSelectionHighlighter::SELECTED);
+
         // Apply point size and line width
-        m_highlighter->setPointSize(props.pointSize, cvSelectionHighlighter::SELECTED);
-        m_highlighter->setLineWidth(props.lineWidth, cvSelectionHighlighter::SELECTED);
-        
+        m_highlighter->setPointSize(props.pointSize,
+                                    cvSelectionHighlighter::SELECTED);
+        m_highlighter->setLineWidth(props.lineWidth,
+                                    cvSelectionHighlighter::SELECTED);
+
         // Also apply to BOUNDARY mode (uses similar settings)
-        m_highlighter->setHighlightOpacity(props.opacity, cvSelectionHighlighter::BOUNDARY);
-        m_highlighter->setPointSize(props.pointSize, cvSelectionHighlighter::BOUNDARY);
-        m_highlighter->setLineWidth(props.lineWidth, cvSelectionHighlighter::BOUNDARY);
-        
+        m_highlighter->setHighlightOpacity(props.opacity,
+                                           cvSelectionHighlighter::BOUNDARY);
+        m_highlighter->setPointSize(props.pointSize,
+                                    cvSelectionHighlighter::BOUNDARY);
+        m_highlighter->setLineWidth(props.lineWidth,
+                                    cvSelectionHighlighter::BOUNDARY);
+
         // Refresh display
         PclUtils::PCLVis* pclVis = getPCLVis();
         if (pclVis) {
             pclVis->UpdateScreen();
         }
     }
-    
+
     // Apply font properties to annotations (cell labels)
     if (m_selectionManager) {
-        cvSelectionAnnotationManager* annotations = m_selectionManager->getAnnotations();
+        cvSelectionAnnotationManager* annotations =
+                m_selectionManager->getAnnotations();
         if (annotations) {
             // Set default properties for new annotations
-            annotations->setDefaultLabelProperties(props, true);  // true = cell labels
-            
+            annotations->setDefaultLabelProperties(props,
+                                                   true);  // true = cell labels
+
             // Apply to all existing annotations
-            annotations->applyLabelProperties(props, true);  // true = cell labels
+            annotations->applyLabelProperties(props,
+                                              true);  // true = cell labels
         }
     }
-    
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Label properties applied: "
-                         "opacity=%1, pointSize=%2, lineWidth=%3")
-                 .arg(props.opacity)
-                 .arg(props.pointSize)
-                 .arg(props.lineWidth));
+
+    CVLog::Print(
+            QString("[cvSelectionPropertiesWidget] Label properties applied: "
+                    "opacity=%1, pointSize=%2, lineWidth=%3")
+                    .arg(props.opacity)
+                    .arg(props.pointSize)
+                    .arg(props.lineWidth));
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onInteractiveLabelPropertiesApplied(
         const cvSelectionLabelPropertiesDialog::LabelProperties& props) {
     m_interactiveLabelProperties = props;
-    
-    // Apply default properties to annotation manager for point labels (interactive)
+
+    // Apply default properties to annotation manager for point labels
+    // (interactive)
     if (m_selectionManager) {
-        cvSelectionAnnotationManager* annotations = m_selectionManager->getAnnotations();
+        cvSelectionAnnotationManager* annotations =
+                m_selectionManager->getAnnotations();
         if (annotations) {
             // Set default properties for new annotations (point labels)
-            annotations->setDefaultLabelProperties(props, false);  // false = point labels
-            
+            annotations->setDefaultLabelProperties(
+                    props, false);  // false = point labels
+
             // Apply to all existing annotations (point labels)
-            annotations->applyLabelProperties(props, false);  // false = point labels
+            annotations->applyLabelProperties(props,
+                                              false);  // false = point labels
         }
     }
-    
+
     // Apply all properties to highlighter (HOVER and PRESELECTED modes)
     if (m_highlighter) {
         // Apply to HOVER mode
-        m_highlighter->setHighlightOpacity(props.opacity, cvSelectionHighlighter::HOVER);
-        m_highlighter->setPointSize(props.pointSize, cvSelectionHighlighter::HOVER);
-        m_highlighter->setLineWidth(props.lineWidth, cvSelectionHighlighter::HOVER);
-        
+        m_highlighter->setHighlightOpacity(props.opacity,
+                                           cvSelectionHighlighter::HOVER);
+        m_highlighter->setPointSize(props.pointSize,
+                                    cvSelectionHighlighter::HOVER);
+        m_highlighter->setLineWidth(props.lineWidth,
+                                    cvSelectionHighlighter::HOVER);
+
         // Also apply to PRESELECTED mode
-        m_highlighter->setHighlightOpacity(props.opacity, cvSelectionHighlighter::PRESELECTED);
-        m_highlighter->setPointSize(props.pointSize, cvSelectionHighlighter::PRESELECTED);
-        m_highlighter->setLineWidth(props.lineWidth, cvSelectionHighlighter::PRESELECTED);
-        
+        m_highlighter->setHighlightOpacity(props.opacity,
+                                           cvSelectionHighlighter::PRESELECTED);
+        m_highlighter->setPointSize(props.pointSize,
+                                    cvSelectionHighlighter::PRESELECTED);
+        m_highlighter->setLineWidth(props.lineWidth,
+                                    cvSelectionHighlighter::PRESELECTED);
+
         // Refresh display
         PclUtils::PCLVis* pclVis = getPCLVis();
         if (pclVis) {
             pclVis->UpdateScreen();
         }
     }
-    
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Interactive label properties applied: "
+
+    CVLog::Print(QString("[cvSelectionPropertiesWidget] Interactive label "
+                         "properties applied: "
                          "opacity=%1, pointSize=%2, lineWidth=%3")
-                 .arg(props.opacity)
-                 .arg(props.pointSize)
-                 .arg(props.lineWidth));
+                         .arg(props.opacity)
+                         .arg(props.pointSize)
+                         .arg(props.lineWidth));
 }
 
 // ============================================================================
@@ -2472,10 +2620,10 @@ void cvSelectionPropertiesWidget::onInteractiveLabelPropertiesApplied(
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onExpressionChanged(const QString& text) {
     emit expressionChanged(text);
-    
+
     // Update the activate button state
     m_activateCombinedSelectionsButton->setEnabled(
-        !text.isEmpty() && !m_savedSelections.isEmpty());
+            !text.isEmpty() && !m_savedSelections.isEmpty());
 }
 
 //-----------------------------------------------------------------------------
@@ -2485,17 +2633,17 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
                                  tr("No active selection to add."));
         return;
     }
-    
+
     // Create new saved selection
     SavedSelection saved;
     saved.name = generateSelectionName();
     saved.type = tr("ID Selection");
     saved.color = generateSelectionColor();
     saved.data = m_selectionData;
-    
+
     m_savedSelections.append(saved);
     updateSelectionEditorTable();
-    
+
     // Update expression with new selection
     QString expr = m_expressionEdit->text();
     if (!expr.isEmpty()) {
@@ -2503,50 +2651,54 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
     }
     expr += saved.name;
     m_expressionEdit->setText(expr);
-    
+
     // Enable buttons
     m_removeAllSelectionsButton->setEnabled(true);
-    m_activateCombinedSelectionsButton->setEnabled(!m_expressionEdit->text().isEmpty());
-    
+    m_activateCombinedSelectionsButton->setEnabled(
+            !m_expressionEdit->text().isEmpty());
+
     emit selectionAdded(saved.data);
-    
+
     CVLog::Print(QString("[cvSelectionPropertiesWidget] Added selection: %1")
-                 .arg(saved.name));
+                         .arg(saved.name));
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onRemoveSelectedSelectionClicked() {
-    QList<QTableWidgetItem*> selectedItems = m_selectionEditorTable->selectedItems();
+    QList<QTableWidgetItem*> selectedItems =
+            m_selectionEditorTable->selectedItems();
     if (selectedItems.isEmpty()) {
         return;
     }
-    
+
     // Get unique rows
     QSet<int> rows;
     for (QTableWidgetItem* item : selectedItems) {
         rows.insert(item->row());
     }
-    
+
     // Remove in reverse order to maintain valid indices
     QList<int> sortedRows = rows.values();
     std::sort(sortedRows.begin(), sortedRows.end(), std::greater<int>());
-    
+
     for (int row : sortedRows) {
         if (row >= 0 && row < m_savedSelections.size()) {
             QString name = m_savedSelections[row].name;
             m_savedSelections.removeAt(row);
             emit selectionRemoved(row);
-            CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Removed selection: %1")
-                              .arg(name));
+            CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Removed "
+                                      "selection: %1")
+                                      .arg(name));
         }
     }
-    
+
     updateSelectionEditorTable();
-    
+
     // Update button states
     m_removeAllSelectionsButton->setEnabled(!m_savedSelections.isEmpty());
     m_activateCombinedSelectionsButton->setEnabled(
-        !m_expressionEdit->text().isEmpty() && !m_savedSelections.isEmpty());
+            !m_expressionEdit->text().isEmpty() &&
+            !m_savedSelections.isEmpty());
 }
 
 //-----------------------------------------------------------------------------
@@ -2554,26 +2706,26 @@ void cvSelectionPropertiesWidget::onRemoveAllSelectionsClicked() {
     if (m_savedSelections.isEmpty()) {
         return;
     }
-    
+
     int result = QMessageBox::question(this, tr("Remove All Selections"),
                                        tr("Remove all saved selections?"),
                                        QMessageBox::Yes | QMessageBox::No);
     if (result != QMessageBox::Yes) {
         return;
     }
-    
+
     m_savedSelections.clear();
     m_selectionNameCounter = 0;
     m_expressionEdit->clear();
     updateSelectionEditorTable();
-    
+
     // Update button states
     m_removeSelectionButton->setEnabled(false);
     m_removeAllSelectionsButton->setEnabled(false);
     m_activateCombinedSelectionsButton->setEnabled(false);
-    
+
     emit allSelectionsRemoved();
-    
+
     CVLog::Print("[cvSelectionPropertiesWidget] Removed all saved selections");
 }
 
@@ -2581,9 +2733,10 @@ void cvSelectionPropertiesWidget::onRemoveAllSelectionsClicked() {
 void cvSelectionPropertiesWidget::onActivateCombinedSelectionsClicked() {
     // TODO: Implement expression evaluation and combine selections
     emit activateCombinedSelectionsRequested();
-    
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Activating combined selections with expression: %1")
-                 .arg(m_expressionEdit->text()));
+
+    CVLog::Print(QString("[cvSelectionPropertiesWidget] Activating combined "
+                         "selections with expression: %1")
+                         .arg(m_expressionEdit->text()));
 }
 
 //-----------------------------------------------------------------------------
@@ -2608,9 +2761,10 @@ void cvSelectionPropertiesWidget::onAttributeTypeChanged(int index) {
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onInvertSelectionToggled(bool checked) {
     emit invertSelectionRequested();
-    
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Invert selection: %1")
-                      .arg(checked ? "ON" : "OFF"));
+
+    CVLog::PrintDebug(
+            QString("[cvSelectionPropertiesWidget] Invert selection: %1")
+                    .arg(checked ? "ON" : "OFF"));
 }
 
 //-----------------------------------------------------------------------------
@@ -2620,25 +2774,33 @@ void cvSelectionPropertiesWidget::onFreezeClicked() {
         return;
     }
 
-    // Freeze selection: Create a static copy that won't change with new selections
-    // In ParaView, this converts the selection to an "AppendSelection" filter
-    // For CloudViewer, we save current selection to bookmarks with "Frozen_" prefix
-    
-    QString frozenName = QString("Frozen_%1").arg(
-        QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss"));
-    
+    // Freeze selection: Create a static copy that won't change with new
+    // selections In ParaView, this converts the selection to an
+    // "AppendSelection" filter For CloudViewer, we save current selection to
+    // bookmarks with "Frozen_" prefix
+
+    QString frozenName = QString("Frozen_%1")
+                                 .arg(QDateTime::currentDateTime().toString(
+                                         "yyyyMMdd_HHmmss"));
+
     if (m_selectionManager && m_selectionManager->getBookmarks()) {
-        m_selectionManager->getBookmarks()->addBookmark(frozenName, m_selectionData);
+        m_selectionManager->getBookmarks()->addBookmark(frozenName,
+                                                        m_selectionData);
         updateBookmarkCombo();
-        CVLog::Print(QString("[cvSelectionPropertiesWidget] Selection frozen as: %1").arg(frozenName));
-        
+        CVLog::Print(
+                QString("[cvSelectionPropertiesWidget] Selection frozen as: %1")
+                        .arg(frozenName));
+
         QMessageBox::information(this, tr("Freeze Selection"),
-                               tr("Selection frozen as bookmark: %1\n"
-                                  "Load it anytime from the Advanced tab.").arg(frozenName));
+                                 tr("Selection frozen as bookmark: %1\n"
+                                    "Load it anytime from the Advanced tab.")
+                                         .arg(frozenName));
     } else {
-        CVLog::Warning("[cvSelectionPropertiesWidget] Selection manager or bookmarks not available");
+        CVLog::Warning(
+                "[cvSelectionPropertiesWidget] Selection manager or bookmarks "
+                "not available");
     }
-    
+
     emit freezeSelectionRequested();
 }
 
@@ -2652,22 +2814,29 @@ void cvSelectionPropertiesWidget::onExtractClicked() {
     // Extract selection: Create a new object from selected elements
     // This is equivalent to ParaView's "Extract Selection" filter
     // Creates a new ccPointCloud or ccMesh depending on selection type
-    
-    bool isCells = (m_selectionData.fieldAssociation() == cvSelectionData::CELLS);
-    bool isPoints = (m_selectionData.fieldAssociation() == cvSelectionData::POINTS);
-    
+
+    bool isCells =
+            (m_selectionData.fieldAssociation() == cvSelectionData::CELLS);
+    bool isPoints =
+            (m_selectionData.fieldAssociation() == cvSelectionData::POINTS);
+
     if (isCells) {
         // Extract as mesh
         onExportToMeshClicked();
-        CVLog::Print("[cvSelectionPropertiesWidget] Extracted selection as Mesh");
+        CVLog::Print(
+                "[cvSelectionPropertiesWidget] Extracted selection as Mesh");
     } else if (isPoints) {
         // Extract as point cloud
         onExportToPointCloudClicked();
-        CVLog::Print("[cvSelectionPropertiesWidget] Extracted selection as Point Cloud");
+        CVLog::Print(
+                "[cvSelectionPropertiesWidget] Extracted selection as Point "
+                "Cloud");
     } else {
-        CVLog::Warning("[cvSelectionPropertiesWidget] Unknown selection type for extraction");
+        CVLog::Warning(
+                "[cvSelectionPropertiesWidget] Unknown selection type for "
+                "extraction");
     }
-    
+
     emit extractSelectionRequested();
 }
 
@@ -2677,99 +2846,105 @@ void cvSelectionPropertiesWidget::onPlotOverTimeClicked() {
         CVLog::Warning("[cvSelectionPropertiesWidget] No selection to plot");
         return;
     }
-    
+
     // Plot Over Time: For static data, show attribute distribution/histogram
     // In ParaView, this shows time-series plots; for CloudViewer, we show:
     // 1. Histogram of scalar field values in selection
     // 2. Distribution plots of various attributes
-    
+
     vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
     if (!polyData) {
-        CVLog::Warning("[cvSelectionPropertiesWidget] No polydata available for plotting");
+        CVLog::Warning(
+                "[cvSelectionPropertiesWidget] No polydata available for "
+                "plotting");
         return;
     }
-    
+
     // Get current attribute type (Point Data or Cell Data)
     bool isPoints = (m_attributeTypeCombo->currentIndex() == 0);
-    vtkDataSetAttributes* attributes = isPoints ? 
-        static_cast<vtkDataSetAttributes*>(polyData->GetPointData()) :
-        static_cast<vtkDataSetAttributes*>(polyData->GetCellData());
-    
+    vtkDataSetAttributes* attributes =
+            isPoints ? static_cast<vtkDataSetAttributes*>(
+                               polyData->GetPointData())
+                     : static_cast<vtkDataSetAttributes*>(
+                               polyData->GetCellData());
+
     if (!attributes) {
         CVLog::Warning("[cvSelectionPropertiesWidget] No attributes available");
         return;
     }
-    
+
     // Create a dialog to show distribution plots
     QDialog* plotDialog = new QDialog(this);
     plotDialog->setWindowTitle(tr("Selection Attribute Distribution"));
     plotDialog->setAttribute(Qt::WA_DeleteOnClose, true);
     plotDialog->resize(800, 600);
-    
+
     QVBoxLayout* mainLayout = new QVBoxLayout(plotDialog);
-    
+
     // Create tab widget for different plots
     QTabWidget* plotTabs = new QTabWidget();
     mainLayout->addWidget(plotTabs);
-    
+
     // Add histogram for each scalar array
     int numArrays = attributes->GetNumberOfArrays();
     for (int i = 0; i < numArrays; ++i) {
         vtkDataArray* array = attributes->GetArray(i);
         if (!array) continue;
-        
+
         QString arrayName = QString::fromUtf8(array->GetName());
         int numComponents = array->GetNumberOfComponents();
-        
+
         // Only plot scalar arrays (1 component)
         if (numComponents != 1) continue;
-        
+
         // Create histogram widget
         QCustomPlot* histogram = new QCustomPlot();
         histogram->setMinimumHeight(400);
-        
+
         // Compute histogram data
         vtkIdType numValues = array->GetNumberOfTuples();
         if (numValues > 0) {
             // Get data range
             double range[2];
             array->GetRange(range);
-            
+
             // Compute histogram bins (use sqrt(N) as default)
-            int numBins = std::max(10, std::min(100, static_cast<int>(std::sqrt(numValues))));
+            int numBins = std::max(
+                    10, std::min(100, static_cast<int>(std::sqrt(numValues))));
             std::vector<double> binCounts(numBins, 0.0);
             double binWidth = (range[1] - range[0]) / numBins;
-            
+
             if (binWidth > 0) {
                 for (vtkIdType j = 0; j < numValues; ++j) {
                     double value = array->GetComponent(j, 0);
-                    int binIndex = static_cast<int>((value - range[0]) / binWidth);
+                    int binIndex =
+                            static_cast<int>((value - range[0]) / binWidth);
                     if (binIndex >= numBins) binIndex = numBins - 1;
                     if (binIndex < 0) binIndex = 0;
                     binCounts[binIndex]++;
                 }
-                
+
                 // Create bar chart
                 QCPBars* bars = new QCPBars(histogram->xAxis, histogram->yAxis);
                 QVector<double> xData, yData;
-                
+
                 for (int b = 0; b < numBins; ++b) {
                     double binCenter = range[0] + (b + 0.5) * binWidth;
                     xData.append(binCenter);
                     yData.append(binCounts[b]);
                 }
-                
+
                 bars->setData(xData, yData);
                 bars->setWidth(binWidth * 0.9);
                 bars->setPen(QPen(QColor(100, 100, 100)));
                 bars->setBrush(QColor(100, 150, 255, 150));
-                
+
                 // Configure axes
                 histogram->xAxis->setLabel(arrayName);
                 histogram->yAxis->setLabel(tr("Count"));
                 histogram->xAxis->setRange(range[0], range[1]);
                 histogram->rescaleAxes();
-                
+
                 // Add statistics text
                 double sum = 0.0, sum2 = 0.0;
                 for (vtkIdType j = 0; j < numValues; ++j) {
@@ -2780,49 +2955,53 @@ void cvSelectionPropertiesWidget::onPlotOverTimeClicked() {
                 double mean = sum / numValues;
                 double variance = (sum2 / numValues) - (mean * mean);
                 double stddev = std::sqrt(std::max(0.0, variance));
-                
+
                 // Add statistics as plot title
-                QString statsText = QString("Count: %1  |  Min: %2  |  Max: %3  |  Mean: %4  |  Std Dev: %5")
-                    .arg(numValues)
-                    .arg(range[0], 0, 'f', 3)
-                    .arg(range[1], 0, 'f', 3)
-                    .arg(mean, 0, 'f', 3)
-                    .arg(stddev, 0, 'f', 3);
-                
+                QString statsText = QString("Count: %1  |  Min: %2  |  Max: %3 "
+                                            " |  Mean: %4  |  Std Dev: %5")
+                                            .arg(numValues)
+                                            .arg(range[0], 0, 'f', 3)
+                                            .arg(range[1], 0, 'f', 3)
+                                            .arg(mean, 0, 'f', 3)
+                                            .arg(stddev, 0, 'f', 3);
+
                 histogram->plotLayout()->insertRow(0);
                 QCPPlotTitle* title = new QCPPlotTitle(histogram, statsText);
                 title->setFont(QFont("sans", 9));
                 histogram->plotLayout()->addElement(0, 0, title);
-                
+
                 histogram->replot();
             }
         }
-        
+
         plotTabs->addTab(histogram, arrayName);
     }
-    
+
     if (plotTabs->count() == 0) {
-        QLabel* noDataLabel = new QLabel(tr("No scalar attributes available to plot"));
+        QLabel* noDataLabel =
+                new QLabel(tr("No scalar attributes available to plot"));
         noDataLabel->setAlignment(Qt::AlignCenter);
         plotTabs->addTab(noDataLabel, tr("No Data"));
     }
-    
+
     // Add close button
     QPushButton* closeButton = new QPushButton(tr("Close"));
     connect(closeButton, &QPushButton::clicked, plotDialog, &QDialog::accept);
     mainLayout->addWidget(closeButton);
-    
+
     plotDialog->show();
-    
+
     emit plotOverTimeRequested();
-    CVLog::Print("[cvSelectionPropertiesWidget] Showing attribute distribution plots");
+    CVLog::Print(
+            "[cvSelectionPropertiesWidget] Showing attribute distribution "
+            "plots");
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onToggleColumnVisibility() {
     // Create a menu to toggle column visibility
     QMenu menu(this);
-    
+
     for (int col = 0; col < m_spreadsheetTable->columnCount(); ++col) {
         QString header = m_spreadsheetTable->horizontalHeaderItem(col)->text();
         QAction* action = menu.addAction(header);
@@ -2833,16 +3012,17 @@ void cvSelectionPropertiesWidget::onToggleColumnVisibility() {
             m_spreadsheetTable->setColumnHidden(col, !visible);
         });
     }
-    
+
     menu.exec(QCursor::pos());
 }
 
 //-----------------------------------------------------------------------------
-void cvSelectionPropertiesWidget::onSpreadsheetItemClicked(QTableWidgetItem* item) {
+void cvSelectionPropertiesWidget::onSpreadsheetItemClicked(
+        QTableWidgetItem* item) {
     if (!item) return;
-    
+
     int row = item->row();
-    
+
     // Get the ID from the first column
     QTableWidgetItem* idItem = m_spreadsheetTable->item(row, 0);
     if (idItem) {
@@ -2858,25 +3038,26 @@ void cvSelectionPropertiesWidget::onSpreadsheetItemClicked(QTableWidgetItem* ite
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::updateSelectionEditorTable() {
     m_selectionEditorTable->setRowCount(m_savedSelections.size());
-    
+
     for (int i = 0; i < m_savedSelections.size(); ++i) {
         const SavedSelection& sel = m_savedSelections[i];
-        
+
         // Name column
         QTableWidgetItem* nameItem = new QTableWidgetItem(sel.name);
         m_selectionEditorTable->setItem(i, 0, nameItem);
-        
+
         // Type column
         QTableWidgetItem* typeItem = new QTableWidgetItem(sel.type);
         m_selectionEditorTable->setItem(i, 1, typeItem);
-        
+
         // Color column (use background color)
         QTableWidgetItem* colorItem = new QTableWidgetItem(sel.color.name());
         colorItem->setBackground(sel.color);
-        colorItem->setForeground(sel.color.lightness() > 128 ? Qt::black : Qt::white);
+        colorItem->setForeground(sel.color.lightness() > 128 ? Qt::black
+                                                             : Qt::white);
         m_selectionEditorTable->setItem(i, 2, colorItem);
     }
-    
+
     m_selectionEditorTable->resizeColumnsToContents();
 }
 
@@ -2897,11 +3078,12 @@ void cvSelectionPropertiesWidget::setDataProducerName(const QString& name) {
     if (m_dataProducerValue) {
         m_dataProducerValue->setText(name.isEmpty() ? tr("(none)") : name);
     }
-    
+
     // Update the selected data header
     if (m_selectedDataLabel) {
         m_selectedDataLabel->setText(
-            QString("<b>Selected Data (%1)</b>").arg(name.isEmpty() ? tr("none") : name));
+                QString("<b>Selected Data (%1)</b>")
+                        .arg(name.isEmpty() ? tr("none") : name));
     }
 }
 
@@ -2910,30 +3092,30 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(vtkPolyData* polyData) {
     if (!polyData || !m_spreadsheetTable) {
         return;
     }
-    
+
     bool isPointData = (m_attributeTypeCombo->currentIndex() == 0);
-    
+
     // Clear existing data
     m_spreadsheetTable->clear();
     m_spreadsheetTable->setRowCount(0);
-    
+
     // Get selection IDs
     if (m_selectionData.isEmpty()) {
         return;
     }
-    
+
     const QVector<qint64>& ids = m_selectionData.ids();
     if (ids.isEmpty()) {
         return;
     }
-    
+
     // Build column headers
     QStringList headers;
     headers << (isPointData ? tr("Point ID") : tr("Cell ID"));
-    
+
     if (isPointData) {
         headers << tr("Points");  // Will show (x, y, z)
-        
+
         // Add point data arrays
         vtkPointData* pointData = polyData->GetPointData();
         if (pointData) {
@@ -2946,7 +3128,7 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(vtkPolyData* polyData) {
         }
     } else {
         headers << tr("Type") << tr("Num Points");
-        
+
         // Add cell data arrays
         vtkCellData* cellData = polyData->GetCellData();
         if (cellData) {
@@ -2958,34 +3140,35 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(vtkPolyData* polyData) {
             }
         }
     }
-    
+
     m_spreadsheetTable->setColumnCount(headers.size());
     m_spreadsheetTable->setHorizontalHeaderLabels(headers);
-    
+
     // Populate rows
     int rowCount = std::min(1000, ids.size());  // Limit to 1000 rows
     m_spreadsheetTable->setRowCount(rowCount);
-    
+
     for (int row = 0; row < rowCount; ++row) {
         qint64 id = ids[row];
         int col = 0;
-        
+
         // ID column
         QTableWidgetItem* idItem = new QTableWidgetItem(QString::number(id));
         idItem->setData(Qt::UserRole, static_cast<qlonglong>(id));
         m_spreadsheetTable->setItem(row, col++, idItem);
-        
+
         if (isPointData) {
             // Points column (x, y, z)
             if (id >= 0 && id < polyData->GetNumberOfPoints()) {
                 double pt[3];
                 polyData->GetPoint(id, pt);
                 QString coords = QString("%1, %2, %3")
-                    .arg(pt[0], 0, 'f', 4)
-                    .arg(pt[1], 0, 'f', 4)
-                    .arg(pt[2], 0, 'f', 4);
-                m_spreadsheetTable->setItem(row, col++, new QTableWidgetItem(coords));
-                
+                                         .arg(pt[0], 0, 'f', 4)
+                                         .arg(pt[1], 0, 'f', 4)
+                                         .arg(pt[2], 0, 'f', 4);
+                m_spreadsheetTable->setItem(row, col++,
+                                            new QTableWidgetItem(coords));
+
                 // Point data arrays
                 vtkPointData* pointData = polyData->GetPointData();
                 if (pointData) {
@@ -2993,8 +3176,10 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(vtkPolyData* polyData) {
                         vtkDataArray* arr = pointData->GetArray(i);
                         if (arr && arr->GetName()) {
                             double value = arr->GetTuple1(id);
-                            m_spreadsheetTable->setItem(row, col++, 
-                                new QTableWidgetItem(QString::number(value, 'g', 6)));
+                            m_spreadsheetTable->setItem(
+                                    row, col++,
+                                    new QTableWidgetItem(
+                                            QString::number(value, 'g', 6)));
                         }
                     }
                 }
@@ -3007,20 +3192,35 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(vtkPolyData* polyData) {
                     // Type
                     QString typeName;
                     switch (cell->GetCellType()) {
-                        case VTK_TRIANGLE: typeName = tr("Triangle"); break;
-                        case VTK_QUAD: typeName = tr("Quad"); break;
-                        case VTK_POLYGON: typeName = tr("Polygon"); break;
-                        case VTK_LINE: typeName = tr("Line"); break;
-                        case VTK_VERTEX: typeName = tr("Vertex"); break;
-                        default: typeName = tr("Unknown"); break;
+                        case VTK_TRIANGLE:
+                            typeName = tr("Triangle");
+                            break;
+                        case VTK_QUAD:
+                            typeName = tr("Quad");
+                            break;
+                        case VTK_POLYGON:
+                            typeName = tr("Polygon");
+                            break;
+                        case VTK_LINE:
+                            typeName = tr("Line");
+                            break;
+                        case VTK_VERTEX:
+                            typeName = tr("Vertex");
+                            break;
+                        default:
+                            typeName = tr("Unknown");
+                            break;
                     }
-                    m_spreadsheetTable->setItem(row, col++, new QTableWidgetItem(typeName));
-                    
+                    m_spreadsheetTable->setItem(row, col++,
+                                                new QTableWidgetItem(typeName));
+
                     // Num Points
-                    m_spreadsheetTable->setItem(row, col++, 
-                        new QTableWidgetItem(QString::number(cell->GetNumberOfPoints())));
+                    m_spreadsheetTable->setItem(
+                            row, col++,
+                            new QTableWidgetItem(QString::number(
+                                    cell->GetNumberOfPoints())));
                 }
-                
+
                 // Cell data arrays
                 vtkCellData* cellData = polyData->GetCellData();
                 if (cellData) {
@@ -3028,17 +3228,20 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(vtkPolyData* polyData) {
                         vtkDataArray* arr = cellData->GetArray(i);
                         if (arr && arr->GetName()) {
                             double value = arr->GetTuple1(id);
-                            m_spreadsheetTable->setItem(row, col++, 
-                                new QTableWidgetItem(QString::number(value, 'g', 6)));
+                            m_spreadsheetTable->setItem(
+                                    row, col++,
+                                    new QTableWidgetItem(
+                                            QString::number(value, 'g', 6)));
                         }
                     }
                 }
             }
         }
     }
-    
+
     m_spreadsheetTable->resizeColumnsToContents();
-    
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Updated spreadsheet with %1 rows")
-                      .arg(rowCount));
+
+    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Updated "
+                              "spreadsheet with %1 rows")
+                              .arg(rowCount));
 }

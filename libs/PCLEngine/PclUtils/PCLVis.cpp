@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
@@ -65,6 +66,7 @@
 #include <vtkCamera.h>
 #include <vtkCaptionActor2D.h>
 #include <vtkCaptionRepresentation.h>
+#include <vtkFieldData.h>
 #include <vtkJPEGReader.h>
 #include <vtkLookupTable.h>
 #include <vtkOpenGLRenderWindow.h>
@@ -81,6 +83,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
+#include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
@@ -88,8 +91,6 @@
 #include <vtkTransform.h>
 #include <vtkTubeFilter.h>
 #include <vtkUnsignedCharArray.h>
-#include <vtkStringArray.h>
-#include <vtkFieldData.h>
 #include <vtkWidgetEvent.h>
 #include <vtkWidgetEventTranslator.h>
 #include <vtkWindowToImageFilter.h>
@@ -2030,103 +2031,115 @@ void PCLVis::addScalarFieldToVTK(const std::string& viewID,
     if (!contains(viewID) || !cloud) {
         return;
     }
-    
+
     // Get scalar field
-    cloudViewer::ScalarField* scalarField = cloud->getScalarField(scalarFieldIndex);
+    cloudViewer::ScalarField* scalarField =
+            cloud->getScalarField(scalarFieldIndex);
     if (!scalarField) {
-        CVLog::Warning("[PCLVis::addScalarFieldToVTK] Invalid scalar field index");
+        CVLog::Warning(
+                "[PCLVis::addScalarFieldToVTK] Invalid scalar field index");
         return;
     }
-    
+
     QString sfName = cloud->getScalarFieldName(scalarFieldIndex);
     std::string scalarFieldName = sfName.toStdString();
-    
+
     // Get actor from cloud actor map
-    pcl::visualization::CloudActorMap::iterator am_it = getCloudActorMap()->find(viewID);
+    pcl::visualization::CloudActorMap::iterator am_it =
+            getCloudActorMap()->find(viewID);
     if (am_it == getCloudActorMap()->end()) {
         return;
     }
-    
+
     vtkActor* actor = am_it->second.actor;
     if (!actor) {
         return;
     }
-    
+
     // Get mapper and polydata
     vtkMapper* mapper = actor->GetMapper();
     if (!mapper) {
         return;
     }
-    
+
     vtkPolyData* polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
     if (!polyData) {
         return;
     }
-    
+
     vtkPointData* pointData = polyData->GetPointData();
     vtkDataArray* activeScalars = pointData->GetScalars();
-    
+
     // Check if the correct array already exists
     vtkDataArray* existingArray = pointData->GetArray(scalarFieldName.c_str());
     if (existingArray && existingArray->GetNumberOfComponents() == 1) {
         // Correct 1-component array already exists, no need to update
-        CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Scalar array '%1' already exists, skipping")
-            .arg(sfName));
+        CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Scalar array "
+                                  "'%1' already exists, skipping")
+                                  .arg(sfName));
         return;
     }
-    
+
     // Remove all old tooltip scalar arrays (1-component, non-active)
-    // This ensures we don't accumulate arrays when switching between scalar fields
+    // This ensures we don't accumulate arrays when switching between scalar
+    // fields
     for (int i = pointData->GetNumberOfArrays() - 1; i >= 0; --i) {
         vtkDataArray* array = pointData->GetArray(i);
-        if (array && 
-            array->GetNumberOfComponents() == 1 && 
+        if (array && array->GetNumberOfComponents() == 1 &&
             array != activeScalars) {
-            // This is a 1-component non-active array (likely an old tooltip scalar)
+            // This is a 1-component non-active array (likely an old tooltip
+            // scalar)
             const char* name = array->GetName();
             pointData->RemoveArray(i);
-            CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Removed old tooltip scalar array '%1'")
-                .arg(name ? name : "(unnamed)"));
+            CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Removed "
+                                      "old tooltip scalar array '%1'")
+                                      .arg(name ? name : "(unnamed)"));
         }
     }
-    
+
     // Extract scalar values directly from ccPointCloud
     vtkIdType numPoints = polyData->GetNumberOfPoints();
-    vtkSmartPointer<vtkFloatArray> scalarArray = vtkSmartPointer<vtkFloatArray>::New();
+    vtkSmartPointer<vtkFloatArray> scalarArray =
+            vtkSmartPointer<vtkFloatArray>::New();
     scalarArray->SetName(scalarFieldName.c_str());
     scalarArray->SetNumberOfComponents(1);
     scalarArray->SetNumberOfTuples(numPoints);
-    
+
     // Copy scalar values from ccPointCloud
     unsigned cloudSize = cloud->size();
     if (static_cast<vtkIdType>(cloudSize) != numPoints) {
-        CVLog::Warning(QString("[PCLVis::addScalarFieldToVTK] Size mismatch: ccCloud=%1, VTK=%2")
-            .arg(cloudSize).arg(numPoints));
+        CVLog::Warning(QString("[PCLVis::addScalarFieldToVTK] Size mismatch: "
+                               "ccCloud=%1, VTK=%2")
+                               .arg(cloudSize)
+                               .arg(numPoints));
         return;
     }
-    
+
     for (vtkIdType i = 0; i < numPoints; ++i) {
-        float scalarValue = static_cast<float>(scalarField->getValue(static_cast<unsigned>(i)));
+        float scalarValue = static_cast<float>(
+                scalarField->getValue(static_cast<unsigned>(i)));
         scalarArray->SetValue(i, scalarValue);
     }
-    
-    // Add array to polydata (but do NOT set as active scalars to avoid overriding rendering)
-    // The tooltip can access this array by name without it being active
+
+    // Add array to polydata (but do NOT set as active scalars to avoid
+    // overriding rendering) The tooltip can access this array by name without
+    // it being active
     pointData->AddArray(scalarArray);
-    // NOTE: Do NOT call SetActiveScalars here - it would override PCL's RGB rendering!
-    
+    // NOTE: Do NOT call SetActiveScalars here - it would override PCL's RGB
+    // rendering!
+
     // Add DatasetName to field data for tooltip display (ParaView style)
     vtkFieldData* fieldData = polyData->GetFieldData();
     if (fieldData) {
         vtkStringArray* datasetNameArray = vtkStringArray::SafeDownCast(
-            fieldData->GetAbstractArray("DatasetName"));
-        
+                fieldData->GetAbstractArray("DatasetName"));
+
         if (!datasetNameArray) {
             // DatasetName not yet added, create it
             datasetNameArray = vtkStringArray::New();
             datasetNameArray->SetName("DatasetName");
             datasetNameArray->SetNumberOfTuples(1);
-            
+
             // Use cloud name as dataset name
             QString cloudName = cloud->getName();
             if (cloudName.isEmpty()) {
@@ -2135,14 +2148,16 @@ void PCLVis::addScalarFieldToVTK(const std::string& viewID,
             datasetNameArray->SetValue(0, cloudName.toStdString());
             fieldData->AddArray(datasetNameArray);
             datasetNameArray->Delete();
-            
-            CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Added DatasetName: %1")
-                .arg(cloudName));
+
+            CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Added "
+                                      "DatasetName: %1")
+                                      .arg(cloudName));
         }
 
-        CVLog::Print(QString("[PCLVis::addScalarFieldToVTK] Added scalar array '%1' with %2 values to VTK polydata")
-        .arg(sfName)
-        .arg(numPoints));
+        CVLog::Print(QString("[PCLVis::addScalarFieldToVTK] Added scalar array "
+                             "'%1' with %2 values to VTK polydata")
+                             .arg(sfName)
+                             .arg(numPoints));
     }
 }
 
@@ -2152,48 +2167,53 @@ void PCLVis::setScalarFieldName(const std::string& viewID,
     if (!contains(viewID)) {
         return;
     }
-    
+
     // Get actor from cloud actor map
-    pcl::visualization::CloudActorMap::iterator am_it = getCloudActorMap()->find(viewID);
+    pcl::visualization::CloudActorMap::iterator am_it =
+            getCloudActorMap()->find(viewID);
     if (am_it == getCloudActorMap()->end()) {
         return;
     }
-    
+
     vtkActor* actor = am_it->second.actor;
     if (!actor) {
         return;
     }
-    
+
     // Get mapper and polydata
     vtkMapper* mapper = actor->GetMapper();
     if (!mapper) {
         return;
     }
-    
+
     vtkPolyData* polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
     if (!polyData) {
         return;
     }
-    
+
     vtkPointData* pointData = polyData->GetPointData();
-    
+
     // Try to find an array with the scalar field name (actual scalar values)
     // This should be separate from the RGB array used for rendering
     vtkDataArray* scalarArray = pointData->GetArray(scalarName.c_str());
-    
+
     if (scalarArray) {
         // Found the scalar array, make it the active scalars for tooltip
         pointData->SetActiveScalars(scalarName.c_str());
-        CVLog::PrintDebug(QString("[PCLVis::setScalarFieldName] Set active scalars to '%1' (%2 components, %3 tuples)")
-            .arg(QString::fromStdString(scalarName))
-            .arg(scalarArray->GetNumberOfComponents())
-            .arg(scalarArray->GetNumberOfTuples()));
+        CVLog::PrintDebug(QString("[PCLVis::setScalarFieldName] Set active "
+                                  "scalars to '%1' (%2 components, %3 tuples)")
+                                  .arg(QString::fromStdString(scalarName))
+                                  .arg(scalarArray->GetNumberOfComponents())
+                                  .arg(scalarArray->GetNumberOfTuples()));
     } else {
-        // Scalar array not found, try to set name on default scalars as fallback
+        // Scalar array not found, try to set name on default scalars as
+        // fallback
         vtkDataArray* defaultScalars = pointData->GetScalars();
         if (defaultScalars) {
-            CVLog::PrintDebug(QString("[PCLVis::setScalarFieldName] Scalar array '%1' not found, using default scalars")
-                .arg(QString::fromStdString(scalarName)));
+            CVLog::PrintDebug(
+                    QString("[PCLVis::setScalarFieldName] Scalar array '%1' "
+                            "not found, using default scalars")
+                            .arg(QString::fromStdString(scalarName)));
         }
     }
 }

@@ -161,7 +161,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
     // ParaView approach: Use vtkHardwareSelector::GeneratePolygonSelection
     // for pixel-precise polygon selection
     // Reference: vtkPVRenderView::SelectPolygon
-    
+
     // Step 1: Find bounding box of polygon
     int minX = INT_MAX, minY = INT_MAX;
     int maxX = INT_MIN, maxY = INT_MIN;
@@ -182,8 +182,12 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
         return nullptr;
     }
 
-    CVLog::Print(QString("[cvSelectionPipeline] Polygon bounding box: [%1, %2, %3, %4]")
-                         .arg(minX).arg(minY).arg(maxX).arg(maxY));
+    CVLog::Print(QString("[cvSelectionPipeline] Polygon bounding box: [%1, %2, "
+                         "%3, %4]")
+                         .arg(minX)
+                         .arg(minY)
+                         .arg(maxX)
+                         .arg(maxY));
 
     // Step 2: Get render window
     vtkRenderWindow* renderWindow = m_viewer->getRenderWindow();
@@ -196,7 +200,8 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
     // Step 3: Create or reuse hardware selector
     if (!m_hardwareSelector) {
         m_hardwareSelector = vtkSmartPointer<vtkHardwareSelector>::New();
-        CVLog::Print("[cvSelectionPipeline] Created hardware selector for polygon");
+        CVLog::Print(
+                "[cvSelectionPipeline] Created hardware selector for polygon");
     }
 
     m_hardwareSelector->SetRenderer(m_renderer);
@@ -216,7 +221,8 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
     // This renders the scene with special color encoding for selection
     bool captureSuccess = m_hardwareSelector->CaptureBuffers();
     if (!captureSuccess) {
-        CVLog::Warning("[cvSelectionPipeline] Failed to capture buffers for polygon");
+        CVLog::Warning(
+                "[cvSelectionPipeline] Failed to capture buffers for polygon");
         // Try once more after forcing a render
         renderWindow->Render();
         captureSuccess = m_hardwareSelector->CaptureBuffers();
@@ -228,7 +234,8 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
 
     // Step 5: Generate polygon selection with pixel-level testing
     // Reference: vtkHardwareSelector::GeneratePolygonSelection
-    // This tests each pixel in the bounding box to see if it's inside the polygon
+    // This tests each pixel in the bounding box to see if it's inside the
+    // polygon
     std::vector<int> polygonArray(numPoints * 2);
     for (vtkIdType i = 0; i < numPoints * 2; ++i) {
         polygonArray[i] = polygon->GetValue(i);
@@ -238,7 +245,8 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
             polygonArray.data(), static_cast<vtkIdType>(numPoints * 2));
 
     if (!selection) {
-        CVLog::Print("[cvSelectionPipeline] Polygon selection returned no results");
+        CVLog::Print(
+                "[cvSelectionPipeline] Polygon selection returned no results");
         // This is not an error - just no items selected
         vtkSmartPointer<vtkSelection> emptySelection =
                 vtkSmartPointer<vtkSelection>::New();
@@ -351,13 +359,17 @@ bool cvSelectionPipeline::hasCachedBuffers() const {
 //-----------------------------------------------------------------------------
 bool cvSelectionPipeline::captureBuffersForFastPreSelection() {
     if (!m_viewer || !m_renderer) {
-        CVLog::Warning("[cvSelectionPipeline] Cannot capture buffers - no viewer/renderer");
+        CVLog::Warning(
+                "[cvSelectionPipeline] Cannot capture buffers - no "
+                "viewer/renderer");
         return false;
     }
 
     vtkRenderWindow* renderWindow = m_viewer->getRenderWindow();
     if (!renderWindow) {
-        CVLog::Warning("[cvSelectionPipeline] Cannot capture buffers - no render window");
+        CVLog::Warning(
+                "[cvSelectionPipeline] Cannot capture buffers - no render "
+                "window");
         return false;
     }
 
@@ -367,64 +379,70 @@ bool cvSelectionPipeline::captureBuffersForFastPreSelection() {
     }
 
     m_hardwareSelector->SetRenderer(m_renderer);
-    
+
     // Set area to full viewport
     int* size = m_renderer->GetSize();
     int* origin = m_renderer->GetOrigin();
-    m_hardwareSelector->SetArea(origin[0], origin[1], 
-                                origin[0] + size[0] - 1, 
+    m_hardwareSelector->SetArea(origin[0], origin[1], origin[0] + size[0] - 1,
                                 origin[1] + size[1] - 1);
 
     // Capture the buffers
     bool success = m_hardwareSelector->CaptureBuffers();
-    
+
     if (success) {
         m_inSelectionMode = true;
-        CVLog::Print("[cvSelectionPipeline] Captured buffers for fast pre-selection");
+        CVLog::Print(
+                "[cvSelectionPipeline] Captured buffers for fast "
+                "pre-selection");
     } else {
         CVLog::Warning("[cvSelectionPipeline] Failed to capture buffers");
     }
-    
+
     return success;
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionPipeline::PixelSelectionInfo cvSelectionPipeline::getPixelSelectionInfo(
-        int x, int y, bool selectCells) {
+cvSelectionPipeline::PixelSelectionInfo
+cvSelectionPipeline::getPixelSelectionInfo(int x, int y, bool selectCells) {
     PixelSelectionInfo result;
-    
+
     if (!m_viewer || !m_renderer) {
-        CVLog::Warning("[cvSelectionPipeline::getPixelSelectionInfo] Invalid viewer or renderer");
+        CVLog::Warning(
+                "[cvSelectionPipeline::getPixelSelectionInfo] Invalid viewer "
+                "or renderer");
         return result;
     }
 
     // PARAVIEW STYLE: Always do fresh hardware selection, NO CACHING
     // Caching causes stale actor problems and incorrect IDs
     // Reference: ParaView never caches for hover/tooltip - always fresh render
-    
-    CVLog::PrintDebug("[cvSelectionPipeline::getPixelSelectionInfo] Performing fresh hardware selection (ParaView style)");
-    
+
+    CVLog::PrintDebug(
+            "[cvSelectionPipeline::getPixelSelectionInfo] Performing fresh "
+            "hardware selection (ParaView style)");
+
     // Do a single-pixel hardware selection
-    int region[4] = { x, y, x, y };
+    int region[4] = {x, y, x, y};
     vtkSmartPointer<vtkSelection> selection = performHardwareSelection(
-            region, selectCells ? FIELD_ASSOCIATION_CELLS : FIELD_ASSOCIATION_POINTS);
-    
+            region,
+            selectCells ? FIELD_ASSOCIATION_CELLS : FIELD_ASSOCIATION_POINTS);
+
     if (selection && selection->GetNumberOfNodes() > 0) {
         vtkSelectionNode* node = selection->GetNode(0);
-        if (node && node->GetSelectionList() && 
+        if (node && node->GetSelectionList() &&
             node->GetSelectionList()->GetNumberOfTuples() > 0) {
-            vtkIdTypeArray* ids = vtkIdTypeArray::SafeDownCast(
-                    node->GetSelectionList());
+            vtkIdTypeArray* ids =
+                    vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
             if (ids && ids->GetNumberOfTuples() > 0) {
                 result.valid = true;
                 result.attributeID = ids->GetValue(0);
-                
+
                 // Get prop from selection node
                 vtkInformation* properties = node->GetProperties();
                 if (properties && properties->Has(vtkSelectionNode::PROP())) {
                     result.prop = vtkProp::SafeDownCast(
                             properties->Get(vtkSelectionNode::PROP()));
-                    
+
                     // Get polyData from prop
                     vtkActor* actor = vtkActor::SafeDownCast(result.prop);
                     if (actor && actor->GetMapper()) {
@@ -435,13 +453,14 @@ cvSelectionPipeline::PixelSelectionInfo cvSelectionPipeline::getPixelSelectionIn
             }
         }
     }
-    
+
     return result;
 }
 
 //-----------------------------------------------------------------------------
 vtkIdType cvSelectionPipeline::fastPreSelectAt(int x, int y, bool selectCells) {
-    // Use the new comprehensive method and return only the ID for backward compatibility
+    // Use the new comprehensive method and return only the ID for backward
+    // compatibility
     PixelSelectionInfo info = getPixelSelectionInfo(x, y, selectCells);
     return info.valid ? info.attributeID : -1;
 }
@@ -451,15 +470,16 @@ void cvSelectionPipeline::enterSelectionMode() {
     if (m_inSelectionMode) {
         return;
     }
-    
+
     m_inSelectionMode = true;
-    
+
     // ParaView-style: When entering selection mode, the render view
     // switches to INTERACTION_MODE_SELECTION which tells it to cache
     // selection render buffers for faster repeated selections.
     // Reference: vtkPVRenderView::SetInteractionMode
-    
-    CVLog::Print("[cvSelectionPipeline] Entered selection mode (caching enabled)");
+
+    CVLog::Print(
+            "[cvSelectionPipeline] Entered selection mode (caching enabled)");
 }
 
 //-----------------------------------------------------------------------------
@@ -467,40 +487,44 @@ void cvSelectionPipeline::exitSelectionMode() {
     if (!m_inSelectionMode) {
         return;
     }
-    
+
     m_inSelectionMode = false;
-    
+
     // ParaView-style: Reset hardware selector to release cached buffers
     // We create a fresh selector on next selection rather than trying to
     // call protected ReleasePixBuffers()
-    // Reference: vtkPVRenderView doesn't explicitly release buffers, 
+    // Reference: vtkPVRenderView doesn't explicitly release buffers,
     // it just lets them be overwritten on next selection
-    // Note: vtkSmartPointer uses = nullptr instead of Reset() (unlike std::shared_ptr)
+    // Note: vtkSmartPointer uses = nullptr instead of Reset() (unlike
+    // std::shared_ptr)
     m_hardwareSelector = nullptr;
-    
-    CVLog::Print("[cvSelectionPipeline] Exited selection mode (cache released)");
+
+    CVLog::Print(
+            "[cvSelectionPipeline] Exited selection mode (cache released)");
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPipeline::invalidateCachedSelection() {
     // Clear the selection cache
     clearCache();
-    
+
     // ParaView-style: Reset hardware selector to invalidate cached buffers
-    // Reference: vtkPVRenderView::InvalidateCachedSelection() clears internal state
-    // Note: vtkSmartPointer uses = nullptr instead of Reset() (unlike std::shared_ptr)
+    // Reference: vtkPVRenderView::InvalidateCachedSelection() clears internal
+    // state Note: vtkSmartPointer uses = nullptr instead of Reset() (unlike
+    // std::shared_ptr)
     m_hardwareSelector = nullptr;
-    
+
     // Clear last selection
     m_lastSelection = nullptr;
-    
+
     CVLog::Print("[cvSelectionPipeline] Invalidated cached selection");
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPipeline::setPointPickingRadius(unsigned int radius) {
     m_pointPickingRadius = radius;
-    CVLog::Print(QString("[cvSelectionPipeline] Point picking radius set to %1 pixels")
+    CVLog::Print(QString("[cvSelectionPipeline] Point picking radius set to %1 "
+                         "pixels")
                          .arg(radius));
 }
 
@@ -518,25 +542,33 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     }
 
     // CRITICAL FIX: Convert screen coordinates to VTK/OpenGL coordinates
-    // VTK uses OpenGL coordinate system: origin at bottom-left, Y increases upward
-    // Mouse events use screen coordinates: origin at top-left, Y increases downward
-    // ParaView reference: vtkPVRenderView::ConvertDisplayToRenderCoordinate
-    
+    // VTK uses OpenGL coordinate system: origin at bottom-left, Y increases
+    // upward Mouse events use screen coordinates: origin at top-left, Y
+    // increases downward ParaView reference:
+    // vtkPVRenderView::ConvertDisplayToRenderCoordinate
+
     int* renderWindowSize = renderWindow->GetSize();
     int windowHeight = renderWindowSize[1];
-    
+
     // Convert Y coordinates (flip vertically)
     int vtk_region[4];
-    vtk_region[0] = region[0];                       // X1 (no change)
-    vtk_region[1] = windowHeight - region[3] - 1;    // Y1 (flip from Y2)
-    vtk_region[2] = region[2];                       // X2 (no change)
-    vtk_region[3] = windowHeight - region[1] - 1;    // Y2 (flip from Y1)
-    
-    CVLog::PrintDebug(QString("[cvSelectionPipeline] Coordinate conversion: "
-                              "Screen[%1,%2,%3,%4] -> VTK[%5,%6,%7,%8] (windowHeight=%9)")
-                             .arg(region[0]).arg(region[1]).arg(region[2]).arg(region[3])
-                             .arg(vtk_region[0]).arg(vtk_region[1]).arg(vtk_region[2]).arg(vtk_region[3])
-                             .arg(windowHeight));
+    vtk_region[0] = region[0];                     // X1 (no change)
+    vtk_region[1] = windowHeight - region[3] - 1;  // Y1 (flip from Y2)
+    vtk_region[2] = region[2];                     // X2 (no change)
+    vtk_region[3] = windowHeight - region[1] - 1;  // Y2 (flip from Y1)
+
+    CVLog::PrintDebug(
+            QString("[cvSelectionPipeline] Coordinate conversion: "
+                    "Screen[%1,%2,%3,%4] -> VTK[%5,%6,%7,%8] (windowHeight=%9)")
+                    .arg(region[0])
+                    .arg(region[1])
+                    .arg(region[2])
+                    .arg(region[3])
+                    .arg(vtk_region[0])
+                    .arg(vtk_region[1])
+                    .arg(vtk_region[2])
+                    .arg(vtk_region[3])
+                    .arg(windowHeight));
 
     // Create or reuse hardware selector
     if (!m_hardwareSelector) {
@@ -545,7 +577,8 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     }
 
     m_hardwareSelector->SetRenderer(m_renderer);
-    m_hardwareSelector->SetArea(vtk_region[0], vtk_region[1], vtk_region[2], vtk_region[3]);
+    m_hardwareSelector->SetArea(vtk_region[0], vtk_region[1], vtk_region[2],
+                                vtk_region[3]);
 
     // Set field association
     if (fieldAssociation == FIELD_ASSOCIATION_CELLS) {
@@ -563,32 +596,32 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     // Reference: vtkPVHardwareSelector::Select() lines 105-130
     // If selecting points with a single-pixel region and no hit found,
     // search in a radius around the click point
-    if (fieldAssociation == FIELD_ASSOCIATION_POINTS && 
-        m_pointPickingRadius > 0 &&
-        region[0] == region[2] && region[1] == region[3])  // Single point click
+    if (fieldAssociation == FIELD_ASSOCIATION_POINTS &&
+        m_pointPickingRadius > 0 && region[0] == region[2] &&
+        region[1] == region[3])  // Single point click
     {
         bool hasSelection = (selection && selection->GetNumberOfNodes() > 0);
         if (!hasSelection) {
-            CVLog::Print(QString("[cvSelectionPipeline] No direct hit, searching "
-                                 "in radius %1 pixels...")
-                                 .arg(m_pointPickingRadius));
-            
+            CVLog::Print(
+                    QString("[cvSelectionPipeline] No direct hit, searching "
+                            "in radius %1 pixels...")
+                            .arg(m_pointPickingRadius));
+
             // Use GetPixelInformation to find nearest point in radius
-            unsigned int pos[2] = { 
-                static_cast<unsigned int>(region[0]), 
-                static_cast<unsigned int>(region[1]) 
-            };
+            unsigned int pos[2] = {static_cast<unsigned int>(region[0]),
+                                   static_cast<unsigned int>(region[1])};
             unsigned int out_pos[2];
-            
-            vtkHardwareSelector::PixelInformation info = 
+
+            vtkHardwareSelector::PixelInformation info =
                     m_hardwareSelector->GetPixelInformation(
                             pos, m_pointPickingRadius, out_pos);
-            
+
             if (info.Valid) {
                 CVLog::Print(QString("[cvSelectionPipeline] Found point at "
                                      "nearby pixel (%1, %2)")
-                                     .arg(out_pos[0]).arg(out_pos[1]));
-                
+                                     .arg(out_pos[0])
+                                     .arg(out_pos[1]));
+
                 // Re-generate selection at the found position
                 selection.TakeReference(m_hardwareSelector->GenerateSelection(
                         out_pos[0], out_pos[1], out_pos[0], out_pos[1]));
@@ -806,7 +839,7 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
             // Get Z-value from selection node if available
             // Z-value represents depth (closer to camera = smaller value)
             double zValue = 1.0;  // Default: far plane
-            
+
             for (unsigned int i = 0; i < selection->GetNumberOfNodes(); ++i) {
                 vtkSelectionNode* node = selection->GetNode(i);
                 if (node &&
@@ -816,10 +849,12 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
                                     vtkSelectionNode::PROP()));
                     if (nodeProp == prop) {
                         // Extract Z-value if available
-                        // Note: VTK's hardware selector doesn't typically store Z in properties
-                        // Z-buffering is handled internally during rendering
-                        // For multi-actor selection, we use the order of nodes as priority
-                        zValue = 1.0 - (static_cast<double>(i) / selection->GetNumberOfNodes());
+                        // Note: VTK's hardware selector doesn't typically store
+                        // Z in properties Z-buffering is handled internally
+                        // during rendering For multi-actor selection, we use
+                        // the order of nodes as priority
+                        zValue = 1.0 - (static_cast<double>(i) /
+                                        selection->GetNumberOfNodes());
                         break;
                     }
                 }
@@ -856,16 +891,20 @@ cvSelectionData cvSelectionPipeline::convertSelectionToData(
         FieldAssociation fieldAssoc,
         const QString& errorContext) {
     if (!vtkSel) {
-        CVLog::Warning(QString("[cvSelectionPipeline] %1 failed").arg(errorContext));
+        CVLog::Warning(
+                QString("[cvSelectionPipeline] %1 failed").arg(errorContext));
         return cvSelectionData();
     }
 
     // Extract IDs
-    vtkSmartPointer<vtkIdTypeArray> ids = extractSelectionIds(vtkSel, fieldAssoc);
+    vtkSmartPointer<vtkIdTypeArray> ids =
+            extractSelectionIds(vtkSel, fieldAssoc);
 
     if (!ids || ids->GetNumberOfTuples() == 0) {
         CVLog::Print(QString("[cvSelectionPipeline] No %1 selected in %2")
-                             .arg(fieldAssoc == FIELD_ASSOCIATION_CELLS ? "cells" : "points")
+                             .arg(fieldAssoc == FIELD_ASSOCIATION_CELLS
+                                          ? "cells"
+                                          : "points")
                              .arg(errorContext));
         return cvSelectionData();
     }
@@ -873,8 +912,8 @@ cvSelectionData cvSelectionPipeline::convertSelectionToData(
     // Convert to cvSelectionData
     cvSelectionData::FieldAssociation cvFieldAssoc =
             (fieldAssoc == FIELD_ASSOCIATION_CELLS) ? cvSelectionData::CELLS
-                                                     : cvSelectionData::POINTS;
-    
+                                                    : cvSelectionData::POINTS;
+
     return cvSelectionData(ids, cvFieldAssoc);
 }
 
@@ -893,7 +932,8 @@ cvSelectionData cvSelectionPipeline::selectCellsOnSurface(const int region[4]) {
     vtkSmartPointer<vtkSelection> vtkSel =
             executeRectangleSelection(const_cast<int*>(region), SURFACE_CELLS);
 
-    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_CELLS, "selectCellsOnSurface");
+    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_CELLS,
+                                  "selectCellsOnSurface");
 }
 
 //-----------------------------------------------------------------------------
@@ -909,7 +949,8 @@ cvSelectionData cvSelectionPipeline::selectPointsOnSurface(
     vtkSmartPointer<vtkSelection> vtkSel =
             executeRectangleSelection(const_cast<int*>(region), SURFACE_POINTS);
 
-    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_POINTS, "selectPointsOnSurface");
+    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_POINTS,
+                                  "selectPointsOnSurface");
 }
 
 //-----------------------------------------------------------------------------
@@ -927,7 +968,8 @@ cvSelectionData cvSelectionPipeline::selectCellsInPolygon(
     vtkSmartPointer<vtkSelection> vtkSel =
             executePolygonSelection(polygon, POLYGON_CELLS);
 
-    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_CELLS, "selectCellsInPolygon");
+    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_CELLS,
+                                  "selectCellsInPolygon");
 }
 
 //-----------------------------------------------------------------------------
@@ -945,7 +987,8 @@ cvSelectionData cvSelectionPipeline::selectPointsInPolygon(
     vtkSmartPointer<vtkSelection> vtkSel =
             executePolygonSelection(polygon, POLYGON_POINTS);
 
-    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_POINTS, "selectPointsInPolygon");
+    return convertSelectionToData(vtkSel, FIELD_ASSOCIATION_POINTS,
+                                  "selectPointsInPolygon");
 }
 
 //-----------------------------------------------------------------------------
@@ -1048,23 +1091,24 @@ bool cvSelectionPipeline::pointInPolygon(const int point[2],
     // Ray casting algorithm for point-in-polygon test
     // Reference: ParaView's vtkHardwareSelector::Internals::PixelInsidePolygon
     // http://en.wikipedia.org/wiki/Point_in_polygon
-    
+
     float px = static_cast<float>(point[0]);
     float py = static_cast<float>(point[1]);
     bool inside = false;
-    
+
     vtkIdType count = numPoints * 2;  // Total values (x,y pairs)
-    
+
     for (vtkIdType i = 0; i < count; i += 2) {
         float p1X = static_cast<float>(polygon->GetValue(i));
         float p1Y = static_cast<float>(polygon->GetValue(i + 1));
         float p2X = static_cast<float>(polygon->GetValue((i + 2) % count));
         float p2Y = static_cast<float>(polygon->GetValue((i + 3) % count));
-        
+
         // Check if ray from point crosses edge (p1X,p1Y)-(p2X,p2Y)
         if (py > std::min(p1Y, p2Y) && py <= std::max(p1Y, p2Y) && p1Y != p2Y) {
             if (px <= std::max(p1X, p2X)) {
-                float xintersection = (py - p1Y) * (p2X - p1X) / (p2Y - p1Y) + p1X;
+                float xintersection =
+                        (py - p1Y) * (p2X - p1X) / (p2Y - p1Y) + p1X;
                 if (p1X == p2X || px <= xintersection) {
                     // Each time intersect, toggle inside
                     inside = !inside;
@@ -1072,28 +1116,29 @@ bool cvSelectionPipeline::pointInPolygon(const int point[2],
             }
         }
     }
-    
+
     return inside;
 }
 
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkSelection> cvSelectionPipeline::refinePolygonSelection(
-        vtkSelection* selection,
-        vtkIntArray* polygon,
-        vtkIdType numPoints) {
+        vtkSelection* selection, vtkIntArray* polygon, vtkIdType numPoints) {
     // ParaView-aligned: Refine selection by testing each point against polygon
     // This is a fallback for when vtkHardwareSelector::GeneratePolygonSelection
     // is not available or when additional filtering is needed
-    
+
     if (!selection || !polygon || numPoints < 3) {
-        CVLog::Warning("[cvSelectionPipeline::refinePolygonSelection] Invalid parameters");
+        CVLog::Warning(
+                "[cvSelectionPipeline::refinePolygonSelection] Invalid "
+                "parameters");
         return nullptr;
     }
 
     vtkSmartPointer<vtkSelection> refinedSelection =
             vtkSmartPointer<vtkSelection>::New();
 
-    for (unsigned int nodeIdx = 0; nodeIdx < selection->GetNumberOfNodes(); ++nodeIdx) {
+    for (unsigned int nodeIdx = 0; nodeIdx < selection->GetNumberOfNodes();
+         ++nodeIdx) {
         vtkSelectionNode* node = selection->GetNode(nodeIdx);
         if (!node) continue;
 
@@ -1115,7 +1160,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::refinePolygonSelection(
         vtkProp* prop = vtkProp::SafeDownCast(
                 properties->Get(vtkSelectionNode::PROP()));
         vtkActor* actor = vtkActor::SafeDownCast(prop);
-        
+
         if (!actor) {
             // Not an actor, copy the node as-is
             vtkSmartPointer<vtkSelectionNode> newNode =
@@ -1138,10 +1183,10 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::refinePolygonSelection(
         if (!data) continue;
 
         int fieldAssociation = node->GetFieldType();
-        
+
         for (vtkIdType i = 0; i < selectionList->GetNumberOfTuples(); ++i) {
             vtkIdType id = selectionList->GetValue(i);
-            
+
             // Get world coordinates
             double worldPos[3] = {0, 0, 0};
             if (fieldAssociation == vtkDataObject::FIELD_ASSOCIATION_POINTS) {
@@ -1166,14 +1211,13 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::refinePolygonSelection(
             // Convert world to display coordinates
             if (m_renderer) {
                 double displayPos[3];
-                m_renderer->SetWorldPoint(worldPos[0], worldPos[1], worldPos[2], 1.0);
+                m_renderer->SetWorldPoint(worldPos[0], worldPos[1], worldPos[2],
+                                          1.0);
                 m_renderer->WorldToDisplay();
                 m_renderer->GetDisplayPoint(displayPos);
 
-                int screenPoint[2] = {
-                        static_cast<int>(displayPos[0]),
-                        static_cast<int>(displayPos[1])
-                };
+                int screenPoint[2] = {static_cast<int>(displayPos[0]),
+                                      static_cast<int>(displayPos[1])};
 
                 // Test if point is inside polygon
                 if (pointInPolygon(screenPoint, polygon, numPoints)) {
@@ -1202,4 +1246,3 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::refinePolygonSelection(
 
     return refinedSelection;
 }
-

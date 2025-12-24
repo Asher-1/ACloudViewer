@@ -76,7 +76,7 @@ private slots:
 private:
     void hookWidget(const vtkSmartPointer<cvConstrainedPolyLineWidget>& widget);
     void updateAngleDisplay();
-    
+
     //! Helper to apply text properties to label actor (without rebuilding)
     void applyTextPropertiesToLabel();
 

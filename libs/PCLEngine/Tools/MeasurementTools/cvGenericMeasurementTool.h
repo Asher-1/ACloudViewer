@@ -110,7 +110,8 @@ public:
     //! Set instance label suffix (e.g., "#1", "#2") for display in 3D view
     virtual void setInstanceLabel(const QString& label) { /* not impl */ }
 
-    //! Set font family for measurement labels (e.g., "Arial", "Times New Roman")
+    //! Set font family for measurement labels (e.g., "Arial", "Times New
+    //! Roman")
     virtual void setFontFamily(const QString& family);
 
     //! Set font size for measurement labels
@@ -131,15 +132,18 @@ public:
     //! Set font color for measurement labels (RGB values 0.0-1.0)
     virtual void setFontColor(double r, double g, double b);
 
-    //! Set horizontal justification for measurement labels ("Left", "Center", "Right")
+    //! Set horizontal justification for measurement labels ("Left", "Center",
+    //! "Right")
     virtual void setHorizontalJustification(const QString& justification);
 
-    //! Set vertical justification for measurement labels ("Top", "Center", "Bottom")
+    //! Set vertical justification for measurement labels ("Top", "Center",
+    //! "Bottom")
     virtual void setVerticalJustification(const QString& justification);
 
 protected:
     //! Apply font properties to VTK text properties
-    //! Must be implemented by derived classes to apply to their specific VTK actors
+    //! Must be implemented by derived classes to apply to their specific VTK
+    //! actors
     virtual void applyFontProperties() = 0;
 
 public:

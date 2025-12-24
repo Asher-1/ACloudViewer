@@ -46,16 +46,17 @@ class QScrollArea;
 
 /**
  * @brief Comprehensive selection properties and management widget
- * 
+ *
  * Based on ParaView's Find Data panel with:
  * - pqFindDataSelectionDisplayFrame (Selection Display)
  * - pqSelectionEditor (Selection Editor)
  * - pqFindDataCurrentSelectionFrame (Selected Data spreadsheet)
- * 
+ *
  * Layout:
  * 1. Selected Data header with action buttons
  * 2. Selection Display (collapsible) - labels, colors, label properties
- * 3. Selection Editor (collapsible) - data producer, expression, saved selections
+ * 3. Selection Editor (collapsible) - data producer, expression, saved
+ * selections
  * 4. Selected Data table (spreadsheet view with attributes)
  */
 class QPCL_ENGINE_LIB_API cvSelectionPropertiesWidget : public QWidget,
@@ -86,7 +87,9 @@ public:
     void clearSelection();
 
     const cvSelectionData& selectionData() const { return m_selectionData; }
-    cvViewSelectionManager* selectionManager() const { return m_selectionManager; }
+    cvViewSelectionManager* selectionManager() const {
+        return m_selectionManager;
+    }
 
     /**
      * @brief Set the data producer name (source of selection)
@@ -124,8 +127,10 @@ private slots:
     void onSelectionColorClicked();
     void onInteractiveSelectionColorClicked();
     void onEditInteractiveLabelPropertiesClicked();
-    void onLabelPropertiesApplied(const cvSelectionLabelPropertiesDialog::LabelProperties& props);
-    void onInteractiveLabelPropertiesApplied(const cvSelectionLabelPropertiesDialog::LabelProperties& props);
+    void onLabelPropertiesApplied(
+            const cvSelectionLabelPropertiesDialog::LabelProperties& props);
+    void onInteractiveLabelPropertiesApplied(
+            const cvSelectionLabelPropertiesDialog::LabelProperties& props);
 
     // === Selection Editor slots ===
     void onExpressionChanged(const QString& text);
@@ -168,13 +173,13 @@ private slots:
 
 private:
     void setupUi();
-    
+
     // ParaView-style sections
     void setupSelectedDataHeader();
     void setupSelectionDisplaySection();
     void setupSelectionEditorSection();
     void setupSelectedDataSpreadsheet();
-    
+
     // Legacy tabs (for backwards compatibility)
     void setupStatisticsTab();
     void setupExportTab();
@@ -185,7 +190,9 @@ private:
     void updateSpreadsheetData(vtkPolyData* polyData);
     void computeBoundingBox(vtkPolyData* polyData, double bounds[6]);
     QString formatBounds(const double bounds[6]);
-    void showColorDialog(const QString& title, double currentColor[3], int mode);
+    void showColorDialog(const QString& title,
+                         double currentColor[3],
+                         int mode);
     void highlightSingleItem(qint64 id);
     qint64 extractIdFromItemText(const QString& itemText);
     void updateBookmarkCombo();
@@ -202,7 +209,8 @@ private:
 
     // Label properties (ParaView-style)
     cvSelectionLabelPropertiesDialog::LabelProperties m_labelProperties;
-    cvSelectionLabelPropertiesDialog::LabelProperties m_interactiveLabelProperties;
+    cvSelectionLabelPropertiesDialog::LabelProperties
+            m_interactiveLabelProperties;
 
     // Saved selections for Selection Editor
     QList<SavedSelection> m_savedSelections;
@@ -237,7 +245,8 @@ private:
     QLabel* m_dataProducerLabel;
     QLabel* m_dataProducerValue;
     QLabel* m_elementTypeLabel;
-    QLabel* m_elementTypeValue;  // ParaView-style: shows element type in a styled label
+    QLabel* m_elementTypeValue;  // ParaView-style: shows element type in a
+                                 // styled label
     QLabel* m_expressionLabel;
     QLineEdit* m_expressionEdit;
     QTableWidget* m_selectionEditorTable;  // Name, Type, Color columns
@@ -250,7 +259,8 @@ private:
     QGroupBox* m_selectedDataGroup;
     QComboBox* m_attributeTypeCombo;
     QToolButton* m_toggleColumnVisibilityButton;
-    QToolButton* m_toggleFieldDataButton;  // ParaView-style: toggle field data visibility
+    QToolButton* m_toggleFieldDataButton;  // ParaView-style: toggle field data
+                                           // visibility
     QCheckBox* m_invertSelectionCheck;
     QTableWidget* m_spreadsheetTable;
 

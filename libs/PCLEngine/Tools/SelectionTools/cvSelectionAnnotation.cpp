@@ -68,7 +68,7 @@ QString cvSelectionAnnotationManager::addAnnotation(
     annotation.id = id;
     annotation.text = text;
     annotation.followSelection = autoPosition;
-    
+
     // Apply default cell label font properties
     annotation.fontFamily = m_defaultCellLabelProps.cellLabelFontFamily;
     annotation.fontSize = m_defaultCellLabelProps.cellLabelFontSize;
@@ -77,30 +77,36 @@ QString cvSelectionAnnotationManager::addAnnotation(
     annotation.bold = m_defaultCellLabelProps.cellLabelBold;
     annotation.italic = m_defaultCellLabelProps.cellLabelItalic;
     annotation.shadow = m_defaultCellLabelProps.cellLabelShadow;
-    annotation.horizontalJustification = m_defaultCellLabelProps.cellLabelHorizontalJustification;
-    annotation.verticalJustification = m_defaultCellLabelProps.cellLabelVerticalJustification;
+    annotation.horizontalJustification =
+            m_defaultCellLabelProps.cellLabelHorizontalJustification;
+    annotation.verticalJustification =
+            m_defaultCellLabelProps.cellLabelVerticalJustification;
 
     if (autoPosition && m_viewer) {
         // Compute selection center from polyData (ParaView-style)
         // Reference: ParaView's vtkSMSelectionHelper::ComputeSelectionBounds
         double* center = computeSelectionCenter(selection, nullptr);
-        
+
         if (center) {
             annotation.position[0] = center[0];
             annotation.position[1] = center[1];
             annotation.position[2] = center[2];
-            
-            CVLog::PrintDebug(QString("[cvSelectionAnnotationManager] Annotation "
-                                      "position: [%1, %2, %3]")
-                                      .arg(center[0]).arg(center[1]).arg(center[2]));
+
+            CVLog::PrintDebug(
+                    QString("[cvSelectionAnnotationManager] Annotation "
+                            "position: [%1, %2, %3]")
+                            .arg(center[0])
+                            .arg(center[1])
+                            .arg(center[2]));
             delete[] center;
         } else {
             // Fallback to origin
             annotation.position[0] = 0.0;
             annotation.position[1] = 0.0;
             annotation.position[2] = 0.0;
-            CVLog::PrintDebug("[cvSelectionAnnotationManager] Using origin for "
-                              "annotation (no polyData available)");
+            CVLog::PrintDebug(
+                    "[cvSelectionAnnotationManager] Using origin for "
+                    "annotation (no polyData available)");
         }
     }
 
@@ -126,7 +132,7 @@ QString cvSelectionAnnotationManager::addAnnotationAt(const QString& text,
                          : id;
 
     cvAnnotation annotation(text, position, annotationId);
-    
+
     // Apply default cell label font properties
     annotation.fontFamily = m_defaultCellLabelProps.cellLabelFontFamily;
     annotation.fontSize = m_defaultCellLabelProps.cellLabelFontSize;
@@ -135,8 +141,10 @@ QString cvSelectionAnnotationManager::addAnnotationAt(const QString& text,
     annotation.bold = m_defaultCellLabelProps.cellLabelBold;
     annotation.italic = m_defaultCellLabelProps.cellLabelItalic;
     annotation.shadow = m_defaultCellLabelProps.cellLabelShadow;
-    annotation.horizontalJustification = m_defaultCellLabelProps.cellLabelHorizontalJustification;
-    annotation.verticalJustification = m_defaultCellLabelProps.cellLabelVerticalJustification;
+    annotation.horizontalJustification =
+            m_defaultCellLabelProps.cellLabelHorizontalJustification;
+    annotation.verticalJustification =
+            m_defaultCellLabelProps.cellLabelVerticalJustification;
 
     m_annotations[annotationId] = annotation;
     createTextActor(annotation);
@@ -268,8 +276,10 @@ void cvSelectionAnnotationManager::applyLabelProperties(
             annotation.bold = props.cellLabelBold;
             annotation.italic = props.cellLabelItalic;
             annotation.shadow = props.cellLabelShadow;
-            annotation.horizontalJustification = props.cellLabelHorizontalJustification;
-            annotation.verticalJustification = props.cellLabelVerticalJustification;
+            annotation.horizontalJustification =
+                    props.cellLabelHorizontalJustification;
+            annotation.verticalJustification =
+                    props.cellLabelVerticalJustification;
         } else {
             annotation.fontFamily = props.pointLabelFontFamily;
             annotation.fontSize = props.pointLabelFontSize;
@@ -278,14 +288,16 @@ void cvSelectionAnnotationManager::applyLabelProperties(
             annotation.bold = props.pointLabelBold;
             annotation.italic = props.pointLabelItalic;
             annotation.shadow = props.pointLabelShadow;
-            annotation.horizontalJustification = props.pointLabelHorizontalJustification;
-            annotation.verticalJustification = props.pointLabelVerticalJustification;
+            annotation.horizontalJustification =
+                    props.pointLabelHorizontalJustification;
+            annotation.verticalJustification =
+                    props.pointLabelVerticalJustification;
         }
-        
+
         // Update the text actor immediately to apply changes
         updateTextActor(annotation.id);
     }
-    
+
     emit annotationsChanged();
 }
 
@@ -298,15 +310,16 @@ void cvSelectionAnnotationManager::setDefaultLabelProperties(
     } else {
         m_defaultPointLabelProps = props;
     }
-    
-    CVLog::PrintDebug(QString("[cvSelectionAnnotationManager] Set default %1 "
-                              "label properties: family=%2, size=%3, color=(%4,%5,%6)")
-                             .arg(isCellLabel ? "cell" : "point")
-                             .arg(props.cellLabelFontFamily)
-                             .arg(props.cellLabelFontSize)
-                             .arg(props.cellLabelColor.red())
-                             .arg(props.cellLabelColor.green())
-                             .arg(props.cellLabelColor.blue()));
+
+    CVLog::PrintDebug(
+            QString("[cvSelectionAnnotationManager] Set default %1 "
+                    "label properties: family=%2, size=%3, color=(%4,%5,%6)")
+                    .arg(isCellLabel ? "cell" : "point")
+                    .arg(props.cellLabelFontFamily)
+                    .arg(props.cellLabelFontSize)
+                    .arg(props.cellLabelColor.red())
+                    .arg(props.cellLabelColor.green())
+                    .arg(props.cellLabelColor.blue()));
 }
 
 //-----------------------------------------------------------------------------
@@ -385,8 +398,10 @@ bool cvSelectionAnnotationManager::exportToFile(const QString& filename) const {
         annotationObj["italic"] = annotation.italic;
         annotationObj["shadow"] = annotation.shadow;
         annotationObj["opacity"] = annotation.opacity;
-        annotationObj["horizontalJustification"] = annotation.horizontalJustification;
-        annotationObj["verticalJustification"] = annotation.verticalJustification;
+        annotationObj["horizontalJustification"] =
+                annotation.horizontalJustification;
+        annotationObj["verticalJustification"] =
+                annotation.verticalJustification;
         annotationObj["visible"] = annotation.visible;
         annotationObj["followSelection"] = annotation.followSelection;
         annotationObj["timestamp"] = annotation.timestamp;
@@ -478,8 +493,10 @@ bool cvSelectionAnnotationManager::importFromFile(const QString& filename,
         annotation.italic = annotationObj["italic"].toBool(false);
         annotation.shadow = annotationObj["shadow"].toBool(true);
         annotation.opacity = annotationObj["opacity"].toDouble(1.0);
-        annotation.horizontalJustification = annotationObj["horizontalJustification"].toString("Left");
-        annotation.verticalJustification = annotationObj["verticalJustification"].toString("Bottom");
+        annotation.horizontalJustification =
+                annotationObj["horizontalJustification"].toString("Left");
+        annotation.verticalJustification =
+                annotationObj["verticalJustification"].toString("Bottom");
         annotation.visible = annotationObj["visible"].toBool(true);
         annotation.followSelection =
                 annotationObj["followSelection"].toBool(false);
@@ -531,7 +548,7 @@ void cvSelectionAnnotationManager::createTextActor(
     textProp->SetItalic(annotation.italic ? 1 : 0);
     textProp->SetShadow(annotation.shadow ? 1 : 0);
     textProp->SetOpacity(annotation.opacity);
-    
+
     // Apply horizontal justification
     if (annotation.horizontalJustification == "Left") {
         textProp->SetJustificationToLeft();
@@ -540,7 +557,7 @@ void cvSelectionAnnotationManager::createTextActor(
     } else if (annotation.horizontalJustification == "Right") {
         textProp->SetJustificationToRight();
     }
-    
+
     // Apply vertical justification
     if (annotation.verticalJustification == "Top") {
         textProp->SetVerticalJustificationToTop();
@@ -549,7 +566,7 @@ void cvSelectionAnnotationManager::createTextActor(
     } else if (annotation.verticalJustification == "Bottom") {
         textProp->SetVerticalJustificationToBottom();
     }
-    
+
     // Mark as modified to ensure VTK updates
     textProp->Modified();
 
@@ -565,8 +582,9 @@ void cvSelectionAnnotationManager::createTextActor(
     } else {
         // Fallback: use default position
         textActor->SetPosition(100, 100);
-        CVLog::PrintDebug("[cvSelectionAnnotationManager] Using default "
-                          "position for annotation");
+        CVLog::PrintDebug(
+                "[cvSelectionAnnotationManager] Using default "
+                "position for annotation");
     }
 
     textActor->SetVisibility(annotation.visible);
@@ -604,7 +622,7 @@ void cvSelectionAnnotationManager::updateTextActor(const QString& id) {
     textProp->SetItalic(annotation.italic ? 1 : 0);
     textProp->SetShadow(annotation.shadow ? 1 : 0);
     textProp->SetOpacity(annotation.opacity);
-    
+
     // Apply horizontal justification
     if (annotation.horizontalJustification == "Left") {
         textProp->SetJustificationToLeft();
@@ -613,7 +631,7 @@ void cvSelectionAnnotationManager::updateTextActor(const QString& id) {
     } else if (annotation.horizontalJustification == "Right") {
         textProp->SetJustificationToRight();
     }
-    
+
     // Apply vertical justification
     if (annotation.verticalJustification == "Top") {
         textProp->SetVerticalJustificationToTop();
@@ -622,7 +640,7 @@ void cvSelectionAnnotationManager::updateTextActor(const QString& id) {
     } else if (annotation.verticalJustification == "Bottom") {
         textProp->SetVerticalJustificationToBottom();
     }
-    
+
     // Mark as modified to ensure VTK updates
     textProp->Modified();
     textActor->Modified();
@@ -720,7 +738,7 @@ double* cvSelectionAnnotationManager::computeSelectionCenter(
 
 //-----------------------------------------------------------------------------
 bool cvSelectionAnnotationManager::worldToDisplay(const double worldPos[3],
-                                                   double displayPos[2]) {
+                                                  double displayPos[2]) {
     if (!m_viewer) {
         return false;
     }
