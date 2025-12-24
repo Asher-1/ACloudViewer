@@ -57,56 +57,63 @@ void cvFilterConfigDialog::setupUI() {
     // Filter type selection
     QHBoxLayout* typeLayout = new QHBoxLayout();
     typeLayout->addWidget(new QLabel(tr("Filter Type:")));
-    
+
     m_filterTypeCombo = new QComboBox();
-    m_filterTypeCombo->addItem(tr("Attribute (Range)"),
-                                static_cast<int>(cvSelectionFilter::ATTRIBUTE_RANGE));
-    m_filterTypeCombo->addItem(tr("Geometric (Area)"),
-                                static_cast<int>(cvSelectionFilter::GEOMETRIC_AREA));
-    m_filterTypeCombo->addItem(tr("Geometric (Angle)"),
-                                static_cast<int>(cvSelectionFilter::GEOMETRIC_ANGLE));
-    m_filterTypeCombo->addItem(tr("Spatial (Bounding Box)"),
-                                static_cast<int>(cvSelectionFilter::SPATIAL_BBOX));
-    m_filterTypeCombo->addItem(tr("Spatial (Distance)"),
-                                static_cast<int>(cvSelectionFilter::SPATIAL_DISTANCE));
-    m_filterTypeCombo->addItem(tr("Topology (Neighbors)"),
-                                static_cast<int>(cvSelectionFilter::TOPOLOGY_NEIGHBORS));
-    
-    connect(m_filterTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &cvFilterConfigDialog::onFilterTypeChanged);
-    
+    m_filterTypeCombo->addItem(
+            tr("Attribute (Range)"),
+            static_cast<int>(cvSelectionFilter::ATTRIBUTE_RANGE));
+    m_filterTypeCombo->addItem(
+            tr("Geometric (Area)"),
+            static_cast<int>(cvSelectionFilter::GEOMETRIC_AREA));
+    m_filterTypeCombo->addItem(
+            tr("Geometric (Angle)"),
+            static_cast<int>(cvSelectionFilter::GEOMETRIC_ANGLE));
+    m_filterTypeCombo->addItem(
+            tr("Spatial (Bounding Box)"),
+            static_cast<int>(cvSelectionFilter::SPATIAL_BBOX));
+    m_filterTypeCombo->addItem(
+            tr("Spatial (Distance)"),
+            static_cast<int>(cvSelectionFilter::SPATIAL_DISTANCE));
+    m_filterTypeCombo->addItem(
+            tr("Topology (Neighbors)"),
+            static_cast<int>(cvSelectionFilter::TOPOLOGY_NEIGHBORS));
+
+    connect(m_filterTypeCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &cvFilterConfigDialog::onFilterTypeChanged);
+
     typeLayout->addWidget(m_filterTypeCombo);
     mainLayout->addLayout(typeLayout);
 
     // Parameter stack (different UI for each filter type)
     m_parameterStack = new QStackedWidget();
-    
+
     setupAttributeFilterUI();
     setupGeometricFilterUI();
     setupSpatialFilterUI();
     setupTopologyFilterUI();
-    
+
     mainLayout->addWidget(m_parameterStack);
 
     // Preview and buttons
     QHBoxLayout* buttonLayout = new QHBoxLayout();
-    
+
     m_previewButton = new QPushButton(tr("Preview"));
     m_previewButton->setEnabled(m_polyData != nullptr);
-    connect(m_previewButton, &QPushButton::clicked,
-            this, &cvFilterConfigDialog::onPreviewClicked);
+    connect(m_previewButton, &QPushButton::clicked, this,
+            &cvFilterConfigDialog::onPreviewClicked);
     buttonLayout->addWidget(m_previewButton);
-    
+
     buttonLayout->addStretch();
-    
+
     QDialogButtonBox* dialogButtons = new QDialogButtonBox(
             QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(dialogButtons, &QDialogButtonBox::accepted,
-            this, &cvFilterConfigDialog::onAccepted);
-    connect(dialogButtons, &QDialogButtonBox::rejected,
-            this, &cvFilterConfigDialog::onRejected);
+    connect(dialogButtons, &QDialogButtonBox::accepted, this,
+            &cvFilterConfigDialog::onAccepted);
+    connect(dialogButtons, &QDialogButtonBox::rejected, this,
+            &cvFilterConfigDialog::onRejected);
     buttonLayout->addWidget(dialogButtons);
-    
+
     mainLayout->addLayout(buttonLayout);
 
     // Set initial filter type
@@ -267,7 +274,7 @@ void cvFilterConfigDialog::setupTopologyFilterUI() {
 void cvFilterConfigDialog::onFilterTypeChanged(int index) {
     m_filterType = static_cast<cvSelectionFilter::FilterType>(
             m_filterTypeCombo->itemData(index).toInt());
-    
+
     // Switch to appropriate parameter UI
     switch (m_filterType) {
         case cvSelectionFilter::ATTRIBUTE_RANGE:
@@ -296,10 +303,13 @@ void cvFilterConfigDialog::onPreviewClicked() {
     // 3. Update visualization with preview highlighting
     // 4. Provide "Revert" option to undo preview
     // Note: Not critical for initial release, can be added in future version
-    CVLog::Print("[cvFilterConfigDialog] Preview feature available in future version");
-    QMessageBox::information(this, tr("Preview"), 
-                            tr("Preview functionality will be available in a future version.\n"
-                               "For now, please use OK to apply the filter."));
+    CVLog::Print(
+            "[cvFilterConfigDialog] Preview feature available in future "
+            "version");
+    QMessageBox::information(
+            this, tr("Preview"),
+            tr("Preview functionality will be available in a future version.\n"
+               "For now, please use OK to apply the filter."));
 }
 
 //-----------------------------------------------------------------------------
@@ -311,9 +321,7 @@ void cvFilterConfigDialog::onAccepted() {
 }
 
 //-----------------------------------------------------------------------------
-void cvFilterConfigDialog::onRejected() {
-    reject();
-}
+void cvFilterConfigDialog::onRejected() { reject(); }
 
 //-----------------------------------------------------------------------------
 void cvFilterConfigDialog::loadParameters() {
@@ -328,7 +336,8 @@ void cvFilterConfigDialog::saveParameters() {
     switch (m_filterType) {
         case cvSelectionFilter::ATTRIBUTE_RANGE:
             m_parameters["attribute"] = m_attributeCombo->currentText();
-            m_parameters["operator"] = m_operatorCombo->currentData().toString();
+            m_parameters["operator"] =
+                    m_operatorCombo->currentData().toString();
             m_parameters["minValue"] = m_minValueSpin->value();
             m_parameters["maxValue"] = m_maxValueSpin->value();
             break;
@@ -353,7 +362,8 @@ void cvFilterConfigDialog::saveParameters() {
             break;
 
         case cvSelectionFilter::TOPOLOGY_NEIGHBORS:
-            m_parameters["neighborCount"] = static_cast<int>(m_distanceSpin->value());
+            m_parameters["neighborCount"] =
+                    static_cast<int>(m_distanceSpin->value());
             break;
     }
 
@@ -369,14 +379,17 @@ bool cvFilterConfigDialog::validateParameters() {
         case cvSelectionFilter::GEOMETRIC_AREA:
         case cvSelectionFilter::GEOMETRIC_ANGLE:
             if (m_minValueSpin->value() > m_maxValueSpin->value()) {
-                CVLog::Warning("[cvFilterConfigDialog] Min value must be <= Max value");
+                CVLog::Warning(
+                        "[cvFilterConfigDialog] Min value must be <= Max "
+                        "value");
                 return false;
             }
             break;
 
         case cvSelectionFilter::SPATIAL_DISTANCE:
             if (m_distanceSpin->value() <= 0.0) {
-                CVLog::Warning("[cvFilterConfigDialog] Distance must be positive");
+                CVLog::Warning(
+                        "[cvFilterConfigDialog] Distance must be positive");
                 return false;
             }
             break;
@@ -406,4 +419,3 @@ QMap<QString, QVariant> cvFilterConfigDialog::getParameters() const {
 cvSelectionFilter::FilterType cvFilterConfigDialog::getFilterType() const {
     return m_filterType;
 }
-

@@ -14,7 +14,6 @@
 #include "cvSelectionReaction.h"
 #include "cvViewSelectionManager.h"
 
-
 // CV_CORE_LIB
 #include <CVLog.h>
 
@@ -38,16 +37,15 @@ cvSelectionToolController::cvSelectionToolController(QObject* parent)
       m_modifierGroup(nullptr) {
     // Connect to manager signals
     // Use QOverload to select the correct signal overload
-    connect(m_manager, 
-            QOverload<const cvSelectionData&>::of(&cvViewSelectionManager::selectionChanged), 
-            this,
-            [this](const cvSelectionData& data) {
+    connect(m_manager,
+            QOverload<const cvSelectionData&>::of(
+                    &cvViewSelectionManager::selectionChanged),
+            this, [this](const cvSelectionData& data) {
                 emit selectionFinished(data);
             });
 
-    connect(m_manager, 
-            QOverload<>::of(&cvViewSelectionManager::selectionChanged), 
-            this,
+    connect(m_manager,
+            QOverload<>::of(&cvViewSelectionManager::selectionChanged), this,
             &cvSelectionToolController::selectionHistoryChanged);
 
     CVLog::Print("[cvSelectionToolController] Initialized");
@@ -82,10 +80,10 @@ void cvSelectionToolController::setVisualizer(ecvGenericVisualizer3D* viewer) {
 
 //-----------------------------------------------------------------------------
 cvSelectionReaction* cvSelectionToolController::registerAction(
-        QAction* action,
-        SelectionMode mode) {
+        QAction* action, SelectionMode mode) {
     if (!action) {
-        CVLog::Warning("[cvSelectionToolController] Cannot register null action");
+        CVLog::Warning(
+                "[cvSelectionToolController] Cannot register null action");
         return nullptr;
     }
 
@@ -102,28 +100,30 @@ cvSelectionReaction* cvSelectionToolController::registerAction(
         connect(reaction, &cvSelectionReaction::zoomToBoxRequested, this,
                 &cvSelectionToolController::zoomToBoxRequested);
     }
-    
+
     // Monitor action state changes to track when selection tools are active
     // This enables selection properties panel display
     if (action->isCheckable()) {
         connect(action, &QAction::toggled, this, [this, mode](bool checked) {
-            CVLog::PrintDebug(QString("[cvSelectionToolController] Action for mode %1 %2")
-                                     .arg(static_cast<int>(mode))
-                                     .arg(checked ? "checked" : "unchecked"));
-            
+            CVLog::PrintDebug(
+                    QString("[cvSelectionToolController] Action for mode %1 %2")
+                            .arg(static_cast<int>(mode))
+                            .arg(checked ? "checked" : "unchecked"));
+
             // Update selection tools active state
             // A tool is active if any reaction's action is checked
             bool anyActive = false;
-            for (auto it = m_reactions.constBegin(); it != m_reactions.constEnd(); ++it) {
+            for (auto it = m_reactions.constBegin();
+                 it != m_reactions.constEnd(); ++it) {
                 QPointer<cvSelectionReaction> reaction = it.value();
-                if (reaction && reaction->parentAction() && 
-                    reaction->parentAction()->isCheckable() && 
+                if (reaction && reaction->parentAction() &&
+                    reaction->parentAction()->isCheckable() &&
                     reaction->parentAction()->isChecked()) {
                     anyActive = true;
                     break;
                 }
             }
-            
+
             setSelectionPropertiesActive(anyActive);
         });
     }
@@ -131,17 +131,18 @@ cvSelectionReaction* cvSelectionToolController::registerAction(
     // Store the reaction
     m_reactions[mode] = reaction;
 
-    CVLog::PrintDebug(QString("[cvSelectionToolController] Registered action for "
-                              "mode %1")
-                              .arg(static_cast<int>(mode)));
+    CVLog::PrintDebug(
+            QString("[cvSelectionToolController] Registered action for "
+                    "mode %1")
+                    .arg(static_cast<int>(mode)));
 
     return reaction;
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::registerModifierActions(QAction* addAction,
-                                                         QAction* subtractAction,
-                                                         QAction* toggleAction) {
+                                                        QAction* subtractAction,
+                                                        QAction* toggleAction) {
     m_addAction = addAction;
     m_subtractAction = subtractAction;
     m_toggleAction = toggleAction;
@@ -151,7 +152,8 @@ void cvSelectionToolController::registerModifierActions(QAction* addAction,
     m_modifierGroup->setExclusive(false);  // Allow none to be checked
 
     if (addAction) {
-        addAction->setData(static_cast<int>(SelectionModifier::SELECTION_ADDITION));
+        addAction->setData(
+                static_cast<int>(SelectionModifier::SELECTION_ADDITION));
         m_modifierGroup->addAction(addAction);
     }
     if (subtractAction) {
@@ -160,7 +162,8 @@ void cvSelectionToolController::registerModifierActions(QAction* addAction,
         m_modifierGroup->addAction(subtractAction);
     }
     if (toggleAction) {
-        toggleAction->setData(static_cast<int>(SelectionModifier::SELECTION_TOGGLE));
+        toggleAction->setData(
+                static_cast<int>(SelectionModifier::SELECTION_TOGGLE));
         m_modifierGroup->addAction(toggleAction);
     }
 
@@ -168,13 +171,13 @@ void cvSelectionToolController::registerModifierActions(QAction* addAction,
     connect(m_modifierGroup, &QActionGroup::triggered, this,
             &cvSelectionToolController::onModifierChanged);
 
-    CVLog::PrintDebug("[cvSelectionToolController] Registered modifier actions");
+    CVLog::PrintDebug(
+            "[cvSelectionToolController] Registered modifier actions");
 }
 
 //-----------------------------------------------------------------------------
-void cvSelectionToolController::registerManipulationActions(QAction* growAction,
-                                                             QAction* shrinkAction,
-                                                             QAction* clearAction) {
+void cvSelectionToolController::registerManipulationActions(
+        QAction* growAction, QAction* shrinkAction, QAction* clearAction) {
     m_growAction = growAction;
     m_shrinkAction = shrinkAction;
     m_clearAction = clearAction;
@@ -199,7 +202,8 @@ void cvSelectionToolController::disableAllTools(cvSelectionReaction* except) {
     for (auto reaction : m_reactions) {
         if (reaction && reaction != except && reaction->isActive()) {
             // Trigger the action to toggle it off
-            if (reaction->parentAction() && reaction->parentAction()->isCheckable()) {
+            if (reaction->parentAction() &&
+                reaction->parentAction()->isCheckable()) {
                 reaction->parentAction()->blockSignals(true);
                 reaction->parentAction()->setChecked(false);
                 reaction->parentAction()->blockSignals(false);
@@ -267,8 +271,9 @@ bool cvSelectionToolController::handleEscapeKey() {
     uncheckAction(m_actions.hoverPoints);
     uncheckAction(m_actions.zoomToBox);
 
-    CVLog::PrintDebug("[cvSelectionToolController] ESC key handled - disabled all "
-                      "selection tools");
+    CVLog::PrintDebug(
+            "[cvSelectionToolController] ESC key handled - disabled all "
+            "selection tools");
     return true;
 }
 
@@ -324,9 +329,10 @@ void cvSelectionToolController::onSelectionFinished(
     // Emit signal
     emit selectionFinished(selectionData);
 
-    CVLog::Print(QString("[cvSelectionToolController] Selection finished: %1 %2")
-                         .arg(selectionData.count())
-                         .arg(selectionData.fieldTypeString()));
+    CVLog::Print(
+            QString("[cvSelectionToolController] Selection finished: %1 %2")
+                    .arg(selectionData.count())
+                    .arg(selectionData.fieldTypeString()));
 }
 
 //-----------------------------------------------------------------------------
@@ -399,34 +405,40 @@ void cvSelectionToolController::setupActions(const SelectionActions& actions) {
     m_actions = actions;
 
     // Register selection modifier actions first (used by other reactions)
-    if (actions.addSelection || actions.subtractSelection || actions.toggleSelection) {
-        registerModifierActions(actions.addSelection, 
-                               actions.subtractSelection, 
-                               actions.toggleSelection);
+    if (actions.addSelection || actions.subtractSelection ||
+        actions.toggleSelection) {
+        registerModifierActions(actions.addSelection, actions.subtractSelection,
+                                actions.toggleSelection);
     }
 
     // Register surface selection actions
     if (actions.selectSurfaceCells) {
-        registerAction(actions.selectSurfaceCells, SelectionMode::SELECT_SURFACE_CELLS);
+        registerAction(actions.selectSurfaceCells,
+                       SelectionMode::SELECT_SURFACE_CELLS);
     }
     if (actions.selectSurfacePoints) {
-        registerAction(actions.selectSurfacePoints, SelectionMode::SELECT_SURFACE_POINTS);
+        registerAction(actions.selectSurfacePoints,
+                       SelectionMode::SELECT_SURFACE_POINTS);
     }
 
     // Register frustum selection actions
     if (actions.selectFrustumCells) {
-        registerAction(actions.selectFrustumCells, SelectionMode::SELECT_FRUSTUM_CELLS);
+        registerAction(actions.selectFrustumCells,
+                       SelectionMode::SELECT_FRUSTUM_CELLS);
     }
     if (actions.selectFrustumPoints) {
-        registerAction(actions.selectFrustumPoints, SelectionMode::SELECT_FRUSTUM_POINTS);
+        registerAction(actions.selectFrustumPoints,
+                       SelectionMode::SELECT_FRUSTUM_POINTS);
     }
 
     // Register polygon selection actions
     if (actions.selectPolygonCells) {
-        registerAction(actions.selectPolygonCells, SelectionMode::SELECT_SURFACE_CELLS_POLYGON);
+        registerAction(actions.selectPolygonCells,
+                       SelectionMode::SELECT_SURFACE_CELLS_POLYGON);
     }
     if (actions.selectPolygonPoints) {
-        registerAction(actions.selectPolygonPoints, SelectionMode::SELECT_SURFACE_POINTS_POLYGON);
+        registerAction(actions.selectPolygonPoints,
+                       SelectionMode::SELECT_SURFACE_POINTS_POLYGON);
     }
 
     // Register block selection actions
@@ -434,17 +446,18 @@ void cvSelectionToolController::setupActions(const SelectionActions& actions) {
         registerAction(actions.selectBlocks, SelectionMode::SELECT_BLOCKS);
     }
     if (actions.selectFrustumBlocks) {
-        registerAction(actions.selectFrustumBlocks, SelectionMode::SELECT_FRUSTUM_BLOCKS);
+        registerAction(actions.selectFrustumBlocks,
+                       SelectionMode::SELECT_FRUSTUM_BLOCKS);
     }
 
     // Register interactive selection actions
     if (actions.interactiveSelectCells) {
-        registerAction(actions.interactiveSelectCells, 
-                      SelectionMode::SELECT_SURFACE_CELLS_INTERACTIVELY);
+        registerAction(actions.interactiveSelectCells,
+                       SelectionMode::SELECT_SURFACE_CELLS_INTERACTIVELY);
     }
     if (actions.interactiveSelectPoints) {
-        registerAction(actions.interactiveSelectPoints, 
-                      SelectionMode::SELECT_SURFACE_POINTS_INTERACTIVELY);
+        registerAction(actions.interactiveSelectPoints,
+                       SelectionMode::SELECT_SURFACE_POINTS_INTERACTIVELY);
     }
 
     // Register hover/tooltip actions
@@ -452,7 +465,8 @@ void cvSelectionToolController::setupActions(const SelectionActions& actions) {
         registerAction(actions.hoverCells, SelectionMode::HOVER_CELLS_TOOLTIP);
     }
     if (actions.hoverPoints) {
-        registerAction(actions.hoverPoints, SelectionMode::HOVER_POINTS_TOOLTIP);
+        registerAction(actions.hoverPoints,
+                       SelectionMode::HOVER_POINTS_TOOLTIP);
     }
 
     // Register zoom to box action
@@ -461,17 +475,18 @@ void cvSelectionToolController::setupActions(const SelectionActions& actions) {
     }
 
     // Register manipulation actions
-    registerManipulationActions(actions.growSelection, 
-                                actions.shrinkSelection, 
+    registerManipulationActions(actions.growSelection, actions.shrinkSelection,
                                 actions.clearSelection);
 
-    CVLog::Print("[cvSelectionToolController] All selection actions registered");
+    CVLog::Print(
+            "[cvSelectionToolController] All selection actions registered");
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::connectHighlighter() {
     // Highlighter is now managed by cvViewSelectionManager
     // This method is kept for compatibility but does nothing
-    CVLog::PrintDebug("[cvSelectionToolController] Highlighter connection established via manager");
+    CVLog::PrintDebug(
+            "[cvSelectionToolController] Highlighter connection established "
+            "via manager");
 }
-

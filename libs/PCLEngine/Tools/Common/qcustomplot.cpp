@@ -7,9 +7,15 @@
 
 #include "qcustomplot.h"
 
-#include <QPrintEngine>
-#include <QPrinter>
-#include <QToolTip>
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QPrintEngine>
+#include <QtGui/QPrinter>
+#include <QtGui/QToolTip>
+#else
+#include <QtPrintSupport/QPrintEngine>
+#include <QtPrintSupport/QPrinter>
+#include <QtWidgets/QToolTip>
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// QCPPainter

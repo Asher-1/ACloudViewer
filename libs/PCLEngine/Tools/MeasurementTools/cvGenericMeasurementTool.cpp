@@ -288,12 +288,14 @@ void cvGenericMeasurementTool::setFontColor(double r, double g, double b) {
     applyFontProperties();
 }
 
-void cvGenericMeasurementTool::setHorizontalJustification(const QString& justification) {
+void cvGenericMeasurementTool::setHorizontalJustification(
+        const QString& justification) {
     m_horizontalJustification = justification;
     applyFontProperties();
 }
 
-void cvGenericMeasurementTool::setVerticalJustification(const QString& justification) {
+void cvGenericMeasurementTool::setVerticalJustification(
+        const QString& justification) {
     m_verticalJustification = justification;
     applyFontProperties();
 }

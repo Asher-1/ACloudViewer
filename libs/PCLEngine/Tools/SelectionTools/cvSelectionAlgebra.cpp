@@ -232,11 +232,12 @@ cvSelectionData cvSelectionAlgebra::performOperation(Operation op,
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionData cvSelectionAlgebra::growSelection(vtkPolyData* polyData,
-                                                  const cvSelectionData& input,
-                                                  int layers,
-                                                  bool removeSeed,
-                                                  bool removeIntermediateLayers) {
+cvSelectionData cvSelectionAlgebra::growSelection(
+        vtkPolyData* polyData,
+        const cvSelectionData& input,
+        int layers,
+        bool removeSeed,
+        bool removeIntermediateLayers) {
     if (!polyData || input.isEmpty()) {
         return cvSelectionData();
     }
@@ -270,22 +271,24 @@ cvSelectionData cvSelectionAlgebra::growSelection(vtkPolyData* polyData,
 
     // ParaView-style: Apply removal options
     QSet<vtkIdType> resultSet = currentSet;
-    
+
     if (removeIntermediateLayers) {
         // Keep only the outermost layer (elements added in the last iteration)
         // Outermost = currentSet - previousLayerSet
         resultSet = currentSet;
         resultSet.subtract(previousLayerSet);
-        CVLog::Print(QString("[cvSelectionAlgebra] Removed intermediate layers, "
-                             "keeping outermost: %1 cells")
-                             .arg(resultSet.size()));
+        CVLog::Print(
+                QString("[cvSelectionAlgebra] Removed intermediate layers, "
+                        "keeping outermost: %1 cells")
+                        .arg(resultSet.size()));
     }
-    
+
     if (removeSeed) {
         // Remove the original seed elements
         resultSet.subtract(seedSet);
-        CVLog::Print(QString("[cvSelectionAlgebra] Removed seed, result: %1 cells")
-                             .arg(resultSet.size()));
+        CVLog::Print(
+                QString("[cvSelectionAlgebra] Removed seed, result: %1 cells")
+                        .arg(resultSet.size()));
     }
 
     QVector<qint64> resultIds;
@@ -293,14 +296,13 @@ cvSelectionData cvSelectionAlgebra::growSelection(vtkPolyData* polyData,
         resultIds.append(id);
     }
 
-    CVLog::Print(
-            QString("[cvSelectionAlgebra] Grow %1 layers (removeSeed=%2, "
-                    "removeIntermediate=%3): %4 -> %5 cells")
-                    .arg(layers)
-                    .arg(removeSeed)
-                    .arg(removeIntermediateLayers)
-                    .arg(input.count())
-                    .arg(resultIds.size()));
+    CVLog::Print(QString("[cvSelectionAlgebra] Grow %1 layers (removeSeed=%2, "
+                         "removeIntermediate=%3): %4 -> %5 cells")
+                         .arg(layers)
+                         .arg(removeSeed)
+                         .arg(removeIntermediateLayers)
+                         .arg(input.count())
+                         .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, cvSelectionData::CELLS);
 }
@@ -442,27 +444,31 @@ bool cvSelectionAlgebra::isBoundaryCell(vtkPolyData* polyData,
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionData cvSelectionAlgebra::expandSelection(vtkPolyData* polyData,
-                                                    const cvSelectionData& input,
-                                                    int layers,
-                                                    bool removeSeed,
-                                                    bool removeIntermediateLayers) {
+cvSelectionData cvSelectionAlgebra::expandSelection(
+        vtkPolyData* polyData,
+        const cvSelectionData& input,
+        int layers,
+        bool removeSeed,
+        bool removeIntermediateLayers) {
     // ParaView-compatible expand selection API
     // Reference: vtkSMSelectionHelper::ExpandSelection
-    
+
     if (!polyData || input.isEmpty()) {
         return cvSelectionData();
     }
 
     // Handle both cell and point selections
-    bool isPointSelection = (input.fieldAssociation() == cvSelectionData::POINTS);
+    bool isPointSelection =
+            (input.fieldAssociation() == cvSelectionData::POINTS);
 
     if (layers > 0) {
         // Grow selection
         if (isPointSelection) {
-            return growPointSelection(polyData, input, layers, removeSeed, removeIntermediateLayers);
+            return growPointSelection(polyData, input, layers, removeSeed,
+                                      removeIntermediateLayers);
         } else {
-            return growSelection(polyData, input, layers, removeSeed, removeIntermediateLayers);
+            return growSelection(polyData, input, layers, removeSeed,
+                                 removeIntermediateLayers);
         }
     } else if (layers < 0) {
         // Shrink selection
@@ -478,18 +484,20 @@ cvSelectionData cvSelectionAlgebra::expandSelection(vtkPolyData* polyData,
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionData cvSelectionAlgebra::growPointSelection(vtkPolyData* polyData,
-                                                        const cvSelectionData& input,
-                                                        int layers,
-                                                        bool removeSeed,
-                                                        bool removeIntermediateLayers) {
+cvSelectionData cvSelectionAlgebra::growPointSelection(
+        vtkPolyData* polyData,
+        const cvSelectionData& input,
+        int layers,
+        bool removeSeed,
+        bool removeIntermediateLayers) {
     if (!polyData || input.isEmpty()) {
         return cvSelectionData();
     }
 
     if (input.fieldAssociation() != cvSelectionData::POINTS) {
         CVLog::Warning(
-                "[cvSelectionAlgebra] growPointSelection only works with point selection");
+                "[cvSelectionAlgebra] growPointSelection only works with point "
+                "selection");
         return input;
     }
 
@@ -515,12 +523,12 @@ cvSelectionData cvSelectionAlgebra::growPointSelection(vtkPolyData* polyData,
 
     // Apply removal options
     QSet<vtkIdType> resultSet = currentSet;
-    
+
     if (removeIntermediateLayers) {
         resultSet = currentSet;
         resultSet.subtract(previousLayerSet);
     }
-    
+
     if (removeSeed) {
         resultSet.subtract(seedSet);
     }
@@ -530,26 +538,26 @@ cvSelectionData cvSelectionAlgebra::growPointSelection(vtkPolyData* polyData,
         resultIds.append(id);
     }
 
-    CVLog::Print(
-            QString("[cvSelectionAlgebra] Grow points %1 layers: %2 -> %3 points")
-                    .arg(layers)
-                    .arg(input.count())
-                    .arg(resultIds.size()));
+    CVLog::Print(QString("[cvSelectionAlgebra] Grow points %1 layers: %2 -> %3 "
+                         "points")
+                         .arg(layers)
+                         .arg(input.count())
+                         .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, cvSelectionData::POINTS);
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionData cvSelectionAlgebra::shrinkPointSelection(vtkPolyData* polyData,
-                                                          const cvSelectionData& input,
-                                                          int iterations) {
+cvSelectionData cvSelectionAlgebra::shrinkPointSelection(
+        vtkPolyData* polyData, const cvSelectionData& input, int iterations) {
     if (!polyData || input.isEmpty()) {
         return cvSelectionData();
     }
 
     if (input.fieldAssociation() != cvSelectionData::POINTS) {
         CVLog::Warning(
-                "[cvSelectionAlgebra] shrinkPointSelection only works with point selection");
+                "[cvSelectionAlgebra] shrinkPointSelection only works with "
+                "point selection");
         return input;
     }
 
@@ -578,18 +586,18 @@ cvSelectionData cvSelectionAlgebra::shrinkPointSelection(vtkPolyData* polyData,
         resultIds.append(id);
     }
 
-    CVLog::Print(
-            QString("[cvSelectionAlgebra] Shrink points %1 iterations: %2 -> %3 points")
-                    .arg(iterations)
-                    .arg(input.count())
-                    .arg(resultIds.size()));
+    CVLog::Print(QString("[cvSelectionAlgebra] Shrink points %1 iterations: %2 "
+                         "-> %3 points")
+                         .arg(iterations)
+                         .arg(input.count())
+                         .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, cvSelectionData::POINTS);
 }
 
 //-----------------------------------------------------------------------------
 QSet<vtkIdType> cvSelectionAlgebra::getPointNeighbors(vtkPolyData* polyData,
-                                                       vtkIdType pointId) {
+                                                      vtkIdType pointId) {
     QSet<vtkIdType> neighbors;
 
     // Get all cells that use this point
@@ -615,11 +623,12 @@ QSet<vtkIdType> cvSelectionAlgebra::getPointNeighbors(vtkPolyData* polyData,
 
 //-----------------------------------------------------------------------------
 bool cvSelectionAlgebra::isBoundaryPoint(vtkPolyData* polyData,
-                                          vtkIdType pointId,
-                                          const QSet<vtkIdType>& selectedSet) {
+                                         vtkIdType pointId,
+                                         const QSet<vtkIdType>& selectedSet) {
     QSet<vtkIdType> neighbors = getPointNeighbors(polyData, pointId);
 
-    // A point is on the boundary if at least one of its neighbors is not selected
+    // A point is on the boundary if at least one of its neighbors is not
+    // selected
     for (vtkIdType neighborId : neighbors) {
         if (!selectedSet.contains(neighborId)) {
             return true;

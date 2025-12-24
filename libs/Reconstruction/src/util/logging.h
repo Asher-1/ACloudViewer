@@ -11,11 +11,6 @@
 
 #include <iostream>
 
-#ifdef GUI_ENABLED
-#include <QCoreApplication>
-#include <QThread>
-#endif
-
 #include "util/string.h"
 
 // Option checker macros. In contrast to glog, this function does not abort the

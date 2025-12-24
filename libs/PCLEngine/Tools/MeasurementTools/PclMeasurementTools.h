@@ -61,8 +61,10 @@ public:  // implemented from ecvGenericMeasurementTools interface
     virtual void setShadow(bool shadow) override;
     virtual void setFontOpacity(double opacity) override;
     virtual void setFontColor(double r, double g, double b) override;
-    virtual void setHorizontalJustification(const QString& justification) override;
-    virtual void setVerticalJustification(const QString& justification) override;
+    virtual void setHorizontalJustification(
+            const QString& justification) override;
+    virtual void setVerticalJustification(
+            const QString& justification) override;
     virtual void setupShortcuts(QWidget* win) override;
     virtual void disableShortcuts() override;
     virtual void clearPickingCache() override;

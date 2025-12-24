@@ -3094,8 +3094,9 @@ void MainWindow::handleEscapeKey() {
 
     // Then handle picking and fullscreen
     cancelPreviousPickingOperation(true);
-    
-    // Handle exclusive fullscreen mode (when a sub-widget is fullscreen, not MainWindow itself)
+
+    // Handle exclusive fullscreen mode (when a sub-widget is fullscreen, not
+    // MainWindow itself)
     if (m_exclusiveFullscreen) {
         toggleExclusiveFullScreen(false);
     }
@@ -4131,31 +4132,40 @@ void MainWindow::initSelectionController() {
                             ->updateSelectionProperties(data);
                 }
             });
-    
-    // CRITICAL FIX: Connect properties delegate's clear request to selection manager
-    // This prevents crashes from dangling pointers when objects are deleted
+
+    // CRITICAL FIX: Connect properties delegate's clear request to selection
+    // manager This prevents crashes from dangling pointers when objects are
+    // deleted
     if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
         connect(m_ccRoot->getPropertiesDelegate(),
                 &ccPropertiesTreeDelegate::requestClearSelection, this,
                 [this]() {
-                    CVLog::Print("[MainWindow] Clearing selection data due to object changes");
+                    CVLog::Print(
+                            "[MainWindow] Clearing selection data due to "
+                            "object changes");
                     auto* manager = getSelectionManager();
                     if (manager) {
                         manager->clearCurrentSelection();
                     }
                     // Also clear highlights
-                    if (m_selectionController && m_selectionController->highlighter()) {
+                    if (m_selectionController &&
+                        m_selectionController->highlighter()) {
                         m_selectionController->highlighter()->clearHighlights();
                     }
                 });
     }
 
-    // Connect zoom to box signal for notification (zoom is handled by cvZoomToBoxTool)
+    // Connect zoom to box signal for notification (zoom is handled by
+    // cvZoomToBoxTool)
     connect(m_selectionController,
             &cvSelectionToolController::zoomToBoxRequested, this,
             [this](int xmin, int ymin, int xmax, int ymax) {
-                CVLog::Print(QString("[MainWindow] Zoom to box completed: [%1, %2, %3, %4]")
-                                     .arg(xmin).arg(ymin).arg(xmax).arg(ymax));
+                CVLog::Print(QString("[MainWindow] Zoom to box completed: [%1, "
+                                     "%2, %3, %4]")
+                                     .arg(xmin)
+                                     .arg(ymin)
+                                     .arg(xmax)
+                                     .arg(ymax));
                 // Zoom is already performed by cvZoomToBoxTool using VTK
                 // This signal is for notification/logging purposes
                 ecvDisplayTools::UpdateScreen();
@@ -4197,8 +4207,9 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
     // CRITICAL FIX: Don't call setCurrentSelection here!
     // The tool has already set it via manager->setCurrentSelection()
     // Calling it again causes infinite recursion:
-    //   setCurrentSelection → selectionChanged → selectionFinished → here → setCurrentSelection...
-    
+    //   setCurrentSelection → selectionChanged → selectionFinished → here →
+    //   setCurrentSelection...
+
     // Get manager from controller
     cvViewSelectionManager* manager = getSelectionManager();
     if (!manager) {
@@ -4208,7 +4219,7 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
     // NOTE: Selection is already stored by the tool/controller
     // We just need to update the UI based on current selection state
     bool hasSelection = !selectionData.isEmpty();
-    
+
     // Enable/disable manipulation actions based on selection state
     m_ui->actionGrowSelection->setEnabled(hasSelection);
     m_ui->actionShrinkSelection->setEnabled(hasSelection);
@@ -4236,9 +4247,9 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
     }
 
     ecvDisplayTools::UpdateScreen();
-    
+
     CVLog::PrintDebug(QString("[MainWindow] Selection UI updated: %1 elements")
-                             .arg(selectionData.count()));
+                              .arg(selectionData.count()));
 }
 
 void MainWindow::onSelectionToolActivated(QAction* action) {
@@ -10157,7 +10168,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                             }
                         }
                     }  // for each label
-                }      // if (cloud)
+                }  // if (cloud)
 
                 // we temporarily detach the entity, as it may undergo
                 //"severe" modifications (octree deletion, etc.) --> see

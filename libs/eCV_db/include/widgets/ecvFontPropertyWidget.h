@@ -58,8 +58,8 @@ public:
         bool bold = false;
         bool italic = false;
         bool shadow = true;
-        QString horizontalJustification = "Left";   // Left, Center, Right
-        QString verticalJustification = "Bottom";   // Top, Center, Bottom
+        QString horizontalJustification = "Left";  // Left, Center, Right
+        QString verticalJustification = "Bottom";  // Top, Center, Bottom
 
         //! Returns VTK font family index (0=Arial, 1=Courier, 2=Times)
         int fontFamilyIndex() const;
@@ -101,8 +101,10 @@ public:
     void setBold(bool bold, bool blockSignal = false);
     void setItalic(bool italic, bool blockSignal = false);
     void setShadow(bool shadow, bool blockSignal = false);
-    void setHorizontalJustification(const QString& justification, bool blockSignal = false);
-    void setVerticalJustification(const QString& justification, bool blockSignal = false);
+    void setHorizontalJustification(const QString& justification,
+                                    bool blockSignal = false);
+    void setVerticalJustification(const QString& justification,
+                                  bool blockSignal = false);
     ///@}
 
     //! Show/hide the color picker button
@@ -143,7 +145,8 @@ private:
     void updateColorButtonAppearance();
     void setupHorizontalJustificationButton();
     void setupVerticalJustificationButton();
-    void updateJustificationButtonIcon(const QString& justification, QToolButton* button);
+    void updateJustificationButtonIcon(const QString& justification,
+                                       QToolButton* button);
 
     Ui::ecvFontPropertyWidget* ui;
 

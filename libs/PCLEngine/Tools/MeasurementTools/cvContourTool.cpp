@@ -122,7 +122,7 @@ void cvContourTool::createNewContour() {
 
     m_currentContourId++;
     m_contours[m_currentContourId] = newContour;
-    
+
     // Apply font properties to the newly created contour
     applyFontProperties();
 }
@@ -341,7 +341,8 @@ void cvContourTool::unlockInteraction() {
                             if (auto* textProp =
                                         labelActor->GetTextProperty()) {
                                 textProp->SetOpacity(m_fontOpacity);
-                                textProp->SetColor(m_fontColor[0], m_fontColor[1],
+                                textProp->SetColor(m_fontColor[0],
+                                                   m_fontColor[1],
                                                    m_fontColor[2]);
                             }
                         }
@@ -654,12 +655,13 @@ void cvContourTool::applyFontProperties() {
                             textProp->SetFontFamilyAsString(
                                     m_fontFamily.toUtf8().constData());
                             textProp->SetFontSize(m_fontSize);
-                            textProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+                            textProp->SetColor(m_fontColor[0], m_fontColor[1],
+                                               m_fontColor[2]);
                             textProp->SetBold(m_fontBold ? 1 : 0);
                             textProp->SetItalic(m_fontItalic ? 1 : 0);
                             textProp->SetShadow(m_fontShadow ? 1 : 0);
                             textProp->SetOpacity(m_fontOpacity);
-                            
+
                             // Apply justification
                             if (m_horizontalJustification == "Left") {
                                 textProp->SetJustificationToLeft();
@@ -668,7 +670,7 @@ void cvContourTool::applyFontProperties() {
                             } else if (m_horizontalJustification == "Right") {
                                 textProp->SetJustificationToRight();
                             }
-                            
+
                             if (m_verticalJustification == "Top") {
                                 textProp->SetVerticalJustificationToTop();
                             } else if (m_verticalJustification == "Center") {
@@ -676,10 +678,12 @@ void cvContourTool::applyFontProperties() {
                             } else if (m_verticalJustification == "Bottom") {
                                 textProp->SetVerticalJustificationToBottom();
                             }
-                            
-                            textProp->Modified();  // Mark as modified to ensure VTK updates
+
+                            textProp->Modified();  // Mark as modified to ensure
+                                                   // VTK updates
                         }
-                        labelActor->Modified();  // Mark actor as modified to trigger re-render
+                        labelActor->Modified();  // Mark actor as modified to
+                                                 // trigger re-render
                     }
                 }
                 rep->BuildRepresentation();

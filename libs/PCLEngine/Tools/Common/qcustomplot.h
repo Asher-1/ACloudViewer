@@ -7,34 +7,86 @@
 
 #pragma once
 
+#include <QtCore/qglobal.h>
+
+// Qt5/Qt6 Compatibility Layer
+#include <QtCompat.h>
+
+// some Qt version/configuration dependent macros to include or exclude certain
+// code paths:
+#ifdef QCUSTOMPLOT_USE_OPENGL
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#define QCP_OPENGL_PBUFFER
+#else
+#define QCP_OPENGL_FBO
+#endif
+#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+#define QCP_OPENGL_OFFSCREENSURFACE
+#endif
+#endif
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#define QCP_DEVICEPIXELRATIO_SUPPORTED
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+#define QCP_DEVICEPIXELRATIO_FLOAT
+#endif
+#endif
+
 #include <qmath.h>
 
-#include <QCache>
-#include <QDateTime>
-#include <QDebug>
-#include <QFlags>
-#include <QMargins>
-#include <QMouseEvent>
-#include <QMultiMap>
-#include <QObject>
-#include <QPaintEvent>
-#include <QPainter>
-#include <QPainterPath>
-#include <QPixmap>
-#include <QPointer>
-#include <QStack>
-#include <QString>
-#include <QVector2D>
-#include <QVector>
-#include <QWidget>
+#include <QtCore/QCache>
+#include <QtCore/QDateTime>
+#include <QtCore/QDebug>
+#include <QtCore/QFlags>
+#include <QtCore/QMargins>
+#include <QtCore/QMultiMap>
+#include <QtCore/QObject>
+#include <QtCore/QPointer>
+#include <QtCore/QStack>
+#include <QtCore/QString>
+#include <QtCore/QVector>
+#include <QtGui/QMouseEvent>
+#include <QtGui/QPaintEvent>
+#include <QtGui/QPainter>
+#include <QtGui/QPainterPath>
+#include <QtGui/QPixmap>
+#include <QtGui/QVector2D>
+#include <QtGui/QWheelEvent>
+#include <algorithm>
 #include <limits>
+#ifdef QCP_OPENGL_FBO
+#include <QtGui/QOpenGLContext>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include <QtGui/QOpenGLFramebufferObject>
+#else
+#include <QOpenGLFramebufferObject>
+#include <QOpenGLPaintDevice>
+#endif
+#ifdef QCP_OPENGL_OFFSCREENSURFACE
+#include <QtGui/QOffscreenSurface>
+#else
+#include <QtGui/QWindow>
+#endif
+#endif
+#ifdef QCP_OPENGL_PBUFFER
+#include <QtOpenGL/QGLPixelBuffer>
+#endif
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <qnumeric.h>
 
-#include <QPrintEngine>
-#include <QPrinter>
+#include <QtGui/QPrintEngine>
+#include <QtGui/QPrinter>
+#include <QtGui/QWidget>
 #else
 #include <QtNumeric>
+#include <QtPrintSupport/QtPrintSupport>
+#include <QtWidgets/QWidget>
+#endif
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+#include <QtCore/QElapsedTimer>
+#endif
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
+#include <QtCore/QTimeZone>
 #endif
 
 class QCPPainter;
@@ -60,12 +112,19 @@ class QCPBars;
 /*! \file */
 
 // decl definitions for shared library compilation/usage:
-#if defined(QCUSTOMPLOT_COMPILE_LIBRARY)
+#if defined(QT_STATIC_BUILD)
+#define QCP_LIB_DECL
+#elif defined(QCUSTOMPLOT_COMPILE_LIBRARY)
 #define QCP_LIB_DECL Q_DECL_EXPORT
 #elif defined(QCUSTOMPLOT_USE_LIBRARY)
 #define QCP_LIB_DECL Q_DECL_IMPORT
 #else
 #define QCP_LIB_DECL
+#endif
+
+// define empty macro for Q_DECL_OVERRIDE if it doesn't exist (Qt < 5)
+#ifndef Q_DECL_OVERRIDE
+#define Q_DECL_OVERRIDE
 #endif
 
 /*!

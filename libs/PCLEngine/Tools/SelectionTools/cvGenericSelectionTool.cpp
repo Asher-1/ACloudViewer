@@ -740,7 +740,7 @@ cvSelectionData cvGenericSelectionTool::applySelectionModifierUnified(
         int fieldAssociation) {
     // ParaView-aligned: Use cvSelectionPipeline::combineSelections()
     // This eliminates code duplication between tools
-    
+
     CVLog::PrintDebug(QString("[cvGenericSelectionTool] "
                               "applySelectionModifierUnified: modifier=%1")
                               .arg(modifier));
@@ -768,6 +768,6 @@ cvSelectionData cvGenericSelectionTool::applySelectionModifierUnified(
     }
 
     // Use Pipeline's unified combination logic
-    return cvSelectionPipeline::combineSelections(currentSelection, newSelection,
-                                                  operation);
+    return cvSelectionPipeline::combineSelections(currentSelection,
+                                                  newSelection, operation);
 }

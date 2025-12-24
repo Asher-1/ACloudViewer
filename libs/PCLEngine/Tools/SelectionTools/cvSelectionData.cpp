@@ -31,7 +31,7 @@ cvSelectionData::cvSelectionData(vtkIdTypeArray* vtkArray, int association)
                 // Invalid array
                 return;
             }
-            
+
             m_vtkArray = vtkSmartPointer<vtkIdTypeArray>::New();
             m_vtkArray->DeepCopy(vtkArray);
         } catch (...) {
@@ -67,7 +67,7 @@ cvSelectionData::cvSelectionData(const cvSelectionData& other)
                 // Invalid array
                 return;
             }
-            
+
             m_vtkArray = vtkSmartPointer<vtkIdTypeArray>::New();
             m_vtkArray->DeepCopy(other.m_vtkArray);
         } catch (...) {

@@ -64,8 +64,9 @@ cvSelectionHighlighter::cvSelectionHighlighter()
     m_preselectedColor[1] = 1.0;
     m_preselectedColor[2] = 0.0;
 
-    // Selected: Bright Magenta (255, 0, 255) - RGB normalized - maximum visibility
-    // Magenta is highly visible against any point cloud color (nature/buildings)
+    // Selected: Bright Magenta (255, 0, 255) - RGB normalized - maximum
+    // visibility Magenta is highly visible against any point cloud color
+    // (nature/buildings)
     m_selectedColor[0] = 1.0;  // Red
     m_selectedColor[1] = 0.0;  // Green
     m_selectedColor[2] = 1.0;  // Blue = Magenta
@@ -97,7 +98,7 @@ void cvSelectionHighlighter::setHighlightColor(double r,
                                                HighlightMode mode) {
     double* color = nullptr;
     vtkSmartPointer<vtkActor>* actor = nullptr;
-    
+
     switch (mode) {
         case HOVER:
             color = m_hoverColor;
@@ -116,17 +117,17 @@ void cvSelectionHighlighter::setHighlightColor(double r,
             actor = &m_boundaryActor;
             break;
     }
-    
+
     if (color) {
         color[0] = r;
         color[1] = g;
         color[2] = b;
-        
+
         // Update existing actor's color immediately for real-time preview
         if (actor && *actor) {
             (*actor)->GetProperty()->SetColor(r, g, b);
         }
-        
+
         CVLog::Print(QString("[cvSelectionHighlighter] Color set for mode %1: "
                              "RGB(%2, %3, %4)")
                              .arg(mode)
@@ -141,7 +142,7 @@ void cvSelectionHighlighter::setHighlightOpacity(double opacity,
                                                  HighlightMode mode) {
     double* opacityPtr = nullptr;
     vtkSmartPointer<vtkActor>* actor = nullptr;
-    
+
     switch (mode) {
         case HOVER:
             m_hoverOpacity = opacity;
@@ -164,12 +165,12 @@ void cvSelectionHighlighter::setHighlightOpacity(double opacity,
             actor = &m_boundaryActor;
             break;
     }
-    
+
     // Update existing actor's opacity immediately for real-time preview
     if (actor && *actor) {
         (*actor)->GetProperty()->SetOpacity(opacity);
     }
-    
+
     CVLog::Print(QString("[cvSelectionHighlighter] Opacity set for mode %1: %2")
                          .arg(mode)
                          .arg(opacity));
@@ -225,12 +226,12 @@ bool cvSelectionHighlighter::highlightSelection(
         CVLog::Warning("[cvSelectionHighlighter] Highlighter is disabled");
         return false;
     }
-    
+
     if (!m_viewer) {
         CVLog::Warning("[cvSelectionHighlighter] No viewer available");
         return false;
     }
-    
+
     if (!selection) {
         CVLog::Warning("[cvSelectionHighlighter] Selection array is null");
         return false;
@@ -248,9 +249,10 @@ bool cvSelectionHighlighter::highlightSelection(
         return false;
     }
 
-    CVLog::PrintDebug(QString("[cvSelectionHighlighter] Got polyData with %1 cells, %2 points")
-                             .arg(polyData->GetNumberOfCells())
-                             .arg(polyData->GetNumberOfPoints()));
+    CVLog::PrintDebug(QString("[cvSelectionHighlighter] Got polyData with %1 "
+                              "cells, %2 points")
+                              .arg(polyData->GetNumberOfCells())
+                              .arg(polyData->GetNumberOfPoints()));
 
     // Delegate to the explicit polyData overload
     return highlightSelection(polyData, selection, fieldAssociation, mode);
@@ -324,19 +326,20 @@ bool cvSelectionHighlighter::highlightSelection(
         return false;
     }
 
-    CVLog::Print(QString("[cvSelectionHighlighter] Highlighting %1 %2 in mode %3")
-                        .arg(selectionData.count())
-                        .arg(selectionData.fieldTypeString())
-                        .arg(mode));
+    CVLog::Print(
+            QString("[cvSelectionHighlighter] Highlighting %1 %2 in mode %3")
+                    .arg(selectionData.count())
+                    .arg(selectionData.fieldTypeString())
+                    .arg(mode));
 
     // Delegate to the VTK-level implementation
     bool success = highlightSelection(selectionData.vtkArray(),
                                       selectionData.fieldAssociation(), mode);
-    
+
     if (!success) {
         CVLog::Error("[cvSelectionHighlighter] Failed to highlight selection");
     }
-    
+
     return success;
 }
 
@@ -391,7 +394,8 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
         HighlightMode mode) {
     CVLog::Print(
             QString("[cvSelectionHighlighter::createHighlightActor] START: "
-                    "fieldAssociation=%1 (%2), mode=%3, selectionCount=%4, polyDataCells=%5, polyDataPoints=%6")
+                    "fieldAssociation=%1 (%2), mode=%3, selectionCount=%4, "
+                    "polyDataCells=%5, polyDataPoints=%6")
                     .arg(fieldAssociation)
                     .arg(fieldAssociation == 0 ? "CELLS" : "POINTS")
                     .arg(mode)
@@ -402,7 +406,8 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
     // Log selection IDs for debugging
     if (selection && selection->GetNumberOfTuples() > 0) {
         QString idsStr;
-        vtkIdType numToShow = qMin(selection->GetNumberOfTuples(), (vtkIdType)10);
+        vtkIdType numToShow =
+                qMin(selection->GetNumberOfTuples(), (vtkIdType)10);
         for (vtkIdType i = 0; i < numToShow; ++i) {
             if (i > 0) idsStr += ", ";
             idsStr += QString::number(selection->GetValue(i));
@@ -410,9 +415,10 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
         if (selection->GetNumberOfTuples() > 10) {
             idsStr += ", ...";
         }
-        CVLog::Print(QString("[cvSelectionHighlighter] Selection IDs: [%1]").arg(idsStr));
+        CVLog::Print(QString("[cvSelectionHighlighter] Selection IDs: [%1]")
+                             .arg(idsStr));
     }
-    
+
     // Create selection node
     vtkSmartPointer<vtkSelectionNode> selectionNode =
             createSelectionNode(selection, fieldAssociation);
@@ -447,15 +453,17 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
 
     vtkIdType numCells = extracted->GetNumberOfCells();
     vtkIdType numPoints = extracted->GetNumberOfPoints();
-    
-    CVLog::Print(QString("[cvSelectionHighlighter::createHighlightActor] Extracted %1 cells, %2 points")
-                        .arg(numCells)
-                        .arg(numPoints));
-    
+
+    CVLog::Print(QString("[cvSelectionHighlighter::createHighlightActor] "
+                         "Extracted %1 cells, %2 points")
+                         .arg(numCells)
+                         .arg(numPoints));
+
     if (numCells == 0 && numPoints == 0) {
         CVLog::Error(
                 "[cvSelectionHighlighter::createHighlightActor] Extraction "
-                "failed: 0 cells and 0 points extracted - check if selection IDs are valid");
+                "failed: 0 cells and 0 points extracted - check if selection "
+                "IDs are valid");
         return nullptr;
     }
 
@@ -497,7 +505,7 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
             // Final selection (magenta color for visibility)
             color = m_selectedColor;
             opacity = m_selectedOpacity;
-            prop->SetLineWidth(5.0);  // Thick lines for final selection
+            prop->SetLineWidth(5.0);   // Thick lines for final selection
             prop->SetPointSize(12.0);  // Large enough to see, not overwhelming
             prop->SetRenderLinesAsTubes(true);
             break;
@@ -573,56 +581,63 @@ vtkSmartPointer<vtkSelectionNode> cvSelectionHighlighter::createSelectionNode(
 void cvSelectionHighlighter::addActorToVisualizer(vtkActor* actor,
                                                   const QString& id) {
     if (!m_viewer) {
-        CVLog::Error("[cvSelectionHighlighter::addActorToVisualizer] No viewer!");
+        CVLog::Error(
+                "[cvSelectionHighlighter::addActorToVisualizer] No viewer!");
         return;
     }
-    
+
     if (!actor) {
-        CVLog::Error("[cvSelectionHighlighter::addActorToVisualizer] No actor!");
+        CVLog::Error(
+                "[cvSelectionHighlighter::addActorToVisualizer] No actor!");
         return;
     }
 
     // Get PCLVis for VTK operations
     PclUtils::PCLVis* pclVis = getPCLVis();
     if (!pclVis) {
-        CVLog::Error("[cvSelectionHighlighter::addActorToVisualizer] Visualizer is not PCLVis");
+        CVLog::Error(
+                "[cvSelectionHighlighter::addActorToVisualizer] Visualizer is "
+                "not PCLVis");
         return;
     }
 
     // Get current renderer
     vtkRenderer* renderer = pclVis->getCurrentRenderer();
     if (!renderer) {
-        CVLog::Error("[cvSelectionHighlighter::addActorToVisualizer] No renderer!");
+        CVLog::Error(
+                "[cvSelectionHighlighter::addActorToVisualizer] No renderer!");
         return;
     }
-    
+
     // CRITICAL: Configure mapper to render highlights ON TOP of main cloud
     // This prevents Z-fighting and ensures highlights are always visible
     vtkMapper* mapper = actor->GetMapper();
     if (mapper) {
         // Use polygon offset to push highlights slightly forward
         mapper->SetResolveCoincidentTopologyToPolygonOffset();
-        mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(-1.0, -1.0);
+        mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(-1.0,
+                                                                     -1.0);
         mapper->SetResolveCoincidentTopologyPolygonOffsetFaces(1);
     }
-    
+
     // Add actor to renderer
     renderer->AddActor(actor);
     actor->SetVisibility(1);  // Ensure visibility is on
-    
-    CVLog::Print(
-            QString("[cvSelectionHighlighter] ✓ Added highlight actor '%1' to renderer")
-                    .arg(id));
-    
+
+    CVLog::Print(QString("[cvSelectionHighlighter] ✓ Added highlight actor "
+                         "'%1' to renderer")
+                         .arg(id));
+
     // Log actor properties for debugging
     vtkProperty* prop = actor->GetProperty();
     double* color = prop->GetColor();
-    CVLog::Print(QString("[cvSelectionHighlighter]   Color: (%1, %2, %3), Opacity: %4, PointSize: %5")
-                        .arg(color[0], 0, 'f', 2)
-                        .arg(color[1], 0, 'f', 2)
-                        .arg(color[2], 0, 'f', 2)
-                        .arg(prop->GetOpacity(), 0, 'f', 2)
-                        .arg(prop->GetPointSize(), 0, 'f', 1));
+    CVLog::Print(QString("[cvSelectionHighlighter]   Color: (%1, %2, %3), "
+                         "Opacity: %4, PointSize: %5")
+                         .arg(color[0], 0, 'f', 2)
+                         .arg(color[1], 0, 'f', 2)
+                         .arg(color[2], 0, 'f', 2)
+                         .arg(prop->GetOpacity(), 0, 'f', 2)
+                         .arg(prop->GetPointSize(), 0, 'f', 1));
 
     // Trigger immediate render update (ParaView-style)
     vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
@@ -682,7 +697,7 @@ void cvSelectionHighlighter::removeActorFromVisualizer(const QString& id) {
 void cvSelectionHighlighter::setPointSize(int size, HighlightMode mode) {
     int* sizePtr = nullptr;
     vtkSmartPointer<vtkActor>* actor = nullptr;
-    
+
     switch (mode) {
         case HOVER:
             m_hoverPointSize = size;
@@ -705,15 +720,16 @@ void cvSelectionHighlighter::setPointSize(int size, HighlightMode mode) {
             actor = &m_boundaryActor;
             break;
     }
-    
+
     // Update existing actor's point size immediately for real-time preview
     if (actor && *actor) {
         (*actor)->GetProperty()->SetPointSize(static_cast<float>(size));
     }
-    
-    CVLog::PrintDebug(QString("[cvSelectionHighlighter] Point size set for mode %1: %2")
-                         .arg(mode)
-                         .arg(size));
+
+    CVLog::PrintDebug(
+            QString("[cvSelectionHighlighter] Point size set for mode %1: %2")
+                    .arg(mode)
+                    .arg(size));
 }
 
 //-----------------------------------------------------------------------------
@@ -736,7 +752,7 @@ int cvSelectionHighlighter::getPointSize(HighlightMode mode) const {
 void cvSelectionHighlighter::setLineWidth(int width, HighlightMode mode) {
     int* widthPtr = nullptr;
     vtkSmartPointer<vtkActor>* actor = nullptr;
-    
+
     switch (mode) {
         case HOVER:
             m_hoverLineWidth = width;
@@ -759,15 +775,16 @@ void cvSelectionHighlighter::setLineWidth(int width, HighlightMode mode) {
             actor = &m_boundaryActor;
             break;
     }
-    
+
     // Update existing actor's line width immediately for real-time preview
     if (actor && *actor) {
         (*actor)->GetProperty()->SetLineWidth(static_cast<float>(width));
     }
-    
-    CVLog::PrintDebug(QString("[cvSelectionHighlighter] Line width set for mode %1: %2")
-                         .arg(mode)
-                         .arg(width));
+
+    CVLog::PrintDebug(
+            QString("[cvSelectionHighlighter] Line width set for mode %1: %2")
+                    .arg(mode)
+                    .arg(width));
 }
 
 //-----------------------------------------------------------------------------

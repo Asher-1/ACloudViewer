@@ -55,11 +55,12 @@ signals:
      * @param selectionData Selection data (VTK-independent)
      */
     void selectionFinished(const cvSelectionData& selectionData);
-    
+
     /**
-     * @brief Emitted when polygon drawing is completed (for custom polygon mode)
+     * @brief Emitted when polygon drawing is completed (for custom polygon
+     * mode)
      * @param polygon Array of polygon vertices [x1, y1, x2, y2, ...]
-     * 
+     *
      * Reference: pqRenderViewSelectionReaction::selectedCustomPolygon()
      */
     void polygonCompleted(vtkIntArray* polygon);

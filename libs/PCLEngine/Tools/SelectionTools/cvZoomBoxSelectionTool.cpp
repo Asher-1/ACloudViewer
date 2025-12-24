@@ -75,9 +75,7 @@ cvZoomBoxSelectionTool::~cvZoomBoxSelectionTool() {
 }
 
 //-----------------------------------------------------------------------------
-QCursor cvZoomBoxSelectionTool::getCursor() const {
-    return m_cursor;
-}
+QCursor cvZoomBoxSelectionTool::getCursor() const { return m_cursor; }
 
 //-----------------------------------------------------------------------------
 void cvZoomBoxSelectionTool::setupInteractorStyle() {
@@ -85,7 +83,9 @@ void cvZoomBoxSelectionTool::setupInteractorStyle() {
         return;
     }
 
-    CVLog::PrintDebug("[cvZoomBoxSelectionTool] Setting up RubberBandZoom interactor style");
+    CVLog::PrintDebug(
+            "[cvZoomBoxSelectionTool] Setting up RubberBandZoom interactor "
+            "style");
 
     // Use vtkInteractorStyleRubberBandZoom for zoom box interaction
     // Reference: pqRenderViewSelectionReaction.cxx, line 403-406
@@ -145,20 +145,22 @@ void cvZoomBoxSelectionTool::onSelectionChanged(vtkObject* caller,
         return;
     }
 
-    CVLog::Print("[cvZoomBoxSelectionTool] Left button released - zoom completed");
+    CVLog::Print(
+            "[cvZoomBoxSelectionTool] Left button released - zoom completed");
 
     // Get the rubber band zoom style to access the selection region
     vtkInteractorStyleRubberBandZoom* zoomStyle =
             vtkInteractorStyleRubberBandZoom::SafeDownCast(m_selectionStyle);
 
     if (!zoomStyle || !m_interactor) {
-        CVLog::Warning("[cvZoomBoxSelectionTool] Invalid zoom style or interactor");
+        CVLog::Warning(
+                "[cvZoomBoxSelectionTool] Invalid zoom style or interactor");
         return;
     }
 
     // The zoom is already performed by vtkInteractorStyleRubberBandZoom
     // We just need to emit the signal with the region
-    
+
     // Get the current event position as the end position
     int* eventPos = m_interactor->GetEventPosition();
     if (eventPos) {
@@ -169,30 +171,32 @@ void cvZoomBoxSelectionTool::onSelectionChanged(vtkObject* caller,
     // Emit zoom completed signal
     // Note: The actual zoom is performed by vtkInteractorStyleRubberBandZoom
     // We emit this signal for any additional processing (e.g., updating UI)
-    emit zoomToBoxCompleted(
-            std::min(m_startPosition[0], m_endPosition[0]),
-            std::min(m_startPosition[1], m_endPosition[1]),
-            std::max(m_startPosition[0], m_endPosition[0]),
-            std::max(m_startPosition[1], m_endPosition[1]));
+    emit zoomToBoxCompleted(std::min(m_startPosition[0], m_endPosition[0]),
+                            std::min(m_startPosition[1], m_endPosition[1]),
+                            std::max(m_startPosition[0], m_endPosition[0]),
+                            std::max(m_startPosition[1], m_endPosition[1]));
 
     // NOTE: Do NOT emit selectionCompleted() for zoom mode!
     // Zoom doesn't produce selection data, and emitting selectionCompleted
     // would trigger the selection data flow causing infinite recursion:
-    // selectionFinished -> setCurrentSelection -> selectionChanged -> selectionFinished...
+    // selectionFinished -> setCurrentSelection -> selectionChanged ->
+    // selectionFinished...
 }
 
 //-----------------------------------------------------------------------------
 bool cvZoomBoxSelectionTool::performSelection(int region[4]) {
     if (!m_viewer || !m_renderer || !region) {
-        CVLog::Warning("[cvZoomBoxSelectionTool] Invalid viewer, renderer or region");
+        CVLog::Warning(
+                "[cvZoomBoxSelectionTool] Invalid viewer, renderer or region");
         return false;
     }
 
-    CVLog::Print(QString("[cvZoomBoxSelectionTool] Perform zoom: [%1, %2, %3, %4]")
-                         .arg(region[0])
-                         .arg(region[1])
-                         .arg(region[2])
-                         .arg(region[3]));
+    CVLog::Print(
+            QString("[cvZoomBoxSelectionTool] Perform zoom: [%1, %2, %3, %4]")
+                    .arg(region[0])
+                    .arg(region[1])
+                    .arg(region[2])
+                    .arg(region[3]));
 
     // Check if region is valid (not just a click)
     if (region[0] == region[2] && region[1] == region[3]) {
@@ -356,8 +360,8 @@ void cvZoomBoxSelectionTool::zoomPerspective(int region[4]) {
     double newViewAngle = viewAngle / zoomFactor;
     cam->SetViewAngle(newViewAngle);
 
-    CVLog::Print(QString("[cvZoomBoxSelectionTool] Perspective zoom: viewAngle=%1 -> %2")
+    CVLog::Print(QString("[cvZoomBoxSelectionTool] Perspective zoom: "
+                         "viewAngle=%1 -> %2")
                          .arg(viewAngle)
                          .arg(newViewAngle));
 }
-

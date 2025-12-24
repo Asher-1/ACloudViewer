@@ -7,11 +7,14 @@
 
 #pragma once
 
-#include "qPCL.h"
-
+// clang-format off
+// Qt - must be included before qPCL.h for MOC to work correctly
 #include <QColor>
 #include <QDialog>
 #include <QFont>
+// clang-format on
+
+#include "qPCL.h"
 
 // Include full definition for FontProperties struct
 #include <widgets/ecvFontPropertyWidget.h>
@@ -56,8 +59,10 @@ public:
         bool cellLabelItalic = false;
         bool cellLabelShadow = false;
         double cellLabelOpacity = 1.0;
-        QString cellLabelHorizontalJustification = "Left";  // "Left", "Center", "Right"
-        QString cellLabelVerticalJustification = "Bottom";  // "Top", "Center", "Bottom"
+        QString cellLabelHorizontalJustification =
+                "Left";  // "Left", "Center", "Right"
+        QString cellLabelVerticalJustification =
+                "Bottom";         // "Top", "Center", "Bottom"
         QString cellLabelFormat;  // e.g., "%s" for ID
 
         // Point Label Font
@@ -68,8 +73,10 @@ public:
         bool pointLabelItalic = false;
         bool pointLabelShadow = false;
         double pointLabelOpacity = 1.0;
-        QString pointLabelHorizontalJustification = "Left";  // "Left", "Center", "Right"
-        QString pointLabelVerticalJustification = "Bottom";  // "Top", "Center", "Bottom"
+        QString pointLabelHorizontalJustification =
+                "Left";  // "Left", "Center", "Right"
+        QString pointLabelVerticalJustification =
+                "Bottom";          // "Top", "Center", "Bottom"
         QString pointLabelFormat;  // e.g., "%s" for ID
 
         // Tooltip Settings
@@ -108,13 +115,15 @@ private:
     void setupUi();
     void loadDefaults();
     void updatePropertiesFromWidgets();
-    
+
     // Helper functions to reduce code duplication (implemented in .cpp)
-    static ecvFontPropertyWidget::FontProperties labelPropertiesToFontProperties(
-            const LabelProperties& props, bool isCellLabel);
+    static ecvFontPropertyWidget::FontProperties
+    labelPropertiesToFontProperties(const LabelProperties& props,
+                                    bool isCellLabel);
     static void fontPropertiesToLabelProperties(
             const ecvFontPropertyWidget::FontProperties& fontProps,
-            LabelProperties& props, bool isCellLabel);
+            LabelProperties& props,
+            bool isCellLabel);
 
 private:
     bool m_isInteractive;

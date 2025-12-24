@@ -7,24 +7,26 @@
 
 #pragma once
 
-#include "cvViewSelectionManager.h"
-#include "qPCL.h"
-
 #include <QAction>
 #include <QCursor>
 #include <QObject>
 #include <QPointer>
 
+#include "cvViewSelectionManager.h"
+#include "qPCL.h"
+
 class cvRenderViewSelectionTool;
 class ecvGenericVisualizer3D;
 
 /**
- * @brief cvSelectionReaction handles various selection modes available on views.
+ * @brief cvSelectionReaction handles various selection modes available on
+ * views.
  *
  * This class follows ParaView's pqRenderViewSelectionReaction pattern.
  * Create multiple instances of cvSelectionReaction to handle different
  * selection modes. The class uses internal static members to ensure that
- * at most 1 view (and 1 type of selection) is in selection-mode at any given time.
+ * at most 1 view (and 1 type of selection) is in selection-mode at any given
+ * time.
  *
  * Reference: ParaView/Qt/ApplicationComponents/pqRenderViewSelectionReaction.h
  */
@@ -151,4 +153,3 @@ private:
     // Static: only one reaction can be active at a time
     static QPointer<cvSelectionReaction> ActiveReaction;
 };
-

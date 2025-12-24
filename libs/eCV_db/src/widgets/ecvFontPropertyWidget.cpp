@@ -6,13 +6,14 @@
 // ----------------------------------------------------------------------------
 
 #include "widgets/ecvFontPropertyWidget.h"
-#include "ui_ecvFontPropertyWidget.h"
 
 #include <QActionGroup>
 #include <QColorDialog>
 #include <QIcon>
 #include <QMenu>
 #include <QToolButton>
+
+#include "ui_ecvFontPropertyWidget.h"
 
 //-----------------------------------------------------------------------------
 // FontProperties helper methods
@@ -49,7 +50,7 @@ ecvFontPropertyWidget::ecvFontPropertyWidget(QWidget* parent)
       ui(new Ui::ecvFontPropertyWidget),
       m_fontColor(255, 255, 255) {
     ui->setupUi(this);
-    
+
     // Ensure icons are loaded (fallback if UI file doesn't load them)
     // Icons are from ParaView: pqBold24.png, pqItalics24.png, pqShadow24.png
     if (ui->boldButton) {
@@ -70,42 +71,40 @@ ecvFontPropertyWidget::ecvFontPropertyWidget(QWidget* parent)
             ui->shadowButton->setIcon(shadowIcon);
         }
     }
-    
+
     setupConnections();
     updateColorButtonAppearance();
-    
+
     // Apply ParaView-style toggle button styling for better visual feedback
     const QString toggleButtonStyle =
-        "QToolButton {"
-        "    border: 1px solid #999;"
-        "    border-radius: 3px;"
-        "    padding: 2px;"
-        "    background-color: #f0f0f0;"
-        "}"
-        "QToolButton:hover {"
-        "    background-color: #e0e0e0;"
-        "    border-color: #666;"
-        "}"
-        "QToolButton:checked {"
-        "    background-color: #c0d0e8;"
-        "    border-color: #4080c0;"
-        "}"
-        "QToolButton:checked:hover {"
-        "    background-color: #a0c0e0;"
-        "}";
-    
+            "QToolButton {"
+            "    border: 1px solid #999;"
+            "    border-radius: 3px;"
+            "    padding: 2px;"
+            "    background-color: #f0f0f0;"
+            "}"
+            "QToolButton:hover {"
+            "    background-color: #e0e0e0;"
+            "    border-color: #666;"
+            "}"
+            "QToolButton:checked {"
+            "    background-color: #c0d0e8;"
+            "    border-color: #4080c0;"
+            "}"
+            "QToolButton:checked:hover {"
+            "    background-color: #a0c0e0;"
+            "}";
+
     if (ui->boldButton) ui->boldButton->setStyleSheet(toggleButtonStyle);
     if (ui->italicButton) ui->italicButton->setStyleSheet(toggleButtonStyle);
     if (ui->shadowButton) ui->shadowButton->setStyleSheet(toggleButtonStyle);
-    
+
     // Setup justification buttons
     setupHorizontalJustificationButton();
     setupVerticalJustificationButton();
 }
 
-ecvFontPropertyWidget::~ecvFontPropertyWidget() {
-    delete ui;
-}
+ecvFontPropertyWidget::~ecvFontPropertyWidget() { delete ui; }
 
 void ecvFontPropertyWidget::setupConnections() {
     connect(ui->fontFamilyComboBox,
@@ -126,8 +125,8 @@ void ecvFontPropertyWidget::setupConnections() {
             &ecvFontPropertyWidget::onShadowToggled);
 }
 
-ecvFontPropertyWidget::FontProperties
-ecvFontPropertyWidget::fontProperties() const {
+ecvFontPropertyWidget::FontProperties ecvFontPropertyWidget::fontProperties()
+        const {
     FontProperties props;
     props.family = fontFamily();
     props.size = fontSize();
@@ -239,7 +238,8 @@ void ecvFontPropertyWidget::setFontSize(int size, bool blockSignal) {
     }
 }
 
-void ecvFontPropertyWidget::setFontColor(const QColor& color, bool blockSignal) {
+void ecvFontPropertyWidget::setFontColor(const QColor& color,
+                                         bool blockSignal) {
     if (m_fontColor != color) {
         m_fontColor = color;
         updateColorButtonAppearance();
@@ -298,10 +298,12 @@ void ecvFontPropertyWidget::setShadow(bool shadow, bool blockSignal) {
     }
 }
 
-void ecvFontPropertyWidget::setHorizontalJustification(const QString& justification, bool blockSignal) {
+void ecvFontPropertyWidget::setHorizontalJustification(
+        const QString& justification, bool blockSignal) {
     if (m_horizontalJustification != justification) {
         m_horizontalJustification = justification;
-        updateJustificationButtonIcon(justification, ui->horizontalJustificationButton);
+        updateJustificationButtonIcon(justification,
+                                      ui->horizontalJustificationButton);
         if (!blockSignal && !m_blockSignals) {
             Q_EMIT horizontalJustificationChanged(justification);
             Q_EMIT fontPropertiesChanged();
@@ -309,10 +311,12 @@ void ecvFontPropertyWidget::setHorizontalJustification(const QString& justificat
     }
 }
 
-void ecvFontPropertyWidget::setVerticalJustification(const QString& justification, bool blockSignal) {
+void ecvFontPropertyWidget::setVerticalJustification(
+        const QString& justification, bool blockSignal) {
     if (m_verticalJustification != justification) {
         m_verticalJustification = justification;
-        updateJustificationButtonIcon(justification, ui->verticalJustificationButton);
+        updateJustificationButtonIcon(justification,
+                                      ui->verticalJustificationButton);
         if (!blockSignal && !m_blockSignals) {
             Q_EMIT verticalJustificationChanged(justification);
             Q_EMIT fontPropertiesChanged();
@@ -401,65 +405,78 @@ void ecvFontPropertyWidget::updateColorButtonAppearance() {
 
 void ecvFontPropertyWidget::setupHorizontalJustificationButton() {
     if (!ui->horizontalJustificationButton) return;
-    
+
     QActionGroup* actionGroup = new QActionGroup(this);
     actionGroup->setExclusive(true);
-    
+
     // Create actions with icons, matching ParaView's implementation
-    QAction* leftAlign = new QAction(QIcon(":/Resources/images/font/pqTextAlignLeft.svg"), tr("Left"), actionGroup);
+    QAction* leftAlign =
+            new QAction(QIcon(":/Resources/images/font/pqTextAlignLeft.svg"),
+                        tr("Left"), actionGroup);
     leftAlign->setIconVisibleInMenu(true);
-    
-    QAction* centerAlign = new QAction(QIcon(":/Resources/images/font/pqTextAlignCenter.svg"), tr("Center"), actionGroup);
+
+    QAction* centerAlign =
+            new QAction(QIcon(":/Resources/images/font/pqTextAlignCenter.svg"),
+                        tr("Center"), actionGroup);
     centerAlign->setIconVisibleInMenu(true);
-    
-    QAction* rightAlign = new QAction(QIcon(":/Resources/images/font/pqTextAlignRight.svg"), tr("Right"), actionGroup);
+
+    QAction* rightAlign =
+            new QAction(QIcon(":/Resources/images/font/pqTextAlignRight.svg"),
+                        tr("Right"), actionGroup);
     rightAlign->setIconVisibleInMenu(true);
-    
+
     QMenu* popup = new QMenu(this);
     popup->addAction(leftAlign);
     popup->addAction(centerAlign);
     popup->addAction(rightAlign);
     ui->horizontalJustificationButton->setMenu(popup);
-    
+
     connect(actionGroup, &QActionGroup::triggered, this,
             &ecvFontPropertyWidget::onHorizontalJustificationTriggered);
-    
+
     // Set initial icon
     updateJustificationButtonIcon("Left", ui->horizontalJustificationButton);
 }
 
 void ecvFontPropertyWidget::setupVerticalJustificationButton() {
     if (!ui->verticalJustificationButton) return;
-    
+
     QActionGroup* actionGroup = new QActionGroup(this);
     actionGroup->setExclusive(true);
-    
+
     // Create actions with icons, matching ParaView's implementation
-    QAction* topAlign = new QAction(QIcon(":/Resources/images/font/pqTextVerticalAlignTop.svg"), tr("Top"), actionGroup);
+    QAction* topAlign = new QAction(
+            QIcon(":/Resources/images/font/pqTextVerticalAlignTop.svg"),
+            tr("Top"), actionGroup);
     topAlign->setIconVisibleInMenu(true);
-    
-    QAction* centerAlign = new QAction(QIcon(":/Resources/images/font/pqTextVerticalAlignCenter.svg"), tr("Center"), actionGroup);
+
+    QAction* centerAlign = new QAction(
+            QIcon(":/Resources/images/font/pqTextVerticalAlignCenter.svg"),
+            tr("Center"), actionGroup);
     centerAlign->setIconVisibleInMenu(true);
-    
-    QAction* bottomAlign = new QAction(QIcon(":/Resources/images/font/pqTextVerticalAlignBottom.svg"), tr("Bottom"), actionGroup);
+
+    QAction* bottomAlign = new QAction(
+            QIcon(":/Resources/images/font/pqTextVerticalAlignBottom.svg"),
+            tr("Bottom"), actionGroup);
     bottomAlign->setIconVisibleInMenu(true);
-    
+
     QMenu* popup = new QMenu(this);
     popup->addAction(topAlign);
     popup->addAction(centerAlign);
     popup->addAction(bottomAlign);
     ui->verticalJustificationButton->setMenu(popup);
-    
+
     connect(actionGroup, &QActionGroup::triggered, this,
             &ecvFontPropertyWidget::onVerticalJustificationTriggered);
-    
+
     // Set initial icon
     updateJustificationButtonIcon("Bottom", ui->verticalJustificationButton);
 }
 
-void ecvFontPropertyWidget::updateJustificationButtonIcon(const QString& justification, QToolButton* button) {
+void ecvFontPropertyWidget::updateJustificationButtonIcon(
+        const QString& justification, QToolButton* button) {
     if (!button || !button->menu()) return;
-    
+
     QList<QAction*> actions = button->menu()->actions();
     for (QAction* action : actions) {
         if (action->text() == justification) {
@@ -475,7 +492,8 @@ void ecvFontPropertyWidget::updateJustificationButtonIcon(const QString& justifi
     }
 }
 
-void ecvFontPropertyWidget::onHorizontalJustificationTriggered(QAction* action) {
+void ecvFontPropertyWidget::onHorizontalJustificationTriggered(
+        QAction* action) {
     QString justification = action->text();
     setHorizontalJustification(justification, false);
 }

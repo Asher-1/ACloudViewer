@@ -70,16 +70,18 @@ cvTooltipSelectionTool::cvTooltipSelectionTool(SelectionMode mode,
             QString("[cvTooltipSelectionTool] Created, mode: %1, field: %2")
                     .arg(m_enableSelection ? "INTERACTIVE" : "TOOLTIP")
                     .arg(m_fieldAssociation == 0 ? "CELLS" : "POINTS"));
-    
-    // Note: Highlighter is obtained from cvViewSelectionManager via getHighlighter()
-    // This ensures all tools share the same highlighter instance, so color settings
-    // from cvSelectionPropertiesWidget are automatically synchronized.
+
+    // Note: Highlighter is obtained from cvViewSelectionManager via
+    // getHighlighter() This ensures all tools share the same highlighter
+    // instance, so color settings from cvSelectionPropertiesWidget are
+    // automatically synchronized.
 }
 
 //-----------------------------------------------------------------------------
 cvTooltipSelectionTool::~cvTooltipSelectionTool() {
-    // Just hide the Qt tooltip - don't try to access highlighter during destruction
-    // as the cvViewSelectionManager singleton might already be destroyed
+    // Just hide the Qt tooltip - don't try to access highlighter during
+    // destruction as the cvViewSelectionManager singleton might already be
+    // destroyed
     QToolTip::hideText();
 
     // Clean up shortcuts
@@ -152,9 +154,10 @@ void cvTooltipSelectionTool::setupObservers() {
     // CRITICAL: Set m_observedObject so cleanupObservers() can remove observers
     m_observedObject = m_interactor;
 
-    // Note: Hardware selection buffers are now captured on-demand in updateHighlight()
-    // to ensure they always reflect the current scene state (see updateHighlight fix)
-    // This prevents stale buffer issues that caused multiple ghost candidate points
+    // Note: Hardware selection buffers are now captured on-demand in
+    // updateHighlight() to ensure they always reflect the current scene state
+    // (see updateHighlight fix) This prevents stale buffer issues that caused
+    // multiple ghost candidate points
 
     // ParaView-style: Observe MouseMoveEvent for tooltip updates
     m_observerIds[0] = m_interactor->AddObserver(
@@ -181,7 +184,8 @@ void cvTooltipSelectionTool::setupObservers() {
                 &cvTooltipSelectionTool::onSelectionChanged);
     }
     // ParaView-style: Setup Ctrl-C/Cmd-C shortcut for copying tooltip
-    // Note: Use ecvDisplayTools::GetCurrentScreen() as parent for proper Qt lifecycle
+    // Note: Use ecvDisplayTools::GetCurrentScreen() as parent for proper Qt
+    // lifecycle
     QWidget* parentWidget = ecvDisplayTools::GetCurrentScreen();
     if (!m_copyShortcut && parentWidget) {
         m_copyShortcut = new QShortcut(QKeySequence::Copy, parentWidget);
@@ -195,9 +199,10 @@ void cvTooltipSelectionTool::setupObservers() {
             }
         });
     }
-    
+
     // NOTE: ESC key handling is centralized in MainWindow::handleEscapeKey()
-    // which calls disableAllSelectionTools(). No need for per-tool ESC shortcuts.
+    // which calls disableAllSelectionTools(). No need for per-tool ESC
+    // shortcuts.
 }
 
 //-----------------------------------------------------------------------------
@@ -241,7 +246,8 @@ void cvTooltipSelectionTool::onMouseMove() {
 
     // ParaView-style: Execute highlight immediately (no throttling)
     // ParaView uses hardware selection with cached buffers for fast performance
-    // Reference: pqRenderViewSelectionReaction::onMouseMove() calls preSelection()
+    // Reference: pqRenderViewSelectionReaction::onMouseMove() calls
+    // preSelection()
     updateHighlight();
 }
 
@@ -249,19 +255,21 @@ void cvTooltipSelectionTool::onMouseMove() {
 void cvTooltipSelectionTool::updateHighlight() {
     // Get shared highlighter from manager
     cvSelectionHighlighter* highlighter = getHighlighter();
-    
+
     // Performance optimization: Skip if highlighter is not available
     if (!highlighter) {
         return;
     }
 
     // CRITICAL FIX: Refresh hardware selection buffers before each pick
-    // This ensures we pick from the current scene state, not stale cached buffers
-    // Without this, we get multiple ghost candidates from old buffer data
+    // This ensures we pick from the current scene state, not stale cached
+    // buffers Without this, we get multiple ghost candidates from old buffer
+    // data
     cvSelectionPipeline* pipeline = getSelectionPipeline();
     if (pipeline) {
         // Recapture buffers to match current scene
-        // Note: This adds minimal overhead (~1-2ms) and is essential for correct picking
+        // Note: This adds minimal overhead (~1-2ms) and is essential for
+        // correct picking
         pipeline->captureBuffersForFastPreSelection();
     }
 
@@ -270,23 +278,23 @@ void cvTooltipSelectionTool::updateHighlight() {
     bool selectCells = isSelectingCells();
     vtkIdType id = -1;
     vtkPolyData* polyData = nullptr;
-    
+
     // Try fast hardware selection first (uses cached buffers)
     // Use new getPixelSelectionInfo to get correct actor and polyData
     if (pipeline && m_interactor) {
         int* pos = m_interactor->GetEventPosition();
-        cvSelectionPipeline::PixelSelectionInfo selInfo = 
+        cvSelectionPipeline::PixelSelectionInfo selInfo =
                 pipeline->getPixelSelectionInfo(pos[0], pos[1], selectCells);
-        
+
         if (selInfo.valid) {
             id = selInfo.attributeID;
             polyData = selInfo.polyData;
-            
+
             // Cache the polyData for tooltip display
             m_currentPolyData = polyData;
         }
     }
-    
+
     // Fallback to software picking if hardware selection fails
     if (id < 0) {
         id = pickAtCursor(selectCells);
@@ -355,15 +363,17 @@ void cvTooltipSelectionTool::updateTooltip(vtkIdType id) {
         return;
     }
 
-    // Use cached polyData from updateHighlight() (fixes "Invalid cell ID" issue)
-    // This ensures we use the same polyData that was selected by hardware selector
+    // Use cached polyData from updateHighlight() (fixes "Invalid cell ID"
+    // issue) This ensures we use the same polyData that was selected by
+    // hardware selector
     vtkPolyData* polyData = m_currentPolyData;
-    
+
     // Fallback to getPolyDataForSelection if cache is empty (should not happen)
     if (!polyData) {
         polyData = getPolyDataForSelection();
         CVLog::PrintDebug(
-                "[cvTooltipSelectionTool::updateTooltip] Using fallback polyData");
+                "[cvTooltipSelectionTool::updateTooltip] Using fallback "
+                "polyData");
     }
 
     if (!polyData) {
@@ -373,14 +383,14 @@ void cvTooltipSelectionTool::updateTooltip(vtkIdType id) {
         hideTooltip();
         return;
     }
-    
+
     // Validate ID is within range for this polyData
-    vtkIdType maxId = (m_fieldAssociation == 0) ? 
-                      polyData->GetNumberOfCells() : 
-                      polyData->GetNumberOfPoints();
+    vtkIdType maxId = (m_fieldAssociation == 0) ? polyData->GetNumberOfCells()
+                                                : polyData->GetNumberOfPoints();
     if (id >= maxId) {
         CVLog::Error(
-                QString("[cvTooltipSelectionTool::updateTooltip] ID %1 out of range "
+                QString("[cvTooltipSelectionTool::updateTooltip] ID %1 out of "
+                        "range "
                         "(max %2) for %3")
                         .arg(id)
                         .arg(maxId - 1)
@@ -475,102 +485,122 @@ void cvTooltipSelectionTool::hideTooltip() {
 bool cvTooltipSelectionTool::isInteractiveMode() const {
     // Interactive modes allow click-to-select behavior
     // Reference: pqRenderViewSelectionReaction lines 101-104
-    return (m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS_INTERACTIVELY ||
-            m_mode == cvViewSelectionManager::SELECT_SURFACE_POINTS_INTERACTIVELY ||
-            m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLDATA_INTERACTIVELY ||
-            m_mode == cvViewSelectionManager::SELECT_SURFACE_POINTDATA_INTERACTIVELY);
+    return (m_mode == cvViewSelectionManager::
+                              SELECT_SURFACE_CELLS_INTERACTIVELY ||
+            m_mode == cvViewSelectionManager::
+                              SELECT_SURFACE_POINTS_INTERACTIVELY ||
+            m_mode == cvViewSelectionManager::
+                              SELECT_SURFACE_CELLDATA_INTERACTIVELY ||
+            m_mode == cvViewSelectionManager::
+                              SELECT_SURFACE_POINTDATA_INTERACTIVELY);
 }
 
 //-----------------------------------------------------------------------------
 void cvTooltipSelectionTool::onLeftButtonPress() {
     // ParaView-style: Record press position, don't select yet
-    // This allows us to distinguish between click (select) and drag (rotate camera)
-    
+    // This allows us to distinguish between click (select) and drag (rotate
+    // camera)
+
     if (!m_interactor) {
         return;
     }
-    
+
     int* pos = m_interactor->GetEventPosition();
     m_leftButtonPressed = true;
     m_leftButtonPressPos[0] = pos[0];
     m_leftButtonPressPos[1] = pos[1];
-    
+
     CVLog::PrintDebug(QString("[cvTooltipSelectionTool::onLeftButtonPress] "
                               "Recorded press at (%1, %2)")
-                             .arg(pos[0]).arg(pos[1]));
+                              .arg(pos[0])
+                              .arg(pos[1]));
 }
 
 //-----------------------------------------------------------------------------
 void cvTooltipSelectionTool::onLeftButtonRelease() {
     // ParaView-style: Check if this was a click (not drag) before selecting
     // Reference: pqRenderViewSelectionReaction checks mouse movement distance
-    
+
     if (!m_enableSelection || !m_interactor) {
         m_leftButtonPressed = false;
         return;
     }
-    
+
     if (!m_leftButtonPressed) {
         // No matching press event, ignore
         return;
     }
-    
+
     // Get release position
     int* releasePos = m_interactor->GetEventPosition();
-    
+
     // Calculate distance between press and release
     int dx = releasePos[0] - m_leftButtonPressPos[0];
     int dy = releasePos[1] - m_leftButtonPressPos[1];
     int distanceSquared = dx * dx + dy * dy;
-    
-    CVLog::PrintDebug(QString("[cvTooltipSelectionTool::onLeftButtonRelease] "
-                              "Press: (%1, %2), Release: (%3, %4), Distance²: %5")
-                             .arg(m_leftButtonPressPos[0]).arg(m_leftButtonPressPos[1])
-                             .arg(releasePos[0]).arg(releasePos[1])
-                             .arg(distanceSquared));
-    
+
+    CVLog::PrintDebug(
+            QString("[cvTooltipSelectionTool::onLeftButtonRelease] "
+                    "Press: (%1, %2), Release: (%3, %4), Distance²: %5")
+                    .arg(m_leftButtonPressPos[0])
+                    .arg(m_leftButtonPressPos[1])
+                    .arg(releasePos[0])
+                    .arg(releasePos[1])
+                    .arg(distanceSquared));
+
     // Reset state
     m_leftButtonPressed = false;
-    
+
     // CRITICAL FIX: Only perform selection if distance < threshold
     // This prevents selection during camera rotation (ParaView-style)
     int thresholdSquared = CLICK_THRESHOLD * CLICK_THRESHOLD;
     if (distanceSquared > thresholdSquared) {
-        CVLog::Print(QString("[cvTooltipSelectionTool] Mouse moved too much (distance²: %1 > %2) - "
+        CVLog::Print(QString("[cvTooltipSelectionTool] Mouse moved too much "
+                             "(distance²: %1 > %2) - "
                              "this is a DRAG (camera rotation), not a click. "
                              "Skipping selection.")
-                            .arg(distanceSquared)
-                            .arg(thresholdSquared));
+                             .arg(distanceSquared)
+                             .arg(thresholdSquared));
         return;
     }
-    
-    CVLog::Print("[cvTooltipSelectionTool] Mouse movement < threshold - this is a CLICK, performing selection");
-    
+
+    CVLog::Print(
+            "[cvTooltipSelectionTool] Mouse movement < threshold - this is a "
+            "CLICK, performing selection");
+
     // Now perform the actual selection (ParaView-style precise picking)
     bool selectCells = isSelectingCells();
     vtkIdType id = -1;
     vtkPolyData* polyData = nullptr;
-    
-    // PRIMARY: Use precise picker for accurate click selection (ParaView method)
+
+    // PRIMARY: Use precise picker for accurate click selection (ParaView
+    // method)
     id = pickAtCursor(selectCells);
     if (id >= 0) {
         polyData = getPolyDataForSelection();
         m_currentPolyData = polyData;
-        CVLog::Print(QString("[cvTooltipSelectionTool] Precise picker selected ID: %1").arg(id));
+        CVLog::Print(QString("[cvTooltipSelectionTool] Precise picker selected "
+                             "ID: %1")
+                             .arg(id));
     } else {
-        CVLog::PrintDebug("[cvTooltipSelectionTool] Precise picker failed, trying hardware selector");
-        
+        CVLog::PrintDebug(
+                "[cvTooltipSelectionTool] Precise picker failed, trying "
+                "hardware selector");
+
         // FALLBACK: Try hardware selector if precise picker fails
         cvSelectionPipeline* pipeline = getSelectionPipeline();
         if (pipeline) {
-            cvSelectionPipeline::PixelSelectionInfo selInfo = 
-                    pipeline->getPixelSelectionInfo(releasePos[0], releasePos[1], selectCells);
-            
+            cvSelectionPipeline::PixelSelectionInfo selInfo =
+                    pipeline->getPixelSelectionInfo(releasePos[0],
+                                                    releasePos[1], selectCells);
+
             if (selInfo.valid) {
                 id = selInfo.attributeID;
                 polyData = selInfo.polyData;
                 m_currentPolyData = polyData;
-                CVLog::PrintDebug(QString("[cvTooltipSelectionTool] Hardware selector fallback selected ID: %1").arg(id));
+                CVLog::PrintDebug(QString("[cvTooltipSelectionTool] Hardware "
+                                          "selector fallback selected ID: %1")
+                                          .arg(id));
             }
         }
     }
@@ -578,9 +608,11 @@ void cvTooltipSelectionTool::onLeftButtonRelease() {
     if (id >= 0) {
         toggleSelection(id);
         CVLog::Print(
-                QString("[cvTooltipSelectionTool] Clicked and selected ID: %1").arg(id));
+                QString("[cvTooltipSelectionTool] Clicked and selected ID: %1")
+                        .arg(id));
     } else {
-        CVLog::Warning("[cvTooltipSelectionTool] Click did not pick any element");
+        CVLog::Warning(
+                "[cvTooltipSelectionTool] Click did not pick any element");
     }
 }
 
@@ -601,7 +633,7 @@ void cvTooltipSelectionTool::toggleSelection(vtkIdType id) {
 
     bool isSelected = false;
     bool needUpdate = false;  // Track if selection actually changed
-    
+
     for (vtkIdType i = 0; i < m_currentSelection->GetNumberOfTuples(); ++i) {
         if (m_currentSelection->GetValue(i) == id) {
             isSelected = true;
@@ -616,7 +648,8 @@ void cvTooltipSelectionTool::toggleSelection(vtkIdType id) {
                                      "from selection")
                                      .arg(id));
             } else {
-                // ADDITION on already-selected item: do nothing (ParaView style)
+                // ADDITION on already-selected item: do nothing (ParaView
+                // style)
                 CVLog::Print(QString("[cvTooltipSelectionTool] ID: %1 already "
                                      "selected, skipping")
                                      .arg(id));
@@ -642,11 +675,10 @@ void cvTooltipSelectionTool::toggleSelection(vtkIdType id) {
             // Add to existing selection (ParaView default for interactive mode)
             m_currentSelection->InsertNextValue(id);
             needUpdate = true;
-            CVLog::Print(
-                    QString("[cvTooltipSelectionTool] Added ID: %1 to "
-                            "selection (total: %2)")
-                            .arg(id)
-                            .arg(m_currentSelection->GetNumberOfTuples()));
+            CVLog::Print(QString("[cvTooltipSelectionTool] Added ID: %1 to "
+                                 "selection (total: %2)")
+                                 .arg(id)
+                                 .arg(m_currentSelection->GetNumberOfTuples()));
         } else if (modifier == cvViewSelectionManager::SELECTION_SUBTRACTION) {
             // This case won't happen since we already checked !isSelected
             // But keep it for completeness
@@ -658,16 +690,18 @@ void cvTooltipSelectionTool::toggleSelection(vtkIdType id) {
             // Add since it's not selected
             m_currentSelection->InsertNextValue(id);
             needUpdate = true;
-            CVLog::Print(
-                    QString("[cvTooltipSelectionTool] Toggled ID: %1 (added, total: %2)")
-                            .arg(id)
-                            .arg(m_currentSelection->GetNumberOfTuples()));
+            CVLog::Print(QString("[cvTooltipSelectionTool] Toggled ID: %1 "
+                                 "(added, total: %2)")
+                                 .arg(id)
+                                 .arg(m_currentSelection->GetNumberOfTuples()));
         }
     }
 
     // Only update if selection actually changed
     if (!needUpdate) {
-        CVLog::PrintDebug("[cvTooltipSelectionTool] Selection unchanged, skipping update");
+        CVLog::PrintDebug(
+                "[cvTooltipSelectionTool] Selection unchanged, skipping "
+                "update");
         return;
     }
 
@@ -676,42 +710,48 @@ void cvTooltipSelectionTool::toggleSelection(vtkIdType id) {
         CVLog::Error("[cvTooltipSelectionTool] m_currentSelection is invalid!");
         return;
     }
-    
+
     // Verify the array is valid
     vtkIdType numTuples = m_currentSelection->GetNumberOfTuples();
     if (numTuples < 0) {
-        CVLog::Error("[cvTooltipSelectionTool] m_currentSelection has invalid tuple count!");
+        CVLog::Error(
+                "[cvTooltipSelectionTool] m_currentSelection has invalid tuple "
+                "count!");
         return;
     }
-    
-    CVLog::PrintDebug(QString("[cvTooltipSelectionTool] Creating selection data with %1 elements")
-                             .arg(numTuples));
-    
+
+    CVLog::PrintDebug(QString("[cvTooltipSelectionTool] Creating selection "
+                              "data with %1 elements")
+                              .arg(numTuples));
+
     // Create selection data - this will do a DeepCopy
     cvSelectionData selectionData(m_currentSelection.Get(), m_fieldAssociation);
-    
+
     // Set actor info for the selection (required for getPolyDataForSelection)
-    vtkPolyData* polyData = m_currentPolyData;  // Use cached polyData from picking
+    vtkPolyData* polyData =
+            m_currentPolyData;  // Use cached polyData from picking
     if (!polyData) {
         polyData = getPolyDataForSelection();
     }
     if (polyData) {
         selectionData.setActorInfo(nullptr, polyData, 0.0);
     }
-    
+
     // Store selection in manager for retrieval
     if (m_manager) {
-        CVLog::PrintDebug("[cvTooltipSelectionTool] Storing selection in manager");
+        CVLog::PrintDebug(
+                "[cvTooltipSelectionTool] Storing selection in manager");
         m_manager->setCurrentSelection(selectionData);
     }
-    
+
     // CRITICAL FIX: Emit base class signal that manager listens to
     // The manager connects to selectionCompleted, not selectionFinished
     emit selectionCompleted();
-    
+
     // Also emit custom signal for backward compatibility
     emit selectionFinished(selectionData);
-    
-    CVLog::Print(QString("[cvTooltipSelectionTool] Selection updated: %1 elements")
-                         .arg(numTuples));
+
+    CVLog::Print(
+            QString("[cvTooltipSelectionTool] Selection updated: %1 elements")
+                    .arg(numTuples));
 }

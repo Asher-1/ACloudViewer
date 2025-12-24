@@ -68,12 +68,12 @@ void configureLineRepresentation(cvConstrainedLineRepresentation* rep) {
         // Configure the Title text property (this displays the distance value)
         if (auto* titleProp = axis->GetTitleTextProperty()) {
             titleProp->SetFontSize(
-                    6);  // Default font size for distance display
+                    6);               // Default font size for distance display
             titleProp->SetBold(0);    // Not bold for better readability
             titleProp->SetShadow(1);  // Add shadow for better visibility
             titleProp->SetColor(1.0, 1.0, 1.0);  // White text
         }
-        
+
         // Configure the Label text property (for ruler tick labels)
         if (auto* labelProp = axis->GetLabelTextProperty()) {
             labelProp->SetFontSize(
@@ -201,7 +201,8 @@ void cvDistanceTool::initTool() {
     m_rep->BuildRepresentation();
 
     // 6. Apply font properties to override configureLineRepresentation defaults
-    // This ensures user-configured font properties (size, bold, italic, etc.) are applied
+    // This ensures user-configured font properties (size, bold, italic, etc.)
+    // are applied
     applyFontProperties();
 
     // 7. Update UI controls with initial positions (if UI is already created)
@@ -646,13 +647,15 @@ void cvDistanceTool::unlockInteraction() {
             // Restore distance text (title) to user-configured settings
             if (auto* titleProp = axis->GetTitleTextProperty()) {
                 titleProp->SetOpacity(m_fontOpacity);
-                titleProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+                titleProp->SetColor(m_fontColor[0], m_fontColor[1],
+                                    m_fontColor[2]);
             }
 
             // Restore axis labels (if visible) to user-configured settings
             if (auto* labelProp = axis->GetLabelTextProperty()) {
                 labelProp->SetOpacity(m_fontOpacity);
-                labelProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+                labelProp->SetColor(m_fontColor[0], m_fontColor[1],
+                                    m_fontColor[2]);
             }
         }
 
@@ -1175,24 +1178,25 @@ void cvDistanceTool::applyFontProperties() {
 
     // Apply font properties to the axis actor's text properties
     if (auto* axis = m_rep->GetAxisActor()) {
-        // CRITICAL: vtkAxisActor2D uses automatic font scaling based on FontFactor
-        // We need to disable automatic adjustment and set properties correctly
-        
+        // CRITICAL: vtkAxisActor2D uses automatic font scaling based on
+        // FontFactor We need to disable automatic adjustment and set properties
+        // correctly
+
         // Disable automatic label adjustment to prevent font size override
         axis->AdjustLabelsOff();
-        
+
         // Calculate font factor based on desired font size
-        // vtkAxisActor2D internally scales fonts, so we adjust the factor accordingly
-        // Base reference size is typically around 12-14 in VTK
+        // vtkAxisActor2D internally scales fonts, so we adjust the factor
+        // accordingly Base reference size is typically around 12-14 in VTK
         double baseFontSize = 12.0;
         double fontFactor = static_cast<double>(m_fontSize) / baseFontSize;
-        if (fontFactor < 0.1) fontFactor = 0.1;  // Prevent too small values
+        if (fontFactor < 0.1) fontFactor = 0.1;    // Prevent too small values
         if (fontFactor > 10.0) fontFactor = 10.0;  // Prevent too large values
-        
+
         // Set font factors for both title and labels
         axis->SetFontFactor(fontFactor);
         axis->SetLabelFactor(fontFactor * 0.8);  // Labels slightly smaller
-        
+
         // Apply to title text property (distance display)
         // The Title is what shows the distance value
         if (auto* titleProp = axis->GetTitleTextProperty()) {
@@ -1203,7 +1207,7 @@ void cvDistanceTool::applyFontProperties() {
             titleProp->SetItalic(m_fontItalic ? 1 : 0);
             titleProp->SetShadow(m_fontShadow ? 1 : 0);
             titleProp->SetOpacity(m_fontOpacity);
-            
+
             // Apply justification
             if (m_horizontalJustification == "Left") {
                 titleProp->SetJustificationToLeft();
@@ -1212,7 +1216,7 @@ void cvDistanceTool::applyFontProperties() {
             } else if (m_horizontalJustification == "Right") {
                 titleProp->SetJustificationToRight();
             }
-            
+
             if (m_verticalJustification == "Top") {
                 titleProp->SetVerticalJustificationToTop();
             } else if (m_verticalJustification == "Center") {
@@ -1220,7 +1224,7 @@ void cvDistanceTool::applyFontProperties() {
             } else if (m_verticalJustification == "Bottom") {
                 titleProp->SetVerticalJustificationToBottom();
             }
-            
+
             titleProp->Modified();  // Mark as modified to ensure VTK updates
         }
 
@@ -1233,7 +1237,7 @@ void cvDistanceTool::applyFontProperties() {
             labelProp->SetItalic(m_fontItalic ? 1 : 0);
             labelProp->SetShadow(m_fontShadow ? 1 : 0);
             labelProp->SetOpacity(m_fontOpacity);
-            
+
             // Apply justification
             if (m_horizontalJustification == "Left") {
                 labelProp->SetJustificationToLeft();
@@ -1242,7 +1246,7 @@ void cvDistanceTool::applyFontProperties() {
             } else if (m_horizontalJustification == "Right") {
                 labelProp->SetJustificationToRight();
             }
-            
+
             if (m_verticalJustification == "Top") {
                 labelProp->SetVerticalJustificationToTop();
             } else if (m_verticalJustification == "Center") {
@@ -1250,10 +1254,10 @@ void cvDistanceTool::applyFontProperties() {
             } else if (m_verticalJustification == "Bottom") {
                 labelProp->SetVerticalJustificationToBottom();
             }
-            
+
             labelProp->Modified();  // Mark as modified to ensure VTK updates
         }
-        
+
         // Mark axis actor as modified to trigger re-render
         axis->Modified();
     }

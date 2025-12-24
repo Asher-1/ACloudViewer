@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include "cvViewSelectionManager.h"
-#include "qPCL.h"
-
 #include <QActionGroup>
 #include <QMap>
 #include <QObject>
 #include <QPointer>
+
+#include "cvViewSelectionManager.h"
+#include "qPCL.h"
 
 class QAction;
 class QMenu;
@@ -24,7 +24,6 @@ class cvSelectionHighlighter;
 class cvSelectionHistory;
 class cvSelectionBookmarks;
 class ecvGenericVisualizer3D;
-
 
 /**
  * @brief Controller class that manages all selection tools and their UI
@@ -60,15 +59,16 @@ public:
 
     /**
      * @brief Setup all selection actions from a UI struct
-     * 
+     *
      * This method registers all selection-related QActions and creates
-     * the corresponding reactions. Call this once during MainWindow initialization.
-     * 
+     * the corresponding reactions. Call this once during MainWindow
+     * initialization.
+     *
      * @param ui Pointer to the UI object containing action pointers
-     * 
+     *
      * The UI object should have these actions:
      * - actionSelectSurfaceCells, actionSelectSurfacePoints
-     * - actionSelectFrustumCells, actionSelectFrustumPoints  
+     * - actionSelectFrustumCells, actionSelectFrustumPoints
      * - actionSelectPolygonCells, actionSelectPolygonPoints
      * - actionSelectBlocks, actionSelectFrustumBlocks
      * - actionInteractiveSelectCells, actionInteractiveSelectPoints
@@ -77,7 +77,7 @@ public:
      * - actionGrowSelection, actionShrinkSelection, actionClearSelection
      * - actionZoomToBox
      */
-    template<typename UiType>
+    template <typename UiType>
     void setupActions(UiType* ui);
 
     /**
@@ -87,7 +87,7 @@ public:
 
     /**
      * @brief Structure to hold all selection action pointers
-     * 
+     *
      * This provides a clean interface for registering actions
      * without depending on specific UI class types.
      */
@@ -95,37 +95,37 @@ public:
         // Surface selection
         QAction* selectSurfaceCells = nullptr;
         QAction* selectSurfacePoints = nullptr;
-        
+
         // Frustum selection
         QAction* selectFrustumCells = nullptr;
         QAction* selectFrustumPoints = nullptr;
-        
+
         // Polygon selection
         QAction* selectPolygonCells = nullptr;
         QAction* selectPolygonPoints = nullptr;
-        
+
         // Block selection
         QAction* selectBlocks = nullptr;
         QAction* selectFrustumBlocks = nullptr;
-        
+
         // Interactive selection
         QAction* interactiveSelectCells = nullptr;
         QAction* interactiveSelectPoints = nullptr;
-        
+
         // Hover/tooltip selection
         QAction* hoverCells = nullptr;
         QAction* hoverPoints = nullptr;
-        
+
         // Selection modifiers
         QAction* addSelection = nullptr;
         QAction* subtractSelection = nullptr;
         QAction* toggleSelection = nullptr;
-        
+
         // Selection manipulation
         QAction* growSelection = nullptr;
         QAction* shrinkSelection = nullptr;
         QAction* clearSelection = nullptr;
-        
+
         // Zoom to box
         QAction* zoomToBox = nullptr;
     };
@@ -149,7 +149,9 @@ public:
     /**
      * @brief Set the properties delegate for selection properties updates
      */
-    void setPropertiesDelegate(QObject* delegate) { m_propertiesDelegate = delegate; }
+    void setPropertiesDelegate(QObject* delegate) {
+        m_propertiesDelegate = delegate;
+    }
 
     /**
      * @brief Register an action for a selection mode
@@ -166,15 +168,15 @@ public:
      * @param toggleAction Toggle selection action (Ctrl+Shift)
      */
     void registerModifierActions(QAction* addAction,
-                                  QAction* subtractAction,
-                                  QAction* toggleAction);
+                                 QAction* subtractAction,
+                                 QAction* toggleAction);
 
     /**
      * @brief Register grow/shrink/clear actions
      */
     void registerManipulationActions(QAction* growAction,
-                                      QAction* shrinkAction,
-                                      QAction* clearAction);
+                                     QAction* shrinkAction,
+                                     QAction* clearAction);
 
     /**
      * @brief Disable all selection tools
@@ -235,7 +237,8 @@ signals:
      * @brief Emitted when selection properties should be updated
      * Connect this to ecvPropertiesTreeDelegate::updateSelectionProperties()
      */
-    void selectionPropertiesUpdateRequested(const cvSelectionData& selectionData);
+    void selectionPropertiesUpdateRequested(
+            const cvSelectionData& selectionData);
 
     /**
      * @brief Emitted when selection history changes
@@ -305,4 +308,3 @@ private:
     QPointer<QAction> m_shrinkAction;
     QPointer<QAction> m_clearAction;
 };
-

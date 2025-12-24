@@ -7,16 +7,18 @@
 
 #pragma once
 
-#include "qPCL.h"
-
-// LOCAL
-#include "cvSelectionData.h"
-
-// Qt
+// clang-format off
+// Qt - must be included before qPCL.h for MOC to work correctly
 #include <QDateTime>
 #include <QObject>
 #include <QStack>
 #include <QString>
+// clang-format on
+
+#include "qPCL.h"
+
+// LOCAL
+#include "cvSelectionData.h"
 
 /**
  * @brief Selection history manager with undo/redo support

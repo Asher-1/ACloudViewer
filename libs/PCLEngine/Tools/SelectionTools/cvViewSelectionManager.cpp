@@ -69,7 +69,8 @@ cvViewSelectionManager::cvViewSelectionManager(QObject* parent)
     m_filter = new cvSelectionFilter(this);
     m_bookmarks = new cvSelectionBookmarks(this);
     m_annotations = new cvSelectionAnnotationManager(this);
-    m_highlighter = new cvSelectionHighlighter();  // Shared highlighter for all tools
+    m_highlighter =
+            new cvSelectionHighlighter();  // Shared highlighter for all tools
 
     // Connect history signals
     connect(m_history, &cvSelectionHistory::selectionRestored, this,
@@ -98,7 +99,7 @@ cvViewSelectionManager::~cvViewSelectionManager() {
         }
     }
     m_toolCache.clear();
-    
+
     // Clean up highlighter (not a QObject, so manual cleanup)
     delete m_highlighter;
     m_highlighter = nullptr;
@@ -135,12 +136,13 @@ void cvViewSelectionManager::setVisualizer(ecvGenericVisualizer3D* viewer) {
     }
     if (m_pipeline && getPCLVis()) {
         m_pipeline->setVisualizer(getPCLVis());
-        
+
         // ParaView-style: Invalidate cached selection when visualizer changes
-        // Reference: pqRenderViewSelectionReaction connects to dataUpdated signal
+        // Reference: pqRenderViewSelectionReaction connects to dataUpdated
+        // signal
         m_pipeline->invalidateCachedSelection();
     }
-    
+
     // Update visualizer for shared highlighter
     if (m_highlighter && getPCLVis()) {
         m_highlighter->setVisualizer(getPCLVis());
@@ -259,12 +261,13 @@ void cvViewSelectionManager::shrinkSelection() {
 }
 
 //-----------------------------------------------------------------------------
-void cvViewSelectionManager::expandSelection(int layers, 
-                                              bool removeSeed, 
-                                              bool removeIntermediateLayers) {
+void cvViewSelectionManager::expandSelection(int layers,
+                                             bool removeSeed,
+                                             bool removeIntermediateLayers) {
     // ParaView-compatible expand selection
-    // Reference: pqRenderViewSelectionReaction::actionTriggered() GROW_SELECTION case
-    
+    // Reference: pqRenderViewSelectionReaction::actionTriggered()
+    // GROW_SELECTION case
+
     if (!m_algebra || !hasSelection()) {
         CVLog::Warning(
                 "[cvViewSelectionManager] No selection or algebra module to "
@@ -283,7 +286,7 @@ void cvViewSelectionManager::expandSelection(int layers,
 
     // Get current selection as cvSelectionData
     cvSelectionData current = currentSelection();
-    
+
     // Use algebra module to expand selection
     cvSelectionData result = m_algebra->expandSelection(
             polyData, current, layers, removeSeed, removeIntermediateLayers);
@@ -293,16 +296,16 @@ void cvViewSelectionManager::expandSelection(int layers,
         setCurrentSelection(result);
 
         // Push to history
-        QString operationName = layers > 0 ? "Grow Selection" : "Shrink Selection";
+        QString operationName =
+                layers > 0 ? "Grow Selection" : "Shrink Selection";
         if (m_history) {
             m_history->pushSelection(result, operationName);
         }
 
-        CVLog::Print(
-                QString("[cvViewSelectionManager] %1: %2 -> %3")
-                        .arg(operationName)
-                        .arg(current.count())
-                        .arg(result.count()));
+        CVLog::Print(QString("[cvViewSelectionManager] %1: %2 -> %3")
+                             .arg(operationName)
+                             .arg(current.count())
+                             .arg(result.count()));
         emit selectionChanged();
     } else if (layers > 0) {
         CVLog::Warning(
@@ -313,14 +316,17 @@ void cvViewSelectionManager::expandSelection(int layers,
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::setGrowSelectionRemoveSeed(bool remove) {
     m_growRemoveSeed = remove;
-    CVLog::Print(QString("[cvViewSelectionManager] GrowSelectionRemoveSeed = %1")
-                         .arg(remove));
+    CVLog::Print(
+            QString("[cvViewSelectionManager] GrowSelectionRemoveSeed = %1")
+                    .arg(remove));
 }
 
 //-----------------------------------------------------------------------------
-void cvViewSelectionManager::setGrowSelectionRemoveIntermediateLayers(bool remove) {
+void cvViewSelectionManager::setGrowSelectionRemoveIntermediateLayers(
+        bool remove) {
     m_growRemoveIntermediateLayers = remove;
-    CVLog::Print(QString("[cvViewSelectionManager] GrowSelectionRemoveIntermediateLayers = %1")
+    CVLog::Print(QString("[cvViewSelectionManager] "
+                         "GrowSelectionRemoveIntermediateLayers = %1")
                          .arg(remove));
 }
 
@@ -384,7 +390,8 @@ cvRenderViewSelectionTool* cvViewSelectionManager::getOrCreateTool(
         case SELECT_SURFACE_CELLDATA_INTERACTIVELY:
         case SELECT_SURFACE_POINTDATA_INTERACTIVELY:
             tool = new cvTooltipSelectionTool(mode, this);
-            // NOTE: ESC key handling is centralized in MainWindow::handleEscapeKey()
+            // NOTE: ESC key handling is centralized in
+            // MainWindow::handleEscapeKey()
             CVLog::Print(QString("[cvViewSelectionManager] Created "
                                  "cvTooltipSelectionTool for mode %1")
                                  .arg(static_cast<int>(mode)));
@@ -407,8 +414,8 @@ cvRenderViewSelectionTool* cvViewSelectionManager::getOrCreateTool(
             // For custom polygon, connect the custom signal
             if (mode == SELECT_CUSTOM_POLYGON) {
                 connect(qobject_cast<cvPolygonSelectionTool*>(tool),
-                        &cvPolygonSelectionTool::polygonCompleted,
-                        this, &cvViewSelectionManager::customPolygonSelected);
+                        &cvPolygonSelectionTool::polygonCompleted, this,
+                        &cvViewSelectionManager::customPolygonSelected);
             }
             CVLog::Print(QString("[cvViewSelectionManager] Created "
                                  "cvPolygonSelectionTool for mode %1")
@@ -437,14 +444,15 @@ cvRenderViewSelectionTool* cvViewSelectionManager::getOrCreateTool(
         case ZOOM_TO_BOX: {
             cvZoomBoxSelectionTool* zoomTool = new cvZoomBoxSelectionTool(this);
             // Connect zoom completed signal to manager's signal
-            connect(zoomTool, &cvZoomBoxSelectionTool::zoomToBoxCompleted,
-                    this, [this](int xmin, int ymin, int xmax, int ymax) {
+            connect(zoomTool, &cvZoomBoxSelectionTool::zoomToBoxCompleted, this,
+                    [this](int xmin, int ymin, int xmax, int ymax) {
                         int region[4] = {xmin, ymin, xmax, ymax};
                         emit zoomToBoxRequested(region);
                         emit zoomToBoxRequested(xmin, ymin, xmax, ymax);
                     });
             tool = zoomTool;
-            CVLog::Print("[cvViewSelectionManager] Created cvZoomBoxSelectionTool");
+            CVLog::Print(
+                    "[cvViewSelectionManager] Created cvZoomBoxSelectionTool");
             break;
         }
 
@@ -546,10 +554,12 @@ void cvViewSelectionManager::setCurrentSelection(
         int fieldAssociation) {
     // CRITICAL FIX: Validate selection pointer before use
     if (selection && selection.GetPointer() == nullptr) {
-        CVLog::Error("[cvViewSelectionManager] Selection SmartPointer contains null pointer!");
+        CVLog::Error(
+                "[cvViewSelectionManager] Selection SmartPointer contains null "
+                "pointer!");
         return;
     }
-    
+
     // Additional validation: check if the object is valid
     vtkIdType newCount = 0;
     if (selection) {
@@ -557,21 +567,26 @@ void cvViewSelectionManager::setCurrentSelection(
             // Test if we can safely access the array
             newCount = selection->GetNumberOfTuples();
             if (newCount < 0) {
-                CVLog::Error("[cvViewSelectionManager] Selection array has invalid tuple count!");
+                CVLog::Error(
+                        "[cvViewSelectionManager] Selection array has invalid "
+                        "tuple count!");
                 return;
             }
         } catch (...) {
-            CVLog::Error("[cvViewSelectionManager] Selection array access failed - invalid pointer!");
+            CVLog::Error(
+                    "[cvViewSelectionManager] Selection array access failed - "
+                    "invalid pointer!");
             return;
         }
     }
 
-    // CRITICAL FIX: Check if selection actually changed to prevent infinite recursion
-    // Compare with current selection
+    // CRITICAL FIX: Check if selection actually changed to prevent infinite
+    // recursion Compare with current selection
     bool hasChanged = false;
     if (!m_currentSelection && newCount == 0) {
         // Both empty - no change
-        CVLog::PrintDebug("[cvViewSelectionManager] Selection unchanged (both empty)");
+        CVLog::PrintDebug(
+                "[cvViewSelectionManager] Selection unchanged (both empty)");
         return;
     } else if (!m_currentSelection && newCount > 0) {
         // Was empty, now has content
@@ -582,7 +597,8 @@ void cvViewSelectionManager::setCurrentSelection(
     } else if (m_currentSelection) {
         // Both have content - check if they're identical
         vtkIdType oldCount = m_currentSelection->GetNumberOfTuples();
-        if (oldCount != newCount || m_currentSelectionFieldAssociation != fieldAssociation) {
+        if (oldCount != newCount ||
+            m_currentSelectionFieldAssociation != fieldAssociation) {
             hasChanged = true;
         } else {
             // Same count and field association - check if IDs are identical
@@ -598,7 +614,9 @@ void cvViewSelectionManager::setCurrentSelection(
     }
 
     if (!hasChanged) {
-        CVLog::PrintDebug("[cvViewSelectionManager] Selection unchanged, skipping update");
+        CVLog::PrintDebug(
+                "[cvViewSelectionManager] Selection unchanged, skipping "
+                "update");
         return;
     }
 
@@ -609,7 +627,7 @@ void cvViewSelectionManager::setCurrentSelection(
     // Store new selection
     if (selection && newCount > 0) {
         m_currentSelection = vtkSmartPointer<vtkIdTypeArray>::New();
-        
+
         try {
             m_currentSelection->DeepCopy(selection);
             m_currentSelectionFieldAssociation = fieldAssociation;
@@ -621,12 +639,14 @@ void cvViewSelectionManager::setCurrentSelection(
                             .arg(fieldAssociation == 0 ? "cells" : "points"));
         } catch (const std::exception& e) {
             CVLog::Error(QString("[cvViewSelectionManager] DeepCopy failed: %1")
-                                .arg(e.what()));
+                                 .arg(e.what()));
             m_currentSelection = nullptr;
             m_currentSelectionFieldAssociation = 0;
             return;
         } catch (...) {
-            CVLog::Error("[cvViewSelectionManager] DeepCopy failed with unknown exception!");
+            CVLog::Error(
+                    "[cvViewSelectionManager] DeepCopy failed with unknown "
+                    "exception!");
             m_currentSelection = nullptr;
             m_currentSelectionFieldAssociation = 0;
             return;
@@ -770,7 +790,9 @@ void cvViewSelectionManager::notifyDataUpdated() {
     // Reference: pqRenderViewSelectionReaction::clearSelectionCache()
     if (m_pipeline) {
         m_pipeline->invalidateCachedSelection();
-        CVLog::Print("[cvViewSelectionManager] Data updated - selection cache invalidated");
+        CVLog::Print(
+                "[cvViewSelectionManager] Data updated - selection cache "
+                "invalidated");
     }
 }
 
@@ -791,23 +813,25 @@ unsigned int cvViewSelectionManager::getPointPickingRadius() const {
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::clearCurrentSelection() {
-    // CRITICAL FIX: Clear current selection to prevent crashes from dangling pointers
-    // This is called when objects might have been deleted
-    
-    CVLog::Print("[cvViewSelectionManager] Clearing current selection (preventing stale references)");
-    
+    // CRITICAL FIX: Clear current selection to prevent crashes from dangling
+    // pointers This is called when objects might have been deleted
+
+    CVLog::Print(
+            "[cvViewSelectionManager] Clearing current selection (preventing "
+            "stale references)");
+
     // Clear the stored selection data
     if (m_currentSelection) {
         m_currentSelection = nullptr;
     }
-    
+
     m_currentSelectionFieldAssociation = -1;
-    
+
     // Clear pipeline cache
     if (m_pipeline) {
         m_pipeline->invalidateCachedSelection();
     }
-    
+
     // Emit signal to notify listeners
     cvSelectionData emptySelection;
     emit selectionChanged(emptySelection);

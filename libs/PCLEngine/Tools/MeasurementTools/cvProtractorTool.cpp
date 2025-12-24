@@ -90,7 +90,7 @@ void configurePolyLineRepresentation(cvConstrainedPolyLineRepresentation* rep,
 cvProtractorTool::cvProtractorTool(QWidget* parent)
     : cvGenericMeasurementTool(parent), m_configUi(nullptr) {
     setWindowTitle(tr("Protractor Measurement Tool"));
-    
+
     // Override base class font size default for angle measurements
     // Angles need larger font for better readability
     m_fontSize = 20;
@@ -203,7 +203,8 @@ void cvProtractorTool::initTool() {
     // 4. Build representation (before updating UI)
     m_rep->BuildRepresentation();
 
-    // 5. Apply font properties to ensure user-configured font properties are applied
+    // 5. Apply font properties to ensure user-configured font properties are
+    // applied
     applyFontProperties();
 
     // 6. Update UI controls with initial positions (if UI is already created)
@@ -346,10 +347,10 @@ void cvProtractorTool::reset() {
         m_rep->SetPoint1WorldPosition(defaultPos1);
         m_rep->SetPoint2WorldPosition(defaultPos2);
         m_rep->BuildRepresentation();
-        
+
         // Reapply text properties after BuildRepresentation
         applyTextPropertiesToLabel();
-        
+
         m_widget->Modified();
     }
 
@@ -458,12 +459,12 @@ void cvProtractorTool::showWidget(bool state) {
     if (m_rep) {
         m_rep->SetVisibility(state ? 1 : 0);
         m_rep->BuildRepresentation();
-        
+
         // Reapply text properties after BuildRepresentation
         if (state) {
             applyTextPropertiesToLabel();
         }
-        
+
         if (m_widget) {
             m_widget->Modified();
             m_widget->Render();
@@ -532,10 +533,10 @@ void cvProtractorTool::setPoint1(double pos[3]) {
     if (m_widget && m_widget->GetEnabled()) {
         m_rep->SetPoint1WorldPosition(pos);
         m_rep->BuildRepresentation();
-        
+
         // Reapply text properties after BuildRepresentation
         applyTextPropertiesToLabel();
-        
+
         m_widget->Modified();
         m_widget->Render();
     }
@@ -565,10 +566,10 @@ void cvProtractorTool::setPoint2(double pos[3]) {
     if (m_widget && m_widget->GetEnabled()) {
         m_rep->SetPoint2WorldPosition(pos);
         m_rep->BuildRepresentation();
-        
+
         // Reapply text properties after BuildRepresentation
         applyTextPropertiesToLabel();
-        
+
         m_widget->Modified();
         m_widget->Render();
     }
@@ -598,10 +599,10 @@ void cvProtractorTool::setCenter(double pos[3]) {
     if (m_widget && m_widget->GetEnabled()) {
         m_rep->SetCenterWorldPosition(pos);
         m_rep->BuildRepresentation();
-        
+
         // Reapply text properties after BuildRepresentation
         applyTextPropertiesToLabel();
-        
+
         m_widget->Modified();
         m_widget->Render();
     }
@@ -626,10 +627,10 @@ void cvProtractorTool::setColor(double r, double g, double b) {
             selectedLineProp->SetColor(r, g, b);
         }
         m_rep->BuildRepresentation();
-        
+
         // Reapply text properties after BuildRepresentation
         applyTextPropertiesToLabel();
-        
+
         if (m_widget) {
             m_widget->Modified();
         }
@@ -769,7 +770,8 @@ void cvProtractorTool::unlockInteraction() {
         // 3. Restore angle label to user-configured settings
         if (auto* labelActor = m_rep->GetAngleLabelActor()) {
             if (auto* textProp = labelActor->GetTextProperty()) {
-                textProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
+                textProp->SetColor(m_fontColor[0], m_fontColor[1],
+                                   m_fontColor[2]);
                 textProp->SetOpacity(m_fontOpacity);
                 textProp->Modified();  // Mark as modified
             }
@@ -857,7 +859,7 @@ void cvProtractorTool::setInstanceLabel(const QString& label) {
     // Update the VTK representation's label suffix
     if (m_rep) {
         m_rep->SetLabelSuffix(m_instanceLabel.toUtf8().constData());
-        
+
         // Call applyFontProperties() which will rebuild representation
         // and reapply font properties correctly
         applyFontProperties();
@@ -1222,12 +1224,12 @@ void cvProtractorTool::on_widgetVisibilityCheckBox_toggled(bool checked) {
     if (m_rep) {
         m_rep->SetVisibility(checked ? 1 : 0);
         m_rep->BuildRepresentation();
-        
+
         // Reapply text properties after BuildRepresentation
         if (checked) {
             applyTextPropertiesToLabel();
         }
-        
+
         if (m_widget) {
             m_widget->Modified();
             m_widget->Render();
@@ -1249,7 +1251,7 @@ void cvProtractorTool::on_arcVisibilityCheckBox_toggled(bool checked) {
     if (m_rep) {
         m_rep->SetShowAngleArc(checked ? 1 : 0);
         m_rep->BuildRepresentation();
-        
+
         // Reapply text properties after BuildRepresentation
         applyTextPropertiesToLabel();
 
@@ -1284,7 +1286,7 @@ void cvProtractorTool::pickKeyboardPoint2(double x, double y, double z) {
 
 void cvProtractorTool::applyTextPropertiesToLabel() {
     if (!m_rep) return;
-    
+
     // Apply font properties to the angle label actor
     // This does NOT call BuildRepresentation()
     if (auto* labelActor = m_rep->GetAngleLabelActor()) {
@@ -1292,16 +1294,16 @@ void cvProtractorTool::applyTextPropertiesToLabel() {
             // Set font family and size
             textProp->SetFontFamilyAsString(m_fontFamily.toUtf8().constData());
             textProp->SetFontSize(m_fontSize);
-            
+
             // Set color and opacity
             textProp->SetColor(m_fontColor[0], m_fontColor[1], m_fontColor[2]);
             textProp->SetOpacity(m_fontOpacity);
-            
+
             // Set style properties
             textProp->SetBold(m_fontBold ? 1 : 0);
             textProp->SetItalic(m_fontItalic ? 1 : 0);
             textProp->SetShadow(m_fontShadow ? 1 : 0);
-            
+
             // Apply horizontal justification
             if (m_horizontalJustification == "Left") {
                 textProp->SetJustificationToLeft();
@@ -1310,7 +1312,7 @@ void cvProtractorTool::applyTextPropertiesToLabel() {
             } else if (m_horizontalJustification == "Right") {
                 textProp->SetJustificationToRight();
             }
-            
+
             // Apply vertical justification
             if (m_verticalJustification == "Top") {
                 textProp->SetVerticalJustificationToTop();
@@ -1319,11 +1321,11 @@ void cvProtractorTool::applyTextPropertiesToLabel() {
             } else if (m_verticalJustification == "Bottom") {
                 textProp->SetVerticalJustificationToBottom();
             }
-            
+
             // Mark text property as modified to ensure VTK updates
             textProp->Modified();
         }
-        
+
         // Mark label actor as modified to trigger re-render
         labelActor->Modified();
     }
@@ -1337,10 +1339,10 @@ void cvProtractorTool::applyFontProperties() {
     // BuildRepresentation() may reset some text properties to defaults,
     // so we must set them AFTER, not before (like cvDistanceTool does)
     m_rep->BuildRepresentation();
-    
+
     // Apply text properties AFTER BuildRepresentation
     applyTextPropertiesToLabel();
-    
+
     // Mark widget as modified and trigger render
     if (m_widget) {
         m_widget->Modified();

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "qPCL.h"
 #include "cvSelectionFilter.h"
+#include "qPCL.h"
 
 // Qt
 #include <QDialog>
@@ -51,8 +51,8 @@ public:
      * @param parent Parent widget
      */
     explicit cvFilterConfigDialog(cvSelectionFilter::FilterType filterType,
-                                   vtkPolyData* polyData = nullptr,
-                                   QWidget* parent = nullptr);
+                                  vtkPolyData* polyData = nullptr,
+                                  QWidget* parent = nullptr);
     ~cvFilterConfigDialog() override;
 
     /**
@@ -79,7 +79,7 @@ private:
     void setupGeometricFilterUI();
     void setupSpatialFilterUI();
     void setupTopologyFilterUI();
-    
+
     void loadParameters();
     void saveParameters();
     bool validateParameters();
@@ -123,4 +123,3 @@ private:
     // Parameter storage
     QMap<QString, QVariant> m_parameters;
 };
-

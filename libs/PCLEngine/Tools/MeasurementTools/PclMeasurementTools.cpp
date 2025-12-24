@@ -259,13 +259,15 @@ void PclMeasurementTools::setFontColor(double r, double g, double b) {
     }
 }
 
-void PclMeasurementTools::setHorizontalJustification(const QString& justification) {
+void PclMeasurementTools::setHorizontalJustification(
+        const QString& justification) {
     if (m_tool) {
         m_tool->setHorizontalJustification(justification);
     }
 }
 
-void PclMeasurementTools::setVerticalJustification(const QString& justification) {
+void PclMeasurementTools::setVerticalJustification(
+        const QString& justification) {
     if (m_tool) {
         m_tool->setVerticalJustification(justification);
     }

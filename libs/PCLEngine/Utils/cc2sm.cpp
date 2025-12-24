@@ -507,29 +507,37 @@ PCLCloud::Ptr cc2smReader::getFloatScalarField(
     try {
         if (m_showMode) {
             // In showMode: Convert scalar field to RGB colors for visualization
-            // Note: Original scalar values will be added separately to VTK for tooltip
+            // Note: Original scalar values will be added separately to VTK for
+            // tooltip
             if (m_cc_cloud->sfShown() &&
                 sfIdx == m_cc_cloud->getCurrentDisplayedScalarFieldIndex()) {
                 PointCloud<OnlyRGB>::Ptr pcl_cloud(new PointCloud<OnlyRGB>);
 
                 unsigned pointCount = m_cc_cloud->size();
-                unsigned realNum = m_partialVisibility ? m_visibilityNum : m_cc_cloud->size();
+                unsigned realNum = m_partialVisibility ? m_visibilityNum
+                                                       : m_cc_cloud->size();
                 pcl_cloud->resize(realNum);
                 unsigned index = 0;
 
                 for (unsigned i = 0; i < pointCount; ++i) {
                     if (m_partialVisibility) {
-                        if (m_cc_cloud->getTheVisibilityArray().at(i) == POINT_VISIBLE) {
+                        if (m_cc_cloud->getTheVisibilityArray().at(i) ==
+                            POINT_VISIBLE) {
                             ScalarType scalar = scalar_field->getValue(i);
-                            const ecvColor::Rgb* col = m_cc_cloud->getScalarValueColor(scalar);
-                            pcl_cloud->at(index).r = static_cast<uint8_t>(col->r);
-                            pcl_cloud->at(index).g = static_cast<uint8_t>(col->g);
-                            pcl_cloud->at(index).b = static_cast<uint8_t>(col->b);
+                            const ecvColor::Rgb* col =
+                                    m_cc_cloud->getScalarValueColor(scalar);
+                            pcl_cloud->at(index).r =
+                                    static_cast<uint8_t>(col->r);
+                            pcl_cloud->at(index).g =
+                                    static_cast<uint8_t>(col->g);
+                            pcl_cloud->at(index).b =
+                                    static_cast<uint8_t>(col->b);
                             ++index;
                         }
                     } else {
                         ScalarType scalar = scalar_field->getValue(i);
-                        const ecvColor::Rgb* col = m_cc_cloud->getScalarValueColor(scalar);
+                        const ecvColor::Rgb* col =
+                                m_cc_cloud->getScalarValueColor(scalar);
                         pcl_cloud->at(i).r = static_cast<uint8_t>(col->r);
                         pcl_cloud->at(i).g = static_cast<uint8_t>(col->g);
                         pcl_cloud->at(i).b = static_cast<uint8_t>(col->b);
@@ -604,7 +612,7 @@ PCLCloud::Ptr cc2smReader::getAsSM(
                      requested_fields.begin();
              it != requested_fields.end(); ++it) {
             bool exists = checkIfFieldExists(*it);
-            if (!exists) { // all check results must be true
+            if (!exists) {  // all check results must be true
                 return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
             }
         }
@@ -1297,18 +1305,22 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
     polydata->SetPolys(polys);
     if (showColors) {
         // Set scalar array name for tooltip display
-        // If showing scalar field, use the scalar field name; otherwise use "Colors"
+        // If showing scalar field, use the scalar field name; otherwise use
+        // "Colors"
         if (showSF && mesh->hasDisplayedScalarField()) {
             // Cast to ccPointCloud to access scalar field methods
             ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(
-                const_cast<ccGenericPointCloud*>(mesh->getAssociatedCloud()));
+                    const_cast<ccGenericPointCloud*>(
+                            mesh->getAssociatedCloud()));
             if (cloud) {
                 int sfIdx = cloud->getCurrentDisplayedScalarFieldIndex();
                 if (sfIdx >= 0) {
                     QString sfName = cloud->getScalarFieldName(sfIdx);
                     colors->SetName(sfName.toStdString().c_str());
-                    CVLog::PrintDebug(QString("[cc2smReader::getVtkPolyDataFromMeshCloud] "
-                                            "Set scalar array name: %1").arg(sfName));
+                    CVLog::PrintDebug(QString("[cc2smReader::"
+                                              "getVtkPolyDataFromMeshCloud] "
+                                              "Set scalar array name: %1")
+                                              .arg(sfName));
                 } else {
                     colors->SetName("Colors");
                 }
