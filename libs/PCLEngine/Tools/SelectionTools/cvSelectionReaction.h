@@ -7,10 +7,13 @@
 
 #pragma once
 
+// clang-format off
+// Qt - must be included before other headers for MOC to work correctly
 #include <QAction>
 #include <QCursor>
 #include <QObject>
 #include <QPointer>
+// clang-format on
 
 #include "cvViewSelectionManager.h"
 #include "qPCL.h"

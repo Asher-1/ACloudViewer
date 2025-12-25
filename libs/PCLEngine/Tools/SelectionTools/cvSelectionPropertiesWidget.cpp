@@ -1040,16 +1040,21 @@ void cvSelectionPropertiesWidget::setupAdvancedTab() {
     algebraLayout->addWidget(algebraInfo);
 
     m_algebraOpCombo = new QComboBox();
-    m_algebraOpCombo->addItem(tr("Union (A ∪ B)"), 
-                              static_cast<int>(cvSelectionAlgebra::Operation::UNION));
-    m_algebraOpCombo->addItem(tr("Intersection (A ∩ B)"),
-                              static_cast<int>(cvSelectionAlgebra::Operation::INTERSECTION));
-    m_algebraOpCombo->addItem(tr("Difference (A - B)"),
-                              static_cast<int>(cvSelectionAlgebra::Operation::DIFFERENCE));
-    m_algebraOpCombo->addItem(tr("Symmetric Diff (A △ B)"),
-                              static_cast<int>(cvSelectionAlgebra::Operation::SYMMETRIC_DIFF));
-    m_algebraOpCombo->addItem(tr("Complement (~A)"),
-                              static_cast<int>(cvSelectionAlgebra::Operation::COMPLEMENT));
+    m_algebraOpCombo->addItem(
+            tr("Union (A ∪ B)"),
+            static_cast<int>(cvSelectionAlgebra::Operation::UNION));
+    m_algebraOpCombo->addItem(
+            tr("Intersection (A ∩ B)"),
+            static_cast<int>(cvSelectionAlgebra::Operation::INTERSECTION));
+    m_algebraOpCombo->addItem(
+            tr("Difference (A - B)"),
+            static_cast<int>(cvSelectionAlgebra::Operation::DIFFERENCE));
+    m_algebraOpCombo->addItem(
+            tr("Symmetric Diff (A △ B)"),
+            static_cast<int>(cvSelectionAlgebra::Operation::SYMMETRIC_DIFF));
+    m_algebraOpCombo->addItem(
+            tr("Complement (~A)"),
+            static_cast<int>(cvSelectionAlgebra::Operation::COMPLEMENT));
     algebraLayout->addWidget(m_algebraOpCombo);
 
     m_applyAlgebraButton = new QPushButton(tr("Apply Operation"));
@@ -2039,8 +2044,9 @@ void cvSelectionPropertiesWidget::onAlgebraOperationTriggered() {
         return;
     }
 
-    cvSelectionAlgebra::Operation op = 
-        static_cast<cvSelectionAlgebra::Operation>(m_algebraOpCombo->currentData().toInt());
+    cvSelectionAlgebra::Operation op =
+            static_cast<cvSelectionAlgebra::Operation>(
+                    m_algebraOpCombo->currentData().toInt());
 
     // For now, emit signal - actual implementation depends on having two
     // selections

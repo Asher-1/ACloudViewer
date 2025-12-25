@@ -18,8 +18,8 @@
 #include "qPCL.h"
 
 // VTK
-#include <vtkSmartPointer.h>
 #include <vtkHardwareSelector.h>  // Full definition needed for vtkSmartPointer<vtkHardwareSelector>
+#include <vtkSmartPointer.h>
 
 // Forward declarations
 class vtkSelection;

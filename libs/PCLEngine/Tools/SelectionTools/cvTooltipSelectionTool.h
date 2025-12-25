@@ -5,8 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CV_TOOLTIP_SELECTION_TOOL_H
-#define CV_TOOLTIP_SELECTION_TOOL_H
+#pragma once
+
+// clang-format off
+// Qt - must be included before other headers for MOC to work correctly
+#include <QShortcut>
+#include <QTimer>
+// clang-format on
 
 #include "cvRenderViewSelectionTool.h"
 #include "cvSelectionHighlighter.h"
@@ -14,10 +19,6 @@
 
 // VTK
 #include <vtkSmartPointer.h>
-
-// Qt
-#include <QShortcut>
-#include <QTimer>
 
 // Forward declarations
 class vtkIdTypeArray;
@@ -216,5 +217,3 @@ private:
     // from consuming mouse events
     vtkSmartPointer<vtkCommand> m_vtkCallback;
 };
-
-#endif  // CV_TOOLTIP_SELECTION_TOOL_H

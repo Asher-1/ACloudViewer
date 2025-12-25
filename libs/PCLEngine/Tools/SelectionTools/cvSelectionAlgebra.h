@@ -43,7 +43,8 @@ class QPCL_ENGINE_LIB_API cvSelectionAlgebra : public QObject {
 public:
     /**
      * @brief Algebra operations
-     * Using enum class to avoid macro conflicts (e.g., DIFFERENCE may be defined as a macro on Windows)
+     * Using enum class to avoid macro conflicts (e.g., DIFFERENCE may be
+     * defined as a macro on Windows)
      */
     enum class Operation {
         UNION,           ///< A ∪ B
