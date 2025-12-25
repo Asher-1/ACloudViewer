@@ -24,17 +24,20 @@
 #include <QDockWidget>
 #include <QFileDialog>
 #include <QHBoxLayout>
+#include <QHostInfo>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QProgressBar>
 #include <QSet>
 #include <QStatusBar>
 #include <QString>
 #include <QTextEdit>
 #include <QTime>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QUrl>
@@ -60,6 +63,7 @@ class ccHObject;
 class ccPickingHub;
 class ccPluginUIManager;
 class ccDBRoot;
+class ecvLayoutManager;
 class ecvRecentFiles;
 class ccTracePolylineTool;
 class ccGraphicalSegmentationTool;
@@ -281,6 +285,16 @@ private:
     void initDBRoot();
     void initConsole();
 
+    // Helper function for formatting bytes
+    QString formatBytes(qint64 bytes);
+
+    // Update memory usage widget size based on window size
+    void updateMemoryUsageWidgetSize();
+
+    // Update all toolbar icon sizes based on current screen resolution
+    // This should be called after all toolbars are created/modified
+    void updateAllToolbarIconSizes();
+
 #ifdef USE_PCL_BACKEND
     //! Initialize selection tool controller (ParaView-style architecture)
     void initSelectionController();
@@ -329,6 +343,7 @@ public slots:
 private slots:
     // status slots
     void onMousePosChanged(const QPoint& pos);
+    void updateMemoryUsage();
     // File menu slots
     void doActionOpenFile();
     void doActionSaveFile();
@@ -341,7 +356,6 @@ private slots:
     void doActionSaveCustomLayout();
     void doActionRestoreDefaultLayout();
     void doActionRestoreCustomLayout();
-    void setupDefaultLayout();
     void doShowPrimitiveFactory();
 
     void doCheckForUpdate();
@@ -746,6 +760,12 @@ private:
     QLabel* m_mousePosLabel;
     QLabel* m_systemInfoLabel;
 
+    // Memory usage display widget (ParaView-style)
+    QWidget* m_memoryUsageWidget;
+    QProgressBar* m_memoryUsageProgressBar;
+    QLabel* m_memoryUsageLabel;
+    QTimer* m_memoryUsageTimer;
+
     // For full screen
     QWidget* m_currentFullWidget;
     //! Wether exclusive full screen is enabled or not
@@ -760,18 +780,8 @@ private:
     //! Manages plugins - menus, toolbars, and the about dialog
     ccPluginUIManager* m_pluginUIManager;
 
-    //! Dock widgets that should be placed on the right side
-    //! (plugins/reconstruction)
-    QSet<QDockWidget*> m_rightSideDockWidgets;
-
-    //! Dock widgets that should be placed on the bottom (e.g., Console)
-    QSet<QDockWidget*> m_bottomDockWidgets;
-
-    //! Toolbars that should be placed on the right side (plugins)
-    QSet<QToolBar*> m_rightSideToolBars;
-
-    //! Toolbars that should be placed on the left side (e.g., Viewing tools)
-    QSet<QToolBar*> m_leftSideToolBars;
+    //! Layout manager for handling window/toolbar layout
+    ecvLayoutManager* m_layoutManager;
 
     //! 3D mouse
     cc3DMouseManager* m_3DMouseManager;

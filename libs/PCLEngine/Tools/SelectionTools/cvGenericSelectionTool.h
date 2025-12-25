@@ -13,9 +13,9 @@
 #include "cvSelectionData.h"
 
 // VTK includes (need full definitions for template instantiation)
+#include <vtkHardwareSelector.h>  // Full definition needed for vtkSmartPointer<vtkHardwareSelector>
 #include <vtkSmartPointer.h>  // For vtkSmartPointer template
 #include <vtkType.h>          // For vtkIdType
-#include <vtkHardwareSelector.h>  // Full definition needed for vtkSmartPointer<vtkHardwareSelector>
 
 // Forward declarations
 class vtkRenderer;

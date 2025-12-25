@@ -7,6 +7,12 @@
 
 #pragma once
 
+// clang-format off
+// QT - must be included before other headers for MOC to work correctly
+#include <QCursor>
+#include <QObject>
+// clang-format on
+
 // LOCAL
 #include "cvGenericSelectionTool.h"
 #include "cvViewSelectionManager.h"
@@ -14,10 +20,6 @@
 
 // VTK
 #include <vtkSmartPointer.h>
-
-// QT
-#include <QCursor>
-#include <QObject>
 
 // Forward declarations
 class vtkRenderWindowInteractor;

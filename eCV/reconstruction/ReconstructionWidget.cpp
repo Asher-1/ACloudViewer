@@ -495,7 +495,8 @@ void ReconstructionWidget::CreateToolbar() {
     reconstruction_toolbar_->addAction(action_reconstruction_stats_);
     reconstruction_toolbar_->addAction(action_grab_image_);
     reconstruction_toolbar_->addAction(action_grab_movie_);
-    reconstruction_toolbar_->setIconSize(QSize(16, 16));
+    // Icon size will be set by MainWindow::setupDefaultLayout() based on screen
+    // resolution Don't set a fixed small size here
     toolbar_list_.push_back(reconstruction_toolbar_);
 }
 

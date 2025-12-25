@@ -7,7 +7,12 @@
 
 #include "MainWindow.h"
 
+// Local
+#include "ecvLayoutManager.h"
+
 // Qt
+#include <QGuiApplication>
+#include <QScreen>
 #include <QSettings>
 #include <QThread>
 
@@ -38,6 +43,7 @@
 #include <CloudSamplingTools.h>
 #include <Delaunay2dMesh.h>
 #include <Jacobi.h>
+#include <MemoryInfo.h>
 #include <MeshSamplingTools.h>
 #include <NormalDistribution.h>
 #include <ParallelSort.h>
@@ -291,6 +297,10 @@ MainWindow::MainWindow()
       m_uiManager(nullptr),
       m_mousePosLabel(nullptr),
       m_systemInfoLabel(nullptr),
+      m_memoryUsageWidget(nullptr),
+      m_memoryUsageProgressBar(nullptr),
+      m_memoryUsageLabel(nullptr),
+      m_memoryUsageTimer(nullptr),
       m_currentFullWidget(nullptr),
       m_exclusiveFullscreen(false),
       m_lastViewMode(VIEWMODE::ORTHOGONAL)
@@ -305,6 +315,9 @@ MainWindow::MainWindow()
                    ecvApp->versionLongStr(false));
 
     m_pluginUIManager = new ccPluginUIManager(this, this);
+
+    // Create layout manager (after m_pluginUIManager is created)
+    m_layoutManager = new ecvLayoutManager(this, m_pluginUIManager);
 
     ccTranslationManager::get().populateMenu(m_ui->langAction,
                                              ecvApp->translationPath());
@@ -322,10 +335,10 @@ MainWindow::MainWindow()
     initial();
 
     // Register ViewToolBar as a left-side toolbar
-    m_leftSideToolBars.insert(m_ui->ViewToolBar);
+    m_layoutManager->registerLeftSideToolBar(m_ui->ViewToolBar);
 
     // Register Console dock widget as a bottom dock widget
-    m_bottomDockWidgets.insert(m_ui->consoleDock);
+    m_layoutManager->registerBottomDockWidget(m_ui->consoleDock);
 
     // connect actions
     connectActions();
@@ -416,6 +429,11 @@ MainWindow::MainWindow()
     m_ui->actionSemanticSegmentation->setEnabled(false);
 #endif
 
+    // Apply unified icon size and style to all toolbars created in constructor
+    // This handles UI toolbars, customViewpointsToolbar, and reconstruction
+    // toolbars
+    updateAllToolbarIconSizes();
+
 #ifdef USE_TBB
     ecvConsole::Print(tr("[TBB] Using Intel's Threading Building Blocks %1.%2")
                               .arg(QString::number(TBB_VERSION_MAJOR),
@@ -454,6 +472,10 @@ MainWindow::~MainWindow() {
     m_animationDlg = nullptr;
     m_mousePosLabel = nullptr;
     m_systemInfoLabel = nullptr;
+    m_memoryUsageWidget = nullptr;
+    m_memoryUsageProgressBar = nullptr;
+    m_memoryUsageLabel = nullptr;
+    m_memoryUsageTimer = nullptr;
 
     m_measurementTool = nullptr;
     m_gsTool = nullptr;
@@ -560,6 +582,22 @@ void MainWindow::initial() {
 
     viewWidget->showMaximized();
     viewWidget->update();
+}
+
+void MainWindow::updateAllToolbarIconSizes() {
+    // Apply unified icon size and style to all existing toolbars
+    // This ensures consistency across all toolbars
+    if (!m_layoutManager) return;
+
+    QScreen* screen = QGuiApplication::primaryScreen();
+    int screenWidth = screen ? screen->geometry().width() : 1920;
+    QList<QToolBar*> allToolbars = findChildren<QToolBar*>();
+
+    for (QToolBar* toolbar : allToolbars) {
+        if (toolbar && toolbar->parent() == this) {
+            m_layoutManager->setToolbarIconSize(toolbar, screenWidth);
+        }
+    }
 }
 
 void MainWindow::initConsole() {
@@ -1147,22 +1185,169 @@ void MainWindow::initStatusBar() {
                 &MainWindow::onMousePosChanged);
     }
 
-    // set system info label
+    // set memory usage display widget (ParaView-style)
     {
-        m_systemInfoLabel = new QLabel(this);
-        m_systemInfoLabel->setMinimumSize(m_systemInfoLabel->sizeHint());
-        m_systemInfoLabel->setAlignment(Qt::AlignHCenter);
-        m_systemInfoLabel->setText(
-                tr("<style> a{text-decoration: none} </style> <a "
-                   "href=\"http://asher-1.github.io\">%1 | "
-                   "asher-1.github.io</a>")
-                        .arg(Settings::TITLE + " " + Settings::APP_VERSION));
-        m_systemInfoLabel->setTextFormat(Qt::RichText);
-        m_systemInfoLabel->setOpenExternalLinks(true);
-        m_ui->statusBar->addPermanentWidget(m_systemInfoLabel, 0);
+        m_memoryUsageWidget = new QWidget(this);
+        // No layout needed - we'll use absolute positioning for overlay
+
+        // Progress bar for memory usage (thicker, like ParaView)
+        m_memoryUsageProgressBar = new QProgressBar(m_memoryUsageWidget);
+        m_memoryUsageProgressBar->setMinimumWidth(
+                240);  // Minimum width (doubled)
+        m_memoryUsageProgressBar->setMaximumWidth(
+                500);  // Maximum width (doubled)
+        m_memoryUsageProgressBar->setFixedHeight(
+                20);  // Thicker height (doubled from 10)
+        m_memoryUsageProgressBar->setMinimum(0);
+        m_memoryUsageProgressBar->setMaximum(100);
+        m_memoryUsageProgressBar->setTextVisible(false);
+        m_memoryUsageProgressBar->setSizePolicy(QSizePolicy::Fixed,
+                                                QSizePolicy::Fixed);
+        m_memoryUsageProgressBar->move(0, 0);  // Position at top-left of widget
+        m_memoryUsageProgressBar->setStyleSheet(
+                "QProgressBar {"
+                "    border: 1px solid #ccc;"
+                "    border-radius: 3px;"
+                "    background-color: #f0f0f0;"
+                "}"
+                "QProgressBar::chunk {"
+                "    background-color: #90EE90;"
+                "    border-radius: 2px;"
+                "}");
+
+        // Label for memory usage text (overlay on progress bar)
+        m_memoryUsageLabel = new QLabel(m_memoryUsageWidget);
+        m_memoryUsageLabel->setMinimumWidth(240);  // Minimum width (doubled)
+        m_memoryUsageLabel->setMaximumWidth(500);  // Maximum width (doubled)
+        m_memoryUsageLabel->setFixedHeight(20);  // Same height as progress bar
+        m_memoryUsageLabel->setAlignment(Qt::AlignCenter);  // Center text
+        m_memoryUsageLabel->setSizePolicy(QSizePolicy::Fixed,
+                                          QSizePolicy::Fixed);
+        m_memoryUsageLabel->move(0, 0);  // Overlay on progress bar
+        QFont labelFont = m_memoryUsageLabel->font();
+        labelFont.setPointSize(labelFont.pointSize() - 1);
+        m_memoryUsageLabel->setFont(labelFont);
+        // Make label transparent so progress bar shows through
+        m_memoryUsageLabel->setStyleSheet("background: transparent;");
+
+        // Set widget size to match progress bar
+        m_memoryUsageWidget->setFixedSize(
+                240, 20);  // Will be updated by updateMemoryUsageWidgetSize
+        m_memoryUsageWidget->setSizePolicy(QSizePolicy::Fixed,
+                                           QSizePolicy::Fixed);
+        m_ui->statusBar->addPermanentWidget(m_memoryUsageWidget, 0);
+
+        // Create timer to update memory usage periodically
+        m_memoryUsageTimer = new QTimer(this);
+        connect(m_memoryUsageTimer, &QTimer::timeout, this,
+                &MainWindow::updateMemoryUsage);
+        m_memoryUsageTimer->start(5000);  // Update every 5 seconds
+
+        // Initial update
+        updateMemoryUsage();
+        updateMemoryUsageWidgetSize();
     }
 
     statusBar()->showMessage(tr("Ready"));
+}
+
+void MainWindow::updateMemoryUsage() {
+    if (!m_memoryUsageProgressBar || !m_memoryUsageLabel) {
+        return;
+    }
+
+    // Get system memory information
+    cloudViewer::system::MemoryInfo memInfo =
+            cloudViewer::system::getMemoryInfo();
+
+    if (memInfo.totalRam > 0) {
+        // Calculate used memory (total - available)
+        qint64 bytesUsed =
+                static_cast<qint64>(memInfo.totalRam - memInfo.availableRam);
+        qint64 bytesTotal = static_cast<qint64>(memInfo.totalRam);
+
+        // Calculate percentage
+        int percentage = static_cast<int>((bytesUsed * 100) / bytesTotal);
+        m_memoryUsageProgressBar->setValue(percentage);
+
+        // Format sizes
+        QString usedStr = formatBytes(bytesUsed);
+        QString totalStr = formatBytes(bytesTotal);
+
+        // Get hostname
+        QString hostname = QHostInfo::localHostName();
+
+        // Update label text: "hostname: used/total percentage%"
+        QString text = QString("%1: %2/%3 %4%")
+                               .arg(hostname)
+                               .arg(usedStr)
+                               .arg(totalStr)
+                               .arg(percentage);
+        m_memoryUsageLabel->setText(text);
+    }
+}
+
+void MainWindow::updateMemoryUsageWidgetSize() {
+    if (!m_memoryUsageWidget || !m_memoryUsageProgressBar ||
+        !m_memoryUsageLabel) {
+        return;
+    }
+
+    // Get window width
+    int windowWidth = width();
+
+    // Calculate widget width based on window size (ParaView-style scaling)
+    // Scale between 240px (min) and 500px (max) based on window width (doubled)
+    const int minWidth = 240;
+    const int maxWidth = 500;
+
+    int widgetWidth;
+    if (windowWidth <= 1280) {
+        // Small windows: use minimum width
+        widgetWidth = minWidth;
+    } else if (windowWidth >= 2560) {
+        // Large windows: use maximum width
+        widgetWidth = maxWidth;
+    } else {
+        // Medium windows: linear interpolation
+        double ratio = static_cast<double>(windowWidth - 1280) / (2560 - 1280);
+        widgetWidth =
+                static_cast<int>(minWidth + ratio * (maxWidth - minWidth));
+    }
+
+    // Update progress bar and label width and widget size
+    m_memoryUsageProgressBar->setFixedWidth(widgetWidth);
+    m_memoryUsageLabel->setFixedWidth(widgetWidth);
+    m_memoryUsageWidget->setFixedSize(widgetWidth,
+                                      20);  // Height is fixed at 20
+
+    // Force update to reflect size changes
+    m_memoryUsageWidget->updateGeometry();
+    m_memoryUsageProgressBar->update();
+    m_memoryUsageLabel->update();
+}
+
+QString MainWindow::formatBytes(qint64 bytes) {
+    const qint64 KB = 1024;
+    const qint64 MB = KB * 1024;
+    const qint64 GB = MB * 1024;
+    const qint64 TB = GB * 1024;
+
+    if (bytes >= TB) {
+        return QString("%1 TiB").arg(bytes / static_cast<double>(TB), 0, 'f',
+                                     1);
+    } else if (bytes >= GB) {
+        return QString("%1 GiB").arg(bytes / static_cast<double>(GB), 0, 'f',
+                                     1);
+    } else if (bytes >= MB) {
+        return QString("%1 MiB").arg(bytes / static_cast<double>(MB), 0, 'f',
+                                     1);
+    } else if (bytes >= KB) {
+        return QString("%1 KiB").arg(bytes / static_cast<double>(KB), 0, 'f',
+                                     1);
+    } else {
+        return QString("%1 B").arg(bytes);
+    }
 }
 
 void MainWindow::initPlugins() {
@@ -1173,33 +1358,78 @@ void MainWindow::initPlugins() {
     QToolBar* mainPluginToolbar = m_pluginUIManager->mainPluginToolbar();
     addToolBar(Qt::RightToolBarArea, glPclToolbar);
     addToolBar(Qt::RightToolBarArea, mainPluginToolbar);
-    // Register plugin toolbars as right-side toolbars
-    m_rightSideToolBars.insert(glPclToolbar);
-    m_rightSideToolBars.insert(mainPluginToolbar);
+    // Register plugin toolbars with layout manager
+    m_layoutManager->registerRightSideToolBar(glPclToolbar);
+    m_layoutManager->registerRightSideToolBar(mainPluginToolbar);
 
     // Combine all additional plugin toolbars into a single unified toolbar
     QList<QToolBar*> additionalToolbars =
             m_pluginUIManager->additionalPluginToolbars();
+
+    CVLog::Print(
+            QString("[MainWindow] Found %1 additional plugin toolbars to unify")
+                    .arg(additionalToolbars.size()));
+
+    // Check if UnifiedPluginToolbar already exists (to avoid duplicate
+    // creation)
+    QToolBar* existingUnifiedToolbar =
+            findChild<QToolBar*>("UnifiedPluginToolbar");
+    if (existingUnifiedToolbar) {
+        // Remove existing toolbar first to avoid duplicates
+        CVLog::Print("[MainWindow] Removing existing UnifiedPluginToolbar");
+        removeToolBar(existingUnifiedToolbar);
+        existingUnifiedToolbar->deleteLater();
+    }
+
     if (!additionalToolbars.isEmpty()) {
-        QToolBar* unifiedPluginToolbar = new QToolBar(tr("Plugins"), this);
+        QToolBar* unifiedPluginToolbar =
+                new QToolBar(tr("MultipleActionsPlugins"), this);
         unifiedPluginToolbar->setObjectName("UnifiedPluginToolbar");
 
-        // Add all actions from all additional plugin toolbars to the unified
-        // toolbar
+        // Collect all actions from additional toolbars, avoiding duplicates
+        QSet<QAction*> addedActions;
+
         for (QToolBar* toolbar : additionalToolbars) {
             QList<QAction*> actions = toolbar->actions();
+            CVLog::Print(QString("[MainWindow] Processing toolbar '%1' with %2 "
+                                 "actions")
+                                 .arg(toolbar->objectName())
+                                 .arg(actions.size()));
+
             for (QAction* action : actions) {
-                unifiedPluginToolbar->addAction(action);
+                // Only add action if it's not already added to unified toolbar
+                if (!addedActions.contains(action)) {
+                    unifiedPluginToolbar->addAction(action);
+                    addedActions.insert(action);
+                }
             }
-            // Remove the original toolbar from the main window and hide it
-            // (don't delete it as actions still reference it)
+            // IMPORTANT: Completely remove and hide the original toolbar
+            // Set parent to nullptr to prevent it from being restored by
+            // restoreState()
             removeToolBar(toolbar);
+            toolbar->setParent(nullptr);
             toolbar->setVisible(false);
+            toolbar->hide();
         }
 
-        // Add the unified toolbar to the top
-        addToolBar(Qt::TopToolBarArea, unifiedPluginToolbar);
-        unifiedPluginToolbar->setVisible(true);
+        // Only add unified toolbar if it has actions
+        if (!unifiedPluginToolbar->actions().isEmpty()) {
+            // Add the unified toolbar to the top
+            addToolBar(Qt::TopToolBarArea, unifiedPluginToolbar);
+            unifiedPluginToolbar->setVisible(true);
+            unifiedPluginToolbar->show();
+
+            CVLog::Print(QString("[MainWindow] Created UnifiedPluginToolbar "
+                                 "with %1 actions from %2 toolbars")
+                                 .arg(unifiedPluginToolbar->actions().size())
+                                 .arg(additionalToolbars.size()));
+        } else {
+            // No actions, delete the empty toolbar
+            CVLog::Warning(
+                    "[MainWindow] UnifiedPluginToolbar has no actions, "
+                    "deleting");
+            delete unifiedPluginToolbar;
+        }
     }
 
     // Set up dynamic menus
@@ -1212,6 +1442,10 @@ void MainWindow::initPlugins() {
             m_pluginUIManager->actionShowMainPluginToolbar());
     m_ui->menuToolbars->addAction(
             m_pluginUIManager->actionShowPCLAlgorithmToolbar());
+
+    // Apply unified icon size and style to all plugin toolbars
+    // This includes glPclToolbar, mainPluginToolbar, and UnifiedPluginToolbar
+    updateAllToolbarIconSizes();
 }
 
 void MainWindow::initDBRoot() {
@@ -1263,6 +1497,10 @@ void MainWindow::initReconstructions() {
             &MainWindow::autoShowReconstructionToolBar);
     showToolbarAction->setCheckable(true);
     showToolbarAction->setEnabled(true);
+    // Get screen width for icon size calculation
+    QScreen* screen = QGuiApplication::primaryScreen();
+    int screenWidth = screen ? screen->geometry().width() : 1920;
+
     for (QToolBar* toolbar : m_rcw->getReconstructionToolbars()) {
         addToolBar(Qt::TopToolBarArea, toolbar);
         connect(showToolbarAction, &QAction::toggled, toolbar,
@@ -3064,6 +3302,7 @@ void MainWindow::resizeEvent(QResizeEvent* event) {
     QMainWindow::resizeEvent(event);
 
     updateOverlayDialogsPlacement();
+    updateMemoryUsageWidgetSize();
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
@@ -3297,112 +3536,36 @@ void MainWindow::doActionResetGUIElementsPos() {
 }
 
 void MainWindow::doActionSaveCustomLayout() {
-    QSettings settings;
-    settings.setValue(ecvPS::CustomLayoutGeom(), saveGeometry());
-    settings.setValue(ecvPS::CustomLayoutState(), saveState());
-
-    QMessageBox::information(
-            this, tr("Save Custom Layout"),
-            tr("Current layout has been saved as custom layout. You can "
-               "restore it later using the 'Restore Custom Layout' action."));
+    if (m_layoutManager) {
+        m_layoutManager->saveCustomLayout();
+        QMessageBox::information(
+                this, tr("Save Custom Layout"),
+                tr("Current layout has been saved as custom layout. You can "
+                   "restore it later using the 'Restore Custom Layout' "
+                   "action."));
+    } else {
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
+    }
 }
 
 void MainWindow::doActionRestoreDefaultLayout() {
-    // Restore Qt default layout - clear all toolbar and dock widget states
-    QSettings settings;
-
-    // Clear main window state to restore default layout
-    settings.remove(ecvPS::MainWinGeom());
-    settings.remove(ecvPS::MainWinState());
-
-    setupDefaultLayout();
-
-    QMessageBox::information(this, tr("Restore Default Layout"),
-                             tr("Qt default layout has been restored"));
+    if (m_layoutManager) {
+        m_layoutManager->restoreDefaultLayout();
+    } else {
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
+    }
 }
 
 void MainWindow::doActionRestoreCustomLayout() {
-    QSettings settings;
-    QVariant geometry = settings.value(ecvPS::CustomLayoutGeom());
-    QVariant state = settings.value(ecvPS::CustomLayoutState());
-
-    if (!geometry.isValid() || !state.isValid()) {
-        QMessageBox::warning(this, tr("Restore Custom Layout"),
-                             tr("No saved custom layout found. Please save "
-                                "current layout first."));
-        return;
-    }
-
-    // Restore custom layout
-    restoreGeometry(geometry.toByteArray());
-    restoreState(state.toByteArray());
-
-    QMessageBox::information(this, tr("Restore Custom Layout"),
-                             tr("Custom layout has been restored"));
-}
-
-void MainWindow::setupDefaultLayout() {
-    // Setup default layout as shown in the reference image:
-    // - Toolbars at the top
-    // - DB Tree dock widget on the left
-    // - Plugin/Reconstruction dock widgets on the right
-    // - Main workspace in the center
-
-    // Reset toolbars - plugin toolbars go to right, left-side toolbars go to
-    // left, others to top
-    QList<QToolBar*> toolBars = findChildren<QToolBar*>();
-    for (QToolBar* toolbar : toolBars) {
-        // Skip hidden toolbars that are not attached to the main window
-        // (e.g., original plugin toolbars that were unified)
-        if (!toolbar->isVisible() && toolbar->parent() == this) {
-            continue;
+    if (m_layoutManager) {
+        if (!m_layoutManager->restoreCustomLayout()) {
+            QMessageBox::warning(this, tr("Restore Custom Layout"),
+                                 tr("No saved custom layout found. Please save "
+                                    "current layout first."));
         }
-        removeToolBar(toolbar);
-        // Check if this is a plugin toolbar (registered in m_rightSideToolBars)
-        if (m_rightSideToolBars.contains(toolbar)) {
-            addToolBar(Qt::RightToolBarArea, toolbar);
-        } else if (m_leftSideToolBars.contains(toolbar)) {
-            // Left-side toolbars (e.g., Viewing tools) go to left
-            addToolBar(Qt::LeftToolBarArea, toolbar);
-        } else {
-            addToolBar(Qt::TopToolBarArea, toolbar);
-        }
-        toolbar->setVisible(true);
-    }
-
-    // Reset dock widgets go to right, bottom widgets go to bottom, others to
-    // left
-    QList<QDockWidget*> dockWidgets = findChildren<QDockWidget*>();
-
-    for (QDockWidget* dock : dockWidgets) {
-        if (!dock->isVisible() && dock->parent() == this) {
-            continue;
-        }
-        if (dock->objectName() == "Log") {
-            continue;
-        }
-        removeDockWidget(dock);
-        // Check if this is a bottom dock widget (e.g., Console)
-        if (m_bottomDockWidgets.contains(dock)) {
-            addDockWidget(Qt::BottomDockWidgetArea, dock);
-        } else if (m_rightSideDockWidgets.contains(dock)) {
-            // Plugin/reconstruction dock widgets go to right
-            addDockWidget(Qt::RightDockWidgetArea, dock);
-        } else {
-            // Regular dock widgets (like DB Tree) go to left
-            addDockWidget(Qt::LeftDockWidgetArea, dock);
-        }
-        dock->setVisible(true);
-    }
-
-    // Maximize window
-    if (this->m_uiManager) {
-        this->m_uiManager->showMaximized();
     } else {
-        showMaximized();
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
     }
-    // Save this as the default layout
-    saveGUIElementsPos();
 }
 
 void MainWindow::toggleFullScreen(bool state) {
@@ -4786,20 +4949,18 @@ void MainWindow::UpdateUI() { TheInstance()->updateUI(); }
 
 void MainWindow::showEvent(QShowEvent* event) {
     QMainWindow::showEvent(event);
+    // Update memory usage widget size when window is shown
+    updateMemoryUsageWidgetSize();
 
     if (!m_FirstShow) {
         return;
     }
 
-    QSettings settings;
-    QVariant geometry = settings.value(ecvPS::MainWinGeom());
-
-    if (geometry.isValid()) {
-        restoreGeometry(geometry.toByteArray());
-        restoreState(settings.value(ecvPS::MainWinState()).toByteArray());
+    // Use layout manager to restore or setup layout
+    if (m_layoutManager) {
+        m_layoutManager->restoreGUILayout(false);
     } else {
-        // First time user - setup default layout as shown in reference image
-        setupDefaultLayout();
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
     }
 
     m_FirstShow = false;
@@ -4826,10 +4987,12 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 }
 
 void MainWindow::saveGUIElementsPos() {
-    // save the state as settings
-    QSettings settings;
-    settings.setValue(ecvPS::MainWinGeom(), saveGeometry());
-    settings.setValue(ecvPS::MainWinState(), saveState());
+    // Use layout manager to save layout
+    if (m_layoutManager) {
+        m_layoutManager->saveGUILayout();
+    } else {
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
+    }
 }
 
 void MainWindow::doShowPrimitiveFactory() {

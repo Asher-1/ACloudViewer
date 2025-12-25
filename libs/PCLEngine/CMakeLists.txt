@@ -130,6 +130,12 @@ if (USE_PCL_BACKEND)
     # Enable AUTOMOC and AUTOUIC for this target as we now use QObject based classes
     set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON AUTOUIC ON)
 
+    # Enable automatic symbol export on Windows to avoid MOC issues with export macros
+    if (WIN32)
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    endif ()
+
     if (MSVC)
         # fix compiling error on windows platform for deprecated flag in pcl
         target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")

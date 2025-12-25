@@ -654,10 +654,6 @@
    <property name="autoFillBackground">
     <bool>false</bool>
    </property>
-   <property name="styleSheet">
-    <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0.165, x2:1, y2:0, stop:0 rgba(255, 174, 93, 255), stop:1 rgba(179, 208, 144, 243));
-item{border: 0px};</string>
-   </property>
   </widget>
   <widget class="QDockWidget" name="DockableDBTree">
    <property name="minimumSize">
