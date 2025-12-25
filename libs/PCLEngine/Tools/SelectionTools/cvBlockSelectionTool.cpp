@@ -17,6 +17,7 @@
 #include <vtkAreaPicker.h>
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
+#include <vtkHardwareSelector.h>  // Full definition needed for copy assignment operator
 #include <vtkInteractorStyleRubberBandPick.h>
 #include <vtkProp.h>
 #include <vtkProp3DCollection.h>

@@ -32,6 +32,7 @@
 #include <CVLog.h>
 
 // VTK
+#include <vtkHardwareSelector.h>  // Full definition needed for copy assignment operator
 #include <vtkIdTypeArray.h>
 #include <vtkIntArray.h>
 #include <vtkPolyData.h>

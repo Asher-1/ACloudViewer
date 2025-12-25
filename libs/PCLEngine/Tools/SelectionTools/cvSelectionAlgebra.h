@@ -43,14 +43,16 @@ class QPCL_ENGINE_LIB_API cvSelectionAlgebra : public QObject {
 public:
     /**
      * @brief Algebra operations
+     * Using enum class to avoid macro conflicts (e.g., DIFFERENCE may be defined as a macro on Windows)
      */
-    enum Operation {
+    enum class Operation {
         UNION,           ///< A ∪ B
         INTERSECTION,    ///< A ∩ B
         DIFFERENCE,      ///< A - B
         SYMMETRIC_DIFF,  ///< A △ B (elements in either but not both)
         COMPLEMENT       ///< ~A (all elements not in A)
     };
+    Q_ENUM(Operation)
 
     explicit cvSelectionAlgebra(QObject* parent = nullptr);
     ~cvSelectionAlgebra() override;

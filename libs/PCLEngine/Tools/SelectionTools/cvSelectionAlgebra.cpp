@@ -208,15 +208,15 @@ cvSelectionData cvSelectionAlgebra::performOperation(Operation op,
                                                      const cvSelectionData& b,
                                                      vtkPolyData* polyData) {
     switch (op) {
-        case UNION:
+        case Operation::UNION:
             return unionOf(a, b);
-        case INTERSECTION:
+        case Operation::INTERSECTION:
             return intersectionOf(a, b);
-        case DIFFERENCE:
+        case Operation::DIFFERENCE:
             return differenceOf(a, b);
-        case SYMMETRIC_DIFF:
+        case Operation::SYMMETRIC_DIFF:
             return symmetricDifferenceOf(a, b);
-        case COMPLEMENT:
+        case Operation::COMPLEMENT:
             if (!polyData) {
                 CVLog::Error(
                         "[cvSelectionAlgebra] polyData required for "
@@ -226,7 +226,7 @@ cvSelectionData cvSelectionAlgebra::performOperation(Operation op,
             return complementOf(polyData, a);
         default:
             CVLog::Error(QString("[cvSelectionAlgebra] Unknown operation: %1")
-                                 .arg(op));
+                                 .arg(static_cast<int>(op)));
             return cvSelectionData();
     }
 }

@@ -19,6 +19,7 @@
 // VTK
 #include <vtkCamera.h>
 #include <vtkCommand.h>
+#include <vtkHardwareSelector.h>  // Full definition needed for copy assignment operator
 #include <vtkInteractorStyleRubberBandZoom.h>
 #include <vtkMath.h>
 #include <vtkRenderWindow.h>

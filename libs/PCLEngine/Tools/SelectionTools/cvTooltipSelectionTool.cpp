@@ -21,6 +21,7 @@
 #include <vtkActor.h>
 #include <vtkCommand.h>
 #include <vtkFieldData.h>
+#include <vtkHardwareSelector.h>  // Full definition needed for copy assignment operator
 #include <vtkIdTypeArray.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>

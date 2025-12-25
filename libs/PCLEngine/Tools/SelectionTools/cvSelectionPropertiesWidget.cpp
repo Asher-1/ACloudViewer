@@ -1040,15 +1040,16 @@ void cvSelectionPropertiesWidget::setupAdvancedTab() {
     algebraLayout->addWidget(algebraInfo);
 
     m_algebraOpCombo = new QComboBox();
-    m_algebraOpCombo->addItem(tr("Union (A ∪ B)"), cvSelectionAlgebra::UNION);
+    m_algebraOpCombo->addItem(tr("Union (A ∪ B)"), 
+                              static_cast<int>(cvSelectionAlgebra::Operation::UNION));
     m_algebraOpCombo->addItem(tr("Intersection (A ∩ B)"),
-                              cvSelectionAlgebra::INTERSECTION);
+                              static_cast<int>(cvSelectionAlgebra::Operation::INTERSECTION));
     m_algebraOpCombo->addItem(tr("Difference (A - B)"),
-                              cvSelectionAlgebra::DIFFERENCE);
+                              static_cast<int>(cvSelectionAlgebra::Operation::DIFFERENCE));
     m_algebraOpCombo->addItem(tr("Symmetric Diff (A △ B)"),
-                              cvSelectionAlgebra::SYMMETRIC_DIFF);
+                              static_cast<int>(cvSelectionAlgebra::Operation::SYMMETRIC_DIFF));
     m_algebraOpCombo->addItem(tr("Complement (~A)"),
-                              cvSelectionAlgebra::COMPLEMENT);
+                              static_cast<int>(cvSelectionAlgebra::Operation::COMPLEMENT));
     algebraLayout->addWidget(m_algebraOpCombo);
 
     m_applyAlgebraButton = new QPushButton(tr("Apply Operation"));
@@ -2038,15 +2039,16 @@ void cvSelectionPropertiesWidget::onAlgebraOperationTriggered() {
         return;
     }
 
-    int op = m_algebraOpCombo->currentData().toInt();
+    cvSelectionAlgebra::Operation op = 
+        static_cast<cvSelectionAlgebra::Operation>(m_algebraOpCombo->currentData().toInt());
 
     // For now, emit signal - actual implementation depends on having two
     // selections
-    emit algebraOperationRequested(op);
+    emit algebraOperationRequested(static_cast<int>(op));
 
     CVLog::Print(QString("[cvSelectionPropertiesWidget] Algebra operation %1 "
                          "requested")
-                         .arg(op));
+                         .arg(static_cast<int>(op)));
 }
 
 //-----------------------------------------------------------------------------
