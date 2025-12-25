@@ -20,6 +20,7 @@
 #include <vtkCell.h>
 #include <vtkCellData.h>
 #include <vtkDataSet.h>
+#include <vtkHardwareSelector.h>  // Full definition needed for copy assignment operator
 #include <vtkIdList.h>
 #include <vtkIdTypeArray.h>
 #include <vtkMapper.h>

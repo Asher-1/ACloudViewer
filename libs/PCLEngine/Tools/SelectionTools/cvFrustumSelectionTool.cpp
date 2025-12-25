@@ -22,6 +22,7 @@
 #include <vtkDataObject.h>
 #include <vtkDataSet.h>
 #include <vtkExtractSelectedFrustum.h>
+#include <vtkHardwareSelector.h>  // Full definition needed for copy assignment operator
 #include <vtkIdTypeArray.h>
 #include <vtkMath.h>
 #include <vtkPlanes.h>

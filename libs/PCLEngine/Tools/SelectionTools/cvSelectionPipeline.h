@@ -19,6 +19,7 @@
 
 // VTK
 #include <vtkSmartPointer.h>
+#include <vtkHardwareSelector.h>  // Full definition needed for vtkSmartPointer<vtkHardwareSelector>
 
 // Forward declarations
 class vtkSelection;
@@ -27,7 +28,6 @@ class vtkIdTypeArray;
 class vtkDataObject;
 class vtkDataSet;
 class vtkRenderer;
-class vtkHardwareSelector;
 class vtkProp;
 
 namespace PclUtils {
