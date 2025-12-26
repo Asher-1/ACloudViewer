@@ -8,11 +8,11 @@
 #pragma once
 
 // clang-format off
-// Qt - must be included before qPCL.h for MOC to work correctly
-#include <QtGui/QColor>
-#include <QtWidgets/QDialog>
-#include <QtGui/QFont>
+// Qt - must be included first for MOC to work correctly on Windows
 #include <QtCore/QObject>
+#include <QtWidgets/QDialog>
+#include <QtGui/QColor>
+#include <QtGui/QFont>
 // clang-format on
 
 #include "qPCL.h"
@@ -99,13 +99,13 @@ public:
      */
     LabelProperties properties() const;
 
-Q_SIGNALS:
+signals:
     /**
      * @brief Emitted when Apply is clicked
      */
     void propertiesApplied(const LabelProperties& props);
 
-private Q_SLOTS:
+private slots:
     void onApplyClicked();
     void onResetClicked();
     void onOpacitySliderChanged(int value);

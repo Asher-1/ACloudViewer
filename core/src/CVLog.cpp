@@ -87,8 +87,28 @@ void CVLog::RegisterInstance(CVLog* logInstance) {
         LogMessage(QString(s_buffer), flags);                \
     }
 
+bool CVLog::PrintVerbose(const char* format, ...) {
+    LOG_ARGS(LOG_VERBOSE)
+    return true;
+}
+
+bool CVLog::PrintVerbose(const QString& message) {
+    LogMessage(message, LOG_VERBOSE);
+    return true;
+}
+
 bool CVLog::Print(const char* format, ...) {
     LOG_ARGS(LOG_STANDARD)
+    return true;
+}
+
+bool CVLog::PrintHigh(const char* format, ...) {
+    LOG_ARGS(LOG_IMPORTANT)
+    return true;
+}
+
+bool CVLog::PrintHigh(const QString& message) {
+    LogMessage(message, LOG_IMPORTANT);
     return true;
 }
 

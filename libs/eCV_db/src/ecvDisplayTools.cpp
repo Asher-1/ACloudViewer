@@ -1939,6 +1939,7 @@ ENTITY_TYPE ecvDisplayTools::ConvertToEntityType(const CV_CLASS_ENUM& type) {
         case CV_TYPES::TORUS:
         case CV_TYPES::EXTRU:
         case CV_TYPES::DISH:
+        case CV_TYPES::DISC:
         case CV_TYPES::BOX:
         case CV_TYPES::COORDINATESYSTEM:
         case CV_TYPES::QUADRIC:

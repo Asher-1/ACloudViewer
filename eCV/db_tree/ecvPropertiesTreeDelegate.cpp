@@ -33,9 +33,11 @@
 #include <ecv2DViewportObject.h>
 #include <ecvAdvancedTypes.h>
 #include <ecvCameraSensor.h>
+#include <ecvCircle.h>
 #include <ecvColorScalesManager.h>
 #include <ecvCone.h>
 #include <ecvCoordinateSystem.h>
+#include <ecvDisc.h>
 #include <ecvDisplayTools.h>
 #include <ecvDrawContext.h>
 #include <ecvFacet.h>
@@ -139,7 +141,8 @@ ccPropertiesTreeDelegate::ccPropertiesTreeDelegate(QStandardItemModel* model,
       m_model(model),
       m_view(view),
       m_selectionToolsActive(false),
-      m_viewer(nullptr)
+      m_viewer(nullptr),
+      m_lastFocusItemRole(OBJECT_NO_PROPERTY)
 #ifdef USE_PCL_BACKEND
       ,
       m_highlighter(nullptr),
@@ -874,6 +877,9 @@ void ccPropertiesTreeDelegate::fillWithPrimitive(ccGenericPrimitive* _obj) {
     } else if (_obj->isKindOf(CV_TYPES::PLANE)) {
         // planar entity commons
         fillWithPlanarEntity(static_cast<ccPlane*>(_obj));
+    } else if (_obj->isA(CV_TYPES::DISC)) {
+        appendRow(ITEM(tr("Radius")), PERSISTENT_EDITOR(OBJECT_DISC_RADIUS),
+                  true);
     }
 }
 
@@ -975,6 +981,19 @@ void ccPropertiesTreeDelegate::fillWithMesh(ccGenericMesh* _obj) {
 
 void ccPropertiesTreeDelegate::fillWithPolyline(ccPolyline* _obj) {
     assert(_obj && m_model);
+    if (!_obj || !m_model) {
+        return;
+    }
+
+    if (_obj->isA(CV_TYPES::CIRCLE)) {
+        addSeparator(tr("Circle"));
+
+        appendRow(ITEM(tr("Drawing precision")),
+                  PERSISTENT_EDITOR(OBJECT_CIRCLE_RESOLUTION), true);
+
+        appendRow(ITEM(tr("Radius")), PERSISTENT_EDITOR(OBJECT_CIRCLE_RADIUS),
+                  true);
+    }
 
     addSeparator(tr("Polyline"));
 
@@ -1535,6 +1554,18 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = spinBox;
         } break;
+        case OBJECT_CIRCLE_RESOLUTION: {
+            QSpinBox* spinBox = new QSpinBox(parent);
+            spinBox->setRange(4, 1024);
+            spinBox->setSingleStep(4);
+
+            connect(spinBox,
+                    static_cast<void (QSpinBox::*)(int)>(
+                            &QSpinBox::valueChanged),
+                    this, &ccPropertiesTreeDelegate::circleResolutionChanged);
+
+            outputWidget = spinBox;
+        } break;
         case OBJECT_SPHERE_RADIUS: {
             QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
             spinBox->setDecimals(6);
@@ -1545,6 +1576,32 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     static_cast<void (QDoubleSpinBox::*)(double)>(
                             &QDoubleSpinBox::valueChanged),
                     this, &ccPropertiesTreeDelegate::sphereRadiusChanged);
+
+            outputWidget = spinBox;
+        } break;
+        case OBJECT_CIRCLE_RADIUS: {
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
+            spinBox->setDecimals(7);
+            spinBox->setRange(1.0e-6, 1.0e6);
+            spinBox->setSingleStep(1.0);
+
+            connect(spinBox,
+                    static_cast<void (QDoubleSpinBox::*)(double)>(
+                            &QDoubleSpinBox::valueChanged),
+                    this, &ccPropertiesTreeDelegate::circleRadiusChanged);
+
+            outputWidget = spinBox;
+        } break;
+        case OBJECT_DISC_RADIUS: {
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
+            spinBox->setDecimals(7);
+            spinBox->setRange(1.0e-6, 1.0e6);
+            spinBox->setSingleStep(1.0);
+
+            connect(spinBox,
+                    static_cast<void (QDoubleSpinBox::*)(double)>(
+                            &QDoubleSpinBox::valueChanged),
+                    this, &ccPropertiesTreeDelegate::discRadiusChanged);
 
             outputWidget = spinBox;
         } break;
@@ -2142,12 +2199,32 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                             : 0);
             break;
         }
+        case OBJECT_CIRCLE_RESOLUTION: {
+            ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+            assert(circle);
+            SetSpinBoxValue(editor, circle ? circle->getResolution() : 0);
+            break;
+        }
         case OBJECT_SPHERE_RADIUS: {
             ccSphere* sphere = ccHObjectCaster::ToSphere(m_currentObject);
             assert(sphere);
             SetDoubleSpinBoxValue(
                     editor,
                     sphere ? static_cast<double>(sphere->getRadius()) : 0.0);
+            break;
+        }
+        case OBJECT_CIRCLE_RADIUS: {
+            ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+            assert(circle);
+            SetDoubleSpinBoxValue(editor, circle ? circle->getRadius() : 0.0);
+            break;
+        }
+        case OBJECT_DISC_RADIUS: {
+            ccDisc* disc = ccHObjectCaster::ToDisc(m_currentObject);
+            assert(disc);
+            SetDoubleSpinBoxValue(
+                    editor,
+                    disc ? static_cast<double>(disc->getRadius()) : 0.0);
             break;
         }
         case OBJECT_CONE_HEIGHT: {
@@ -2938,6 +3015,71 @@ void ccPropertiesTreeDelegate::octreeDisplayedLevelChanged(int val) {
         updateCurrentEntity();
 
         // we must also reset the properties display!
+        updateModel();
+    }
+}
+
+void ccPropertiesTreeDelegate::circleResolutionChanged(int val) {
+    if (!m_currentObject) {
+        return;
+    }
+
+    ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+    assert(circle);
+    if (!circle) return;
+
+    if (circle->getResolution() != static_cast<unsigned int>(val)) {
+        bool wasVisible = circle->isVisible();
+        circle->setResolution(val);
+        circle->setVisible(wasVisible);
+
+        updateCurrentEntity();
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_CIRCLE_RESOLUTION;
+
+        // we must also reset the properties display!
+        updateModel();
+    }
+}
+
+void ccPropertiesTreeDelegate::circleRadiusChanged(double val) {
+    if (!m_currentObject) return;
+
+    ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+    assert(circle);
+    if (!circle) return;
+
+    if (circle->getRadius() != val) {
+        bool wasVisible = circle->isVisible();
+        circle->setRadius(val);
+        circle->setVisible(wasVisible);
+
+        updateCurrentEntity();
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_CIRCLE_RADIUS;
+
+        // we must also reset the properties display!
+        updateModel();
+    }
+}
+
+void ccPropertiesTreeDelegate::discRadiusChanged(double val) {
+    if (!m_currentObject) return;
+
+    ccDisc* disc = ccHObjectCaster::ToDisc(m_currentObject);
+    assert(disc);
+    if (!disc) return;
+
+    PointCoordinateType radius = static_cast<PointCoordinateType>(val);
+    if (disc->getRadius() != radius) {
+        disc->setRadius(radius);
+
+        updateCurrentEntity();
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_DISC_RADIUS;
         updateModel();
     }
 }

@@ -145,6 +145,8 @@
     <addaction name="themeAction"/>
     <addaction name="langAction"/>
     <addaction name="actionGlobalShiftSettings"/>
+    <addaction name="separator"/>
+    <addaction name="actionShortcutSettings"/>
    </widget>
    <widget class="QMenu" name="menuDisplay">
     <property name="title">
@@ -217,6 +219,8 @@
      <addaction name="actionSaveCustomLayout"/>
      <addaction name="actionRestoreDefaultLayout"/>
      <addaction name="actionRestoreCustomLayout"/>
+     <addaction name="separator"/>
+     <addaction name="actionRestoreWindowOnStartup"/>
     </widget>
     <addaction name="menuLayout"/>
    </widget>
@@ -529,6 +533,12 @@
      <addaction name="actionFlipPlane"/>
      <addaction name="actionComparePlanes"/>
     </widget>
+    <widget class="QMenu" name="menuCircle">
+     <property name="title">
+      <string>Circle</string>
+     </property>
+     <addaction name="actionPromoteCircleToCylinder"/>
+    </widget>
     <widget class="QMenu" name="menuClean">
      <property name="title">
       <string>Clean</string>
@@ -617,6 +627,7 @@
     <addaction name="menuMesh"/>
     <addaction name="menuPolyline"/>
     <addaction name="menuPlane"/>
+    <addaction name="menuCircle"/>
     <addaction name="menuScalarFields"/>
     <addaction name="menuSensors"/>
     <addaction name="menuWaveform"/>
@@ -1417,6 +1428,23 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Restore previously saved custom layout</string>
+   </property>
+  </action>
+  <action name="actionRestoreWindowOnStartup">
+   <property name="text">
+    <string>Restore Default Window on Startup</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="toolTip">
+    <string>Restore window default geometry and state on startup</string>
+   </property>
+   <property name="statusTip">
+    <string>Restore window default geometry and state on startup</string>
    </property>
   </action>
   <action name="actionConsole">
@@ -3385,8 +3413,16 @@ QTreeView::branch:open:has-children:has-siblings  {
    <property name="toolTip">
     <string>Set Global Shift &amp; Scale mechanism parameters</string>
    </property>
+  </action>
+  <action name="actionShortcutSettings">
+   <property name="text">
+    <string>Shortcut Settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>Configure keyboard shortcuts</string>
+   </property>
    <property name="statusTip">
-    <string>Set Global Shift &amp; Scale mechanism parameters</string>
+    <string>Configure keyboard shortcuts</string>
    </property>
   </action>
   <action name="GrayThemeAction">
@@ -4019,6 +4055,21 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Compare two planes (angle + distance)</string>
+   </property>
+  </action>
+  <action name="actionPromoteCircleToCylinder">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/primCylinder.gif</normaloff>:/Resources/images/primCylinder.gif</iconset>
+   </property>
+   <property name="text">
+    <string>Promote to cylinder</string>
+   </property>
+   <property name="toolTip">
+    <string>Promote the selected circle to a cylinder</string>
+   </property>
+   <property name="statusTip">
+    <string>Promote the selected circle to a cylinder</string>
    </property>
   </action>
   <action name="actionFlipMeshTriangles">

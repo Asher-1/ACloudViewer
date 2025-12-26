@@ -71,4 +71,8 @@ public:
     static inline const QString CustomLayoutState() {
         return "customLayoutState";
     }
+    static inline const QString DoNotRestoreWindowGeometry() {
+        return "DoNotRestoreWindowGeometry";
+    }
+    static inline const QString Shortcuts() { return "Shortcuts"; }
 };

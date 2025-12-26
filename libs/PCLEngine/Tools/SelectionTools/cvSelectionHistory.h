@@ -8,9 +8,9 @@
 #pragma once
 
 // clang-format off
-// Qt - must be included before qPCL.h for MOC to work correctly
-#include <QtCore/QDateTime>
+// Qt - must be included first for MOC to work correctly on Windows
 #include <QtCore/QObject>
+#include <QtCore/QDateTime>
 #include <QtCore/QStack>
 #include <QtCore/QString>
 // clang-format on

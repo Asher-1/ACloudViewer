@@ -90,7 +90,10 @@ public:
         OBJECT_LABEL_DISP_2D,
         OBJECT_LABEL_POINT_LEGEND,
         OBJECT_PRIMITIVE_PRECISION,
+        OBJECT_CIRCLE_RESOLUTION,
         OBJECT_SPHERE_RADIUS,
+        OBJECT_CIRCLE_RADIUS,
+        OBJECT_DISC_RADIUS,
         OBJECT_CONE_HEIGHT,
         OBJECT_CONE_BOTTOM_RADIUS,
         OBJECT_CONE_TOP_RADIUS,
@@ -211,7 +214,10 @@ private:
     void octreeDisplayModeChanged(int);
     void octreeDisplayedLevelChanged(int);
     void primitivePrecisionChanged(int);
+    void circleResolutionChanged(int);
     void sphereRadiusChanged(double);
+    void circleRadiusChanged(double);
+    void discRadiusChanged(double);
     void coneHeightChanged(double);
     void coneBottomRadiusChanged(double);
     void coneTopRadiusChanged(double);
@@ -289,6 +295,8 @@ protected:
     bool m_selectionToolsActive;
     //! Visualizer for selection properties widget (abstract interface)
     ecvGenericVisualizer3D* m_viewer;
+    //! Last focused item role (used to force scroll focus after model update)
+    CC_PROPERTY_ROLE m_lastFocusItemRole;
 #ifdef USE_PCL_BACKEND
     //! Highlighter for selection properties widget
     cvSelectionHighlighter* m_highlighter;
