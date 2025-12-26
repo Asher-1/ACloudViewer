@@ -102,6 +102,13 @@ private:  // Helper methods
     //! Calculate appropriate icon size based on screen width
     QSize getIconSizeForScreen(int screenWidth) const;
 
+    //! Check if auto-restore is enabled
+    /** @return true if auto-restore is enabled, false otherwise
+     *  Default value is true (restore enabled) to match UI action's default
+     * checked state
+     */
+    bool isAutoRestoreEnabled() const;
+
     //! Setup toolbar layout (two-row configuration)
     void setupToolbarLayout(int screenWidth);
 

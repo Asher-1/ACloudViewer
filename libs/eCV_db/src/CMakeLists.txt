@@ -8,6 +8,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvBBox.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvBox.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvCameraSensor.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvCircle.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvClipBox.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvColorScale.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvColorScalesManager.cpp
@@ -17,6 +18,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvCylinder.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDepthBuffer.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDish.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisc.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTools.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDrawableObject.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvExternalFactory.cpp

@@ -16,6 +16,8 @@
 // ECV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecvCameraSensor.h>
+#include <ecvCircle.h>
+#include <ecvDisc.h>
 #include <ecvFacet.h>
 #include <ecvFlags.h>
 #include <ecvGenericPointCloud.h>

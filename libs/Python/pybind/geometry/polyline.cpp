@@ -10,8 +10,10 @@
 #include <ReferenceCloud.h>
 
 // ECV_DB_LIB
+#include <ecvCircle.h>
 #include <ecvFacet.h>
 #include <ecvMesh.h>
+#include <ecvObject.h>
 #include <ecvPlanarEntityInterface.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
@@ -225,6 +227,51 @@ void pybind_polyline(py::module& m) {
             {{"density_based", "The density based."},
              {"sampling_parameter", "The sampling parameter."},
              {"with_rgb", "with rgb."}});
+
+    // cloudViewer.geometry.ccCircle
+    py::class_<ccCircle, PyGeometry<ccCircle>, std::shared_ptr<ccCircle>,
+               ccPolyline>
+            pycircle(m, "ccCircle", py::multiple_inheritance(),
+                     "A 3D circle represented as a polyline.");
+    py::detail::bind_copy_functions<ccCircle>(pycircle);
+    pycircle.def(py::init([](double radius, unsigned resolution,
+                             unsigned uniqueID) {
+                     return new ccCircle(radius, resolution, uniqueID);
+                 }),
+                 "Circle constructor", "radius"_a = 0.0, "resolution"_a = 48,
+                 "uniqueID"_a = ccUniqueIDGenerator::InvalidUniqueID)
+            .def("__repr__",
+                 [](const ccCircle& circle) {
+                     std::string info = fmt::format(
+                             "ccCircle with radius {}, resolution {} and {} "
+                             "segments",
+                             circle.getRadius(), circle.getResolution(),
+                             circle.segmentCount());
+                     return info;
+                 })
+            .def("get_radius", &ccCircle::getRadius,
+                 "Returns the radius of the circle.")
+            .def("set_radius", &ccCircle::setRadius,
+                 "Sets the radius of the circle.", "radius"_a)
+            .def("get_resolution", &ccCircle::getResolution,
+                 "Returns the resolution of the displayed circle.")
+            .def("set_resolution", &ccCircle::setResolution,
+                 "Sets the resolution of the displayed circle.", "resolution"_a)
+            .def(
+                    "clone",
+                    [](const ccCircle& circle) {
+                        return std::shared_ptr<ccCircle>(circle.clone());
+                    },
+                    "Clones this circle.");
+
+    docstring::ClassMethodDocInject(m, "ccCircle", "get_radius");
+    docstring::ClassMethodDocInject(m, "ccCircle", "set_radius",
+                                    {{"radius", "The desired radius."}});
+    docstring::ClassMethodDocInject(m, "ccCircle", "get_resolution");
+    docstring::ClassMethodDocInject(
+            m, "ccCircle", "set_resolution",
+            {{"resolution", "The displayed resolution (>= 4)."}});
+    docstring::ClassMethodDocInject(m, "ccCircle", "clone");
 }
 
 void pybind_polyline_methods(py::module& m) {}

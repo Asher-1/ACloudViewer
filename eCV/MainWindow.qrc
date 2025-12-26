@@ -73,6 +73,8 @@
         <file>Resources/images/dbMiscGeomSymbolLocked.png</file>
         <file>Resources/images/dbOctreeSymbolLocked.png</file>
         <file>Resources/images/dbPolylineSymbol.png</file>
+        <file>Resources/images/dbCircle.png</file>
+        <file>Resources/images/primCylinder.gif</file>
         <file>Resources/images/dbSubMeshSymbol.png</file>
         <file>Resources/images/dbSubMeshSymbolLocked.png</file>
         <file>Resources/images/dbViewportSymbol.png</file>

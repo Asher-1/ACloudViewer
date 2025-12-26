@@ -90,6 +90,7 @@ class ecvAnimationParamDlg;
 class ccPointListPickingDlg;
 class ecvPrimitiveFactoryDlg;
 class ccPointPairRegistrationDlg;
+class ecvShortcutDialog;
 
 class QMdiArea;
 class QMdiSubWindow;
@@ -326,6 +327,12 @@ private:
     //! Stops input and destroys any input device handling
     void destroyInputDevices();
 
+    //! Populates the action list for shortcut management
+    void populateActionList();
+
+    //! Shows the shortcut settings dialog
+    void showShortcutDialog();
+
     void doActionComputeMesh(cloudViewer::TRIANGULATION_TYPES type);
     //! Creates point clouds from multiple 'components'
     void createComponentsClouds(
@@ -353,6 +360,7 @@ private slots:
     void changeLanguage();
     void doActionGlobalShiftSeetings();
     void doActionResetGUIElementsPos();
+    void doActionRestoreWindowOnStartup(bool state);
     void doActionSaveCustomLayout();
     void doActionRestoreDefaultLayout();
     void doActionRestoreCustomLayout();
@@ -437,6 +445,7 @@ private slots:
     void doActionEditPlane();
     void doActionFlipPlane();
     void doActionComparePlanes();
+    void doActionPromoteCircleToCylinder();
 
     //! Clones currently selected entities
     void doActionClone();
@@ -788,6 +797,12 @@ private:
 
     //! Gamepad handler
     ccGamepadManager* m_gamepadManager;
+
+    //! Shortcut dialog
+    ecvShortcutDialog* m_shortcutDlg;
+
+    //! List of actions for shortcut management
+    QList<QAction*> m_actions;
 
 private:
 #ifdef BUILD_RECONSTRUCTION

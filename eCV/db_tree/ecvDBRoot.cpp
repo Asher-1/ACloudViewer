@@ -153,6 +153,10 @@ private:
                                   ":/Resources/images/dbPolylineSymbol.png")),
                           {}});
 
+        const int circleIndex = mIconList.count();
+        mIconList.append(
+                {QIcon(QStringLiteral(":/Resources/images/dbCircle.png")), {}});
+
         const int octreeIndex = mIconList.count();
         mIconList.append(
                 {QIcon(QStringLiteral(":/Resources/images/dbOctreeSymbol.png")),
@@ -223,6 +227,7 @@ private:
                     {CV_TYPES::MESH_GROUP, subMeshIndex},
                     {CV_TYPES::SUB_MESH, subMeshIndex},
                     {CV_TYPES::POLY_LINE, polyLineIndex},
+                    {CV_TYPES::CIRCLE, circleIndex},
                     {CV_TYPES::POINT_OCTREE, octreeIndex},
                     {CV_TYPES::CALIBRATED_IMAGE, calibratedImageIndex},
                     {CV_TYPES::IMAGE, imageIndex},
@@ -238,7 +243,8 @@ private:
                     {CV_TYPES::LABEL_2D, labelIndex},
                     {CV_TYPES::VIEWPORT_2D_OBJECT, viewportObjIndex},
                     {CV_TYPES::VIEWPORT_2D_LABEL, viewportLabelIndex},
-                    {CV_TYPES::COORDINATESYSTEM, geomIndex}};
+                    {CV_TYPES::COORDINATESYSTEM, geomIndex},
+                    {CV_TYPES::DISC, geomIndex}};
     }
 
     IconPair mDefaultIcons;
@@ -1290,6 +1296,10 @@ size_t ccDBRoot::getSelectedEntities(ccHObject::Container& selectedEntities,
                 if (obj->isKindOf(CV_TYPES::PLANE)) info->planeCount++;
             } else if (obj->isKindOf(CV_TYPES::POLY_LINE)) {
                 info->polylineCount++;
+
+                if (obj->isKindOf(CV_TYPES::CIRCLE)) {
+                    info->circleCount++;
+                }
             } else if (obj->isKindOf(CV_TYPES::SENSOR)) {
                 info->sensorCount++;
                 if (obj->isKindOf(CV_TYPES::GBL_SENSOR)) info->gblSensorCount++;
@@ -1880,6 +1890,7 @@ void ccDBRoot::selectByTypeAndName() {
     scDlg.addType(tr("    Cone"), CV_TYPES::CONE);
     scDlg.addType(tr("    Box"), CV_TYPES::BOX);
     scDlg.addType(tr("    Dish"), CV_TYPES::DISH);
+    scDlg.addType(tr("    Disc"), CV_TYPES::DISC);
     scDlg.addType(tr("    Extrusion"), CV_TYPES::EXTRU);
     scDlg.addType(tr("Sensor"), CV_TYPES::SENSOR);
     scDlg.addType(tr("  GBL/TLS sensor"), CV_TYPES::GBL_SENSOR);

@@ -9,12 +9,16 @@
 
 // Local
 #include "ecvLayoutManager.h"
+#include "ecvShortcutDialog.h"
 
 // Qt
 #include <QGuiApplication>
 #include <QScreen>
 #include <QSettings>
 #include <QThread>
+
+// Standard
+#include <algorithm>
 
 #include "ecvAnnotationsTool.h"
 #include "ecvApplication.h"
@@ -61,8 +65,10 @@
 #include <ecv2DLabel.h>
 #include <ecv2DViewportObject.h>
 #include <ecvCameraSensor.h>
+#include <ecvCircle.h>
 #include <ecvColorScalesManager.h>
 #include <ecvCylinder.h>
+#include <ecvDisc.h>
 #include <ecvDisplayTools.h>
 #include <ecvFacet.h>
 #include <ecvFileUtils.h>
@@ -303,7 +309,8 @@ MainWindow::MainWindow()
       m_memoryUsageTimer(nullptr),
       m_currentFullWidget(nullptr),
       m_exclusiveFullscreen(false),
-      m_lastViewMode(VIEWMODE::ORTHOGONAL)
+      m_lastViewMode(VIEWMODE::ORTHOGONAL),
+      m_shortcutDlg(nullptr)
 #ifdef BUILD_RECONSTRUCTION
       ,
       m_rcw(nullptr)
@@ -334,25 +341,32 @@ MainWindow::MainWindow()
     // Initialization
     initial();
 
-    // Register ViewToolBar as a left-side toolbar
-    m_layoutManager->registerLeftSideToolBar(m_ui->ViewToolBar);
-
-    // Register Console dock widget as a bottom dock widget
-    m_layoutManager->registerBottomDockWidget(m_ui->consoleDock);
+    // restore the state of the 'auto-restore' menu entry
+    // (do that before connecting the actions)
+    {
+        QSettings settings;
+        bool doNotAutoRestoreGeometry =
+                settings.value(ecvPS::DoNotRestoreWindowGeometry(),
+                               !m_ui->actionRestoreWindowOnStartup->isChecked())
+                        .toBool();
+        m_ui->actionRestoreWindowOnStartup->setChecked(
+                !doNotAutoRestoreGeometry);
+    }
 
     // connect actions
     connectActions();
-
-    // Reconstruction
-#ifdef BUILD_RECONSTRUCTION
-    initReconstructions();
-#endif
 
     setupInputDevices();
 
     freezeUI(false);
 
     updateUI();
+
+    // Register ViewToolBar as a left-side toolbar
+    m_layoutManager->registerLeftSideToolBar(m_ui->ViewToolBar);
+
+    // Register Console dock widget as a bottom dock widget
+    m_layoutManager->registerBottomDockWidget(m_ui->consoleDock);
 
     // advanced widgets not handled by QDesigner
     {  // view mode pop-up menu
@@ -400,6 +414,22 @@ MainWindow::MainWindow()
         m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
         m_ui->actionShowPivot->blockSignals(false);
         toggleRotationCenterVisibility(autoShowCenterAxis);
+    }
+
+    // Shortcut management
+    {
+        populateActionList();
+        // Alphabetical sort
+        std::sort(m_actions.begin(), m_actions.end(),
+                  [](const QAction* a, const QAction* b) {
+                      return a->text() < b->text();
+                  });
+
+        m_shortcutDlg = new ecvShortcutDialog(m_actions, this);
+        m_shortcutDlg->restoreShortcutsFromQSettings();
+
+        connect(m_ui->actionShortcutSettings, &QAction::triggered, this,
+                &MainWindow::showShortcutDialog);
     }
 
     refreshAll();
@@ -558,6 +588,11 @@ void MainWindow::initial() {
 
     // init status bar
     initStatusBar();
+
+// Reconstruction
+#ifdef BUILD_RECONSTRUCTION
+    initReconstructions();
+#endif
 
     QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
     viewWidget->setMinimumSize(400, 300);
@@ -770,6 +805,10 @@ void MainWindow::connectActions() {
     connect(m_ui->actionComparePlanes, &QAction::triggered, this,
             &MainWindow::doActionComparePlanes);
 
+    //"Edit > Circle" menu
+    connect(m_ui->actionPromoteCircleToCylinder, &QAction::triggered, this,
+            &MainWindow::doActionPromoteCircleToCylinder);
+
     //"Edit > Scalar fields" menu
     connect(m_ui->actionShowHistogram, &QAction::triggered, this,
             &MainWindow::showSelectedEntitiesHistogram);
@@ -980,6 +1019,8 @@ void MainWindow::connectActions() {
             &MainWindow::toggle3DView);
     connect(m_ui->actionResetGUIElementsPos, &QAction::triggered, this,
             &MainWindow::doActionResetGUIElementsPos);
+    connect(m_ui->actionRestoreWindowOnStartup, &QAction::toggled, this,
+            &MainWindow::doActionRestoreWindowOnStartup);
     connect(m_ui->actionSaveCustomLayout, &QAction::triggered, this,
             &MainWindow::doActionSaveCustomLayout);
     connect(m_ui->actionRestoreDefaultLayout, &QAction::triggered, this,
@@ -1391,10 +1432,11 @@ void MainWindow::initPlugins() {
 
         for (QToolBar* toolbar : additionalToolbars) {
             QList<QAction*> actions = toolbar->actions();
-            CVLog::Print(QString("[MainWindow] Processing toolbar '%1' with %2 "
-                                 "actions")
-                                 .arg(toolbar->objectName())
-                                 .arg(actions.size()));
+            CVLog::PrintDebug(
+                    QString("[MainWindow] Processing toolbar '%1' with %2 "
+                            "actions")
+                            .arg(toolbar->objectName())
+                            .arg(actions.size()));
 
             for (QAction* action : actions) {
                 // Only add action if it's not already added to unified toolbar
@@ -3235,6 +3277,9 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionFlipPlane->setEnabled(selInfo.planeCount != 0);
     m_ui->actionComparePlanes->setEnabled(selInfo.planeCount == 2);
 
+    m_ui->actionPromoteCircleToCylinder->setEnabled((selInfo.selCount == 1) &&
+                                                    (selInfo.circleCount == 1));
+
     m_ui->actionFindBiggestInnerRectangle->setEnabled(exactlyOneCloud);
 
     //	m_ui->menuActiveScalarField->setEnabled((exactlyOneCloud ||
@@ -3568,6 +3613,11 @@ void MainWindow::doActionRestoreCustomLayout() {
     } else {
         CVLog::Error("[MainWindow] Layout manager is not initialized!");
     }
+}
+
+void MainWindow::doActionRestoreWindowOnStartup(bool state) {
+    QSettings settings;
+    settings.setValue(ecvPS::DoNotRestoreWindowGeometry(), !state);
 }
 
 void MainWindow::toggleFullScreen(bool state) {
@@ -6920,6 +6970,48 @@ void MainWindow::doActionFlipPlane() {
     updatePropertiesView();
 }
 
+void MainWindow::doActionPromoteCircleToCylinder() {
+    if (!haveOneSelection()) {
+        assert(false);
+        return;
+    }
+
+    ccCircle* circle = ccHObjectCaster::ToCircle(m_selectedEntities.front());
+    if (!circle) {
+        assert(false);
+        return;
+    }
+
+    static double CylinderHeight = 0.0;
+    if (CylinderHeight == 0.0) {
+        CylinderHeight = 2 * circle->getRadius();
+    }
+    bool ok = false;
+    double value = QInputDialog::getDouble(
+            this, tr("Cylinder height"), tr("Height"), CylinderHeight, 0.0,
+            std::numeric_limits<double>::max(), 6, &ok);
+    if (!ok) {
+        return;
+    }
+
+    CylinderHeight = value;
+
+    ccCylinder* cylinder = new ccCylinder(
+            static_cast<PointCoordinateType>(circle->getRadius()),
+            static_cast<PointCoordinateType>(CylinderHeight),
+            &circle->getGLTransformationHistory(),
+            tr("Cylinder from ") + circle->getName());
+
+    circle->setEnabled(false);
+    if (circle->getParent()) {
+        circle->getParent()->addChild(cylinder);
+    }
+
+    addToDB(cylinder, true, true);
+    setSelectedInDB(circle, false);
+    setSelectedInDB(cylinder, true);
+}
+
 void MainWindow::doActionComparePlanes() {
     if (m_selectedEntities.size() != 2) {
         ecvConsole::Error("Select 2 planes!");
@@ -7524,6 +7616,20 @@ void MainWindow::doActionClone() {
                 ecvConsole::Error(
                         tr("An error occurred while cloning polyline %1")
                                 .arg(entity->getName()));
+            }
+        } else if (entity->isA(CV_TYPES::CIRCLE)) {
+            clone = ccHObjectCaster::ToCircle(entity)->clone();
+            if (!clone) {
+                ecvConsole::Error(
+                        tr("An error occurred while cloning circle %1")
+                                .arg(entity->getName()));
+            }
+        } else if (entity->isA(CV_TYPES::DISC)) {
+            ccDisc* disc = ccHObjectCaster::ToDisc(entity);
+            clone = (disc ? disc->clone() : 0);
+            if (!clone) {
+                ecvConsole::Error(tr("An error occurred while cloning disc %1")
+                                          .arg(entity->getName()));
             }
         } else if (entity->isA(CV_TYPES::FACET)) {
             ccFacet* facet = ccHObjectCaster::ToFacet(entity);
@@ -11024,6 +11130,7 @@ void MainWindow::doActionCloudPrimitiveDist() {
                 m_selectedEntities[i]->isA(CV_TYPES::CYLINDER) ||
                 m_selectedEntities[i]->isA(CV_TYPES::CONE) ||
                 m_selectedEntities[i]->isA(CV_TYPES::BOX) ||
+                m_selectedEntities[i]->isA(CV_TYPES::DISC) ||
                 m_selectedEntities[i]->isA(CV_TYPES::POLY_LINE)) {
                 if (foundPrimitive) {
                     ecvConsole::Error(
@@ -11044,7 +11151,7 @@ void MainWindow::doActionCloudPrimitiveDist() {
     if (!foundPrimitive) {
         ecvConsole::Error(
                 "[Compute Primitive Distances] Select at least one "
-                "Plane/Box/Sphere/Cylinder/Cone/Polyline Primitive!");
+                "Plane/Box/Sphere/Cylinder/Cone/Disc/Polyline Primitive!");
         return;
     }
     if (clouds.size() <= 0) {
@@ -11174,6 +11281,20 @@ void MainWindow::doActionCloudPrimitiveDist() {
                                           rotationTransform, boxCenter,
                                           signedDist)))
                         ecvConsole::Error(errString, "Box", returnCode);
+                    break;
+                }
+                case CV_TYPES::DISC: {
+                    ccDisc* disc = static_cast<ccDisc*>(refEntity);
+                    cloudViewer::SquareMatrix rotationTransform(
+                            disc->getTransformation().data(), true);
+                    if (!(returnCode = cloudViewer::DistanceComputationTools::
+                                  computeCloud2DiscEquation(
+                                          compEnt,
+                                          refEntity->getOwnBB().getCenter(),
+                                          static_cast<ccDisc*>(refEntity)
+                                                  ->getRadius(),
+                                          rotationTransform, signedDist)))
+                        ecvConsole::Error(errString, "Disc", returnCode);
                     break;
                 }
                 case CV_TYPES::POLY_LINE: {
@@ -11631,8 +11752,7 @@ void MainWindow::doActionFitCircle() {
                              .arg(normal.z));
 
         // create the circle representation as a polyline
-        ccPolyline* circle =
-                ccPolyline::Circle(CCVector3(0, 0, 0), radius, 128);
+        ccCircle* circle = new ccCircle(radius, 128);
         if (circle) {
             circle->setName(QObject::tr("Circle r=%1").arg(radius));
             cloud->addChild(circle);
@@ -12011,4 +12131,128 @@ void MainWindow::doComputeGeometricFeature() {
 
     refreshSelected();
     updateUI();
+}
+
+void MainWindow::populateActionList() {
+    m_actions.clear();
+
+    // Collect all actions from menus and toolbars
+    QList<QAction*> allActions = findChildren<QAction*>();
+
+    // Collect actions from dynamic menus that shouldn't have shortcuts
+    QSet<QAction*> excludedActions;
+
+    // Filter out recent files menu actions
+    QMenu* recentFilesMenu = m_recentFiles ? m_recentFiles->menu() : nullptr;
+    if (recentFilesMenu) {
+        for (QAction* menuAction : recentFilesMenu->actions()) {
+            excludedActions.insert(menuAction);
+        }
+    }
+
+    // Filter out 3D mouse manager menu actions
+#ifdef CC_3DXWARE_SUPPORT
+    if (m_3DMouseManager) {
+        QMenu* mouseMenu = m_3DMouseManager->menu();
+        if (mouseMenu) {
+            for (QAction* menuAction : mouseMenu->actions()) {
+                excludedActions.insert(menuAction);
+            }
+        }
+    }
+#endif
+
+    // Filter out gamepad manager menu actions
+#ifdef CC_GAMEPAD_SUPPORT
+    if (m_gamepadManager) {
+        QMenu* gamepadMenu = m_gamepadManager->menu();
+        if (gamepadMenu) {
+            for (QAction* menuAction : gamepadMenu->actions()) {
+                excludedActions.insert(menuAction);
+            }
+        }
+    }
+#endif
+
+    // Collect all menu actions (QMenu::menuAction()) to exclude them
+    // These are the menu items themselves, not functional actions
+    QList<QMenu*> allMenus = findChildren<QMenu*>();
+    for (QMenu* menu : allMenus) {
+        excludedActions.insert(menu->menuAction());
+    }
+
+    for (QAction* action : allActions) {
+        // Skip actions without text
+        if (!action || action->text().isEmpty()) {
+            continue;
+        }
+
+        // Skip separator actions
+        if (action->isSeparator()) {
+            continue;
+        }
+
+        // Skip excluded actions (from dynamic menus)
+        if (excludedActions.contains(action)) {
+            continue;
+        }
+
+        // Skip actions whose parent is ecvRecentFiles
+        // (additional check for dynamically created actions)
+        if (action->parent() == m_recentFiles) {
+            continue;
+        }
+
+        // Skip menu actions (QMenu::menuAction())
+        // These represent menus themselves, not functional actions
+        // Check if this action is a menu's menuAction
+        bool isMenuAction = false;
+        for (QMenu* menu : allMenus) {
+            if (menu->menuAction() == action) {
+                // This is a menu item itself, skip it
+                isMenuAction = true;
+                break;
+            }
+        }
+        if (isMenuAction) {
+            continue;
+        }
+
+        // Skip actions without objectName that are likely temporary/dynamic
+        // UI-defined actions typically have objectName set
+        // But allow actions from UI menus/toolbars even without objectName
+        if (action->objectName().isEmpty()) {
+            QWidget* parentWidget = qobject_cast<QWidget*>(action->parent());
+            // Only include if parent is a known UI widget (menuBar, toolbar, or
+            // menu from UI)
+            bool isFromUI = false;
+            if (parentWidget) {
+                // Check if it's from the UI structure
+                if (parentWidget == m_ui->menuBar ||
+                    qobject_cast<QToolBar*>(parentWidget)) {
+                    isFromUI = true;
+                } else if (QMenu* menu = qobject_cast<QMenu*>(parentWidget)) {
+                    // For menus, check if it's part of the UI structure
+                    // UI menus are typically children of menuBar or have
+                    // objectName
+                    if (menu->parent() == m_ui->menuBar ||
+                        !menu->objectName().isEmpty()) {
+                        isFromUI = true;
+                    }
+                }
+            }
+            if (!isFromUI) {
+                continue;
+            }
+        }
+
+        // Add action to list
+        m_actions.append(action);
+    }
+}
+
+void MainWindow::showShortcutDialog() {
+    if (m_shortcutDlg) {
+        m_shortcutDlg->exec();
+    }
 }

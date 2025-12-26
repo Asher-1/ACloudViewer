@@ -8,7 +8,7 @@
 #pragma once
 
 // clang-format off
-// Qt - must be included before other headers for MOC to work correctly
+// Qt - must be included first for MOC to work correctly on Windows
 #include <QtCore/QObject>
 // clang-format on
 

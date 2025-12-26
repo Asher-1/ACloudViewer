@@ -443,8 +443,29 @@ void ecvLayoutManager::saveGUILayout() {
     CVLog::Print("[ecvLayoutManager] GUI layout saved");
 }
 
+bool ecvLayoutManager::isAutoRestoreEnabled() const {
+    QSettings settings;
+    // Default value is true (restore enabled), which matches the UI action's
+    // default checked state (true = restore enabled)
+    // We check DoNotRestoreWindowGeometry and invert it
+    bool doNotAutoRestoreGeometry =
+            settings.value(ecvPS::DoNotRestoreWindowGeometry(), false).toBool();
+    return !doNotAutoRestoreGeometry;
+}
+
 void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
     QSettings settings;
+
+    // Check if auto-restore is enabled (do this check first, matching
+    // CloudCompare)
+    if (isAutoRestoreEnabled()) {
+        CVLog::Print(
+                "[ecvLayoutManager] Auto-restore enabled, using default "
+                "layout");
+        setupDefaultLayout();
+        return;
+    }
+
     QVariant geometry = settings.value(ecvPS::MainWinGeom());
 
     // Get screen resolution for icon size calculation
