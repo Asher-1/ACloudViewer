@@ -9,9 +9,9 @@
 
 // clang-format off
 // Qt - must be included before qPCL.h for MOC to work correctly
-#include <QHash>
-#include <QMap>
-#include <QObject>
+#include <QtCore/QHash>
+#include <QtCore/QMap>
+#include <QtCore/QObject>
 // clang-format on
 
 #include "cvSelectionData.h"

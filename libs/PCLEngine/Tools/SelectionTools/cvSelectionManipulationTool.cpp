@@ -8,6 +8,7 @@
 #include "cvSelectionManipulationTool.h"
 
 #include "cvSelectionData.h"
+#include "cvSelectionTypes.h"  // For SelectionMode enum
 
 // LOCAL
 #include "PclUtils/PCLVis.h"
@@ -51,12 +52,12 @@ vtkIdTypeArray* cvSelectionManipulationTool::execute(
     vtkIdTypeArray* result = nullptr;
 
     switch (m_mode) {
-        case cvViewSelectionManager::CLEAR_SELECTION:
+        case SelectionMode::CLEAR_SELECTION:
             result = clearSelection();
             CVLog::Print("[cvSelectionManipulationTool] Selection cleared");
             break;
 
-        case cvViewSelectionManager::GROW_SELECTION:
+        case SelectionMode::GROW_SELECTION:
             result = growSelection(currentSelection, fieldAssociation);
             if (result) {
                 CVLog::Print(QString("[cvSelectionManipulationTool] Selection "
@@ -65,7 +66,7 @@ vtkIdTypeArray* cvSelectionManipulationTool::execute(
             }
             break;
 
-        case cvViewSelectionManager::SHRINK_SELECTION:
+        case SelectionMode::SHRINK_SELECTION:
             result = shrinkSelection(currentSelection, fieldAssociation);
             if (result) {
                 CVLog::Print(QString("[cvSelectionManipulationTool] Selection "
@@ -93,7 +94,7 @@ cvSelectionData cvSelectionManipulationTool::executeData(
     // This method wraps execute() and returns cvSelectionData directly
 
     if (currentData.isEmpty() &&
-        m_mode != cvViewSelectionManager::CLEAR_SELECTION) {
+        m_mode != SelectionMode::CLEAR_SELECTION) {
         CVLog::Warning(
                 "[cvSelectionManipulationTool] Cannot execute on empty "
                 "selection");
@@ -105,7 +106,7 @@ cvSelectionData cvSelectionManipulationTool::executeData(
 
     if (!result) {
         // For CLEAR_SELECTION, result is nullptr (empty selection)
-        if (m_mode == cvViewSelectionManager::CLEAR_SELECTION) {
+        if (m_mode == SelectionMode::CLEAR_SELECTION) {
             return cvSelectionData();  // Empty selection
         }
         CVLog::Warning(

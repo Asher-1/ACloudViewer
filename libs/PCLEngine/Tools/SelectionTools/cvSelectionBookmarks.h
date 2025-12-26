@@ -9,12 +9,12 @@
 
 // clang-format off
 // Qt - must be included before qPCL.h for MOC to work correctly
-#include <QDateTime>
-#include <QList>
-#include <QMap>
-#include <QObject>
-#include <QString>
-#include <QStringList>
+#include <QtCore/QDateTime>
+#include <QtCore/QList>
+#include <QtCore/QMap>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QStringList>
 // clang-format on
 
 #include "qPCL.h"

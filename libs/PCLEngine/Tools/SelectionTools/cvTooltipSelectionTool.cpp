@@ -9,6 +9,8 @@
 
 #include "cvSelectionData.h"
 #include "cvSelectionPipeline.h"
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
+#include "cvViewSelectionManager.h"  // For instance() and getHighlighter()
 
 // LOCAL
 #include "PclUtils/PCLVis.h"
@@ -46,7 +48,7 @@ cvTooltipSelectionTool::cvTooltipSelectionTool(SelectionMode mode,
       m_mouseMoving(false),
       m_leftButtonPressed(false),
       m_currentPolyData(nullptr),
-      m_tooltipHelper(new cvSelectionTooltipHelper()),
+      m_tooltipFormatter(new cvTooltipFormatter()),
       m_copyShortcut(nullptr),
       m_enableSelection(false),
       m_tooltipEnabled(true) {  // Tooltips enabled by default
@@ -91,6 +93,12 @@ cvTooltipSelectionTool::~cvTooltipSelectionTool() {
         m_copyShortcut = nullptr;
     }
 
+    // Clean up tooltip formatter
+    if (m_tooltipFormatter) {
+        delete m_tooltipFormatter;
+        m_tooltipFormatter = nullptr;
+    }
+
     CVLog::Print("[cvTooltipSelectionTool] Destroyed");
 }
 
@@ -131,8 +139,8 @@ void cvTooltipSelectionTool::setTooltipEnabled(bool enabled) {
 
 //-----------------------------------------------------------------------------
 void cvTooltipSelectionTool::setMaxTooltipAttributes(int maxAttributes) {
-    if (m_tooltipHelper) {
-        m_tooltipHelper->setMaxAttributes(maxAttributes);
+    if (m_tooltipFormatter) {
+        m_tooltipFormatter->setMaxAttributes(maxAttributes);
         CVLog::PrintDebug(QString("[cvTooltipSelectionTool] Max tooltip "
                                   "attributes set to %1")
                                   .arg(maxAttributes));
@@ -400,9 +408,9 @@ void cvTooltipSelectionTool::updateTooltip(vtkIdType id) {
         return;
     }
 
-    if (!m_tooltipHelper) {
+    if (!m_tooltipFormatter) {
         CVLog::Warning(
-                "[cvTooltipSelectionTool::updateTooltip] m_tooltipHelper is "
+                "[cvTooltipSelectionTool::updateTooltip] m_tooltipFormatter is "
                 "nullptr, hiding tooltip");
         hideTooltip();
         return;
@@ -428,16 +436,16 @@ void cvTooltipSelectionTool::updateTooltip(vtkIdType id) {
     }
 
     // Generate tooltip text (ParaView format)
-    QString htmlTooltip = m_tooltipHelper->getTooltipInfo(
+    QString htmlTooltip = m_tooltipFormatter->getTooltipInfo(
             polyData, id,
-            m_fieldAssociation == 0 ? cvSelectionTooltipHelper::CELLS
-                                    : cvSelectionTooltipHelper::POINTS,
+            m_fieldAssociation == 0 ? cvTooltipFormatter::CELLS
+                                    : cvTooltipFormatter::POINTS,
             datasetName);
 
-    QString plainTooltip = m_tooltipHelper->getPlainTooltipInfo(
+    QString plainTooltip = m_tooltipFormatter->getPlainTooltipInfo(
             polyData, id,
-            m_fieldAssociation == 0 ? cvSelectionTooltipHelper::CELLS
-                                    : cvSelectionTooltipHelper::POINTS,
+            m_fieldAssociation == 0 ? cvTooltipFormatter::CELLS
+                                    : cvTooltipFormatter::POINTS,
             datasetName);
 
     if (!htmlTooltip.isEmpty()) {
@@ -486,14 +494,10 @@ void cvTooltipSelectionTool::hideTooltip() {
 bool cvTooltipSelectionTool::isInteractiveMode() const {
     // Interactive modes allow click-to-select behavior
     // Reference: pqRenderViewSelectionReaction lines 101-104
-    return (m_mode == cvViewSelectionManager::
-                              SELECT_SURFACE_CELLS_INTERACTIVELY ||
-            m_mode == cvViewSelectionManager::
-                              SELECT_SURFACE_POINTS_INTERACTIVELY ||
-            m_mode == cvViewSelectionManager::
-                              SELECT_SURFACE_CELLDATA_INTERACTIVELY ||
-            m_mode == cvViewSelectionManager::
-                              SELECT_SURFACE_POINTDATA_INTERACTIVELY);
+    return (m_mode == SelectionMode::SELECT_SURFACE_CELLS_INTERACTIVELY ||
+            m_mode == SelectionMode::SELECT_SURFACE_POINTS_INTERACTIVELY ||
+            m_mode == SelectionMode::SELECT_SURFACE_CELLDATA_INTERACTIVELY ||
+            m_mode == SelectionMode::SELECT_SURFACE_POINTDATA_INTERACTIVELY);
 }
 
 //-----------------------------------------------------------------------------
@@ -628,8 +632,8 @@ void cvTooltipSelectionTool::toggleSelection(vtkIdType id) {
 
     // ParaView behavior: In interactive selection mode, DEFAULT becomes
     // ADDITION Reference: pqRenderViewSelectionReaction.cxx, line 958-962
-    if (modifier == cvViewSelectionManager::SELECTION_DEFAULT) {
-        modifier = cvViewSelectionManager::SELECTION_ADDITION;
+    if (modifier == SelectionModifier::SELECTION_DEFAULT) {
+        modifier = SelectionModifier::SELECTION_ADDITION;
     }
 
     bool isSelected = false;
@@ -640,8 +644,8 @@ void cvTooltipSelectionTool::toggleSelection(vtkIdType id) {
             isSelected = true;
 
             // Handle modifier keys for already-selected items
-            if (modifier == cvViewSelectionManager::SELECTION_SUBTRACTION ||
-                modifier == cvViewSelectionManager::SELECTION_TOGGLE) {
+            if (modifier == SelectionModifier::SELECTION_SUBTRACTION ||
+                modifier == SelectionModifier::SELECTION_TOGGLE) {
                 // Remove from selection
                 m_currentSelection->RemoveTuple(i);
                 needUpdate = true;
@@ -668,11 +672,11 @@ void cvTooltipSelectionTool::toggleSelection(vtkIdType id) {
 
         // ParaView behavior: In interactive selection mode, DEFAULT becomes
         // ADDITION Reference: pqRenderViewSelectionReaction.cxx, line 958-962
-        if (modifier == cvViewSelectionManager::SELECTION_DEFAULT) {
-            modifier = cvViewSelectionManager::SELECTION_ADDITION;
+        if (modifier == SelectionModifier::SELECTION_DEFAULT) {
+            modifier = SelectionModifier::SELECTION_ADDITION;
         }
 
-        if (modifier == cvViewSelectionManager::SELECTION_ADDITION) {
+        if (modifier == SelectionModifier::SELECTION_ADDITION) {
             // Add to existing selection (ParaView default for interactive mode)
             m_currentSelection->InsertNextValue(id);
             needUpdate = true;
@@ -680,14 +684,14 @@ void cvTooltipSelectionTool::toggleSelection(vtkIdType id) {
                                  "selection (total: %2)")
                                  .arg(id)
                                  .arg(m_currentSelection->GetNumberOfTuples()));
-        } else if (modifier == cvViewSelectionManager::SELECTION_SUBTRACTION) {
+        } else if (modifier == SelectionModifier::SELECTION_SUBTRACTION) {
             // This case won't happen since we already checked !isSelected
             // But keep it for completeness
             CVLog::Warning(QString("[cvTooltipSelectionTool] ID: %1 not in "
                                    "selection, cannot subtract")
                                    .arg(id));
             return;  // No update needed
-        } else if (modifier == cvViewSelectionManager::SELECTION_TOGGLE) {
+        } else if (modifier == SelectionModifier::SELECTION_TOGGLE) {
             // Add since it's not selected
             m_currentSelection->InsertNextValue(id);
             needUpdate = true;

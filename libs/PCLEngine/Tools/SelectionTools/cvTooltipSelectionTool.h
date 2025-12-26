@@ -15,7 +15,7 @@
 
 #include "cvRenderViewSelectionTool.h"
 #include "cvSelectionHighlighter.h"
-#include "cvSelectionTooltipHelper.h"
+#include "cvTooltipFormatter.h"
 
 // VTK
 #include <vtkSmartPointer.h>
@@ -186,8 +186,8 @@ private:
     // actors)
     vtkPolyData* m_currentPolyData;
 
-    // Tooltip helpers
-    cvSelectionTooltipHelper* m_tooltipHelper;
+    // Tooltip formatter
+    cvTooltipFormatter* m_tooltipFormatter;
     // Note: Highlighter is now shared via
     // cvViewSelectionManager::getHighlighter()
 

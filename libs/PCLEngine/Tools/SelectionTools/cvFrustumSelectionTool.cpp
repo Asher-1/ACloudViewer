@@ -9,6 +9,7 @@
 
 #include "cvSelectionData.h"
 #include "cvSelectionPipeline.h"
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
 
 // LOCAL
 #include "PclUtils/PCLVis.h"
@@ -119,8 +120,8 @@ bool cvFrustumSelectionTool::performSelection(int region[4]) {
 
     // Apply selection modifier
     SelectionModifier modifier = getSelectionModifierFromKeyboard();
-    if (modifier == cvViewSelectionManager::SELECTION_DEFAULT &&
-        m_modifier != cvViewSelectionManager::SELECTION_DEFAULT) {
+    if (modifier == SelectionModifier::SELECTION_DEFAULT &&
+        m_modifier != SelectionModifier::SELECTION_DEFAULT) {
         modifier = m_modifier;
     }
 
@@ -317,6 +318,6 @@ vtkSmartPointer<vtkIdTypeArray> cvFrustumSelectionTool::applySelectionModifier(
 
 //-----------------------------------------------------------------------------
 bool cvFrustumSelectionTool::isSelectingCells() const {
-    return (m_mode == cvViewSelectionManager::SELECT_FRUSTUM_CELLS ||
-            m_mode == cvViewSelectionManager::SELECT_FRUSTUM_BLOCKS);
+    return (m_mode == SelectionMode::SELECT_FRUSTUM_CELLS ||
+            m_mode == SelectionMode::SELECT_FRUSTUM_BLOCKS);
 }

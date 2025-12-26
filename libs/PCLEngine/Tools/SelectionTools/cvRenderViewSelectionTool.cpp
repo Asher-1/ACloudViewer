@@ -9,6 +9,8 @@
 
 #include "cvSelectionPipeline.h"
 #include "cvSelectionToolHelper.h"
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
+#include "cvViewSelectionManager.h"
 
 // LOCAL
 #include "PclUtils/PCLVis.h"
@@ -81,7 +83,7 @@ cvRenderViewSelectionTool::cvRenderViewSelectionTool(SelectionMode mode,
     : QObject(parent),
       cvGenericSelectionTool(),
       m_mode(mode),
-      m_modifier(cvViewSelectionManager::SELECTION_DEFAULT),
+      m_modifier(SelectionModifier::SELECTION_DEFAULT),
       m_enabled(false),
       m_previousRenderViewMode(-1),
       m_cursor(Qt::CrossCursor) {
@@ -236,7 +238,7 @@ void cvRenderViewSelectionTool::showInstructionAndSetCursor() {
     QCursor cursor;
 
     switch (m_mode) {
-        case cvViewSelectionManager::HOVER_CELLS_TOOLTIP:
+        case SelectionMode::HOVER_CELLS_TOOLTIP:
             settingsKey = "pqTooltipSelection";
             title = tr("Tooltip Selection Information");
             message = tr(
@@ -250,7 +252,7 @@ void cvRenderViewSelectionTool::showInstructionAndSetCursor() {
             cursor = Qt::CrossCursor;
             break;
 
-        case cvViewSelectionManager::HOVER_POINTS_TOOLTIP:
+        case SelectionMode::HOVER_POINTS_TOOLTIP:
             settingsKey = "pqTooltipSelection";
             title = tr("Tooltip Selection Information");
             message =
@@ -265,8 +267,8 @@ void cvRenderViewSelectionTool::showInstructionAndSetCursor() {
             cursor = Qt::CrossCursor;
             break;
 
-        case cvViewSelectionManager::SELECT_SURFACE_CELLS_INTERACTIVELY:
-        case cvViewSelectionManager::SELECT_SURFACE_POINTS_INTERACTIVELY:
+        case SelectionMode::SELECT_SURFACE_CELLS_INTERACTIVELY:
+        case SelectionMode::SELECT_SURFACE_POINTS_INTERACTIVELY:
             settingsKey = "pqInteractiveSelection";
             title = tr("Interactive Selection Information");
             message =
@@ -287,17 +289,17 @@ void cvRenderViewSelectionTool::showInstructionAndSetCursor() {
             cursor = Qt::CrossCursor;
             break;
 
-        case cvViewSelectionManager::SELECT_SURFACE_CELLS:
-        case cvViewSelectionManager::SELECT_SURFACE_POINTS:
-        case cvViewSelectionManager::SELECT_FRUSTUM_CELLS:
-        case cvViewSelectionManager::SELECT_FRUSTUM_POINTS:
+        case SelectionMode::SELECT_SURFACE_CELLS:
+        case SelectionMode::SELECT_SURFACE_POINTS:
+        case SelectionMode::SELECT_FRUSTUM_CELLS:
+        case SelectionMode::SELECT_FRUSTUM_POINTS:
             cursor = Qt::CrossCursor;
             // No dialog for these standard selection modes (ParaView doesn't
             // show one)
             break;
 
-        case cvViewSelectionManager::SELECT_SURFACE_CELLS_POLYGON:
-        case cvViewSelectionManager::SELECT_SURFACE_POINTS_POLYGON:
+        case SelectionMode::SELECT_SURFACE_CELLS_POLYGON:
+        case SelectionMode::SELECT_SURFACE_POINTS_POLYGON:
             cursor = Qt::PointingHandCursor;
             break;
         default:
@@ -510,8 +512,8 @@ void cvRenderViewSelectionTool::onSelectionChanged(vtkObject* caller,
 
     // Get the selection modifier (may be modified by keyboard)
     SelectionModifier modifier = getSelectionModifierFromKeyboard();
-    if (modifier == cvViewSelectionManager::SELECTION_DEFAULT &&
-        m_modifier != cvViewSelectionManager::SELECTION_DEFAULT) {
+    if (modifier == SelectionModifier::SELECTION_DEFAULT &&
+        m_modifier != SelectionModifier::SELECTION_DEFAULT) {
         modifier = m_modifier;
     }
 
@@ -524,11 +526,9 @@ void cvRenderViewSelectionTool::onSelectionChanged(vtkObject* caller,
 
         // Check mode to determine data type
         bool isPolygonMode =
-                (m_mode ==
-                         cvViewSelectionManager::SELECT_SURFACE_CELLS_POLYGON ||
-                 m_mode == cvViewSelectionManager::
-                                   SELECT_SURFACE_POINTS_POLYGON ||
-                 m_mode == cvViewSelectionManager::SELECT_CUSTOM_POLYGON);
+                (m_mode == SelectionMode::SELECT_SURFACE_CELLS_POLYGON ||
+                 m_mode == SelectionMode::SELECT_SURFACE_POINTS_POLYGON ||
+                 m_mode == SelectionMode::SELECT_CUSTOM_POLYGON);
 
         if (isPolygonMode) {
             // Polygon mode: callData is a vtkObject (vtkIntArray)
@@ -617,7 +617,7 @@ bool cvRenderViewSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
 cvRenderViewSelectionTool::SelectionModifier
 cvRenderViewSelectionTool::getSelectionModifierFromKeyboard() const {
     if (!m_interactor) {
-        return cvViewSelectionManager::SELECTION_DEFAULT;
+        return SelectionModifier::SELECTION_DEFAULT;
     }
 
     // Check keyboard modifiers
@@ -626,14 +626,14 @@ cvRenderViewSelectionTool::getSelectionModifierFromKeyboard() const {
     bool shift = m_interactor->GetShiftKey() == 1;
 
     if (ctrl && shift) {
-        return cvViewSelectionManager::SELECTION_TOGGLE;
+        return SelectionModifier::SELECTION_TOGGLE;
     } else if (ctrl) {
-        return cvViewSelectionManager::SELECTION_ADDITION;
+        return SelectionModifier::SELECTION_ADDITION;
     } else if (shift) {
-        return cvViewSelectionManager::SELECTION_SUBTRACTION;
+        return SelectionModifier::SELECTION_SUBTRACTION;
     }
 
-    return cvViewSelectionManager::SELECTION_DEFAULT;
+    return SelectionModifier::SELECTION_DEFAULT;
 }
 
 // Note: initializePickers() and pickAtCursor() methods have been moved to
@@ -644,14 +644,12 @@ cvRenderViewSelectionTool::getSelectionModifierFromKeyboard() const {
 bool cvRenderViewSelectionTool::isSelectingCells() const {
     // Check if the mode is for cell selection
     // Reference: pqRenderViewSelectionReaction mode handling
-    return (m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS ||
-            m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS_POLYGON ||
-            m_mode == cvViewSelectionManager::
-                              SELECT_SURFACE_CELLS_INTERACTIVELY ||
-            m_mode == cvViewSelectionManager::
-                              SELECT_SURFACE_CELLDATA_INTERACTIVELY ||
-            m_mode == cvViewSelectionManager::SELECT_FRUSTUM_CELLS ||
-            m_mode == cvViewSelectionManager::HOVER_CELLS_TOOLTIP ||
-            m_mode == cvViewSelectionManager::SELECT_BLOCKS ||
-            m_mode == cvViewSelectionManager::SELECT_FRUSTUM_BLOCKS);
+    return (m_mode == SelectionMode::SELECT_SURFACE_CELLS ||
+            m_mode == SelectionMode::SELECT_SURFACE_CELLS_POLYGON ||
+            m_mode == SelectionMode::SELECT_SURFACE_CELLS_INTERACTIVELY ||
+            m_mode == SelectionMode::SELECT_SURFACE_CELLDATA_INTERACTIVELY ||
+            m_mode == SelectionMode::SELECT_FRUSTUM_CELLS ||
+            m_mode == SelectionMode::HOVER_CELLS_TOOLTIP ||
+            m_mode == SelectionMode::SELECT_BLOCKS ||
+            m_mode == SelectionMode::SELECT_FRUSTUM_BLOCKS);
 }

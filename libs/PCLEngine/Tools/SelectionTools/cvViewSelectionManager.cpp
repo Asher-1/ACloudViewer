@@ -12,6 +12,7 @@
 #include "cvPolygonSelectionTool.h"
 #include "cvRenderViewSelectionTool.h"
 #include "cvSelectionData.h"
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
 #include "cvSurfaceSelectionTool.h"
 #include "cvTooltipSelectionTool.h"
 #include "cvZoomBoxSelectionTool.h"
@@ -51,7 +52,7 @@ cvViewSelectionManager::cvViewSelectionManager(QObject* parent)
     : QObject(parent),
       cvGenericSelectionTool(),
       m_currentMode(static_cast<SelectionMode>(-1)),
-      m_currentModifier(SELECTION_DEFAULT),
+      m_currentModifier(SelectionModifier::SELECTION_DEFAULT),
       m_isActive(false),
       m_currentTool(nullptr),
       m_currentSelection(nullptr),
@@ -79,7 +80,7 @@ cvViewSelectionManager::cvViewSelectionManager(QObject* parent)
     connect(m_history, &cvSelectionHistory::historyChanged, this,
             [this]() { emit selectionChanged(); });
 
-    CVLog::Print("[cvViewSelectionManager] Initialized with utility modules");
+    CVLog::PrintDebug("[cvViewSelectionManager] Initialized with utility modules");
 }
 
 //-----------------------------------------------------------------------------
@@ -107,7 +108,7 @@ cvViewSelectionManager::~cvViewSelectionManager() {
 
     // Utility modules will be automatically deleted by Qt parent-child
     // relationship
-    CVLog::Print("[cvViewSelectionManager] Destroyed");
+    CVLog::PrintDebug("[cvViewSelectionManager] Destroyed");
 }
 
 //-----------------------------------------------------------------------------
@@ -153,15 +154,15 @@ void cvViewSelectionManager::setVisualizer(ecvGenericVisualizer3D* viewer) {
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::enableSelection(SelectionMode mode) {
     // Special handling for non-interactive modes
-    if (mode == CLEAR_SELECTION) {
+    if (mode == SelectionMode::CLEAR_SELECTION) {
         clearSelection();
         return;
     }
-    if (mode == GROW_SELECTION) {
+    if (mode == SelectionMode::GROW_SELECTION) {
         growSelection();
         return;
     }
-    if (mode == SHRINK_SELECTION) {
+    if (mode == SelectionMode::SHRINK_SELECTION) {
         shrinkSelection();
         return;
     }
@@ -245,7 +246,7 @@ void cvViewSelectionManager::clearSelection() {
         m_history->pushSelection(cvSelectionData(), "Clear Selection");
     }
 
-    CVLog::Print("[cvViewSelectionManager] Clear selection");
+    CVLog::PrintDebug("[cvViewSelectionManager] Clear selection");
     emit selectionChanged();
 }
 
@@ -303,7 +304,7 @@ void cvViewSelectionManager::expandSelection(int layers,
             m_history->pushSelection(result, operationName);
         }
 
-        CVLog::Print(QString("[cvViewSelectionManager] %1: %2 -> %3")
+        CVLog::PrintDebug(QString("[cvViewSelectionManager] %1: %2 -> %3")
                              .arg(operationName)
                              .arg(current.count())
                              .arg(result.count()));
@@ -326,7 +327,7 @@ void cvViewSelectionManager::setGrowSelectionRemoveSeed(bool remove) {
 void cvViewSelectionManager::setGrowSelectionRemoveIntermediateLayers(
         bool remove) {
     m_growRemoveIntermediateLayers = remove;
-    CVLog::Print(QString("[cvViewSelectionManager] "
+    CVLog::PrintDebug(QString("[cvViewSelectionManager] "
                          "GrowSelectionRemoveIntermediateLayers = %1")
                          .arg(remove));
 }
@@ -342,8 +343,8 @@ bool cvViewSelectionManager::isCompatible(SelectionMode mode1,
     // Cell selection modes are compatible with each other
     // Reference: pqRenderViewSelectionReaction.cxx, line 1037-1060
     QSet<SelectionMode> cellModes = {
-            SELECT_SURFACE_CELLS, SELECT_SURFACE_CELLS_POLYGON,
-            SELECT_SURFACE_CELLS_INTERACTIVELY, SELECT_FRUSTUM_CELLS};
+            SelectionMode::SELECT_SURFACE_CELLS, SelectionMode::SELECT_SURFACE_CELLS_POLYGON,
+            SelectionMode::SELECT_SURFACE_CELLS_INTERACTIVELY, SelectionMode::SELECT_FRUSTUM_CELLS};
 
     if (cellModes.contains(mode1) && cellModes.contains(mode2)) {
         return true;
@@ -351,15 +352,15 @@ bool cvViewSelectionManager::isCompatible(SelectionMode mode1,
 
     // Point selection modes are compatible with each other
     QSet<SelectionMode> pointModes = {
-            SELECT_SURFACE_POINTS, SELECT_SURFACE_POINTS_POLYGON,
-            SELECT_SURFACE_POINTS_INTERACTIVELY, SELECT_FRUSTUM_POINTS};
+            SelectionMode::SELECT_SURFACE_POINTS, SelectionMode::SELECT_SURFACE_POINTS_POLYGON,
+            SelectionMode::SELECT_SURFACE_POINTS_INTERACTIVELY, SelectionMode::SELECT_FRUSTUM_POINTS};
 
     if (pointModes.contains(mode1) && pointModes.contains(mode2)) {
         return true;
     }
 
     // Block selection modes are compatible
-    QSet<SelectionMode> blockModes = {SELECT_BLOCKS, SELECT_FRUSTUM_BLOCKS};
+    QSet<SelectionMode> blockModes = {SelectionMode::SELECT_BLOCKS, SelectionMode::SELECT_FRUSTUM_BLOCKS};
 
     if (blockModes.contains(mode1) && blockModes.contains(mode2)) {
         return true;
@@ -384,65 +385,65 @@ cvRenderViewSelectionTool* cvViewSelectionManager::getOrCreateTool(
         // Tooltip and Interactive modes: use cvTooltipSelectionTool
         // (unified class supporting both modes)
         // Reference: pqRenderViewSelectionReaction lines 92-109
-        case HOVER_CELLS_TOOLTIP:
-        case HOVER_POINTS_TOOLTIP:
-        case SELECT_SURFACE_CELLS_INTERACTIVELY:
-        case SELECT_SURFACE_POINTS_INTERACTIVELY:
-        case SELECT_SURFACE_CELLDATA_INTERACTIVELY:
-        case SELECT_SURFACE_POINTDATA_INTERACTIVELY:
+        case SelectionMode::HOVER_CELLS_TOOLTIP:
+        case SelectionMode::HOVER_POINTS_TOOLTIP:
+        case SelectionMode::SELECT_SURFACE_CELLS_INTERACTIVELY:
+        case SelectionMode::SELECT_SURFACE_POINTS_INTERACTIVELY:
+        case SelectionMode::SELECT_SURFACE_CELLDATA_INTERACTIVELY:
+        case SelectionMode::SELECT_SURFACE_POINTDATA_INTERACTIVELY:
             tool = new cvTooltipSelectionTool(mode, this);
             // NOTE: ESC key handling is centralized in
             // MainWindow::handleEscapeKey()
-            CVLog::Print(QString("[cvViewSelectionManager] Created "
+            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
                                  "cvTooltipSelectionTool for mode %1")
                                  .arg(static_cast<int>(mode)));
             break;
 
         // Surface selection modes: use cvSurfaceSelectionTool
-        case SELECT_SURFACE_CELLS:
-        case SELECT_SURFACE_POINTS:
+        case SelectionMode::SELECT_SURFACE_CELLS:
+        case SelectionMode::SELECT_SURFACE_POINTS:
             tool = new cvSurfaceSelectionTool(mode, this);
-            CVLog::Print(QString("[cvViewSelectionManager] Created "
+            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
                                  "cvSurfaceSelectionTool for mode %1")
                                  .arg(static_cast<int>(mode)));
             break;
 
         // Polygon selection modes: use cvPolygonSelectionTool
-        case SELECT_SURFACE_CELLS_POLYGON:
-        case SELECT_SURFACE_POINTS_POLYGON:
-        case SELECT_CUSTOM_POLYGON:  // Custom polygon also uses polygon tool
+        case SelectionMode::SELECT_SURFACE_CELLS_POLYGON:
+        case SelectionMode::SELECT_SURFACE_POINTS_POLYGON:
+        case SelectionMode::SELECT_CUSTOM_POLYGON:  // Custom polygon also uses polygon tool
             tool = new cvPolygonSelectionTool(mode, this);
             // For custom polygon, connect the custom signal
-            if (mode == SELECT_CUSTOM_POLYGON) {
+            if (mode == SelectionMode::SELECT_CUSTOM_POLYGON) {
                 connect(qobject_cast<cvPolygonSelectionTool*>(tool),
                         &cvPolygonSelectionTool::polygonCompleted, this,
                         &cvViewSelectionManager::customPolygonSelected);
             }
-            CVLog::Print(QString("[cvViewSelectionManager] Created "
+            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
                                  "cvPolygonSelectionTool for mode %1")
                                  .arg(static_cast<int>(mode)));
             break;
 
         // Frustum selection modes: use cvFrustumSelectionTool
-        case SELECT_FRUSTUM_CELLS:
-        case SELECT_FRUSTUM_POINTS:
-        case SELECT_FRUSTUM_BLOCKS:
+        case SelectionMode::SELECT_FRUSTUM_CELLS:
+        case SelectionMode::SELECT_FRUSTUM_POINTS:
+        case SelectionMode::SELECT_FRUSTUM_BLOCKS:
             tool = new cvFrustumSelectionTool(mode, this);
-            CVLog::Print(QString("[cvViewSelectionManager] Created "
+            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
                                  "cvFrustumSelectionTool for mode %1")
                                  .arg(static_cast<int>(mode)));
             break;
 
         // Block selection mode: use cvBlockSelectionTool
-        case SELECT_BLOCKS:
+        case SelectionMode::SELECT_BLOCKS:
             tool = new cvBlockSelectionTool(mode, this);
-            CVLog::Print(QString("[cvViewSelectionManager] Created "
+            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
                                  "cvBlockSelectionTool for mode %1")
                                  .arg(static_cast<int>(mode)));
             break;
 
         // Zoom to box mode: use cvZoomBoxSelectionTool
-        case ZOOM_TO_BOX: {
+        case SelectionMode::ZOOM_TO_BOX: {
             cvZoomBoxSelectionTool* zoomTool = new cvZoomBoxSelectionTool(this);
             // Connect zoom completed signal to manager's signal
             connect(zoomTool, &cvZoomBoxSelectionTool::zoomToBoxCompleted, this,

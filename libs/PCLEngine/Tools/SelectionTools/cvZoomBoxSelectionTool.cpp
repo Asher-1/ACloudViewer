@@ -8,6 +8,7 @@
 #include "cvZoomBoxSelectionTool.h"
 
 #include "cvSelectionToolHelper.h"
+#include "cvSelectionTypes.h"  // For SelectionMode enum
 
 // LOCAL
 #include "PclUtils/PCLVis.h"
@@ -59,7 +60,7 @@ private:
 
 //-----------------------------------------------------------------------------
 cvZoomBoxSelectionTool::cvZoomBoxSelectionTool(QObject* parent)
-    : cvRenderViewSelectionTool(cvViewSelectionManager::ZOOM_TO_BOX, parent),
+    : cvRenderViewSelectionTool(SelectionMode::ZOOM_TO_BOX, parent),
       m_useDollyForPerspective(true) {
     m_startPosition[0] = m_startPosition[1] = 0;
     m_endPosition[0] = m_endPosition[1] = 0;

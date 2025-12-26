@@ -21,18 +21,19 @@ class vtkDataArray;
 class vtkFieldData;
 
 /**
- * @brief Helper class for generating tooltip information for selected elements
+ * @brief Formatter class for generating tooltip text from VTK data
  *
- * Based on ParaView's vtkSMTooltipSelectionPipeline
- * Generates HTML-formatted tooltip text showing:
+ * This class formats tooltip information for selected elements (points/cells)
+ * from VTK PolyData into HTML-formatted text. It extracts and formats:
  * - Element ID
  * - Coordinates (for points)
  * - Type (for cells)
  * - Data array values (Intensity, RGB, normals, etc.)
  *
+ * Based on ParaView's vtkSMTooltipSelectionPipeline
  * Reference: ParaView/Remoting/Misc/vtkSMTooltipSelectionPipeline.cxx
  */
-class QPCL_ENGINE_LIB_API cvSelectionTooltipHelper {
+class QPCL_ENGINE_LIB_API cvTooltipFormatter {
 public:
     /**
      * @brief Element association type
@@ -42,12 +43,12 @@ public:
     /**
      * @brief Constructor
      */
-    cvSelectionTooltipHelper();
+    cvTooltipFormatter();
 
     /**
      * @brief Destructor
      */
-    ~cvSelectionTooltipHelper();
+    ~cvTooltipFormatter();
 
     /**
      * @brief Generate tooltip information for a selected element
@@ -117,3 +118,4 @@ private:
 
     int m_maxAttributes;  ///< Maximum number of attributes to display
 };
+

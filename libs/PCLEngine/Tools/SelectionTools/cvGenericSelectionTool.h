@@ -11,17 +11,18 @@
 
 #include "cvSelectionBase.h"
 #include "cvSelectionData.h"
+#include "cvSelectionTypes.h"  // For SelectionModifier enum
 
 // VTK includes (need full definitions for template instantiation)
+#include <vtkCellPicker.h>        // Full definition needed for vtkSmartPointer<vtkCellPicker>
 #include <vtkHardwareSelector.h>  // Full definition needed for vtkSmartPointer<vtkHardwareSelector>
-#include <vtkSmartPointer.h>  // For vtkSmartPointer template
-#include <vtkType.h>          // For vtkIdType
+#include <vtkPointPicker.h>       // Full definition needed for vtkSmartPointer<vtkPointPicker>
+#include <vtkSmartPointer.h>      // For vtkSmartPointer template
+#include <vtkType.h>              // For vtkIdType
 
 // Forward declarations
 class vtkRenderer;
 class vtkSelection;
-class vtkCellPicker;
-class vtkPointPicker;
 class vtkRenderWindowInteractor;
 class cvViewSelectionManager;
 class cvSelectionPipeline;
@@ -47,24 +48,15 @@ class QPCL_ENGINE_LIB_API cvGenericSelectionTool : public cvSelectionBase {
 public:
     /**
      * @brief Selection mode
+     * Now using global SelectionMode enum from cvSelectionTypes.h
      */
-    enum SelectionMode {
-        SELECT_SURFACE_CELLS,   ///< Select cells on surface
-        SELECT_SURFACE_POINTS,  ///< Select points on surface
-        SELECT_FRUSTUM_CELLS,   ///< Select cells in frustum
-        SELECT_FRUSTUM_POINTS,  ///< Select points in frustum
-        SELECT_BLOCKS           ///< Select blocks (composite data)
-    };
+    using SelectionMode = ::SelectionMode;
 
     /**
      * @brief Selection modifier (for multi-selection)
+     * Now using global SelectionModifier enum from cvSelectionTypes.h
      */
-    enum SelectionModifier {
-        REPLACE = 0,   ///< Replace current selection
-        ADD = 1,       ///< Add to current selection
-        SUBTRACT = 2,  ///< Subtract from current selection
-        TOGGLE = 3     ///< Toggle selection state
-    };
+    using SelectionModifier = ::SelectionModifier;
 
     cvGenericSelectionTool()
         : cvSelectionBase(),
@@ -147,8 +139,8 @@ protected:
     cvSelectionData hardwareSelectAtPoint(
             int x,
             int y,
-            SelectionMode mode = SELECT_SURFACE_CELLS,
-            SelectionModifier modifier = REPLACE);
+            SelectionMode mode = SelectionMode::SELECT_SURFACE_CELLS,
+            SelectionModifier modifier = SelectionModifier::SELECTION_DEFAULT);
 
     /**
      * @brief Perform hardware selection in a region
@@ -159,8 +151,8 @@ protected:
      */
     cvSelectionData hardwareSelectInRegion(
             const int region[4],
-            SelectionMode mode = SELECT_SURFACE_CELLS,
-            SelectionModifier modifier = REPLACE);
+            SelectionMode mode = SelectionMode::SELECT_SURFACE_CELLS,
+            SelectionModifier modifier = SelectionModifier::SELECTION_DEFAULT);
 
     /**
      * @brief Get all actors at a screen location (without full selection)

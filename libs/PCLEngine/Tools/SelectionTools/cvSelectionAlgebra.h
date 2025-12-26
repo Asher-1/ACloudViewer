@@ -8,15 +8,15 @@
 #pragma once
 
 // clang-format off
-// Qt - must be included before qPCL.h for MOC to work correctly
-#include <QObject>
-#include <QSet>
-#include <QString>
+// Qt - must be included before qPCL.h and cvSelectionData.h for MOC to work correctly
+// QObject must be fully defined before Q_ENUM macro
+#include <QtCore/QObject>
+#include <QtCore/QSet>
+#include <QtCore/QString>
 // clang-format on
 
-#include "qPCL.h"
-
 // LOCAL
+// Note: cvSelectionData.h includes qPCL.h, so we include it after Qt headers
 #include "cvSelectionData.h"
 
 // VTK
@@ -45,6 +45,7 @@ public:
      * @brief Algebra operations
      * Using enum class to avoid macro conflicts (e.g., DIFFERENCE may be
      * defined as a macro on Windows)
+     * Note: Q_ENUM requires QObject to be fully defined before the enum
      */
     enum class Operation {
         UNION,           ///< A ∪ B
@@ -53,10 +54,10 @@ public:
         SYMMETRIC_DIFF,  ///< A △ B (elements in either but not both)
         COMPLEMENT       ///< ~A (all elements not in A)
     };
+    // Q_ENUM must be placed after enum definition and QObject must be fully visible
     Q_ENUM(Operation)
 
     explicit cvSelectionAlgebra(QObject* parent = nullptr);
-    ~cvSelectionAlgebra() override;
 
     /**
      * @brief Compute union of two selections

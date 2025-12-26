@@ -7,6 +7,8 @@
 
 #include "cvBlockSelectionTool.h"
 
+#include "cvSelectionTypes.h"  // For SelectionMode enum
+
 // LOCAL
 #include "PclUtils/PCLVis.h"
 
@@ -29,7 +31,7 @@
 //-----------------------------------------------------------------------------
 cvBlockSelectionTool::cvBlockSelectionTool(SelectionMode mode, QObject* parent)
     : cvRenderViewSelectionTool(mode, parent), m_interactorStyle(nullptr) {
-    QString modeStr = (mode == cvViewSelectionManager::SELECT_BLOCKS)
+    QString modeStr = (mode == SelectionMode::SELECT_BLOCKS)
                               ? "SELECT_BLOCKS"
                               : "SELECT_FRUSTUM_BLOCKS";
     CVLog::Print(QString("[cvBlockSelectionTool] Created with mode: %1")
@@ -59,7 +61,7 @@ void cvBlockSelectionTool::setupInteractorStyle() {
     // Set the interactor style
     interactor->SetInteractorStyle(m_interactorStyle);
 
-    QString modeStr = (m_mode == cvViewSelectionManager::SELECT_BLOCKS)
+    QString modeStr = (m_mode == SelectionMode::SELECT_BLOCKS)
                               ? "surface"
                               : "frustum";
     CVLog::Print(QString("[cvBlockSelectionTool] Interactor style set for %1 "
@@ -145,7 +147,7 @@ void cvBlockSelectionTool::onSelectionChanged(vtkObject* caller,
     QVector<int> blockIds = extractBlockIds(x1, y1, x2, y2);
 
     if (!blockIds.isEmpty()) {
-        QString modeStr = (m_mode == cvViewSelectionManager::SELECT_BLOCKS)
+        QString modeStr = (m_mode == SelectionMode::SELECT_BLOCKS)
                                   ? "surface"
                                   : "frustum";
         CVLog::Print(
@@ -224,7 +226,7 @@ bool cvBlockSelectionTool::isBlockInSelection(
     // with the frustum For surface selection, we would check if the block is
     // visible on the surface
 
-    if (m_mode == cvViewSelectionManager::SELECT_FRUSTUM_BLOCKS) {
+    if (m_mode == SelectionMode::SELECT_FRUSTUM_BLOCKS) {
         // Frustum selection: include all blocks that intersect with the frustum
         // (simplified: always include for demonstration)
         return true;

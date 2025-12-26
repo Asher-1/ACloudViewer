@@ -10,6 +10,7 @@
 #include "PclUtils/PCLVis.h"
 #include "cvSelectionBase.h"
 #include "cvSelectionPipeline.h"
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
 #include "cvViewSelectionManager.h"
 
 // VTK
@@ -111,16 +112,16 @@ cvSelectionData cvGenericSelectionTool::hardwareSelectInRegion(
         // Map SelectionMode to Pipeline SelectionType
         cvSelectionPipeline::SelectionType pipelineType;
         switch (mode) {
-            case SELECT_SURFACE_CELLS:
+            case SelectionMode::SELECT_SURFACE_CELLS:
                 pipelineType = cvSelectionPipeline::SURFACE_CELLS;
                 break;
-            case SELECT_SURFACE_POINTS:
+            case SelectionMode::SELECT_SURFACE_POINTS:
                 pipelineType = cvSelectionPipeline::SURFACE_POINTS;
                 break;
-            case SELECT_FRUSTUM_CELLS:
+            case SelectionMode::SELECT_FRUSTUM_CELLS:
                 pipelineType = cvSelectionPipeline::FRUSTUM_CELLS;
                 break;
-            case SELECT_FRUSTUM_POINTS:
+            case SelectionMode::SELECT_FRUSTUM_POINTS:
                 pipelineType = cvSelectionPipeline::FRUSTUM_POINTS;
                 break;
             default:
@@ -138,8 +139,8 @@ cvSelectionData cvGenericSelectionTool::hardwareSelectInRegion(
         cvSelectionData newSelection;
         if (vtkSel) {
             int fieldAssoc =
-                    (mode == SELECT_SURFACE_POINTS ||
-                     mode == SELECT_FRUSTUM_POINTS)
+                    (mode == SelectionMode::SELECT_SURFACE_POINTS ||
+                     mode == SelectionMode::SELECT_FRUSTUM_POINTS)
                             ? cvSelectionPipeline::FIELD_ASSOCIATION_POINTS
                             : cvSelectionPipeline::FIELD_ASSOCIATION_CELLS;
 
@@ -150,16 +151,16 @@ cvSelectionData cvGenericSelectionTool::hardwareSelectInRegion(
         }
 
         // Apply modifier using pipeline's combineSelections
-        if (modifier != REPLACE && !m_currentSelection.isEmpty()) {
+        if (modifier != SelectionModifier::SELECTION_DEFAULT && !m_currentSelection.isEmpty()) {
             cvSelectionPipeline::CombineOperation operation;
             switch (modifier) {
-                case ADD:
+                case SelectionModifier::SELECTION_ADDITION:
                     operation = cvSelectionPipeline::OPERATION_ADDITION;
                     break;
-                case SUBTRACT:
+                case SelectionModifier::SELECTION_SUBTRACTION:
                     operation = cvSelectionPipeline::OPERATION_SUBTRACTION;
                     break;
-                case TOGGLE:
+                case SelectionModifier::SELECTION_TOGGLE:
                     operation = cvSelectionPipeline::OPERATION_TOGGLE;
                     break;
                 default:
@@ -186,8 +187,8 @@ cvSelectionData cvGenericSelectionTool::hardwareSelectInRegion(
     // Determine field association
     int fieldAssociation = vtkDataObject::FIELD_ASSOCIATION_CELLS;
     switch (mode) {
-        case SELECT_SURFACE_POINTS:
-        case SELECT_FRUSTUM_POINTS:
+        case SelectionMode::SELECT_SURFACE_POINTS:
+        case SelectionMode::SELECT_FRUSTUM_POINTS:
             fieldAssociation = vtkDataObject::FIELD_ASSOCIATION_POINTS;
             break;
         default:
@@ -221,7 +222,7 @@ cvSelectionData cvGenericSelectionTool::hardwareSelectInRegion(
     // Smart pointer handles cleanup automatically
 
     // Apply modifier if needed
-    if (modifier != REPLACE && !m_currentSelection.isEmpty()) {
+    if (modifier != SelectionModifier::SELECTION_DEFAULT && !m_currentSelection.isEmpty()) {
         return applyModifier(newSelection, m_currentSelection, modifier);
     }
 
@@ -465,7 +466,7 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
         return currentSelection;
     }
 
-    if (currentSelection.isEmpty() || modifier == REPLACE) {
+    if (currentSelection.isEmpty() || modifier == SelectionModifier::SELECTION_DEFAULT) {
         return newSelection;
     }
 
@@ -475,7 +476,7 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
     QSet<qint64> resultSet(currentIds.begin(), currentIds.end());
 
     switch (modifier) {
-        case ADD: {
+        case SelectionModifier::SELECTION_ADDITION: {
             // Add new IDs to current selection
             for (qint64 id : newIds) {
                 resultSet.insert(id);
@@ -483,7 +484,7 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
             break;
         }
 
-        case SUBTRACT: {
+        case SelectionModifier::SELECTION_SUBTRACTION: {
             // Remove new IDs from current selection
             for (qint64 id : newIds) {
                 resultSet.remove(id);
@@ -491,7 +492,7 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
             break;
         }
 
-        case TOGGLE: {
+        case SelectionModifier::SELECTION_TOGGLE: {
             // Toggle: add if not present, remove if present
             for (qint64 id : newIds) {
                 if (resultSet.contains(id)) {
@@ -514,7 +515,7 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
     cvSelectionData result(resultIds, newSelection.fieldAssociation());
 
     // Merge actor information
-    if (modifier == ADD || modifier == TOGGLE) {
+    if (modifier == SelectionModifier::SELECTION_ADDITION || modifier == SelectionModifier::SELECTION_TOGGLE) {
         for (int i = 0; i < currentSelection.actorCount(); ++i) {
             result.addActorInfo(currentSelection.actorInfo(i));
         }

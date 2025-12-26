@@ -12,6 +12,7 @@
 #include "cvSelectionHighlighter.h"
 #include "cvSelectionHistory.h"
 #include "cvSelectionReaction.h"
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
 #include "cvViewSelectionManager.h"
 
 // CV_CORE_LIB
@@ -48,7 +49,7 @@ cvSelectionToolController::cvSelectionToolController(QObject* parent)
             QOverload<>::of(&cvViewSelectionManager::selectionChanged), this,
             &cvSelectionToolController::selectionHistoryChanged);
 
-    CVLog::Print("[cvSelectionToolController] Initialized");
+    CVLog::PrintDebug("[cvSelectionToolController] Initialized");
 }
 
 //-----------------------------------------------------------------------------
@@ -61,14 +62,14 @@ cvSelectionToolController::~cvSelectionToolController() {
     }
     m_reactions.clear();
 
-    CVLog::Print("[cvSelectionToolController] Destroyed");
+    CVLog::PrintDebug("[cvSelectionToolController] Destroyed");
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::initialize(QWidget* parent) {
     m_parentWidget = parent;
 
-    CVLog::Print("[cvSelectionToolController] Initialized with parent widget");
+    CVLog::PrintDebug("[cvSelectionToolController] Initialized with parent widget");
 }
 
 //-----------------------------------------------------------------------------
@@ -103,6 +104,8 @@ cvSelectionReaction* cvSelectionToolController::registerAction(
 
     // Monitor action state changes to track when selection tools are active
     // This enables selection properties panel display
+    // NOTE: ZOOM_TO_BOX is excluded from selection tools - it doesn't produce
+    // selection data and shouldn't show selection properties panel
     if (action->isCheckable()) {
         connect(action, &QAction::toggled, this, [this, mode](bool checked) {
             CVLog::PrintDebug(
@@ -110,11 +113,24 @@ cvSelectionReaction* cvSelectionToolController::registerAction(
                             .arg(static_cast<int>(mode))
                             .arg(checked ? "checked" : "unchecked"));
 
+            // For ZOOM_TO_BOX, don't update selection properties state
+            // It's not a selection tool and shouldn't affect the properties panel
+            if (mode == SelectionMode::ZOOM_TO_BOX) {
+                return;
+            }
+
             // Update selection tools active state
             // A tool is active if any reaction's action is checked
+            // EXCLUDE ZOOM_TO_BOX from this check - it's not a selection tool
             bool anyActive = false;
             for (auto it = m_reactions.constBegin();
                  it != m_reactions.constEnd(); ++it) {
+                SelectionMode reactionMode = it.key();
+                // Skip ZOOM_TO_BOX - it doesn't produce selection data
+                if (reactionMode == SelectionMode::ZOOM_TO_BOX) {
+                    continue;
+                }
+                
                 QPointer<cvSelectionReaction> reaction = it.value();
                 if (reaction && reaction->parentAction() &&
                     reaction->parentAction()->isCheckable() &&
@@ -329,7 +345,7 @@ void cvSelectionToolController::onSelectionFinished(
     // Emit signal
     emit selectionFinished(selectionData);
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionToolController] Selection finished: %1 %2")
                     .arg(selectionData.count())
                     .arg(selectionData.fieldTypeString()));
@@ -366,20 +382,20 @@ void cvSelectionToolController::onModifierChanged(QAction* action) {
 
         QString modeName;
         switch (data.toInt()) {
-            case SelectionModifier::SELECTION_ADDITION:
+            case static_cast<int>(SelectionModifier::SELECTION_ADDITION):
                 modeName = "ADD (Ctrl)";
                 break;
-            case SelectionModifier::SELECTION_SUBTRACTION:
+            case static_cast<int>(SelectionModifier::SELECTION_SUBTRACTION):
                 modeName = "SUBTRACT (Shift)";
                 break;
-            case SelectionModifier::SELECTION_TOGGLE:
+            case static_cast<int>(SelectionModifier::SELECTION_TOGGLE):
                 modeName = "TOGGLE (Ctrl+Shift)";
                 break;
             default:
                 modeName = "DEFAULT";
                 break;
         }
-        CVLog::Print(
+        CVLog::PrintDebug(
                 QString("[cvSelectionToolController] Selection modifier: %1")
                         .arg(modeName));
     } else {
@@ -478,7 +494,7 @@ void cvSelectionToolController::setupActions(const SelectionActions& actions) {
     registerManipulationActions(actions.growSelection, actions.shrinkSelection,
                                 actions.clearSelection);
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             "[cvSelectionToolController] All selection actions registered");
 }
 

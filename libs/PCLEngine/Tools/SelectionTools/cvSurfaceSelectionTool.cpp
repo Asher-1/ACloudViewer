@@ -9,6 +9,7 @@
 
 #include "cvSelectionData.h"
 #include "cvSelectionPipeline.h"
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
 
 // LOCAL
 #include "PclUtils/PCLVis.h"
@@ -72,20 +73,20 @@ bool cvSurfaceSelectionTool::performSelection(int region[4]) {
 
     // Use base class unified hardware selection (ParaView-aligned)
     // Reference: pqRenderView.cxx, selectOnSurface()
-    cvGenericSelectionTool::SelectionMode mode =
-            isSelectingCells() ? cvGenericSelectionTool::SELECT_SURFACE_CELLS
-                               : cvGenericSelectionTool::SELECT_SURFACE_POINTS;
+    SelectionMode mode =
+            isSelectingCells() ? SelectionMode::SELECT_SURFACE_CELLS
+                               : SelectionMode::SELECT_SURFACE_POINTS;
 
     // Get selection modifier
     SelectionModifier modifier = getSelectionModifierFromKeyboard();
-    if (modifier == cvViewSelectionManager::SELECTION_DEFAULT &&
-        m_modifier != cvViewSelectionManager::SELECTION_DEFAULT) {
+    if (modifier == SelectionModifier::SELECTION_DEFAULT &&
+        m_modifier != SelectionModifier::SELECTION_DEFAULT) {
         modifier = m_modifier;
     }
 
     // Perform hardware selection using base class method
     cvSelectionData newSelection = hardwareSelectInRegion(
-            region, mode, cvGenericSelectionTool::REPLACE);
+            region, mode, SelectionModifier::SELECTION_DEFAULT);
 
     if (newSelection.isEmpty()) {
         CVLog::Print("[cvSurfaceSelectionTool] No items selected");
@@ -139,6 +140,6 @@ cvSelectionData cvSurfaceSelectionTool::applySelectionModifier(
 
 //-----------------------------------------------------------------------------
 bool cvSurfaceSelectionTool::isSelectingCells() const {
-    return (m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS ||
-            m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS_POLYGON);
+    return (m_mode == SelectionMode::SELECT_SURFACE_CELLS ||
+            m_mode == SelectionMode::SELECT_SURFACE_CELLS_POLYGON);
 }

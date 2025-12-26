@@ -9,16 +9,19 @@
 
 // clang-format off
 // Qt - must be included before other headers for MOC to work correctly
-#include <QAction>
-#include <QCursor>
-#include <QObject>
-#include <QPointer>
+#include <QtWidgets/QAction>
+#include <QtGui/QCursor>
+#include <QtCore/QObject>
+#include <QtCore/QPointer>
 // clang-format on
 
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
 #include "cvViewSelectionManager.h"
 #include "qPCL.h"
 
-class cvRenderViewSelectionTool;
+// Forward declarations (for types used in QPointer, need full definition)
+// Note: cvRenderViewSelectionTool must be fully defined for QPointer template instantiation
+#include "cvRenderViewSelectionTool.h"
 class ecvGenericVisualizer3D;
 
 /**
@@ -37,7 +40,7 @@ class QPCL_ENGINE_LIB_API cvSelectionReaction : public QObject {
     Q_OBJECT
 
 public:
-    using SelectionMode = cvViewSelectionManager::SelectionMode;
+    using SelectionMode = ::SelectionMode;
 
     /**
      * @brief Constructor

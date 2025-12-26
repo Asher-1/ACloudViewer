@@ -14,19 +14,19 @@
 #endif
 
 /**
- * QUI无边框窗体控件 作者:feiyangqingyun(QQ:517216493)
- * 1:内置 N >= 12 套精美样式,可直接切换,也可自定义样式路径
- * 2:可设置部件(左上角图标/最小化按钮/最大化按钮/关闭按钮)的图标或者图片及是否可见
- * 3:可集成设计师插件,直接拖曳使用,所见即所得
- * 4:如果需要窗体可拖动大小,设置 setSizeGripEnabled(true);
- * 5:可设置全局样式 setStyle
- * 6:可弹出消息框 showMessageBoxInfo
- * 7:可弹出错误框 showMessageBoxError
- * 8:可弹出询问框 showMessageBoxError
- * 9:可弹出输入框 showInputBox
- * 10:集成图形字体设置方法及根据指定文字获取图片
- * 11:集成设置窗体居中显示/设置翻译文件/设置编码/设置延时/设置系统时间等静态方法
- * 12:集成获取应用程序文件名/ 等方法
+ * QUI Frameless Window Widget
+ * 1: Built-in N >= 12 beautiful styles, can be switched directly, or custom style paths can be set
+ * 2: Can set icons or images for widgets (top-left icon/minimize button/maximize button/close button) and their visibility
+ * 3: Can integrate designer plugin, drag and drop directly, WYSIWYG
+ * 4: If window resizing is needed, set setSizeGripEnabled(true);
+ * 5: Can set global style with setStyle
+ * 6: Can show message box with showMessageBoxInfo
+ * 7: Can show error box with showMessageBoxError
+ * 8: Can show question box with showMessageBoxQuestion
+ * 9: Can show input box with showInputBox
+ * 10: Integrated graphics font setting methods and get image from specified text
+ * 11: Integrated static methods for setting window center display/setting translation files/setting encoding/setting delay/setting system time, etc.
+ * 12: Integrated methods for getting application file name, etc.
  */
 
 #include <QPainterPath>

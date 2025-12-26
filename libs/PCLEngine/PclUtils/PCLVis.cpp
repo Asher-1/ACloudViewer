@@ -1334,7 +1334,7 @@ void PCLVis::displayText(const CC_DRAW_CONTEXT& context) {
 
 bool PCLVis::updateTexture(const CC_DRAW_CONTEXT& context,
                            const ccMaterialSet* materials) {
-    CVLog::Print("[PCLVis::updateTexture] ENTRY: viewID=%s, materials=%zu",
+    CVLog::PrintDebug("[PCLVis::updateTexture] ENTRY: viewID=%s, materials=%zu",
                  CVTools::FromQString(context.viewID).c_str(),
                  materials ? materials->size() : 0);
 

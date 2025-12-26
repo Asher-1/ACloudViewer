@@ -1403,6 +1403,12 @@ void MainWindow::initPlugins() {
                     addedActions.insert(action);
                 }
             }
+            
+            // Add separator after each toolbar's actions (except after the last toolbar)
+            if (toolbar != additionalToolbars.last()) {
+                unifiedPluginToolbar->addSeparator();
+            }
+            
             // IMPORTANT: Completely remove and hide the original toolbar
             // Set parent to nullptr to prevent it from being restored by
             // restoreState()
@@ -3315,12 +3321,8 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
             // Handle ESC key globally to exit selection tools
             // This is needed because VTK render window captures key events
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
-            CVLog::Print(
-                    "[MainWindow::eventFilter] KeyPress key: %d from object: "
-                    "%s",
-                    keyEvent->key(), obj->objectName().toStdString().c_str());
             if (keyEvent->key() == Qt::Key_Escape) {
-                CVLog::Print(
+                CVLog::PrintDebug(
                         "[MainWindow::eventFilter] ESC key detected, calling "
                         "handleEscapeKey");
                 // Handle ESC key the same way as keyPressEvent
@@ -3361,7 +3363,7 @@ void MainWindow::handleEscapeKey() {
     // Second, disable all active selection tools (SelectionTools
     // module) This ensures ESC exits selection modes like Rectangle
     // Select, Polygon Select, etc.
-    CVLog::Print("[MainWindow] Disabling all selection tools");
+    CVLog::PrintDebug("[MainWindow] Disabling all selection tools");
     // Disable all selection tools via controller
     // The controller handles unchecking all actions
 #ifdef USE_PCL_BACKEND
@@ -3385,7 +3387,6 @@ void MainWindow::handleEscapeKey() {
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event) {
-    CVLog::Print("[MainWindow::keyPressEvent] Key: %d", event->key());
     switch (event->key()) {
         case Qt::Key_Escape:
             CVLog::Print(
@@ -4471,7 +4472,7 @@ void MainWindow::initSelectionController() {
     connect(m_selectionController,
             &cvSelectionToolController::zoomToBoxRequested, this,
             [this](int xmin, int ymin, int xmax, int ymax) {
-                CVLog::Print(QString("[MainWindow] Zoom to box completed: [%1, "
+                CVLog::PrintDebug(QString("[MainWindow] Zoom to box completed: [%1, "
                                      "%2, %3, %4]")
                                      .arg(xmin)
                                      .arg(ymin)
@@ -4488,7 +4489,7 @@ void MainWindow::initSelectionController() {
                 m_ccRoot->getPropertiesDelegate());
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             "[MainWindow] Selection controller initialized (ParaView-style "
             "architecture)");
 }
@@ -4566,7 +4567,7 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
 void MainWindow::onSelectionToolActivated(QAction* action) {
     bool isSelectionTool = (action && action->isChecked());
 
-    CVLog::Print(QString("[MainWindow] Selection tool %1: %2")
+    CVLog::PrintDebug(QString("[MainWindow] Selection tool %1: %2")
                          .arg(action ? action->text() : "unknown")
                          .arg(isSelectionTool ? "activated" : "deactivated"));
 
@@ -4620,7 +4621,7 @@ void MainWindow::onSelectionRestored(const cvSelectionData& selection) {
     cvViewSelectionManager* manager = getSelectionManager();
     if (manager) {
         manager->setCurrentSelection(selection);
-        CVLog::Print(QString("[MainWindow] Selection restored: %1 %2")
+        CVLog::PrintDebug(QString("[MainWindow] Selection restored: %1 %2")
                              .arg(selection.count())
                              .arg(selection.fieldTypeString()));
         if (m_ccRoot) {
@@ -4959,6 +4960,9 @@ void MainWindow::showEvent(QShowEvent* event) {
     // Use layout manager to restore or setup layout
     if (m_layoutManager) {
         m_layoutManager->restoreGUILayout(false);
+        // After restoring layout, ensure all toolbar icon sizes are updated
+        // This is critical because restoreGUILayout may restore saved icon sizes
+        updateAllToolbarIconSizes();
     } else {
         CVLog::Error("[MainWindow] Layout manager is not initialized!");
     }

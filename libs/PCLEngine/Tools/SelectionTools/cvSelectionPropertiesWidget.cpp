@@ -16,7 +16,7 @@
 #include "cvSelectionExporter.h"
 #include "cvSelectionFilter.h"
 #include "cvSelectionHighlighter.h"
-#include "cvSelectionTooltipHelper.h"
+#include "cvTooltipFormatter.h"
 #include "cvViewSelectionManager.h"
 
 // ECV_DB_LIB
@@ -110,7 +110,7 @@ cvSelectionPropertiesWidget::cvSelectionPropertiesWidget(QWidget* parent)
     : QWidget(parent),
       cvSelectionBase(),
       m_highlighter(nullptr),
-      m_tooltipHelper(new cvSelectionTooltipHelper()),
+      m_tooltipFormatter(new cvTooltipFormatter()),
       m_selectionManager(nullptr),
       m_selectionCount(0),
       m_volume(0.0),
@@ -180,7 +180,7 @@ cvSelectionPropertiesWidget::cvSelectionPropertiesWidget(QWidget* parent)
 
 //-----------------------------------------------------------------------------
 cvSelectionPropertiesWidget::~cvSelectionPropertiesWidget() {
-    delete m_tooltipHelper;
+    delete m_tooltipFormatter;
 }
 
 // setVisualizer is inherited from cvGenericSelectionTool

@@ -9,16 +9,16 @@
 
 // clang-format off
 // Qt - must be included before qPCL.h for MOC to work correctly
-#include <QColor>
-#include <QGroupBox>
-#include <QLabel>
-#include <QObject>
-#include <QPushButton>
-#include <QScrollArea>
-#include <QSpinBox>
-#include <QTableWidget>
-#include <QToolButton>
-#include <QWidget>
+#include <QtGui/QColor>
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QLabel>
+#include <QtCore/QObject>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QScrollArea>
+#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QTableWidget>
+#include <QtWidgets/QToolButton>
+#include <QtWidgets/QWidget>
 // clang-format on
 
 #include "qPCL.h"
@@ -30,7 +30,7 @@
 
 // Forward declarations
 class cvSelectionHighlighter;
-class cvSelectionTooltipHelper;
+class cvTooltipFormatter;
 class cvViewSelectionManager;
 class cvSelectionAlgebra;
 class cvSelectionFilter;
@@ -206,7 +206,7 @@ private:
 private:
     // Core components
     cvSelectionHighlighter* m_highlighter;
-    cvSelectionTooltipHelper* m_tooltipHelper;
+    cvTooltipFormatter* m_tooltipFormatter;
     cvViewSelectionManager* m_selectionManager;
     cvSelectionData m_selectionData;
 
