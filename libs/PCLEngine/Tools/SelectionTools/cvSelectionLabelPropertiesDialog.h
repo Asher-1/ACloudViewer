@@ -9,10 +9,10 @@
 
 // clang-format off
 // Qt - must be included before qPCL.h for MOC to work correctly
-#include <QColor>
-#include <QDialog>
-#include <QFont>
-#include <QObject>
+#include <QtGui/QColor>
+#include <QtWidgets/QDialog>
+#include <QtGui/QFont>
+#include <QtCore/QObject>
 // clang-format on
 
 #include "qPCL.h"

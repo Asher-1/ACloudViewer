@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "cvSelectionTooltipHelper.h"
+#include "cvTooltipFormatter.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -24,23 +24,23 @@
 #include <QStringList>
 
 //-----------------------------------------------------------------------------
-cvSelectionTooltipHelper::cvSelectionTooltipHelper() : m_maxAttributes(15) {}
+cvTooltipFormatter::cvTooltipFormatter() : m_maxAttributes(15) {}
 
 //-----------------------------------------------------------------------------
-cvSelectionTooltipHelper::~cvSelectionTooltipHelper() {}
+cvTooltipFormatter::~cvTooltipFormatter() {}
 
 //-----------------------------------------------------------------------------
-void cvSelectionTooltipHelper::setMaxAttributes(int maxAttribs) {
+void cvTooltipFormatter::setMaxAttributes(int maxAttribs) {
     m_maxAttributes = maxAttribs;
 }
 
 //-----------------------------------------------------------------------------
-QString cvSelectionTooltipHelper::getTooltipInfo(vtkPolyData* polyData,
+QString cvTooltipFormatter::getTooltipInfo(vtkPolyData* polyData,
                                                  vtkIdType elementId,
                                                  AssociationType association,
                                                  const QString& datasetName) {
     if (!polyData) {
-        CVLog::Error("[cvSelectionTooltipHelper] Invalid polyData");
+        CVLog::Error("[cvTooltipFormatter] Invalid polyData");
         return QString();
     }
 
@@ -52,7 +52,7 @@ QString cvSelectionTooltipHelper::getTooltipInfo(vtkPolyData* polyData,
 }
 
 //-----------------------------------------------------------------------------
-QString cvSelectionTooltipHelper::getPlainTooltipInfo(
+QString cvTooltipFormatter::getPlainTooltipInfo(
         vtkPolyData* polyData,
         vtkIdType elementId,
         AssociationType association,
@@ -70,10 +70,10 @@ QString cvSelectionTooltipHelper::getPlainTooltipInfo(
 }
 
 //-----------------------------------------------------------------------------
-QString cvSelectionTooltipHelper::formatPointTooltip(
+QString cvTooltipFormatter::formatPointTooltip(
         vtkPolyData* polyData, vtkIdType pointId, const QString& datasetName) {
     if (pointId < 0 || pointId >= polyData->GetNumberOfPoints()) {
-        CVLog::Error("[cvSelectionTooltipHelper] Invalid point ID: %lld",
+        CVLog::Error("[cvTooltipFormatter] Invalid point ID: %lld",
                      pointId);
         return QString();
     }
@@ -160,7 +160,7 @@ QString cvSelectionTooltipHelper::formatPointTooltip(
                         matName = QString::fromStdString(
                                 materialNamesArray->GetValue(matIndex));
                         CVLog::PrintDebug(
-                                QString("[cvSelectionTooltipHelper] Using "
+                                QString("[cvTooltipFormatter] Using "
                                         "MaterialNames[%1]='%2' for texture "
                                         "coordinates")
                                         .arg(matIndex)
@@ -352,10 +352,10 @@ QString cvSelectionTooltipHelper::formatPointTooltip(
 }
 
 //-----------------------------------------------------------------------------
-QString cvSelectionTooltipHelper::formatCellTooltip(
+QString cvTooltipFormatter::formatCellTooltip(
         vtkPolyData* polyData, vtkIdType cellId, const QString& datasetName) {
     if (cellId < 0 || cellId >= polyData->GetNumberOfCells()) {
-        CVLog::Error("[cvSelectionTooltipHelper] Invalid cell ID: %lld",
+        CVLog::Error("[cvTooltipFormatter] Invalid cell ID: %lld",
                      cellId);
         return QString();
     }
@@ -616,7 +616,7 @@ QString cvSelectionTooltipHelper::formatCellTooltip(
 }
 
 //-----------------------------------------------------------------------------
-void cvSelectionTooltipHelper::addArrayValues(QString& tooltip,
+void cvTooltipFormatter::addArrayValues(QString& tooltip,
                                               vtkFieldData* fieldData,
                                               vtkIdType tupleIndex) {
     if (!fieldData) {
@@ -652,7 +652,7 @@ void cvSelectionTooltipHelper::addArrayValues(QString& tooltip,
 }
 
 //-----------------------------------------------------------------------------
-QString cvSelectionTooltipHelper::formatArrayValue(vtkDataArray* array,
+QString cvTooltipFormatter::formatArrayValue(vtkDataArray* array,
                                                    vtkIdType tupleIndex) {
     if (!array || tupleIndex < 0 || tupleIndex >= array->GetNumberOfTuples()) {
         return QString();
@@ -693,7 +693,7 @@ QString cvSelectionTooltipHelper::formatArrayValue(vtkDataArray* array,
 }
 
 //-----------------------------------------------------------------------------
-QString cvSelectionTooltipHelper::formatNumber(double value) {
+QString cvTooltipFormatter::formatNumber(double value) {
     // ParaView intelligent number formatting
     double absValue = qAbs(value);
 

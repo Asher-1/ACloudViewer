@@ -9,6 +9,7 @@
 
 #include "cvRenderViewSelectionTool.h"
 #include "cvSelectionData.h"
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
 #include "cvViewSelectionManager.h"
 #include "cvZoomBoxSelectionTool.h"
 
@@ -140,9 +141,9 @@ void cvSelectionReaction::beginSelection() {
     }
 
     // Set selection modifier
-    int modifier = getSelectionModifier();
+    int modifierInt = getSelectionModifier();
     tool->setSelectionModifier(
-            static_cast<cvViewSelectionManager::SelectionModifier>(modifier));
+            static_cast<SelectionModifier>(modifierInt));
 
     // Enable the tool
     tool->enable();
@@ -227,12 +228,12 @@ void cvSelectionReaction::onToolSelectionFinished(
 //-----------------------------------------------------------------------------
 int cvSelectionReaction::getSelectionModifier() {
     if (!m_modifierGroup) {
-        return cvViewSelectionManager::SELECTION_DEFAULT;
+        return static_cast<int>(SelectionModifier::SELECTION_DEFAULT);
     }
 
     QAction* checkedAction = m_modifierGroup->checkedAction();
     if (!checkedAction) {
-        return cvViewSelectionManager::SELECTION_DEFAULT;
+        return static_cast<int>(SelectionModifier::SELECTION_DEFAULT);
     }
 
     // The action's data should contain the modifier value
@@ -241,7 +242,7 @@ int cvSelectionReaction::getSelectionModifier() {
         return data.toInt();
     }
 
-    return cvViewSelectionManager::SELECTION_DEFAULT;
+    return static_cast<int>(SelectionModifier::SELECTION_DEFAULT);
 }
 
 //-----------------------------------------------------------------------------

@@ -9,7 +9,7 @@
 
 // clang-format off
 // Qt - must be included before other headers for MOC to work correctly
-#include <QObject>
+#include <QtCore/QObject>
 // clang-format on
 
 #include "cvRenderViewSelectionTool.h"

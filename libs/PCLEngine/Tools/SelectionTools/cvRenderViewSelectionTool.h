@@ -9,14 +9,17 @@
 
 // clang-format off
 // QT - must be included before other headers for MOC to work correctly
-#include <QCursor>
-#include <QObject>
+#include <QtGui/QCursor>
+#include <QtCore/QObject>
 // clang-format on
 
 // LOCAL
 #include "cvGenericSelectionTool.h"
-#include "cvViewSelectionManager.h"
 #include "qPCL.h"
+
+// Forward declaration - full definition included in cvRenderViewSelectionTool.cpp
+// to avoid circular dependency with cvViewSelectionManager.h
+class cvViewSelectionManager;
 
 // VTK
 #include <vtkSmartPointer.h>
@@ -50,8 +53,8 @@ class QPCL_ENGINE_LIB_API cvRenderViewSelectionTool
                                        // methods
 
 public:
-    using SelectionMode = cvViewSelectionManager::SelectionMode;
-    using SelectionModifier = cvViewSelectionManager::SelectionModifier;
+    // SelectionMode and SelectionModifier are now defined in cvSelectionTypes.h
+    // to avoid circular dependency with cvViewSelectionManager
 
     explicit cvRenderViewSelectionTool(SelectionMode mode,
                                        QObject* parent = nullptr);

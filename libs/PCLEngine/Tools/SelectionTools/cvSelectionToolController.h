@@ -9,12 +9,13 @@
 
 // clang-format off
 // Qt - must be included before other headers for MOC to work correctly
-#include <QActionGroup>
-#include <QMap>
-#include <QObject>
-#include <QPointer>
+#include <QtWidgets/QActionGroup>
+#include <QtCore/QMap>
+#include <QtCore/QObject>
+#include <QtCore/QPointer>
 // clang-format on
 
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
 #include "cvViewSelectionManager.h"
 #include "qPCL.h"
 
@@ -41,8 +42,8 @@ class QPCL_ENGINE_LIB_API cvSelectionToolController : public QObject {
     Q_OBJECT
 
 public:
-    using SelectionMode = cvViewSelectionManager::SelectionMode;
-    using SelectionModifier = cvViewSelectionManager::SelectionModifier;
+    using SelectionMode = ::SelectionMode;
+    using SelectionModifier = ::SelectionModifier;
 
     /**
      * @brief Get the singleton instance

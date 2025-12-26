@@ -11,9 +11,9 @@
 #include "qPCL.h"
 
 // QT
-#include <QSharedPointer>
-#include <QString>
-#include <QVector>
+#include <QtCore/QSharedPointer>
+#include <QtCore/QString>
+#include <QtCore/QVector>
 
 // VTK
 #include <vtkSmartPointer.h>

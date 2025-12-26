@@ -36,46 +36,55 @@ ecvLayoutManager::~ecvLayoutManager() {}
 
 QRect ecvLayoutManager::getScreenGeometry() const {
     QScreen* screen = QGuiApplication::primaryScreen();
-    return screen ? screen->availableGeometry() : QRect(0, 0, 1920, 1080);
+    // Use geometry() instead of availableGeometry() to match MainWindow::updateAllToolbarIconSizes()
+    // This ensures consistent screen width calculation
+    return screen ? screen->geometry() : QRect(0, 0, 1920, 1080);
 }
 
 QSize ecvLayoutManager::getIconSizeForScreen(int screenWidth) const {
-    // Icon size scaling based on screen resolution
-    // Takes into account both logical resolution and device pixel ratio
-    // for better support of High DPI/Retina displays
-
-    // Get device pixel ratio for High DPI support
+    // Icon size scaling based on physical screen resolution
+    // Consider devicePixelRatio for High DPI displays (especially macOS Retina)
+    // This ensures proper icon sizing across Windows, Linux, and macOS platforms
+    
     QScreen* screen = QGuiApplication::primaryScreen();
     qreal dpr = screen ? screen->devicePixelRatio() : 1.0;
-
-    // Effective resolution considers DPI scaling
-    // For Retina/High DPI displays, this gives us the "perceived" resolution
-    int effectiveWidth = static_cast<int>(screenWidth * dpr);
-
-    // Icon size scaling:
-    // 4K+ physical (3840+): 32px
-    // 2K+ physical (2560+): 28px
-    // Full HD+ physical (1920+): 24px
-    // Lower resolution: 20px
-    // Minimum size: 16px for very small screens
-
+    
+    // Calculate physical resolution (logical resolution × devicePixelRatio)
+    // This gives us the actual pixel density of the display
+    // Examples:
+    // - macOS Retina: logical 1920 × dpr 2.0 = physical 3840 (4K)
+    // - Standard 2K: logical 2560 × dpr 1.0 = physical 2560 (2K)
+    // - 8K display: logical 7680 × dpr 1.0 = physical 7680 (8K)
+    int physicalWidth = static_cast<int>(screenWidth * dpr);
+    
+    // Icon size calculation based on physical resolution
+    // Supports: 8K, 4K, 2K, 1080p, HD+, HD, and lower resolutions
     int baseSize;
-    if (effectiveWidth >= 3840) {
+    
+    if (physicalWidth >= 7680) {
+        // 8K physical resolution (7680x4320)
+        baseSize = 40;
+    } else if (physicalWidth >= 3840) {
+        // 4K physical resolution (3840x2160)
+        // Includes macOS Retina displays where logical 1920 × dpr 2.0 = 3840
         baseSize = 32;
-    } else if (effectiveWidth >= 2560) {
-        baseSize = 28;
-    } else if (effectiveWidth >= 1920) {
-        baseSize = 24;
-    } else if (effectiveWidth >= 1280) {
-        baseSize = 20;
+    } else if (physicalWidth >= 2560) {
+        // 2K physical resolution (2560x1440)
+        // Scale icon size based on DPR for better visual consistency
+        // For standard 2K (dpr=1.0): 22px
+        // For scaled displays (dpr>1.0): scale up proportionally
+        baseSize = static_cast<int>(22 * (1.0 + (dpr - 1.0) * 0.3));
+        baseSize = qBound(22, baseSize, 28);  // Clamp between 22 and 28
+    } else if (physicalWidth >= 1920) {
+        // Full HD physical resolution (1920x1080)
+        // For standard 1080p (dpr=1.0): 18px
+        // For slightly scaled displays (1.0 < dpr < 2.0): scale up slightly
+        baseSize = static_cast<int>(18 * (1.0 + (dpr - 1.0) * 0.2));
+        baseSize = qBound(18, baseSize, 22);  // Clamp between 18 and 22
     } else {
-        baseSize = 16;  // For very small screens
+        // HD+ (1600x900), HD (1280x720), and lower resolutions - minimum size
+        baseSize = 16;
     }
-
-    // On High DPI displays with large scale factors, we might want to adjust
-    // For example, a 1920 logical with 2x DPI becomes 3840 effective, should
-    // use larger icons But the icons are already rendered at higher quality due
-    // to DPI, so we keep the base size
 
     return QSize(baseSize, baseSize);
 }
@@ -88,7 +97,8 @@ void ecvLayoutManager::setToolbarIconSize(QToolBar* toolbar, int screenWidth) {
 
     // Set stylesheet to ensure buttons have proper size and icons fill the
     // button Use consistent padding across all toolbars
-    int buttonSize = iconSize.width() + 4;  // Minimal padding for button
+    // Reduce padding for smaller icons to make buttons more compact
+    int buttonSize = iconSize.width() + (iconSize.width() <= 16 ? 2 : 4);  // Less padding for small icons
     toolbar->setStyleSheet(QString("QToolBar#%1 QToolButton { "
                                    "    min-width: %2px; "
                                    "    min-height: %2px; "
@@ -195,10 +205,6 @@ void ecvLayoutManager::repositionUnifiedPluginToolbar() {
 
     unifiedPluginToolbar->setVisible(true);
     unifiedPluginToolbar->show();
-
-    CVLog::Print(QString("[LayoutManager] UnifiedPluginToolbar ensured visible "
-                         "with %1 actions")
-                         .arg(unifiedPluginToolbar->actions().size()));
 }
 
 void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
@@ -398,8 +404,6 @@ void ecvLayoutManager::setupMainWindowGeometry(int screenWidth,
 }
 
 void ecvLayoutManager::setupDefaultLayout() {
-    CVLog::Print("[LayoutManager] Setting up default layout...");
-
     // Get screen resolution
     QRect screenGeometry = getScreenGeometry();
     int screenWidth = screenGeometry.width();
@@ -414,7 +418,7 @@ void ecvLayoutManager::setupDefaultLayout() {
     setupDockWidgetLayout(screenWidth, screenHeight);
     setupMainWindowGeometry(screenWidth, screenHeight);
 
-    CVLog::Print("[LayoutManager] Default layout setup complete");
+    CVLog::Print("[LayoutManager] GUI Default layout setup complete");
 }
 
 void ecvLayoutManager::saveGUILayout() {
@@ -437,6 +441,10 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
     QSettings settings;
     QVariant geometry = settings.value(ecvPS::MainWinGeom());
 
+    // Get screen resolution for icon size calculation
+    QRect screenGeometry = getScreenGeometry();
+    int screenWidth = screenGeometry.width();
+
     if (!forceDefault && geometry.isValid()) {
         // Restore saved layout
         m_mainWindow->restoreGeometry(geometry.toByteArray());
@@ -449,11 +457,20 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
         // Ensure UnifiedPluginToolbar is visible
         repositionUnifiedPluginToolbar();
 
+        // Update icon sizes for all toolbars after restoring layout
+        // This ensures icons are properly sized even when restoring from saved state
+        QList<QToolBar*> allToolbars = m_mainWindow->findChildren<QToolBar*>();
+        for (QToolBar* toolbar : allToolbars) {
+            if (toolbar && toolbar->parent() == m_mainWindow) {
+                setToolbarIconSize(toolbar, screenWidth);
+            }
+        }
+
         CVLog::Print("[LayoutManager] GUI layout restored from settings");
     } else {
         // Use default layout
         setupDefaultLayout();
-        CVLog::Print("[LayoutManager] Using default layout");
+        CVLog::Print("[LayoutManager] GUI Using default layout");
     }
 }
 

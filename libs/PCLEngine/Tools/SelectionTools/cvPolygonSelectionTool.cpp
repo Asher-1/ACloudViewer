@@ -9,6 +9,7 @@
 
 #include "cvSelectionData.h"
 #include "cvSelectionPipeline.h"
+#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
 
 // LOCAL
 #include "PclUtils/PCLVis.h"
@@ -73,7 +74,7 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
     // and don't perform selection (let the caller handle it)
     // Reference: pqRenderViewSelectionReaction::selectionChanged()
     // SELECT_CUSTOM_POLYGON case
-    if (m_mode == cvViewSelectionManager::SELECT_CUSTOM_POLYGON) {
+    if (m_mode == SelectionMode::SELECT_CUSTOM_POLYGON) {
         CVLog::Print(
                 "[cvPolygonSelectionTool] Custom polygon mode - emitting "
                 "polygonCompleted");
@@ -83,8 +84,8 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
 
     // Get selection modifier
     SelectionModifier modifier = getSelectionModifierFromKeyboard();
-    if (modifier == cvViewSelectionManager::SELECTION_DEFAULT &&
-        m_modifier != cvViewSelectionManager::SELECTION_DEFAULT) {
+    if (modifier == SelectionModifier::SELECTION_DEFAULT &&
+        m_modifier != SelectionModifier::SELECTION_DEFAULT) {
         modifier = m_modifier;
     }
 
@@ -143,14 +144,14 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
                              .arg(maxX)
                              .arg(maxY));
 
-        cvGenericSelectionTool::SelectionMode mode =
+        SelectionMode mode =
                 isSelectingCells()
-                        ? cvGenericSelectionTool::SELECT_SURFACE_CELLS
-                        : cvGenericSelectionTool::SELECT_SURFACE_POINTS;
+                        ? SelectionMode::SELECT_SURFACE_CELLS
+                        : SelectionMode::SELECT_SURFACE_POINTS;
 
         int region[4] = {minX, minY, maxX, maxY};
         newSelection = hardwareSelectInRegion(region, mode,
-                                              cvGenericSelectionTool::REPLACE);
+                                              SelectionModifier::SELECTION_DEFAULT);
     }
 
     if (newSelection.isEmpty()) {
@@ -203,5 +204,5 @@ cvSelectionData cvPolygonSelectionTool::applySelectionModifier(
 
 //-----------------------------------------------------------------------------
 bool cvPolygonSelectionTool::isSelectingCells() const {
-    return (m_mode == cvViewSelectionManager::SELECT_SURFACE_CELLS_POLYGON);
+    return (m_mode == SelectionMode::SELECT_SURFACE_CELLS_POLYGON);
 }

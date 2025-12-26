@@ -25,9 +25,6 @@ cvSelectionAlgebra::cvSelectionAlgebra(QObject* parent) : QObject(parent) {
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionAlgebra::~cvSelectionAlgebra() {}
-
-//-----------------------------------------------------------------------------
 cvSelectionData cvSelectionAlgebra::unionOf(const cvSelectionData& a,
                                             const cvSelectionData& b) {
     if (a.isEmpty()) return b;

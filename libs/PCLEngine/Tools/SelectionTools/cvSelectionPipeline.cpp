@@ -45,13 +45,13 @@ cvSelectionPipeline::cvSelectionPipeline(QObject* parent)
       m_cachingEnabled(true),
       m_cacheHits(0),
       m_cacheMisses(0) {
-    CVLog::Print("[cvSelectionPipeline] Created");
+    CVLog::PrintDebug("[cvSelectionPipeline] Created");
 }
 
 //-----------------------------------------------------------------------------
 cvSelectionPipeline::~cvSelectionPipeline() {
     clearCache();
-    CVLog::Print(QString("[cvSelectionPipeline] Destroyed - Cache stats: %1 "
+    CVLog::PrintDebug(QString("[cvSelectionPipeline] Destroyed - Cache stats: %1 "
                          "hits, %2 misses")
                          .arg(m_cacheHits)
                          .arg(m_cacheMisses));
@@ -73,7 +73,7 @@ void cvSelectionPipeline::setVisualizer(PclUtils::PCLVis* viewer) {
     // Clear cache when visualizer changes
     clearCache();
 
-    CVLog::Print(QString("[cvSelectionPipeline] Visualizer set: %1")
+    CVLog::PrintDebug(QString("[cvSelectionPipeline] Visualizer set: %1")
                          .arg((quintptr)viewer, 0, 16));
 }
 
@@ -335,7 +335,7 @@ void cvSelectionPipeline::clearCache() {
     // Smart pointers handle cleanup automatically
     m_selectionCache.clear();
 
-    CVLog::Print("[cvSelectionPipeline] Cache cleared");
+    CVLog::PrintDebug("[cvSelectionPipeline] Cache cleared");
 }
 
 //-----------------------------------------------------------------------------
@@ -517,7 +517,7 @@ void cvSelectionPipeline::invalidateCachedSelection() {
     // Clear last selection
     m_lastSelection = nullptr;
 
-    CVLog::Print("[cvSelectionPipeline] Invalidated cached selection");
+    CVLog::PrintDebug("[cvSelectionPipeline] Invalidated cached selection");
 }
 
 //-----------------------------------------------------------------------------
