@@ -151,7 +151,8 @@ cvSelectionData cvGenericSelectionTool::hardwareSelectInRegion(
         }
 
         // Apply modifier using pipeline's combineSelections
-        if (modifier != SelectionModifier::SELECTION_DEFAULT && !m_currentSelection.isEmpty()) {
+        if (modifier != SelectionModifier::SELECTION_DEFAULT &&
+            !m_currentSelection.isEmpty()) {
             cvSelectionPipeline::CombineOperation operation;
             switch (modifier) {
                 case SelectionModifier::SELECTION_ADDITION:
@@ -222,7 +223,8 @@ cvSelectionData cvGenericSelectionTool::hardwareSelectInRegion(
     // Smart pointer handles cleanup automatically
 
     // Apply modifier if needed
-    if (modifier != SelectionModifier::SELECTION_DEFAULT && !m_currentSelection.isEmpty()) {
+    if (modifier != SelectionModifier::SELECTION_DEFAULT &&
+        !m_currentSelection.isEmpty()) {
         return applyModifier(newSelection, m_currentSelection, modifier);
     }
 
@@ -466,7 +468,8 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
         return currentSelection;
     }
 
-    if (currentSelection.isEmpty() || modifier == SelectionModifier::SELECTION_DEFAULT) {
+    if (currentSelection.isEmpty() ||
+        modifier == SelectionModifier::SELECTION_DEFAULT) {
         return newSelection;
     }
 
@@ -515,7 +518,8 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
     cvSelectionData result(resultIds, newSelection.fieldAssociation());
 
     // Merge actor information
-    if (modifier == SelectionModifier::SELECTION_ADDITION || modifier == SelectionModifier::SELECTION_TOGGLE) {
+    if (modifier == SelectionModifier::SELECTION_ADDITION ||
+        modifier == SelectionModifier::SELECTION_TOGGLE) {
         for (int i = 0; i < currentSelection.actorCount(); ++i) {
             result.addActorInfo(currentSelection.actorInfo(i));
         }

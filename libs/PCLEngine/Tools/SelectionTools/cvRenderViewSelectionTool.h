@@ -17,8 +17,9 @@
 #include "cvGenericSelectionTool.h"
 #include "qPCL.h"
 
-// Forward declaration - full definition included in cvRenderViewSelectionTool.cpp
-// to avoid circular dependency with cvViewSelectionManager.h
+// Forward declaration - full definition included in
+// cvRenderViewSelectionTool.cpp to avoid circular dependency with
+// cvViewSelectionManager.h
 class cvViewSelectionManager;
 
 // VTK

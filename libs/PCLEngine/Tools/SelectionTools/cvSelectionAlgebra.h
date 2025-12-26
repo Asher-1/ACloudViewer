@@ -54,7 +54,8 @@ public:
         SYMMETRIC_DIFF,  ///< A △ B (elements in either but not both)
         COMPLEMENT       ///< ~A (all elements not in A)
     };
-    // Q_ENUM must be placed after enum definition and QObject must be fully visible
+    // Q_ENUM must be placed after enum definition and QObject must be fully
+    // visible
     Q_ENUM(Operation)
 
     explicit cvSelectionAlgebra(QObject* parent = nullptr);

@@ -118,4 +118,3 @@ private:
 
     int m_maxAttributes;  ///< Maximum number of attributes to display
 };
-

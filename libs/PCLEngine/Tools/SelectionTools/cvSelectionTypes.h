@@ -24,9 +24,9 @@
  */
 enum class SelectionMode {
     // Surface selection
-    SELECT_SURFACE_CELLS,          ///< Select cells on surface (rectangle)
-    SELECT_SURFACE_POINTS,         ///< Select points on surface (rectangle)
-    SELECT_SURFACE_CELLS_POLYGON,  ///< Select cells on surface (polygon)
+    SELECT_SURFACE_CELLS,           ///< Select cells on surface (rectangle)
+    SELECT_SURFACE_POINTS,          ///< Select points on surface (rectangle)
+    SELECT_SURFACE_CELLS_POLYGON,   ///< Select cells on surface (polygon)
     SELECT_SURFACE_POINTS_POLYGON,  ///< Select points on surface (polygon)
 
     // Frustum selection
@@ -38,8 +38,8 @@ enum class SelectionMode {
     SELECT_FRUSTUM_BLOCKS,  ///< Select blocks in frustum
 
     // Interactive selection
-    SELECT_SURFACE_CELLS_INTERACTIVELY,  ///< Hover highlight + click select
-                                         ///< (cells)
+    SELECT_SURFACE_CELLS_INTERACTIVELY,      ///< Hover highlight + click select
+                                             ///< (cells)
     SELECT_SURFACE_POINTS_INTERACTIVELY,     ///< Hover highlight + click
                                              ///< select (points)
     SELECT_SURFACE_CELLDATA_INTERACTIVELY,   ///< Hover highlight cell data
@@ -78,8 +78,8 @@ inline uint qHash(SelectionMode key, uint seed = 0) noexcept {
     return qHash(static_cast<int>(key), seed);
 }
 
-// Provide qHash function for SelectionModifier to support QSet<SelectionModifier>
+// Provide qHash function for SelectionModifier to support
+// QSet<SelectionModifier>
 inline uint qHash(SelectionModifier key, uint seed = 0) noexcept {
     return qHash(static_cast<int>(key), seed);
 }
-

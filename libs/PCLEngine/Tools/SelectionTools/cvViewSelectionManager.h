@@ -25,7 +25,8 @@
 #include "cvRenderViewSelectionTool.h"
 
 // Forward declarations
-// Note: cvRenderViewSelectionTool must be fully defined for QPointer template instantiation
+// Note: cvRenderViewSelectionTool must be fully defined for QPointer template
+// instantiation
 class cvSelectionData;
 class cvSelectionHistory;
 class cvSelectionAlgebra;

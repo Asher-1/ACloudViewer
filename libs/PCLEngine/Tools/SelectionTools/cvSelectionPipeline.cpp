@@ -51,10 +51,11 @@ cvSelectionPipeline::cvSelectionPipeline(QObject* parent)
 //-----------------------------------------------------------------------------
 cvSelectionPipeline::~cvSelectionPipeline() {
     clearCache();
-    CVLog::PrintDebug(QString("[cvSelectionPipeline] Destroyed - Cache stats: %1 "
-                         "hits, %2 misses")
-                         .arg(m_cacheHits)
-                         .arg(m_cacheMisses));
+    CVLog::PrintDebug(
+            QString("[cvSelectionPipeline] Destroyed - Cache stats: %1 "
+                    "hits, %2 misses")
+                    .arg(m_cacheHits)
+                    .arg(m_cacheMisses));
 }
 
 //-----------------------------------------------------------------------------
@@ -74,7 +75,7 @@ void cvSelectionPipeline::setVisualizer(PclUtils::PCLVis* viewer) {
     clearCache();
 
     CVLog::PrintDebug(QString("[cvSelectionPipeline] Visualizer set: %1")
-                         .arg((quintptr)viewer, 0, 16));
+                              .arg((quintptr)viewer, 0, 16));
 }
 
 //-----------------------------------------------------------------------------

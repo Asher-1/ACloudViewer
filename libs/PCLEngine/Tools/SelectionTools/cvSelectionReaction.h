@@ -20,7 +20,8 @@
 #include "qPCL.h"
 
 // Forward declarations (for types used in QPointer, need full definition)
-// Note: cvRenderViewSelectionTool must be fully defined for QPointer template instantiation
+// Note: cvRenderViewSelectionTool must be fully defined for QPointer template
+// instantiation
 #include "cvRenderViewSelectionTool.h"
 class ecvGenericVisualizer3D;
 

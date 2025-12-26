@@ -61,9 +61,8 @@ void cvBlockSelectionTool::setupInteractorStyle() {
     // Set the interactor style
     interactor->SetInteractorStyle(m_interactorStyle);
 
-    QString modeStr = (m_mode == SelectionMode::SELECT_BLOCKS)
-                              ? "surface"
-                              : "frustum";
+    QString modeStr =
+            (m_mode == SelectionMode::SELECT_BLOCKS) ? "surface" : "frustum";
     CVLog::Print(QString("[cvBlockSelectionTool] Interactor style set for %1 "
                          "block selection")
                          .arg(modeStr));
@@ -147,9 +146,8 @@ void cvBlockSelectionTool::onSelectionChanged(vtkObject* caller,
     QVector<int> blockIds = extractBlockIds(x1, y1, x2, y2);
 
     if (!blockIds.isEmpty()) {
-        QString modeStr = (m_mode == SelectionMode::SELECT_BLOCKS)
-                                  ? "surface"
-                                  : "frustum";
+        QString modeStr = (m_mode == SelectionMode::SELECT_BLOCKS) ? "surface"
+                                                                   : "frustum";
         CVLog::Print(
                 QString("[cvBlockSelectionTool] %1 blocks selected (%2 mode)")
                         .arg(blockIds.size())
