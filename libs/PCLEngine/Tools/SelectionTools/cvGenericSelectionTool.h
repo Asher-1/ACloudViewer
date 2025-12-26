@@ -14,11 +14,11 @@
 #include "cvSelectionTypes.h"  // For SelectionModifier enum
 
 // VTK includes (need full definitions for template instantiation)
-#include <vtkCellPicker.h>        // Full definition needed for vtkSmartPointer<vtkCellPicker>
+#include <vtkCellPicker.h>  // Full definition needed for vtkSmartPointer<vtkCellPicker>
 #include <vtkHardwareSelector.h>  // Full definition needed for vtkSmartPointer<vtkHardwareSelector>
-#include <vtkPointPicker.h>       // Full definition needed for vtkSmartPointer<vtkPointPicker>
-#include <vtkSmartPointer.h>      // For vtkSmartPointer template
-#include <vtkType.h>              // For vtkIdType
+#include <vtkPointPicker.h>  // Full definition needed for vtkSmartPointer<vtkPointPicker>
+#include <vtkSmartPointer.h>  // For vtkSmartPointer template
+#include <vtkType.h>          // For vtkIdType
 
 // Forward declarations
 class vtkRenderer;

@@ -142,8 +142,7 @@ void cvSelectionReaction::beginSelection() {
 
     // Set selection modifier
     int modifierInt = getSelectionModifier();
-    tool->setSelectionModifier(
-            static_cast<SelectionModifier>(modifierInt));
+    tool->setSelectionModifier(static_cast<SelectionModifier>(modifierInt));
 
     // Enable the tool
     tool->enable();

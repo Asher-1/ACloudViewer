@@ -36,9 +36,9 @@ void cvTooltipFormatter::setMaxAttributes(int maxAttribs) {
 
 //-----------------------------------------------------------------------------
 QString cvTooltipFormatter::getTooltipInfo(vtkPolyData* polyData,
-                                                 vtkIdType elementId,
-                                                 AssociationType association,
-                                                 const QString& datasetName) {
+                                           vtkIdType elementId,
+                                           AssociationType association,
+                                           const QString& datasetName) {
     if (!polyData) {
         CVLog::Error("[cvTooltipFormatter] Invalid polyData");
         return QString();
@@ -52,11 +52,10 @@ QString cvTooltipFormatter::getTooltipInfo(vtkPolyData* polyData,
 }
 
 //-----------------------------------------------------------------------------
-QString cvTooltipFormatter::getPlainTooltipInfo(
-        vtkPolyData* polyData,
-        vtkIdType elementId,
-        AssociationType association,
-        const QString& datasetName) {
+QString cvTooltipFormatter::getPlainTooltipInfo(vtkPolyData* polyData,
+                                                vtkIdType elementId,
+                                                AssociationType association,
+                                                const QString& datasetName) {
     // Get HTML tooltip and strip HTML tags
     QString htmlTooltip =
             getTooltipInfo(polyData, elementId, association, datasetName);
@@ -70,11 +69,11 @@ QString cvTooltipFormatter::getPlainTooltipInfo(
 }
 
 //-----------------------------------------------------------------------------
-QString cvTooltipFormatter::formatPointTooltip(
-        vtkPolyData* polyData, vtkIdType pointId, const QString& datasetName) {
+QString cvTooltipFormatter::formatPointTooltip(vtkPolyData* polyData,
+                                               vtkIdType pointId,
+                                               const QString& datasetName) {
     if (pointId < 0 || pointId >= polyData->GetNumberOfPoints()) {
-        CVLog::Error("[cvTooltipFormatter] Invalid point ID: %lld",
-                     pointId);
+        CVLog::Error("[cvTooltipFormatter] Invalid point ID: %lld", pointId);
         return QString();
     }
 
@@ -352,11 +351,11 @@ QString cvTooltipFormatter::formatPointTooltip(
 }
 
 //-----------------------------------------------------------------------------
-QString cvTooltipFormatter::formatCellTooltip(
-        vtkPolyData* polyData, vtkIdType cellId, const QString& datasetName) {
+QString cvTooltipFormatter::formatCellTooltip(vtkPolyData* polyData,
+                                              vtkIdType cellId,
+                                              const QString& datasetName) {
     if (cellId < 0 || cellId >= polyData->GetNumberOfCells()) {
-        CVLog::Error("[cvTooltipFormatter] Invalid cell ID: %lld",
-                     cellId);
+        CVLog::Error("[cvTooltipFormatter] Invalid cell ID: %lld", cellId);
         return QString();
     }
 
@@ -617,8 +616,8 @@ QString cvTooltipFormatter::formatCellTooltip(
 
 //-----------------------------------------------------------------------------
 void cvTooltipFormatter::addArrayValues(QString& tooltip,
-                                              vtkFieldData* fieldData,
-                                              vtkIdType tupleIndex) {
+                                        vtkFieldData* fieldData,
+                                        vtkIdType tupleIndex) {
     if (!fieldData) {
         return;
     }
@@ -653,7 +652,7 @@ void cvTooltipFormatter::addArrayValues(QString& tooltip,
 
 //-----------------------------------------------------------------------------
 QString cvTooltipFormatter::formatArrayValue(vtkDataArray* array,
-                                                   vtkIdType tupleIndex) {
+                                             vtkIdType tupleIndex) {
     if (!array || tupleIndex < 0 || tupleIndex >= array->GetNumberOfTuples()) {
         return QString();
     }

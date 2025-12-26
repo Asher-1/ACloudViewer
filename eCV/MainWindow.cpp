@@ -1403,12 +1403,13 @@ void MainWindow::initPlugins() {
                     addedActions.insert(action);
                 }
             }
-            
-            // Add separator after each toolbar's actions (except after the last toolbar)
+
+            // Add separator after each toolbar's actions (except after the last
+            // toolbar)
             if (toolbar != additionalToolbars.last()) {
                 unifiedPluginToolbar->addSeparator();
             }
-            
+
             // IMPORTANT: Completely remove and hide the original toolbar
             // Set parent to nullptr to prevent it from being restored by
             // restoreState()
@@ -4472,12 +4473,13 @@ void MainWindow::initSelectionController() {
     connect(m_selectionController,
             &cvSelectionToolController::zoomToBoxRequested, this,
             [this](int xmin, int ymin, int xmax, int ymax) {
-                CVLog::PrintDebug(QString("[MainWindow] Zoom to box completed: [%1, "
-                                     "%2, %3, %4]")
-                                     .arg(xmin)
-                                     .arg(ymin)
-                                     .arg(xmax)
-                                     .arg(ymax));
+                CVLog::PrintDebug(
+                        QString("[MainWindow] Zoom to box completed: [%1, "
+                                "%2, %3, %4]")
+                                .arg(xmin)
+                                .arg(ymin)
+                                .arg(xmax)
+                                .arg(ymax));
                 // Zoom is already performed by cvZoomToBoxTool using VTK
                 // This signal is for notification/logging purposes
                 ecvDisplayTools::UpdateScreen();
@@ -4567,9 +4569,10 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
 void MainWindow::onSelectionToolActivated(QAction* action) {
     bool isSelectionTool = (action && action->isChecked());
 
-    CVLog::PrintDebug(QString("[MainWindow] Selection tool %1: %2")
-                         .arg(action ? action->text() : "unknown")
-                         .arg(isSelectionTool ? "activated" : "deactivated"));
+    CVLog::PrintDebug(
+            QString("[MainWindow] Selection tool %1: %2")
+                    .arg(action ? action->text() : "unknown")
+                    .arg(isSelectionTool ? "activated" : "deactivated"));
 
     // Notify properties delegate about selection tool state
     if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
@@ -4622,8 +4625,8 @@ void MainWindow::onSelectionRestored(const cvSelectionData& selection) {
     if (manager) {
         manager->setCurrentSelection(selection);
         CVLog::PrintDebug(QString("[MainWindow] Selection restored: %1 %2")
-                             .arg(selection.count())
-                             .arg(selection.fieldTypeString()));
+                                  .arg(selection.count())
+                                  .arg(selection.fieldTypeString()));
         if (m_ccRoot) {
             m_ccRoot->updatePropertiesView();
         }
@@ -4961,7 +4964,8 @@ void MainWindow::showEvent(QShowEvent* event) {
     if (m_layoutManager) {
         m_layoutManager->restoreGUILayout(false);
         // After restoring layout, ensure all toolbar icon sizes are updated
-        // This is critical because restoreGUILayout may restore saved icon sizes
+        // This is critical because restoreGUILayout may restore saved icon
+        // sizes
         updateAllToolbarIconSizes();
     } else {
         CVLog::Error("[MainWindow] Layout manager is not initialized!");

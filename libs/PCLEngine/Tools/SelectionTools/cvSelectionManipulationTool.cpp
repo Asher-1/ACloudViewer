@@ -93,8 +93,7 @@ cvSelectionData cvSelectionManipulationTool::executeData(
     // VTK-independent interface for UI layer
     // This method wraps execute() and returns cvSelectionData directly
 
-    if (currentData.isEmpty() &&
-        m_mode != SelectionMode::CLEAR_SELECTION) {
+    if (currentData.isEmpty() && m_mode != SelectionMode::CLEAR_SELECTION) {
         CVLog::Warning(
                 "[cvSelectionManipulationTool] Cannot execute on empty "
                 "selection");

@@ -69,7 +69,8 @@ cvSelectionToolController::~cvSelectionToolController() {
 void cvSelectionToolController::initialize(QWidget* parent) {
     m_parentWidget = parent;
 
-    CVLog::PrintDebug("[cvSelectionToolController] Initialized with parent widget");
+    CVLog::PrintDebug(
+            "[cvSelectionToolController] Initialized with parent widget");
 }
 
 //-----------------------------------------------------------------------------
@@ -114,7 +115,8 @@ cvSelectionReaction* cvSelectionToolController::registerAction(
                             .arg(checked ? "checked" : "unchecked"));
 
             // For ZOOM_TO_BOX, don't update selection properties state
-            // It's not a selection tool and shouldn't affect the properties panel
+            // It's not a selection tool and shouldn't affect the properties
+            // panel
             if (mode == SelectionMode::ZOOM_TO_BOX) {
                 return;
             }
@@ -130,7 +132,7 @@ cvSelectionReaction* cvSelectionToolController::registerAction(
                 if (reactionMode == SelectionMode::ZOOM_TO_BOX) {
                     continue;
                 }
-                
+
                 QPointer<cvSelectionReaction> reaction = it.value();
                 if (reaction && reaction->parentAction() &&
                     reaction->parentAction()->isCheckable() &&

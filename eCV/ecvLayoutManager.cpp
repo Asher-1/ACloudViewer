@@ -36,19 +36,21 @@ ecvLayoutManager::~ecvLayoutManager() {}
 
 QRect ecvLayoutManager::getScreenGeometry() const {
     QScreen* screen = QGuiApplication::primaryScreen();
-    // Use geometry() instead of availableGeometry() to match MainWindow::updateAllToolbarIconSizes()
-    // This ensures consistent screen width calculation
+    // Use geometry() instead of availableGeometry() to match
+    // MainWindow::updateAllToolbarIconSizes() This ensures consistent screen
+    // width calculation
     return screen ? screen->geometry() : QRect(0, 0, 1920, 1080);
 }
 
 QSize ecvLayoutManager::getIconSizeForScreen(int screenWidth) const {
     // Icon size scaling based on physical screen resolution
     // Consider devicePixelRatio for High DPI displays (especially macOS Retina)
-    // This ensures proper icon sizing across Windows, Linux, and macOS platforms
-    
+    // This ensures proper icon sizing across Windows, Linux, and macOS
+    // platforms
+
     QScreen* screen = QGuiApplication::primaryScreen();
     qreal dpr = screen ? screen->devicePixelRatio() : 1.0;
-    
+
     // Calculate physical resolution (logical resolution × devicePixelRatio)
     // This gives us the actual pixel density of the display
     // Examples:
@@ -56,11 +58,11 @@ QSize ecvLayoutManager::getIconSizeForScreen(int screenWidth) const {
     // - Standard 2K: logical 2560 × dpr 1.0 = physical 2560 (2K)
     // - 8K display: logical 7680 × dpr 1.0 = physical 7680 (8K)
     int physicalWidth = static_cast<int>(screenWidth * dpr);
-    
+
     // Icon size calculation based on physical resolution
     // Supports: 8K, 4K, 2K, 1080p, HD+, HD, and lower resolutions
     int baseSize;
-    
+
     if (physicalWidth >= 7680) {
         // 8K physical resolution (7680x4320)
         baseSize = 40;
@@ -98,7 +100,9 @@ void ecvLayoutManager::setToolbarIconSize(QToolBar* toolbar, int screenWidth) {
     // Set stylesheet to ensure buttons have proper size and icons fill the
     // button Use consistent padding across all toolbars
     // Reduce padding for smaller icons to make buttons more compact
-    int buttonSize = iconSize.width() + (iconSize.width() <= 16 ? 2 : 4);  // Less padding for small icons
+    int buttonSize =
+            iconSize.width() +
+            (iconSize.width() <= 16 ? 2 : 4);  // Less padding for small icons
     toolbar->setStyleSheet(QString("QToolBar#%1 QToolButton { "
                                    "    min-width: %2px; "
                                    "    min-height: %2px; "
@@ -178,12 +182,13 @@ void ecvLayoutManager::repositionUnifiedPluginToolbar() {
     }
 
     if (!unifiedPluginToolbar) {
-        CVLog::Warning("[LayoutManager] UnifiedPluginToolbar not found!");
+        CVLog::Warning("[ecvLayoutManager] UnifiedPluginToolbar not found!");
         return;
     }
 
     if (unifiedPluginToolbar->actions().isEmpty()) {
-        CVLog::Warning("[LayoutManager] UnifiedPluginToolbar has no actions!");
+        CVLog::Warning(
+                "[ecvLayoutManager] UnifiedPluginToolbar has no actions!");
         return;
     }
 
@@ -349,7 +354,7 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         setToolbarIconSize(toolbar, screenWidth);
     }
 
-    CVLog::Print("[LayoutManager] Toolbar layout configured");
+    CVLog::Print("[ecvLayoutManager] Toolbar layout configured");
 }
 
 void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
@@ -366,7 +371,7 @@ void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
         // Other dock widgets are handled by MainWindow
     }
 
-    CVLog::Print("[LayoutManager] Dock widget layout configured");
+    CVLog::Print("[ecvLayoutManager] Dock widget layout configured");
 }
 
 void ecvLayoutManager::setupMainWindowGeometry(int screenWidth,
@@ -395,12 +400,13 @@ void ecvLayoutManager::setupMainWindowGeometry(int screenWidth,
 
     m_mainWindow->setGeometry(x, y, windowWidth, windowHeight);
 
-    CVLog::Print(QString("[LayoutManager] Main window geometry set: %1x%2 at "
-                         "(%3, %4)")
-                         .arg(windowWidth)
-                         .arg(windowHeight)
-                         .arg(x)
-                         .arg(y));
+    CVLog::Print(
+            QString("[ecvLayoutManager] Main window geometry set: %1x%2 at "
+                    "(%3, %4)")
+                    .arg(windowWidth)
+                    .arg(windowHeight)
+                    .arg(x)
+                    .arg(y));
 }
 
 void ecvLayoutManager::setupDefaultLayout() {
@@ -409,7 +415,7 @@ void ecvLayoutManager::setupDefaultLayout() {
     int screenWidth = screenGeometry.width();
     int screenHeight = screenGeometry.height();
 
-    CVLog::Print(QString("[LayoutManager] Screen resolution: %1x%2")
+    CVLog::Print(QString("[ecvLayoutManager] Screen resolution: %1x%2")
                          .arg(screenWidth)
                          .arg(screenHeight));
 
@@ -418,7 +424,7 @@ void ecvLayoutManager::setupDefaultLayout() {
     setupDockWidgetLayout(screenWidth, screenHeight);
     setupMainWindowGeometry(screenWidth, screenHeight);
 
-    CVLog::Print("[LayoutManager] GUI Default layout setup complete");
+    CVLog::Print("[ecvLayoutManager] GUI Default layout setup complete");
 }
 
 void ecvLayoutManager::saveGUILayout() {
@@ -434,7 +440,7 @@ void ecvLayoutManager::saveGUILayout() {
     settings.setValue(ecvPS::MainWinGeom(), m_mainWindow->saveGeometry());
     settings.setValue(ecvPS::MainWinState(), m_mainWindow->saveState());
 
-    CVLog::Print("[LayoutManager] GUI layout saved");
+    CVLog::Print("[ecvLayoutManager] GUI layout saved");
 }
 
 void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
@@ -458,7 +464,8 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
         repositionUnifiedPluginToolbar();
 
         // Update icon sizes for all toolbars after restoring layout
-        // This ensures icons are properly sized even when restoring from saved state
+        // This ensures icons are properly sized even when restoring from saved
+        // state
         QList<QToolBar*> allToolbars = m_mainWindow->findChildren<QToolBar*>();
         for (QToolBar* toolbar : allToolbars) {
             if (toolbar && toolbar->parent() == m_mainWindow) {
@@ -466,11 +473,11 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
             }
         }
 
-        CVLog::Print("[LayoutManager] GUI layout restored from settings");
+        CVLog::Print("[ecvLayoutManager] GUI layout restored from settings");
     } else {
         // Use default layout
         setupDefaultLayout();
-        CVLog::Print("[LayoutManager] GUI Using default layout");
+        CVLog::Print("[ecvLayoutManager] GUI Using default layout");
     }
 }
 

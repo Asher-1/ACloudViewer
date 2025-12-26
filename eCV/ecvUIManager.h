@@ -15,17 +15,17 @@
 
 /**
  * QUI Frameless Window Widget
- * 1: Built-in N >= 12 beautiful styles, can be switched directly, or custom style paths can be set
- * 2: Can set icons or images for widgets (top-left icon/minimize button/maximize button/close button) and their visibility
- * 3: Can integrate designer plugin, drag and drop directly, WYSIWYG
- * 4: If window resizing is needed, set setSizeGripEnabled(true);
- * 5: Can set global style with setStyle
- * 6: Can show message box with showMessageBoxInfo
- * 7: Can show error box with showMessageBoxError
- * 8: Can show question box with showMessageBoxQuestion
- * 9: Can show input box with showInputBox
- * 10: Integrated graphics font setting methods and get image from specified text
- * 11: Integrated static methods for setting window center display/setting translation files/setting encoding/setting delay/setting system time, etc.
+ * 1: Built-in N >= 12 beautiful styles, can be switched directly, or custom
+ * style paths can be set 2: Can set icons or images for widgets (top-left
+ * icon/minimize button/maximize button/close button) and their visibility 3:
+ * Can integrate designer plugin, drag and drop directly, WYSIWYG 4: If window
+ * resizing is needed, set setSizeGripEnabled(true); 5: Can set global style
+ * with setStyle 6: Can show message box with showMessageBoxInfo 7: Can show
+ * error box with showMessageBoxError 8: Can show question box with
+ * showMessageBoxQuestion 9: Can show input box with showInputBox 10: Integrated
+ * graphics font setting methods and get image from specified text 11:
+ * Integrated static methods for setting window center display/setting
+ * translation files/setting encoding/setting delay/setting system time, etc.
  * 12: Integrated methods for getting application file name, etc.
  */
 

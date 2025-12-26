@@ -73,9 +73,9 @@ bool cvSurfaceSelectionTool::performSelection(int region[4]) {
 
     // Use base class unified hardware selection (ParaView-aligned)
     // Reference: pqRenderView.cxx, selectOnSurface()
-    SelectionMode mode =
-            isSelectingCells() ? SelectionMode::SELECT_SURFACE_CELLS
-                               : SelectionMode::SELECT_SURFACE_POINTS;
+    SelectionMode mode = isSelectingCells()
+                                 ? SelectionMode::SELECT_SURFACE_CELLS
+                                 : SelectionMode::SELECT_SURFACE_POINTS;
 
     // Get selection modifier
     SelectionModifier modifier = getSelectionModifierFromKeyboard();

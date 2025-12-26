@@ -144,14 +144,13 @@ bool cvPolygonSelectionTool::performPolygonSelection(vtkIntArray* polygon) {
                              .arg(maxX)
                              .arg(maxY));
 
-        SelectionMode mode =
-                isSelectingCells()
-                        ? SelectionMode::SELECT_SURFACE_CELLS
-                        : SelectionMode::SELECT_SURFACE_POINTS;
+        SelectionMode mode = isSelectingCells()
+                                     ? SelectionMode::SELECT_SURFACE_CELLS
+                                     : SelectionMode::SELECT_SURFACE_POINTS;
 
         int region[4] = {minX, minY, maxX, maxY};
-        newSelection = hardwareSelectInRegion(region, mode,
-                                              SelectionModifier::SELECTION_DEFAULT);
+        newSelection = hardwareSelectInRegion(
+                region, mode, SelectionModifier::SELECTION_DEFAULT);
     }
 
     if (newSelection.isEmpty()) {

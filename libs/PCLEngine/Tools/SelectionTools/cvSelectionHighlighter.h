@@ -17,7 +17,7 @@
 #include <QString>
 
 // VTK
-#include <vtkActor.h>        // Full definition needed for vtkSmartPointer<vtkActor>
+#include <vtkActor.h>  // Full definition needed for vtkSmartPointer<vtkActor>
 #include <vtkSmartPointer.h>
 class vtkIdTypeArray;
 class vtkPolyData;
