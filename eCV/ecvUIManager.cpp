@@ -1368,8 +1368,8 @@ void QUIWidget::activeTray(QSystemTrayIcon::ActivationReason reason) {
             break;
         case QSystemTrayIcon::Trigger:
             m_systemTray->showMessage(
-                    "Information",              // 消息窗口标题
-                    "There is a new message!",  // 消息内容
+                    "Information",                              // 消息窗口标题
+                    "There is a new message!",                  // 消息内容
                     QSystemTrayIcon::MessageIcon::Information,  // 消息窗口图标
                     5000);  // 消息窗口显示时长
             break;

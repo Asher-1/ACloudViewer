@@ -611,14 +611,12 @@ Example:
             "Create an oriented bounding box from attribute 'positions'.");
     pointcloud.def("crop",
                    (PointCloud(PointCloud::*)(const AxisAlignedBoundingBox&,
-                                              bool) const) &
-                           PointCloud::Crop,
+                                              bool) const)&PointCloud::Crop,
                    "Function to crop pointcloud into output pointcloud.",
                    "aabb"_a, "invert"_a = false);
     pointcloud.def("crop",
                    (PointCloud(PointCloud::*)(const OrientedBoundingBox&, bool)
-                            const) &
-                           PointCloud::Crop,
+                            const)&PointCloud::Crop,
                    "Function to crop pointcloud into output pointcloud.",
                    "obb"_a, "invert"_a = false);
 

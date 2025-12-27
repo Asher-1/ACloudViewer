@@ -209,6 +209,8 @@
         <file>Resources/images/svg/pqZoomToData.png</file>
         <file>Resources/images/svg/pqProtractor.svg</file>
         <file>Resources/images/svg/pqRuler.svg</file>
+        <file>Resources/images/svg/pqSettings.svg</file>
+        <file>Resources/images/svg/pqSplitHorizontal.svg</file>
         <file>Resources/images/svg/slice.png</file>
         <file>Resources/images/svg/pqElemMapData.png</file>
         <file>Resources/images/svg/pqFaceSetData.png</file>

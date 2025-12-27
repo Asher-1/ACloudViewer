@@ -659,7 +659,7 @@ public:
     static QString DarkColorEnd;      // 加深状态结束颜色
     static QString HighColor;         // 高亮颜色
 
-    static void ReadConfig();  // 读取配置文件,在main函数最开始加载程序载入
+    static void ReadConfig();   // 读取配置文件,在main函数最开始加载程序载入
     static void WriteConfig();  // 写入配置文件,在更改配置文件程序关闭时调用
     static void NewConfig();    // 以初始值新建配置文件
     static bool CheckConfig();  // 校验配置文件

@@ -63,12 +63,34 @@ QSize ecvLayoutManager::getIconSizeForScreen(int screenWidth) const {
     // Supports: 8K, 4K, 2K, 1080p, HD+, HD, and lower resolutions
     int baseSize;
 
+#ifdef Q_OS_MAC
+    // macOS: Use moderate icon sizes for better visibility while fitting in 3
+    // rows macOS Retina displays have high DPR, use 3-row layout for better
+    // organization
+    if (physicalWidth >= 7680) {
+        // 8K physical resolution (7680x4320)
+        baseSize = 28;
+    } else if (physicalWidth >= 3840) {
+        // 4K physical resolution (3840x2160) - macOS Retina displays
+        // Balanced size for good visibility and 3-row layout
+        baseSize = 24;
+    } else if (physicalWidth >= 2560) {
+        // 2K physical resolution (2560x1440)
+        baseSize = 22;
+    } else if (physicalWidth >= 1920) {
+        // Full HD physical resolution (1920x1080)
+        baseSize = 20;
+    } else {
+        // HD+ (1600x900), HD (1280x720), and lower resolutions
+        baseSize = 18;
+    }
+#else
+    // Windows and Linux: Use standard icon sizes
     if (physicalWidth >= 7680) {
         // 8K physical resolution (7680x4320)
         baseSize = 40;
     } else if (physicalWidth >= 3840) {
         // 4K physical resolution (3840x2160)
-        // Includes macOS Retina displays where logical 1920 × dpr 2.0 = 3840
         baseSize = 32;
     } else if (physicalWidth >= 2560) {
         // 2K physical resolution (2560x1440)
@@ -87,6 +109,7 @@ QSize ecvLayoutManager::getIconSizeForScreen(int screenWidth) const {
         // HD+ (1600x900), HD (1280x720), and lower resolutions - minimum size
         baseSize = 16;
     }
+#endif
 
     return QSize(baseSize, baseSize);
 }
@@ -282,10 +305,13 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         setToolbarIconSize(toolbar, screenWidth);
     }
 
-    // Setup top toolbars in two-row configuration
-    // First row: mainToolBar, SFToolBar, FilterToolBar, [UnifiedPluginToolbar]
-    // Second row: [Reconstruction], AnnotationToolBar, MeasurementsToolBar,
-    // SelectionToolBar, [Others]
+    // Setup top toolbars configuration
+    // macOS: 3-row layout for better organization
+    // Windows/Linux: 2-row layout
+    // First row: mainToolBar, SFToolBar, FilterToolBar
+    // Second row (macOS only): UnifiedPluginToolbar, [Reconstruction]
+    // Last row: AnnotationToolBar, MeasurementsToolBar, SelectionToolBar,
+    // [Others]
 
     QMap<QString, QToolBar*> toolbarMap;
     QList<QToolBar*> reconstructionToolbars;
@@ -317,6 +343,49 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         }
     }
 
+#ifdef Q_OS_MAC
+    // macOS: 3-row layout
+    // Add toolbar break for second row
+    m_mainWindow->addToolBarBreak(Qt::TopToolBarArea);
+
+    // Add reconstruction toolbars in second row
+    for (QToolBar* toolbar : reconstructionToolbars) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
+        toolbar->setVisible(true);
+        setToolbarIconSize(toolbar, screenWidth);
+    }
+
+    // Add UnifiedPluginToolbar at beginning of second row
+    if (unifiedPluginToolbar && !unifiedPluginToolbar->actions().isEmpty()) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, unifiedPluginToolbar);
+        unifiedPluginToolbar->setVisible(true);
+        setToolbarIconSize(unifiedPluginToolbar, screenWidth);
+    }
+
+    // Add toolbar break for third row
+    m_mainWindow->addToolBarBreak(Qt::TopToolBarArea);
+
+    // Add third row toolbars
+    QStringList thirdRowOrder = {"AnnotationToolBar", "MeasurementsToolBar",
+                                 "SelectionToolBar"};
+    for (const QString& name : thirdRowOrder) {
+        if (toolbarMap.contains(name)) {
+            QToolBar* toolbar = toolbarMap[name];
+            m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
+            toolbar->setVisible(true);
+            setToolbarIconSize(toolbar, screenWidth);
+            toolbarMap.remove(name);
+        }
+    }
+
+    // Add remaining toolbars to third row
+    for (QToolBar* toolbar : toolbarMap.values()) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
+        toolbar->setVisible(true);
+        setToolbarIconSize(toolbar, screenWidth);
+    }
+#else
+    // Windows/Linux: 2-row layout
     // Add UnifiedPluginToolbar at end of first row
     if (unifiedPluginToolbar && !unifiedPluginToolbar->actions().isEmpty()) {
         m_mainWindow->addToolBar(Qt::TopToolBarArea, unifiedPluginToolbar);
@@ -353,6 +422,7 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         toolbar->setVisible(true);
         setToolbarIconSize(toolbar, screenWidth);
     }
+#endif
 
     CVLog::Print("[ecvLayoutManager] Toolbar layout configured");
 }

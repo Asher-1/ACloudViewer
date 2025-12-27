@@ -674,6 +674,14 @@ void MainWindow::connectActions() {
             &MainWindow::doActionEnhanceRGBWithIntensities);
     connect(m_ui->actionColorFromScalarField, &QAction::triggered, this,
             &MainWindow::doActionColorFromScalars);
+    connect(m_ui->actionRGBGaussianFilter, &QAction::triggered, this,
+            &MainWindow::doActionRGBGaussianFilter);
+    connect(m_ui->actionRGBBilateralFilter, &QAction::triggered, this,
+            &MainWindow::doActionRGBBilateralFilter);
+    connect(m_ui->actionRGBMeanFilter, &QAction::triggered, this,
+            &MainWindow::doActionRGBMeanFilter);
+    connect(m_ui->actionRGBMedianFilter, &QAction::triggered, this,
+            &MainWindow::doActionRGBMedianFilter);
     connect(m_ui->actionClearColor, &QAction::triggered, this, [=]() {
         clearSelectedEntitiesProperty(ccEntityAction::CLEAR_PROPERTY::COLORS);
     });
@@ -1247,13 +1255,14 @@ void MainWindow::initStatusBar() {
         m_memoryUsageProgressBar->move(0, 0);  // Position at top-left of widget
         m_memoryUsageProgressBar->setStyleSheet(
                 "QProgressBar {"
-                "    border: 1px solid #ccc;"
-                "    border-radius: 3px;"
-                "    background-color: #f0f0f0;"
+                "    border: 1px solid #999;"
+                "    border-radius: 2px;"
+                "    background-color: #e0e0e0;"
                 "}"
                 "QProgressBar::chunk {"
-                "    background-color: #90EE90;"
-                "    border-radius: 2px;"
+                "    background-color: #B8E6B8;"  // Light green, matches
+                                                  // ParaView
+                "    border-radius: 1px;"
                 "}");
 
         // Label for memory usage text (overlay on progress bar)
@@ -3221,6 +3230,10 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionClearColor->setEnabled(atLeastOneColor);
     m_ui->actionRGBToGreyScale->setEnabled(atLeastOneColor);
     m_ui->actionEnhanceRGBWithIntensities->setEnabled(atLeastOneColor);
+    m_ui->actionRGBGaussianFilter->setEnabled(atLeastOneColor);
+    m_ui->actionRGBBilateralFilter->setEnabled(atLeastOneColor);
+    m_ui->actionRGBMeanFilter->setEnabled(atLeastOneColor);
+    m_ui->actionRGBMedianFilter->setEnabled(atLeastOneColor);
     m_ui->actionColorFromScalarField->setEnabled(atLeastOneSF);
 
     // == 1
@@ -6114,7 +6127,9 @@ void MainWindow::doActionExportDepthBuffer() {
     }
 
     DepthMapFileFilter::SaveParameters parameters;
-    { parameters.alwaysDisplaySaveDialog = true; }
+    {
+        parameters.alwaysDisplaySaveDialog = true;
+    }
     CC_FILE_ERROR result =
             DepthMapFileFilter().saveToFile(toSave, filename, parameters);
 
@@ -9164,15 +9179,67 @@ void MainWindow::doActionOpenColorScalesManager() {
     updateUI();
 }
 
+void MainWindow::doActionRGBGaussianFilter() {
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::GAUSSIAN;
+    if (!ccEntityAction::rgbGaussianFilter(m_selectedEntities, filterParams,
+                                           this))
+        return;
+
+    refreshSelected();
+    updateUI();
+}
+
+void MainWindow::doActionRGBBilateralFilter() {
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::BILATERAL;
+    if (!ccEntityAction::rgbGaussianFilter(m_selectedEntities, filterParams,
+                                           this))
+        return;
+
+    refreshSelected();
+    updateUI();
+}
+
+void MainWindow::doActionRGBMeanFilter() {
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::MEAN;
+    if (!ccEntityAction::rgbGaussianFilter(m_selectedEntities, filterParams,
+                                           this))
+        return;
+
+    refreshSelected();
+    updateUI();
+}
+
+void MainWindow::doActionRGBMedianFilter() {
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::MEDIAN;
+    if (!ccEntityAction::rgbGaussianFilter(m_selectedEntities, filterParams,
+                                           this))
+        return;
+
+    refreshSelected();
+    updateUI();
+}
+
 void MainWindow::doActionSFGaussianFilter() {
-    if (!ccEntityAction::sfGaussianFilter(m_selectedEntities, this)) return;
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::GAUSSIAN;
+    if (!ccEntityAction::sfGaussianFilter(m_selectedEntities, filterParams,
+                                          this))
+        return;
 
     refreshSelected();
     updateUI();
 }
 
 void MainWindow::doActionSFBilateralFilter() {
-    if (!ccEntityAction::sfBilateralFilter(m_selectedEntities, this)) return;
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::BILATERAL;
+    if (!ccEntityAction::sfGaussianFilter(m_selectedEntities, filterParams,
+                                          this))
+        return;
 
     refreshSelected();
     updateUI();

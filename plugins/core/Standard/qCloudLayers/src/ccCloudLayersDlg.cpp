@@ -187,7 +187,9 @@ void ccCloudLayersDlg::saveSettings() {
             settings.setValue("OutputClass", cbOutput->currentText());
 
         settings.beginGroup("Window");
-        { settings.setValue("geometry", saveGeometry()); }
+        {
+            settings.setValue("geometry", saveGeometry());
+        }
         settings.sync();
     }
     settings.endGroup();
@@ -232,7 +234,9 @@ void ccCloudLayersDlg::loadSettings() {
         cbOutput->setCurrentIndex(outIndex == -1 ? 0 : outIndex);
 
         settings.beginGroup("Window");
-        { restoreGeometry(settings.value("geometry").toByteArray()); }
+        {
+            restoreGeometry(settings.value("geometry").toByteArray());
+        }
         settings.endGroup();
     }
     settings.endGroup();
