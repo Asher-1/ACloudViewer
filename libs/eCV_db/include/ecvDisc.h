@@ -41,7 +41,7 @@ public:
     inline PointCoordinateType getRadius() const { return m_radius; }
     //! Sets radius
     /** \warning changes primitive content (calls
-      *ccGenericPrimitive::updateRepresentation)
+     *ccGenericPrimitive::updateRepresentation)
      **/
     void setRadius(PointCoordinateType radius);
 

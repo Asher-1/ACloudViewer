@@ -522,6 +522,10 @@ private slots:
     void doActionChangeColorLevels();
     void doActionEnhanceRGBWithIntensities();
     void doActionColorFromScalars();
+    void doActionRGBGaussianFilter();
+    void doActionRGBBilateralFilter();
+    void doActionRGBMeanFilter();
+    void doActionRGBMedianFilter();
 
     // scalar field menu
     void showSelectedEntitiesHistogram();

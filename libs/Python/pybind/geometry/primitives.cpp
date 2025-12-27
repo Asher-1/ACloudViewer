@@ -900,8 +900,7 @@ void pybind_primitives(py::module& m) {
                  "\n"
                  "-param name name.",
                  "radius"_a, "trans_matrix"_a = Eigen::Matrix4d::Identity(),
-                 "precision"_a = ccDisc::DEFAULT_DRAWING_PRECISION,
-                 "name"_a = "Disc")
+                 "precision"_a = 72, "name"_a = "Disc")
             .def("__repr__",
                  [](const ccDisc& disc) {
                      std::string info =

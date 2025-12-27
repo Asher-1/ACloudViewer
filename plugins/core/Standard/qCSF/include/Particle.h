@@ -49,8 +49,8 @@ public:
                                           // correspoinding lidar point list
     std::size_t nearestPointIndex;  // 对应的lidar点最临近点的索引 index nearest
                                     // lidar point
-    double nearestPointHeight;  // 该点的y轴值  the height(y) of the nearest
-                                // lidar point
+    double nearestPointHeight;      // 该点的y轴值  the height(y) of the nearest
+                                    // lidar point
     double tmpDist;  // 临时变量，用于计算lidar点再水平面上距离布料点直接的距离
                      // only for inner computation
 

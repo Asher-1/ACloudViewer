@@ -149,7 +149,9 @@ void GamepadInput::updateInternalState() {
     }
 
     // zoom
-    { m_zoom = -axisLeftY() * s_gamepadSpeed; }
+    {
+        m_zoom = -axisLeftY() * s_gamepadSpeed;
+    }
 
     if (m_hasRotation || m_hasPanning || m_hasTranslation || m_zoom != 0) {
         Q_EMIT updated();

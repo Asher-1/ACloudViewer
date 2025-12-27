@@ -15,6 +15,25 @@ v3.9.4-Beta (Asher) - 12/02/2025
     -   Add ruler widget based on vtk support for measurement tools
     -   Add protractor widget based on vtk support for measurement tools
     -   Add contour widget based on vtk support for measurement tools
+    -   New 'Display > Display settings' options:
+        -   Restore default window geometry on startup
+        -   option to control whether the default window geometry (size and position) should be restored or not
+    -   Edit > Color > Gaussian filter
+    -   Edit > Color > Bilateral filter
+    -   Edit > Color > Median filter
+    -   Edit > Color > Mean filter
+        -   to improve coloring by applying a color filter
+    -   New setting dialog to customize keyboard shortcuts for all actions
+    -   DB tree: new context menu option 'Export images'
+        -   to export as PNG files all images highlighted or children of highlighted entities (recursive)
+        -   thanks to https://github.com/stolariks for the initial contribution
+    -   New entity: Circle
+        -   specific polyline that is currently the result of the 'Tools > Fit > Circle' method
+        -   the user can control the radius and the display resolution
+        -   New method: 'Edit > Circle > Promote to Cylinder'. can be used on a Circle entity to derive a cylinder from it (CC will simply ask for the cylinder height)
+    -   New entity: Disc
+        -   the user can control the radius and the display resolution
+        -   distances between a point cloud and a disc can be computed with 'Tools > Distances > Cloud/primitive dist'
 
 - Bug fixes:
     -   Fix code style

@@ -216,6 +216,10 @@
      <property name="title">
       <string>Layout</string>
      </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/svg/pqSplitHorizontal.svg</normaloff>:/Resources/images/svg/pqSplitHorizontal.svg</iconset>
+     </property>
      <addaction name="actionSaveCustomLayout"/>
      <addaction name="actionRestoreDefaultLayout"/>
      <addaction name="actionRestoreCustomLayout"/>
@@ -394,6 +398,10 @@
      <addaction name="actionChangeColorLevels"/>
      <addaction name="actionSetColorGradient"/>
      <addaction name="actionRGBToGreyScale"/>
+     <addaction name="actionRGBGaussianFilter"/>
+     <addaction name="actionRGBBilateralFilter"/>
+     <addaction name="actionRGBMeanFilter"/>
+     <addaction name="actionRGBMedianFilter"/>
      <addaction name="actionScalarFieldFromColor"/>
      <addaction name="actionInterpolateColors"/>
      <addaction name="actionEnhanceRGBWithIntensities"/>
@@ -1576,6 +1584,58 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Convert RGB colors to grey scale colors</string>
+   </property>
+  </action>
+  <action name="actionRGBGaussianFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvGaussianFilter.png</normaloff>:/Resources/images/ecvGaussianFilter.png</iconset>
+   </property>
+   <property name="text">
+    <string>Gaussian filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute gaussian filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute gaussian filter</string>
+   </property>
+  </action>
+  <action name="actionRGBBilateralFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvBilateralFilter.png</normaloff>:/Resources/images/ecvBilateralFilter.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bilateral filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute bilateral filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute bilateral filter</string>
+   </property>
+  </action>
+  <action name="actionRGBMeanFilter">
+   <property name="text">
+    <string>Mean filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute mean filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute mean filter</string>
+   </property>
+  </action>
+  <action name="actionRGBMedianFilter">
+   <property name="text">
+    <string>Median filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute median filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute median filter</string>
    </property>
   </action>
   <action name="actionScalarFieldFromColor">
@@ -3415,6 +3475,10 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
   </action>
   <action name="actionShortcutSettings">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSettings.svg</normaloff>:/Resources/images/svg/pqSettings.svg</iconset>
+   </property>
    <property name="text">
     <string>Shortcut Settings...</string>
    </property>

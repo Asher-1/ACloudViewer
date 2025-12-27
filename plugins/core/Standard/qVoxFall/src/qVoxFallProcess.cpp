@@ -169,7 +169,9 @@ bool ClusterEmptySpace(int maxThreads,
         }
 #if defined(_OPENMP)
 #pragma omp critical(ClusterEmptySpace)
-        { nProgress.oneStep(); }
+        {
+            nProgress.oneStep();
+        }
 #endif
     }
     for (int index = 0; index < voxelCount; ++index) {

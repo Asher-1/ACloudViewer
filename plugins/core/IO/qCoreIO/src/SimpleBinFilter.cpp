@@ -144,7 +144,9 @@ CC_FILE_ERROR SimpleBinFilter::saveToFile(ccHObject* root,
                                                 // in the header
 
         // 2 bytes = header flag
-        { dataStream << s_headerFlagSBF; }
+        {
+            dataStream << s_headerFlagSBF;
+        }
         writtenBytes += 2;
 
         // 8 bytes = point count

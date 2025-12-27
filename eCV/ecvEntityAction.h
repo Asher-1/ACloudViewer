@@ -25,6 +25,7 @@
 
 #include "ecvColorScale.h"
 #include "ecvMesh.h"
+#include "ecvPointCloud.h"
 
 class QWidget;
 
@@ -61,12 +62,14 @@ bool convertTextureToColor(const ccHObject::Container &selectedEntities,
                            QWidget *parent);
 bool enhanceRGBWithIntensities(const ccHObject::Container &selectedEntities,
                                QWidget *parent);
+bool rgbGaussianFilter(const ccHObject::Container &selectedEntities,
+                       ccPointCloud::RgbFilterOptions filterParams,
+                       QWidget *parent = nullptr);
 
 // Scalar Fields
 bool sfGaussianFilter(const ccHObject::Container &selectedEntities,
-                      QWidget *parent);
-bool sfBilateralFilter(const ccHObject::Container &selectedEntities,
-                       QWidget *parent);
+                      ccPointCloud::RgbFilterOptions filterParams,
+                      QWidget *parent = nullptr);
 bool sfConvertToRGB(const ccHObject::Container &selectedEntities,
                     QWidget *parent);
 bool sfConvertToRandomRGB(const ccHObject::Container &selectedEntities,

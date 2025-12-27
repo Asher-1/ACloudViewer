@@ -783,6 +783,46 @@ public:  // other methods
     **/
     bool setRGBColor(const ecvColor::Rgb& col);
 
+    //! RGB filter types
+    enum RGB_FILTER_TYPES { NONE, BILATERAL, GAUSSIAN, MEAN, MEDIAN };
+
+    //! RGB filter options
+    struct RgbFilterOptions {
+        bool applyToSFduringRGB = false;
+        RGB_FILTER_TYPES filterType = RGB_FILTER_TYPES::NONE;
+        unsigned char burntOutColorThreshold = 0;
+        bool commandLine = false;
+        double sigmaSF = -1;
+        double spatialSigma = -1;
+        bool blendGrayscale = false;
+        unsigned char blendGrayscaleThreshold = 0;
+        double blendGrayscalePercent = 0.5;
+    };
+
+    //! Applies a spatial Gaussian filter on RGB colors
+    /** The "amplitude" of the Gaussian filter must be specified (sigma).
+        As 99% of the Gaussian distribution is between -3*sigma and +3*sigma
+    around the mean value, this filter will only look for neighbors within a
+    sphere of radius 3*sigma. One can also use the filter as a Bilateral filter.
+    In this case the weights are computed considering the difference of the
+    neighbors SF values with the current point SF value (also following a
+    Gaussian distribution). Warning: this method assumes the output scalar field
+    is set.
+        \param sigma filter variance
+        \param sigmaSF if strictly positive, the variance for the Bilateral
+    filter
+        \param filterParams filter options
+        \param progressCb the client application can get some notification of
+    the process progress through this callback mechanism (see
+    GenericProgressCallback)
+        \return success
+    **/
+    bool applyFilterToRGB(
+            PointCoordinateType sigma,
+            PointCoordinateType sigmaSF,
+            RgbFilterOptions filterParams,
+            cloudViewer::GenericProgressCallback* progressCb = nullptr);
+
     //! Inverts normals (if any)
     void invertNormals();
 
