@@ -68,7 +68,7 @@
 #include <vld.h>
 #endif
 
-#include "ScaleBar.h"
+#include "ScaleBarWidget.h"
 
 // macroes
 #ifndef VTK_CREATE
@@ -243,7 +243,7 @@ void QVTKWidgetCustom::initVtk(
     this->m_camera = m_render->GetActiveCamera();
     this->m_renders = this->GetRenderWindow()->GetRenderers();
     if (!m_scaleBar) {
-        m_scaleBar = new ScaleBar(m_render);
+        m_scaleBar = new ScaleBarWidget(m_render);
     }
 }
 
@@ -1349,6 +1349,32 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
             evt->accept();
         } break;
 
+        case QEvent::KeyPress: {
+            // Handle ESC key before VTK interactor processes it
+            // This ensures ESC works to exit selection tools
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);
+            if (keyEvent->key() == Qt::Key_Escape) {
+                CVLog::Print(
+                        "[QVTKWidgetCustom] ESC key pressed, forwarding to "
+                        "MainWindow");
+
+                // Handle fullscreen toggle
+                emit m_tools->exclusiveFullScreenToggled(false);
+
+                // Forward ESC to MainWindow to handle selection tools
+                if (m_win) {
+                    // Use postEvent to ensure it goes through MainWindow's
+                    // event loop
+                    QKeyEvent* newEvent =
+                            new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
+                                          keyEvent->modifiers());
+                    QCoreApplication::postEvent(m_win, newEvent);
+                }
+                evt->accept();
+                return true;  // Event handled, don't pass to VTK
+            }
+        } break;
+
         default: {
             // CVLog::Print("Unhandled event: %i", evt->type());
         } break;
@@ -1358,13 +1384,7 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
 }
 
 void QVTKWidgetCustom::keyPressEvent(QKeyEvent* event) {
-    switch (event->key()) {
-        case Qt::Key_Escape: {
-            emit m_tools->exclusiveFullScreenToggled(false);
-            break;
-        }
-        // Translation on macos: shift + three finger tap move
-        default:
-            QVTKOpenGLNativeWidget::keyPressEvent(event);
-    }
+    // ESC is already handled in event() before VTK processes it
+    // Other keys are passed to the base class
+    QVTKOpenGLNativeWidget::keyPressEvent(event);
 }

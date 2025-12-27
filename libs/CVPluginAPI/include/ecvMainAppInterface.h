@@ -140,8 +140,8 @@ public:
     // virtual void redrawAll(bool only2D = false) = 0;
 
     //! Redraws all GL windows that have the 'refresh' flag on
-    /** See ccGLWindow::toBeRefreshed and
-    ccDrawableObject::prepareDisplayForRefresh. \param only2D whether to redraw
+    /** See ccDrawableObject::prepareDisplayForRefresh.
+     \param only2D whether to redraw
     everything (false) or only the 2D layer (true)
     **/
     virtual void refreshAll(bool only2D = false, bool forceRedraw = true) = 0;
@@ -171,7 +171,7 @@ public:
     // virtual void disableAll() = 0;
 
     ////! Disables all GL windows but the specified one
-    // virtual void disableAllBut(ccGLWindow* win) = 0;
+    // virtual void disableAllBut(MainWindow* win) = 0;
 
     //! Updates UI (menu and properties browser) to reflect current selection
     //! state

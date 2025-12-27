@@ -443,7 +443,9 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename,
 
     // base mesh
     ccMesh* baseMesh = new ccMesh(vertices);
-    baseMesh->setName(QFileInfo(filename).baseName());
+    baseMesh->setName(
+            QFileInfo(filename).fileName());  // Use full filename with
+                                              // extension (ParaView-style)
     // we need some space already reserved!
     if (!baseMesh->reserve(128)) {
         CVLog::Error("Not engouh memory!");
@@ -1066,6 +1068,11 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename,
                         CVLog::Print("[OBJ] %i materials loaded",
                                      materials->size() - oldSize);
                         materialsLoadFailed = false;
+
+                        // Store MTL filename (with extension) for
+                        // ParaView-style MaterialLibraries ParaView stores the
+                        // complete filename as specified in mtllib command
+                        baseMesh->setMetaData("MTL_FILENAME", mtlFilename);
                     } else {
                         CVLog::Error(QString("[OBJ] Failed to load material "
                                              "file! (should be in '%1')")

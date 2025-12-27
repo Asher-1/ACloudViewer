@@ -8,8 +8,9 @@
 #pragma once
 
 // LOCAL
-#include "PclUtils/PCLCloud.h"
-#include "Tools/PclPointCloudColorHandlerLUT.h"
+#include <Utils/PCLCloud.h>
+
+#include "Tools/ColorTools/PclPointCloudColorHandlerLUT.h"
 #include "qPCL.h"
 
 // ECV_DB_LIB

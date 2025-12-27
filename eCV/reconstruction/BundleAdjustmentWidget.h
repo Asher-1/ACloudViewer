@@ -10,8 +10,8 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "OptionsWidget.h"
 #include "base/reconstruction.h"
+#include "ui/options_widget.h"
 #include "util/option_manager.h"
 
 namespace cloudViewer {
@@ -20,7 +20,7 @@ using OptionManager = colmap::OptionManager;
 class ReconstructionWidget;
 class ThreadControlWidget;
 
-class BundleAdjustmentWidget : public OptionsWidget {
+class BundleAdjustmentWidget : public colmap::OptionsWidget {
 public:
     BundleAdjustmentWidget(ReconstructionWidget* main_window,
                            OptionManager* options);

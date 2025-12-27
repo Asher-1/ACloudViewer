@@ -7,17 +7,30 @@
 
 #include "MainWindow.h"
 
+// Local
+#include "ecvLayoutManager.h"
+#include "ecvShortcutDialog.h"
+
+// Qt
+#include <QGuiApplication>
+#include <QScreen>
+#include <QSettings>
+#include <QThread>
+
+// Standard
+#include <algorithm>
+
 #include "ecvAnnotationsTool.h"
 #include "ecvApplication.h"
 #include "ecvConsole.h"
 #include "ecvCropTool.h"
 #include "ecvFilterTool.h"
-#include "ecvFilterWindowTool.h"
 #include "ecvGraphicalSegmentationTool.h"
 #include "ecvGraphicalTransformationTool.h"
 #include "ecvHistogramWindow.h"
 #include "ecvInnerRect2DFinder.h"
 #include "ecvLibAlgorithms.h"
+#include "ecvMeasurementTool.h"
 #include "ecvPersistentSettings.h"
 #include "ecvRecentFiles.h"
 #include "ecvRegistrationTools.h"
@@ -34,6 +47,7 @@
 #include <CloudSamplingTools.h>
 #include <Delaunay2dMesh.h>
 #include <Jacobi.h>
+#include <MemoryInfo.h>
 #include <MeshSamplingTools.h>
 #include <NormalDistribution.h>
 #include <ParallelSort.h>
@@ -51,8 +65,10 @@
 #include <ecv2DLabel.h>
 #include <ecv2DViewportObject.h>
 #include <ecvCameraSensor.h>
+#include <ecvCircle.h>
 #include <ecvColorScalesManager.h>
 #include <ecvCylinder.h>
+#include <ecvDisc.h>
 #include <ecvDisplayTools.h>
 #include <ecvFacet.h>
 #include <ecvFileUtils.h>
@@ -139,6 +155,7 @@
 
 // other
 #include "db_tree/ecvDBRoot.h"
+#include "db_tree/ecvPropertiesTreeDelegate.h"
 #include "pluginManager/ecvPluginUIManager.h"
 
 // 3D mouse handler
@@ -160,10 +177,18 @@
 #ifdef USE_PCL_BACKEND
 #include <PclUtils/PCLDisplayTools.h>
 #include <Tools/AnnotationTools/PclAnnotationTool.h>
-#include <Tools/CurveFitting.h>
-#include <Tools/EditCameraTool.h>
+#include <Tools/CameraTools/EditCameraTool.h>
+#include <Tools/Common/CurveFitting.h>
 #include <Tools/FilterTools/PclFiltersTool.h>
-#include <Tools/TransformTools/QvtkTransformTool.h>
+#include <Tools/MeasurementTools/PclMeasurementTools.h>
+// Selection Tools - Using centralized controller (ParaView-style architecture)
+#include <Tools/SelectionTools/cvSelectionData.h>
+#include <Tools/SelectionTools/cvSelectionHighlighter.h>
+#include <Tools/SelectionTools/cvSelectionHistory.h>
+#include <Tools/SelectionTools/cvSelectionManipulationTool.h>
+#include <Tools/SelectionTools/cvSelectionToolController.h>
+#include <Tools/SelectionTools/cvViewSelectionManager.h>
+#include <Tools/TransformTools/PclTransformTool.h>
 #endif
 
 // ECV_PYTHON_LIB
@@ -269,15 +294,23 @@ MainWindow::MainWindow()
       m_filterTool(nullptr),
       m_annoTool(nullptr),
       m_filterLabelTool(nullptr),
-      m_filterWindowTool(nullptr),
+      m_measurementTool(nullptr),
       m_dssTool(nullptr),
+#ifdef USE_PCL_BACKEND
+      m_selectionController(nullptr),
+#endif
       m_layout(nullptr),
       m_uiManager(nullptr),
       m_mousePosLabel(nullptr),
       m_systemInfoLabel(nullptr),
+      m_memoryUsageWidget(nullptr),
+      m_memoryUsageProgressBar(nullptr),
+      m_memoryUsageLabel(nullptr),
+      m_memoryUsageTimer(nullptr),
       m_currentFullWidget(nullptr),
       m_exclusiveFullscreen(false),
-      m_lastViewMode(VIEWMODE::ORTHOGONAL)
+      m_lastViewMode(VIEWMODE::ORTHOGONAL),
+      m_shortcutDlg(nullptr)
 #ifdef BUILD_RECONSTRUCTION
       ,
       m_rcw(nullptr)
@@ -289,6 +322,9 @@ MainWindow::MainWindow()
                    ecvApp->versionLongStr(false));
 
     m_pluginUIManager = new ccPluginUIManager(this, this);
+
+    // Create layout manager (after m_pluginUIManager is created)
+    m_layoutManager = new ecvLayoutManager(this, m_pluginUIManager);
 
     ccTranslationManager::get().populateMenu(m_ui->langAction,
                                              ecvApp->translationPath());
@@ -305,13 +341,20 @@ MainWindow::MainWindow()
     // Initialization
     initial();
 
+    // restore the state of the 'auto-restore' menu entry
+    // (do that before connecting the actions)
+    {
+        QSettings settings;
+        bool doNotAutoRestoreGeometry =
+                settings.value(ecvPS::DoNotRestoreWindowGeometry(),
+                               !m_ui->actionRestoreWindowOnStartup->isChecked())
+                        .toBool();
+        m_ui->actionRestoreWindowOnStartup->setChecked(
+                !doNotAutoRestoreGeometry);
+    }
+
     // connect actions
     connectActions();
-
-    // Reconstruction
-#ifdef BUILD_RECONSTRUCTION
-    initReconstructions();
-#endif
 
     setupInputDevices();
 
@@ -319,44 +362,42 @@ MainWindow::MainWindow()
 
     updateUI();
 
+    // Register ViewToolBar as a left-side toolbar
+    m_layoutManager->registerLeftSideToolBar(m_ui->ViewToolBar);
+
+    // Register Console dock widget as a bottom dock widget
+    m_layoutManager->registerBottomDockWidget(m_ui->consoleDock);
+
     // advanced widgets not handled by QDesigner
     {  // view mode pop-up menu
-        {
-            m_viewModePopupButton = new QToolButton();
-            QMenu* menu = new QMenu(m_viewModePopupButton);
-            menu->addAction(m_ui->actionOrthogonalProjection);
-            menu->addAction(m_ui->actionPerspectiveProjection);
+        m_viewModePopupButton = new QToolButton();
+        QMenu* menu = new QMenu(m_viewModePopupButton);
+        menu->addAction(m_ui->actionOrthogonalProjection);
+        menu->addAction(m_ui->actionPerspectiveProjection);
 
-            m_viewModePopupButton->setMenu(menu);
-            m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
-            m_viewModePopupButton->setToolTip("Set current view mode");
-            m_viewModePopupButton->setStatusTip(
-                    m_viewModePopupButton->toolTip());
-            m_ui->ViewToolBar->insertWidget(m_ui->actionZoomAndCenter,
-                                            m_viewModePopupButton);
-            m_viewModePopupButton->setEnabled(false);
-        }
-
-        // custom viewports configuration
-        {
-            QToolBar* customViewpointsToolbar =
-                    new ecvCustomViewpointsToolbar(this);
-            customViewpointsToolbar->setObjectName("customViewpointsToolbar");
-            customViewpointsToolbar->layout()->setSpacing(0);
-            this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
-            // this->insertToolBar(m_ui->FilterToolBar,
-            // customViewpointsToolbar);
-        }
-
-        // orthogonal projection mode (default)
-        {
-            m_ui->actionOrthogonalProjection->trigger();
-            ecvConsole::Print("Perspective off!");
-        }
+        m_viewModePopupButton->setMenu(menu);
+        m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
+        m_viewModePopupButton->setToolTip("Set current view mode");
+        m_viewModePopupButton->setStatusTip(m_viewModePopupButton->toolTip());
+        m_ui->ViewToolBar->insertWidget(m_ui->actionZoomToBox,
+                                        m_viewModePopupButton);
+        m_viewModePopupButton->setEnabled(false);
     }
 
-    // restore options
-    {
+    {  // custom viewports configuration
+        QToolBar* customViewpointsToolbar =
+                new ecvCustomViewpointsToolbar(this);
+        customViewpointsToolbar->setObjectName("customViewpointsToolbar");
+        customViewpointsToolbar->layout()->setSpacing(0);
+        this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
+    }
+
+    {  // orthogonal projection mode (default)
+        m_ui->actionOrthogonalProjection->trigger();
+        ecvConsole::Print("Perspective off!");
+    }
+
+    {  // restore options
         QSettings settings;
 
         // auto pick center
@@ -373,6 +414,22 @@ MainWindow::MainWindow()
         m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
         m_ui->actionShowPivot->blockSignals(false);
         toggleRotationCenterVisibility(autoShowCenterAxis);
+    }
+
+    // Shortcut management
+    {
+        populateActionList();
+        // Alphabetical sort
+        std::sort(m_actions.begin(), m_actions.end(),
+                  [](const QAction* a, const QAction* b) {
+                      return a->text() < b->text();
+                  });
+
+        m_shortcutDlg = new ecvShortcutDialog(m_actions, this);
+        m_shortcutDlg->restoreShortcutsFromQSettings();
+
+        connect(m_ui->actionShortcutSettings, &QAction::triggered, this,
+                &MainWindow::showShortcutDialog);
     }
 
     refreshAll();
@@ -401,6 +458,11 @@ MainWindow::MainWindow()
 #else
     m_ui->actionSemanticSegmentation->setEnabled(false);
 #endif
+
+    // Apply unified icon size and style to all toolbars created in constructor
+    // This handles UI toolbars, customViewpointsToolbar, and reconstruction
+    // toolbars
+    updateAllToolbarIconSizes();
 
 #ifdef USE_TBB
     ecvConsole::Print(tr("[TBB] Using Intel's Threading Building Blocks %1.%2")
@@ -440,14 +502,22 @@ MainWindow::~MainWindow() {
     m_animationDlg = nullptr;
     m_mousePosLabel = nullptr;
     m_systemInfoLabel = nullptr;
+    m_memoryUsageWidget = nullptr;
+    m_memoryUsageProgressBar = nullptr;
+    m_memoryUsageLabel = nullptr;
+    m_memoryUsageTimer = nullptr;
 
-    m_filterWindowTool = nullptr;
+    m_measurementTool = nullptr;
     m_gsTool = nullptr;
     m_transTool = nullptr;
     m_filterTool = nullptr;
     m_annoTool = nullptr;
     m_dssTool = nullptr;
     m_filterLabelTool = nullptr;
+
+    // Selection tools are now managed by cvSelectionToolController
+    // The controller is a singleton and handles its own cleanup
+
     m_compDlg = nullptr;
     m_ppDlg = nullptr;
     m_plpDlg = nullptr;
@@ -519,9 +589,18 @@ void MainWindow::initial() {
     // init status bar
     initStatusBar();
 
+// Reconstruction
+#ifdef BUILD_RECONSTRUCTION
+    initReconstructions();
+#endif
+
     QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
     viewWidget->setMinimumSize(400, 300);
     m_mdiArea->addSubWindow(viewWidget);
+
+    // Install event filter on the VTK render widget to capture ESC key
+    // VTK render window doesn't pass key events to Qt by default
+    viewWidget->installEventFilter(this);
 
     // picking hub
     {
@@ -538,6 +617,22 @@ void MainWindow::initial() {
 
     viewWidget->showMaximized();
     viewWidget->update();
+}
+
+void MainWindow::updateAllToolbarIconSizes() {
+    // Apply unified icon size and style to all existing toolbars
+    // This ensures consistency across all toolbars
+    if (!m_layoutManager) return;
+
+    QScreen* screen = QGuiApplication::primaryScreen();
+    int screenWidth = screen ? screen->geometry().width() : 1920;
+    QList<QToolBar*> allToolbars = findChildren<QToolBar*>();
+
+    for (QToolBar* toolbar : allToolbars) {
+        if (toolbar && toolbar->parent() == this) {
+            m_layoutManager->setToolbarIconSize(toolbar, screenWidth);
+        }
+    }
 }
 
 void MainWindow::initConsole() {
@@ -579,6 +674,14 @@ void MainWindow::connectActions() {
             &MainWindow::doActionEnhanceRGBWithIntensities);
     connect(m_ui->actionColorFromScalarField, &QAction::triggered, this,
             &MainWindow::doActionColorFromScalars);
+    connect(m_ui->actionRGBGaussianFilter, &QAction::triggered, this,
+            &MainWindow::doActionRGBGaussianFilter);
+    connect(m_ui->actionRGBBilateralFilter, &QAction::triggered, this,
+            &MainWindow::doActionRGBBilateralFilter);
+    connect(m_ui->actionRGBMeanFilter, &QAction::triggered, this,
+            &MainWindow::doActionRGBMeanFilter);
+    connect(m_ui->actionRGBMedianFilter, &QAction::triggered, this,
+            &MainWindow::doActionRGBMedianFilter);
     connect(m_ui->actionClearColor, &QAction::triggered, this, [=]() {
         clearSelectedEntitiesProperty(ccEntityAction::CLEAR_PROPERTY::COLORS);
     });
@@ -592,6 +695,14 @@ void MainWindow::connectActions() {
             &MainWindow::doActionVoxelSampling);
 
     //"Edit" menu
+    connect(m_ui->actionSegment, &QAction::triggered, this,
+            &MainWindow::activateSegmentationMode);
+    connect(m_ui->actionRemoveDuplicatePoints, &QAction::triggered, this,
+            &MainWindow::doRemoveDuplicatePoints);
+    connect(m_ui->actionSubsample, &QAction::triggered, this,
+            &MainWindow::doActionSubsample);
+    connect(m_ui->actionEditGlobalShiftAndScale, &QAction::triggered, this,
+            &MainWindow::doActionEditGlobalShiftAndScale);
     connect(m_ui->actionClone, &QAction::triggered, this,
             &MainWindow::doActionClone);
     connect(m_ui->actionMerge, &QAction::triggered, this,
@@ -702,6 +813,10 @@ void MainWindow::connectActions() {
     connect(m_ui->actionComparePlanes, &QAction::triggered, this,
             &MainWindow::doActionComparePlanes);
 
+    //"Edit > Circle" menu
+    connect(m_ui->actionPromoteCircleToCylinder, &QAction::triggered, this,
+            &MainWindow::doActionPromoteCircleToCylinder);
+
     //"Edit > Scalar fields" menu
     connect(m_ui->actionShowHistogram, &QAction::triggered, this,
             &MainWindow::showSelectedEntitiesHistogram);
@@ -741,7 +856,6 @@ void MainWindow::connectActions() {
             &MainWindow::doActionInterpolateScalarFields);
     connect(m_ui->actionScalarFieldArithmetic, &QAction::triggered, this,
             &MainWindow::doActionScalarFieldArithmetic);
-
     connect(m_ui->actionDeleteScalarField, &QAction::triggered, this, [=]() {
         clearSelectedEntitiesProperty(
                 ccEntityAction::CLEAR_PROPERTY::CURRENT_SCALAR_FIELD);
@@ -783,13 +897,6 @@ void MainWindow::connectActions() {
     connect(m_ui->actionCompressFWFData, &QAction::triggered, this,
             &MainWindow::doActionCompressFWFData);
 
-    connect(m_ui->actionRemoveDuplicatePoints, &QAction::triggered, this,
-            &MainWindow::doRemoveDuplicatePoints);
-    connect(m_ui->actionSubsample, &QAction::triggered, this,
-            &MainWindow::doActionSubsample);
-    connect(m_ui->actionEditGlobalShiftAndScale, &QAction::triggered, this,
-            &MainWindow::doActionEditGlobalShiftAndScale);
-
     //"Tools > Filter" menu
     connect(m_ui->actionClipFilter, &QAction::triggered, this,
             &MainWindow::activateClippingMode);
@@ -809,14 +916,14 @@ void MainWindow::connectActions() {
             &MainWindow::activateStreamlineMode);
     connect(m_ui->actionGlyphFilter, &QAction::triggered, this,
             &MainWindow::activateGlyphMode);
-    connect(m_ui->actionSegment, &QAction::triggered, this,
-            &MainWindow::activateSegmentationMode);
-    connect(m_ui->actionFilterSection, &QAction::triggered, this,
-            &MainWindow::activateFilterWindowMode);
-    connect(m_ui->actionKMeans, &QAction::triggered, this,
-            &MainWindow::doActionKMeans);
-    connect(m_ui->actionFrontPropagation, &QAction::triggered, this,
-            &MainWindow::doActionFrontPropagation);
+
+    // "Tools > Measurements" menu
+    connect(m_ui->actionDistanceWidget, &QAction::triggered, this,
+            &MainWindow::activateDistanceMode);
+    connect(m_ui->actionProtractorWidget, &QAction::triggered, this,
+            &MainWindow::activateProtractorMode);
+    connect(m_ui->actionContourWidget, &QAction::triggered, this,
+            &MainWindow::activateContourMode);
 
     // "Tools > Distances" menu
     connect(m_ui->actionCloudCloudDist, &QAction::triggered, this,
@@ -920,10 +1027,25 @@ void MainWindow::connectActions() {
             &MainWindow::toggle3DView);
     connect(m_ui->actionResetGUIElementsPos, &QAction::triggered, this,
             &MainWindow::doActionResetGUIElementsPos);
-    connect(m_ui->actionGlobalZoom, &QAction::triggered, this,
-            &MainWindow::setGlobalZoom);
+    connect(m_ui->actionRestoreWindowOnStartup, &QAction::toggled, this,
+            &MainWindow::doActionRestoreWindowOnStartup);
+    connect(m_ui->actionSaveCustomLayout, &QAction::triggered, this,
+            &MainWindow::doActionSaveCustomLayout);
+    connect(m_ui->actionRestoreDefaultLayout, &QAction::triggered, this,
+            &MainWindow::doActionRestoreDefaultLayout);
+    connect(m_ui->actionRestoreCustomLayout, &QAction::triggered, this,
+            &MainWindow::doActionRestoreCustomLayout);
     connect(m_ui->actionZoomAndCenter, &QAction::triggered, this,
             &MainWindow::zoomOnSelectedEntities);
+    connect(m_ui->actionGlobalZoom, &QAction::triggered, this,
+            &MainWindow::setGlobalZoom);
+
+    // "Edit > Selection" menu - Initialize selection controller
+    // (ParaView-style)
+#ifdef USE_PCL_BACKEND
+    initSelectionController();
+#endif
+
     connect(m_ui->actionLockRotationAxis, &QAction::triggered, this,
             &MainWindow::toggleLockRotationAxis);
     connect(m_ui->actionSaveViewportAsObject, &QAction::triggered, this,
@@ -994,8 +1116,7 @@ void MainWindow::connectActions() {
     connect(m_ui->consoleWidget,
             &ecvCustomQListWidget::customContextMenuRequested, this,
             &MainWindow::popMenuInConsole);
-    // DGM: we don't want to block the 'dropEvent' method of ccGLWindow
-    // instances!
+    // DGM: we don't want to block the 'dropEvent' method of MainWindow!
     connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::filesDropped,
             this, &MainWindow::addToDBAuto, Qt::QueuedConnection);
 
@@ -1010,6 +1131,12 @@ void MainWindow::connectActions() {
     connect(ecvDisplayTools::TheInstance(),
             &ecvDisplayTools::exclusiveFullScreenToggled, this,
             &MainWindow::toggleExclusiveFullScreen);
+
+    // Not yet implemented!
+    connect(m_ui->actionKMeans, &QAction::triggered, this,
+            &MainWindow::doActionKMeans);
+    connect(m_ui->actionFrontPropagation, &QAction::triggered, this,
+            &MainWindow::doActionFrontPropagation);
 
     // update
     initApplicationUpdate();
@@ -1107,33 +1234,260 @@ void MainWindow::initStatusBar() {
                 &MainWindow::onMousePosChanged);
     }
 
-    // set system info label
+    // set memory usage display widget (ParaView-style)
     {
-        m_systemInfoLabel = new QLabel(this);
-        m_systemInfoLabel->setMinimumSize(m_systemInfoLabel->sizeHint());
-        m_systemInfoLabel->setAlignment(Qt::AlignHCenter);
-        m_systemInfoLabel->setText(
-                tr("<style> a{text-decoration: none} </style> <a "
-                   "href=\"http://asher-1.github.io\">%1 | "
-                   "asher-1.github.io</a>")
-                        .arg(Settings::TITLE + " " + Settings::APP_VERSION));
-        m_systemInfoLabel->setTextFormat(Qt::RichText);
-        m_systemInfoLabel->setOpenExternalLinks(true);
-        m_ui->statusBar->addPermanentWidget(m_systemInfoLabel, 0);
+        m_memoryUsageWidget = new QWidget(this);
+        // No layout needed - we'll use absolute positioning for overlay
+
+        // Progress bar for memory usage (thicker, like ParaView)
+        m_memoryUsageProgressBar = new QProgressBar(m_memoryUsageWidget);
+        m_memoryUsageProgressBar->setMinimumWidth(
+                240);  // Minimum width (doubled)
+        m_memoryUsageProgressBar->setMaximumWidth(
+                500);  // Maximum width (doubled)
+        m_memoryUsageProgressBar->setFixedHeight(
+                20);  // Thicker height (doubled from 10)
+        m_memoryUsageProgressBar->setMinimum(0);
+        m_memoryUsageProgressBar->setMaximum(100);
+        m_memoryUsageProgressBar->setTextVisible(false);
+        m_memoryUsageProgressBar->setSizePolicy(QSizePolicy::Fixed,
+                                                QSizePolicy::Fixed);
+        m_memoryUsageProgressBar->move(0, 0);  // Position at top-left of widget
+        m_memoryUsageProgressBar->setStyleSheet(
+                "QProgressBar {"
+                "    border: 1px solid #999;"
+                "    border-radius: 2px;"
+                "    background-color: #e0e0e0;"
+                "}"
+                "QProgressBar::chunk {"
+                "    background-color: #B8E6B8;"  // Light green, matches
+                                                  // ParaView
+                "    border-radius: 1px;"
+                "}");
+
+        // Label for memory usage text (overlay on progress bar)
+        m_memoryUsageLabel = new QLabel(m_memoryUsageWidget);
+        m_memoryUsageLabel->setMinimumWidth(240);  // Minimum width (doubled)
+        m_memoryUsageLabel->setMaximumWidth(500);  // Maximum width (doubled)
+        m_memoryUsageLabel->setFixedHeight(20);  // Same height as progress bar
+        m_memoryUsageLabel->setAlignment(Qt::AlignCenter);  // Center text
+        m_memoryUsageLabel->setSizePolicy(QSizePolicy::Fixed,
+                                          QSizePolicy::Fixed);
+        m_memoryUsageLabel->move(0, 0);  // Overlay on progress bar
+        QFont labelFont = m_memoryUsageLabel->font();
+        labelFont.setPointSize(labelFont.pointSize() - 1);
+        m_memoryUsageLabel->setFont(labelFont);
+        // Make label transparent so progress bar shows through
+        m_memoryUsageLabel->setStyleSheet("background: transparent;");
+
+        // Set widget size to match progress bar
+        m_memoryUsageWidget->setFixedSize(
+                240, 20);  // Will be updated by updateMemoryUsageWidgetSize
+        m_memoryUsageWidget->setSizePolicy(QSizePolicy::Fixed,
+                                           QSizePolicy::Fixed);
+        m_ui->statusBar->addPermanentWidget(m_memoryUsageWidget, 0);
+
+        // Create timer to update memory usage periodically
+        m_memoryUsageTimer = new QTimer(this);
+        connect(m_memoryUsageTimer, &QTimer::timeout, this,
+                &MainWindow::updateMemoryUsage);
+        m_memoryUsageTimer->start(5000);  // Update every 5 seconds
+
+        // Initial update
+        updateMemoryUsage();
+        updateMemoryUsageWidgetSize();
     }
 
     statusBar()->showMessage(tr("Ready"));
+}
+
+void MainWindow::updateMemoryUsage() {
+    if (!m_memoryUsageProgressBar || !m_memoryUsageLabel) {
+        return;
+    }
+
+    // Get system memory information
+    cloudViewer::system::MemoryInfo memInfo =
+            cloudViewer::system::getMemoryInfo();
+
+    if (memInfo.totalRam > 0) {
+        // Calculate used memory (total - available)
+        qint64 bytesUsed =
+                static_cast<qint64>(memInfo.totalRam - memInfo.availableRam);
+        qint64 bytesTotal = static_cast<qint64>(memInfo.totalRam);
+
+        // Calculate percentage
+        int percentage = static_cast<int>((bytesUsed * 100) / bytesTotal);
+        m_memoryUsageProgressBar->setValue(percentage);
+
+        // Format sizes
+        QString usedStr = formatBytes(bytesUsed);
+        QString totalStr = formatBytes(bytesTotal);
+
+        // Get hostname
+        QString hostname = QHostInfo::localHostName();
+
+        // Update label text: "hostname: used/total percentage%"
+        QString text = QString("%1: %2/%3 %4%")
+                               .arg(hostname)
+                               .arg(usedStr)
+                               .arg(totalStr)
+                               .arg(percentage);
+        m_memoryUsageLabel->setText(text);
+    }
+}
+
+void MainWindow::updateMemoryUsageWidgetSize() {
+    if (!m_memoryUsageWidget || !m_memoryUsageProgressBar ||
+        !m_memoryUsageLabel) {
+        return;
+    }
+
+    // Get window width
+    int windowWidth = width();
+
+    // Calculate widget width based on window size (ParaView-style scaling)
+    // Scale between 240px (min) and 500px (max) based on window width (doubled)
+    const int minWidth = 240;
+    const int maxWidth = 500;
+
+    int widgetWidth;
+    if (windowWidth <= 1280) {
+        // Small windows: use minimum width
+        widgetWidth = minWidth;
+    } else if (windowWidth >= 2560) {
+        // Large windows: use maximum width
+        widgetWidth = maxWidth;
+    } else {
+        // Medium windows: linear interpolation
+        double ratio = static_cast<double>(windowWidth - 1280) / (2560 - 1280);
+        widgetWidth =
+                static_cast<int>(minWidth + ratio * (maxWidth - minWidth));
+    }
+
+    // Update progress bar and label width and widget size
+    m_memoryUsageProgressBar->setFixedWidth(widgetWidth);
+    m_memoryUsageLabel->setFixedWidth(widgetWidth);
+    m_memoryUsageWidget->setFixedSize(widgetWidth,
+                                      20);  // Height is fixed at 20
+
+    // Force update to reflect size changes
+    m_memoryUsageWidget->updateGeometry();
+    m_memoryUsageProgressBar->update();
+    m_memoryUsageLabel->update();
+}
+
+QString MainWindow::formatBytes(qint64 bytes) {
+    const qint64 KB = 1024;
+    const qint64 MB = KB * 1024;
+    const qint64 GB = MB * 1024;
+    const qint64 TB = GB * 1024;
+
+    if (bytes >= TB) {
+        return QString("%1 TiB").arg(bytes / static_cast<double>(TB), 0, 'f',
+                                     1);
+    } else if (bytes >= GB) {
+        return QString("%1 GiB").arg(bytes / static_cast<double>(GB), 0, 'f',
+                                     1);
+    } else if (bytes >= MB) {
+        return QString("%1 MiB").arg(bytes / static_cast<double>(MB), 0, 'f',
+                                     1);
+    } else if (bytes >= KB) {
+        return QString("%1 KiB").arg(bytes / static_cast<double>(KB), 0, 'f',
+                                     1);
+    } else {
+        return QString("%1 B").arg(bytes);
+    }
 }
 
 void MainWindow::initPlugins() {
     m_pluginUIManager->init();
 
     // Set up dynamic tool bars
-    addToolBar(Qt::RightToolBarArea, m_pluginUIManager->glPclToolbar());
-    addToolBar(Qt::RightToolBarArea, m_pluginUIManager->mainPluginToolbar());
+    QToolBar* glPclToolbar = m_pluginUIManager->glPclToolbar();
+    QToolBar* mainPluginToolbar = m_pluginUIManager->mainPluginToolbar();
+    addToolBar(Qt::RightToolBarArea, glPclToolbar);
+    addToolBar(Qt::RightToolBarArea, mainPluginToolbar);
+    // Register plugin toolbars with layout manager
+    m_layoutManager->registerRightSideToolBar(glPclToolbar);
+    m_layoutManager->registerRightSideToolBar(mainPluginToolbar);
 
-    for (QToolBar* toolbar : m_pluginUIManager->additionalPluginToolbars()) {
-        addToolBar(Qt::TopToolBarArea, toolbar);
+    // Combine all additional plugin toolbars into a single unified toolbar
+    QList<QToolBar*> additionalToolbars =
+            m_pluginUIManager->additionalPluginToolbars();
+
+    CVLog::Print(
+            QString("[MainWindow] Found %1 additional plugin toolbars to unify")
+                    .arg(additionalToolbars.size()));
+
+    // Check if UnifiedPluginToolbar already exists (to avoid duplicate
+    // creation)
+    QToolBar* existingUnifiedToolbar =
+            findChild<QToolBar*>("UnifiedPluginToolbar");
+    if (existingUnifiedToolbar) {
+        // Remove existing toolbar first to avoid duplicates
+        CVLog::Print("[MainWindow] Removing existing UnifiedPluginToolbar");
+        removeToolBar(existingUnifiedToolbar);
+        existingUnifiedToolbar->deleteLater();
+    }
+
+    if (!additionalToolbars.isEmpty()) {
+        QToolBar* unifiedPluginToolbar =
+                new QToolBar(tr("MultipleActionsPlugins"), this);
+        unifiedPluginToolbar->setObjectName("UnifiedPluginToolbar");
+
+        // Collect all actions from additional toolbars, avoiding duplicates
+        QSet<QAction*> addedActions;
+
+        for (QToolBar* toolbar : additionalToolbars) {
+            QList<QAction*> actions = toolbar->actions();
+            CVLog::PrintDebug(
+                    QString("[MainWindow] Processing toolbar '%1' with %2 "
+                            "actions")
+                            .arg(toolbar->objectName())
+                            .arg(actions.size()));
+
+            for (QAction* action : actions) {
+                // Only add action if it's not already added to unified toolbar
+                if (!addedActions.contains(action)) {
+                    unifiedPluginToolbar->addAction(action);
+                    addedActions.insert(action);
+                }
+            }
+
+            // Add separator after each toolbar's actions (except after the last
+            // toolbar)
+            if (toolbar != additionalToolbars.last()) {
+                unifiedPluginToolbar->addSeparator();
+            }
+
+            // IMPORTANT: Completely remove and hide the original toolbar
+            // Set parent to nullptr to prevent it from being restored by
+            // restoreState()
+            removeToolBar(toolbar);
+            toolbar->setParent(nullptr);
+            toolbar->setVisible(false);
+            toolbar->hide();
+        }
+
+        // Only add unified toolbar if it has actions
+        if (!unifiedPluginToolbar->actions().isEmpty()) {
+            // Add the unified toolbar to the top
+            addToolBar(Qt::TopToolBarArea, unifiedPluginToolbar);
+            unifiedPluginToolbar->setVisible(true);
+            unifiedPluginToolbar->show();
+
+            CVLog::Print(QString("[MainWindow] Created UnifiedPluginToolbar "
+                                 "with %1 actions from %2 toolbars")
+                                 .arg(unifiedPluginToolbar->actions().size())
+                                 .arg(additionalToolbars.size()));
+        } else {
+            // No actions, delete the empty toolbar
+            CVLog::Warning(
+                    "[MainWindow] UnifiedPluginToolbar has no actions, "
+                    "deleting");
+            delete unifiedPluginToolbar;
+        }
     }
 
     // Set up dynamic menus
@@ -1146,6 +1500,10 @@ void MainWindow::initPlugins() {
             m_pluginUIManager->actionShowMainPluginToolbar());
     m_ui->menuToolbars->addAction(
             m_pluginUIManager->actionShowPCLAlgorithmToolbar());
+
+    // Apply unified icon size and style to all plugin toolbars
+    // This includes glPclToolbar, mainPluginToolbar, and UnifiedPluginToolbar
+    updateAllToolbarIconSizes();
 }
 
 void MainWindow::initDBRoot() {
@@ -1197,6 +1555,10 @@ void MainWindow::initReconstructions() {
             &MainWindow::autoShowReconstructionToolBar);
     showToolbarAction->setCheckable(true);
     showToolbarAction->setEnabled(true);
+    // Get screen width for icon size calculation
+    QScreen* screen = QGuiApplication::primaryScreen();
+    int screenWidth = screen ? screen->geometry().width() : 1920;
+
     for (QToolBar* toolbar : m_rcw->getReconstructionToolbars()) {
         addToolBar(Qt::TopToolBarArea, toolbar);
         connect(showToolbarAction, &QAction::toggled, toolbar,
@@ -1213,7 +1575,8 @@ void MainWindow::initReconstructions() {
     m_ui->menuBar->insertMenu(m_ui->menuDisplay->menuAction(), rc_menu);
 
     // Set docker widget
-    this->addDockWidget(Qt::RightDockWidgetArea, m_rcw->getLogWidget());
+    QDockWidget* logWidget = m_rcw->getLogWidget();
+    this->addDockWidget(Qt::RightDockWidgetArea, logWidget);
 
     // Set reconstruction status bar
     m_ui->statusBar->insertPermanentWidget(1, m_rcw->getImageStatusBar(), 0);
@@ -2629,8 +2992,8 @@ void MainWindow::activateTranslateRotateMode() {
     if (!getActiveWindow()) return;
 
 #ifdef USE_PCL_BACKEND
-    QvtkTransformTool* qTransTool =
-            new QvtkTransformTool(ecvDisplayTools::GetVisualizer3D());
+    PclTransformTool* pclTransTool =
+            new PclTransformTool(ecvDisplayTools::GetVisualizer3D());
     if (!m_transTool) m_transTool = new ccGraphicalTransformationTool(this);
     if (m_transTool->getNumberOfValidEntities() != 0) {
         m_transTool->clear();
@@ -2641,7 +3004,7 @@ void MainWindow::activateTranslateRotateMode() {
     return;
 #endif  // USE_PCL_BACKEND
 
-    if (!m_transTool->setTansformTool(qTransTool) ||
+    if (!m_transTool->setTansformTool(pclTransTool) ||
         !m_transTool->linkWith(ecvDisplayTools::GetCurrentScreen())) {
         CVLog::Warning(
                 "[MainWindow::activateTranslateRotateMode] Initialization "
@@ -2757,11 +3120,6 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     bool atLeastOneCameraSensor = (selInfo.cameraSensorCount > 0);
     bool atLeastOnePolyline = (selInfo.polylineCount > 0);
 
-    // m_ui->menuEdit->setEnabled(atLeastOneEntity);
-    // m_ui->menuTools->setEnabled(atLeastOneEntity);
-    // m_ui->menuAlgorithm->setEnabled(atLeastOneEntity);
-    // m_ui->menuDisplay->setEnabled(atLeastOneEntity);
-
     m_ui->actionTracePolyline->setEnabled(!dbIsEmpty);
     m_ui->actionZoomAndCenter->setEnabled(atLeastOneEntity);
     m_ui->actionSave->setEnabled(atLeastOneEntity);
@@ -2771,7 +3129,9 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionImportSFFromFile->setEnabled(atLeastOneEntity);
     m_ui->actionExportCoordToSF->setEnabled(atLeastOneEntity);
     m_ui->actionSegment->setEnabled(atLeastOneEntity);
-    m_ui->actionFilterSection->setEnabled(atLeastOneEntity);
+    m_ui->actionContourWidget->setEnabled(atLeastOneEntity);
+    m_ui->actionDistanceWidget->setEnabled(atLeastOneEntity);
+    m_ui->actionProtractorWidget->setEnabled(atLeastOneEntity);
     m_ui->actionTranslateRotate->setEnabled(atLeastOneEntity);
     m_ui->actionShowDepthBuffer->setEnabled(atLeastOneGBLSensor);
     m_ui->actionExportDepthBuffer->setEnabled(atLeastOneGBLSensor);
@@ -2870,6 +3230,10 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionClearColor->setEnabled(atLeastOneColor);
     m_ui->actionRGBToGreyScale->setEnabled(atLeastOneColor);
     m_ui->actionEnhanceRGBWithIntensities->setEnabled(atLeastOneColor);
+    m_ui->actionRGBGaussianFilter->setEnabled(atLeastOneColor);
+    m_ui->actionRGBBilateralFilter->setEnabled(atLeastOneColor);
+    m_ui->actionRGBMeanFilter->setEnabled(atLeastOneColor);
+    m_ui->actionRGBMedianFilter->setEnabled(atLeastOneColor);
     m_ui->actionColorFromScalarField->setEnabled(atLeastOneSF);
 
     // == 1
@@ -2925,6 +3289,9 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionEditPlane->setEnabled(selInfo.planeCount == 1);
     m_ui->actionFlipPlane->setEnabled(selInfo.planeCount != 0);
     m_ui->actionComparePlanes->setEnabled(selInfo.planeCount == 2);
+
+    m_ui->actionPromoteCircleToCylinder->setEnabled((selInfo.selCount == 1) &&
+                                                    (selInfo.circleCount == 1));
 
     m_ui->actionFindBiggestInnerRectangle->setEnabled(exactlyOneCloud);
 
@@ -3000,6 +3367,7 @@ void MainWindow::resizeEvent(QResizeEvent* event) {
     QMainWindow::resizeEvent(event);
 
     updateOverlayDialogsPlacement();
+    updateMemoryUsageWidgetSize();
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
@@ -3008,6 +3376,20 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
         case QEvent::Move:
             updateOverlayDialogsPlacement();
             break;
+        case QEvent::KeyPress: {
+            // Handle ESC key globally to exit selection tools
+            // This is needed because VTK render window captures key events
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+            if (keyEvent->key() == Qt::Key_Escape) {
+                CVLog::PrintDebug(
+                        "[MainWindow::eventFilter] ESC key detected, calling "
+                        "handleEscapeKey");
+                // Handle ESC key the same way as keyPressEvent
+                handleEscapeKey();
+                return true;  // Event handled
+            }
+            break;
+        }
         default:
             // nothing to do
             break;
@@ -3017,15 +3399,60 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
     return QObject::eventFilter(obj, event);
 }
 
+void MainWindow::handleEscapeKey() {
+    // First, stop any active measurement tool and uncheck its button
+    if (m_measurementTool && m_measurementTool->started()) {
+        m_measurementTool->stop(false);
+
+        // Uncheck measurement tool actions if they are checkable
+        if (m_ui->actionDistanceWidget &&
+            m_ui->actionDistanceWidget->isCheckable()) {
+            m_ui->actionDistanceWidget->setChecked(false);
+        }
+        if (m_ui->actionProtractorWidget &&
+            m_ui->actionProtractorWidget->isCheckable()) {
+            m_ui->actionProtractorWidget->setChecked(false);
+        }
+        if (m_ui->actionContourWidget &&
+            m_ui->actionContourWidget->isCheckable()) {
+            m_ui->actionContourWidget->setChecked(false);
+        }
+    }
+
+    // Second, disable all active selection tools (SelectionTools
+    // module) This ensures ESC exits selection modes like Rectangle
+    // Select, Polygon Select, etc.
+    CVLog::PrintDebug("[MainWindow] Disabling all selection tools");
+    // Disable all selection tools via controller
+    // The controller handles unchecking all actions
+#ifdef USE_PCL_BACKEND
+    if (m_selectionController) {
+        m_selectionController->handleEscapeKey();
+    }
+#endif
+
+    // Then handle picking and fullscreen
+    cancelPreviousPickingOperation(true);
+
+    // Handle exclusive fullscreen mode (when a sub-widget is fullscreen, not
+    // MainWindow itself)
+    if (m_exclusiveFullscreen) {
+        toggleExclusiveFullScreen(false);
+    }
+    // Handle normal fullscreen mode (when MainWindow itself is fullscreen)
+    else if (this->isFullScreen()) {
+        this->showNormal();
+    }
+}
+
 void MainWindow::keyPressEvent(QKeyEvent* event) {
     switch (event->key()) {
-        case Qt::Key_Escape: {
-            cancelPreviousPickingOperation(true);
-            if (this->isFullScreen()) {
-                this->showNormal();
-            }
+        case Qt::Key_Escape:
+            CVLog::Print(
+                    "[MainWindow::keyPressEvent] ESC key received, calling "
+                    "handleEscapeKey");
+            handleEscapeKey();
             break;
-        }
         default:
             QMainWindow::keyPressEvent(event);
     }
@@ -3085,7 +3512,10 @@ void MainWindow::updateMenus() {
 
     ////oher actions
     m_ui->actionSegment->setEnabled(hasMdiChild && hasSelectedEntities);
-    m_ui->actionFilterSection->setEnabled(hasMdiChild && hasSelectedEntities);
+    m_ui->actionContourWidget->setEnabled(hasMdiChild && hasSelectedEntities);
+    m_ui->actionDistanceWidget->setEnabled(hasMdiChild && hasSelectedEntities);
+    m_ui->actionProtractorWidget->setEnabled(hasMdiChild &&
+                                             hasSelectedEntities);
     m_ui->actionTranslateRotate->setEnabled(hasMdiChild && hasSelectedEntities);
     m_ui->actionPointPicking->setEnabled(hasMdiChild && hasLoadedEntities);
     m_ui->actionPointListPicking->setEnabled(hasLoadedEntities);
@@ -3165,6 +3595,44 @@ void MainWindow::doActionResetGUIElementsPos() {
     s_autoSaveGuiElementPos = false;
 }
 
+void MainWindow::doActionSaveCustomLayout() {
+    if (m_layoutManager) {
+        m_layoutManager->saveCustomLayout();
+        QMessageBox::information(
+                this, tr("Save Custom Layout"),
+                tr("Current layout has been saved as custom layout. You can "
+                   "restore it later using the 'Restore Custom Layout' "
+                   "action."));
+    } else {
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
+    }
+}
+
+void MainWindow::doActionRestoreDefaultLayout() {
+    if (m_layoutManager) {
+        m_layoutManager->restoreDefaultLayout();
+    } else {
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
+    }
+}
+
+void MainWindow::doActionRestoreCustomLayout() {
+    if (m_layoutManager) {
+        if (!m_layoutManager->restoreCustomLayout()) {
+            QMessageBox::warning(this, tr("Restore Custom Layout"),
+                                 tr("No saved custom layout found. Please save "
+                                    "current layout first."));
+        }
+    } else {
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
+    }
+}
+
+void MainWindow::doActionRestoreWindowOnStartup(bool state) {
+    QSettings settings;
+    settings.setValue(ecvPS::DoNotRestoreWindowGeometry(), !state);
+}
+
 void MainWindow::toggleFullScreen(bool state) {
     if (m_uiManager != nullptr) {
         m_uiManager->toggleFullScreen(state);
@@ -3191,13 +3659,18 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
             if (m_currentFullWidget) {
                 m_formerGeometry = m_currentFullWidget->saveGeometry();
                 m_currentFullWidget->setWindowFlags(Qt::Dialog);
+                // Install event filter to capture ESC key in fullscreen mode
+                m_currentFullWidget->installEventFilter(this);
             }
 
             m_exclusiveFullscreen = true;
-            if (m_currentFullWidget)
+            if (m_currentFullWidget) {
                 m_currentFullWidget->showFullScreen();
-            else
+                // Ensure the widget has keyboard focus to receive ESC key
+                m_currentFullWidget->setFocus();
+            } else {
                 showFullScreen();
+            }
 
             onExclusiveFullScreenToggled(state);
             ecvDisplayTools::DisplayNewMessage(
@@ -3971,6 +4444,294 @@ void MainWindow::setGlobalZoom() {
     }
 }
 
+//=============================================================================
+// SELECTION TOOLS - Using centralized cvSelectionToolController
+// (ParaView-style)
+//=============================================================================
+
+#if defined(USE_PCL_BACKEND)
+void MainWindow::initSelectionController() {
+    // Get the singleton controller
+    m_selectionController = cvSelectionToolController::instance();
+    m_selectionController->initialize(this);
+
+    // Set visualizer
+    ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+    if (viewer) {
+        m_selectionController->setVisualizer(viewer);
+    }
+
+    // Setup all actions using the SelectionActions struct
+    cvSelectionToolController::SelectionActions actions;
+    actions.selectSurfaceCells = m_ui->actionSelectSurfaceCells;
+    actions.selectSurfacePoints = m_ui->actionSelectSurfacePoints;
+    actions.selectFrustumCells = m_ui->actionSelectFrustumCells;
+    actions.selectFrustumPoints = m_ui->actionSelectFrustumPoints;
+    actions.selectPolygonCells = m_ui->actionSelectPolygonCells;
+    actions.selectPolygonPoints = m_ui->actionSelectPolygonPoints;
+    actions.selectBlocks = m_ui->actionSelectBlocks;
+    actions.selectFrustumBlocks = m_ui->actionSelectFrustumBlocks;
+    actions.interactiveSelectCells = m_ui->actionInteractiveSelectCells;
+    actions.interactiveSelectPoints = m_ui->actionInteractiveSelectPoints;
+    actions.hoverCells = m_ui->actionHoverCells;
+    actions.hoverPoints = m_ui->actionHoverPoints;
+    actions.addSelection = m_ui->actionAddSelection;
+    actions.subtractSelection = m_ui->actionSubtractSelection;
+    actions.toggleSelection = m_ui->actionToggleSelection;
+    actions.growSelection = m_ui->actionGrowSelection;
+    actions.shrinkSelection = m_ui->actionShrinkSelection;
+    actions.clearSelection = m_ui->actionClearSelection;
+    actions.zoomToBox = m_ui->actionZoomToBox;
+
+    m_selectionController->setupActions(actions);
+
+    // Connect controller signals to MainWindow slots
+    connect(m_selectionController,
+            &cvSelectionToolController::selectionFinished, this,
+            &MainWindow::onSelectionFinished);
+
+    connect(m_selectionController,
+            &cvSelectionToolController::selectionToolStateChanged, this,
+            [this](bool active) {
+                if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+                    m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(
+                            active);
+                    m_ccRoot->updatePropertiesView();
+                }
+            });
+
+    connect(m_selectionController,
+            &cvSelectionToolController::selectionPropertiesUpdateRequested,
+            this, [this](const cvSelectionData& data) {
+                if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+                    m_ccRoot->getPropertiesDelegate()
+                            ->updateSelectionProperties(data);
+                }
+            });
+
+    // CRITICAL FIX: Connect properties delegate's clear request to selection
+    // manager This prevents crashes from dangling pointers when objects are
+    // deleted
+    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+        connect(m_ccRoot->getPropertiesDelegate(),
+                &ccPropertiesTreeDelegate::requestClearSelection, this,
+                [this]() {
+                    CVLog::Print(
+                            "[MainWindow] Clearing selection data due to "
+                            "object changes");
+                    auto* manager = getSelectionManager();
+                    if (manager) {
+                        manager->clearCurrentSelection();
+                    }
+                    // Also clear highlights
+                    if (m_selectionController &&
+                        m_selectionController->highlighter()) {
+                        m_selectionController->highlighter()->clearHighlights();
+                    }
+                });
+    }
+
+    // Connect zoom to box signal for notification (zoom is handled by
+    // cvZoomToBoxTool)
+    connect(m_selectionController,
+            &cvSelectionToolController::zoomToBoxRequested, this,
+            [this](int xmin, int ymin, int xmax, int ymax) {
+                CVLog::PrintDebug(
+                        QString("[MainWindow] Zoom to box completed: [%1, "
+                                "%2, %3, %4]")
+                                .arg(xmin)
+                                .arg(ymin)
+                                .arg(xmax)
+                                .arg(ymax));
+                // Zoom is already performed by cvZoomToBoxTool using VTK
+                // This signal is for notification/logging purposes
+                ecvDisplayTools::UpdateScreen();
+            });
+
+    // Set the properties delegate for the controller
+    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+        m_selectionController->setPropertiesDelegate(
+                m_ccRoot->getPropertiesDelegate());
+    }
+
+    CVLog::PrintDebug(
+            "[MainWindow] Selection controller initialized (ParaView-style "
+            "architecture)");
+}
+
+void MainWindow::disableAllSelectionTools(void* except) {
+    // Delegate to the controller - it handles all tool management
+    if (m_selectionController) {
+        // Pass nullptr to disable all tools
+        m_selectionController->disableAllTools(nullptr);
+    }
+
+    // Hide selection properties when all tools are disabled
+    if (except == nullptr && m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+        m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(false);
+        m_ccRoot->updatePropertiesView();
+    }
+}
+
+cvViewSelectionManager* MainWindow::getSelectionManager() const {
+    if (m_selectionController) {
+        return m_selectionController->manager();
+    }
+    return nullptr;
+}
+
+void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
+    // CRITICAL FIX: Don't call setCurrentSelection here!
+    // The tool has already set it via manager->setCurrentSelection()
+    // Calling it again causes infinite recursion:
+    //   setCurrentSelection → selectionChanged → selectionFinished → here →
+    //   setCurrentSelection...
+
+    // Get manager from controller
+    cvViewSelectionManager* manager = getSelectionManager();
+    if (!manager) {
+        return;
+    }
+
+    // NOTE: Selection is already stored by the tool/controller
+    // We just need to update the UI based on current selection state
+    bool hasSelection = !selectionData.isEmpty();
+
+    // Enable/disable manipulation actions based on selection state
+    m_ui->actionGrowSelection->setEnabled(hasSelection);
+    m_ui->actionShrinkSelection->setEnabled(hasSelection);
+    m_ui->actionClearSelection->setEnabled(hasSelection);
+
+    // Update selection properties widget
+    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+        if (m_ccRoot->getPropertiesDelegate()->areSelectionToolsActive()) {
+            m_ccRoot->getPropertiesDelegate()->updateSelectionProperties(
+                    selectionData);
+        }
+    }
+
+    // Handle highlighting via the shared highlighter in the controller
+    cvSelectionHighlighter* highlighter =
+            m_selectionController ? m_selectionController->highlighter()
+                                  : nullptr;
+    if (highlighter) {
+        if (!hasSelection) {
+            highlighter->clearHighlights();
+        } else {
+            highlighter->highlightSelection(selectionData,
+                                            cvSelectionHighlighter::SELECTED);
+        }
+    }
+
+    ecvDisplayTools::UpdateScreen();
+
+    CVLog::PrintDebug(QString("[MainWindow] Selection UI updated: %1 elements")
+                              .arg(selectionData.count()));
+}
+
+void MainWindow::onSelectionToolActivated(QAction* action) {
+    bool isSelectionTool = (action && action->isChecked());
+
+    CVLog::PrintDebug(
+            QString("[MainWindow] Selection tool %1: %2")
+                    .arg(action ? action->text() : "unknown")
+                    .arg(isSelectionTool ? "activated" : "deactivated"));
+
+    // Notify properties delegate about selection tool state
+    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
+        if (isSelectionTool) {
+            ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+            if (viewer) {
+                m_ccRoot->getPropertiesDelegate()->setVisualizer(viewer);
+            }
+
+            // Get shared highlighter from controller
+            if (m_selectionController) {
+                cvSelectionHighlighter* highlighter =
+                        m_selectionController->highlighter();
+                if (highlighter) {
+                    m_ccRoot->getPropertiesDelegate()->setHighlighter(
+                            highlighter);
+                }
+            }
+        }
+
+        // Activate/deactivate selection tools display
+        m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(
+                isSelectionTool);
+
+        // Force refresh the properties view
+        if (isSelectionTool) {
+            ccHObject* currentObj =
+                    m_ccRoot->getPropertiesDelegate()->getCurrentObject();
+            if (!currentObj) {
+                ccHObject* root = m_ccRoot->getRootEntity();
+                if (root && root->getChildrenNumber() > 0) {
+                    for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {
+                        ccHObject* child = root->getChild(i);
+                        if (child && child->isEnabled()) {
+                            m_ccRoot->selectEntity(child);
+                            break;
+                        }
+                    }
+                }
+            }
+            m_ccRoot->updatePropertiesView();
+        } else {
+            m_ccRoot->updatePropertiesView();
+        }
+    }
+}
+
+void MainWindow::onSelectionRestored(const cvSelectionData& selection) {
+    cvViewSelectionManager* manager = getSelectionManager();
+    if (manager) {
+        manager->setCurrentSelection(selection);
+        CVLog::PrintDebug(QString("[MainWindow] Selection restored: %1 %2")
+                                  .arg(selection.count())
+                                  .arg(selection.fieldTypeString()));
+        if (m_ccRoot) {
+            m_ccRoot->updatePropertiesView();
+        }
+    }
+}
+
+void MainWindow::onSelectionHistoryChanged() {
+    if (m_selectionController) {
+        cvSelectionHistory* history = m_selectionController->history();
+        if (history) {
+            CVLog::PrintDebug(
+                    QString("[MainWindow] Selection history changed - "
+                            "Can undo: %1, Can redo: %2")
+                            .arg(history->canUndo())
+                            .arg(history->canRedo()));
+        }
+    }
+}
+
+void MainWindow::onBookmarksChanged() {
+    CVLog::PrintDebug("[MainWindow] Selection bookmarks changed");
+}
+
+void MainWindow::undoSelection() {
+    if (m_selectionController) {
+        m_selectionController->undoSelection();
+    }
+}
+
+void MainWindow::redoSelection() {
+    if (m_selectionController) {
+        m_selectionController->redoSelection();
+    }
+}
+
+#endif
+
+//=============================================================================
+// SELECTION TOOLS - Using centralized cvSelectionToolController
+// (ParaView-style)
+//=============================================================================
+
 void MainWindow::increasePointSize() {
     ecvDisplayTools::SetPointSize(
             ecvDisplayTools::GetViewportParameters().defaultPointSize + 1);
@@ -4255,28 +5016,25 @@ void MainWindow::UpdateUI() { TheInstance()->updateUI(); }
 
 void MainWindow::showEvent(QShowEvent* event) {
     QMainWindow::showEvent(event);
+    // Update memory usage widget size when window is shown
+    updateMemoryUsageWidgetSize();
 
     if (!m_FirstShow) {
         return;
     }
 
-    QSettings settings;
-    QVariant geometry = settings.value(ecvPS::MainWinGeom());
-
-    if (geometry.isValid()) {
-        restoreGeometry(geometry.toByteArray());
-        restoreState(settings.value(ecvPS::MainWinState()).toByteArray());
+    // Use layout manager to restore or setup layout
+    if (m_layoutManager) {
+        m_layoutManager->restoreGUILayout(false);
+        // After restoring layout, ensure all toolbar icon sizes are updated
+        // This is critical because restoreGUILayout may restore saved icon
+        // sizes
+        updateAllToolbarIconSizes();
+    } else {
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
     }
 
     m_FirstShow = false;
-
-    if (!geometry.isValid()) {
-        if (this->m_uiManager) {
-            this->m_uiManager->showMaximized();
-        } else {
-            showMaximized();
-        }
-    }
 
     if (isFullScreen()) {
         m_ui->actionFullScreen->setChecked(true);
@@ -4300,10 +5058,12 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 }
 
 void MainWindow::saveGUIElementsPos() {
-    // save the state as settings
-    QSettings settings;
-    settings.setValue(ecvPS::MainWinGeom(), saveGeometry());
-    settings.setValue(ecvPS::MainWinState(), saveState());
+    // Use layout manager to save layout
+    if (m_layoutManager) {
+        m_layoutManager->saveGUILayout();
+    } else {
+        CVLog::Error("[MainWindow] Layout manager is not initialized!");
+    }
 }
 
 void MainWindow::doShowPrimitiveFactory() {
@@ -5367,7 +6127,9 @@ void MainWindow::doActionExportDepthBuffer() {
     }
 
     DepthMapFileFilter::SaveParameters parameters;
-    { parameters.alwaysDisplaySaveDialog = true; }
+    {
+        parameters.alwaysDisplaySaveDialog = true;
+    }
     CC_FILE_ERROR result =
             DepthMapFileFilter().saveToFile(toSave, filename, parameters);
 
@@ -6223,6 +6985,48 @@ void MainWindow::doActionFlipPlane() {
     updatePropertiesView();
 }
 
+void MainWindow::doActionPromoteCircleToCylinder() {
+    if (!haveOneSelection()) {
+        assert(false);
+        return;
+    }
+
+    ccCircle* circle = ccHObjectCaster::ToCircle(m_selectedEntities.front());
+    if (!circle) {
+        assert(false);
+        return;
+    }
+
+    static double CylinderHeight = 0.0;
+    if (CylinderHeight == 0.0) {
+        CylinderHeight = 2 * circle->getRadius();
+    }
+    bool ok = false;
+    double value = QInputDialog::getDouble(
+            this, tr("Cylinder height"), tr("Height"), CylinderHeight, 0.0,
+            std::numeric_limits<double>::max(), 6, &ok);
+    if (!ok) {
+        return;
+    }
+
+    CylinderHeight = value;
+
+    ccCylinder* cylinder = new ccCylinder(
+            static_cast<PointCoordinateType>(circle->getRadius()),
+            static_cast<PointCoordinateType>(CylinderHeight),
+            &circle->getGLTransformationHistory(),
+            tr("Cylinder from ") + circle->getName());
+
+    circle->setEnabled(false);
+    if (circle->getParent()) {
+        circle->getParent()->addChild(cylinder);
+    }
+
+    addToDB(cylinder, true, true);
+    setSelectedInDB(circle, false);
+    setSelectedInDB(cylinder, true);
+}
+
 void MainWindow::doActionComparePlanes() {
     if (m_selectedEntities.size() != 2) {
         ecvConsole::Error("Select 2 planes!");
@@ -6827,6 +7631,20 @@ void MainWindow::doActionClone() {
                 ecvConsole::Error(
                         tr("An error occurred while cloning polyline %1")
                                 .arg(entity->getName()));
+            }
+        } else if (entity->isA(CV_TYPES::CIRCLE)) {
+            clone = ccHObjectCaster::ToCircle(entity)->clone();
+            if (!clone) {
+                ecvConsole::Error(
+                        tr("An error occurred while cloning circle %1")
+                                .arg(entity->getName()));
+            }
+        } else if (entity->isA(CV_TYPES::DISC)) {
+            ccDisc* disc = ccHObjectCaster::ToDisc(entity);
+            clone = (disc ? disc->clone() : 0);
+            if (!clone) {
+                ecvConsole::Error(tr("An error occurred while cloning disc %1")
+                                          .arg(entity->getName()));
             }
         } else if (entity->isA(CV_TYPES::FACET)) {
             ccFacet* facet = ccHObjectCaster::ToFacet(entity);
@@ -8361,15 +9179,67 @@ void MainWindow::doActionOpenColorScalesManager() {
     updateUI();
 }
 
+void MainWindow::doActionRGBGaussianFilter() {
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::GAUSSIAN;
+    if (!ccEntityAction::rgbGaussianFilter(m_selectedEntities, filterParams,
+                                           this))
+        return;
+
+    refreshSelected();
+    updateUI();
+}
+
+void MainWindow::doActionRGBBilateralFilter() {
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::BILATERAL;
+    if (!ccEntityAction::rgbGaussianFilter(m_selectedEntities, filterParams,
+                                           this))
+        return;
+
+    refreshSelected();
+    updateUI();
+}
+
+void MainWindow::doActionRGBMeanFilter() {
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::MEAN;
+    if (!ccEntityAction::rgbGaussianFilter(m_selectedEntities, filterParams,
+                                           this))
+        return;
+
+    refreshSelected();
+    updateUI();
+}
+
+void MainWindow::doActionRGBMedianFilter() {
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::MEDIAN;
+    if (!ccEntityAction::rgbGaussianFilter(m_selectedEntities, filterParams,
+                                           this))
+        return;
+
+    refreshSelected();
+    updateUI();
+}
+
 void MainWindow::doActionSFGaussianFilter() {
-    if (!ccEntityAction::sfGaussianFilter(m_selectedEntities, this)) return;
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::GAUSSIAN;
+    if (!ccEntityAction::sfGaussianFilter(m_selectedEntities, filterParams,
+                                          this))
+        return;
 
     refreshSelected();
     updateUI();
 }
 
 void MainWindow::doActionSFBilateralFilter() {
-    if (!ccEntityAction::sfBilateralFilter(m_selectedEntities, this)) return;
+    ccPointCloud::RgbFilterOptions filterParams;
+    filterParams.filterType = ccPointCloud::RGB_FILTER_TYPES::BILATERAL;
+    if (!ccEntityAction::sfGaussianFilter(m_selectedEntities, filterParams,
+                                          this))
+        return;
 
     refreshSelected();
     updateUI();
@@ -9213,56 +10083,112 @@ void MainWindow::doActionEditGlobalShiftAndScale() {
     updateUI();
 }
 
-// Tools menu methods
-void MainWindow::activateFilterWindowMode() {
-    if (!haveSelection()) {
-        return;
-    }
-    if (!m_filterWindowTool) {
-        m_filterWindowTool = new ecvFilterWindowTool(this);
-        connect(m_filterWindowTool, &ccOverlayDialog::processFinished, this,
-                &MainWindow::deactivateFilterWindowMode);
-        registerOverlayDialog(m_filterWindowTool, Qt::TopRightCorner);
-    }
-    m_filterWindowTool->linkWith(ecvDisplayTools::GetCurrentScreen());
+// Tools measurement menu methods
+void MainWindow::activateDistanceMode() {
+#ifdef USE_PCL_BACKEND
+    doActionMeasurementMode(
+            ecvGenericMeasurementTools::MeasurementType::DISTANCE_WIDGET);
+#else
+    CVLog::Warning(
+            "[MainWindow] please use pcl as backend and then try again!");
+    return;
+#endif  // USE_PCL_BACKEND
+}
+
+void MainWindow::activateProtractorMode() {
+#ifdef USE_PCL_BACKEND
+    doActionMeasurementMode(
+            ecvGenericMeasurementTools::MeasurementType::PROTRACTOR_WIDGET);
+#else
+    CVLog::Warning(
+            "[MainWindow] please use pcl as backend and then try again!");
+    return;
+#endif  // USE_PCL_BACKEND
+}
+
+void MainWindow::activateContourMode() {
+#ifdef USE_PCL_BACKEND
+    doActionMeasurementMode(
+            ecvGenericMeasurementTools::MeasurementType::CONTOUR_WIDGET);
+#else
+    CVLog::Warning(
+            "[MainWindow] please use pcl as backend and then try again!");
+    return;
+#endif  // USE_PCL_BACKEND
+}
+
+void MainWindow::doActionMeasurementMode(int mode) {
+    if (!haveOneSelection()) return;
 
     // we have to use a local copy: 'unselectEntity' will change the set of
     // currently selected entities!
     ccHObject::Container selectedEntities = getSelectedEntities();
+
+    if (!m_measurementTool) {
+        m_measurementTool = new ecvMeasurementTool(this);
+        connect(m_measurementTool, &ccOverlayDialog::processFinished, this,
+                [=]() {
+                    ccHObject::Container outs = m_measurementTool->getOutputs();
+                    for (ccHObject* entity : outs) {
+                        entity->setEnabled(true);
+                    }
+
+                    if (!outs.empty()) {
+                        // hide origin entities.
+                        for (ccHObject* entity : selectedEntities) {
+                            entity->setEnabled(false);
+                        }
+
+                        m_ccRoot->selectEntities(outs);
+                        refreshSelected();
+                    }
+
+                    freezeUI(false);
+                    updateUI();
+                });
+        registerOverlayDialog(m_measurementTool, Qt::TopRightCorner);
+    }
+
+#ifdef USE_PCL_BACKEND
+    ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
+    if (!viewer) {
+        CVLog::Error("[MainWindow] No visualizer available!");
+        return;
+    }
+
+    ecvGenericMeasurementTools* measurementTool = new PclMeasurementTools(
+            viewer, ecvGenericMeasurementTools::MeasurementType(mode));
+
+    // Add the new tool instance to the measurement tool dialog
+    m_measurementTool->setMeasurementTool(measurementTool);
+    m_measurementTool->linkWith(ecvDisplayTools::GetCurrentScreen());
+
     for (ccHObject* entity : selectedEntities) {
-        if (m_filterWindowTool->addAssociatedEntity(entity)) {
+        if (m_measurementTool->addAssociatedEntity(entity)) {
             // automatically deselect the entity (to avoid seeing its bounding
             // box ;)
             m_ccRoot->unselectEntity(entity);
         }
     }
 
-    if (m_filterWindowTool->getNumberOfAssociatedEntity() == 0) {
-        m_filterWindowTool->close();
+    if (m_measurementTool->getNumberOfAssociatedEntity() == 0) {
+        CVLog::Warning("[MainWindow] No valid entities for measurement!");
         return;
     }
 
-    freezeUI(true);
-    m_ui->ViewToolBar->setDisabled(true);
-    m_ui->ViewToolBar->hide();
-    m_ui->propertyDock->hide();
-
-    if (m_filterWindowTool->start()) {
+    if (m_measurementTool->start()) {
         updateOverlayDialogsPlacement();
+        ecvDisplayTools::UpdateScreen();
     } else {
-        deactivateFilterWindowMode(false);
         freezeUI(false);
         updateUI();
-        ecvConsole::Error(tr("Unexpected error!"));  // indeed...
+        ecvConsole::Error(tr("Unexpected error!"));
     }
-}
-
-void MainWindow::deactivateFilterWindowMode(bool state) {
-    freezeUI(false);
-    m_ui->ViewToolBar->setDisabled(false);
-    m_ui->ViewToolBar->show();
-    m_ui->propertyDock->show();
-    updateUI();
+#else
+    CVLog::Warning(
+            "[MainWindow] please use pcl as backend and then try again!");
+    return;
+#endif  // USE_PCL_BACKEND
 }
 
 void MainWindow::activateClippingMode() {
@@ -9696,13 +10622,9 @@ void MainWindow::deactivateSegmentationMode(bool state) {
                     }
                     for (ccHObject::Container::iterator it = labels.begin();
                          it != labels.end(); ++it) {
-                        if ((*it)->isA(
-                                    CV_TYPES::
-                                            LABEL_2D))  // Warning:
-                                                        // cc2DViewportLabel is
-                                                        // also a kind of
-                                                        // 'CV_TYPES::LABEL_2D'!
-                        {
+                        // Warning: cc2DViewportLabel is also a kind of
+                        // 'CV_TYPES::LABEL_2D'!
+                        if ((*it)->isA(CV_TYPES::LABEL_2D)) {
                             // we must search for all dependent labels and
                             // remove them!!!
                             // TODO: couldn't we be more clever and update the
@@ -10275,6 +11197,7 @@ void MainWindow::doActionCloudPrimitiveDist() {
                 m_selectedEntities[i]->isA(CV_TYPES::CYLINDER) ||
                 m_selectedEntities[i]->isA(CV_TYPES::CONE) ||
                 m_selectedEntities[i]->isA(CV_TYPES::BOX) ||
+                m_selectedEntities[i]->isA(CV_TYPES::DISC) ||
                 m_selectedEntities[i]->isA(CV_TYPES::POLY_LINE)) {
                 if (foundPrimitive) {
                     ecvConsole::Error(
@@ -10295,7 +11218,7 @@ void MainWindow::doActionCloudPrimitiveDist() {
     if (!foundPrimitive) {
         ecvConsole::Error(
                 "[Compute Primitive Distances] Select at least one "
-                "Plane/Box/Sphere/Cylinder/Cone/Polyline Primitive!");
+                "Plane/Box/Sphere/Cylinder/Cone/Disc/Polyline Primitive!");
         return;
     }
     if (clouds.size() <= 0) {
@@ -10425,6 +11348,20 @@ void MainWindow::doActionCloudPrimitiveDist() {
                                           rotationTransform, boxCenter,
                                           signedDist)))
                         ecvConsole::Error(errString, "Box", returnCode);
+                    break;
+                }
+                case CV_TYPES::DISC: {
+                    ccDisc* disc = static_cast<ccDisc*>(refEntity);
+                    cloudViewer::SquareMatrix rotationTransform(
+                            disc->getTransformation().data(), true);
+                    if (!(returnCode = cloudViewer::DistanceComputationTools::
+                                  computeCloud2DiscEquation(
+                                          compEnt,
+                                          refEntity->getOwnBB().getCenter(),
+                                          static_cast<ccDisc*>(refEntity)
+                                                  ->getRadius(),
+                                          rotationTransform, signedDist)))
+                        ecvConsole::Error(errString, "Disc", returnCode);
                     break;
                 }
                 case CV_TYPES::POLY_LINE: {
@@ -10882,8 +11819,7 @@ void MainWindow::doActionFitCircle() {
                              .arg(normal.z));
 
         // create the circle representation as a polyline
-        ccPolyline* circle =
-                ccPolyline::Circle(CCVector3(0, 0, 0), radius, 128);
+        ccCircle* circle = new ccCircle(radius, 128);
         if (circle) {
             circle->setName(QObject::tr("Circle r=%1").arg(radius));
             cloud->addChild(circle);
@@ -11262,4 +12198,128 @@ void MainWindow::doComputeGeometricFeature() {
 
     refreshSelected();
     updateUI();
+}
+
+void MainWindow::populateActionList() {
+    m_actions.clear();
+
+    // Collect all actions from menus and toolbars
+    QList<QAction*> allActions = findChildren<QAction*>();
+
+    // Collect actions from dynamic menus that shouldn't have shortcuts
+    QSet<QAction*> excludedActions;
+
+    // Filter out recent files menu actions
+    QMenu* recentFilesMenu = m_recentFiles ? m_recentFiles->menu() : nullptr;
+    if (recentFilesMenu) {
+        for (QAction* menuAction : recentFilesMenu->actions()) {
+            excludedActions.insert(menuAction);
+        }
+    }
+
+    // Filter out 3D mouse manager menu actions
+#ifdef CC_3DXWARE_SUPPORT
+    if (m_3DMouseManager) {
+        QMenu* mouseMenu = m_3DMouseManager->menu();
+        if (mouseMenu) {
+            for (QAction* menuAction : mouseMenu->actions()) {
+                excludedActions.insert(menuAction);
+            }
+        }
+    }
+#endif
+
+    // Filter out gamepad manager menu actions
+#ifdef CC_GAMEPAD_SUPPORT
+    if (m_gamepadManager) {
+        QMenu* gamepadMenu = m_gamepadManager->menu();
+        if (gamepadMenu) {
+            for (QAction* menuAction : gamepadMenu->actions()) {
+                excludedActions.insert(menuAction);
+            }
+        }
+    }
+#endif
+
+    // Collect all menu actions (QMenu::menuAction()) to exclude them
+    // These are the menu items themselves, not functional actions
+    QList<QMenu*> allMenus = findChildren<QMenu*>();
+    for (QMenu* menu : allMenus) {
+        excludedActions.insert(menu->menuAction());
+    }
+
+    for (QAction* action : allActions) {
+        // Skip actions without text
+        if (!action || action->text().isEmpty()) {
+            continue;
+        }
+
+        // Skip separator actions
+        if (action->isSeparator()) {
+            continue;
+        }
+
+        // Skip excluded actions (from dynamic menus)
+        if (excludedActions.contains(action)) {
+            continue;
+        }
+
+        // Skip actions whose parent is ecvRecentFiles
+        // (additional check for dynamically created actions)
+        if (action->parent() == m_recentFiles) {
+            continue;
+        }
+
+        // Skip menu actions (QMenu::menuAction())
+        // These represent menus themselves, not functional actions
+        // Check if this action is a menu's menuAction
+        bool isMenuAction = false;
+        for (QMenu* menu : allMenus) {
+            if (menu->menuAction() == action) {
+                // This is a menu item itself, skip it
+                isMenuAction = true;
+                break;
+            }
+        }
+        if (isMenuAction) {
+            continue;
+        }
+
+        // Skip actions without objectName that are likely temporary/dynamic
+        // UI-defined actions typically have objectName set
+        // But allow actions from UI menus/toolbars even without objectName
+        if (action->objectName().isEmpty()) {
+            QWidget* parentWidget = qobject_cast<QWidget*>(action->parent());
+            // Only include if parent is a known UI widget (menuBar, toolbar, or
+            // menu from UI)
+            bool isFromUI = false;
+            if (parentWidget) {
+                // Check if it's from the UI structure
+                if (parentWidget == m_ui->menuBar ||
+                    qobject_cast<QToolBar*>(parentWidget)) {
+                    isFromUI = true;
+                } else if (QMenu* menu = qobject_cast<QMenu*>(parentWidget)) {
+                    // For menus, check if it's part of the UI structure
+                    // UI menus are typically children of menuBar or have
+                    // objectName
+                    if (menu->parent() == m_ui->menuBar ||
+                        !menu->objectName().isEmpty()) {
+                        isFromUI = true;
+                    }
+                }
+            }
+            if (!isFromUI) {
+                continue;
+            }
+        }
+
+        // Add action to list
+        m_actions.append(action);
+    }
+}
+
+void MainWindow::showShortcutDialog() {
+    if (m_shortcutDlg) {
+        m_shortcutDlg->exec();
+    }
 }

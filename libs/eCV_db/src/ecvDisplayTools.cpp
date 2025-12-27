@@ -1939,6 +1939,7 @@ ENTITY_TYPE ecvDisplayTools::ConvertToEntityType(const CV_CLASS_ENUM& type) {
         case CV_TYPES::TORUS:
         case CV_TYPES::EXTRU:
         case CV_TYPES::DISH:
+        case CV_TYPES::DISC:
         case CV_TYPES::BOX:
         case CV_TYPES::COORDINATESYSTEM:
         case CV_TYPES::QUADRIC:
@@ -2392,10 +2393,14 @@ const ecvGui::ParamStruct& ecvDisplayTools::GetDisplayParameters() {
 
 void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters& params) {
     // get/compute the modelview matrix
-    { GetViewMatrix(params.modelViewMat.data()); }
+    {
+        GetViewMatrix(params.modelViewMat.data());
+    }
 
     // get/compute the projection matrix
-    { GetProjectionMatrix(params.projectionMat.data()); }
+    {
+        GetProjectionMatrix(params.projectionMat.data());
+    }
 
     ccGLMatrixd rotationMat;
     rotationMat.setRotation(
@@ -3172,7 +3177,9 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
             }
 
             // hot-zone
-            { s_tools.instance->DrawClickableItems(0, yStart); }
+            {
+                s_tools.instance->DrawClickableItems(0, yStart);
+            }
         }
     }
 }

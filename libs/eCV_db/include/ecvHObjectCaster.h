@@ -34,6 +34,8 @@ class ccPlanarEntityInterface;
 class ccPlane;
 class ccPointCloud;
 class ccPolyline;
+class ccCircle;
+class ccDisc;
 class ccSensor;
 class ccShiftedObject;
 class ccSphere;
@@ -93,6 +95,9 @@ public:
     //! Converts current object to ccPolyline (if possible)
     static ccPolyline* ToPolyline(ccHObject* obj);
 
+    //! Converts current object to ccCircle (if possible)
+    static ccCircle* ToCircle(ccHObject* obj);
+
     //! Converts current object to ccFacet (if possible)
     static ccFacet* ToFacet(ccHObject* obj);
 
@@ -114,6 +119,8 @@ public:
     static ccQuadric* ToQuadric(ccHObject* obj);
     //! Converts current object to ccBox (if possible)
     static ccBox* ToBox(ccHObject* obj);
+    //! Converts current object to ccDisc (if possible)
+    static ccDisc* ToDisc(ccHObject* obj);
     //! Converts current object to ccDish (if possible)
     static ccDish* ToDish(ccHObject* obj);
     //! Converts current object to ccExtru (if possible)

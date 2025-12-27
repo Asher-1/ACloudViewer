@@ -128,7 +128,9 @@ CC_FILE_ERROR PovFilter::saveToFile(ccHObject* entity,
             QString thisFilename = fullBaseName + QString("_%1.bin").arg(i);
 
             BinFilter::SaveParameters parameters;
-            { parameters.alwaysDisplaySaveDialog = false; }
+            {
+                parameters.alwaysDisplaySaveDialog = false;
+            }
             CC_FILE_ERROR error = FileIOFilter::SaveToFile(
                     clouds[i], thisFilename, parameters,
                     BinFilter::GetFileFilter());
