@@ -1413,12 +1413,38 @@ void MainWindow::initPlugins() {
     m_layoutManager->registerRightSideToolBar(mainPluginToolbar);
 
     // Combine all additional plugin toolbars into a single unified toolbar
+    // But exclude Python plugins - they should be handled separately
     QList<QToolBar*> additionalToolbars =
             m_pluginUIManager->additionalPluginToolbars();
 
-    CVLog::Print(
-            QString("[MainWindow] Found %1 additional plugin toolbars to unify")
-                    .arg(additionalToolbars.size()));
+    // Separate Python plugin toolbars from other toolbars
+    QList<QToolBar*> pythonPluginToolbars;
+    QList<QToolBar*> otherPluginToolbars;
+    
+    for (QToolBar* toolbar : additionalToolbars) {
+        if (ccPluginUIManager::isPythonPluginToolbar(toolbar)) {
+            pythonPluginToolbars.append(toolbar);
+        } else {
+            otherPluginToolbars.append(toolbar);
+        }
+    }
+
+    CVLog::PrintDebug(
+            QString("[MainWindow] Found %1 additional plugin toolbars (%2 "
+                    "Python, %3 others)")
+                    .arg(additionalToolbars.size())
+                    .arg(pythonPluginToolbars.size())
+                    .arg(otherPluginToolbars.size()));
+
+    // Handle Python plugin toolbars separately - add them individually
+    for (QToolBar* pythonToolbar : pythonPluginToolbars) {
+        CVLog::Print(QString("[MainWindow] Adding Python plugin toolbar '%1' "
+                             "separately")
+                             .arg(pythonToolbar->objectName()));
+        addToolBar(Qt::TopToolBarArea, pythonToolbar);
+        pythonToolbar->setVisible(true);
+        pythonToolbar->show();
+    }
 
     // Check if UnifiedPluginToolbar already exists (to avoid duplicate
     // creation)
@@ -1431,7 +1457,7 @@ void MainWindow::initPlugins() {
         existingUnifiedToolbar->deleteLater();
     }
 
-    if (!additionalToolbars.isEmpty()) {
+    if (!otherPluginToolbars.isEmpty()) {
         QToolBar* unifiedPluginToolbar =
                 new QToolBar(tr("MultipleActionsPlugins"), this);
         unifiedPluginToolbar->setObjectName("UnifiedPluginToolbar");
@@ -1439,7 +1465,7 @@ void MainWindow::initPlugins() {
         // Collect all actions from additional toolbars, avoiding duplicates
         QSet<QAction*> addedActions;
 
-        for (QToolBar* toolbar : additionalToolbars) {
+        for (QToolBar* toolbar : otherPluginToolbars) {
             QList<QAction*> actions = toolbar->actions();
             CVLog::PrintDebug(
                     QString("[MainWindow] Processing toolbar '%1' with %2 "
@@ -1457,7 +1483,7 @@ void MainWindow::initPlugins() {
 
             // Add separator after each toolbar's actions (except after the last
             // toolbar)
-            if (toolbar != additionalToolbars.last()) {
+            if (toolbar != otherPluginToolbars.last()) {
                 unifiedPluginToolbar->addSeparator();
             }
 
@@ -1480,7 +1506,7 @@ void MainWindow::initPlugins() {
             CVLog::Print(QString("[MainWindow] Created UnifiedPluginToolbar "
                                  "with %1 actions from %2 toolbars")
                                  .arg(unifiedPluginToolbar->actions().size())
-                                 .arg(additionalToolbars.size()));
+                                 .arg(otherPluginToolbars.size()));
         } else {
             // No actions, delete the empty toolbar
             CVLog::Warning(

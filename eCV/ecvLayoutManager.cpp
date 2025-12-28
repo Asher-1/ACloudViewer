@@ -175,11 +175,17 @@ void ecvLayoutManager::setToolbarIconSize(QToolBar* toolbar, int screenWidth) {
 
 void ecvLayoutManager::hideAdditionalPluginToolbars() {
     // Hide all additional plugin toolbars that were unified
+    // But exclude Python plugins - they should remain visible
     QList<QToolBar*> additionalToolbars =
             m_pluginManager->additionalPluginToolbars();
 
     for (QToolBar* toolbar : additionalToolbars) {
         if (toolbar) {
+            // Skip Python plugin toolbars - they are handled separately
+            if (ccPluginUIManager::isPythonPluginToolbar(toolbar)) {
+                continue;
+            }
+            
             // Remove from main window if attached
             if (toolbar->parent() == m_mainWindow) {
                 m_mainWindow->removeToolBar(toolbar);
@@ -245,10 +251,16 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
     QList<QToolBar*> leftToolbars;
 
     // Get list of additional plugin toolbars that were unified (to skip them)
+    // But exclude Python plugins - they should be handled normally
     QList<QToolBar*> additionalPluginToolbars =
             m_pluginManager->additionalPluginToolbars();
-    QSet<QToolBar*> additionalToolbarsSet(additionalPluginToolbars.begin(),
-                                          additionalPluginToolbars.end());
+    QSet<QToolBar*> additionalToolbarsSet;
+    for (QToolBar* toolbar : additionalPluginToolbars) {
+        // Don't skip Python plugin toolbars - they are handled separately
+        if (!ccPluginUIManager::isPythonPluginToolbar(toolbar)) {
+            additionalToolbarsSet.insert(toolbar);
+        }
+    }
 
     // Categorize toolbars by area
     for (QToolBar* toolbar : toolBars) {
@@ -258,7 +270,7 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
             continue;
         }
 
-        // Skip unified additional plugin toolbars
+        // Skip unified additional plugin toolbars (but not Python plugins)
         if (additionalToolbarsSet.contains(toolbar)) {
             continue;
         }
@@ -315,6 +327,7 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
 
     QMap<QString, QToolBar*> toolbarMap;
     QList<QToolBar*> reconstructionToolbars;
+    QList<QToolBar*> pythonPluginToolbars;
     QToolBar* unifiedPluginToolbar = nullptr;
 
     for (QToolBar* toolbar : topToolbars) {
@@ -326,6 +339,9 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
             }
         } else if (toolbarName == "Reconstruction") {
             reconstructionToolbars.append(toolbar);
+        } else if (ccPluginUIManager::isPythonPluginToolbar(toolbar)) {
+            // Collect Python plugin toolbars separately
+            pythonPluginToolbars.append(toolbar);
         } else {
             toolbarMap[toolbarName] = toolbar;
         }
@@ -384,6 +400,13 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         toolbar->setVisible(true);
         setToolbarIconSize(toolbar, screenWidth);
     }
+
+    // Add Python plugin toolbars at the end of third row
+    for (QToolBar* toolbar : pythonPluginToolbars) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
+        toolbar->setVisible(true);
+        setToolbarIconSize(toolbar, screenWidth);
+    }
 #else
     // Windows/Linux: 2-row layout
     // Add UnifiedPluginToolbar at end of first row
@@ -391,6 +414,13 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         m_mainWindow->addToolBar(Qt::TopToolBarArea, unifiedPluginToolbar);
         unifiedPluginToolbar->setVisible(true);
         setToolbarIconSize(unifiedPluginToolbar, screenWidth);
+    }
+
+    // Add Python plugin toolbars at the end of first row
+    for (QToolBar* toolbar : pythonPluginToolbars) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
+        toolbar->setVisible(true);
+        setToolbarIconSize(toolbar, screenWidth);
     }
 
     // Add toolbar break for second row

@@ -430,8 +430,8 @@ int main(int argc, char* argv[]) {
 
             qui->setTitle(Settings::APP_TITLE);
 
-            // set align center
-            qui->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            // set align center - center the window title text
+            qui->setAlignment(Qt::AlignCenter);
 
             // set dragable
             qui->setSizeGripEnabled(true);
