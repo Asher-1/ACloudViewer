@@ -66,6 +66,9 @@ public:
 
     void showAboutDialog() const;
 
+    // Helper method to check if a toolbar belongs to Python plugin
+    static bool isPythonPluginToolbar(QToolBar *toolbar);
+
 private:
     void setupActions();
 
