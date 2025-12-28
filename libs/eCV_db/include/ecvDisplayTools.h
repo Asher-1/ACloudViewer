@@ -556,7 +556,7 @@ public:  // main interface
         return GetMainWindow()->devicePixelRatio();
     }
 
-    // 新增：跨平台字体大小优化函数
+    // New: Cross-platform font size optimization function
     static inline int GetOptimizedFontSize(int baseFontSize = 12) {
         QWidget* win = GetMainWindow();
         if (!win) {
@@ -569,64 +569,64 @@ public:  // main interface
             return baseFontSize;
         }
 
-        // 获取屏幕分辨率信息
+        // Get screen resolution information
         QSize screenSize = screen->size();
         int screenWidth = screenSize.width();
         int screenHeight = screenSize.height();
         int screenDPI = screen->physicalDotsPerInch();
 
-        // 平台特定的基础字体大小调整
+        // Platform-specific base font size adjustment
         int platformBaseSize = baseFontSize;
 #ifdef Q_OS_MAC
-        // macOS: 默认字体稍大，但需要考虑Retina显示器的过度放大
+        // macOS: Default font is slightly larger, but need to consider Retina display over-scaling
         platformBaseSize = baseFontSize;
         if (dpiScale > 1) {
-            // Retina显示器：使用较小的字体避免过度放大
+            // Retina display: Use smaller font to avoid over-scaling
             platformBaseSize = std::max(8, baseFontSize - (dpiScale - 1) * 2);
         }
 #elif defined(Q_OS_WIN)
-        // Windows: 根据DPI调整字体大小
+        // Windows: Adjust font size according to DPI
         if (screenDPI > 120) {
-            // 高DPI显示器
+            // High DPI display
             platformBaseSize = std::max(8, baseFontSize - 1);
         } else if (screenDPI < 96) {
-            // 低DPI显示器
+            // Low DPI display
             platformBaseSize = baseFontSize + 1;
         }
 #elif defined(Q_OS_LINUX)
-        // Linux: 根据屏幕分辨率调整
+        // Linux: Adjust according to screen resolution
         if (screenWidth >= 1920 && screenHeight >= 1080) {
-            // 高分辨率显示器
+            // High resolution display
             platformBaseSize = std::max(8, baseFontSize - 1);
         } else if (screenWidth < 1366) {
-            // 低分辨率显示器
+            // Low resolution display
             platformBaseSize = baseFontSize + 1;
         }
 #endif
 
-        // 分辨率特定的调整
+        // Resolution-specific adjustment
         int resolutionFactor = 1;
         if (screenWidth >= 2560 && screenHeight >= 1440) {
-            // 2K及以上分辨率
+            // 2K and above resolution
             resolutionFactor = 0;
         } else if (screenWidth >= 1920 && screenHeight >= 1080) {
-            // 1080p分辨率
+            // 1080p resolution
             resolutionFactor = 0;
         } else if (screenWidth < 1366) {
-            // 低分辨率
+            // Low resolution
             resolutionFactor = 1;
         }
 
-        // 最终字体大小计算
+        // Final font size calculation
         int finalSize = platformBaseSize + resolutionFactor;
 
-        // 确保字体大小在合理范围内
+        // Ensure font size is within reasonable range
         finalSize = std::max(6, std::min(24, finalSize));
 
         return finalSize;
     }
 
-    // 新增：跨平台DPI缩放处理函数
+    // New: Cross-platform DPI scaling handling function
     static inline double GetPlatformAwareDPIScale() {
         QWidget* win = GetMainWindow();
         if (!win) {
@@ -639,42 +639,42 @@ public:  // main interface
             return static_cast<double>(dpiScale);
         }
 
-        // 获取屏幕信息
+        // Get screen information
         QSize screenSize = screen->size();
         int screenWidth = screenSize.width();
         int screenHeight = screenSize.height();
         int screenDPI = screen->physicalDotsPerInch();
 
-        // 平台特定的DPI缩放调整
+        // Platform-specific DPI scaling adjustment
         double adjustedScale = static_cast<double>(dpiScale);
 
 #ifdef Q_OS_MAC
-        // macOS: Retina显示器需要特殊处理
+        // macOS: Retina displays need special handling
         if (dpiScale > 1) {
-            // 对于UI元素，使用较小的缩放以避免过度放大
+            // For UI elements, use smaller scaling to avoid over-scaling
             adjustedScale = 1.0 + (dpiScale - 1.0) * 0.5;
         }
 #elif defined(Q_OS_WIN)
-        // Windows: 根据DPI设置调整
+        // Windows: Adjust according to DPI settings
         if (screenDPI > 120) {
-            // 高DPI显示器，适当减小缩放
+            // High DPI display, appropriately reduce scaling
             adjustedScale = std::min(adjustedScale, 1.5);
         } else if (screenDPI < 96) {
-            // 低DPI显示器，适当增加缩放
+            // Low DPI display, appropriately increase scaling
             adjustedScale = std::max(adjustedScale, 1.0);
         }
 #elif defined(Q_OS_LINUX)
-        // Linux: 根据分辨率调整
+        // Linux: Adjust according to resolution
         if (screenWidth >= 2560 && screenHeight >= 1440) {
-            // 超高分辨率，减小缩放
+            // Ultra-high resolution, reduce scaling
             adjustedScale = std::min(adjustedScale, 1.3);
         } else if (screenWidth < 1366) {
-            // 低分辨率，增加缩放
+            // Low resolution, increase scaling
             adjustedScale = std::max(adjustedScale, 1.0);
         }
 #endif
 
-        // 确保缩放在合理范围内
+        // Ensure scaling is within reasonable range
         adjustedScale = std::max(0.5, std::min(2.0, adjustedScale));
 
         return adjustedScale;

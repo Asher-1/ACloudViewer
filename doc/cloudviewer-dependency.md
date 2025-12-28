@@ -1,15 +1,22 @@
 Build from source
 =====================
 
+[**Linux building**](compiling-cloudviewer-linux.md)
+
+[**MacOS building**](compiling-cloudviewer-macos.md)
+
+[**Windows building**](compiling-cloudviewer-windows.md)
+
+
 System requirements
 -------------------
 
 * Ubuntu 18.04+: GCC 5+, Clang 7+
 * macOS 10.14+: XCode 8.0+
-* Windows 10 (64-bit): Visual Studio 2019+
-* CMake: 3.15+ for Ubuntu and macOS, 3.18+ for Windows
+* Windows 10 (64-bit): Visual Studio 2022+
+* CMake: 3.19+
 
-  * Ubuntu (18.04):
+  * Ubuntu (18.04+):
 
     * Install with ``apt-get``: see `official APT repository <https://apt.kitware.com/>`_
     * Install with ``snap``: ``sudo snap install cmake --classic``
@@ -28,12 +35,8 @@ System requirements
 Cloning CloudViewer
 --------------
 
-Make sure to use the ``--recursive`` flag when cloning CloudViewer.
-
-    git clone --recursive https://github.com/Asher-1/ACloudViewer.git
+    git clone https://github.com/Asher-1/ACloudViewer.git
     
-    # You can also update the submodule manually
-    git submodule update --init --recursive
 
 
 Note
