@@ -441,7 +441,7 @@ cvSelectionData cvSelectionFilter::combineAND(const cvSelectionData& a,
 
     QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
 
-    CVLog::Print(QString("[cvSelectionFilter] AND: %1 ∩ %2 = %3")
+    CVLog::Print(QString("[cvSelectionFilter] AND: %1 & %2 = %3")
                          .arg(a.count())
                          .arg(b.count())
                          .arg(resultIds.size()));
@@ -469,7 +469,7 @@ cvSelectionData cvSelectionFilter::combineOR(const cvSelectionData& a,
 
     QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
 
-    CVLog::Print(QString("[cvSelectionFilter] OR: %1 ∪ %2 = %3")
+    CVLog::Print(QString("[cvSelectionFilter] OR: %1 U %2 = %3")
                          .arg(a.count())
                          .arg(b.count())
                          .arg(resultIds.size()));
