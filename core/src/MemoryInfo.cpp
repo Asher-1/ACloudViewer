@@ -123,15 +123,14 @@ MemoryInfo getMemoryInfo() {
         infos.freeRam = (int64_t)vm_stat.free_count * (int64_t)page_size;
 
         // Available RAM: ParaView/VTK style calculation for macOS
-        // ParaView uses "App Memory" concept but excludes purgeable and
-        // compressed memory App Memory = active + wired - purgeable -
-        // compressor This represents memory actively used by applications,
-        // excluding reclaimable memory
-        uint64_t app_memory =
-                ((uint64_t)vm_stat.active_count + (uint64_t)vm_stat.wire_count -
-                 (uint64_t)vm_stat.purgeable_count -
-                 (uint64_t)vm_stat.compressor_page_count) *
-                (uint64_t)page_size;
+        // Based on ParaView's SystemInformation.cxx implementation:
+        // - GetHostMemoryUsed() returns: (active + wired) * page_size
+        // - GetAvailablePhysicalMemory() returns: (free + inactive) * page_size
+        // ParaView status bar uses GetHostMemoryUsed() for memory usage display
+        // So: Used = active + wired, Available = Total - Used
+        uint64_t app_memory = ((uint64_t)vm_stat.active_count +
+                               (uint64_t)vm_stat.wire_count) *
+                              (uint64_t)page_size;
         infos.availableRam = infos.totalRam - app_memory;
     }
 #else
