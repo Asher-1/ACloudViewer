@@ -767,9 +767,7 @@ CC_FILE_ERROR STLFilter::loadBinaryFile(QFile& fp,
 
         // we have successfully read the 3 vertices
         // let's add a new triangle
-        {
-            mesh->addTriangle(vertIndexes[0], vertIndexes[1], vertIndexes[2]);
-        }
+        { mesh->addTriangle(vertIndexes[0], vertIndexes[1], vertIndexes[2]); }
 
         // and a new normal?
         if (normals) {

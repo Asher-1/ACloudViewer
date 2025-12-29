@@ -351,18 +351,6 @@ private slots:
     void on_btnMenu_Max_clicked();
     void on_btnMenu_Close_clicked();
 
-    ////Minimize and hide interface
-    // void changeEvent(QEvent *event) override {
-    //	if (event->type()==QEvent::WindowStateChange &&
-    //		this->windowState() == Qt::WindowMinimized) {
-    //		m_systemTray->showMessage("Information",//Message window title
-    //			"ACloudViewer",//Message content
-    //			QSystemTrayIcon::MessageIcon::Information,//Message window icon
-    //			5000);//Message window display duration
-    //	}
-    //	QDialog::changeEvent(event);
-    // };
-
     // Restore application window
     void showWindow() {
         // this->widget->show();
@@ -651,16 +639,18 @@ public:
 
     // Stylesheet color values
     static QString TextColor;         // Text color
-    static QString PanelColor;       // Panel color
-    static QString BorderColor;      // Border color
+    static QString PanelColor;        // Panel color
+    static QString BorderColor;       // Border color
     static QString NormalColorStart;  // Normal state start color
     static QString NormalColorEnd;    // Normal state end color
-    static QString DarkColorStart;   // Darkened state start color
-    static QString DarkColorEnd;     // Darkened state end color
-    static QString HighColor;        // Highlight color
+    static QString DarkColorStart;    // Darkened state start color
+    static QString DarkColorEnd;      // Darkened state end color
+    static QString HighColor;         // Highlight color
 
-    static void ReadConfig();   // Read config file, called at the beginning of main function when loading application
-    static void WriteConfig();  // Write config file, called when closing application after changing config
+    static void ReadConfig();   // Read config file, called at the beginning of
+                                // main function when loading application
+    static void WriteConfig();  // Write config file, called when closing
+                                // application after changing config
     static void NewConfig();    // Create new config file with initial values
     static bool CheckConfig();  // Validate config file
 };

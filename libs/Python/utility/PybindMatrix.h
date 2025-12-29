@@ -27,8 +27,8 @@ public:
     bool load(py::handle src, bool convert) {
         if (!convert && !py::array_t<T>::check_(src)) return false;
 
-        auto buf = py::array_t < T,
-             py::array::c_style | py::array::forcecast > ::ensure(src);
+        auto buf = py::array_t<T, py::array::c_style |
+                                          py::array::forcecast>::ensure(src);
         if (!buf) return false;
 
         auto dims = buf.ndim();

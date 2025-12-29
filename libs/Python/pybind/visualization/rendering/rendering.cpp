@@ -122,8 +122,8 @@ void pybind_rendering_classes(py::module &m_rendering) {
                  "as the background color of the window")
             .def("add_texture",
                  (TextureHandle(Renderer::*)(
-                         const std::shared_ptr<geometry::Image>,
-                         bool))&Renderer::AddTexture,
+                         const std::shared_ptr<geometry::Image>, bool)) &
+                         Renderer::AddTexture,
                  "image"_a, "is_sRGB"_a = false,
                  "Adds a texture. The first parameter is the image, the second "
                  "parameter is optional and is True if the image is in the "

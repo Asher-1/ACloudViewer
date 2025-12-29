@@ -578,7 +578,8 @@ public:  // main interface
         // Platform-specific base font size adjustment
         int platformBaseSize = baseFontSize;
 #ifdef Q_OS_MAC
-        // macOS: Default font is slightly larger, but need to consider Retina display over-scaling
+        // macOS: Default font is slightly larger, but need to consider Retina
+        // display over-scaling
         platformBaseSize = baseFontSize;
         if (dpiScale > 1) {
             // Retina display: Use smaller font to avoid over-scaling

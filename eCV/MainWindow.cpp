@@ -6127,9 +6127,7 @@ void MainWindow::doActionExportDepthBuffer() {
     }
 
     DepthMapFileFilter::SaveParameters parameters;
-    {
-        parameters.alwaysDisplaySaveDialog = true;
-    }
+    { parameters.alwaysDisplaySaveDialog = true; }
     CC_FILE_ERROR result =
             DepthMapFileFilter().saveToFile(toSave, filename, parameters);
 
