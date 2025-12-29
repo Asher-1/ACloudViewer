@@ -407,9 +407,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 #ifdef _OPENMP
 #pragma omp critical(GetInformationMatrixFromPointClouds)
 #endif
-        {
-            GTG += GTG_private;
-        }
+        { GTG += GTG_private; }
 #ifdef _OPENMP
     }
 #endif

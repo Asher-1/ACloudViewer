@@ -12,6 +12,6 @@
 
 namespace cloudViewer {
 //! Empty class - for classification purpose only
-class CV_CORE_LIB_API CVToolbox{};
+class CV_CORE_LIB_API CVToolbox {};
 
 }  // namespace cloudViewer

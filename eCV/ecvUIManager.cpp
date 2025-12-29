@@ -943,11 +943,13 @@ QString QUIWidget::byteArrayToHexStr(const QByteArray &data) {
 }
 
 QString QUIWidget::getFileName(const QString &filter, QString defaultDir) {
-    return QFileDialog::getOpenFileName(0, QStringLiteral("Select File"), defaultDir, filter);
+    return QFileDialog::getOpenFileName(0, QStringLiteral("Select File"),
+                                        defaultDir, filter);
 }
 
 QStringList QUIWidget::getFileNames(const QString &filter, QString defaultDir) {
-    return QFileDialog::getOpenFileNames(0, QStringLiteral("Select File"), defaultDir, filter);
+    return QFileDialog::getOpenFileNames(0, QStringLiteral("Select File"),
+                                         defaultDir, filter);
 }
 
 QString QUIWidget::getFolderName() {
@@ -1293,18 +1295,12 @@ void QUIWidget::initForm() {
 
     // Add theme menu
     QStringList name;
-    name << QStringLiteral("Silvery")
-         << QStringLiteral("Blue")
-         << QStringLiteral("Light Blue")
-         << QStringLiteral("Dark Blue")
-         << QStringLiteral("Gray")
-         << QStringLiteral("Light Gray")
-         << QStringLiteral("Dark Gray")
-         << QStringLiteral("Black")
-         << QStringLiteral("Light Black")
-         << QStringLiteral("Dark Black")
-         << QStringLiteral("PS Black")
-         << QStringLiteral("Flat Black")
+    name << QStringLiteral("Silvery") << QStringLiteral("Blue")
+         << QStringLiteral("Light Blue") << QStringLiteral("Dark Blue")
+         << QStringLiteral("Gray") << QStringLiteral("Light Gray")
+         << QStringLiteral("Dark Gray") << QStringLiteral("Black")
+         << QStringLiteral("Light Black") << QStringLiteral("Dark Black")
+         << QStringLiteral("PS Black") << QStringLiteral("Flat Black")
          << QStringLiteral("Flat White");
 
     foreach (QString str, name) {
@@ -1347,13 +1343,15 @@ void QUIWidget::createTrayMenu() {
     m_systemTray = new QSystemTrayIcon(this);
     m_systemTray->setIcon(QIcon(Settings::APP_LOGO));  // Set system tray icon
     m_systemTray->setToolTip(Settings::TITLE);         // Show tooltip
-    m_systemTray->showMessage(QStringLiteral("Tray"), QStringLiteral("Tray Management"), QSystemTrayIcon::Information,
-                              10000);
+    m_systemTray->showMessage(QStringLiteral("Tray"),
+                              QStringLiteral("Tray Management"),
+                              QSystemTrayIcon::Information, 10000);
     m_systemTray->setContextMenu(trayMenu);  // Bind tray menu
     m_systemTray->show();                    // Show icon in taskbar
 
     connect(m_systemTray, &QSystemTrayIcon::activated, this,
-            &QUIWidget::activeTray);  // Click tray to execute corresponding action
+            &QUIWidget::activeTray);  // Click tray to execute corresponding
+                                      // action
     connect(m_systemTray, &QSystemTrayIcon::messageClicked, this,
             &QUIWidget::showWindow);  // Click message box to show main window
 }
@@ -1368,9 +1366,10 @@ void QUIWidget::activeTray(QSystemTrayIcon::ActivationReason reason) {
             break;
         case QSystemTrayIcon::Trigger:
             m_systemTray->showMessage(
-                    "Information",                              // Message window title
-                    "There is a new message!",                  // Message content
-                    QSystemTrayIcon::MessageIcon::Information,  // Message window icon
+                    "Information",              // Message window title
+                    "There is a new message!",  // Message content
+                    QSystemTrayIcon::MessageIcon::Information,  // Message
+                                                                // window icon
                     5000);  // Message window display duration
             break;
     }
@@ -2489,7 +2488,8 @@ void IconHelper::setStyle(QWidget *widget,
     widget->setStyleSheet(qss.join(""));
 
     for (int i = 0; i < btnCount; i++) {
-        // Store corresponding button object for easy image switching on mouse hover
+        // Store corresponding button object for easy image switching on mouse
+        // hover
         QPixmap pixNormal = getPixmap(normalTextColor, QChar(pixChar.at(i)),
                                       iconSize, iconWidth, iconHeight);
         QPixmap pixDark = getPixmap(darkTextColor, QChar(pixChar.at(i)),
@@ -2534,7 +2534,8 @@ void IconHelper::setStyle(QFrame *frame,
     frame->setStyleSheet(qss.join(""));
 
     for (int i = 0; i < btnCount; i++) {
-        // Store corresponding button object for easy image switching on mouse hover
+        // Store corresponding button object for easy image switching on mouse
+        // hover
         QPixmap pixNormal = getPixmap(normalTextColor, QChar(pixChar.at(i)),
                                       iconSize, iconWidth, iconHeight);
         QPixmap pixDark = getPixmap(darkTextColor, QChar(pixChar.at(i)),
@@ -2620,7 +2621,8 @@ void QUIConfig::NewConfig() {
 }
 
 bool QUIConfig::CheckConfig() {
-    // If config file size is 0, continue with initial values and generate config file
+    // If config file size is 0, continue with initial values and generate
+    // config file
     QFile file(QUIConfig::ConfigFile);
 
     if (file.size() == 0) {
@@ -2628,7 +2630,8 @@ bool QUIConfig::CheckConfig() {
         return false;
     }
 
-    // If config file is incomplete, continue with initial values and generate config file
+    // If config file is incomplete, continue with initial values and generate
+    // config file
     if (file.open(QFile::ReadOnly)) {
         bool ok = true;
 

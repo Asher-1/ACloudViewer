@@ -1214,9 +1214,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(
                         QString outputFile = imageDir.absoluteFilePath(
                                 "colored_dtm_vertices.bin");
                         BinFilter::SaveParameters parameters;
-                        {
-                            parameters.alwaysDisplaySaveDialog = false;
-                        }
+                        { parameters.alwaysDisplaySaveDialog = false; }
                         if (bf.saveToFile(mntCloud, outputFile, parameters) ==
                             CC_FERR_NO_ERROR)
                             CVLog::Print(QString("[Bundler] Color DTM vertices "
