@@ -825,7 +825,6 @@ cloudViewer_print_configuration_summary()
 set(SCRIPTS_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 file(GLOB main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/*.md" )
 list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.txt" )
-list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/doc/cloudviewer-detail-zh.md" )
 list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/license.txt" 
                                 "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/global_shift_list_template.txt")
 

@@ -1,152 +1,224 @@
-# 在 Windows 上编译 CloudViewer
 
-该文档介绍在 Windows 系统上编译运行 CloudViewer，首先介绍了开发环境的搭建，然后使用 CMake 编译 CloudViewer。所需软件及类库的版本如下（其他版本的环境搭建及配置基本相似）：
+Build from source On Windows
+=====================
 
-- Visual Studio Community 2017
-- Qt5.10.1-msvc2017_x64
-- PCL1.9.1-x64
-- vtk8.1.0
-- cmake3.14
+## WINDOWS: [BUILD_SHELL](../scripts/build_win.py)
 
-## 目录
-
-- [环境搭建](#环境搭建)
-  - [资源下载](#资源下载)
-  - [VS安装](#VS安装)
-  - [PCL安装](#PCL安装)
-  - [Qt安装](Qt安装)
-  - [VTK编译](#VTK编译)
-  - [环境变量配置](#环境变量配置)
-- [CloudViewer编译运行](#CloudViewer编译运行)
-- CloudViewer打包（TODO）
-
-## 环境搭建
-
-### 资源下载
-
-- **Visual Studio**
-  - [Visual Studio Community 2017](https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=Community&rel=15) 
-- **Qt**
-  - [Qt5.10.1](http://download.qt.io/archive/qt/5.10/5.10.1/)
-  - [qt-vsaddin-msvc2017](https://download.qt.io/development_releases/vsaddin/)
-- **PCL**
-  - [PCL-1.9.1-AllInOne-msvc2017-win64.exe](https://github.com/PointCloudLibrary/pcl/releases/download/pcl-1.9.1/PCL-1.9.1-AllInOne-msvc2017-win64.exe)
-  - [PCL-1.9.1-pdb-msvc2017-win64.zip](https://github.com/PointCloudLibrary/pcl/releases/download/pcl-1.9.1/pcl-1.9.1-pdb-msvc2017-win64.zip)
-
-- **VTK**
-  - [vtk8.1.0 source code](https://github.com/Kitware/VTK/archive/v8.1.0.zip)
-  - [cmake](<https://cmake.org/download/>) 
-
-### VS安装
-
-作为演示，为简单起见，安装 Visual Studio 2017 社区版，在安装时，仅勾选了必需的 `Desktop development with C++`。如个人有其他开发需要（如 .NET 开发），可以自行勾选。
-
-<img src="http://nightn.com/cloudviewer/img2/vs2017-community-install.png" width="600"/>
-
-VS2017 与之前版本不同，是在线安装，即边下载边安装，耗时与网速和电脑配置相关。耐心等待安装完成。
-
-<img src="http://nightn.com/cloudviewer/img2/vs2017-community-installing.png" width="400"/>
-
-### PCL安装
-
-PCL 是点云开源库，可以在其 Github realese 页面获取 windows 安装程序和 pdb 文件。这里选择目前最新版 PCL1.9.1 进行安装，将所有组件都勾选上。
-
-<img src="http://nightn.com/cloudviewer/img2/pcl1.9.1-install.png" width="500"/>
-
-安装过程中，会跳出 `OpenNI2` 的单独安装对话框，将安装路径修改为 `3rdParty/OpenNI2`，即和其他 PCL 依赖的第三方库放在一起，然后继续，完成 PCL 的安装。
-
-<img src="http://nightn.com/cloudviewer/img2/openni2-path.png" width="500"/>
-
-### Qt安装
-
-安装 Qt5.10.1，在安装组件选择时，根据 Visual Studio 的版本选择对应的 Qt，在此选择 `MSVC 2017 64-bit`，其他组件可以按需选择。
-
-<img src="http://nightn.com/cloudviewer/img2/qt-setup.png" width="400"/>
-
-耐心等待 Qt 安装完成即可。
-
-<img src="http://nightn.com/cloudviewer/img2/qt-install-finish.png" width="400"/>
-
-然后为 Visual Studio 安装 qt addin 插件，在前面的下载链接中下载插件文件，后缀名为 `.vsix` ，双击完成安装。重新打开 Visual Studio，可以在菜单栏上看到 `QT VS Tools` 菜单。
-
-<img src="http://nightn.com/cloudviewer/img2/qt-vsaddin.png" width="400"/>
-
-安装完成后，打开 Visual Studio 进行 Qt 配置。打开 `Qt VS Tools` - `Qt Options`，设置对应 Qt 版本及路径。
-
-<img src="http://nightn.com/cloudviewer/img2/qt-options.png" width="500"/>
-
-### VTK编译
-
-PCL 依赖 VTK，在其 `3rdParty` 目录下可以看到 VTK。那为什么还要自己手动编译 VTK 呢？这是因为，PCL 安装目录下的 VTK 并不完整，其中就少了与 Qt 相关的模块，而这些模块是 CloudViewer 编译运行所需要的（如 `QVTKWidget`）。所以我们需要手动编译 VTK，并替换 PCL `3rdParty` 下的 VTK。
-
-可以发现，PCL1.9.1 依赖 VTK8.1，所以我们编译这个版本的 VTK（如果你使用的是其他版本的 PCL，请编译对应版本的 VTK）。可以在 VTK Github 下的 release 页面获取对应版本的 VTK 源码。在此之前，假设你已经安装好了 cmake 和 Visual Studio，前者用于生成平台相关的解决方案，后者用于编译。
-
-首先将 VTK 源码解压，打开 cmake-gui，设置源码目录（此处即为 VTK 源码目录）和生成目录。并使用 `Add Entry` 按钮添加缓存变量 **CMAKE_DEBUG_POSTFIX**，类型为 **STRING**，值设置为 **-gd**。这是为了将最后编译的 debug 文件与 release 文件区分开来。
-
-<img src="http://nightn.com/cloudviewer/img2/vtk-config.png" width="500"/>
-
-单击 `Configure` 进行配置，根据安装的 Visual Studio 的版本选择对应的生成器，选择 x64 平台。然后开始配置。
-
-<img src="http://nightn.com/cloudviewer/img2/cmake-generator-config.png" width="500"/>
-
-配置过程中，cmake 会检测当前环境，编译器等，并生成缓存变量。第一次配置完成后，需要对一些缓存变量进行修改，如 **CMAKE_INSTALL_PREFIX**，它规定了最后构建的 VTK 安装在什么地方，这个目录可以随意选择，到时候拷贝到 PCL `3rdParty` 目录下即可。此外，可以选择需要构建的内容：**BUILD_DOCUMENTATION**, **BUILD_EXAMPLES**, **BUILD_SHARED_LIBS**, **BUILD_TESTING**。考虑到项目并没有直接使用 VTK，而只是用于替换 PCL 中的 VTK，所以只勾选了 **BUILD_SHARED_LIBS**，不对文档、实例和测试进行生成，这样可以节省生成和构建的时间。另外一个比较重要的是，要勾选 **VTK_Group_Qt**。具体如下图所示，单击 `Configure`，进行配置。
-
-<img src="http://nightn.com/cloudviewer/img2/cmake-vtk-configuring-2.png" width="500"/>
-
-然后可能会提示 **Qt5_DIR** NOT FOUND，所以，将该缓存变量设置为 Qt cmake 目录，在我的机器上该目录为 `C:\Qt\Qt5.10.1\5.10.1\msvc2017_64\lib\cmake\Qt5`（具体根据 Qt 的版本和安装目录进行合适的设置）。将 **VTK_QT_VERSION** 设置为 5。
-
-<img src="http://nightn.com/cloudviewer/img2/cmake-vtk-configuring-qt.png" width="500"/>
-
-然后 `Configure`，配置完成后，开始 `Generate`，生成完毕后，可以在生成目录下发现 Visual Studio 解决方案。打开解决方案，其中包含了上百个项目，默认是 Debug x64 模式，右击 **ALL_BUILD** 项目，选择生成，生成完成后，右击 **INSTALL** 项目，选择生成，即开始安装，将生成 debug 库文件。待构建完成后，切换为 Release x64 模式，按同样的操作，生成 release 库文件（构建过程比较耗时，大概需要 1 个小时左右）。最终完成 VTK 的构建，可以在先前配置的安装目录下找到构建好的文件。
-
-最后，将构建好的整个目录拷贝至 PCL `3rdParty` 目录下，更名为 `VTK`，替换掉原来的 VTK。此外，为了能够在 Qt Designer 中使用 QVTKWidget 控件，将 `PCL_ROOT/3rdParty/VTK/plugins/designer/QVTKWidget.dll` 拷贝至 `QTDIR/Qt5.10.1/5.10.1/msvc2017_64/plugins/designer` 目录下（PCL_ROOT 和 QTDIR 分别是 PCL 和 Qt 的安装根目录，具体目录设置根据软件版本和安装路径而定）。
-
-### 环境变量配置
-
-添加以下环境变量（如已添加则忽略）。
-
-- **PCL_ROOT**
-
-  指向 PCL 安装根目录（示例：`C:\Program Files\PCL 1.9.1`）。
-
-- **QTDIR**
-
-  指向 QT 安装根目录（示例：`D:\Program\Qt\Qt5.10.1`）。
-
-在 **PATH** 环境变量添加以下值：
-
-- **%PCL_ROOT%\bin**
-- **%PCL_ROOT%\3rdParty\FLANN\bin**
-- **%PCL_ROOT%\3rdParty\VTK\bin**
-- **%PCL_ROOT%\3rdParty\Qhull\bin**
-- **%PCL_ROOT%\3rdParty\OpenNI2\Tools**
-
-## CloudViewer编译运行
-
-克隆 CloudViewer。
-
-```shell
-# 克隆 CloudViewer
-git clone https://github.com/Asher-1/ACloudViewer.git
+```
+python .\scripts\build_win.py
 ```
 
-使用 cmake 配置和生成（也可以选择使用 cmake-gui）。
+## python env setup
+```
+$env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
+Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows_cloudViewer.yml") -Destination "$env:TEMP\conda_windows_cloudViewer.yml"
+(Get-Content "$env:TEMP\conda_windows_cloudViewer.yml") -replace "3.8", $env:PYTHON_VERSION | Set-Content "$env:TEMP\conda_windows_cloudViewer.yml"
 
-```shell
-cd ACloudViewer
-# configure & generate 使用 -G 指定 generator
-cmake -H. -Bbuild -G "Visual Studio 15 2017 Win64"
+conda env create -f "$env:TEMP\conda_windows_cloudViewer.yml"
+conda activate cloudViewer
+
+$env:GENERATOR = "Visual Studio 17 2022"
+$env:ARCHITECTURE = "x64"
+$env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalProcessors
+$env:CLOUDVIEWER_INSTALL_DIR = "C:/dev/cloudViewer_install"
 ```
 
-cmake 运行完成后，将在 `build` 目录生成 Visual Studio 解决方案（假设使用 Visual Studio 作为 generator），可以使用 Visual Studio IDE 编译运行，也可以使用 cmake。
 
-```shell
-# 编译
-cmake --build build
-# 运行（以 Debug 为例）
-./build/src/Debug/ACloudViewer.exe
+## Building App
+
+```
+mkdir build_app
+cd build_app
+../scripts/setup_conda_env.ps1
+
+cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
+    -DDEVELOPER_BUILD="OFF" `
+    -DBUILD_EXAMPLES=OFF `
+    -DBUILD_SHARED_LIBS=OFF `
+    -DSTATIC_WINDOWS_RUNTIME=OFF `
+    -DBUILD_CUDA_MODULE=ON `
+    -DWITH_OPENMP=ON `
+    -DWITH_SIMD=ON `
+    -DUSE_SIMD=ON `
+    -DPACKAGE=ON `
+    -DBUILD_BENCHMARKS=OFF `
+    -DBUILD_OPENCV=ON `
+    -DBUILD_RECONSTRUCTION=ON `
+    -DUSE_PCL_BACKEND=ON `
+    -DWITH_PCL_NURBS=ON `
+    -DCVCORELIB_USE_CGAL=ON `
+    -DCVCORELIB_SHARED=ON `
+    -DCVCORELIB_USE_QT_CONCURRENT=ON `
+    -DOPTION_USE_GDAL=OFF `
+    -DOPTION_USE_DXF_LIB=ON `
+    -DPLUGIN_IO_QDRACO=ON `
+    -DPLUGIN_IO_QLAS=ON `
+    -DPLUGIN_IO_QADDITIONAL=ON `
+    -DPLUGIN_IO_QCORE=ON `
+    -DPLUGIN_IO_QCSV_MATRIX=ON `
+    -DPLUGIN_IO_QE57=ON `
+    -DPLUGIN_IO_QMESH=ON `
+    -DPLUGIN_IO_QPDAL=OFF `
+    -DPLUGIN_IO_QPHOTOSCAN=ON `
+    -DPLUGIN_IO_QRDB=ON `
+    -DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=ON `
+    -DPLUGIN_IO_QFBX=ON `
+    -DPLUGIN_IO_QSTEP=OFF `
+    -DPLUGIN_STANDARD_QCORK=ON `
+    -DPLUGIN_STANDARD_QJSONRPC=ON `
+    -DPLUGIN_STANDARD_QCLOUDLAYERS=ON `
+    -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON `
+    -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON `
+    -DPLUGIN_STANDARD_QANIMATION=ON `
+    -DQANIMATION_WITH_FFMPEG_SUPPORT=ON `
+    -DPLUGIN_STANDARD_QCANUPO=ON `
+    -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON `
+    -DPLUGIN_STANDARD_QCOMPASS=ON `
+    -DPLUGIN_STANDARD_QCSF=ON `
+    -DPLUGIN_STANDARD_QFACETS=ON `
+    -DPLUGIN_STANDARD_G3POINT=ON `
+    -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON `
+    -DPLUGIN_STANDARD_QM3C2=ON `
+    -DPLUGIN_STANDARD_QMPLANE=ON `
+    -DPLUGIN_STANDARD_QPCL=ON `
+    -DPLUGIN_STANDARD_QPOISSON_RECON=ON `
+    -DPOISSON_RECON_WITH_OPEN_MP=ON `
+    -DPLUGIN_STANDARD_QSRA=ON `
+    -DPLUGIN_STANDARD_3DMASC=ON `
+    -DPLUGIN_STANDARD_QTREEISO=ON `
+    -DPLUGIN_STANDARD_QVOXFALL=ON `
+    -DBUILD_WITH_CONDA=ON `
+    -DCONDA_PREFIX=$env:CONDA_PREFIX `
+    -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `
+    -DEIGEN_ROOT_DIR="$env:EIGEN_ROOT_DIR" `
+    -DPLUGIN_PYTHON=ON `
+    -DBUILD_PYTHON_MODULE=ON `
+    -DBUILD_UNIT_TESTS=OFF `
+    -DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR `
+    ..
+
+cmake --build . --config Release --verbose --parallel 48
+cmake --build . --config Release --target ACloudViewer --verbose --parallel 48
+
+cmake --install . --config Release --verbose --parallel 48
+
 ```
 
-运行结果如下图所示。
+## Building wheel
 
-<img src="http://nightn.com/cloudviewer/img2/windows-run-result.png" width="600"/>
+```
+$env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
+Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows.yml") -Destination "$env:TEMP\conda_windows.yml"
+(Get-Content "$env:TEMP\conda_windows.yml") -replace "3.8", "3.12" | Set-Content "$env:TEMP\conda_windows.yml"
+
+conda env create -f "$env:TEMP\conda_windows.yml"
+conda activate python3.12
+
+. (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
+Install-PythonDependencies -options "with-cuda","with-torch","with-jupyter"
+```
+
+```
+mkdir build
+cd build
+../scripts/setup_conda_env.ps1
+
+cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
+        -DBUILD_SHARED_LIBS=OFF `
+        -DDEVELOPER_BUILD=OFF `
+        -DCMAKE_BUILD_TYPE=Release `
+        -DUSE_SYSTEM_EIGEN3=ON `
+        -DBUILD_AZURE_KINECT=ON `
+        -DBUILD_LIBREALSENSE=ON `
+        -DBUILD_UNIT_TESTS=OFF `
+        -DBUILD_BENCHMARKS=OFF `
+        -DBUILD_CUDA_MODULE=ON `
+        -DUSE_SIMD=ON `
+        -DWITH_SIMD=ON `
+        -DWITH_OPENMP=ON `
+        -DWITH_IPP=ON `
+        -DCVCORELIB_SHARED=ON `
+        -DCVCORELIB_USE_CGAL=ON `
+        -DCVCORELIB_USE_QT_CONCURRENT=ON `
+        -DUSE_PCL_BACKEND=OFF `
+        -DBUILD_RECONSTRUCTION=ON `
+        -DBUILD_PYTORCH_OPS=ON `
+        -DBUILD_TENSORFLOW_OPS=OFF `
+        -DBUNDLE_CLOUDVIEWER_ML=ON `
+        -DBUILD_JUPYTER_EXTENSION=ON `
+        -DBUILD_FILAMENT_FROM_SOURCE=OFF `
+        -DBUILD_WITH_CONDA=ON `
+        -DCONDA_PREFIX=$env:CONDA_PREFIX `
+        -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `
+        -DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR `
+        ..
+
+cmake --build . --target pip-package --config Release --parallel $env:NPROC
+```
+
+
+## Compilation options
+-------------------
+ML Module
+
+Warning: Due to incompatibilities in the cxx11_abi on Linux between PyTorch and TensorFlow, 
+official Python wheels on Linux only support PyTorch, not TensorFlow.
+The ML module consists of primitives like operators and layers as well as high
+level code for models and pipelines. To build the operators and layers, set
+``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
+enable ``BUILD_CUDA_MODULE=ON`` for GPU support. To include the models and
+pipelines from CloudViewer-ML in the python package, set ``BUNDLE_CLOUDVIEWER_ML=ON`` and
+``CLOUDVIEWER_ML_ROOT`` to the CloudViewer-ML repository. You can directly download
+CloudViewer-ML from GitHub during the build with
+``CLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git``.
+
+The following example shows the command for building the ops with GPU support
+for all supported ML frameworks and bundling the high level CloudViewer-ML code.
+
+    # In the build directory
+    cmake -DBUILD_CUDA_MODULE=ON \
+          -DBUILD_PYTORCH_OPS=ON \
+          -DBUILD_TENSORFLOW_OPS=OFF \
+          -DBUNDLE_CLOUDVIEWER_ML=ON \
+          -DCLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
+          ..
+    # Install the python wheel with pip
+    make -j install-pip-package
+
+note::
+    Importing Python libraries compiled with different CXX ABI may cause segfaults
+    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
+    and TensorFlow Python releases use the older CXX ABI; while when they are
+    compiled from source, newer ABI is enabled by default.
+	When releasing CloudViewer as a Python package, we set
+    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
+    in order to ensure compatibility with PyTorch and TensorFlow Python releases.
+	If you build PyTorch or TensorFlow from source or if you run into ABI
+    compatibility issues with them, please:
+
+1. Check PyTorch and TensorFlow ABI with
+	
+		python -c "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI)"
+		python -c "import tensorflow; print(tensorflow.__cxx11_abi_flag__)"
+
+2. Configure CloudViewer to compile all dependencies from source
+   with the corresponding ABI version obtained from step 1.
+
+After installation of the Python package, you can check CloudViewer ABI version
+with:
+
+        python -c "import cloudViewer; print(cloudViewer.pybind._GLIBCXX_USE_CXX11_ABI)"
+
+To build CloudViewer with CUDA support, configure with:
+
+        cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
+
+Please note that CUDA support is work in progress and experimental. For building CloudViewer with CUDA support, ensure that CUDA is properly installed by running following commands:
+
+code-block:: bash
+
+        nvidia-smi      # Prints CUDA-enabled GPU information
+        nvcc -V         # Prints compiler version
+
+If you see an output similar to ``command not found``, you can install CUDA toolkit by following the `official documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
+

@@ -1041,16 +1041,16 @@ void cvSelectionPropertiesWidget::setupAdvancedTab() {
 
     m_algebraOpCombo = new QComboBox();
     m_algebraOpCombo->addItem(
-            tr("Union (A ∪ B)"),
+            tr("Union (A U B)"),
             static_cast<int>(cvSelectionAlgebra::Operation::UNION));
     m_algebraOpCombo->addItem(
-            tr("Intersection (A ∩ B)"),
+            tr("Intersection (A & B)"),
             static_cast<int>(cvSelectionAlgebra::Operation::INTERSECTION));
     m_algebraOpCombo->addItem(
             tr("Difference (A - B)"),
             static_cast<int>(cvSelectionAlgebra::Operation::DIFFERENCE));
     m_algebraOpCombo->addItem(
-            tr("Symmetric Diff (A △ B)"),
+            tr("Symmetric Diff (A ^ B)"),
             static_cast<int>(cvSelectionAlgebra::Operation::SYMMETRIC_DIFF));
     m_algebraOpCombo->addItem(
             tr("Complement (~A)"),

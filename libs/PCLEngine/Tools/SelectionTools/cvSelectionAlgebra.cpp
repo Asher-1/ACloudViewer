@@ -42,7 +42,7 @@ cvSelectionData cvSelectionAlgebra::unionOf(const cvSelectionData& a,
 
     QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
 
-    CVLog::Print(QString("[cvSelectionAlgebra] Union: %1 ∪ %2 = %3")
+    CVLog::Print(QString("[cvSelectionAlgebra] Union: %1 U %2 = %3")
                          .arg(a.count())
                          .arg(b.count())
                          .arg(resultIds.size()));
@@ -71,7 +71,7 @@ cvSelectionData cvSelectionAlgebra::intersectionOf(const cvSelectionData& a,
 
     QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
 
-    CVLog::Print(QString("[cvSelectionAlgebra] Intersection: %1 ∩ %2 = %3")
+    CVLog::Print(QString("[cvSelectionAlgebra] Intersection: %1 & %2 = %3")
                          .arg(a.count())
                          .arg(b.count())
                          .arg(resultIds.size()));
@@ -125,8 +125,8 @@ cvSelectionData cvSelectionAlgebra::symmetricDifferenceOf(
         return cvSelectionData();
     }
 
-    // Symmetric difference: (A - B) ∪ (B - A)
-    // Or equivalently: (A ∪ B) - (A ∩ B)
+    // Symmetric difference: (A - B) U (B - A)
+    // Or equivalently: (A U B) - (A & B)
     QSet<qint64> setA = QSet<qint64>(a.ids().begin(), a.ids().end());
     QSet<qint64> setB = QSet<qint64>(b.ids().begin(), b.ids().end());
 
@@ -144,7 +144,7 @@ cvSelectionData cvSelectionAlgebra::symmetricDifferenceOf(
     QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
 
     CVLog::Print(
-            QString("[cvSelectionAlgebra] Symmetric Difference: %1 △ %2 = %3")
+            QString("[cvSelectionAlgebra] Symmetric Difference: %1 ^ %2 = %3")
                     .arg(a.count())
                     .arg(b.count())
                     .arg(resultIds.size()));

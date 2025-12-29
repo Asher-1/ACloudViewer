@@ -80,9 +80,7 @@ public:
         // we don't catch the exception (so that the
         // caller can properly handle the error!)
         // try
-        {
-            m_cd.resize(w * h, 0);
-        }
+        { m_cd.resize(w * h, 0); }
         // catch (const std::bad_alloc&)
         //{
         //	//not enough memory!
