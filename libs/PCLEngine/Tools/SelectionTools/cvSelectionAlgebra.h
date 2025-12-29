@@ -7,6 +7,12 @@
 
 #pragma once
 
+// Protect against Windows macro conflicts - must be before any includes
+// Note: Windows headers may define DIFFERENCE as a macro
+#ifdef DIFFERENCE
+#undef DIFFERENCE
+#endif
+
 // clang-format off
 // Qt - must be included before qPCL.h and cvSelectionData.h for MOC to work correctly
 // QObject must be fully defined before Q_ENUM macro
@@ -29,10 +35,10 @@ class vtkPolyData;
  * @brief Selection algebra operations
  *
  * Provides set-theoretic operations on selections:
- * - Union (A ∪ B): Combine two selections
- * - Intersection (A ∩ B): Common elements
+ * - Union (A U B): Combine two selections
+ * - Intersection (A & B): Common elements
  * - Difference (A - B): Elements in A but not in B
- * - Symmetric Difference (A △ B): Elements in A or B but not both
+ * - Symmetric Difference (A ^ B): Elements in A or B but not both
  * - Complement (~A): All elements not in A
  *
  * Based on ParaView's selection algebra functionality.
@@ -46,16 +52,15 @@ public:
      * Using enum class to avoid macro conflicts (e.g., DIFFERENCE may be
      * defined as a macro on Windows)
      * Note: Q_ENUM requires QObject to be fully defined before the enum
+     * Note: DIFFERENCE macro protection is handled at file scope (top of file)
      */
     enum class Operation {
-        UNION,           ///< A ∪ B
-        INTERSECTION,    ///< A ∩ B
-        DIFFERENCE,      ///< A - B
-        SYMMETRIC_DIFF,  ///< A △ B (elements in either but not both)
-        COMPLEMENT       ///< ~A (all elements not in A)
+        UNION,
+        INTERSECTION,
+        DIFFERENCE,
+        SYMMETRIC_DIFF,
+        COMPLEMENT
     };
-    // Q_ENUM must be placed after enum definition and QObject must be fully
-    // visible
     Q_ENUM(Operation)
 
     explicit cvSelectionAlgebra(QObject* parent = nullptr);
@@ -64,7 +69,7 @@ public:
      * @brief Compute union of two selections
      * @param a First selection
      * @param b Second selection
-     * @return Union result (A ∪ B)
+     * @return Union result (A U B)
      */
     static cvSelectionData unionOf(const cvSelectionData& a,
                                    const cvSelectionData& b);
@@ -73,7 +78,7 @@ public:
      * @brief Compute intersection of two selections
      * @param a First selection
      * @param b Second selection
-     * @return Intersection result (A ∩ B)
+     * @return Intersection result (A & B)
      */
     static cvSelectionData intersectionOf(const cvSelectionData& a,
                                           const cvSelectionData& b);
@@ -91,7 +96,7 @@ public:
      * @brief Compute symmetric difference of two selections
      * @param a First selection
      * @param b Second selection
-     * @return Symmetric difference result (A △ B)
+     * @return Symmetric difference result (A ^ B)
      */
     static cvSelectionData symmetricDifferenceOf(const cvSelectionData& a,
                                                  const cvSelectionData& b);

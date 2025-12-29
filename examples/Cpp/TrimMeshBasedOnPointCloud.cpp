@@ -79,9 +79,7 @@ int main(int argc, char* argv[]) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-        {
-            ++progress_bar;
-        }
+        { ++progress_bar; }
     }
 
     ccPointCloud* cloud =

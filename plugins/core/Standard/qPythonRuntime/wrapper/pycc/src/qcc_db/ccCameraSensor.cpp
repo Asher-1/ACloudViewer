@@ -88,8 +88,7 @@ void define_ccCameraSensor(py::module &m)
             })
         .def_property(
             "linearDisparityParams",
-            [](const ccCameraSensor::BrownDistortionParameters &self) -> py::tuple
-            {
+            [](const ccCameraSensor::BrownDistortionParameters &self) -> py::tuple {
                 return py::make_tuple(self.linearDisparityParams[0], self.linearDisparityParams[1]);
             },
             [](ccCameraSensor::BrownDistortionParameters &self,
@@ -102,8 +101,7 @@ void define_ccCameraSensor(py::module &m)
             })
         .def_property(
             "K_BrownParams",
-            [](const ccCameraSensor::BrownDistortionParameters &self) -> py::tuple
-            {
+            [](const ccCameraSensor::BrownDistortionParameters &self) -> py::tuple {
                 return py::make_tuple(
                     self.K_BrownParams[0], self.K_BrownParams[1], self.K_BrownParams[2]);
             },

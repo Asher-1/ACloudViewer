@@ -2732,9 +2732,7 @@ void ccPointCloud::scale(PointCoordinateType fx,
     }
 
     // update the transformation history
-    {
-        m_glTransHistory = scaleTrans * m_glTransHistory;
-    }
+    { m_glTransHistory = scaleTrans * m_glTransHistory; }
 
     notifyGeometryUpdate();  // calls releaseVBOs()
 }
