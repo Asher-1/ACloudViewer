@@ -585,7 +585,7 @@ if (BUILD_CUDA_MODULE)
     endif()
 
     if(WIN32 AND NOT (CUDA_VERSION VERSION_LESS "11.2"))
-        set(CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS} -Xcudafe --display_error_number --diag-suppress 1394,1388)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcudafe --display_error_number --diag-suppress 1394,1388")
     endif()
 
     include(CloudViewerMakeCudaArchitectures)

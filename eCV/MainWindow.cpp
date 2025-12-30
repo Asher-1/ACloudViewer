@@ -12309,6 +12309,13 @@ void MainWindow::populateActionList() {
             continue;
         }
 
+        // Skip actions that have a menu (root menu items with submenus)
+        // These are container actions, not functional actions
+        // Examples: "Measurement Tools", "PCL Algorithms", "Paraview"
+        if (action->menu() != nullptr) {
+            continue;
+        }
+
         // Skip actions without objectName that are likely temporary/dynamic
         // UI-defined actions typically have objectName set
         // But allow actions from UI menus/toolbars even without objectName

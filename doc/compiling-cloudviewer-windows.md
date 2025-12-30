@@ -29,6 +29,7 @@ $env:CLOUDVIEWER_INSTALL_DIR = "C:/dev/cloudViewer_install"
 ```
 mkdir build_app
 cd build_app
+conda activate cloudViewer
 ../scripts/setup_conda_env.ps1
 
 cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
@@ -100,7 +101,7 @@ cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
 cmake --build . --config Release --verbose --parallel 48
 cmake --build . --config Release --target ACloudViewer --verbose --parallel 48
 
-cmake --install . --config Release --verbose --parallel 48
+cmake --install . --config Release --verbose
 
 ```
 
@@ -116,6 +117,12 @@ conda activate python3.12
 
 . (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
 Install-PythonDependencies -options "with-cuda","with-torch","with-jupyter"
+
+# deploy yarn for jupyter building
+node --version
+npm --version
+npm install -g yarn
+yarn --version
 ```
 
 ```
