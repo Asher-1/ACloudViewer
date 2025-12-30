@@ -35,6 +35,7 @@ $env:GENERATOR = "Visual Studio 17 2022"
 $env:ARCHITECTURE = "x64"
 $env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalProcessors
 $env:CLOUDVIEWER_INSTALL_DIR = "C:/dev/cloudViewer_install"
+$env:CLOUDVIEWER_ML_ROOT = "C:/Users/asher/develop/code/CloudViewer/CloudViewer-ML"
 
 # Display results
 Write-Host "`nEnvironment variables set:" -ForegroundColor Green

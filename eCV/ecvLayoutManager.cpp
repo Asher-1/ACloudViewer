@@ -416,13 +416,6 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         setToolbarIconSize(unifiedPluginToolbar, screenWidth);
     }
 
-    // Add Python plugin toolbars at the end of first row
-    for (QToolBar* toolbar : pythonPluginToolbars) {
-        m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
-        toolbar->setVisible(true);
-        setToolbarIconSize(toolbar, screenWidth);
-    }
-
     // Add toolbar break for second row
     m_mainWindow->addToolBarBreak(Qt::TopToolBarArea);
 
@@ -448,6 +441,13 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
 
     // Add remaining toolbars
     for (QToolBar* toolbar : toolbarMap.values()) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
+        toolbar->setVisible(true);
+        setToolbarIconSize(toolbar, screenWidth);
+    }
+
+    // Add Python plugin toolbars at the end of second row
+    for (QToolBar* toolbar : pythonPluginToolbars) {
         m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
         toolbar->setVisible(true);
         setToolbarIconSize(toolbar, screenWidth);
