@@ -139,7 +139,7 @@ cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
         -DBUILD_LIBREALSENSE=ON `
         -DBUILD_UNIT_TESTS=OFF `
         -DBUILD_BENCHMARKS=OFF `
-        -DBUILD_CUDA_MODULE=ON `
+        -DBUILD_CUDA_MODULE=OFF `
         -DUSE_SIMD=ON `
         -DWITH_SIMD=ON `
         -DWITH_OPENMP=ON `
@@ -160,6 +160,12 @@ cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
         -DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR `
         ..
 
+# build without cuda
+cmake --build . --target python-package --config Release --parallel $env:NPROC
+cmake --build . --target pip-package --config Release --parallel $env:NPROC
+
+# build with cuda
+cmake -DBUILD_CUDA_MODULE=ON ..
 cmake --build . --target pip-package --config Release --parallel $env:NPROC
 ```
 
