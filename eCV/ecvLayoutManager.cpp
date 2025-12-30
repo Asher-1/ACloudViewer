@@ -476,37 +476,13 @@ void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
 
 void ecvLayoutManager::setupMainWindowGeometry(int screenWidth,
                                                int screenHeight) {
-    // Adjust main window size based on screen resolution
-    int windowWidth;
-    int windowHeight;
+    // Always maximize the main window on startup
+    m_mainWindow->showMaximized();
 
-    if (screenWidth >= 3840) {
-        // 4K resolution: use 90% of screen
-        windowWidth = static_cast<int>(screenWidth * 0.9);
-        windowHeight = static_cast<int>(screenHeight * 0.9);
-    } else if (screenWidth >= 1920) {
-        // Full HD: use 95% of screen
-        windowWidth = static_cast<int>(screenWidth * 0.95);
-        windowHeight = static_cast<int>(screenHeight * 0.95);
-    } else {
-        // Lower resolution: maximize
-        m_mainWindow->showMaximized();
-        return;
-    }
-
-    // Center the window
-    int x = (screenWidth - windowWidth) / 2;
-    int y = (screenHeight - windowHeight) / 2;
-
-    m_mainWindow->setGeometry(x, y, windowWidth, windowHeight);
-
-    CVLog::Print(
-            QString("[ecvLayoutManager] Main window geometry set: %1x%2 at "
-                    "(%3, %4)")
-                    .arg(windowWidth)
-                    .arg(windowHeight)
-                    .arg(x)
-                    .arg(y));
+    CVLog::PrintDebug(
+            QString("[ecvLayoutManager] Main window maximized (screen: %1x%2)")
+                    .arg(screenWidth)
+                    .arg(screenHeight));
 }
 
 void ecvLayoutManager::setupDefaultLayout() {
@@ -515,9 +491,9 @@ void ecvLayoutManager::setupDefaultLayout() {
     int screenWidth = screenGeometry.width();
     int screenHeight = screenGeometry.height();
 
-    CVLog::Print(QString("[ecvLayoutManager] Screen resolution: %1x%2")
-                         .arg(screenWidth)
-                         .arg(screenHeight));
+    CVLog::PrintDebug(QString("[ecvLayoutManager] Screen resolution: %1x%2")
+                        .arg(screenWidth)
+                        .arg(screenHeight));
 
     // Setup components
     setupToolbarLayout(screenWidth);
