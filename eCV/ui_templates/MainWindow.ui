@@ -4315,6 +4315,10 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
   </action>
   <action name="actionFitCircle">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/dbCircle.png</normaloff>:/Resources/images/dbCircle.png</iconset>
+   </property>
    <property name="text">
     <string>Circle</string>
    </property>
