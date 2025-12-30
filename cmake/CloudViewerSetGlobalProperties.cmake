@@ -150,6 +150,11 @@ function(cloudViewer_set_global_properties target)
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
             target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
+            # UTF-8 support: set both source and execution character sets to UTF-8
+            # https://docs.microsoft.com/en-us/cpp/build/reference/utf-8-set-source-and-executable-character-sets-to-utf-8
+            # Enable UTF-8 source and execution character sets to properly handle Unicode characters
+            # This fixes compilation errors with Unicode string literals (e.g., in pybind11)
+            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/utf-8>)
             if(BUILD_GUI)
                 # GLEW and CloudViewer make direct OpenGL calls and link to opengl32.lib;
                 # Filament needs to link through bluegl.lib.

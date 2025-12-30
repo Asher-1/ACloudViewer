@@ -44,10 +44,15 @@ public:
 
     void restoreShortcutsFromQSettings() const;
 
+private slots:
+    void filterActions(const QString& searchText);
+
 private:
     const QAction* checkConflict(const QKeySequence& sequence) const;
     void handleDoubleClick(QTableWidgetItem* item);
+    void showAllRows();
 
     Ui_ShortcutDialog* m_ui;
     ecvShortcutEditDialog* m_editDialog;
+    QList<QAction*> m_allActions;  // Store all actions for filtering
 };
