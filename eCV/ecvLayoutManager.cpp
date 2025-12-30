@@ -185,7 +185,7 @@ void ecvLayoutManager::hideAdditionalPluginToolbars() {
             if (ccPluginUIManager::isPythonPluginToolbar(toolbar)) {
                 continue;
             }
-            
+
             // Remove from main window if attached
             if (toolbar->parent() == m_mainWindow) {
                 m_mainWindow->removeToolBar(toolbar);

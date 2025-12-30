@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>780</width>
+    <width>1000</width>
     <height>634</height>
    </rect>
   </property>
@@ -14,6 +14,13 @@
    <string>Shortcuts</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLineEdit" name="searchLineEdit">
+     <property name="placeholderText">
+      <string>Search actions...</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <widget class="QTableWidget" name="tableWidget">
      <property name="toolTip">

@@ -545,6 +545,10 @@
      <property name="title">
       <string>Circle</string>
      </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/dbCircle.png</normaloff>:/Resources/images/dbCircle.png</iconset>
+     </property>
      <addaction name="actionPromoteCircleToCylinder"/>
     </widget>
     <widget class="QMenu" name="menuClean">

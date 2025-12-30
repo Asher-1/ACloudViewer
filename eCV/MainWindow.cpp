@@ -1420,7 +1420,7 @@ void MainWindow::initPlugins() {
     // Separate Python plugin toolbars from other toolbars
     QList<QToolBar*> pythonPluginToolbars;
     QList<QToolBar*> otherPluginToolbars;
-    
+
     for (QToolBar* toolbar : additionalToolbars) {
         if (ccPluginUIManager::isPythonPluginToolbar(toolbar)) {
             pythonPluginToolbars.append(toolbar);
@@ -12224,128 +12224,139 @@ void MainWindow::doComputeGeometricFeature() {
     updateUI();
 }
 
-void MainWindow::populateActionList() {
-    m_actions.clear();
-
-    // Collect all actions from menus and toolbars
-    QList<QAction*> allActions = findChildren<QAction*>();
-
-    // Collect actions from dynamic menus that shouldn't have shortcuts
-    QSet<QAction*> excludedActions;
-
-    // Filter out recent files menu actions
-    QMenu* recentFilesMenu = m_recentFiles ? m_recentFiles->menu() : nullptr;
-    if (recentFilesMenu) {
-        for (QAction* menuAction : recentFilesMenu->actions()) {
-            excludedActions.insert(menuAction);
-        }
+// Helper function to recursively collect functional actions from a menu
+// Only collects leaf actions (actions without submenus) that are not excluded
+static void collectActionsFromMenu(QMenu* menu,
+                                   QList<QAction*>& actions,
+                                   QSet<QAction*>& collected,
+                                   const QSet<QMenu*>& excludedMenus) {
+    if (!menu || excludedMenus.contains(menu)) {
+        return;
     }
 
-    // Filter out 3D mouse manager menu actions
-#ifdef CC_3DXWARE_SUPPORT
-    if (m_3DMouseManager) {
-        QMenu* mouseMenu = m_3DMouseManager->menu();
-        if (mouseMenu) {
-            for (QAction* menuAction : mouseMenu->actions()) {
-                excludedActions.insert(menuAction);
-            }
-        }
-    }
-#endif
-
-    // Filter out gamepad manager menu actions
-#ifdef CC_GAMEPAD_SUPPORT
-    if (m_gamepadManager) {
-        QMenu* gamepadMenu = m_gamepadManager->menu();
-        if (gamepadMenu) {
-            for (QAction* menuAction : gamepadMenu->actions()) {
-                excludedActions.insert(menuAction);
-            }
-        }
-    }
-#endif
-
-    // Collect all menu actions (QMenu::menuAction()) to exclude them
-    // These are the menu items themselves, not functional actions
-    QList<QMenu*> allMenus = findChildren<QMenu*>();
-    for (QMenu* menu : allMenus) {
-        excludedActions.insert(menu->menuAction());
-    }
-
-    for (QAction* action : allActions) {
-        // Skip actions without text
-        if (!action || action->text().isEmpty()) {
+    for (QAction* action : menu->actions()) {
+        if (!action) {
             continue;
         }
 
-        // Skip separator actions
+        // Skip separators
         if (action->isSeparator()) {
             continue;
         }
 
-        // Skip excluded actions (from dynamic menus)
-        if (excludedActions.contains(action)) {
+        // Skip actions without text (not user-visible)
+        if (action->text().isEmpty()) {
             continue;
         }
 
-        // Skip actions whose parent is ecvRecentFiles
-        // (additional check for dynamically created actions)
-        if (action->parent() == m_recentFiles) {
+        // Skip if already collected (avoid duplicates)
+        if (collected.contains(action)) {
             continue;
         }
 
-        // Skip menu actions (QMenu::menuAction())
-        // These represent menus themselves, not functional actions
-        // Check if this action is a menu's menuAction
-        bool isMenuAction = false;
-        for (QMenu* menu : allMenus) {
-            if (menu->menuAction() == action) {
-                // This is a menu item itself, skip it
-                isMenuAction = true;
-                break;
-            }
-        }
-        if (isMenuAction) {
+        // Skip toolbar toggle actions by objectName pattern
+        // All toolbar toggle actions have objectName starting with
+        // "actionDisplay"
+        if (!action->objectName().isEmpty() &&
+            action->objectName().startsWith("actionDisplay")) {
             continue;
         }
 
-        // Skip actions that have a menu (root menu items with submenus)
-        // These are container actions, not functional actions
-        // Examples: "Measurement Tools", "PCL Algorithms", "Paraview"
-        if (action->menu() != nullptr) {
+        // If action has a submenu, recursively process it
+        QMenu* submenu = action->menu();
+        if (submenu) {
+            collectActionsFromMenu(submenu, actions, collected, excludedMenus);
+            continue;  // Don't add menu items themselves
+        }
+
+        // This is a functional action (leaf node), add it
+        actions.append(action);
+        collected.insert(action);
+    }
+}
+
+void MainWindow::populateActionList() {
+    m_actions.clear();
+
+    // Build set of excluded menus (dynamic menus that shouldn't have shortcuts)
+    QSet<QMenu*> excludedMenus;
+
+    // Exclude recent files menu
+    if (m_recentFiles) {
+        QMenu* recentFilesMenu = m_recentFiles->menu();
+        if (recentFilesMenu) {
+            excludedMenus.insert(recentFilesMenu);
+        }
+    }
+
+    // Exclude 3D mouse manager menu
+#ifdef CC_3DXWARE_SUPPORT
+    if (m_3DMouseManager) {
+        QMenu* mouseMenu = m_3DMouseManager->menu();
+        if (mouseMenu) {
+            excludedMenus.insert(mouseMenu);
+        }
+    }
+#endif
+
+    // Exclude gamepad manager menu
+#ifdef CC_GAMEPAD_SUPPORT
+    if (m_gamepadManager) {
+        QMenu* gamepadMenu = m_gamepadManager->menu();
+        if (gamepadMenu) {
+            excludedMenus.insert(gamepadMenu);
+        }
+    }
+#endif
+
+    // Exclude toolbar menu (contains toolbar toggle actions)
+    excludedMenus.insert(m_ui->menuToolbars);
+
+    // Track collected actions to avoid duplicates
+    QSet<QAction*> collected;
+
+    // Collect actions from menuBar menus (efficient: only traverse menu
+    // structure)
+    for (QAction* menuBarAction : m_ui->menuBar->actions()) {
+        QMenu* menu = menuBarAction->menu();
+        if (menu) {
+            collectActionsFromMenu(menu, m_actions, collected, excludedMenus);
+        }
+    }
+
+    // Also collect actions from toolbars (for toolbar actions not in menus)
+    for (QToolBar* toolbar : findChildren<QToolBar*>()) {
+        // Skip plugin toolbars (they contain plugin actions)
+        QString toolbarName = toolbar->objectName();
+        if (toolbarName.contains("Plugin", Qt::CaseInsensitive) ||
+            toolbarName.contains("PCL", Qt::CaseInsensitive)) {
             continue;
         }
 
-        // Skip actions without objectName that are likely temporary/dynamic
-        // UI-defined actions typically have objectName set
-        // But allow actions from UI menus/toolbars even without objectName
-        if (action->objectName().isEmpty()) {
-            QWidget* parentWidget = qobject_cast<QWidget*>(action->parent());
-            // Only include if parent is a known UI widget (menuBar, toolbar, or
-            // menu from UI)
-            bool isFromUI = false;
-            if (parentWidget) {
-                // Check if it's from the UI structure
-                if (parentWidget == m_ui->menuBar ||
-                    qobject_cast<QToolBar*>(parentWidget)) {
-                    isFromUI = true;
-                } else if (QMenu* menu = qobject_cast<QMenu*>(parentWidget)) {
-                    // For menus, check if it's part of the UI structure
-                    // UI menus are typically children of menuBar or have
-                    // objectName
-                    if (menu->parent() == m_ui->menuBar ||
-                        !menu->objectName().isEmpty()) {
-                        isFromUI = true;
-                    }
-                }
-            }
-            if (!isFromUI) {
+        for (QAction* action : toolbar->actions()) {
+            if (!action || action->isSeparator() || action->text().isEmpty()) {
                 continue;
             }
-        }
 
-        // Add action to list
-        m_actions.append(action);
+            // Skip if already collected
+            if (collected.contains(action)) {
+                continue;
+            }
+
+            // Skip toolbar toggle actions
+            if (!action->objectName().isEmpty() &&
+                action->objectName().startsWith("actionDisplay")) {
+                continue;
+            }
+
+            // Skip actions with submenus
+            if (action->menu()) {
+                continue;
+            }
+
+            m_actions.append(action);
+            collected.insert(action);
+        }
     }
 }
 
