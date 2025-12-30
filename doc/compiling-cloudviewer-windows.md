@@ -95,7 +95,7 @@ cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
     -DPLUGIN_PYTHON=ON `
     -DBUILD_PYTHON_MODULE=ON `
     -DBUILD_UNIT_TESTS=OFF `
-    -DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR `
+    -DCMAKE_INSTALL_PREFIX="$env:CLOUDVIEWER_INSTALL_DIR" `
     ..
 
 cmake --build . --config Release --verbose --parallel 48
@@ -157,7 +157,7 @@ cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
         -DBUILD_WITH_CONDA=ON `
         -DCONDA_PREFIX=$env:CONDA_PREFIX `
         -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `
-        -DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR `
+        -DCMAKE_INSTALL_PREFIX="$env:CLOUDVIEWER_INSTALL_DIR" `
         ..
 
 # build without cuda
