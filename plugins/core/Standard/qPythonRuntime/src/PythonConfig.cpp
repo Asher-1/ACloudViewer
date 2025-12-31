@@ -19,10 +19,6 @@
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#include <QTextCodec>
-#endif
-
 #if defined(USE_EMBEDDED_MODULES)
 #if defined(Q_OS_WINDOWS)
 static QString BundledSitePackagesPath()
@@ -83,11 +79,7 @@ static Version GetPythonExeVersion(QProcess &pythonProcess)
     pythonProcess.waitForFinished();
 
     const QString versionStr =
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        QString::fromUtf8(pythonProcess.readAllStandardOutput());
-#else
-        QTextCodec::codecForName("utf-8")->toUnicode(pythonProcess.readAllStandardOutput());
-#endif
+        qtCompatCodecForName("utf-8")->toUnicode(pythonProcess.readAllStandardOutput());
 
     auto splits = qtCompatSplitRefChar(versionStr, ' ');
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -432,7 +424,7 @@ void PythonConfig::initFromPythonExecutable(const QString &pythonExecutable)
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         QString::fromUtf8(pythonProcess.readAllStandardOutput());
 #else
-        QTextCodec::codecForName("utf-8")->toUnicode(pythonProcess.readAllStandardOutput());
+        qtCompatCodecForName("utf-8")->toUnicode(pythonProcess.readAllStandardOutput());
 #endif
 
     QStringList pathsAndHome = result.split('\n');

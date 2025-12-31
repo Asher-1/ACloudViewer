@@ -106,8 +106,8 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
             sizeof(PointCoordinateType) == 4 && !vertices->isShifted() ? 8
                                                                        : 12);
 
-    stream << "# " << FileIO::createdBy() << endl;
-    stream << "# " << FileIO::createdDateTime() << endl;
+    stream << "# " << FileIO::createdBy() << QtCompat::endl;
+    stream << "# " << FileIO::createdDateTime() << QtCompat::endl;
 
     if (file.error() != QFile::NoError) return CC_FERR_WRITING;
 
@@ -115,7 +115,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
         const CCVector3* P = vertices->getPoint(i);
         CCVector3d Pglobal = vertices->toGlobal3d<PointCoordinateType>(*P);
         stream << "v " << Pglobal.x << " " << Pglobal.y << " " << Pglobal.z
-               << endl;
+               << QtCompat::endl;
         if (file.error() != QFile::NoError) return CC_FERR_WRITING;
         if (pDlg &&
             !nprogress
@@ -144,7 +144,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
                     const CCVector3& normalVec =
                             ccNormalVectors::GetNormal(normsTable->getValue(i));
                     stream << "vn " << normalVec.x << " " << normalVec.y << " "
-                           << normalVec.z << endl;
+                           << normalVec.z << QtCompat::endl;
                     if (file.error() != QFile::NoError) return CC_FERR_WRITING;
 
                     // increment progress bar
@@ -169,7 +169,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
             for (unsigned i = 0; i < nbPoints; ++i) {
                 const CCVector3& normalVec = vertices->getPointNormal(i);
                 stream << "vn " << normalVec.x << " " << normalVec.y << " "
-                       << normalVec.z << endl;
+                       << normalVec.z << QtCompat::endl;
                 if (file.error() != QFile::NoError) return CC_FERR_WRITING;
 
                 // increment progress bar
@@ -197,7 +197,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
         QString baseName = QFileInfo(filename).baseName();
         if (materials->saveAsMTL(QFileInfo(filename).absolutePath(), baseName,
                                  errors)) {
-            stream << "mtllib " << baseName << ".mtl" << endl;
+            stream << "mtllib " << baseName << ".mtl" << QtCompat::endl;
             if (file.error() != QFile::NoError) return CC_FERR_WRITING;
         } else {
             materials = nullptr;
@@ -231,7 +231,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
 
             for (unsigned i = 0; i < texCoords->currentSize(); ++i) {
                 const TexCoords2D& tc = texCoords->getValue(i);
-                stream << "vt " << tc.tx << " " << tc.ty << endl;
+                stream << "vt " << tc.tx << " " << tc.ty << QtCompat::endl;
                 if (file.error() != QFile::NoError) return CC_FERR_WRITING;
 
                 // increment progress bar
@@ -280,7 +280,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
         ccGenericMesh* st = static_cast<ccGenericMesh*>(*it);
 
         stream << "g " << (st->getName().isNull() ? "mesh" : st->getName())
-               << endl;
+               << QtCompat::endl;
         if (file.error() != QFile::NoError) return CC_FERR_WRITING;
 
         unsigned triNum = st->size();
@@ -296,9 +296,9 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
                     if (mtlIndex >= 0 &&
                         mtlIndex < static_cast<int>(materials->size())) {
                         ccMaterial::CShared mat = materials->at(mtlIndex);
-                        stream << "usemtl " << mat->getName() << endl;
+                        stream << "usemtl " << mat->getName() << QtCompat::endl;
                     } else {
-                        stream << "usemtl " << endl;
+                        stream << "usemtl " << QtCompat::endl;
                     }
                     if (file.error() != QFile::NoError) return CC_FERR_WRITING;
                     lastMtlIndex = mtlIndex;
@@ -352,7 +352,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
                     stream << " " << i3;
                 }
             }
-            stream << endl;
+            stream << QtCompat::endl;
 
             if (file.error() != QFile::NoError) {
                 return CC_FERR_WRITING;
@@ -364,7 +364,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity,
             }
         }
 
-        stream << "#" << triNum << " faces" << endl;
+        stream << "#" << triNum << " faces" << QtCompat::endl;
         if (file.error() != QFile::NoError) {
             return CC_FERR_WRITING;
         }

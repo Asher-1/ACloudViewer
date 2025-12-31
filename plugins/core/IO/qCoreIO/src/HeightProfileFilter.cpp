@@ -12,7 +12,9 @@
 
 // Qt
 #include <QFile>
-#include <QTextStream>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 
 HeightProfileFilter::HeightProfileFilter()
     : FileIOFilter({"_Height profile Filter",
@@ -62,7 +64,7 @@ CC_FILE_ERROR HeightProfileFilter::saveToFile(
     outFile.setRealNumberNotation(QTextStream::FixedNotation);
     outFile.setRealNumberPrecision(
             sizeof(PointCoordinateType) == 4 && !poly->isShifted() ? 8 : 12);
-    outFile << "Curvilinear abscissa; Z" << endl;
+    outFile << "Curvilinear abscissa; Z" << QtCompat::endl;
 
     // curvilinear abscissa
     double s = 0;
@@ -77,7 +79,7 @@ CC_FILE_ERROR HeightProfileFilter::saveToFile(
 
         // convert to 'local' coordinate system
         CCVector3d Pg = poly->toGlobal3d(*P);
-        outFile << s << "; " << Pg.z << endl;
+        outFile << s << "; " << Pg.z << QtCompat::endl;
     }
 
     file.close();

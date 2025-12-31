@@ -17,9 +17,8 @@
 #include <QDir>
 #include <QListWidgetItem>
 #include <QMessageBox>
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#include <QTextCodec>
-#endif
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 
 #include <CVLog.h>
 #include <CVTools.h>

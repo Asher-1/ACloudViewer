@@ -7,12 +7,21 @@
 
 #pragma once
 
-// clang-format off
 // Qt - must be included before other headers for MOC to work correctly
+#include <QtGlobal>
+
+// clang-format off
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QAction>
+#include <QCursor>
+#include <QObject>
+#include <QPointer>
+#else
 #include <QtWidgets/QAction>
 #include <QtGui/QCursor>
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
+#endif
 // clang-format on
 
 #include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums

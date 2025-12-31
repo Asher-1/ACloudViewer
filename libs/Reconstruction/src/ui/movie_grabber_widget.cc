@@ -255,8 +255,13 @@ void MovieGrabberWidget::Assemble() {
                                          dimage_size * tt);
 
       QImage image = model_viewer_widget_->GrabImage();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+      image.save(dir.filePath(
+          "frame" + QString::asprintf("%06zu", frame_number) + ".png"));
+#else
       image.save(dir.filePath(
           "frame" + QString().sprintf("%06zu", frame_number) + ".png"));
+#endif
       frame_number += 1;
     }
 

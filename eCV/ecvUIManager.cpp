@@ -255,7 +255,11 @@ void QUIWidget::setTranslator(const QString &qmFile) {
 }
 
 void QUIWidget::setCode() {
-#if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    // Qt6: QTextCodec is removed, UTF-8 is used by default
+    // No need to set codec in Qt6
+    Q_UNUSED(0);  // Suppress unused variable warning
+#elif (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
 #if _MSC_VER
     QTextCodec *codec = QTextCodec::codecForName("gbk");
 #else

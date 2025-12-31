@@ -10,6 +10,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QProcess>
+#include <cstdlib>
 
 const float Pi = 3.14159f;
 
@@ -52,7 +53,7 @@ QImage star(const QSize& size) {
 }
 
 double random(int low, int high) {
-    double f = (double)qrand() / RAND_MAX;
+    double f = (double)std::rand() / RAND_MAX;
     return f * (high - low) + low;
 }
 

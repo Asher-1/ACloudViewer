@@ -25,7 +25,6 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QSettings>
-#include <QTextStream>
 #include <QtGui>
 #include <unordered_set>
 

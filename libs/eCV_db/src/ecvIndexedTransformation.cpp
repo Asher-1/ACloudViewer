@@ -8,8 +8,9 @@
 #include "ecvIndexedTransformation.h"
 
 // Qt
+#include <QtCompat.h>
+
 #include <QFile>
-#include <QTextStream>
 
 // System
 #include <assert.h>
@@ -41,7 +42,7 @@ bool ccIndexedTransformation::toAsciiFile(QString filename,
     // save transformation first (so that it can be loaded as a ccGLMatrix!)
     for (unsigned i = 0; i < 4; ++i) {
         stream << m_mat[i] << " " << m_mat[i + 4] << " " << m_mat[i + 8] << " "
-               << m_mat[i + 12] << endl;
+               << m_mat[i + 12] << QtCompat::endl;
     }
     // save index next
     stream << m_index;

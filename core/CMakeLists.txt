@@ -209,6 +209,11 @@ if (CVCORELIB_USE_CGAL)
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_CGAL_LIB)
 endif ()
 
+# QT
+target_link_libraries(${PROJECT_NAME}
+        PUBLIC
+        Qt::Widgets
+        )
 # QT (optional)
 if (CVCORELIB_USE_QT_CONCURRENT)
     # Qt5/Qt6 compatibility

@@ -56,7 +56,13 @@ QLayoutItem *FlowLayout::takeAt(int index) {
         return 0;
 }
 
-Qt::Orientations FlowLayout::expandingDirections() const { return 0; }
+Qt::Orientations FlowLayout::expandingDirections() const {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return Qt::Orientations();
+#else
+    return 0;
+#endif
+}
 
 bool FlowLayout::hasHeightForWidth() const { return true; }
 
@@ -77,7 +83,13 @@ QSize FlowLayout::minimumSize() const {
     QLayoutItem *item;
     foreach (item, itemList) size = size.expandedTo(item->minimumSize());
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QMargins margins = contentsMargins();
+    size += QSize(margins.left() + margins.right(),
+                  margins.top() + margins.bottom());
+#else
     size += QSize(2 * margin(), 2 * margin());
+#endif
     return size;
 }
 

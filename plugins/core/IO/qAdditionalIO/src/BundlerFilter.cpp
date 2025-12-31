@@ -32,8 +32,6 @@
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
 
-#include <QTextStream>
-
 // cloudViewer (for DTM generation)
 #include <MeshSamplingTools.h>
 #include <PointProjectionTools.h>
@@ -1133,16 +1131,17 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(
             QTextStream stream(&f);
             stream.setRealNumberNotation(QTextStream::FixedNotation);
             stream.setRealNumberPrecision(12);
-            stream << "PixelSize" << ' ' << OR_pixelSize << endl;
+            stream << "PixelSize" << ' ' << OR_pixelSize << QtCompat::endl;
             stream << "Global3DBBox" << ' ' << OR_globalCorners[0] << ' '
                    << OR_globalCorners[1] << ' ' << OR_globalCorners[2] << ' '
-                   << OR_globalCorners[3] << endl;
+                   << OR_globalCorners[3] << QtCompat::endl;
             int globalWidth = static_cast<int>(
                     (OR_globalCorners[2] - OR_globalCorners[0]) / OR_pixelSize);
             int globalHeight = static_cast<int>(
                     (OR_globalCorners[3] - OR_globalCorners[1]) / OR_pixelSize);
             stream << "Global2DBBox" << ' ' << 0 << ' ' << 0 << ' '
-                   << globalWidth - 1 << ' ' << globalHeight - 1 << endl;
+                   << globalWidth - 1 << ' ' << globalHeight - 1
+                   << QtCompat::endl;
 
             for (unsigned i = 0; i < OR_infos.size(); ++i) {
                 stream << "Image" << ' ' << OR_infos[i].name << ' ';
@@ -1160,7 +1159,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(
                        << xShiftGlobal + (static_cast<int>(OR_infos[i].w) - 1)
                        << ' '
                        << yShiftGlobal + (static_cast<int>(OR_infos[i].h) - 1)
-                       << endl;
+                       << QtCompat::endl;
             }
         } else {
             CVLog::Warning(
