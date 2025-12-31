@@ -34,12 +34,12 @@
 
 // QT
 #include <QColor>
+#include <QStringList>
 
 // std
 #include <vector>
 
 class ccPointCloud;
-class QStringList;
 class ecvMainAppInterface;
 class ColorsTableType;
 

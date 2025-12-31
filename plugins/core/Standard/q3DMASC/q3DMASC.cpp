@@ -16,6 +16,7 @@
 #include "qTrain3DMASCDialog.h"
 
 // qCC_db
+#include <QtCompat.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
 
@@ -756,13 +757,13 @@ void q3DMASCPlugin::doTrainAction() {
                                             .arg(filename));
                         }
                         QTextStream stream(&file);
-                        stream << "# feature importance" << endl;
+                        stream << "# feature importance" << QtCompat::endl;
                         for (size_t i = 0; i < originalFeatures.size(); ++i) {
                             if (originalFeatures[i].selected) {
                                 stream << originalFeatures[i]
                                                   .feature->toString()
                                        << " " << originalFeatures[i].importance
-                                       << endl;
+                                       << QtCompat::endl;
                             }
                         }
                     }

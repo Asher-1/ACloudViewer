@@ -9,6 +9,7 @@
 
 // Qt
 #include <CVLog.h>
+#include <QtCompat.h>
 
 #include <QDateTime>
 #include <QFileDialog>
@@ -16,7 +17,6 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QTableWidgetItem>
-#include <QTextStream>
 
 // System
 #include <assert.h>
@@ -202,12 +202,12 @@ void Train3DMASCDialog::onExportResults(QString filePath /*=""*/) {
     }
 
     QTextStream stream(&file);
-    stream << "Feature;Importance" << Qt::endl;
+    stream << "Feature;Importance" << QtCompat::endl;
     for (int index = 0; index < tableWidget->rowCount(); ++index) {
         QString featureName = tableWidget->item(index, 0)->text();
         QString importance =
                 tableWidget->item(index, FeatureImportanceColumn)->text();
-        stream << featureName << ";" << importance << Qt::endl;
+        stream << featureName << ";" << importance << QtCompat::endl;
     }
 }
 
@@ -234,7 +234,11 @@ bool Train3DMASCDialog::openTraceFile() {
     QDir parameterDir = QDir(info.path());
 
     QFileDialog dialog(this);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    dialog.setFileMode(QFileDialog::Directory);
+#else
     dialog.setFileMode(QFileDialog::DirectoryOnly);
+#endif
     dialog.setWindowTitle("Choose a valid directory for the traces");
     dialog.setDirectory(
             QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation)
@@ -310,7 +314,7 @@ void Train3DMASCDialog::saveTraces(ConfusionMatrix* confusionMatrix) {
         // save the run number and the overall accuracy
         if (m_traceStream.device())
             m_traceStream << run << " " << confusionMatrix->getOverallAccuracy()
-                          << Qt::endl;
+                          << QtCompat::endl;
         confusionMatrix->save(m_tracePath + "/" + "run_" +
                               QString::number(run) + "_confusion_matrix.txt");
     }

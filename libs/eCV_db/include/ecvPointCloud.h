@@ -22,7 +22,12 @@
 #include "ecvWaveform.h"
 
 // Qt
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QOpenGLBuffer>
+#define QGLBuffer QOpenGLBuffer
+#else
 #include <QGLBuffer>
+#endif
 
 class ccMesh;
 class QGLBuffer;

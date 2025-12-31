@@ -8,9 +8,10 @@
 #include "ecvWaveform.h"
 
 // Qt
+#include <QtCompat.h>
+
 #include <QDataStream>
 #include <QFile>
-#include <QTextStream>
 
 WaveformDescriptor::WaveformDescriptor()
     : numberOfSamples(0),
@@ -201,10 +202,10 @@ bool ccWaveform::ToASCII(const QString& filename,
     QTextStream stream(&file);
     stream.setRealNumberPrecision(6);
     stream.setRealNumberNotation(QTextStream::FixedNotation);
-    stream << "//time(ps);intensity" << endl;
+    stream << "//time(ps);intensity" << QtCompat::endl;
 
     for (uint32_t i = 0; i < values.size(); ++i) {
-        stream << i * samplingRate_ps << ";" << values[i] << endl;
+        stream << i * samplingRate_ps << ";" << values[i] << QtCompat::endl;
     }
 
     file.close();

@@ -54,11 +54,9 @@ QString CVTools::ToNativeSeparators(const QString& path) {
 }
 
 std::string CVTools::FromUnicode(const QString& qstr) {
-    // QTextCodec* pCodec = QTextCodec::codecForName("system");
-    QTextCodec* pCodec = QTextCodec::codecForLocale();
+    QtCompatQTextCodec* pCodec = qtCompatCodecForLocale();
     if (!pCodec) {
-        CVLog::PrintDebug(
-                "Failed to call QTextCodec::codecForName from system");
+        CVLog::PrintDebug("Failed to call qtCompatCodecForLocale");
         return qstr.toStdString();
     }
 
@@ -68,11 +66,9 @@ std::string CVTools::FromUnicode(const QString& qstr) {
 }
 
 QString CVTools::ToUnicode(const std::string& cstr) {
-    // QTextCodec* pCodec = QTextCodec::codecForName("system");
-    QTextCodec* pCodec = QTextCodec::codecForLocale();
+    QtCompatQTextCodec* pCodec = qtCompatCodecForLocale();
     if (!pCodec) {
-        CVLog::PrintDebug(
-                "Failed to call QTextCodec::codecForName from system");
+        CVLog::PrintDebug("Failed to call qtCompatCodecForLocale");
         return QString(cstr.c_str());
     }
 

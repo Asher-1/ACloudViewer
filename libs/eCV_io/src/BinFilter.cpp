@@ -1155,9 +1155,12 @@ CC_FILE_ERROR BinFilter::LoadFileV1(QFile& in,
                 fileChunkPos = lineRead;
                 fileChunkSize = std::min(nbOfPoints - lineRead,
                                          CC_MAX_NUMBER_OF_POINTS_PER_CLOUD);
-                char partName[64];
+                // Increased size to accommodate cloudName (255) + ".part_" +
+                // number
+                char partName[256];
                 ++parts;
-                sprintf(partName, "%s.part_%i", cloudName, parts);
+                snprintf(partName, sizeof(partName), "%s.part_%i", cloudName,
+                         parts);
                 loadedCloud = new ccPointCloud(partName);
                 loadedCloud->reserveThePointsTable(fileChunkSize);
 

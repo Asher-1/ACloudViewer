@@ -136,7 +136,7 @@ void EditCameraTool::UpdateCamera() {
     s_viewer->setRotationFactor(CurrentCameraParam.rotationFactor);
 
     s_viewer->getCurrentRenderer()->SetActiveCamera(s_camera);
-    s_viewer->updateCamera();
+    s_viewer->UpdateScreen();
 }
 
 //-----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ void EditCameraTool::adjustCamera(CameraAdjustmentType enType, double value) {
                 break;
         }
 
-        s_viewer->updateCamera();
+        s_viewer->UpdateScreen();
     }
 }
 

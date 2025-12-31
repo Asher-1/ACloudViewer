@@ -139,10 +139,10 @@ bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
         QWheelEvent* wheelEvent = static_cast<QWheelEvent*>(event);
 
         // adjust radius (+ avoid really small radius)
+        double delta = qtCompatWheelEventDelta(wheelEvent);
         m_radius = std::max(
                 m_radiusStep,
-                m_radius - static_cast<int>(m_radiusStep *
-                                            (wheelEvent->delta() / 100.0)));
+                m_radius - static_cast<int>(m_radiusStep * (delta / 100.0)));
 
         // repaint
         ecvDisplayTools::RedrawDisplay(true, false);

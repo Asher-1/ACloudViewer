@@ -15,7 +15,6 @@
 // Qt
 #include <QFile>
 #include <QStringList>
-#include <QTextStream>
 
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
@@ -86,7 +85,7 @@ CC_FILE_ERROR SalomeHydroFilter::saveToFile(ccHObject* entity,
         }
 
         // a simple empty line is used as separator between each polyline!
-        if (i != 0) outFile << endl;
+        if (i != 0) outFile << QtCompat::endl;
 
         for (unsigned j = 0; j < vertCount; ++j) {
             const CCVector3* P = poly->getPoint(j);
@@ -95,7 +94,8 @@ CC_FILE_ERROR SalomeHydroFilter::saveToFile(ccHObject* entity,
             CCVector3d Pg = poly->toGlobal3d(*P);
             outFile << QString::number(Pg.x, 'E', c_precision) << " ";
             outFile << QString::number(Pg.y, 'E', c_precision) << " ";
-            outFile << QString::number(Pg.z, 'E', c_precision) << endl;
+            outFile << QString::number(Pg.z, 'E', c_precision)
+                    << QtCompat::endl;
         }
 
         result = CC_FERR_NO_ERROR;

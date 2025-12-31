@@ -512,7 +512,9 @@ ccColorScaleEditorWidget::ccColorScaleEditorWidget(
     setLayout(m_orientation == Qt::Horizontal
                       ? static_cast<QLayout*>(new QVBoxLayout())
                       : static_cast<QLayout*>(new QHBoxLayout()));
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     layout()->setMargin(0);
+#endif
     layout()->setSpacing(0);
     layout()->setContentsMargins(0, 0, 0, 0);
 

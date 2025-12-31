@@ -74,19 +74,20 @@ CC_FILE_ERROR OFFFilter::saveToFile(ccHObject* entity,
     stream.setRealNumberPrecision(12);  // TODO: ask the user?
 
     // header: "OFF"
-    stream << "OFF" << endl;
+    stream << "OFF" << QtCompat::endl;
 
     // 2nd line: vertices count / faces count / edges count
     unsigned vertCount = vertices->size();
     unsigned triCount = mesh->size();
-    stream << vertCount << ' ' << triCount << ' ' << 0 << endl;
+    stream << vertCount << ' ' << triCount << ' ' << 0 << QtCompat::endl;
 
     // save vertices
     {
         for (unsigned i = 0; i < vertCount; ++i) {
             const CCVector3* P = vertices->getPoint(i);
             CCVector3d Pglobal = vertices->toGlobal3d<PointCoordinateType>(*P);
-            stream << Pglobal.x << ' ' << Pglobal.y << ' ' << Pglobal.z << endl;
+            stream << Pglobal.x << ' ' << Pglobal.y << ' ' << Pglobal.z
+                   << QtCompat::endl;
         }
     }
 
@@ -96,7 +97,7 @@ CC_FILE_ERROR OFFFilter::saveToFile(ccHObject* entity,
             const cloudViewer::VerticesIndexes* tsi =
                     mesh->getTriangleVertIndexes(i);
             stream << "3 " << tsi->i1 << ' ' << tsi->i2 << ' ' << tsi->i3
-                   << endl;
+                   << QtCompat::endl;
         }
     }
 

@@ -13,7 +13,6 @@
 // Qt
 #include <QFile>
 #include <QFileInfo>
-#include <QTextStream>
 
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>

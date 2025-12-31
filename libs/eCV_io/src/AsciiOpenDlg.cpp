@@ -1321,7 +1321,7 @@ void AsciiOpenDlg::shortcutButtonPressed() {
 
 void AsciiOpenDlg::setSeparator(QChar sep) {
     m_ui->commaDecimalCheckBox->blockSignals(true);
-    if (sep == 44)  // comma
+    if (sep == QChar(','))  // comma
     {
         m_ui->commaDecimalCheckBox->setEnabled(false);
         // m_ui->commaDecimalCheckBox->setChecked(false);

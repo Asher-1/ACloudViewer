@@ -3093,7 +3093,7 @@ Qt::Alignment QCPLayoutInset::insetAlignment(int index) const {
         return mInsetAlignment.at(index);
     else {
         qDebug() << Q_FUNC_INFO << "Invalid element index:" << index;
-        return 0;
+        return Qt::Alignment();
     }
 }
 
@@ -11229,7 +11229,7 @@ void QCustomPlot::wheelEvent(QWheelEvent *event) {
     emit mouseWheel(event);
 
     // call event of affected layout element:
-    if (QCPLayoutElement *el = layoutElementAt(event->pos()))
+    if (QCPLayoutElement *el = layoutElementAt(qtCompatWheelEventPos(event)))
         el->wheelEvent(event);
 
     QWidget::wheelEvent(event);
@@ -12993,21 +12993,22 @@ void QCPAxisRect::wheelEvent(QWheelEvent *event) {
     if (mParentPlot->interactions().testFlag(QCP::iRangeZoom)) {
         if (mRangeZoom != 0) {
             double factor;
-            double wheelSteps = event->delta() /
+            double wheelSteps = qtCompatWheelEventDelta(event) /
                                 120.0;  // a single step delta is +/-120 usually
+            QPointF wheelPos = qtCompatWheelEventPos(event);
             if (mRangeZoom.testFlag(Qt::Horizontal)) {
                 factor = qPow(mRangeZoomFactorHorz, wheelSteps);
                 if (mRangeZoomHorzAxis.data())
                     mRangeZoomHorzAxis.data()->scaleRange(
                             factor, mRangeZoomHorzAxis.data()->pixelToCoord(
-                                            event->pos().x()));
+                                            wheelPos.x()));
             }
             if (mRangeZoom.testFlag(Qt::Vertical)) {
                 factor = qPow(mRangeZoomFactorVert, wheelSteps);
                 if (mRangeZoomVertAxis.data())
                     mRangeZoomVertAxis.data()->scaleRange(
                             factor, mRangeZoomVertAxis.data()->pixelToCoord(
-                                            event->pos().y()));
+                                            wheelPos.y()));
             }
             mParentPlot->replot();
         }
@@ -14393,7 +14394,7 @@ void QCPColorScale::setRangeDrag(bool enabled) {
     if (enabled)
         mAxisRect.data()->setRangeDrag(QCPAxis::orientation(mType));
     else
-        mAxisRect.data()->setRangeDrag(0);
+        mAxisRect.data()->setRangeDrag(Qt::Orientation());
 }
 
 /*!
@@ -14412,7 +14413,7 @@ void QCPColorScale::setRangeZoom(bool enabled) {
     if (enabled)
         mAxisRect.data()->setRangeZoom(QCPAxis::orientation(mType));
     else
-        mAxisRect.data()->setRangeZoom(0);
+        mAxisRect.data()->setRangeZoom(Qt::Orientation());
 }
 
 /*!
@@ -14933,7 +14934,7 @@ void QCPGraph::setData(const QVector<double> &key,
     for (int i = 0; i < n; ++i) {
         newData.key = key[i];
         newData.value = value[i];
-        mData->insertMulti(newData.key, newData);
+        qtCompatMapInsertMulti(mData, newData.key, newData);
     }
 }
 
@@ -14960,7 +14961,7 @@ void QCPGraph::setDataValueError(const QVector<double> &key,
         newData.value = value[i];
         newData.valueErrorMinus = valueError[i];
         newData.valueErrorPlus = valueError[i];
-        mData->insertMulti(key[i], newData);
+        qtCompatMapInsertMulti(mData, key[i], newData);
     }
 }
 
@@ -14988,7 +14989,7 @@ void QCPGraph::setDataValueError(const QVector<double> &key,
         newData.value = value[i];
         newData.valueErrorMinus = valueErrorMinus[i];
         newData.valueErrorPlus = valueErrorPlus[i];
-        mData->insertMulti(key[i], newData);
+        qtCompatMapInsertMulti(mData, key[i], newData);
     }
 }
 
@@ -15015,7 +15016,7 @@ void QCPGraph::setDataKeyError(const QVector<double> &key,
         newData.value = value[i];
         newData.keyErrorMinus = keyError[i];
         newData.keyErrorPlus = keyError[i];
-        mData->insertMulti(key[i], newData);
+        qtCompatMapInsertMulti(mData, key[i], newData);
     }
 }
 
@@ -15043,7 +15044,7 @@ void QCPGraph::setDataKeyError(const QVector<double> &key,
         newData.value = value[i];
         newData.keyErrorMinus = keyErrorMinus[i];
         newData.keyErrorPlus = keyErrorPlus[i];
-        mData->insertMulti(key[i], newData);
+        qtCompatMapInsertMulti(mData, key[i], newData);
     }
 }
 
@@ -15075,7 +15076,7 @@ void QCPGraph::setDataBothError(const QVector<double> &key,
         newData.keyErrorPlus = keyError[i];
         newData.valueErrorMinus = valueError[i];
         newData.valueErrorPlus = valueError[i];
-        mData->insertMulti(key[i], newData);
+        qtCompatMapInsertMulti(mData, key[i], newData);
     }
 }
 
@@ -15110,7 +15111,7 @@ void QCPGraph::setDataBothError(const QVector<double> &key,
         newData.keyErrorPlus = keyErrorPlus[i];
         newData.valueErrorMinus = valueErrorMinus[i];
         newData.valueErrorPlus = valueErrorPlus[i];
-        mData->insertMulti(key[i], newData);
+        qtCompatMapInsertMulti(mData, key[i], newData);
     }
 }
 
@@ -15258,7 +15259,7 @@ void QCPGraph::addData(const QCPDataMap &dataMap) { mData->unite(dataMap); }
   \see removeData
 */
 void QCPGraph::addData(const QCPData &data) {
-    mData->insertMulti(data.key, data);
+    qtCompatMapInsertMulti(mData, data.key, data);
 }
 
 /*! \overload
@@ -15274,7 +15275,7 @@ void QCPGraph::addData(double key, double value) {
     QCPData newData;
     newData.key = key;
     newData.value = value;
-    mData->insertMulti(newData.key, newData);
+    qtCompatMapInsertMulti(mData, newData.key, newData);
 }
 
 /*! \overload
@@ -15293,7 +15294,7 @@ void QCPGraph::addData(const QVector<double> &keys,
     for (int i = 0; i < n; ++i) {
         newData.key = keys[i];
         newData.value = values[i];
-        mData->insertMulti(newData.key, newData);
+        qtCompatMapInsertMulti(mData, newData.key, newData);
     }
 }
 
@@ -17503,7 +17504,7 @@ void QCPCurve::setData(const QVector<double> &t,
         newData.t = t[i];
         newData.key = key[i];
         newData.value = value[i];
-        mData->insertMulti(newData.t, newData);
+        qtCompatMapInsertMulti(mData, newData.t, newData);
     }
 }
 
@@ -17524,7 +17525,7 @@ void QCPCurve::setData(const QVector<double> &key,
                         // key/value pair
         newData.key = key[i];
         newData.value = value[i];
-        mData->insertMulti(newData.t, newData);
+        qtCompatMapInsertMulti(mData, newData.t, newData);
     }
 }
 
@@ -17562,7 +17563,7 @@ void QCPCurve::addData(const QCPCurveDataMap &dataMap) {
   \see removeData
 */
 void QCPCurve::addData(const QCPCurveData &data) {
-    mData->insertMulti(data.t, data);
+    qtCompatMapInsertMulti(mData, data.t, data);
 }
 
 /*! \overload
@@ -17574,7 +17575,7 @@ void QCPCurve::addData(double t, double key, double value) {
     newData.t = t;
     newData.key = key;
     newData.value = value;
-    mData->insertMulti(newData.t, newData);
+    qtCompatMapInsertMulti(mData, newData.t, newData);
 }
 
 /*! \overload
@@ -17593,7 +17594,7 @@ void QCPCurve::addData(double key, double value) {
         newData.t = 0;
     newData.key = key;
     newData.value = value;
-    mData->insertMulti(newData.t, newData);
+    qtCompatMapInsertMulti(mData, newData.t, newData);
 }
 
 /*! \overload
@@ -17611,7 +17612,7 @@ void QCPCurve::addData(const QVector<double> &ts,
         newData.t = ts[i];
         newData.key = keys[i];
         newData.value = values[i];
-        mData->insertMulti(newData.t, newData);
+        qtCompatMapInsertMulti(mData, newData.t, newData);
     }
 }
 
@@ -19616,7 +19617,7 @@ void QCPBars::setData(const QVector<double> &key,
     for (int i = 0; i < n; ++i) {
         newData.key = key[i];
         newData.value = value[i];
-        mData->insertMulti(newData.key, newData);
+        qtCompatMapInsertMulti(mData, newData.key, newData);
     }
 }
 
@@ -19699,7 +19700,7 @@ void QCPBars::addData(const QCPBarDataMap &dataMap) { mData->unite(dataMap); }
   \see removeData
 */
 void QCPBars::addData(const QCPBarData &data) {
-    mData->insertMulti(data.key, data);
+    qtCompatMapInsertMulti(mData, data.key, data);
 }
 
 /*! \overload
@@ -19710,7 +19711,7 @@ void QCPBars::addData(double key, double value) {
     QCPBarData newData;
     newData.key = key;
     newData.value = value;
-    mData->insertMulti(newData.key, newData);
+    qtCompatMapInsertMulti(mData, newData.key, newData);
 }
 
 /*! \overload
@@ -19725,7 +19726,7 @@ void QCPBars::addData(const QVector<double> &keys,
     for (int i = 0; i < n; ++i) {
         newData.key = keys[i];
         newData.value = values[i];
-        mData->insertMulti(newData.key, newData);
+        qtCompatMapInsertMulti(mData, newData.key, newData);
     }
 }
 
@@ -21850,8 +21851,9 @@ void QCPFinancial::setData(const QVector<double> &key,
     n = qMin(n, low.size());
     n = qMin(n, close.size());
     for (int i = 0; i < n; ++i) {
-        mData->insertMulti(key[i], QCPFinancialData(key[i], open[i], high[i],
-                                                    low[i], close[i]));
+        qtCompatMapInsertMulti(
+                mData, key[i],
+                QCPFinancialData(key[i], open[i], high[i], low[i], close[i]));
     }
 }
 
@@ -21956,7 +21958,7 @@ void QCPFinancial::addData(const QCPFinancialDataMap &dataMap) {
   \see removeData
 */
 void QCPFinancial::addData(const QCPFinancialData &data) {
-    mData->insertMulti(data.key, data);
+    qtCompatMapInsertMulti(mData, data.key, data);
 }
 
 /*! \overload
@@ -21971,7 +21973,8 @@ void QCPFinancial::addData(const QCPFinancialData &data) {
 */
 void QCPFinancial::addData(
         double key, double open, double high, double low, double close) {
-    mData->insertMulti(key, QCPFinancialData(key, open, high, low, close));
+    qtCompatMapInsertMulti(mData, key,
+                           QCPFinancialData(key, open, high, low, close));
 }
 
 /*! \overload
@@ -21994,8 +21997,9 @@ void QCPFinancial::addData(const QVector<double> &key,
     n = qMin(n, low.size());
     n = qMin(n, close.size());
     for (int i = 0; i < n; ++i) {
-        mData->insertMulti(key[i], QCPFinancialData(key[i], open[i], high[i],
-                                                    low[i], close[i]));
+        qtCompatMapInsertMulti(
+                mData, key[i],
+                QCPFinancialData(key[i], open[i], high[i], low[i], close[i]));
     }
 }
 

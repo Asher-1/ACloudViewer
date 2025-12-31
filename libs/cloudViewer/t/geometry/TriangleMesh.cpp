@@ -1530,7 +1530,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
             uv2xy(max_workers, core::Tensor({}, core::Float32)),
             uvrays(max_workers, core::Tensor({}, core::Float32));
 
-    auto project_one_image = [&](size_t i, tbb::feeder<size_t> &feeder) {
+    auto project_one_image = [&](size_t i) {
         size_t widx = tbb::this_task_arena::current_thread_index();
         // initialize task variables
         if (!this_albedo[widx].GetShape().IsCompatible(
