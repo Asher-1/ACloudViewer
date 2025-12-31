@@ -158,6 +158,11 @@ option(USE_SYSTEM_PYBIND11 "Use system pre-installed pybind11"                  
 option(USE_SYSTEM_QHULLCPP "Use system pre-installed qhullcpp"                  OFF)
 option(USE_SYSTEM_STDGPU   "Use system pre-installed stdgpu"                    OFF)
 option(USE_SYSTEM_TBB "Use system pre-installed TBB"                            OFF)
+# Auto-enable USE_SYSTEM_TBB for conda with Qt6 to avoid conflicts
+if(BUILD_WITH_CONDA AND USE_QT6 AND NOT USE_SYSTEM_TBB)
+    message(STATUS "Auto-enabling USE_SYSTEM_TBB for conda environment on Linux")
+    set(USE_SYSTEM_TBB ON)
+endif()
 option(USE_SYSTEM_TINYGLTF "Use system pre-installed tinygltf"                  OFF)
 option(USE_SYSTEM_TINYOBJLOADER "Use system pre-installed tinyobjloader"        OFF)
 option(USE_SYSTEM_FFMPEG "Use system pre-installed ffmpeg"                      OFF)

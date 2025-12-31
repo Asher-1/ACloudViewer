@@ -219,6 +219,7 @@
         <file>Resources/images/svg/pqClip.png</file>
         <file>Resources/images/svg/pqEyeball.png</file>
         <file>Resources/images/svg/pqEyeballClosed.png</file>
+        <file>Resources/images/lockedAxis.png</file>
         <file>Resources/images/3D3.png</file>
         <file>Resources/images/3D4.png</file>
         <file>Resources/images/3DMaterial.png</file>

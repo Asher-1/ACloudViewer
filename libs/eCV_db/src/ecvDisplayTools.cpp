@@ -1834,7 +1834,9 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
         GetVisibleObjectsBB(zoomedBox);
     }
 
-    if (!zoomedBox.isValid()) return;
+    if (!zoomedBox.isValid()) {
+        return;
+    }
 
     if (redraw) {
         InvalidateViewport();
@@ -1850,9 +1852,7 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
     double bbDiag = static_cast<double>(zoomedBox.getDiagNorm());
 
     if (cloudViewer::LessThanEpsilon(bbDiag)) {
-        CVLog::Warning(
-                "[ecvDisplayTools] Entity/DB has a null bounding-box! Can't "
-                "zoom in...");
+        CVLog::Warning("[ecvDisplayTools] Entity/DB has a null bounding-box!");
         return;
     }
 

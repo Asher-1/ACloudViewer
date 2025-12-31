@@ -137,3 +137,11 @@ bool ccDisc::fromFile_MeOnly(QFile& in,
 
     return true;
 }
+
+ccBBox ccDisc::getOwnFitBB(ccGLMatrix& trans) {
+    trans = m_transformation;
+    // Disc is a 2D circle in XY plane, so bbox is a square centered at origin
+    // with side length = 2 * radius, and height = 0
+    return ccBBox(CCVector3(-m_radius, -m_radius, 0),
+                  CCVector3(m_radius, m_radius, 0));
+}

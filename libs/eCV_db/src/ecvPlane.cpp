@@ -29,6 +29,12 @@ ccPlane::ccPlane(QString name /*=QString("Plane")*/)
     : ccGenericPrimitive(name), m_xWidth(0), m_yWidth(0) {}
 
 bool ccPlane::buildUp() {
+    // invalid dimensions?
+    if (cloudViewer::LessThanEpsilon(m_xWidth) ||
+        cloudViewer::LessThanEpsilon(m_yWidth)) {
+        return false;
+    }
+
     if (!init(4, false, 2, 1)) {
         CVLog::Error("[ccPlane::buildUp] Not enough memory");
         return false;

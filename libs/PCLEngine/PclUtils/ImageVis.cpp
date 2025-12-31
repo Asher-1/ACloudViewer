@@ -195,15 +195,6 @@ std::string ImageVis::pickItem(int x, int y) {
 void ImageVis::setRenderWindow(vtkSmartPointer<vtkRenderWindow> win) {
     this->win_ = win;
 
-    // Enable alpha bit planes for transparency rendering support
-    // This is essential for RGBA images to display transparency correctly
-    if (win) {
-        win->SetAlphaBitPlanes(1);
-        CVLog::Print(
-                "[ImageVis::setRenderWindow] Enabled alpha bit planes for "
-                "transparency support");
-    }
-
     // Add window resize observer
     if (win && !m_windowResizeCallback) {
         m_windowResizeCallback = vtkSmartPointer<vtkCallbackCommand>::New();

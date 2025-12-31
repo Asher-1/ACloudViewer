@@ -67,7 +67,17 @@ public:
     }
 
 public:  // inherited methods (ccHObject)
-    inline virtual bool IsEmpty() const override { return volume() <= 0; }
+    // IsEmpty should check if bbox has zero size in all dimensions, not just
+    // volume For 2D objects (Z=0), volume=0 but bbox is still valid if X or Y
+    // dimension > 0
+    inline virtual bool IsEmpty() const override {
+        if (!isValid()) return true;
+        // Use getMaxBoxDim() which returns the maximum of X, Y, Z extents
+        // This correctly handles 2D objects where Z=0 but X or Y > 0
+        // A bbox is empty only if all dimensions are zero (or very close to
+        // zero)
+        return getMaxBoxDim() <= static_cast<PointCoordinateType>(0);
+    }
 
     virtual inline Eigen::Vector3d GetMinBound() const override {
         return CCVector3d::fromArray(m_bbMin);

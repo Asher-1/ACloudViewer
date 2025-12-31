@@ -1438,9 +1438,10 @@ void MainWindow::initPlugins() {
 
     // Handle Python plugin toolbars separately - add them individually
     for (QToolBar* pythonToolbar : pythonPluginToolbars) {
-        CVLog::Print(QString("[MainWindow] Adding Python plugin toolbar '%1' "
-                             "separately")
-                             .arg(pythonToolbar->objectName()));
+        CVLog::PrintDebug(
+                QString("[MainWindow] Adding Python plugin toolbar '%1' "
+                        "separately")
+                        .arg(pythonToolbar->objectName()));
         addToolBar(Qt::TopToolBarArea, pythonToolbar);
         pythonToolbar->setVisible(true);
         pythonToolbar->show();
@@ -1503,10 +1504,11 @@ void MainWindow::initPlugins() {
             unifiedPluginToolbar->setVisible(true);
             unifiedPluginToolbar->show();
 
-            CVLog::Print(QString("[MainWindow] Created UnifiedPluginToolbar "
-                                 "with %1 actions from %2 toolbars")
-                                 .arg(unifiedPluginToolbar->actions().size())
-                                 .arg(otherPluginToolbars.size()));
+            CVLog::PrintDebug(
+                    QString("[MainWindow] Created UnifiedPluginToolbar "
+                            "with %1 actions from %2 toolbars")
+                            .arg(unifiedPluginToolbar->actions().size())
+                            .arg(otherPluginToolbars.size()));
         } else {
             // No actions, delete the empty toolbar
             CVLog::Warning(
