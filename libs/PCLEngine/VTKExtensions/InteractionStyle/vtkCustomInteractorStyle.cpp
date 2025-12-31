@@ -448,36 +448,46 @@ void vtkCustomInteractorStyle::OnKeyDown() {
             CVLog::Print(
                     "| Help:"
                     "-------"
-                    "          p, P   : switch to a point-based representation"
-                    "          w, W   : switch to a wireframe-based "
+                    "          CTRL + SHIFT + p, P   : switch to a point-based "
+                    "representation"
+                    "          CTRL + SHIFT + w, W   : switch to a "
+                    "wireframe-based "
                     "representation (where available)"
-                    "          s, S   : switch to a surface-based "
+                    "          CTRL + SHIFT + s, S   : switch to a "
+                    "surface-based "
                     "representation (where available)"
                     ""
-                    "          j, J   : take a .PNG snapshot of the current "
+                    "          CTRL + ALT + j, J   : take a .PNG snapshot of "
+                    "the current "
                     "window view"
-                    "          c, C   : display current camera/window "
+                    "          CTRL + ALT + c, C   : display current "
+                    "camera/window "
                     "parameters"
                     "          f, F   : fly to point mode"
                     ""
                     "          e, E   : exit the interactor"
                     "          q, Q   : stop and call VTK's TerminateApp"
                     ""
-                    "           +/-   : increment/decrement overall point size"
-                    "     +/- [+ ALT] : zoom in/out "
+                    "          CTRL + SHIFT + +/-   : increment/decrement "
+                    "overall point size"
+                    "          CTRL + ALT + +/-: zoom in/out "
                     ""
-                    "          g, G   : display scale grid (on/off)"
-                    "          u, U   : display lookup table (on/off)"
+                    "          CTRL + ALT + g, G   : display scale grid "
+                    "(on/off)"
+                    "          CTRL + ALT + u, U   : display lookup table "
+                    "(on/off)"
                     ""
-                    "    o, O         : switch between perspective/parallel "
+                    "    CTRL + ALT + o, O         : switch between "
+                    "perspective/parallel "
                     "projection (default = perspective)"
                     "    r, R [+ ALT] : reset camera [to viewpoint = {0, 0, 0} "
                     "-> center_{x, y, z}]"
                     "    CTRL + s, S  : save camera parameters"
                     "    CTRL + r, R  : restore camera parameters"
                     ""
-                    "    ALT + s, S   : turn stereo mode on/off"
-                    "    ALT + f, F   : switch between maximized window mode "
+                    "    CTRL + ALT + s, S   : turn stereo mode on/off"
+                    "    CTRL + ALT + f, F   : switch between maximized window "
+                    "mode "
                     "and original size"
                     ""
                     "          l, L           : list all available geometric "
@@ -540,17 +550,19 @@ void vtkCustomInteractorStyle::OnKeyDown() {
         // Switch representation to points
         case 'p':
         case 'P': {
-            vtkSmartPointer<vtkActorCollection> ac =
-                    CurrentRenderer->GetActors();
-            vtkCollectionSimpleIterator ait;
-            for (ac->InitTraversal(ait);
-                 vtkActor* actor = ac->GetNextActor(ait);) {
-                for (actor->InitPathTraversal();
-                     vtkAssemblyPath* path = actor->GetNextPath();) {
-                    vtkSmartPointer<vtkActor> apart =
-                            reinterpret_cast<vtkActor*>(
-                                    path->GetLastNode()->GetViewProp());
-                    apart->GetProperty()->SetRepresentationToPoints();
+            if (shift && ctrl) {
+                vtkSmartPointer<vtkActorCollection> ac =
+                        CurrentRenderer->GetActors();
+                vtkCollectionSimpleIterator ait;
+                for (ac->InitTraversal(ait);
+                     vtkActor* actor = ac->GetNextActor(ait);) {
+                    for (actor->InitPathTraversal();
+                         vtkAssemblyPath* path = actor->GetNextPath();) {
+                        vtkSmartPointer<vtkActor> apart =
+                                reinterpret_cast<vtkActor*>(
+                                        path->GetLastNode()->GetViewProp());
+                        apart->GetProperty()->SetRepresentationToPoints();
+                    }
                 }
             }
             break;
@@ -559,18 +571,20 @@ void vtkCustomInteractorStyle::OnKeyDown() {
         // Switch representation to wireframe (override default behavior)
         case 'w':
         case 'W': {
-            vtkSmartPointer<vtkActorCollection> ac =
-                    CurrentRenderer->GetActors();
-            vtkCollectionSimpleIterator ait;
-            for (ac->InitTraversal(ait);
-                 vtkActor* actor = ac->GetNextActor(ait);) {
-                for (actor->InitPathTraversal();
-                     vtkAssemblyPath* path = actor->GetNextPath();) {
-                    vtkSmartPointer<vtkActor> apart =
-                            reinterpret_cast<vtkActor*>(
-                                    path->GetLastNode()->GetViewProp());
-                    apart->GetProperty()->SetRepresentationToWireframe();
-                    apart->GetProperty()->SetLighting(false);
+            if (shift && ctrl) {
+                vtkSmartPointer<vtkActorCollection> ac =
+                        CurrentRenderer->GetActors();
+                vtkCollectionSimpleIterator ait;
+                for (ac->InitTraversal(ait);
+                     vtkActor* actor = ac->GetNextActor(ait);) {
+                    for (actor->InitPathTraversal();
+                         vtkAssemblyPath* path = actor->GetNextPath();) {
+                        vtkSmartPointer<vtkActor> apart =
+                                reinterpret_cast<vtkActor*>(
+                                        path->GetLastNode()->GetViewProp());
+                        apart->GetProperty()->SetRepresentationToWireframe();
+                        apart->GetProperty()->SetLighting(false);
+                    }
                 }
             }
             break;
@@ -579,48 +593,53 @@ void vtkCustomInteractorStyle::OnKeyDown() {
         // Save a PNG snapshot with the current screen
         case 'j':
         case 'J': {
-            char cam_fn[80], snapshot_fn[80];
-            unsigned t = static_cast<unsigned>(time(0));
-            sprintf(snapshot_fn, "screenshot-%d.png", t);
-            saveScreenshot(snapshot_fn);
+            if (alt && ctrl) {
+                char cam_fn[80], snapshot_fn[80];
+                unsigned t = static_cast<unsigned>(time(0));
+                sprintf(snapshot_fn, "screenshot-%d.png", t);
+                saveScreenshot(snapshot_fn);
 
-            sprintf(cam_fn, "screenshot-%d.cam", t);
-            saveCameraParameters(cam_fn);
+                sprintf(cam_fn, "screenshot-%d.cam", t);
+                saveCameraParameters(cam_fn);
 
-            CVLog::Print(
-                    "Screenshot (%s) and camera information (%s) successfully "
-                    "captured.",
-                    snapshot_fn, cam_fn);
+                CVLog::Print(
+                        "Screenshot (%s) and camera information (%s) "
+                        "successfully "
+                        "captured.",
+                        snapshot_fn, cam_fn);
+            }
             break;
         }
         // display current camera settings/parameters
         case 'c':
         case 'C': {
-            vtkSmartPointer<vtkCamera> cam = Interactor->GetRenderWindow()
-                                                     ->GetRenderers()
-                                                     ->GetFirstRenderer()
-                                                     ->GetActiveCamera();
-            double clip[2], focal[3], pos[3], view[3];
-            cam->GetClippingRange(clip);
-            cam->GetFocalPoint(focal);
-            cam->GetPosition(pos);
-            cam->GetViewUp(view);
-            int* win_pos = Interactor->GetRenderWindow()->GetPosition();
-            int* win_size = Interactor->GetRenderWindow()->GetSize();
-            std::cerr << "Clipping plane [near,far] " << clip[0] << ", "
-                      << clip[1] << endl
-                      << "Focal point [x,y,z] " << focal[0] << ", " << focal[1]
-                      << ", " << focal[2] << endl
-                      << "Position [x,y,z] " << pos[0] << ", " << pos[1] << ", "
-                      << pos[2] << endl
-                      << "View up [x,y,z] " << view[0] << ", " << view[1]
-                      << ", " << view[2] << endl
-                      << "Camera view angle [degrees] " << cam->GetViewAngle()
-                      << endl
-                      << "Window size [x,y] " << win_size[0] << ", "
-                      << win_size[1] << endl
-                      << "Window position [x,y] " << win_pos[0] << ", "
-                      << win_pos[1] << endl;
+            if (alt && ctrl) {
+                vtkSmartPointer<vtkCamera> cam = Interactor->GetRenderWindow()
+                                                         ->GetRenderers()
+                                                         ->GetFirstRenderer()
+                                                         ->GetActiveCamera();
+                double clip[2], focal[3], pos[3], view[3];
+                cam->GetClippingRange(clip);
+                cam->GetFocalPoint(focal);
+                cam->GetPosition(pos);
+                cam->GetViewUp(view);
+                int* win_pos = Interactor->GetRenderWindow()->GetPosition();
+                int* win_size = Interactor->GetRenderWindow()->GetSize();
+                std::cerr << "Clipping plane [near,far] " << clip[0] << ", "
+                          << clip[1] << endl
+                          << "Focal point [x,y,z] " << focal[0] << ", "
+                          << focal[1] << ", " << focal[2] << endl
+                          << "Position [x,y,z] " << pos[0] << ", " << pos[1]
+                          << ", " << pos[2] << endl
+                          << "View up [x,y,z] " << view[0] << ", " << view[1]
+                          << ", " << view[2] << endl
+                          << "Camera view angle [degrees] "
+                          << cam->GetViewAngle() << endl
+                          << "Window size [x,y] " << win_size[0] << ", "
+                          << win_size[1] << endl
+                          << "Window position [x,y] " << win_pos[0] << ", "
+                          << win_pos[1] << endl;
+            }
             break;
         }
         case '=': {
@@ -629,9 +648,9 @@ void vtkCustomInteractorStyle::OnKeyDown() {
         }
         case 43:  // KEY_PLUS
         {
-            if (alt)
+            if (alt && ctrl)
                 zoomIn();
-            else {
+            else if (shift && ctrl) {
                 vtkSmartPointer<vtkActorCollection> ac =
                         CurrentRenderer->GetActors();
                 vtkCollectionSimpleIterator ait;
@@ -652,9 +671,9 @@ void vtkCustomInteractorStyle::OnKeyDown() {
         }
         case 45:  // KEY_MINUS
         {
-            if (alt)
+            if (alt && ctrl)
                 zoomOut();
-            else {
+            else if (shift && ctrl) {
                 vtkSmartPointer<vtkActorCollection> ac =
                         CurrentRenderer->GetActors();
                 vtkCollectionSimpleIterator ait;
@@ -677,47 +696,49 @@ void vtkCustomInteractorStyle::OnKeyDown() {
         case 'f':
         case 'F': {
             if (keymod) {
-                // Get screen size
-                int* temp = Interactor->GetRenderWindow()->GetScreenSize();
-                int scr_size[2];
-                scr_size[0] = temp[0];
-                scr_size[1] = temp[1];
+                if (alt && ctrl) {
+                    // Get screen size
+                    int* temp = Interactor->GetRenderWindow()->GetScreenSize();
+                    int scr_size[2];
+                    scr_size[0] = temp[0];
+                    scr_size[1] = temp[1];
 
-                // Get window size
-                temp = Interactor->GetRenderWindow()->GetSize();
-                int win_size[2];
-                win_size[0] = temp[0];
-                win_size[1] = temp[1];
-                // Is window size = max?
-                if (win_size[0] == max_win_height_ &&
-                    win_size[1] == max_win_width_) {
-                    // Set the previously saved 'current' window size
-                    Interactor->GetRenderWindow()->SetSize(win_height_,
-                                                           win_width_);
-                    // Set the previously saved window position
-                    Interactor->GetRenderWindow()->SetPosition(win_pos_x_,
-                                                               win_pos_y_);
-                    Interactor->GetRenderWindow()->Render();
-                    Interactor->Render();
-                }
-                // Set to max
-                else {
-                    int* win_pos = Interactor->GetRenderWindow()->GetPosition();
-                    // Save the current window position
-                    win_pos_x_ = win_pos[0];
-                    win_pos_y_ = win_pos[1];
-                    // Save the current window size
-                    win_height_ = win_size[0];
-                    win_width_ = win_size[1];
-                    // Set the maximum window size
-                    Interactor->GetRenderWindow()->SetSize(scr_size[0],
-                                                           scr_size[1]);
-                    Interactor->GetRenderWindow()->Render();
-                    Interactor->Render();
-                    int* win_size = Interactor->GetRenderWindow()->GetSize();
-                    // Save the maximum window size
-                    max_win_height_ = win_size[0];
-                    max_win_width_ = win_size[1];
+                    // Get window size
+                    temp = Interactor->GetRenderWindow()->GetSize();
+                    int win_size[2];
+                    win_size[0] = temp[0];
+                    win_size[1] = temp[1];
+                    // Is window size = max?
+                    if (win_size[0] == max_win_height_ &&
+                        win_size[1] == max_win_width_) {
+                        // Set the previously saved 'current' window size
+                        Interactor->GetRenderWindow()->SetSize(win_height_,
+                                                               win_width_);
+                        // Set the previously saved window position
+                        Interactor->GetRenderWindow()->SetPosition(win_pos_x_,
+                                                                   win_pos_y_);
+                        Interactor->GetRenderWindow()->Render();
+                        Interactor->Render();
+                    } else {  // Set to max
+                        int* win_pos =
+                                Interactor->GetRenderWindow()->GetPosition();
+                        // Save the current window position
+                        win_pos_x_ = win_pos[0];
+                        win_pos_y_ = win_pos[1];
+                        // Save the current window size
+                        win_height_ = win_size[0];
+                        win_width_ = win_size[1];
+                        // Set the maximum window size
+                        Interactor->GetRenderWindow()->SetSize(scr_size[0],
+                                                               scr_size[1]);
+                        Interactor->GetRenderWindow()->Render();
+                        Interactor->Render();
+                        int* win_size =
+                                Interactor->GetRenderWindow()->GetSize();
+                        // Save the maximum window size
+                        max_win_height_ = win_size[0];
+                        max_win_width_ = win_size[1];
+                    }
                 }
             } else {
                 AnimState = VTKIS_ANIM_ON;
@@ -736,10 +757,10 @@ void vtkCustomInteractorStyle::OnKeyDown() {
             }
             break;
         }
-        // 's'/'S' w/out ALT
+        // 's'/'S' w/out ALT + CTRL
         case 's':
         case 'S': {
-            if (keymod) {
+            if (alt && ctrl) {
                 int stereo_render =
                         Interactor->GetRenderWindow()->GetStereoRender();
                 if (!stereo_render) {
@@ -756,7 +777,7 @@ void vtkCustomInteractorStyle::OnKeyDown() {
                 Interactor->GetRenderWindow()->SetStereoRender(!stereo_render);
                 Interactor->GetRenderWindow()->Render();
                 Interactor->Render();
-            } else {
+            } else if (shift && ctrl) {
                 vtkInteractorStyleRubberBandPick::OnKeyDown();
                 vtkSmartPointer<vtkActorCollection> ac =
                         CurrentRenderer->GetActors();
@@ -779,31 +800,38 @@ void vtkCustomInteractorStyle::OnKeyDown() {
         // Display a grid/scale over the screen
         case 'g':
         case 'G': {
-            if (!grid_enabled_) {
-                grid_actor_->TopAxisVisibilityOn();
-                CurrentRenderer->AddViewProp(grid_actor_);
-                grid_enabled_ = true;
-            } else {
-                CurrentRenderer->RemoveViewProp(grid_actor_);
-                grid_enabled_ = false;
+            if (alt && ctrl) {
+                if (!grid_enabled_) {
+                    grid_actor_->TopAxisVisibilityOn();
+                    CurrentRenderer->AddViewProp(grid_actor_);
+                    grid_enabled_ = true;
+                } else {
+                    CurrentRenderer->RemoveViewProp(grid_actor_);
+                    grid_enabled_ = false;
+                }
             }
             break;
         }
 
         case 'o':
         case 'O': {
-            vtkSmartPointer<vtkCamera> cam = CurrentRenderer->GetActiveCamera();
-            int flag = cam->GetParallelProjection();
-            cam->SetParallelProjection(!flag);
+            if (alt && ctrl) {
+                vtkSmartPointer<vtkCamera> cam =
+                        CurrentRenderer->GetActiveCamera();
+                int flag = cam->GetParallelProjection();
+                cam->SetParallelProjection(!flag);
 
-            CurrentRenderer->SetActiveCamera(cam);
-            CurrentRenderer->Render();
+                CurrentRenderer->SetActiveCamera(cam);
+                CurrentRenderer->Render();
+            }
             break;
         }
         // Display a LUT actor on screen
         case 'u':
         case 'U': {
-            this->updateLookUpTableDisplay(true);
+            if (alt && ctrl) {
+                this->updateLookUpTableDisplay(true);
+            }
             break;
         }
 
@@ -826,8 +854,8 @@ void vtkCustomInteractorStyle::OnKeyDown() {
 
             static pcl::visualization::CloudActorMap::iterator it =
                     cloud_actors_->begin();
-            // it might be that some actors don't have a valid transformation
-            // set -> we skip them to avoid a seg fault.
+            // it might be that some actors don't have a valid
+            // transformation set -> we skip them to avoid a seg fault.
             bool found_transformation = false;
             for (unsigned idx = 0; idx < cloud_actors_->size(); ++idx, ++it) {
                 if (it == cloud_actors_->end()) it = cloud_actors_->begin();
@@ -839,8 +867,8 @@ void vtkCustomInteractorStyle::OnKeyDown() {
                 }
             }
 
-            // if a valid transformation was found, use it otherwise fall back
-            // to default view point.
+            // if a valid transformation was found, use it otherwise fall
+            // back to default view point.
             if (found_transformation) {
                 const pcl::visualization::CloudActor& actor = it->second;
                 cam->SetPosition(
@@ -955,8 +983,8 @@ void vtkCustomInteractorStyle::OnMouseMove() {
     if (this->CurrentMode != VTKISRBP_SELECT/* && !Interactor->GetControlKey() && !Interactor->GetShiftKey()*/)
 		{
         if (this->CurrentRenderer && this->CurrentManipulator) {
-            // When an interaction is active, we should not change the renderer
-            // being interacted with.
+            // When an interaction is active, we should not change the
+            // renderer being interacted with.
         } else {
             this->FindPokedRenderer(this->Interactor->GetEventPosition()[0],
                                     this->Interactor->GetEventPosition()[1]);
@@ -1353,15 +1381,16 @@ void vtkCustomInteractorStyle::updateLookUpTableDisplay(bool add_lut) {
 
     if (!lut_enabled_ && !add_lut) return;
 
-    if (lut_actor_id_ !=
-        "")  // Search if provided actor id is in CloudActorMap or ShapeActorMap
+    if (lut_actor_id_ != "")  // Search if provided actor id is in
+                              // CloudActorMap or ShapeActorMap
     {
         am_it = cloud_actors_->find(lut_actor_id_);
         if (am_it == cloud_actors_->end()) {
             sm_it = shape_actors_->find(lut_actor_id_);
             if (sm_it == shape_actors_->end()) {
                 PCL_WARN(
-                        "[updateLookUpTableDisplay] Could not find any actor "
+                        "[updateLookUpTableDisplay] Could not find any "
+                        "actor "
                         "with id <%s>!",
                         lut_actor_id_.c_str());
                 if (lut_enabled_) {  // Remove LUT and exit
@@ -1377,7 +1406,8 @@ void vtkCustomInteractorStyle::updateLookUpTableDisplay(bool add_lut) {
             if (!actor ||
                 !actor->GetMapper()->GetInput()->GetPointData()->GetScalars()) {
                 PCL_WARN(
-                        "[updateLookUpTableDisplay] id <%s> does not hold any "
+                        "[updateLookUpTableDisplay] id <%s> does not hold "
+                        "any "
                         "color information!",
                         lut_actor_id_.c_str());
                 if (lut_enabled_) {  // Remove LUT and exit
@@ -1399,7 +1429,8 @@ void vtkCustomInteractorStyle::updateLookUpTableDisplay(bool add_lut) {
                          ->GetPointData()
                          ->GetScalars()) {
                 PCL_WARN(
-                        "[updateLookUpTableDisplay] id <%s> does not hold any "
+                        "[updateLookUpTableDisplay] id <%s> does not hold "
+                        "any "
                         "color information!",
                         lut_actor_id_.c_str());
                 if (lut_enabled_) {  // Remove LUT and exit
@@ -1414,8 +1445,8 @@ void vtkCustomInteractorStyle::updateLookUpTableDisplay(bool add_lut) {
             lut_actor_->Modified();
             actor_found = true;
         }
-    } else  // lut_actor_id_ == "", the user did not specify which cloud/shape
-            // LUT should be displayed
+    } else  // lut_actor_id_ == "", the user did not specify which
+            // cloud/shape LUT should be displayed
     // Circling through all clouds/shapes and displaying first LUT found
     {
         for (am_it = cloud_actors_->begin(); am_it != cloud_actors_->end();

@@ -14,9 +14,11 @@
 #include "ecv2DViewportLabel.h"
 #include "ecvBox.h"
 #include "ecvCameraSensor.h"
+#include "ecvCircle.h"
 #include "ecvCoordinateSystem.h"
 #include "ecvCustomObject.h"
 #include "ecvCylinder.h"
+#include "ecvDisc.h"
 #include "ecvDish.h"
 #include "ecvDisplayTools.h"
 #include "ecvExternalFactory.h"
@@ -142,6 +144,8 @@ ccHObject* ccHObject::New(CV_CLASS_ENUM objectType, const char* name /*=0*/) {
         case CV_TYPES::POLY_LINE:
             // warning: no associated vertices --> retrieved later
             return new ccPolyline(nullptr);
+        case CV_TYPES::CIRCLE:
+            return new ccCircle();
         case CV_TYPES::FACET:
             return new ccFacet();
         case CV_TYPES::MATERIAL_SET:
@@ -183,6 +187,8 @@ ccHObject* ccHObject::New(CV_CLASS_ENUM objectType, const char* name /*=0*/) {
             return new ccBox(name);
         case CV_TYPES::CONE:
             return new ccCone(name);
+        case CV_TYPES::DISC:
+            return new ccDisc(name);
         case CV_TYPES::DISH:
             return new ccDish(name);
         case CV_TYPES::EXTRU:

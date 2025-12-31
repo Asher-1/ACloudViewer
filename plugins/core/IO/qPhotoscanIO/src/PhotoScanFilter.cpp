@@ -12,7 +12,6 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QTextStream>
 #include <QXmlStreamReader>
 
 // Qt5/Qt6 Compatibility

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include "CVCoreLib.h"
 
@@ -20,6 +21,7 @@ public:
     struct CV_CORE_LIB_API Impl {
         int num_cores_;
         int num_threads_;
+        std::string model_name_;
     };
 
 public:
@@ -37,6 +39,10 @@ public:
     /// This returns the same result as std::thread::hardware_concurrency() or
     /// boost::thread::hardware_concurrency().
     int NumThreads() const;
+
+    /// Returns the CPU model name/brand string.
+    /// Returns empty string if not available.
+    const std::string& ModelName() const;
 
     /// Prints CPUInfo in the console.
     void Print() const;

@@ -22,6 +22,7 @@
 #include <fstream>
 #include <limits>
 #elif defined(CV_MAC_OS)
+#include <mach/host_info.h>
 #include <mach/mach_host.h>
 #include <mach/mach_init.h>
 #include <mach/mach_types.h>
@@ -108,20 +109,29 @@ MemoryInfo getMemoryInfo() {
         infos.freeSwap = swap.xsu_avail;
     }
 
-    // In use.
+    // In use - Reference ParaView/VTK implementation for macOS memory
+    // statistics Use 64-bit API for accurate memory statistics on modern macOS
+    // systems
     mach_port_t stat_port = mach_host_self();
     vm_size_t page_size;
-    vm_statistics_data_t vm_stat;
-    mach_msg_type_number_t count = sizeof(vm_stat) / sizeof(natural_t);
+    vm_statistics64_data_t vm_stat;
+    mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
     if (KERN_SUCCESS == host_page_size(stat_port, &page_size) &&
-        KERN_SUCCESS == host_statistics(stat_port, HOST_VM_INFO,
-                                        (host_info_t)&vm_stat, &count)) {
-        // uint64_t used = ((int64_t)vm_stat.active_count +
-        // (int64_t)vm_stat.inactive_count + (int64_t)vm_stat.wire_count) *
-        // (int64_t)page_size;
-        // infos.freeRam = infos.totalRam - used;
+        KERN_SUCCESS == host_statistics64(stat_port, HOST_VM_INFO64,
+                                          (host_info64_t)&vm_stat, &count)) {
+        // Free RAM: completely free memory pages
         infos.freeRam = (int64_t)vm_stat.free_count * (int64_t)page_size;
-        infos.availableRam = infos.freeRam;
+
+        // Available RAM: ParaView/VTK style calculation for macOS
+        // Based on ParaView's SystemInformation.cxx implementation:
+        // - GetHostMemoryUsed() returns: (active + wired) * page_size
+        // - GetAvailablePhysicalMemory() returns: (free + inactive) * page_size
+        // ParaView status bar uses GetHostMemoryUsed() for memory usage display
+        // So: Used = active + wired, Available = Total - Used
+        uint64_t app_memory = ((uint64_t)vm_stat.active_count +
+                               (uint64_t)vm_stat.wire_count) *
+                              (uint64_t)page_size;
+        infos.availableRam = infos.totalRam - app_memory;
     }
 #else
     // TODO: could be done on FreeBSD too

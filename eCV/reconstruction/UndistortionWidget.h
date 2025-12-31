@@ -10,9 +10,9 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "OptionsWidget.h"
 #include "ThreadControlWidget.h"
 #include "base/undistortion.h"
+#include "ui/options_widget.h"
 
 namespace colmap {
 class Reconstruction;
@@ -24,7 +24,7 @@ namespace cloudViewer {
 
 using OptionManager = colmap::OptionManager;
 
-class UndistortionWidget : public OptionsWidget {
+class UndistortionWidget : public colmap::OptionsWidget {
 public:
     UndistortionWidget(QWidget* parent, const OptionManager* options);
 

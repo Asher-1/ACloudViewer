@@ -34,7 +34,6 @@ class MappingLabel : public QWidget
 	    , m_statusLabel(new QLabel)
 	{
 		auto* layout = new QHBoxLayout;
-		layout->setMargin(0);
 		layout->addWidget(m_nameLabel);
 		layout->addWidget(m_statusLabel);
 		setLayout(layout);

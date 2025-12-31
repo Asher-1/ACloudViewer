@@ -9,10 +9,10 @@
 
 #include <CVConst.h>
 #include <CVLog.h>
+#include <QtCompat.h>
 
 #include <QBrush>
 #include <QFile>
-#include <QTextStream>
 #include <algorithm>
 #include <iostream>
 #include <iterator>
@@ -288,7 +288,7 @@ bool ConfusionMatrix::save(QString filePath) {
     for (auto class_number : class_numbers) {
         stream << class_number << " ";
     }
-    stream << Qt::endl;
+    stream << QtCompat::endl;
     for (int row = 0; row < confusionMatrix.rows; row++) {
         stream << class_numbers.at(row) << " ";
         for (int col = 0; col < confusionMatrix.cols; col++) {
@@ -296,7 +296,8 @@ bool ConfusionMatrix::save(QString filePath) {
         }
         stream << precisionRecallF1Score.at<float>(row, PRECISION) << " ";
         stream << precisionRecallF1Score.at<float>(row, RECALL) << " ";
-        stream << precisionRecallF1Score.at<float>(row, F1_SCORE) << Qt::endl;
+        stream << precisionRecallF1Score.at<float>(row, F1_SCORE)
+               << QtCompat::endl;
     }
 
     file.close();

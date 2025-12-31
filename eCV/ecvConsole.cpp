@@ -19,6 +19,8 @@
 #include <CommonSettings.h>
 
 // Qt
+#include <QtCompat.h>
+
 #include <QApplication>
 #include <QClipboard>
 #include <QColor>
@@ -28,7 +30,6 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QStandardPaths>
-#include <QTextStream>
 #include <QThread>
 #include <QTime>
 
@@ -295,7 +296,7 @@ void ecvConsole::logMessage(const QString& message, int level) {
         // Write to log file immediately for crash safety (all messages)
         // UI update will still be handled by the timer for performance
         if (m_logStream) {
-            *m_logStream << formatedMessage << endl;
+            *m_logStream << formatedMessage << QtCompat::endl;
             // Flush immediately for ERROR/WARNING, or every few messages for
             // others
             if ((level & LOG_ERROR) || (level & LOG_WARNING)) {
@@ -490,14 +491,16 @@ bool ecvConsole::setLogFile(const QString& logPrefix) {
         m_mutex.lock();
         m_logStream = new QTextStream(&m_logFile);
         // Write header to log file
-        *m_logStream << "========================================" << endl;
-        *m_logStream << "ACloudViewer Log File" << endl;
+        *m_logStream << "========================================"
+                     << QtCompat::endl;
+        *m_logStream << "ACloudViewer Log File" << QtCompat::endl;
         *m_logStream << "Started at: "
                      << QDateTime::currentDateTime().toString(
                                 "yyyy-MM-dd HH:mm:ss")
-                     << endl;
-        *m_logStream << "Log file: " << logPath << endl;
-        *m_logStream << "========================================" << endl;
+                     << QtCompat::endl;
+        *m_logStream << "Log file: " << logPath << QtCompat::endl;
+        *m_logStream << "========================================"
+                     << QtCompat::endl;
         m_mutex.unlock();
 
         setAutoRefresh(true);

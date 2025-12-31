@@ -336,22 +336,39 @@ bool QVideoEncoder::close() {
 
     // delayed frames?
     while (ret >= 0) {
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+        AVPacket *pkt = av_packet_alloc();
+        if (!pkt) {
+            break;
+        }
+        ret = avcodec_receive_packet(m_ff->codecContext, pkt);
+        if (ret < 0) {
+            av_packet_free(&pkt);
+            break;
+        }
+        write_frame(m_ff, pkt);
+        av_packet_free(&pkt);
+#else
         AVPacket pkt;
         memset(&pkt, 0, sizeof(AVPacket));
         av_init_packet(&pkt);
-
         ret = avcodec_receive_packet(m_ff->codecContext, &pkt);
         if (ret < 0) {
             break;
         }
-
         write_frame(m_ff, &pkt);
+        av_packet_unref(&pkt);
+#endif
     }
 
     av_write_trailer(m_ff->formatContext);
 
     // close the codec
+#if LIBAVCODEC_VERSION_MAJOR >= 59
+    avcodec_free_context(&m_ff->codecContext);
+#else
     avcodec_close(m_ff->codecContext);
+#endif
 
     // free the streams and other data
     freeFrame();
@@ -363,7 +380,11 @@ bool QVideoEncoder::close() {
     avio_close(m_ff->formatContext->pb);
 
     // free the stream
+#if LIBAVFORMAT_VERSION_MAJOR >= 59
+    avformat_free_context(m_ff->formatContext);
+#else
     av_free(m_ff->formatContext);
+#endif
 
     m_isOpen = false;
 
@@ -401,14 +422,47 @@ bool QVideoEncoder::encodeImage(const QImage &image,
         }
 
         while (ret >= 0) {
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+            AVPacket *pkt = av_packet_alloc();
+            if (!pkt) {
+                if (errorString)
+                    *errorString = "Failed to allocate packet";
+                return false;
+            }
+            ret = avcodec_receive_packet(m_ff->codecContext, pkt);
+            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+                av_packet_free(&pkt);
+                break;
+            } else if (ret < 0) {
+                char errorStr[AV_ERROR_MAX_STRING_SIZE] = {0};
+                av_make_error_string(errorStr, AV_ERROR_MAX_STRING_SIZE, ret);
+                if (errorString)
+                    *errorString = QString("Error receiving video frame: %1")
+                                           .arg(errorStr);
+                av_packet_free(&pkt);
+                return false;
+            }
+
+            int wRet = write_frame(m_ff, pkt);
+            if (wRet < 0) {
+                char errorStr[AV_ERROR_MAX_STRING_SIZE] = {0};
+                av_make_error_string(errorStr, AV_ERROR_MAX_STRING_SIZE, wRet);
+                if (errorString)
+                    *errorString =
+                            QString("Error while writing video frame: %1")
+                                    .arg(errorStr);
+                av_packet_free(&pkt);
+                return false;
+            }
+            av_packet_free(&pkt);
+#else
             AVPacket pkt;
             memset(&pkt, 0, sizeof(AVPacket));
             av_init_packet(&pkt);
-
             ret = avcodec_receive_packet(m_ff->codecContext, &pkt);
-            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
                 break;
-            else if (ret < 0) {
+            } else if (ret < 0) {
                 char errorStr[AV_ERROR_MAX_STRING_SIZE] = {0};
                 av_make_error_string(errorStr, AV_ERROR_MAX_STRING_SIZE, ret);
                 if (errorString)
@@ -427,6 +481,8 @@ bool QVideoEncoder::encodeImage(const QImage &image,
                                     .arg(errorStr);
                 return false;
             }
+            av_packet_unref(&pkt);
+#endif
         }
     }
 
@@ -462,14 +518,22 @@ bool QVideoEncoder::convertImage_sws(const QImage &image,
 
     int num_bytes =
             av_image_get_buffer_size(AV_PIX_FMT_BGRA, m_width, m_height, 1);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    if (num_bytes != static_cast<int>(image.sizeInBytes())) {
+#else
     if (num_bytes != image.byteCount()) {
+#endif
         if (errorString) *errorString = "[SWS] Number of bytes mismatch";
         return false;
     }
 
     const uint8_t *srcSlice[3] = {
             static_cast<const uint8_t *>(image.constBits()), 0, 0};
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    int srcStride[3] = {static_cast<int>(image.bytesPerLine()), 0, 0};
+#else
     int srcStride[3] = {image.bytesPerLine(), 0, 0};
+#endif
 
     sws_scale(m_ff->swsContext, srcSlice, srcStride, 0, m_height,
               m_ff->frame->data, m_ff->frame->linesize);

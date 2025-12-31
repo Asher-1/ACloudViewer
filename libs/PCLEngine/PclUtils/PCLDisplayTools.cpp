@@ -8,9 +8,9 @@
 #include "PCLDisplayTools.h"
 
 // PCLModules
-#include "PCLConv.h"
-#include "cc2sm.h"
-#include "sm2cc.h"
+#include <Utils/PCLConv.h>
+#include <Utils/cc2sm.h>
+#include <Utils/sm2cc.h>
 
 // CV_CORE_LIB
 #include <CVGeom.h>
@@ -38,7 +38,10 @@
 #include <pcl/point_types.h>
 
 // VTK
+#include <vtkFieldData.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkPolyData.h>
+#include <vtkStringArray.h>
 
 // SYSTEM
 #include <assert.h>
@@ -96,6 +99,7 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
     std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
     bool firstShow = !m_visualizer3D->contains(viewID);
+    bool hasRedrawn = false;
 
     if (ecvCloud->isRedraw() || firstShow) {
         if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
@@ -107,6 +111,7 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
             }
             m_visualizer3D->draw(context, pclCloud);
             m_visualizer3D->updateNormals(context, pclCloud);
+            hasRedrawn = true;
         } else {
             m_visualizer3D->resetScalarColor(viewID, true, viewport);
             if (!updateEntityColor(context, ecvCloud)) {
@@ -118,6 +123,7 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                 }
                 m_visualizer3D->draw(context, pclCloud);
                 m_visualizer3D->updateNormals(context, pclCloud);
+                hasRedrawn = true;
             } else {
                 if (context.drawParam.showNorms) {
                     PCLCloud::Ptr pointNormals =
@@ -133,6 +139,20 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
     if (m_visualizer3D->contains(viewID)) {
         m_visualizer3D->setPointSize(context.defaultPointSize, viewID,
                                      viewport);
+
+        // Ensure scalar field data is available in VTK for tooltips
+        // Always update when SF is shown (to handle SF switching)
+        if (context.drawParam.showSF && ecvCloud->sfShown()) {
+            int sfIdx = ecvCloud->getCurrentDisplayedScalarFieldIndex();
+            if (sfIdx >= 0) {
+                // Add/update scalar field to VTK for tooltip display
+                // Extract values directly from ccPointCloud (not from PCL
+                // cloud) Note: addScalarFieldToVTK has internal check to avoid
+                // unnecessary updates
+                m_visualizer3D->addScalarFieldToVTK(viewID, ecvCloud, sfIdx,
+                                                    viewport);
+            }
+        }
 
         if ((!context.drawParam.showColors && !context.drawParam.showSF) ||
             ecvCloud->isColorOverridden()) {
@@ -231,6 +251,30 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                         cc2smReader(ecvCloud, true).getPclMesh(mesh);
                 if (!pclMesh) return;
                 m_visualizer3D->draw(context, pclMesh);
+
+                // Add mesh name to VTK FieldData after PCL creates the actor
+                // (for tooltip display, ParaView style)
+                std::string viewID = CVTools::FromQString(context.viewID);
+                vtkActor* actor = m_visualizer3D->getActorById(viewID);
+                if (actor && actor->GetMapper() &&
+                    mesh->getName().length() > 0) {
+                    vtkPolyData* polyData = vtkPolyData::SafeDownCast(
+                            actor->GetMapper()->GetInput());
+                    if (polyData) {
+                        QString meshName = mesh->getName();
+                        CVLog::Print(QString("[PCLDisplayTools::drawMesh] "
+                                             "Adding DatasetName to "
+                                             "non-textured mesh: '%1'")
+                                             .arg(meshName));
+
+                        vtkSmartPointer<vtkStringArray> datasetNameArray =
+                                vtkSmartPointer<vtkStringArray>::New();
+                        datasetNameArray->SetName("DatasetName");
+                        datasetNameArray->SetNumberOfTuples(1);
+                        datasetNameArray->SetValue(0, meshName.toStdString());
+                        polyData->GetFieldData()->AddArray(datasetNameArray);
+                    }
+                }
             }
         } else {
             // Non-first display and no need for complete rebuild: only update
@@ -1118,10 +1162,19 @@ void PCLDisplayTools::changeEntityProperties(PROPERTY_PARAM& param) {
         } break;
         case PROPERTY_MODE::ECV_OPACITY_PROPERTY: {
             switch (param.entityType) {
-                case ENTITY_TYPE::ECV_POINT_CLOUD:
-                case ENTITY_TYPE::ECV_MESH: {
+                case ENTITY_TYPE::ECV_POINT_CLOUD: {
+                    // Point clouds use PCL's point cloud opacity setting
                     m_visualizer3D->setPointCloudOpacity(param.opacity, viewId,
                                                          viewport);
+                } break;
+                case ENTITY_TYPE::ECV_MESH: {
+                    // Meshes (textured or not) use dedicated mesh opacity
+                    // method This properly handles:
+                    // - Textured meshes with alpha blending
+                    // - Non-textured meshes with simple opacity
+                    // - Depth peeling for correct transparency rendering
+                    m_visualizer3D->setMeshOpacity(param.opacity, viewId,
+                                                   viewport);
                 } break;
                 case ENTITY_TYPE::ECV_SHAPE:
                 case ENTITY_TYPE::ECV_LINES_3D: {

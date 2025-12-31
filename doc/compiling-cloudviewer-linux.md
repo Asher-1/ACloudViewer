@@ -1,80 +1,212 @@
-Build from source in Ubuntu and macOS
+Build from source on Ubuntu
 =====================
 
-1. Install dependencies
+[**Fast Docker build on Linux**](../docker/README.md)
 
-	    # On Ubuntu
-	    utils/install_deps_ubuntu.sh assume-yes
-	
-	    # On macOS
-	    # Install Homebrew first: https://brew.sh/
-	    utils/install_deps_macos.sh
-	
-	    # configure for vtk(8.2)
-	      cmake -DVTK_QT_VERSION:STRING=5 \
-		-DCMAKE_BUILD_TYPE=Release \
-	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-	      	-DVTK_Group_Qt:BOOL=ON \
-	      	-DCMAKE_PREFIX_PATH:PATH=/opt/5.14.2/5.14.2/gcc_64/lib/cmake  \
-	      	-DBUILD_SHARED_LIBS:BOOL=ON ..
-	
-		make -j 8
-		sudo make install
-	    # cofigure for qt VTK PLUGINS
-		sudo find / -name libQVTKWidgetPlugin.so
-		sudo cp lib/libQVTKWidgetPlugin.so /opt/Qt5.14.2/5.14.2/gcc_64/plugins/designer
-		sudo cp lib/libQVTKWidgetPlugin.so /opt/Qt5.14.2/Tools/QtCreator/lib/Qt/plugins/designer
-	
-	    # cofigure PCL(1.11.1)
-		cmake -DCMAKE_BUILD_TYPE=Release \
-		      -DBUILD_GPU=ON \
-		      -DBUILD_apps=ON \
-		      -DBUILD_examples=ON \
-		      -DBUILD_surface_on_nurbs=ON \
-		      -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-		      -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake ..
-	
-		make -j 8
-		sudo make install
+LINUX:(Docker) [BUILD_SHELL](../docker/build-release.sh) and [BUILD_SHELL_CONDA](../docker/build-release-conda.sh)
 
-2. Setup Python environments
+```
+./docker/build-release.sh
 
-Activate the python ``virtualenv`` or Conda ``virtualenv```. Check
-``which python`` to ensure that it shows the desired Python executable.
-Alternatively, set the CMake flag ``-DPYTHON_EXECUTABLE=/path/to/python``
-to specify the python executable.
-If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=OFF``.
+or
 
-3. Config
+./docker/build-release-conda.sh
+```
 
-	    mkdir build
-	    cd build
-	    cmake -DCMAKE_BUILD_TYPE=Release \
-	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake \
-	      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/lib/cmake  \
-	      	../ACloudViewer
-	
-	    cmake -DCMAKE_BUILD_TYPE=Release \
-	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-	      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
-	      	-DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
+## Debug wheel (Linux)
 
-The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
-CloudViewer to a user location. In the absence of this argument CloudViewer will be
-installed to a system location where ``sudo`` is required) For more
-options of the build, see :ref:`compilation_options`.
+```
+1. gdb --batch --ex run --ex bt --ex quit --args python3 -c "import cloudViewer"
+
+或者
+
+2. gdb python3
+3. run -c "import cloudViewer"
+
+4. bt
+```
+
+## Install dependencies
+```
+utils/install_deps_ubuntu.sh assume-yes
+```
+
+## python env setup
+```
+export PYENV_ROOT=~/.pyenv PYTHON_VERSION=3.12
+export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+
+curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+python --version && pip --version
+```
+
+## Building APP
+
+```
+export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
+export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+
+cd ACloudViewer
+mkdir build_app
+cd build_app
+cmake   -DDEVELOPER_BUILD=OFF \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_JUPYTER_EXTENSION=OFF \
+        -DBUILD_LIBREALSENSE=OFF \
+        -DBUILD_AZURE_KINECT=OFF \
+        -DBUILD_BENCHMARKS=ON \
+        -DWITH_OPENMP=ON \
+        -DWITH_IPP=ON \
+        -DWITH_SIMD=ON \
+        -DUSE_SIMD=ON \
+        -DPACKAGE=ON \
+        -DUSE_PCL_BACKEND=ON \
+        -DBUILD_WEBRTC=OFF \
+        -DBUILD_OPENCV=ON \
+        -DBUILD_RECONSTRUCTION=ON \
+        -DBUILD_CUDA_MODULE=ON \
+        -DBUILD_COMMON_CUDA_ARCHS=ON \
+        -DBUILD_PYTORCH_OPS=OFF \
+        -DBUILD_TENSORFLOW_OPS=OFF \
+        -DBUNDLE_CLOUDVIEWER_ML=OFF \
+        -DCVCORELIB_USE_CGAL=ON \
+        -DCVCORELIB_SHARED=ON \
+        -DCVCORELIB_USE_QT_CONCURRENT=ON \
+        -DOPTION_USE_GDAL=OFF \
+        -DOPTION_USE_DXF_LIB=ON \
+        -DOPTION_USE_RANSAC_LIB=ON \
+        -DOPTION_USE_SHAPE_LIB=ON \
+        -DPLUGIN_IO_QDRACO=ON \
+        -DPLUGIN_IO_QLAS=ON \
+        -DPLUGIN_IO_QADDITIONAL=ON \
+        -DPLUGIN_IO_QCORE=ON \
+        -DPLUGIN_IO_QCSV_MATRIX=ON \
+        -DPLUGIN_IO_QE57=ON \
+        -DPLUGIN_IO_QMESH=ON \
+        -DPLUGIN_IO_QPDAL=OFF \
+        -DPLUGIN_IO_QPHOTOSCAN=ON \
+        -DPLUGIN_IO_QRDB=ON \
+        -DPLUGIN_IO_QFBX=OFF \
+        -DPLUGIN_IO_QSTEP=OFF \
+        -DPLUGIN_STANDARD_QCORK=ON \
+        -DPLUGIN_STANDARD_QJSONRPC=ON \
+        -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
+        -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
+        -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
+        -DPLUGIN_STANDARD_QANIMATION=ON \
+        -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
+        -DPLUGIN_STANDARD_QCANUPO=ON \
+        -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
+        -DPLUGIN_STANDARD_QCOMPASS=ON \
+        -DPLUGIN_STANDARD_QCSF=ON \
+        -DPLUGIN_STANDARD_QFACETS=ON \
+        -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON \
+        -DPLUGIN_STANDARD_QM3C2=ON \
+        -DPLUGIN_STANDARD_QMPLANE=ON \
+        -DPLUGIN_STANDARD_QPCL=ON \
+        -DPLUGIN_STANDARD_QPOISSON_RECON=ON \
+        -DPOISSON_RECON_WITH_OPEN_MP=ON \
+        -DPLUGIN_STANDARD_QRANSAC_SD=ON \
+        -DPLUGIN_STANDARD_QSRA=ON \
+        -DPLUGIN_STANDARD_3DMASC=ON \
+        -DPLUGIN_STANDARD_QTREEISO=ON \
+        -DPLUGIN_STANDARD_QVOXFALL=ON \
+        -DPLUGIN_STANDARD_G3POINT=ON \
+        -DPLUGIN_PYTHON=ON \
+        -DBUILD_PYTHON_MODULE=ON \
+        -DBUILD_WITH_CONDA=ON \
+        -DCONDA_PREFIX=$CONDA_PREFIX \
+        -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
+        -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
+        ..
+
+Build: 
+        make "-j$(nproc)"
+        make install "-j$(nproc)"
+```
 
 
-4. Build
+## Building wheel
 
-	    # On Ubuntu
-	    make -j$(nproc)
-	
-	    # On macOS
-	    make -j$(sysctl -n hw.physicalcpu)
+```
+export PYENV_ROOT=~/.pyenv PYTHON_VERSION=3.12
+export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+
+curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+python --version && pip --version
+
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
+# Get build scripts and control environment variables
+# shellcheck source=ci_utils.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
+echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
+install_python_dependencies with-jupyter with-unit-test
+
+```
+
+```
+sudo apt install libxxf86vm-dev
+
+export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
+export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+cd ACloudViewer
+mkdir build
+cd build
+cmake -DDEVELOPER_BUILD=OFF \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_LIBREALSENSE=ON \
+      -DBUILD_AZURE_KINECT=ON \
+      -DBUILD_BENCHMARKS=OFF \
+      -DBUILD_OPENCV=OFF \
+      -DWITH_OPENMP=ON \
+      -DWITH_IPP=ON \
+      -DWITH_SIMD=ON \
+      -DUSE_SIMD=ON \
+      -DCVCORELIB_SHARED=ON \
+      -DCVCORELIB_USE_CGAL=ON \
+      -DCVCORELIB_USE_QT_CONCURRENT=ON \
+      -DBUILD_WEBRTC=ON \
+      -DUSE_PCL_BACKEND=OFF \
+      -DBUILD_FILAMENT_FROM_SOURCE=OFF \
+      -DBUILD_JUPYTER_EXTENSION=ON \
+      -DBUILD_RECONSTRUCTION=ON \
+      -DBUILD_COMMON_CUDA_ARCHS=ON \
+      -DBUILD_PYTORCH_OPS=ON \
+      -DBUILD_TENSORFLOW_OPS=OFF \
+      -DBUNDLE_CLOUDVIEWER_ML=ON \
+      -DBUILD_WITH_CONDA=ON \
+      -DCONDA_PREFIX=$CONDA_PREFIX \
+      -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
+      -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
+      -DCLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML \
+      ..
+
+make "-j$(nproc)" python-package
+
+# build with cuda
+cmake -DBUILD_CUDA_MODULE=ON ..
+
+make "-j$(nproc)" pip-package
+make "-j$(nproc)" install-pip-package
+python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
+
+```
 
 
-5. Install
+## Install
 
 To install CloudViewer C++ library:
 
@@ -125,27 +257,8 @@ Finally, verify the Python installation with:
     python -c "import cloudViewer; print(cloudViewer)"
 
 
-Compilation options
+## Compilation options
 -------------------
-
-OpenMP
-
-We automatically detect if the C++ compiler supports OpenMP and compile CloudViewer
-with it if the compilation option ``WITH_OPENMP`` is ``ON``.
-OpenMP can greatly accelerate computation on a multi-core CPU.
-
-The default LLVM compiler on OS X does not support OpenMP.
-A workaround is to install a C++ compiler with OpenMP support, such as ``gcc``,
-then use it to compile CloudViewer. For example, starting from a clean build
-directory, run
-
-    brew install gcc --without-multilib
-    cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
-    make -j
-
-note:: This workaround has some compatibility issues with the source code of
-    GLFW included in ``3rdparty``.
-    Make sure CloudViewer is linked against GLFW installed on the OS.
 
 ML Module
 
@@ -211,7 +324,7 @@ code-block:: bash
 If you see an output similar to ``command not found``, you can install CUDA toolkit by following the `official documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
 
 
-Unit test
+## Unit test
 ---------
 
 To build and run C++ unit tests:
@@ -228,8 +341,3 @@ To run Python unit tests:
     make install-pip-package
     pytest ../python/test
 
-
-Package Linux
--------------
-
-[package-on-linux.md file](package-on-linux.md)

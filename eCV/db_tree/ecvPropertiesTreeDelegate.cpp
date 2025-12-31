@@ -20,16 +20,26 @@
 #include "matrixDisplayDlg.h"
 #include "sfEditDlg.h"
 
+#ifdef USE_PCL_BACKEND
+// PCL Selection Tools
+#include <PCLEngine/Tools/SelectionTools/cvSelectionData.h>
+#include <PCLEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.h>
+#include <PCLEngine/Tools/SelectionTools/cvViewSelectionManager.h>
+#endif
+
 // ECV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
 #include <ecv2DViewportObject.h>
 #include <ecvAdvancedTypes.h>
 #include <ecvCameraSensor.h>
+#include <ecvCircle.h>
 #include <ecvColorScalesManager.h>
 #include <ecvCone.h>
 #include <ecvCoordinateSystem.h>
+#include <ecvDisc.h>
 #include <ecvDisplayTools.h>
+#include <ecvDrawContext.h>
 #include <ecvFacet.h>
 #include <ecvGBLSensor.h>
 #include <ecvGenericPrimitive.h>
@@ -57,6 +67,7 @@
 #include <QComboBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QHeaderView>
 #include <QImageReader>
 #include <QLineEdit>
 #include <QLocale>
@@ -67,9 +78,12 @@
 #include <QSpinBox>
 #include <QStandardItemModel>
 #include <QToolButton>
+#include <QTreeView>
 
 // System
 #include <assert.h>
+
+#include <cmath>
 
 // Default 'None' string
 const char* ccPropertiesTreeDelegate::s_noneString = QT_TR_NOOP("None");
@@ -125,7 +139,16 @@ ccPropertiesTreeDelegate::ccPropertiesTreeDelegate(QStandardItemModel* model,
     : QStyledItemDelegate(parent),
       m_currentObject(nullptr),
       m_model(model),
-      m_view(view) {
+      m_view(view),
+      m_selectionToolsActive(false),
+      m_viewer(nullptr),
+      m_lastFocusItemRole(OBJECT_NO_PROPERTY)
+#ifdef USE_PCL_BACKEND
+      ,
+      m_highlighter(nullptr),
+      m_selectionPropertiesWidget(nullptr)
+#endif
+{
     assert(m_model && m_view);
 }
 
@@ -144,6 +167,7 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
             case OBJECT_OCTREE_TYPE:
             case OBJECT_COLOR_RAMP_STEPS:
             case OBJECT_CLOUD_POINT_SIZE:
+            case OBJECT_OPACITY:
                 return QSize(50, 24);
             case OBJECT_COLOR_SOURCE:
             case OBJECT_POLYLINE_WIDTH:
@@ -156,6 +180,12 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
             case OBJECT_HISTORY_MATRIX_EDITOR:
             case OBJECT_GLTRANS_MATRIX_EDITOR:
                 return QSize(250, 140);
+            case OBJECT_SELECTION_PROPERTIES:
+                // Selection properties widget should be large enough to show
+                // all content When shown alone (no DB object), it will fill the
+                // entire view When shown with other properties, it gets a
+                // reasonable default size
+                return QSize(300, 400);
         }
     }
 
@@ -174,7 +204,17 @@ ccHObject* ccPropertiesTreeDelegate::getCurrentObject() {
 }
 
 void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
-    if (!hObject) return;
+    if (!hObject) {
+        CVLog::PrintDebug(
+                "[ccPropertiesTreeDelegate::fillModel] Called with nullptr, "
+                "clearing");
+        unbind();
+        if (m_model) {
+            m_model->removeRows(0, m_model->rowCount());
+        }
+        m_currentObject = nullptr;
+        return;
+    }
 
     unbind();
 
@@ -190,6 +230,22 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
         m_model->setColumnCount(2);
         m_model->setHeaderData(0, Qt::Horizontal, tr("Property"));
         m_model->setHeaderData(1, Qt::Horizontal, tr("State/Value"));
+    }
+
+    // Ensure header is visible when displaying normal properties
+    // (it may have been hidden when showing only selection properties)
+    if (m_view) {
+        QTreeView* treeView = qobject_cast<QTreeView*>(m_view);
+        if (treeView && treeView->header()) {
+            treeView->header()->show();
+        }
+    }
+
+    // Selection Tools Properties (ParaView-style)
+    // Show selection properties FIRST when any selection tool is active
+    // Place at TOP of properties tree for maximum visibility and accessibility
+    if (m_selectionToolsActive) {
+        fillWithSelectionProperties();
     }
 
     if (m_currentObject->isHierarchy())
@@ -302,9 +358,24 @@ void ccPropertiesTreeDelegate::appendWideRow(
 
     if (m_model) {
         m_model->appendRow(item);
-        if (openPersistentEditor)
-            m_view->openPersistentEditor(
-                    m_model->index(m_model->rowCount() - 1, 0));
+        if (openPersistentEditor && m_view) {
+            QModelIndex index = m_model->index(m_model->rowCount() - 1, 0);
+            if (index.isValid()) {
+                // Check if this is selection properties to add debug logging
+                if (item->data().isValid() &&
+                    item->data().toInt() == OBJECT_SELECTION_PROPERTIES) {
+                    CVLog::PrintDebug(QString("[ccPropertiesTreeDelegate] "
+                                              "Opening persistent editor for "
+                                              "selection properties at row %1")
+                                              .arg(index.row()));
+                }
+                m_view->openPersistentEditor(index);
+            } else {
+                CVLog::Warning(
+                        "[ccPropertiesTreeDelegate] Invalid index for "
+                        "persistent editor");
+            }
+        }
     }
 }
 
@@ -344,6 +415,180 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
 
         appendRow(ITEM(it.key()), ITEM(value));
     }
+}
+
+void ccPropertiesTreeDelegate::fillWithSelectionProperties() {
+    assert(m_model);
+
+#ifdef USE_PCL_BACKEND
+    // Add separator for selection tools section
+    addSeparator(tr("Selection Tools"));
+
+    // Add wide row for selection properties widget (ParaView-style)
+    // This will display the cvSelectionPropertiesWidget with all tabs
+    // Ensure persistent editor is opened by explicitly passing true
+    QStandardItem* item = PERSISTENT_EDITOR(OBJECT_SELECTION_PROPERTIES);
+    appendWideRow(item, true);
+
+    // Force view update to ensure editor is created and displayed
+    if (m_view) {
+        m_view->update();
+    }
+#endif
+}
+
+void ccPropertiesTreeDelegate::setSelectionToolsActive(bool active) {
+    CVLog::Print(
+            QString("[ccPropertiesTreeDelegate::setSelectionToolsActive] "
+                    "called with active=%1, current m_selectionToolsActive=%2, "
+                    "m_currentObject=%3")
+                    .arg(active)
+                    .arg(m_selectionToolsActive)
+                    .arg(m_currentObject ? "yes" : "no"));
+
+    if (m_selectionToolsActive != active) {
+        m_selectionToolsActive = active;
+
+        if (active) {
+            // CRITICAL FIX: When activating selection tools, clear any stale
+            // selection data This prevents crashes from dangling pointers to
+            // deleted objects
+            emit requestClearSelection();
+
+            // When selection tools become active, always show selection
+            // properties even if no object is selected in DB tree
+            if (m_currentObject) {
+                // SAFETY: Validate object before updating - it might be a
+                // dangling pointer
+                try {
+                    CVLog::Print(
+                            "[ccPropertiesTreeDelegate] Updating model with "
+                            "selection properties");
+                    updateModel();
+                } catch (...) {
+                    CVLog::Error(
+                            "[ccPropertiesTreeDelegate] CRASH AVOIDED: "
+                            "m_currentObject is invalid, clearing");
+                    m_currentObject = nullptr;
+                    showSelectionPropertiesOnly();
+                }
+            } else {
+                // Show only selection properties when no object is selected
+                CVLog::Print(
+                        "[ccPropertiesTreeDelegate] Showing selection "
+                        "properties only (no object)");
+                showSelectionPropertiesOnly();
+            }
+        } else {
+            // CRITICAL FIX: When deactivating, clear selection data to avoid
+            // stale references
+            emit requestClearSelection();
+
+            // When selection tools are deactivated
+            if (m_currentObject) {
+                // SAFETY: Validate object before updating
+                try {
+                    CVLog::Print(
+                            "[ccPropertiesTreeDelegate] Updating model without "
+                            "selection properties");
+                    updateModel();  // Refresh to remove selection properties
+                                    // section
+                } catch (...) {
+                    CVLog::Error(
+                            "[ccPropertiesTreeDelegate] CRASH AVOIDED: "
+                            "m_currentObject is invalid, clearing");
+                    m_currentObject = nullptr;
+                    clearModel();
+                }
+            } else {
+                // Clear the model when no object and no selection tools
+                CVLog::Print("[ccPropertiesTreeDelegate] Clearing model");
+                clearModel();
+            }
+        }
+    } else {
+        CVLog::Print(
+                "[ccPropertiesTreeDelegate] Selection tools active state "
+                "unchanged, skipping update");
+    }
+}
+
+void ccPropertiesTreeDelegate::showSelectionPropertiesOnly() {
+#ifdef USE_PCL_BACKEND
+    if (!m_model) {
+        CVLog::Warning(
+                "[ccPropertiesTreeDelegate::showSelectionPropertiesOnly] Model "
+                "is null");
+        return;
+    }
+
+    unbind();
+
+    // Clear and setup model
+    m_model->removeRows(0, m_model->rowCount());
+    m_model->setColumnCount(2);
+    m_model->setHeaderData(0, Qt::Horizontal, tr("Property"));
+    m_model->setHeaderData(1, Qt::Horizontal, tr("State/Value"));
+
+    // When no object is selected, show selection properties widget alone
+    // without separator This allows it to occupy the entire properties panel
+    QStandardItem* item = PERSISTENT_EDITOR(OBJECT_SELECTION_PROPERTIES);
+    appendWideRow(item, true);
+
+    // Reconnect signals
+    connect(m_model, &QStandardItemModel::itemChanged, this,
+            &ccPropertiesTreeDelegate::updateItem);
+
+    // Force view update to ensure editor is created and displayed
+    if (m_view) {
+        // Try to cast to QTreeView for advanced configuration
+        QTreeView* treeView = qobject_cast<QTreeView*>(m_view);
+        if (treeView && m_model->rowCount() > 0) {
+            treeView->expandAll();
+
+            // Hide the header to maximize space for the widget
+            if (treeView->header()) {
+                treeView->header()->hide();
+            }
+
+            // Make the row fill the entire view height
+            QModelIndex index = m_model->index(0, 0);
+            if (index.isValid()) {
+                // Calculate available height (view height minus margins)
+                int availableHeight = treeView->viewport()->height();
+
+                // Get the widget and ensure it expands
+                QWidget* widget = treeView->indexWidget(index);
+                if (widget) {
+                    widget->setSizePolicy(QSizePolicy::Expanding,
+                                          QSizePolicy::Expanding);
+                    widget->setMinimumHeight(availableHeight);
+                }
+            }
+        }
+
+        m_view->update();
+        // Also ensure the view is visible and enabled
+        m_view->setVisible(true);
+        m_view->setEnabled(true);
+    } else {
+        CVLog::Warning(
+                "[ccPropertiesTreeDelegate::showSelectionPropertiesOnly] View "
+                "is null");
+    }
+
+    CVLog::PrintDebug(
+            "[ccPropertiesTreeDelegate] Showing selection properties only (no "
+            "object selected, occupying full panel)");
+#endif
+}
+
+void ccPropertiesTreeDelegate::clearModel() {
+    if (!m_model) return;
+
+    unbind();
+    m_model->removeRows(0, m_model->rowCount());
+    m_currentObject = nullptr;
 }
 
 void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
@@ -428,6 +673,16 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
     appendRow(ITEM(tr("Info")), ITEM(tr("Object ID: %1 - Children: %2")
                                              .arg(_obj->getUniqueID())
                                              .arg(_obj->getChildrenNumber())));
+
+    // opacity (transparency) - ParaView-style slider + spinbox [0.0, 1.0]
+    // Placed before Current Display as per ParaView's property panel layout
+    // Applies to point clouds, meshes, primitives, and other renderable objects
+    if (_obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
+        _obj->isKindOf(CV_TYPES::MESH) || _obj->isKindOf(CV_TYPES::PRIMITIVE) ||
+        _obj->isKindOf(CV_TYPES::POLY_LINE) ||
+        _obj->isKindOf(CV_TYPES::FACET)) {
+        appendRow(ITEM(tr("Opacity")), PERSISTENT_EDITOR(OBJECT_OPACITY), true);
+    }
 
     // display window
     if (!_obj->isLocked())
@@ -622,6 +877,9 @@ void ccPropertiesTreeDelegate::fillWithPrimitive(ccGenericPrimitive* _obj) {
     } else if (_obj->isKindOf(CV_TYPES::PLANE)) {
         // planar entity commons
         fillWithPlanarEntity(static_cast<ccPlane*>(_obj));
+    } else if (_obj->isA(CV_TYPES::DISC)) {
+        appendRow(ITEM(tr("Radius")), PERSISTENT_EDITOR(OBJECT_DISC_RADIUS),
+                  true);
     }
 }
 
@@ -723,6 +981,19 @@ void ccPropertiesTreeDelegate::fillWithMesh(ccGenericMesh* _obj) {
 
 void ccPropertiesTreeDelegate::fillWithPolyline(ccPolyline* _obj) {
     assert(_obj && m_model);
+    if (!_obj || !m_model) {
+        return;
+    }
+
+    if (_obj->isA(CV_TYPES::CIRCLE)) {
+        addSeparator(tr("Circle"));
+
+        appendRow(ITEM(tr("Drawing precision")),
+                  PERSISTENT_EDITOR(OBJECT_CIRCLE_RESOLUTION), true);
+
+        appendRow(ITEM(tr("Radius")), PERSISTENT_EDITOR(OBJECT_CIRCLE_RADIUS),
+                  true);
+    }
 
     addSeparator(tr("Polyline"));
 
@@ -1104,6 +1375,8 @@ bool ccPropertiesTreeDelegate::isWideEditor(int itemData) const {
         case OBJECT_SENSOR_MATRIX_EDITOR:
         case OBJECT_HISTORY_MATRIX_EDITOR:
         case OBJECT_GLTRANS_MATRIX_EDITOR:
+        case OBJECT_SELECTION_PROPERTIES:  // Selection properties widget spans
+                                           // both columns
         case TREE_VIEW_HEADER:
             return true;
         default:
@@ -1117,13 +1390,19 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
         QWidget* parent,
         const QStyleOptionViewItem& option,
         const QModelIndex& index) const {
-    if (!m_model || !m_currentObject) return nullptr;
+    if (!m_model) return nullptr;
 
     QStandardItem* item = m_model->itemFromIndex(index);
 
     if (!item || !item->data().isValid()) return nullptr;
 
     int itemData = item->data().toInt();
+
+    // Selection properties can be created even without a current object
+    // (when selection tools are active but no DB object is selected)
+    if (itemData != OBJECT_SELECTION_PROPERTIES && !m_currentObject) {
+        return nullptr;
+    }
     if (item->column() == 0 && !isWideEditor(itemData)) {
         // on the first column, only editors spanning on 2 columns are allowed
         return nullptr;
@@ -1135,15 +1414,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = new QComboBox(parent);
 
-            // std::vector<ccGLWindow*> glWindows;
-            // MainWindow::GetGLWindows(glWindows);
-
             comboBox->addItem(s_noneString);
-
-            // for (unsigned i = 0; i < glWindows.size(); ++i)
-            //{
-            //	comboBox->addItem(glWindows[i]->windowTitle());
-            // }
 
             connect(comboBox,
                     static_cast<void (QComboBox::*)(const QString&)>(
@@ -1283,6 +1554,18 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = spinBox;
         } break;
+        case OBJECT_CIRCLE_RESOLUTION: {
+            QSpinBox* spinBox = new QSpinBox(parent);
+            spinBox->setRange(4, 1024);
+            spinBox->setSingleStep(4);
+
+            connect(spinBox,
+                    static_cast<void (QSpinBox::*)(int)>(
+                            &QSpinBox::valueChanged),
+                    this, &ccPropertiesTreeDelegate::circleResolutionChanged);
+
+            outputWidget = spinBox;
+        } break;
         case OBJECT_SPHERE_RADIUS: {
             QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
             spinBox->setDecimals(6);
@@ -1293,6 +1576,32 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     static_cast<void (QDoubleSpinBox::*)(double)>(
                             &QDoubleSpinBox::valueChanged),
                     this, &ccPropertiesTreeDelegate::sphereRadiusChanged);
+
+            outputWidget = spinBox;
+        } break;
+        case OBJECT_CIRCLE_RADIUS: {
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
+            spinBox->setDecimals(7);
+            spinBox->setRange(1.0e-6, 1.0e6);
+            spinBox->setSingleStep(1.0);
+
+            connect(spinBox,
+                    static_cast<void (QDoubleSpinBox::*)(double)>(
+                            &QDoubleSpinBox::valueChanged),
+                    this, &ccPropertiesTreeDelegate::circleRadiusChanged);
+
+            outputWidget = spinBox;
+        } break;
+        case OBJECT_DISC_RADIUS: {
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
+            spinBox->setDecimals(7);
+            spinBox->setRange(1.0e-6, 1.0e6);
+            spinBox->setSingleStep(1.0);
+
+            connect(spinBox,
+                    static_cast<void (QDoubleSpinBox::*)(double)>(
+                            &QDoubleSpinBox::valueChanged),
+                    this, &ccPropertiesTreeDelegate::discRadiusChanged);
 
             outputWidget = spinBox;
         } break;
@@ -1345,6 +1654,64 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     &ccPropertiesTreeDelegate::imageAlphaChanged);
 
             outputWidget = slider;
+        } break;
+        case OBJECT_OPACITY: {
+            // ParaView-style opacity control: Slider + SpinBox combination
+            // Creates a horizontal layout with slider and numeric input
+            QWidget* container = new QWidget(parent);
+            QHBoxLayout* layout = new QHBoxLayout(container);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(4);
+
+            // Slider for quick adjustment
+            QSlider* slider = new QSlider(Qt::Horizontal, container);
+            slider->setRange(0, 100);  // 0% to 100% opacity
+            slider->setSingleStep(1);
+            slider->setPageStep(10);
+            slider->setTickPosition(QSlider::NoTicks);
+
+            // SpinBox for precise numeric input (ParaView style: shows
+            // 0.00-1.00)
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(container);
+            spinBox->setRange(0.0, 1.0);
+            spinBox->setDecimals(2);
+            spinBox->setSingleStep(0.01);
+            spinBox->setFixedWidth(60);
+
+            // Synchronize slider and spinbox (visual sync only, no opacity
+            // update)
+            connect(slider, &QSlider::valueChanged, this, [spinBox](int value) {
+                spinBox->blockSignals(true);
+                spinBox->setValue(value / 100.0);
+                spinBox->blockSignals(false);
+            });
+            connect(spinBox,
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                    [slider](double value) {
+                        slider->blockSignals(true);
+                        slider->setValue(static_cast<int>(value * 100));
+                        slider->blockSignals(false);
+                    });
+
+            // Connect BOTH slider and spinbox to opacity change handler
+            // Slider: direct connection
+            connect(slider, &QAbstractSlider::valueChanged, this,
+                    &ccPropertiesTreeDelegate::opacityChanged);
+            // SpinBox: convert double [0.0, 1.0] to int [0, 100] for handler
+            // Use const_cast because createEditor is const but opacityChanged
+            // is not
+            ccPropertiesTreeDelegate* self =
+                    const_cast<ccPropertiesTreeDelegate*>(this);
+            connect(spinBox,
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), self,
+                    [self](double value) {
+                        self->opacityChanged(static_cast<int>(value * 100));
+                    });
+
+            layout->addWidget(slider, 1);   // Stretch factor 1
+            layout->addWidget(spinBox, 0);  // Fixed size
+
+            outputWidget = container;
         } break;
         case OBJECT_SENSOR_INDEX: {
             ccSensor* sensor = ccHObjectCaster::ToSensor(m_currentObject);
@@ -1525,14 +1892,35 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = spinBox;
         } break;
+        case OBJECT_SELECTION_PROPERTIES: {
+#ifdef USE_PCL_BACKEND
+            // Create selection properties widget (ParaView-style)
+            cvSelectionPropertiesWidget* selectionWidget =
+                    new cvSelectionPropertiesWidget(parent);
+
+            // Widget will be configured by MainWindow with visualizer and
+            // highlighter This is done in setEditorData
+
+            outputWidget = selectionWidget;
+
+            CVLog::PrintDebug(
+                    "[ccPropertiesTreeDelegate] Created selection properties "
+                    "widget");
+#else
+            // If USE_PCL_BACKEND is not defined, return nullptr to avoid assert
+            CVLog::Warning(
+                    "[ccPropertiesTreeDelegate] Selection properties requested "
+                    "but USE_PCL_BACKEND is not defined");
+            return nullptr;
+#endif
+        } break;
         default:
             return QStyledItemDelegate::createEditor(parent, option, index);
     }
 
     if (outputWidget) {
-        outputWidget->setFocusPolicy(
-                Qt::StrongFocus);  // Qt doc: << The returned editor widget
-                                   // should have Qt::StrongFocus >>
+        // Qt doc: << The returned editor widget should have Qt::StrongFocus >>
+        outputWidget->setFocusPolicy(Qt::StrongFocus);
     } else {
         // shouldn't happen
         assert(false);
@@ -1601,15 +1989,26 @@ void SetComboBoxIndex(QWidget* editor, int index) {
 
 void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                                              const QModelIndex& index) const {
-    if (!m_model || !m_currentObject) return;
+    if (!m_model) return;
 
     QStandardItem* item = m_model->itemFromIndex(index);
+    if (!item || !item->data().isValid()) return;
 
-    if (!item || !item->data().isValid() ||
-        (item->column() == 0 && !isWideEditor(item->data().toInt())))
-        return;
+    int itemData = item->data().toInt();
 
-    switch (item->data().toInt()) {
+    // Selection properties can be configured even without a current object
+    // (when selection tools are active but no DB object is selected)
+    if (itemData == OBJECT_SELECTION_PROPERTIES) {
+        // Handle selection properties separately - doesn't require
+        // m_currentObject
+    } else {
+        // All other properties require a current object
+        if (!m_currentObject) return;
+    }
+
+    if (item->column() == 0 && !isWideEditor(itemData)) return;
+
+    switch (itemData) {
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = qobject_cast<QComboBox*>(editor);
             if (!comboBox) {
@@ -1800,12 +2199,32 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                             : 0);
             break;
         }
+        case OBJECT_CIRCLE_RESOLUTION: {
+            ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+            assert(circle);
+            SetSpinBoxValue(editor, circle ? circle->getResolution() : 0);
+            break;
+        }
         case OBJECT_SPHERE_RADIUS: {
             ccSphere* sphere = ccHObjectCaster::ToSphere(m_currentObject);
             assert(sphere);
             SetDoubleSpinBoxValue(
                     editor,
                     sphere ? static_cast<double>(sphere->getRadius()) : 0.0);
+            break;
+        }
+        case OBJECT_CIRCLE_RADIUS: {
+            ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+            assert(circle);
+            SetDoubleSpinBoxValue(editor, circle ? circle->getRadius() : 0.0);
+            break;
+        }
+        case OBJECT_DISC_RADIUS: {
+            ccDisc* disc = ccHObjectCaster::ToDisc(m_currentObject);
+            assert(disc);
+            SetDoubleSpinBoxValue(
+                    editor,
+                    disc ? static_cast<double>(disc->getRadius()) : 0.0);
             break;
         }
         case OBJECT_CONE_HEIGHT: {
@@ -1840,6 +2259,27 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             assert(image);
             slider->setValue(static_cast<int>(image->getAlpha() * 255.0f));
             // slider->setTickPosition(QSlider::NoTicks);
+            break;
+        }
+        case OBJECT_OPACITY: {
+            // ParaView-style: editor is a container with slider + spinbox
+            QWidget* container = qobject_cast<QWidget*>(editor);
+            if (!container) return;
+
+            // Find the slider and spinbox in the container
+            QSlider* slider = container->findChild<QSlider*>();
+            QDoubleSpinBox* spinBox = container->findChild<QDoubleSpinBox*>();
+
+            // Get current opacity from the object [0.0, 1.0]
+            float opacity = m_currentObject->getOpacity();
+
+            // Set both controls (slider triggers spinbox sync via signal)
+            if (slider) {
+                slider->setValue(static_cast<int>(opacity * 100.0f));
+            }
+            if (spinBox) {
+                spinBox->setValue(static_cast<double>(opacity));
+            }
             break;
         }
         case OBJECT_SENSOR_INDEX: {
@@ -1904,6 +2344,68 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                 if (m_currentObject->sfShown()) currentIndex = lastIndex;
             }
             SetComboBoxIndex(editor, currentIndex);
+            break;
+        }
+        case OBJECT_SELECTION_PROPERTIES: {
+#ifdef USE_PCL_BACKEND
+            cvSelectionPropertiesWidget* selectionWidget =
+                    qobject_cast<cvSelectionPropertiesWidget*>(editor);
+            if (selectionWidget) {
+                // Configure widget with visualizer
+                // Get from delegate first, fallback to ecvDisplayTools
+                ecvGenericVisualizer3D* viewer = m_viewer;
+                if (!viewer) {
+                    viewer = ecvDisplayTools::GetVisualizer3D();
+                }
+                if (viewer) {
+                    selectionWidget->setVisualizer(viewer);
+                }
+
+                // Store widget reference for later updates
+                // This allows us to update the widget when selection changes
+                m_selectionPropertiesWidget = selectionWidget;
+
+                // Connect signals to MainWindow and configure selection manager
+                MainWindow* mainWindow = MainWindow::TheInstance();
+                if (mainWindow) {
+                    // Note: Tooltip settings have been moved to
+                    // cvSelectionLabelPropertiesDialog and are now configured
+                    // through the label properties dialog
+
+                    // Set selection manager - this also sets up the shared
+                    // highlighter so color settings are synchronized across all
+                    // tooltip tools Note: This works even when m_currentObject
+                    // is null (no DB object selected)
+                    cvViewSelectionManager* selectionManager =
+                            mainWindow->getSelectionManager();
+                    if (selectionManager) {
+                        selectionWidget->setSelectionManager(selectionManager);
+
+                        // Get current selection and update the widget
+                        // This ensures export buttons are enabled if there's
+                        // already a selection
+                        if (selectionManager->hasSelection()) {
+                            const cvSelectionData& currentSelection =
+                                    selectionManager->currentSelection();
+                            selectionWidget->updateSelection(currentSelection);
+                            CVLog::PrintDebug(
+                                    QString("[ecvPropertiesTreeDelegate] "
+                                            "Initialized with existing "
+                                            "selection: %1 %2")
+                                            .arg(currentSelection.count())
+                                            .arg(currentSelection
+                                                         .fieldTypeString()));
+                        }
+                    }
+                }
+
+                CVLog::PrintDebug(
+                        QString("[ecvPropertiesTreeDelegate] Selection "
+                                "properties "
+                                "widget configured (currentObject: %1)")
+                                .arg(m_currentObject ? "yes" : "no"));
+            }
+#endif
             break;
         }
         default:
@@ -2241,6 +2743,20 @@ void ccPropertiesTreeDelegate::updateModel() {
     fillModel(m_currentObject);
 }
 
+#ifdef USE_PCL_BACKEND
+void ccPropertiesTreeDelegate::updateSelectionProperties(
+        const cvSelectionData& selectionData) {
+    if (m_selectionPropertiesWidget) {
+        // Update the widget with new selection data
+        m_selectionPropertiesWidget->updateSelection(selectionData);
+        CVLog::PrintDebug(QString("[ccPropertiesTreeDelegate] Updated "
+                                  "selection properties: %1 %2")
+                                  .arg(selectionData.count())
+                                  .arg(selectionData.fieldTypeString()));
+    }
+}
+#endif
+
 QMap<QString, QString> ccPropertiesTreeDelegate::getCurrentMeshTexturePathMap()
         const {
     if (!m_currentObject) {
@@ -2503,6 +3019,71 @@ void ccPropertiesTreeDelegate::octreeDisplayedLevelChanged(int val) {
     }
 }
 
+void ccPropertiesTreeDelegate::circleResolutionChanged(int val) {
+    if (!m_currentObject) {
+        return;
+    }
+
+    ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+    assert(circle);
+    if (!circle) return;
+
+    if (circle->getResolution() != static_cast<unsigned int>(val)) {
+        bool wasVisible = circle->isVisible();
+        circle->setResolution(val);
+        circle->setVisible(wasVisible);
+
+        updateCurrentEntity();
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_CIRCLE_RESOLUTION;
+
+        // we must also reset the properties display!
+        updateModel();
+    }
+}
+
+void ccPropertiesTreeDelegate::circleRadiusChanged(double val) {
+    if (!m_currentObject) return;
+
+    ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+    assert(circle);
+    if (!circle) return;
+
+    if (circle->getRadius() != val) {
+        bool wasVisible = circle->isVisible();
+        circle->setRadius(val);
+        circle->setVisible(wasVisible);
+
+        updateCurrentEntity();
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_CIRCLE_RADIUS;
+
+        // we must also reset the properties display!
+        updateModel();
+    }
+}
+
+void ccPropertiesTreeDelegate::discRadiusChanged(double val) {
+    if (!m_currentObject) return;
+
+    ccDisc* disc = ccHObjectCaster::ToDisc(m_currentObject);
+    assert(disc);
+    if (!disc) return;
+
+    PointCoordinateType radius = static_cast<PointCoordinateType>(val);
+    if (disc->getRadius() != radius) {
+        disc->setRadius(radius);
+
+        updateCurrentEntity();
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_DISC_RADIUS;
+        updateModel();
+    }
+}
+
 void ccPropertiesTreeDelegate::primitivePrecisionChanged(int val) {
     if (!m_currentObject) return;
 
@@ -2609,6 +3190,49 @@ void ccPropertiesTreeDelegate::imageAlphaChanged(int val) {
         ecvDisplayTools::ChangeOpacity(
                 alpha, CVTools::FromQString(image->getViewId()));
     }
+}
+
+void ccPropertiesTreeDelegate::opacityChanged(int val) {
+    if (!m_currentObject) return;
+
+    // Convert slider value [0, 100] to opacity [0.0, 1.0]
+    float opacity = val / 100.0f;
+
+    // Check if opacity actually changed to avoid unnecessary updates
+    if (std::abs(m_currentObject->getOpacity() - opacity) < 0.001f) {
+        return;
+    }
+
+    // Store the new opacity in the object
+    m_currentObject->setOpacity(opacity);
+
+    // Determine entity type for proper property application
+    ENTITY_TYPE entityType = ENTITY_TYPE::ECV_POINT_CLOUD;  // Default
+
+    if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
+    } else if (m_currentObject->isKindOf(CV_TYPES::MESH) ||
+               m_currentObject->isKindOf(CV_TYPES::PRIMITIVE)) {
+        entityType = ENTITY_TYPE::ECV_MESH;
+    } else if (m_currentObject->isKindOf(CV_TYPES::POLY_LINE)) {
+        entityType = ENTITY_TYPE::ECV_LINES_3D;
+    } else if (m_currentObject->isKindOf(CV_TYPES::FACET)) {
+        entityType = ENTITY_TYPE::ECV_MESH;
+    }
+
+    // Create property parameter and apply opacity change
+    PROPERTY_PARAM param(m_currentObject, static_cast<double>(opacity));
+    param.entityType = entityType;
+    param.viewId = m_currentObject->getViewId();
+    param.viewport = 0;
+
+    // Apply the opacity change via display tools
+    ecvDisplayTools::ChangeEntityProperties(param, true);
+
+    CVLog::PrintDebug(QString("[ccPropertiesTreeDelegate::opacityChanged] "
+                              "Set opacity to %1 for object '%2'")
+                              .arg(opacity)
+                              .arg(m_currentObject->getName()));
 }
 
 void ccPropertiesTreeDelegate::applyImageViewport() {

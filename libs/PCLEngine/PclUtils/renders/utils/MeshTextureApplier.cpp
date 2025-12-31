@@ -9,15 +9,15 @@
 
 #include <CVLog.h>
 #include <CVTools.h>
+#include <Utils/cc2sm.h>  // For cc2smReader::getVtkPolyDataWithTextures
+#include <Utils/sm2cc.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObjectCaster.h>  // For ccHObjectCaster
 #include <ecvMaterial.h>
 #include <ecvMaterialSet.h>
 #include <ecvPointCloud.h>  // For POINT_VISIBLE
 
-#include "cc2sm.h"  // For cc2smReader::getVtkPolyDataWithTextures
 #include "renders/TextureRenderManager.h"
-#include "sm2cc.h"
 
 // PCL
 #include <pcl/TextureMesh.h>

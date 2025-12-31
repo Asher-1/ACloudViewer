@@ -65,4 +65,14 @@ public:
     static inline const QString AutoShowReconstructionToolBar() {
         return "ReconstructionToolBar";
     }
+    static inline const QString CustomLayoutGeom() {
+        return "customLayoutGeometry";
+    }
+    static inline const QString CustomLayoutState() {
+        return "customLayoutState";
+    }
+    static inline const QString DoNotRestoreWindowGeometry() {
+        return "DoNotRestoreWindowGeometry";
+    }
+    static inline const QString Shortcuts() { return "Shortcuts"; }
 };

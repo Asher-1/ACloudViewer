@@ -33,6 +33,8 @@
 
 #include "ui/main_window.h"
 
+#include <QtCompat.h>
+
 #define SELECTION_BUFFER_IMAGE_IDX 0
 #define SELECTION_BUFFER_POINT_IDX 1
 
@@ -281,9 +283,15 @@ void ModelViewerWidget::ReloadReconstruction() {
     images[image_id] = reconstruction->Image(image_id);
   }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  statusbar_status_label->setText(QString::asprintf(
+      "%d Images - %d Points", static_cast<int>(reg_image_ids.size()),
+      static_cast<int>(points3D.size())));
+#else
   statusbar_status_label->setText(QString().sprintf(
       "%d Images - %d Points", static_cast<int>(reg_image_ids.size()),
       static_cast<int>(points3D.size())));
+#endif
 
   Upload();
 }
@@ -628,14 +636,15 @@ void ModelViewerWidget::mouseMoveEvent(QMouseEvent* event) {
 }
 
 void ModelViewerWidget::wheelEvent(QWheelEvent* event) {
+  double delta = qtCompatWheelEventDelta(event);
   if (event->modifiers() & Qt::ControlModifier) {
-    ChangePointSize(event->delta());
+    ChangePointSize(static_cast<float>(delta));
   } else if (event->modifiers() & Qt::AltModifier) {
-    ChangeCameraSize(event->delta());
+    ChangeCameraSize(static_cast<float>(delta));
   } else if (event->modifiers() & Qt::ShiftModifier) {
-    ChangeNearPlane(event->delta());
+    ChangeNearPlane(static_cast<float>(delta));
   } else {
-    ChangeFocusDistance(event->delta());
+    ChangeFocusDistance(static_cast<float>(delta));
   }
   event->accept();
 }

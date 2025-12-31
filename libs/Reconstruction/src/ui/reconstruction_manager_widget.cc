@@ -31,6 +31,9 @@
 
 #include "ui/reconstruction_manager_widget.h"
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 namespace colmap {
 
 const size_t ReconstructionManagerWidget::kNewestReconstructionIdx =
@@ -59,12 +62,19 @@ void ReconstructionManagerWidget::Update() {
 
   int max_width = 0;
   for (size_t i = 0; i < reconstruction_manager_->Size(); ++i) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    const QString item = QString::asprintf(
+        "Model %d (%d images, %d points)", static_cast<int>(i + 1),
+        static_cast<int>(reconstruction_manager_->Get(i).NumRegImages()),
+        static_cast<int>(reconstruction_manager_->Get(i).NumPoints3D()));
+#else
     const QString item = QString().sprintf(
         "Model %d (%d images, %d points)", static_cast<int>(i + 1),
         static_cast<int>(reconstruction_manager_->Get(i).NumRegImages()),
         static_cast<int>(reconstruction_manager_->Get(i).NumPoints3D()));
+#endif
     QFontMetrics font_metrics(view()->font());
-    max_width = std::max(max_width, font_metrics.width(item));
+    max_width = std::max(max_width, QTCOMPAT_FONTMETRICS_WIDTH(font_metrics, item));
     addItem(item);
   }
 

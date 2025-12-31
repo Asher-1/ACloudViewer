@@ -7,9 +7,11 @@
 
 #include "CPUInfo.h"
 
+#include <cstring>
 #include <fstream>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -21,6 +23,7 @@
 #include <sys/types.h>
 #elif _WIN32
 #include <Windows.h>
+#include <intrin.h>
 #endif
 
 #include <Helper.h>
@@ -106,11 +109,66 @@ static int PhysicalConcurrency() {
     } catch (...) {
         return std::thread::hardware_concurrency();
     }
-}  // namespace utility
+}
+
+/// Returns the CPU model name/brand string.
+static std::string GetCPUModelName() {
+#ifdef __linux__
+    std::ifstream proc_cpuinfo("/proc/cpuinfo");
+    std::string line;
+    while (std::getline(proc_cpuinfo, line)) {
+        if (line.find("model name") == 0) {
+            size_t colon_pos = line.find(':');
+            if (colon_pos != std::string::npos) {
+                std::string model_name = line.substr(colon_pos + 1);
+                return utility::StripString(model_name);
+            }
+        }
+    }
+    return "";
+#elif __APPLE__
+    char brand_string[256];
+    size_t size = sizeof(brand_string);
+    if (sysctlbyname("machdep.cpu.brand_string", brand_string, &size, NULL,
+                     0) == 0) {
+        return std::string(brand_string);
+    }
+    return "";
+#elif _WIN32
+    // Use CPUID instruction to get CPU brand string
+    int cpuInfo[4] = {-1};
+    char brand_string[0x40] = {0};
+
+    // Get extended CPUID info
+    __cpuid(cpuInfo, 0x80000000);
+    unsigned int nExIds = cpuInfo[0];
+
+    if (nExIds >= 0x80000004) {
+        // Get brand string in 3 parts
+        for (unsigned int i = 0x80000002; i <= 0x80000004; ++i) {
+            __cpuid(cpuInfo, i);
+            memcpy(brand_string + (i - 0x80000002) * 16, cpuInfo,
+                   sizeof(cpuInfo));
+        }
+        std::string result(brand_string);
+        // Trim whitespace
+        size_t first = result.find_first_not_of(" \t\n\r");
+        size_t last = result.find_last_not_of(" \t\n\r");
+        if (first != std::string::npos && last != std::string::npos) {
+            return result.substr(first, last - first + 1);
+        }
+        return result;
+    }
+    return "";
+#else
+    return "";
+#endif
+}
 
 CPUInfo::CPUInfo() : impl_(new CPUInfo::Impl()) {
     impl_->num_cores_ = PhysicalConcurrency();
     impl_->num_threads_ = std::thread::hardware_concurrency();
+    impl_->model_name_ = GetCPUModelName();
 }
 
 CPUInfo& CPUInfo::GetInstance() {
@@ -122,9 +180,16 @@ int CPUInfo::NumCores() const { return impl_->num_cores_; }
 
 int CPUInfo::NumThreads() const { return impl_->num_threads_; }
 
+const std::string& CPUInfo::ModelName() const { return impl_->model_name_; }
+
 void CPUInfo::Print() const {
-    utility::LogInfo("CPUInfo: {} cores, {} threads.", NumCores(),
-                     NumThreads());
+    if (!impl_->model_name_.empty()) {
+        utility::LogInfo("CPUInfo: {} ({} cores, {} threads).",
+                         impl_->model_name_, NumCores(), NumThreads());
+    } else {
+        utility::LogInfo("CPUInfo: {} cores, {} threads.", NumCores(),
+                         NumThreads());
+    }
 }
 
 }  // namespace utility

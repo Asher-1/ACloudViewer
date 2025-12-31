@@ -12,10 +12,11 @@
 // Local
 #include "ImageVis.h"
 
-#include "PCLConv.h"
+#include <Utils/PCLConv.h>
+
 #include "PclUtils/CustomContextItem.h"
-#include "Tools/PclTools.h"
-#include "Tools/ecvTools.h"
+#include "Tools/Common/PclTools.h"
+#include "Tools/Common/ecvTools.h"
 
 // CV_CORE_LIB
 #include <CVPlatform.h>
@@ -193,15 +194,6 @@ std::string ImageVis::pickItem(int x, int y) {
 
 void ImageVis::setRenderWindow(vtkSmartPointer<vtkRenderWindow> win) {
     this->win_ = win;
-
-    // Enable alpha bit planes for transparency rendering support
-    // This is essential for RGBA images to display transparency correctly
-    if (win) {
-        win->SetAlphaBitPlanes(1);
-        CVLog::Print(
-                "[ImageVis::setRenderWindow] Enabled alpha bit planes for "
-                "transparency support");
-    }
 
     // Add window resize observer
     if (win && !m_windowResizeCallback) {

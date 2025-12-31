@@ -29,7 +29,9 @@
 
 #include <QDialog>
 #include <QFile>
-#include <QTextStream>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 
 #include "confusionmatrix.h"
 

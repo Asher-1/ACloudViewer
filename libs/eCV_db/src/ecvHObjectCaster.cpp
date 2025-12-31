@@ -19,9 +19,11 @@
 #include "ecvBBox.h"
 #include "ecvBox.h"
 #include "ecvCameraSensor.h"
+#include "ecvCircle.h"
 #include "ecvCone.h"
 #include "ecvCoordinateSystem.h"
 #include "ecvCylinder.h"
+#include "ecvDisc.h"
 #include "ecvDish.h"
 #include "ecvExtru.h"
 #include "ecvFacet.h"
@@ -141,6 +143,11 @@ ccPolyline* ccHObjectCaster::ToPolyline(ccHObject* obj) {
                                                  : nullptr);
 }
 
+ccCircle* ccHObjectCaster::ToCircle(ccHObject* obj) {
+    return (obj && obj->isKindOf(CV_TYPES::CIRCLE) ? static_cast<ccCircle*>(obj)
+                                                   : nullptr);
+}
+
 ccFacet* ccHObjectCaster::ToFacet(ccHObject* obj) {
     return obj && obj->isA(CV_TYPES::FACET) ? static_cast<ccFacet*>(obj)
                                             : nullptr;
@@ -192,6 +199,11 @@ ccBox* ccHObjectCaster::ToBox(ccHObject* obj) {
 ccPlane* ccHObjectCaster::ToPlane(ccHObject* obj) {
     return obj && obj->isA(CV_TYPES::PLANE) ? static_cast<ccPlane*>(obj)
                                             : nullptr;
+}
+
+ccDisc* ccHObjectCaster::ToDisc(ccHObject* obj) {
+    return obj && obj->isA(CV_TYPES::DISC) ? static_cast<ccDisc*>(obj)
+                                           : nullptr;
 }
 
 ccDish* ccHObjectCaster::ToDish(ccHObject* obj) {

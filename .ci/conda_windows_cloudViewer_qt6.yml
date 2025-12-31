@@ -1,0 +1,22 @@
+name: cloudViewer
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - ninja
+  - pkg-config
+  - eigen=3.4.*
+  - boost=1.85.* # pcl and reconstruction
+  - flann=1.9.*
+  - qhull=2020.2
+  - xerces-c=3.2.* # reconstruction or PLUGIN_IO_QE57
+  - qt6-main>=6.4.*
+  - cgal=6.*
+  - ffmpeg=7.1.*
+  - zlib=1.3.* # PLUGIN_IO_QPHOTOSCAN
+  - laszip # PLUGIN_IO_QLAS
+  - pip: # for python plugins
+    - numpy>=1.26.4
+    - pybind11>=2.6.0
+    - pywin32
+    - typing_extensions

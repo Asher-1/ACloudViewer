@@ -10,40 +10,40 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "OptionsWidget.h"
+#include "ui/options_widget.h"
 #include "util/option_manager.h"
 
 namespace cloudViewer {
 
 using OptionManager = colmap::OptionManager;
 
-class MapperGeneralOptionsWidget : public OptionsWidget {
+class MapperGeneralOptionsWidget : public colmap::OptionsWidget {
 public:
     MapperGeneralOptionsWidget(QWidget* parent, OptionManager* options);
 };
 
-class MapperTriangulationOptionsWidget : public OptionsWidget {
+class MapperTriangulationOptionsWidget : public colmap::OptionsWidget {
 public:
     MapperTriangulationOptionsWidget(QWidget* parent, OptionManager* options);
 };
 
-class MapperRegistrationOptionsWidget : public OptionsWidget {
+class MapperRegistrationOptionsWidget : public colmap::OptionsWidget {
 public:
     MapperRegistrationOptionsWidget(QWidget* parent, OptionManager* options);
 };
 
-class MapperInitializationOptionsWidget : public OptionsWidget {
+class MapperInitializationOptionsWidget : public colmap::OptionsWidget {
 public:
     MapperInitializationOptionsWidget(QWidget* parent, OptionManager* options);
 };
 
-class MapperBundleAdjustmentOptionsWidget : public OptionsWidget {
+class MapperBundleAdjustmentOptionsWidget : public colmap::OptionsWidget {
 public:
     MapperBundleAdjustmentOptionsWidget(QWidget* parent,
                                         OptionManager* options);
 };
 
-class MapperFilteringOptionsWidget : public OptionsWidget {
+class MapperFilteringOptionsWidget : public colmap::OptionsWidget {
 public:
     MapperFilteringOptionsWidget(QWidget* parent, OptionManager* options);
 };

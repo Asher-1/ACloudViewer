@@ -2477,7 +2477,7 @@ static double s_testedPoints = 0.0;
 // warning: there may be more points at the end of nNSS.pointsInNeighbourhood
 // than the actual nearest neighbors!
 int DgmOctree::findNeighborsInASphereStartingFromCell(
-        NearestNeighboursSphericalSearchStruct& nNSS,
+        NearestNeighboursSearchStruct& nNSS,
         double radius,
         bool sortValues) const {
 #ifdef TEST_CELLS_FOR_SPHERICAL_NN

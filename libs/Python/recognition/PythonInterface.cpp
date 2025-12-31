@@ -12,7 +12,9 @@
 #include <CVTools.h>
 
 // PYTHON
-// #undef slots
+// Undefine Qt's 'slots' macro before including Python headers to avoid
+// conflicts
+#undef slots
 #include <pybind11/embed.h>
 
 // SYSTEM

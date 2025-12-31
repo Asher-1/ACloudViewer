@@ -11,7 +11,14 @@
 #include <ecvArray.h>
 
 // Qt
+#include <QPointer>
 #include <QStyledItemDelegate>
+
+// Forward declarations
+class ecvGenericVisualizer3D;
+#ifdef USE_PCL_BACKEND
+class cvSelectionHighlighter;
+#endif
 
 class ccHObject;
 class ccGenericPointCloud;
@@ -38,6 +45,11 @@ class QStandardItemModel;
 class QStandardItem;
 class QAbstractItemView;
 
+#ifdef USE_PCL_BACKEND
+class cvSelectionPropertiesWidget;
+class cvSelectionData;
+#endif
+
 //! GUI properties list dialog element
 class ccPropertiesTreeDelegate : public QStyledItemDelegate {
     Q_OBJECT
@@ -48,6 +60,7 @@ public:
         OBJECT_NO_PROPERTY = 0,
         OBJECT_NAME,
         OBJECT_VISIBILITY,
+        OBJECT_OPACITY,  // Object transparency/opacity [0.0, 1.0]
         OBJECT_CURRENT_DISPLAY,
         OBJECT_NORMALS_SHOWN,
         OBJECT_COLOR_SOURCE,
@@ -77,7 +90,10 @@ public:
         OBJECT_LABEL_DISP_2D,
         OBJECT_LABEL_POINT_LEGEND,
         OBJECT_PRIMITIVE_PRECISION,
+        OBJECT_CIRCLE_RESOLUTION,
         OBJECT_SPHERE_RADIUS,
+        OBJECT_CIRCLE_RADIUS,
+        OBJECT_DISC_RADIUS,
         OBJECT_CONE_HEIGHT,
         OBJECT_CONE_BOTTOM_RADIUS,
         OBJECT_CONE_TOP_RADIUS,
@@ -96,6 +112,20 @@ public:
         OBJECT_COORDINATE_SYSTEM_DISP_AXES,
         OBJECT_COORDINATE_SYSTEM_AXES_WIDTH,
         OBJECT_COORDINATE_SYSTEM_DISP_SCALE,
+        // Selection Tool Properties (ParaView-style)
+        OBJECT_SELECTION_PROPERTIES,   // Wide editor for selection properties
+                                       // widget
+        OBJECT_SELECTION_HOVER_COLOR,  // Color picker for hover highlight
+        OBJECT_SELECTION_PRESELECTED_COLOR,  // Color picker for preselected
+                                             // highlight
+        OBJECT_SELECTION_SELECTED_COLOR,  // Color picker for selected highlight
+        OBJECT_SELECTION_BOUNDARY_COLOR,  // Color picker for boundary highlight
+        OBJECT_SELECTION_HOVER_OPACITY,   // Opacity for hover
+        OBJECT_SELECTION_PRESELECTED_OPACITY,  // Opacity for preselected
+        OBJECT_SELECTION_SELECTED_OPACITY,     // Opacity for selected
+        OBJECT_SELECTION_BOUNDARY_OPACITY,     // Opacity for boundary
+        OBJECT_SELECTION_SHOW_TOOLTIPS,        // Checkbox for tooltip display
+        OBJECT_SELECTION_MAX_ATTRIBUTES,  // Spinbox for max tooltip attributes
         TREE_VIEW_HEADER,
     };
 
@@ -127,12 +157,45 @@ public:
     //! Returns currently bound object
     ccHObject* getCurrentObject();
 
+    //! Set whether selection tools are active (to show selection properties)
+    void setSelectionToolsActive(bool active);
+
+    //! Check if selection tools are active
+    bool areSelectionToolsActive() const { return m_selectionToolsActive; }
+
+    //! Show only selection properties (when no object is selected but selection
+    //! tools are active)
+    void showSelectionPropertiesOnly();
+
+    //! Clear the model completely
+    void clearModel();
+
+    //! Set visualizer for selection properties widget
+    void setVisualizer(ecvGenericVisualizer3D* viewer) { m_viewer = viewer; }
+#ifdef USE_PCL_BACKEND
+    //! Set highlighter for selection properties widget
+    void setHighlighter(cvSelectionHighlighter* highlighter) {
+        m_highlighter = highlighter;
+    }
+
+    //! Update selection properties widget with new selection data
+    void updateSelectionProperties(const cvSelectionData& selectionData);
+#endif
+
 signals:
     void ccObjectPropertiesChanged(ccHObject* hObject) const;
     void ccObjectAppearanceChanged(ccHObject* hObject,
                                    bool forceRedraw = true) const;
     void ccObjectAndChildrenAppearanceChanged(ccHObject* hObject,
                                               bool forceRedraw = true) const;
+
+    /**
+     * @brief Request to clear all selection data (prevents crashes from stale
+     * references)
+     * @note Emitted when objects might have been deleted or selection tools
+     * state changes
+     */
+    void requestClearSelection() const;
 
 private:
     static const char* s_noneString;
@@ -151,7 +214,10 @@ private:
     void octreeDisplayModeChanged(int);
     void octreeDisplayedLevelChanged(int);
     void primitivePrecisionChanged(int);
+    void circleResolutionChanged(int);
     void sphereRadiusChanged(double);
+    void circleRadiusChanged(double);
+    void discRadiusChanged(double);
     void coneHeightChanged(double);
     void coneBottomRadiusChanged(double);
     void coneTopRadiusChanged(double);
@@ -172,6 +238,7 @@ private:
     void polyineWidthChanged(int);
     void coordinateSystemAxisWidthChanged(int);
     void trihedronsScaleChanged(double);
+    void opacityChanged(int);  // Opacity slider value changed [0, 100]
 
 protected:
     void addSeparator(QString title);
@@ -202,6 +269,7 @@ protected:
     void fillWithMetaData(ccObject*);
     void fillWithShifted(ccShiftedObject*);
     void fillWithCoordinateSystem(const ccCoordinateSystem*);
+    void fillWithSelectionProperties();
     template <class Type, int N, class ComponentType>
     void fillWithCCArray(ccArray<Type, N, ComponentType>*);
 
@@ -223,4 +291,18 @@ protected:
     //! Maps mesh object -> (texture name -> texture path)
     //! Mutable to allow modification in const methods (setEditorData)
     mutable QMap<ccHObject*, QMap<QString, QString>> m_meshTexturePathMaps;
+    //! Flag indicating if selection tools are currently active
+    bool m_selectionToolsActive;
+    //! Visualizer for selection properties widget (abstract interface)
+    ecvGenericVisualizer3D* m_viewer;
+    //! Last focused item role (used to force scroll focus after model update)
+    CC_PROPERTY_ROLE m_lastFocusItemRole;
+#ifdef USE_PCL_BACKEND
+    //! Highlighter for selection properties widget
+    cvSelectionHighlighter* m_highlighter;
+    //! Selection properties widget reference (for direct updates)
+    //! Using QPointer to automatically become null when widget is destroyed
+    //! Mutable because it needs to be set in const setEditorData method
+    mutable QPointer<cvSelectionPropertiesWidget> m_selectionPropertiesWidget;
+#endif
 };

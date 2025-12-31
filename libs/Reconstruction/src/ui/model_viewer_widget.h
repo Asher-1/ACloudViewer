@@ -9,7 +9,12 @@
 
 #include <QOpenGLFunctions_3_2_Core>
 #include <QtCore>
+#include <QtGlobal>
 #include <QtOpenGL>
+// QOpenGLWidget: In Qt5 it's in QtOpenGL module, in Qt6 it's in QtOpenGLWidgets
+// module Use direct include which works for both when the appropriate module is
+// linked
+#include <QOpenGLWidget>
 
 #include "base/database.h"
 #include "base/reconstruction.h"

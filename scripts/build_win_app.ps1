@@ -8,6 +8,15 @@ param (
 
 $ErrorActionPreference = "Stop"
 
+# Set code page to UTF-8 (65001) to avoid MSVC compilation errors with Unicode characters
+# This is especially important for Chinese Windows systems that default to GBK (936)
+# GitHub Actions uses UTF-8 code page by default, which is why the issue doesn't occur there
+$OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8
+chcp 65001 | Out-Null
+Write-Host "Code page set to UTF-8 (65001)" -ForegroundColor Green
+
 $env:PYTHON_VERSION = $PythonVersion
 $env:ENV_NAME = "cloudViewer"
 $env:CLOUDVIEWER_INSTALL_DIR = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")

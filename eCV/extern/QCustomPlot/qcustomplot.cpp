@@ -7,6 +7,8 @@
 
 #include "qcustomplot.h"
 
+#include <QtCompat.h>
+
 /* including file 'src/vector2d.cpp', size 7340                              */
 /* commit ce344b3f96a62e5f652585e55f1ae7c7883cd45b 2018-06-25 01:03:39 +0200 */
 
@@ -4839,7 +4841,11 @@ Qt::Alignment QCPLayoutInset::insetAlignment(int index) const {
         return mInsetAlignment.at(index);
     else {
         qDebug() << Q_FUNC_INFO << "Invalid element index:" << index;
-        return 0;
+#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
+        return nullptr;
+#else
+        return {};
+#endif
     }
 }
 
@@ -6219,6 +6225,8 @@ double QCPAxisTickerDateTime::dateTimeToKey(const QDateTime dateTime) {
 double QCPAxisTickerDateTime::dateTimeToKey(const QDate date) {
 #if QT_VERSION < QT_VERSION_CHECK(4, 7, 0)
     return QDateTime(date).toTime_t();
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return QDateTime(date, QTime()).toMSecsSinceEpoch() / 1000.0;
 #else
     return QDateTime(date).toMSecsSinceEpoch() / 1000.0;
 #endif
@@ -6760,7 +6768,11 @@ void QCPAxisTickerText::addTick(double position, const QString &label) {
   \see addTick, setTicks, clear
 */
 void QCPAxisTickerText::addTicks(const QMap<double, QString> &ticks) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     mTicks.unite(ticks);
+#else
+    mTicks.insert(ticks);
+#endif
 }
 
 /*! \overload
@@ -9091,13 +9103,15 @@ void QCPAxis::wheelEvent(QWheelEvent *event) {
         return;
     }
 
+    const double delta = qtCompatWheelEventDelta(event);
+    const QPointF pos = qtCompatWheelEventPos(event);
+
     const double wheelSteps =
-            event->delta() / 120.0;  // a single step delta is +/-120 usually
+            delta / 120.0;  // a single step delta is +/-120 usually
     const double factor =
             qPow(mAxisRect->rangeZoomFactor(orientation()), wheelSteps);
-    scaleRange(factor, pixelToCoord(orientation() == Qt::Horizontal
-                                            ? event->pos().x()
-                                            : event->pos().y()));
+    scaleRange(factor, pixelToCoord(orientation() == Qt::Horizontal ? pos.x()
+                                                                    : pos.y()));
     mParentPlot->replot();
 }
 
@@ -15523,13 +15537,19 @@ void QCustomPlot::mouseReleaseEvent(QMouseEvent *event) {
 */
 void QCustomPlot::wheelEvent(QWheelEvent *event) {
     emit mouseWheel(event);
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+    const QPointF pos = event->pos();
+#else
+    const QPointF pos = event->position();
+#endif
+
     // forward event to layerable under cursor:
-    QList<QCPLayerable *> candidates = layerableListAt(event->pos(), false);
-    for (int i = 0; i < candidates.size(); ++i) {
+    foreach (QCPLayerable *candidate, layerableListAt(pos, false)) {
         event->accept();  // default impl of QCPLayerable's mouse events ignore
                           // the event, in that case propagate to next candidate
                           // in list
-        candidates.at(i)->wheelEvent(event);
+        candidate->wheelEvent(event);
         if (event->isAccepted()) break;
     }
     event->accept();  // in case QCPLayerable reimplementation manipulates event
@@ -15887,11 +15907,19 @@ void QCustomPlot::processRectSelection(QRect rect, QMouseEvent *event) {
                             plottable->interface1D()) {
                     QCPDataSelection dataSel =
                             plottableInterface->selectTestRect(rectF, true);
-                    if (!dataSel.isEmpty())
+                    if (!dataSel.isEmpty()) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
                         potentialSelections.insertMulti(
                                 dataSel.dataPointCount(),
                                 QPair<QCPAbstractPlottable *, QCPDataSelection>(
                                         plottable, dataSel));
+#else
+                        potentialSelections.insert(
+                                dataSel.dataPointCount(),
+                                QPair<QCPAbstractPlottable *, QCPDataSelection>(
+                                        plottable, dataSel));
+#endif
+                    }
                 }
             }
 
@@ -18607,28 +18635,27 @@ void QCPAxisRect::mouseReleaseEvent(QMouseEvent *event,
   inverting the factor, when the wheel step is negative (f^-1 = 1/f).
 */
 void QCPAxisRect::wheelEvent(QWheelEvent *event) {
+    const double delta = qtCompatWheelEventDelta(event);
+    const QPointF pos = qtCompatWheelEventPos(event);
+
     // Mouse range zooming interaction:
     if (mParentPlot->interactions().testFlag(QCP::iRangeZoom)) {
         if (mRangeZoom != 0) {
             double factor;
-            double wheelSteps = event->delta() /
-                                120.0;  // a single step delta is +/-120 usually
+            double wheelSteps =
+                    delta / 120.0;  // a single step delta is +/-120 usually
             if (mRangeZoom.testFlag(Qt::Horizontal)) {
                 factor = qPow(mRangeZoomFactorHorz, wheelSteps);
-                for (int i = 0; i < mRangeZoomHorzAxis.size(); ++i) {
-                    if (!mRangeZoomHorzAxis.at(i).isNull())
-                        mRangeZoomHorzAxis.at(i)->scaleRange(
-                                factor, mRangeZoomHorzAxis.at(i)->pixelToCoord(
-                                                event->pos().x()));
+                foreach (QPointer<QCPAxis> axis, mRangeZoomHorzAxis) {
+                    if (!axis.isNull())
+                        axis->scaleRange(factor, axis->pixelToCoord(pos.x()));
                 }
             }
             if (mRangeZoom.testFlag(Qt::Vertical)) {
                 factor = qPow(mRangeZoomFactorVert, wheelSteps);
-                for (int i = 0; i < mRangeZoomVertAxis.size(); ++i) {
-                    if (!mRangeZoomVertAxis.at(i).isNull())
-                        mRangeZoomVertAxis.at(i)->scaleRange(
-                                factor, mRangeZoomVertAxis.at(i)->pixelToCoord(
-                                                event->pos().y()));
+                foreach (QPointer<QCPAxis> axis, mRangeZoomVertAxis) {
+                    if (!axis.isNull())
+                        axis->scaleRange(factor, axis->pixelToCoord(pos.y()));
                 }
             }
             mParentPlot->replot();
@@ -20242,10 +20269,15 @@ void QCPColorScale::setRangeDrag(bool enabled) {
         return;
     }
 
-    if (enabled)
+    if (enabled) {
         mAxisRect.data()->setRangeDrag(QCPAxis::orientation(mType));
-    else
-        mAxisRect.data()->setRangeDrag(0);
+    } else {
+#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
+        mAxisRect.data()->setRangeDrag(nullptr);
+#else
+        mAxisRect.data()->setRangeDrag({});
+#endif
+    }
 }
 
 /*!
@@ -20261,10 +20293,15 @@ void QCPColorScale::setRangeZoom(bool enabled) {
         return;
     }
 
-    if (enabled)
+    if (enabled) {
         mAxisRect.data()->setRangeZoom(QCPAxis::orientation(mType));
-    else
-        mAxisRect.data()->setRangeZoom(0);
+    } else {
+#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
+        mAxisRect.data()->setRangeDrag(nullptr);
+#else
+        mAxisRect.data()->setRangeZoom({});
+#endif
+    }
 }
 
 /*!
