@@ -53,6 +53,9 @@ public:
     bool hasDrawingPrecision() const override { return true; }
     ccGenericPrimitive* clone() const override;
 
+    // inherited from ccHObject
+    ccBBox getOwnFitBB(ccGLMatrix& trans) override;
+
 protected:
     // inherited from ccGenericPrimitive
     bool toFile_MeOnly(QFile& out) const override;

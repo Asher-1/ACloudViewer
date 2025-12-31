@@ -7,6 +7,7 @@
 
 #include "CPUInfo.h"
 
+#include <cstring>
 #include <fstream>
 #include <memory>
 #include <set>
@@ -14,7 +15,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <cstring>
 
 #ifdef __linux__
 #include <sys/sysinfo.h>
@@ -129,7 +129,8 @@ static std::string GetCPUModelName() {
 #elif __APPLE__
     char brand_string[256];
     size_t size = sizeof(brand_string);
-    if (sysctlbyname("machdep.cpu.brand_string", brand_string, &size, NULL, 0) == 0) {
+    if (sysctlbyname("machdep.cpu.brand_string", brand_string, &size, NULL,
+                     0) == 0) {
         return std::string(brand_string);
     }
     return "";
@@ -137,16 +138,17 @@ static std::string GetCPUModelName() {
     // Use CPUID instruction to get CPU brand string
     int cpuInfo[4] = {-1};
     char brand_string[0x40] = {0};
-    
+
     // Get extended CPUID info
     __cpuid(cpuInfo, 0x80000000);
     unsigned int nExIds = cpuInfo[0];
-    
+
     if (nExIds >= 0x80000004) {
         // Get brand string in 3 parts
         for (unsigned int i = 0x80000002; i <= 0x80000004; ++i) {
             __cpuid(cpuInfo, i);
-            memcpy(brand_string + (i - 0x80000002) * 16, cpuInfo, sizeof(cpuInfo));
+            memcpy(brand_string + (i - 0x80000002) * 16, cpuInfo,
+                   sizeof(cpuInfo));
         }
         std::string result(brand_string);
         // Trim whitespace

@@ -14,10 +14,10 @@
 #include "ecvUIManager.h"
 
 // CV_CORE_LIB
+#include <CPUInfo.h>
 #include <CVLog.h>
 #include <CVTools.h>
 #include <MemoryInfo.h>
-#include <CPUInfo.h>
 
 // ECV_DB_LIB
 #include <ecvColorScalesManager.h>
@@ -50,10 +50,11 @@
 // System-specific includes
 #ifdef _WIN32
 #include <windows.h>  // For GetFileType, GetStdHandle, AttachConsole
-#include <cstdio>     // For freopen
+
+#include <cstdio>  // For freopen
 #endif
 #ifdef Q_OS_MAC
-#include <cstdlib>    // For putenv
+#include <cstdlib>  // For putenv
 #endif
 
 // COMMON
@@ -75,14 +76,15 @@
 // Function to get total system memory in GB
 QString GetTotalMemoryInfo() {
     using namespace cloudViewer::system;
-    
+
     MemoryInfo memInfo = getMemoryInfo();
-    
+
     if (memInfo.totalRam > 0) {
-        double totalGB = static_cast<double>(memInfo.totalRam) / (1024.0 * 1024.0 * 1024.0);
+        double totalGB = static_cast<double>(memInfo.totalRam) /
+                         (1024.0 * 1024.0 * 1024.0);
         return QString("RAM: %1 GB").arg(totalGB, 0, 'f', 2);
     }
-    
+
     return QString("RAM: Unable to detect");
 }
 
@@ -110,16 +112,16 @@ QString GetStorageInfo() {
 // Function to get CPU information
 QString GetCPUInfo() {
     using namespace cloudViewer::utility;
-    
+
     const CPUInfo& cpuInfo = CPUInfo::GetInstance();
     int numCores = cpuInfo.NumCores();
     int numThreads = cpuInfo.NumThreads();
     std::string modelName = cpuInfo.ModelName();
-    
+
     if (numCores <= 0 && numThreads <= 0) {
         return QString("CPU: Unable to detect");
     }
-    
+
     QString result;
     if (!modelName.empty()) {
         // Show model name with cores and threads
@@ -136,12 +138,14 @@ QString GetCPUInfo() {
     } else {
         // Fallback: show only cores and threads
         if (numCores > 0) {
-            result = QString("CPU: %1 cores, %2 threads").arg(numCores).arg(numThreads);
+            result = QString("CPU: %1 cores, %2 threads")
+                             .arg(numCores)
+                             .arg(numThreads);
         } else {
             result = QString("CPU: %1 threads").arg(numThreads);
         }
     }
-    
+
     return result;
 }
 

@@ -492,8 +492,8 @@ void ecvLayoutManager::setupDefaultLayout() {
     int screenHeight = screenGeometry.height();
 
     CVLog::PrintDebug(QString("[ecvLayoutManager] Screen resolution: %1x%2")
-                        .arg(screenWidth)
-                        .arg(screenHeight));
+                              .arg(screenWidth)
+                              .arg(screenHeight));
 
     // Setup components
     setupToolbarLayout(screenWidth);
