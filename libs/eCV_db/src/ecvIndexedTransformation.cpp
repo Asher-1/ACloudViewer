@@ -131,16 +131,22 @@ ccIndexedTransformation ccIndexedTransformation::Interpolate(
     return ccIndexedTransformation(mat, index);
 }
 
-bool ccIndexedTransformation::toFile(QFile& out) const {
-    if (!ccGLMatrix::toFile(out)) return false;
+bool ccIndexedTransformation::toFile(QFile& out, short dataVersion) const {
+    if (!ccGLMatrix::toFile(out, dataVersion)) return false;
 
     assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
 
     // index (dataVersion>=34)
-    if (out.write((const char*)&m_index, sizeof(double)) < 0)
-        return WriteError();
+    if (dataVersion >= 34) {
+        if (out.write((const char*)&m_index, sizeof(double)) < 0)
+            return WriteError();
+    }
 
     return true;
+}
+
+short ccIndexedTransformation::minimumFileVersion() const {
+    return std::max(static_cast<short>(34), ccGLMatrix::minimumFileVersion());
 }
 
 bool ccIndexedTransformation::fromFile(QFile& in,

@@ -281,8 +281,14 @@ void ccPolyline::drawMeOnly(CC_DRAW_CONTEXT& context) {
 
 void ccPolyline::setWidth(PointCoordinateType width) { m_width = width; }
 
-bool ccPolyline::toFile_MeOnly(QFile& out) const {
-    if (!ccHObject::toFile_MeOnly(out)) return false;
+bool ccPolyline::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 31) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccHObject::toFile_MeOnly(out, dataVersion)) return false;
 
     // we can't save the associated cloud here (as it may be shared by multiple
     // polylines) so instead we save it's unique ID (dataVersion>=28) WARNING:
@@ -334,6 +340,11 @@ bool ccPolyline::toFile_MeOnly(QFile& out) const {
     return true;
 }
 
+short ccPolyline::minimumFileVersion_MeOnly() const {
+    short minVersion = (isShifted() ? 39 : 31);
+    return std::max(minVersion, ccHObject::minimumFileVersion_MeOnly());
+}
+
 bool ccPolyline::fromFile_MeOnly(QFile& in,
                                  short dataVersion,
                                  int flags,
@@ -367,11 +378,12 @@ bool ccPolyline::fromFile_MeOnly(QFile& in,
     }
 
     //'global shift & scale' (dataVersion>=39)
+    m_globalScale = 1.0;
+    m_globalShift = CCVector3d(0, 0, 0);
     if (dataVersion >= 39) {
-        if (!loadShiftInfoFromFile(in)) return ReadError();
-    } else {
-        m_globalScale = 1.0;
-        m_globalShift = CCVector3d(0, 0, 0);
+        if (!loadShiftInfoFromFile(in)) {
+            return ReadError();
+        }
     }
 
     QDataStream inStream(&in);
@@ -391,11 +403,11 @@ bool ccPolyline::fromFile_MeOnly(QFile& in,
     inStream >> m_foreground;
 
     // Width of the line (dataVersion>=31)
-    if (dataVersion >= 31)
+    m_width = 0;
+    if (dataVersion >= 31) {
         ccSerializationHelper::CoordsFromDataStream(inStream, flags, &m_width,
                                                     1);
-    else
-        m_width = 0;
+    }
 
     return true;
 }

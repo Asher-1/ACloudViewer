@@ -1418,7 +1418,8 @@ protected:
 protected:
     // inherited from ccHObject
     void drawMeOnly(CC_DRAW_CONTEXT& context) override;
-    bool toFile_MeOnly(QFile& out) const override;
+    bool toFile_MeOnly(QFile& out, short dataVersion) const override;
+    short minimumFileVersion_MeOnly() const override;
     bool fromFile_MeOnly(QFile& in,
                          short dataVersion,
                          int flags,

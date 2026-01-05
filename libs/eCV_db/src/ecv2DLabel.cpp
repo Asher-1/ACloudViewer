@@ -447,8 +447,14 @@ bool cc2DLabel::addPickedPoint(const PickedPoint& pp) {
     return true;
 }
 
-bool cc2DLabel::toFile_MeOnly(QFile& out) const {
-    if (!ccHObject::toFile_MeOnly(out)) return false;
+bool cc2DLabel::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 50) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccHObject::toFile_MeOnly(out, dataVersion)) return false;
 
     // points count (dataVersion >= 20)
     uint32_t count = (uint32_t)m_pickedPoints.size();
@@ -489,6 +495,11 @@ bool cc2DLabel::toFile_MeOnly(QFile& out) const {
         return WriteError();
 
     return true;
+}
+
+short cc2DLabel::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(50),
+                    ccHObject::minimumFileVersion_MeOnly());
 }
 
 bool cc2DLabel::fromFile_MeOnly(QFile& in,

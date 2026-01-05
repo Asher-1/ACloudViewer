@@ -75,19 +75,30 @@ void ccCircle::setResolution(unsigned resolution) {
     }
 }
 
-bool ccCircle::toFile_MeOnly(QFile& out) const {
+bool ccCircle::toFile_MeOnly(QFile& out, short dataVersion) const {
     assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 56) {
+        assert(false);
+        return false;
+    }
 
-    if (!ccPolyline::toFile_MeOnly(out)) {
+    if (!ccPolyline::toFile_MeOnly(out, dataVersion)) {
         return false;
     }
 
     QDataStream outStream(&out);
 
+    // Radius (dataVersion>=56)
     outStream << m_radius;
+    // Resolution (dataVersion>=56)
     outStream << m_resolution;
 
     return true;
+}
+
+short ccCircle::minimumFileVersion_MeOnly() const {
+    short minVersion = 56;
+    return std::max(minVersion, ccHObject::minimumFileVersion_MeOnly());
 }
 
 bool ccCircle::fromFile_MeOnly(QFile& in,

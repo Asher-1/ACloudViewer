@@ -147,8 +147,14 @@ ccBBox ccGenericPointCloud::getOwnBB(bool withGLFeatures /*=false*/) {
     return box;
 }
 
-bool ccGenericPointCloud::toFile_MeOnly(QFile& out) const {
-    if (!ccHObject::toFile_MeOnly(out)) return false;
+bool ccGenericPointCloud::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 33) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccHObject::toFile_MeOnly(out, dataVersion)) return false;
 
     //'global shift & scale' (dataVersion>=39)
     saveShiftInfoToFile(out);
@@ -168,6 +174,11 @@ bool ccGenericPointCloud::toFile_MeOnly(QFile& out) const {
     if (out.write((const char*)&m_pointSize, 1) < 0) return WriteError();
 
     return true;
+}
+
+short ccGenericPointCloud::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(33),
+                    ccHObject::minimumFileVersion_MeOnly());
 }
 
 bool ccGenericPointCloud::fromFile_MeOnly(QFile& in,
@@ -204,10 +215,11 @@ bool ccGenericPointCloud::fromFile_MeOnly(QFile& in,
     }
 
     //'point size' (dataVersion>=24)
+    m_pointSize = 0;
     if (dataVersion >= 24) {
-        if (in.read((char*)&m_pointSize, 1) < 0) return WriteError();
-    } else {
-        m_pointSize = 0;  // follows default setting
+        if (in.read((char*)&m_pointSize, 1) < 0) {
+            return ReadError();
+        }
     }
 
     return true;

@@ -106,9 +106,14 @@ void ccDisc::setRadius(PointCoordinateType radius) {
     applyTransformationToVertices();
 }
 
-bool ccDisc::toFile_MeOnly(QFile& out) const {
+bool ccDisc::toFile_MeOnly(QFile& out, short dataVersion) const {
     assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
-    if (!ccGenericPrimitive::toFile_MeOnly(out)) {
+    if (dataVersion < 57) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccGenericPrimitive::toFile_MeOnly(out, dataVersion)) {
         return false;
     }
 
@@ -117,6 +122,11 @@ bool ccDisc::toFile_MeOnly(QFile& out) const {
     outStream << m_radius;
 
     return true;
+}
+
+short ccDisc::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(57),
+                    ccGenericPrimitive::minimumFileVersion_MeOnly());
 }
 
 bool ccDisc::fromFile_MeOnly(QFile& in,

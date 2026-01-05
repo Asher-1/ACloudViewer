@@ -44,6 +44,11 @@
 #include <unistd.h>
 #endif
 
+//! Last saved file version
+static short s_lastSavedFileBinVersion = 0;
+
+short BinFilter::GetLastSavedFileVersion() { return s_lastSavedFileBinVersion; }
+
 BinFilter::BinFilter()
     : FileIOFilter({"_CloudCompare BIN Filter",
                     1.0f,  // priority
@@ -142,6 +147,8 @@ CC_FILE_ERROR _SaveFileV2() {
 CC_FILE_ERROR BinFilter::saveToFile(ccHObject* root,
                                     const QString& filename,
                                     const SaveParameters& parameters) {
+    s_lastSavedFileBinVersion = 0;
+
     if (!root || filename.isNull()) return CC_FERR_BAD_ARGUMENT;
 
     QFile out(filename);
@@ -191,29 +198,6 @@ CC_FILE_ERROR BinFilter::SaveFileV2(QFile& out, ccHObject* object) {
     //- 'new' evolutive version, starts by 4 bytes ("CCB2") + save the current
     // ccObject version
 
-    // header
-    // Since ver 2.5.2, the 4th character of the header corresponds to
-    //'deserialization flags' (see ccSerializableObject::DeserializationFlags)
-    char firstBytes[5] = "CCB2";
-    {
-        char flags = 0;
-        if (sizeof(PointCoordinateType) == 8)
-            flags |= static_cast<char>(
-                    ccSerializableObject::DF_POINT_COORDS_64_BITS);
-        if (sizeof(ScalarType) == 4)
-            flags |= static_cast<char>(
-                    ccSerializableObject::DF_SCALAR_VAL_32_BITS);
-        assert(flags <= 8);
-        firstBytes[3] = 48 + flags;  // 48 = ASCII("0")
-    }
-
-    if (out.write(firstBytes, 4) < 0) return CC_FERR_WRITING;
-
-    // Current BIN file version
-    uint32_t binVersion_u32 =
-            static_cast<uint32_t>(ccObject::GetCurrentDBVersion());
-    if (out.write((char*)&binVersion_u32, 4) < 0) return CC_FERR_WRITING;
-
     CC_FILE_ERROR result = CC_FERR_NO_ERROR;
 
     // we check if all linked entities are in the sub tree we are going to save
@@ -233,10 +217,8 @@ CC_FILE_ERROR BinFilter::SaveFileV2(QFile& out, ccHObject* object) {
             ccMesh* mesh = ccHObjectCaster::ToMesh(currentObject);
             if (mesh->getAssociatedCloud())
                 dependencies.insert(mesh->getAssociatedCloud());
-            // if (mesh->getMaterialSet())
-            //	dependencies.insert(mesh->getMaterialSet());
-            if (mesh->getTexCoordinatesTable())
-                dependencies.insert(mesh->getTexCoordinatesTable());
+            if (mesh->getMaterialSet())
+                dependencies.insert(mesh->getMaterialSet());
             if (mesh->getTexCoordinatesTable())
                 dependencies.insert(mesh->getTexCoordinatesTable());
         } else if (currentObject->isA(CV_TYPES::SUB_MESH)) {
@@ -260,7 +242,10 @@ CC_FILE_ERROR BinFilter::SaveFileV2(QFile& out, ccHObject* object) {
             cc2DLabel* label = static_cast<cc2DLabel*>(currentObject);
             for (unsigned i = 0; i < label->size(); ++i) {
                 const cc2DLabel::PickedPoint& pp = label->getPickedPoint(i);
-                dependencies.insert(pp.cloud);
+                if (pp.cloud)
+                    dependencies.insert(pp.cloud);
+                else if (pp.mesh)
+                    dependencies.insert(pp.mesh);
             }
         } else if (currentObject->isA(CV_TYPES::FACET)) {
             ccFacet* facet = static_cast<ccFacet*>(currentObject);
@@ -295,8 +280,44 @@ CC_FILE_ERROR BinFilter::SaveFileV2(QFile& out, ccHObject* object) {
             toCheck.push_back(currentObject->getChild(i));
     }
 
-    if (result == CC_FERR_NO_ERROR)
-        if (!object->toFile(out)) result = CC_FERR_CONSOLE_ERROR;
+    if (result != CC_FERR_NO_ERROR) {
+        return result;
+    }
+
+    // header
+    // Since ver 2.5.2, the 4th character of the header corresponds to
+    //'deserialization flags' (see ccSerializableObject::DeserializationFlags)
+    char firstBytes[5] = "CCB2";
+    {
+        char flags = 0;
+        if (sizeof(PointCoordinateType) == 8) {
+            flags |= static_cast<char>(
+                    ccSerializableObject::DF_POINT_COORDS_64_BITS);
+        }
+        // internal representation of scalar fields is now always floats
+        flags |= static_cast<char>(ccSerializableObject::DF_SCALAR_VAL_32_BITS);
+        assert(flags <= 8);
+        firstBytes[3] = 48 + flags;  // 48 = ASCII("0")
+    }
+
+    if (out.write(firstBytes, 4) < 0) return CC_FERR_WRITING;
+
+    // Current BIN file version
+    short dataVersion = object->minimumFileVersion();
+    {
+        CVLog::Print(QString("[BIN] Output file version: %1.%2 (automatically "
+                             "deduced from selected entities)")
+                             .arg(dataVersion / 10)
+                             .arg(dataVersion % 10));
+        uint32_t binVersion_u32 = dataVersion;
+        if (out.write((char*)&binVersion_u32, 4) < 0) return CC_FERR_WRITING;
+    }
+
+    if (!object->toFile(out, dataVersion)) {
+        result = CC_FERR_CONSOLE_ERROR;
+    }
+
+    s_lastSavedFileBinVersion = dataVersion;
 
     out.close();
 
@@ -458,6 +479,13 @@ CC_FILE_ERROR BinFilter::LoadFileV2(QFile& in,
                          .arg(binVersion % 10)
                          .arg(coordsFormat)
                          .arg(scalarFormat));
+
+    if (ccObject::GetCurrentDBVersion() < binVersion) {
+        CVLog::Error(
+                "This version of CloudViewer is too old and can't load this "
+                "file, sorry");
+        return CC_FERR_CONSOLE_ERROR;
+    }
 
     // we keep track of the last unique ID before load
     unsigned lastUniqueIDBeforeLoad = ccObject::GetLastUniqueID();

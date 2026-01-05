@@ -292,8 +292,13 @@ void ccScalarField::setColorRampSteps(unsigned steps) {
     m_modified = true;
 }
 
-bool ccScalarField::toFile(QFile& out) const {
+bool ccScalarField::toFile(QFile& out, short dataVersion) const {
     assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+
+    if (dataVersion < 20) {
+        assert(false);
+        return false;
+    }
 
     // name (dataVersion>=20)
     if (out.write(m_name, 256) < 0) return WriteError();
@@ -328,25 +333,28 @@ bool ccScalarField::toFile(QFile& out) const {
         return WriteError();
 
     //'symmetrical scale' state (dataVersion>=27)
-    if (out.write((const char*)&m_symmetricalScale, sizeof(bool)) < 0)
-        return WriteError();
-
-    //'NaN values in grey' state (dataVersion>=27)
-    if (out.write((const char*)&m_showNaNValuesInGrey, sizeof(bool)) < 0)
-        return WriteError();
-
-    //'always show 0' state (dataVersion>=27)
-    if (out.write((const char*)&m_alwaysShowZero, sizeof(bool)) < 0)
-        return WriteError();
-
-    // color scale (dataVersion>=27)
-    {
-        bool hasColorScale = (m_colorScale != nullptr);
-        if (out.write((const char*)&hasColorScale, sizeof(bool)) < 0)
+    if (dataVersion >= 27) {
+        if (out.write((const char*)&m_symmetricalScale, sizeof(bool)) < 0)
             return WriteError();
 
-        if (m_colorScale)
-            if (!m_colorScale->toFile(out)) return WriteError();
+        //'NaN values in grey' state (dataVersion>=27)
+        if (out.write((const char*)&m_showNaNValuesInGrey, sizeof(bool)) < 0)
+            return WriteError();
+
+        //'always show 0' state (dataVersion>=27)
+        if (out.write((const char*)&m_alwaysShowZero, sizeof(bool)) < 0)
+            return WriteError();
+
+        // color scale (dataVersion>=27)
+        {
+            bool hasColorScale = (m_colorScale != nullptr);
+            if (out.write((const char*)&hasColorScale, sizeof(bool)) < 0)
+                return WriteError();
+
+            if (m_colorScale)
+                if (!m_colorScale->toFile(out, dataVersion))
+                    return WriteError();
+        }
     }
 
     // color ramp steps (dataVersion>=20)
@@ -354,10 +362,29 @@ bool ccScalarField::toFile(QFile& out) const {
     if (out.write((const char*)&colorRampSteps, 4) < 0) return WriteError();
 
     // global shift (dataVersion>=42)
-    if (out.write((const char*)&m_globalShift, sizeof(double)) < 0)
-        return WriteError();
+    if (dataVersion >= 42) {
+        if (out.write((const char*)&m_globalShift, sizeof(double)) < 0)
+            return WriteError();
+    }
 
     return true;
+}
+
+short ccScalarField::minimumFileVersion() const {
+    // we need version 42 to save a non-zero global shift
+    short minVersion = (getGlobalShift() != 0.0 ? 42 : 27);
+
+    if (strlen(m_name) > 255) {
+        // we need version 52 to save a name longer than 255 characters
+        minVersion = std::max(minVersion, static_cast<short>(52));
+    }
+
+    if (m_colorScale) {
+        // we need a certain version to save the color scale depending on its
+        // contents
+        minVersion = std::max(minVersion, m_colorScale->minimumFileVersion());
+    }
+    return minVersion;
 }
 
 bool ccScalarField::fromFile(QFile& in,

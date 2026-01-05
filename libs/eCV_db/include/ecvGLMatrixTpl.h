@@ -624,6 +624,17 @@ public:
         CC_MAT_R11 = CC_MAT_R22 = CC_MAT_R33 = CC_MAT_R44 = static_cast<T>(1);
     }
 
+    //! Returns whether this matrix is equal to identity
+    inline virtual bool isIdentity() const {
+        for (unsigned l = 0; l < 4; ++l) {      // lines
+            for (unsigned c = 0; c < 4; ++c) {  // columns
+                if (m_mat[c * 4 + l] != static_cast<T>(l == c ? 1 : 0))
+                    return false;
+            }
+        }
+        return true;
+    }
+
     //! Clears translation
     /** Translation is set to (0,0,0).
      **/
@@ -1390,8 +1401,15 @@ public:
 
     // inherited from ccSerializableObject
     bool isSerializable() const override { return true; }
-    bool toFile(QFile& out) const override {
+
+    bool toFile(QFile& out, short dataVersion) const override {
         assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+
+        // Version validation
+        if (dataVersion < 20) {
+            assert(false);
+            return false;
+        }
 
         // data (dataVersion>=20)
         if (out.write(reinterpret_cast<const char*>(m_mat),
@@ -1399,6 +1417,11 @@ public:
             return WriteError();
 
         return true;
+    }
+
+    short minimumFileVersion() const override {
+        // ccGLMatrix data structure has been stable since version 20
+        return 20;
     }
 
     bool fromFile(QFile& in,

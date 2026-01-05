@@ -583,11 +583,12 @@ protected:
     bool computeFrustumCorners();
 
     // Inherited from ccHObject
-    virtual bool toFile_MeOnly(QFile& out) const override;
-    virtual bool fromFile_MeOnly(QFile& in,
-                                 short dataVersion,
-                                 int flags,
-                                 LoadedIDMap& oldToNewIDMap) override;
+    bool toFile_MeOnly(QFile& out, short dataVersion) const override;
+    short minimumFileVersion_MeOnly() const override;
+    bool fromFile_MeOnly(QFile& in,
+                         short dataVersion,
+                         int flags,
+                         LoadedIDMap& oldToNewIDMap) override;
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 
     ecvColor::Rgb m_plane_color;
