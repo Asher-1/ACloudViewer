@@ -53,9 +53,14 @@ ecvViewportParameters::ecvViewportParameters(
       pivotPoint(params.pivotPoint),
       cameraCenter(params.cameraCenter) {}
 
-bool ecvViewportParameters::toFile(QFile& out) const {
+bool ecvViewportParameters::toFile(QFile& out, short dataVersion) const {
+    if (dataVersion < 20) {
+        assert(false);
+        return false;
+    }
+
     // base modelview matrix (dataVersion>=20)
-    if (!viewMat.toFile(out)) return false;
+    if (!viewMat.toFile(out, dataVersion)) return false;
 
     // other parameters (dataVersion>=20)
     QDataStream outStream(&out);
@@ -82,6 +87,11 @@ bool ecvViewportParameters::toFile(QFile& out) const {
     outStream << cameraAspectRatio;
 
     return true;
+}
+
+short ecvViewportParameters::minimumFileVersion() const {
+    // Version 36 introduced double precision for camera matrix
+    return std::max(static_cast<short>(36), viewMat.minimumFileVersion());
 }
 
 bool ecvViewportParameters::fromFile(QFile& in,

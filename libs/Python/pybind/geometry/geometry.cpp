@@ -816,14 +816,19 @@ void pybind_geometry_classes(py::module& m) {
                  "R"_a, "center"_a)
             .def(
                     "to_file",
-                    [](const ccHObject& entity, const std::string& filename) {
+                    [](const ccHObject& entity, const std::string& filename,
+                       short dataVersion) {
                         QFile out(filename.c_str());
                         if (!out.open(QIODevice::WriteOnly)) {
                             return false;
                         }
-                        return entity.toFile(out);
+                        return entity.toFile(out, dataVersion);
                     },
-                    "Saves data to binary stream.", "filename"_a)
+                    "Saves data to binary stream.", "filename"_a,
+                    "data_version"_a)
+            .def("minimum_file_version", &ccHObject::minimumFileVersion,
+                 "Returns the minimum file version required to save this "
+                 "object")
             .def(
                     "from_file",
                     [](ccHObject& entity, const std::string& filename,

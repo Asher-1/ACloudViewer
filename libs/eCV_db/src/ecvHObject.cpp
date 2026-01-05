@@ -1113,14 +1113,20 @@ bool ccHObject::isSerializable() const {
     return (getClassID() == CV_TYPES::HIERARCHY_OBJECT);
 }
 
-bool ccHObject::toFile(QFile& out) const {
+bool ccHObject::toFile(QFile& out, short dataVersion) const {
     assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
 
+    // Version validation
+    if (dataVersion < 23) {
+        assert(false);
+        return false;
+    }
+
     // write 'ccObject' header
-    if (!ccObject::toFile(out)) return false;
+    if (!ccObject::toFile(out, dataVersion)) return false;
 
     // write own data
-    if (!toFile_MeOnly(out)) return false;
+    if (!toFile_MeOnly(out, dataVersion)) return false;
 
     //(serializable) child count (dataVersion >= 20)
     uint32_t serializableCount = 0;
@@ -1137,7 +1143,7 @@ bool ccHObject::toFile(QFile& out) const {
     // write serializable children (if any)
     for (auto child : m_children) {
         if (child->isSerializable()) {
-            if (!child->toFile(out)) return false;
+            if (!child->toFile(out, dataVersion)) return false;
         }
     }
 
@@ -1147,9 +1153,24 @@ bool ccHObject::toFile(QFile& out) const {
         return WriteError();
 
     // write transformation history (dataVersion >= 45)
-    m_glTransHistory.toFile(out);
+    if (dataVersion >= 45) {
+        m_glTransHistory.toFile(out, dataVersion);
+    }
 
     return true;
+}
+
+short ccHObject::minimumFileVersion() const {
+    short minVersion = m_glTransHistory.isIdentity() ? 23 : 45;
+    minVersion = std::max(minVersion, ccObject::minimumFileVersion());
+    minVersion = std::max(minVersion, minimumFileVersion_MeOnly());
+
+    // write serializable children (if any)
+    for (auto child : m_children) {
+        minVersion = std::max(minVersion, child->minimumFileVersion());
+    }
+
+    return minVersion;
 }
 
 bool ccHObject::fromFile(QFile& in,
@@ -1277,8 +1298,14 @@ bool ccHObject::fromFileNoChildren(QFile& in,
     return fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap);
 }
 
-bool ccHObject::toFile_MeOnly(QFile& out) const {
+bool ccHObject::toFile_MeOnly(QFile& out, short dataVersion) const {
     assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+
+    // Version validation
+    if (dataVersion < 20) {
+        assert(false);
+        return false;
+    }
 
     /*** ccHObject takes in charge the ccDrawableObject properties (which is not
      * a ccSerializableObject) ***/
@@ -1302,7 +1329,7 @@ bool ccHObject::toFile_MeOnly(QFile& out) const {
     if (out.write(reinterpret_cast<const char*>(&m_sfDisplayed), sizeof(bool)) <
         0)
         return WriteError();
-    //'colorIsOverriden' state (dataVersion>=20)
+    //'colorIsOverridden' state (dataVersion>=20)
     if (out.write(reinterpret_cast<const char*>(&m_colorIsOverridden),
                   sizeof(bool)) < 0)
         return WriteError();
@@ -1318,17 +1345,26 @@ bool ccHObject::toFile_MeOnly(QFile& out) const {
                   sizeof(bool)) < 0)
         return WriteError();
     if (m_glTransEnabled) {
-        if (!m_glTrans.toFile(out)) {
+        if (!m_glTrans.toFile(out, dataVersion)) {
             return false;
         }
     }
 
     //'showNameIn3D' state (dataVersion>=24)
-    if (out.write(reinterpret_cast<const char*>(&m_showNameIn3D),
-                  sizeof(bool)) < 0)
-        return WriteError();
+    if (dataVersion >= 24) {
+        if (out.write(reinterpret_cast<const char*>(&m_showNameIn3D),
+                      sizeof(bool)) < 0)
+            return WriteError();
+    }
 
     return true;
+}
+
+short ccHObject::minimumFileVersion_MeOnly() const {
+    // Determine minimum version based on feature usage:
+    // - Version 20: Basic drawable properties
+    // - Version 24: showNameIn3D state
+    return m_showNameIn3D ? 24 : 20;
 }
 
 bool ccHObject::fromFile_MeOnly(QFile& in,
@@ -1370,6 +1406,7 @@ bool ccHObject::fromFile_MeOnly(QFile& in,
         return ReadError();
     if (m_glTransEnabled) {
         if (!m_glTrans.fromFile(in, dataVersion, flags, oldToNewIDMap)) {
+            m_glTransEnabled = false;
             return false;
         }
     }
@@ -1378,7 +1415,7 @@ bool ccHObject::fromFile_MeOnly(QFile& in,
     if (dataVersion >= 24) {
         if (in.read(reinterpret_cast<char*>(&m_showNameIn3D), sizeof(bool)) <
             0) {
-            return WriteError();
+            return ReadError();
         }
     } else {
         m_showNameIn3D = false;

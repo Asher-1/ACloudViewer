@@ -28,7 +28,13 @@ bool WaveformDescriptor::operator!=(const WaveformDescriptor& d) const {
            d.samplingRate_ps != samplingRate_ps;
 }
 
-bool WaveformDescriptor::toFile(QFile& out) const {
+bool WaveformDescriptor::toFile(QFile& out, short dataVersion) const {
+    // Version validation
+    if (dataVersion < 44) {
+        assert(false);
+        return false;
+    }
+
     QDataStream outStream(&out);
 
     // dataVersion >= 44
@@ -40,6 +46,8 @@ bool WaveformDescriptor::toFile(QFile& out) const {
 
     return true;
 }
+
+short WaveformDescriptor::minimumFileVersion() const { return 44; }
 
 bool WaveformDescriptor::fromFile(QFile& in,
                                   short dataVersion,
@@ -251,7 +259,13 @@ void ccWaveform::applyRigidTransformation(const ccGLMatrix& trans) {
     m_beamDir = CCVector3f::fromArray(u.u);
 }
 
-bool ccWaveform::toFile(QFile& out) const {
+bool ccWaveform::toFile(QFile& out, short dataVersion) const {
+    // Version validation
+    if (dataVersion < 46) {
+        assert(false);
+        return false;
+    }
+
     QDataStream outStream(&out);
 
     // dataVersion >= 46
@@ -266,10 +280,17 @@ bool ccWaveform::toFile(QFile& out) const {
         outStream << m_beamDir.z;
         outStream << m_echoTime_ps;
         // dataVersion >= 47
-        outStream << m_returnIndex;
+        if (dataVersion >= 47) {
+            outStream << m_returnIndex;
+        }
     }
 
     return true;
+}
+
+short ccWaveform::minimumFileVersion() const {
+    // Return index requires version 47, otherwise 46 is sufficient
+    return (m_returnIndex != 1) ? 47 : 46;
 }
 
 bool ccWaveform::fromFile(QFile& in,

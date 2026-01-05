@@ -1211,10 +1211,10 @@ bool rotationMatrixToFile(QString name,
     return true;
 }
 
-bool GrainsAsEllipsoids::toFile_MeOnly(QFile& out) const {
+bool GrainsAsEllipsoids::toFile_MeOnly(QFile& out, short dataVersion) const {
     CVLog::Print("[G3Point] write GrainsAsEllipsoids object in .bin");
 
-    if (!ccHObject::toFile_MeOnly(out)) {
+    if (!ccHObject::toFile_MeOnly(out, dataVersion)) {
         return false;
     }
 
@@ -1238,6 +1238,10 @@ bool GrainsAsEllipsoids::toFile_MeOnly(QFile& out) const {
         return WriteError();
 
     return true;
+}
+
+short GrainsAsEllipsoids::minimumFileVersion_MeOnly() const {
+    return ccHObject::minimumFileVersion_MeOnly();
 }
 
 bool GrainsAsEllipsoids::fromFile_MeOnly(QFile& in,

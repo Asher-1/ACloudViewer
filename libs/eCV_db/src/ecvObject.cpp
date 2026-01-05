@@ -124,8 +124,14 @@ void ccObject::setFlagState(CV_OBJECT_FLAG flag, bool state) {
         m_flags &= (~unsigned(flag));
 }
 
-bool ccObject::toFile(QFile& out) const {
+bool ccObject::toFile(QFile& out, short dataVersion) const {
     assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+
+    // Version validation
+    if (dataVersion < 34) {
+        assert(false);
+        return false;
+    }
 
     // class ID (dataVersion>=20)
     // DGM: on 64 bits since version 34
@@ -177,6 +183,8 @@ bool ccObject::toFile(QFile& out) const {
 
     return true;
 }
+
+short ccObject::minimumFileVersion() const { return 34; }
 
 CV_CLASS_ENUM ccObject::ReadClassIDFromFile(QFile& in, short dataVersion) {
     assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
@@ -279,8 +287,32 @@ bool ccObject::fromFile(QFile& in,
             QString key;
             QVariant value;
             inStream >> key;
-            inStream >> value;
-            setMetaData(key, value);
+#if 1  // patch to overcome the issue with LAS vlrs not being readable anymore
+       // as QVariant object with Qt 6
+            if (key == "LAS.vlrs") {
+                inStream.skipRawData(
+                        16);  // size of a partial QVariant object on Windows
+                quint64 vlrSize = 0;
+                inStream >> vlrSize;
+                for (quint64 i = 0; i < vlrSize; ++i) {
+                    inStream.skipRawData(sizeof(uint16_t));
+                    inStream.skipRawData(16 * sizeof(char));
+                    inStream.skipRawData(sizeof(uint16_t));
+                    uint16_t record_length_after_header;
+                    inStream >> record_length_after_header;
+                    inStream.skipRawData(32 * sizeof(char));
+                    inStream.skipRawData(record_length_after_header);
+                }
+
+                quint64 extraScalarFieldCount = 0;
+                inStream >> extraScalarFieldCount;
+                inStream.skipRawData(272 * extraScalarFieldCount);
+            } else
+#endif
+            {
+                inStream >> value;
+                setMetaData(key, value);
+            }
         }
     }
 

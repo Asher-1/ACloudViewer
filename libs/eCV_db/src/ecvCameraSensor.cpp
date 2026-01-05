@@ -418,11 +418,17 @@ void ccCameraSensor::computeProjectionMatrix() {
     m_projectionMatrixIsValid = true;
 }
 
-bool ccCameraSensor::toFile_MeOnly(QFile& out) const {
-    if (!ccSensor::toFile_MeOnly(out)) return false;
+bool ccCameraSensor::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 38) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccSensor::toFile_MeOnly(out, dataVersion)) return false;
 
     // projection matrix (35 <= dataVersion < 38)
-    // if (!m_projectionMatrix.toFile(out))
+    // if (!m_projectionMatrix.toFile(out, dataVersion))
     //	return WriteError();
 
     /** various parameters (dataVersion>=35) **/
@@ -494,6 +500,12 @@ bool ccCameraSensor::toFile_MeOnly(QFile& out) const {
     outStream << m_frustumInfos.center.z;
 
     return true;
+}
+
+short ccCameraSensor::minimumFileVersion_MeOnly() const {
+    // Camera sensor with intrinsic/distortion params requires version 43+
+    return std::max(static_cast<short>(43),
+                    ccSensor::minimumFileVersion_MeOnly());
 }
 
 bool ccCameraSensor::fromFile_MeOnly(QFile& in,

@@ -330,12 +330,17 @@ ccMaterial::getAllTextureFilenames() const {
     return result;
 }
 
-bool ccMaterial::toFile(QFile& out) const {
+bool ccMaterial::toFile(QFile& out, short dataVersion) const {
+    if (dataVersion < 20) {
+        assert(false);
+        return false;
+    }
+
     QDataStream outStream(&out);
 
     // material name (dataVersion >= 20)
     outStream << m_name;
-    // texture (dataVersion >= 20)
+    // texture filename (dataVersion >= 37) or texture image (dataVersion < 37)
     outStream << m_textureFilename;
     // material colors (dataVersion >= 20)
     // we don't use QByteArray here as it has its own versions!
@@ -355,6 +360,8 @@ bool ccMaterial::toFile(QFile& out) const {
 
     return true;
 }
+
+short ccMaterial::minimumFileVersion() const { return 20; }
 
 bool ccMaterial::fromFile(QFile& in,
                           short dataVersion,

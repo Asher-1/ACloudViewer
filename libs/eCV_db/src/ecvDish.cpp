@@ -159,8 +159,14 @@ bool ccDish::buildUp() {
     return true;
 }
 
-bool ccDish::toFile_MeOnly(QFile& out) const {
-    if (!ccGenericPrimitive::toFile_MeOnly(out)) return false;
+bool ccDish::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 21) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccGenericPrimitive::toFile_MeOnly(out, dataVersion)) return false;
 
     // parameters (dataVersion>=21)
     QDataStream outStream(&out);
@@ -169,6 +175,11 @@ bool ccDish::toFile_MeOnly(QFile& out) const {
     outStream << m_height;
 
     return true;
+}
+
+short ccDish::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(21),
+                    ccGenericPrimitive::minimumFileVersion_MeOnly());
 }
 
 bool ccDish::fromFile_MeOnly(QFile& in,

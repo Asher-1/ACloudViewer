@@ -20,6 +20,9 @@ public:
     }
     static inline QString GetDefaultExtension() { return "bin"; }
 
+    //! Returns the last saved file version
+    static short GetLastSavedFileVersion();
+
     // inherited from FileIOFilter
     virtual CC_FILE_ERROR loadFile(const QString& filename,
                                    ccHObject& container,

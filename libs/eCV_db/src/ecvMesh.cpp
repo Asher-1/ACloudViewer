@@ -3572,8 +3572,14 @@ int ccMesh::getTriangleMtlIndex(unsigned triangleIndex) const {
     return m_triMtlIndexes->at(triangleIndex);
 }
 
-bool ccMesh::toFile_MeOnly(QFile& out) const {
-    if (!ccGenericMesh::toFile_MeOnly(out)) return false;
+bool ccMesh::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 29) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccGenericMesh::toFile_MeOnly(out, dataVersion)) return false;
 
     // we can't save the associated cloud here (as it may be shared by multiple
     // meshes) so instead we save it's unique ID (dataVersion>=20) WARNING: the
@@ -3668,6 +3674,13 @@ bool ccMesh::toFile_MeOnly(QFile& out) const {
     }
 
     return true;
+}
+
+short ccMesh::minimumFileVersion_MeOnly() const {
+    short minVersion =
+            std::max(static_cast<short>(29),
+                     ccSerializationHelper::GenericArrayToFileMinVersion());
+    return std::max(minVersion, ccGenericMesh::minimumFileVersion_MeOnly());
 }
 
 bool ccMesh::fromFile_MeOnly(QFile& in,

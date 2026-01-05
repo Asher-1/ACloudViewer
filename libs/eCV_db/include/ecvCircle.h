@@ -62,7 +62,8 @@ protected:
     void updateInternalRepresentation();
 
     // inherited from ccHObject
-    bool toFile_MeOnly(QFile& out) const override;
+    bool toFile_MeOnly(QFile& out, short dataVersion) const override;
+    short minimumFileVersion_MeOnly() const override;
     bool fromFile_MeOnly(QFile& in,
                          short dataVersion,
                          int flags,

@@ -181,7 +181,12 @@ void ccColorScale::update() {
     }
 }
 
-bool ccColorScale::toFile(QFile& out) const {
+bool ccColorScale::toFile(QFile& out, short dataVersion) const {
+    if (dataVersion < 27) {
+        assert(false);
+        return false;
+    }
+
     QDataStream outStream(&out);
 
     // name (dataVersion>=27)
@@ -219,7 +224,7 @@ bool ccColorScale::toFile(QFile& out) const {
     }
 
     // custom labels (dataVersion>=40)
-    {
+    if (dataVersion >= 40) {
         // custom label count
         uint32_t labelCount = static_cast<uint32_t>(m_customLabels.size());
         if (out.write((const char*)&labelCount, 4) < 0) return WriteError();
@@ -228,13 +233,28 @@ bool ccColorScale::toFile(QFile& out) const {
         for (LabelSet::const_iterator it = m_customLabels.begin();
              it != m_customLabels.end(); ++it) {
             outStream << it->value;
-            if (ccObject::GetCurrentDBVersion() >= 54) {
+            if (dataVersion >= 54) {
                 outStream << it->text;
             }
         }
     }
 
     return true;
+}
+
+short ccColorScale::minimumFileVersion() const {
+    short minVersion = 27;
+    if (!m_customLabels.empty()) {
+        minVersion = 40;
+        // Check if any custom label has text
+        for (const auto& label : m_customLabels) {
+            if (!label.text.isEmpty()) {
+                minVersion = 54;
+                break;
+            }
+        }
+    }
+    return minVersion;
 }
 
 bool ccColorScale::fromFile(QFile& in,

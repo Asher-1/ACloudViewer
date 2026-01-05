@@ -278,6 +278,14 @@ build_gui_app() {
         CONDA_LIB_DIR=""
         echo "BUILD_WITH_CONDA is off"
     fi
+
+    # Check USE_QT6 environment variable (set by build_gui_app.sh or docker)
+    if [[ -z "${USE_QT6:-}" ]]; then
+        USE_QT6=OFF
+        echo "USE_QT6 not set, defaulting to OFF (Qt5)"
+    else
+        echo "USE_QT6 is set to: $USE_QT6"
+    fi
     set -u
 
     echo
@@ -287,6 +295,7 @@ build_gui_app() {
     cmakeGuiOptions=("-DBUILD_SHARED_LIBS=OFF"
                 "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
                 "-DCMAKE_BUILD_TYPE=Release"
+                "-DUSE_QT6=$USE_QT6"
                 "-DBUILD_JUPYTER_EXTENSION=OFF"
                 "-DBUILD_LIBREALSENSE=OFF"
                 "-DBUILD_AZURE_KINECT=OFF"

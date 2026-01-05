@@ -2530,6 +2530,19 @@ void MainWindow::doActionSaveFile() {
                 result = CC_FERR_NO_SAVE;
             }
         }
+
+        // display the compatible version info for BIN files
+        if (result == CC_FERR_NO_ERROR) {
+            short fileVersion = BinFilter::GetLastSavedFileVersion();
+            if (fileVersion != 0) {
+                QString minVersion =
+                        ecvApplication::GetMinVersionForFileVersion(
+                                fileVersion);
+                CVLog::Print(tr("This file can be loaded by ACloudViewer "
+                                "version %1 and later")
+                                     .arg(minVersion));
+            }
+        }
     } else if (entitiesToSave.getChildrenNumber() != 0) {
         result = FileIOFilter::SaveToFile(entitiesToSave.getChildrenNumber() > 1
                                                   ? &entitiesToSave
@@ -2635,6 +2648,18 @@ void MainWindow::doActionSaveProject() {
             rootEntity->getChildrenNumber() == 1 ? rootEntity->getChild(0)
                                                  : rootEntity,
             selectedFilename, parameters, binFilter);
+
+    // display the compatible version info for BIN files
+    if (result == CC_FERR_NO_ERROR) {
+        short fileVersion = BinFilter::GetLastSavedFileVersion();
+        if (fileVersion != 0) {
+            QString minVersion =
+                    ecvApplication::GetMinVersionForFileVersion(fileVersion);
+            CVLog::Print(tr("This file can be loaded by ACloudViewer version "
+                            "%1 and later")
+                                 .arg(minVersion));
+        }
+    }
 
     // we update the current 'save' path
     QFileInfo fi(selectedFilename);
