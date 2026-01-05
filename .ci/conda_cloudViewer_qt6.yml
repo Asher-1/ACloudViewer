@@ -1,7 +1,6 @@
-name: cloudViewer
+name: qt6
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - python=3.13
   - ninja

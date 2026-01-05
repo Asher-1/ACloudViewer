@@ -66,6 +66,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DWITH_SIMD=ON \
         -DUSE_SIMD=ON \
         -DPACKAGE=ON \
+        -DUSE_QT6=OFF \
         -DUSE_PCL_BACKEND=ON \
         -DBUILD_WEBRTC=OFF \
         -DBUILD_OPENCV=ON \
@@ -152,7 +153,8 @@ CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&
 # shellcheck source=ci_utils.sh
 source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
-install_python_dependencies with-jupyter with-unit-test
+export BUILD_PYTORCH_OPS=ON
+install_python_dependencies with-cuda with-jupyter with-unit-test
 
 ```
 
@@ -174,6 +176,7 @@ cmake -DDEVELOPER_BUILD=OFF \
       -DWITH_OPENMP=ON \
       -DWITH_IPP=ON \
       -DWITH_SIMD=ON \
+      -DUSE_QT6=OFF \
       -DUSE_SIMD=ON \
       -DCVCORELIB_SHARED=ON \
       -DCVCORELIB_USE_CGAL=ON \
