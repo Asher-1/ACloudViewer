@@ -266,6 +266,20 @@ if (BUILD_WITH_CONDA)
         message(FATAL_ERROR "FAILED TO ENSURE CONDA_PREFIX VARIABLES")
     endif()
     message(STATUS "Building with conda env at ${CONDA_PREFIX}")
+    
+    # Fix C++ ABI linking issues: ensure conda's libstdc++ is used
+    if(UNIX AND NOT APPLE)
+        # Add conda lib directory to rpath for runtime library resolution
+        set(CMAKE_BUILD_RPATH "${CONDA_PREFIX}/lib" ${CMAKE_BUILD_RPATH})
+        set(CMAKE_INSTALL_RPATH "${CONDA_PREFIX}/lib" ${CMAKE_INSTALL_RPATH})
+        set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
+        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+        
+        # Also add to linker flags to ensure libstdc++ from conda is found
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,${CONDA_PREFIX}/lib -L${CONDA_PREFIX}/lib")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,${CONDA_PREFIX}/lib -L${CONDA_PREFIX}/lib")
+        message(STATUS "Added conda lib directory to rpath and library search path: ${CONDA_PREFIX}/lib")
+    endif()
 endif()
 
 # Default build type on single-config generators.

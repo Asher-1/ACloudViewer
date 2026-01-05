@@ -30,7 +30,11 @@
 
 // QT
 #include <QDir>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QSurfaceFormat>
+#else
 #include <QGLFormat>
+#endif
 #include <QMessageBox>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
@@ -333,12 +337,15 @@ int main(int argc, char* argv[]) {
     QTimer splashTimer;
     // standard mode
     if (!commandLine) {
-#ifdef Q_OS_MAC
-        if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_3_3) ==
-            0) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QOpenGLContext context;
+        QSurfaceFormat format;
+        format.setVersion(2, 1);
+        context.setFormat(format);
+        if (!context.create() || !context.isValid()) {
             QMessageBox::critical(nullptr, QObject::tr("Error"),
                                   QObject::tr("This application needs OpenGL "
-                                              "3.3 at least to run!"));
+                                              "2.1 at least to run!"));
             return EXIT_FAILURE;
         }
 #else

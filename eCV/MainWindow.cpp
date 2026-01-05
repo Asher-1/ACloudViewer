@@ -9069,7 +9069,7 @@ void MainWindow::doActionComputeBestICPRmsMatrix() {
                     stream << ";";
                     stream << cloud->getName();
                 }
-                stream << endl;
+                stream << QtCompat::endl;
             }
 
             // rows
@@ -9080,7 +9080,7 @@ void MainWindow::doActionComputeBestICPRmsMatrix() {
                     stream << rmsMatrix[j * cloudCount + i];
                     stream << ";";
                 }
-                stream << endl;
+                stream << QtCompat::endl;
             }
 
             CVLog::Print(tr("[doActionComputeBestICPRmsMatrix] Job done"));
@@ -11538,7 +11538,7 @@ void MainWindow::doActionExportPlaneInfo() {
     csvStream << "Nz,";
     csvStream << "Dip,";
     csvStream << "Dip dir,";
-    csvStream << endl;
+    csvStream << QtCompat::endl;
 
     QChar separator(',');
 
@@ -11562,7 +11562,7 @@ void MainWindow::doActionExportPlaneInfo() {
         csvStream << N.z << separator;                 // Nz
         csvStream << dip_deg << separator;             // Dip
         csvStream << dipDir_deg << separator;          // Dip direction
-        csvStream << endl;
+        csvStream << QtCompat::endl;
     }
 
     ecvConsole::Print(tr("[I/O] File '%1' successfully saved (%2 plane(s))")
@@ -11645,7 +11645,7 @@ void MainWindow::doActionExportCloudInfo() {
             csvStream << sfIndex << " sum,";
         }
     }
-    csvStream << endl;
+    csvStream << QtCompat::endl;
 
     // write one line per cloud
     {
@@ -11680,7 +11680,7 @@ void MainWindow::doActionExportCloudInfo() {
                           << "," /*"SF std.dev.;"*/;
                 csvStream << sfSum << "," /*"SF sum;"*/;
             }
-            csvStream << endl;
+            csvStream << QtCompat::endl;
         }
     }
 

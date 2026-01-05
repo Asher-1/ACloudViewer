@@ -102,10 +102,12 @@ public:
     virtual QString organizationName() const;
     virtual QString applicationName() const;
 
-#if QT_CONFIG(textcodec) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#if defined(QT_CONFIG) && QT_CONFIG(textcodec)
     void setIniCodec(QTextCodec *codec);
     void setIniCodec(const char *codecName);
     QTextCodec *iniCoxdec() const;
+#endif
 #endif
 protected:
     /**

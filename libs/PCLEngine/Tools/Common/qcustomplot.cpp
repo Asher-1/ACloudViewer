@@ -7,6 +7,9 @@
 
 #include "qcustomplot.h"
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QPrintEngine>
 #include <QtGui/QPrinter>
@@ -15248,7 +15251,9 @@ void QCPGraph::setAdaptiveSampling(bool enabled) {
 
   \see removeData
 */
-void QCPGraph::addData(const QCPDataMap &dataMap) { mData->unite(dataMap); }
+void QCPGraph::addData(const QCPDataMap &dataMap) {
+    qtCompatMapUnite(mData, dataMap);
+}
 
 /*! \overload
   Adds the provided single data point in \a data to the current data.
@@ -17555,7 +17560,7 @@ void QCPCurve::setLineStyle(QCPCurve::LineStyle style) { mLineStyle = style; }
   \see removeData
 */
 void QCPCurve::addData(const QCPCurveDataMap &dataMap) {
-    mData->unite(dataMap);
+    qtCompatMapUnite(mData, dataMap);
 }
 
 /*! \overload
@@ -19693,7 +19698,9 @@ void QCPBars::moveAbove(QCPBars *bars) {
   Adds the provided data points in \a dataMap to the current data.
   \see removeData
 */
-void QCPBars::addData(const QCPBarDataMap &dataMap) { mData->unite(dataMap); }
+void QCPBars::addData(const QCPBarDataMap &dataMap) {
+    qtCompatMapUnite(mData, dataMap);
+}
 
 /*! \overload
   Adds the provided single data point in \a data to the current data.
@@ -21945,7 +21952,7 @@ void QCPFinancial::setPenNegative(const QPen &pen) { mPenNegative = pen; }
   \see removeData
 */
 void QCPFinancial::addData(const QCPFinancialDataMap &dataMap) {
-    mData->unite(dataMap);
+    qtCompatMapUnite(mData, dataMap);
 }
 
 /*! \overload

@@ -1,4 +1,4 @@
-name: cloudViewer
+name: cloudViewer_qt6
 channels:
   - conda-forge
 dependencies:

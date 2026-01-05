@@ -1,4 +1,4 @@
-name: python3.8
+name: python_qt6
 channels:
   - conda-forge
 dependencies:

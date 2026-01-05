@@ -703,13 +703,14 @@ void qtCompatMapInsertMulti(QMultiMap<Key, T>* map,
 // Compatibility for QMap::unite() - removed in Qt6
 template <typename Key, typename T>
 void qtCompatMapUnite(QMap<Key, T>* map, const QMap<Key, T>& other) {
-    // In Qt6, use insert with iterator range
-    map->insert(other.begin(), other.end());
+    // In Qt6, use insert() which accepts the entire map
+    map->insert(other);
 }
 
 template <typename Key, typename T>
 void qtCompatMapUnite(QMultiMap<Key, T>* map, const QMultiMap<Key, T>& other) {
-    map->insert(other.begin(), other.end());
+    // In Qt6, use insert() which accepts the entire map
+    map->insert(other);
 }
 #else
 // Qt5: Direct passthrough functions
@@ -734,6 +735,36 @@ template <typename Key, typename T>
 void qtCompatMapUnite(QMultiMap<Key, T>* map, const QMultiMap<Key, T>& other) {
     map->unite(other);
 }
+#endif
+
+// ----------------------------------------------------------------------------
+// QPlainTextEdit::setTabStopWidth() / setTabStopDistance() Compatibility
+// ----------------------------------------------------------------------------
+// Qt5: QPlainTextEdit::setTabStopWidth(int width) (deprecated in Qt5.10+)
+// Qt6: QPlainTextEdit::setTabStopDistance(qreal distance) (setTabStopWidth
+// removed)
+// ----------------------------------------------------------------------------
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+// Qt6: Use setTabStopDistance() which accepts qreal
+#include <QPlainTextEdit>
+inline void qtCompatSetTabStopWidth(QPlainTextEdit* edit, int width) {
+    edit->setTabStopDistance(static_cast<qreal>(width));
+}
+#else
+// Qt5: Use setTabStopWidth() if available, otherwise use setTabStopDistance()
+#include <QPlainTextEdit>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+// Qt5.10+: setTabStopWidth is deprecated, prefer setTabStopDistance
+inline void qtCompatSetTabStopWidth(QPlainTextEdit* edit, int width) {
+    edit->setTabStopDistance(static_cast<qreal>(width));
+}
+#else
+// Qt5.0-5.9: Use setTabStopWidth
+inline void qtCompatSetTabStopWidth(QPlainTextEdit* edit, int width) {
+    edit->setTabStopWidth(width);
+}
+#endif
 #endif
 
 #endif  // QTCOMPAT_H

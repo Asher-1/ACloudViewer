@@ -70,3 +70,5 @@ cd docker
 ./docker/docker_build.sh cuda_wheel_py312_dev
 
 See `./docker_build.sh` for all available options.
+
+Note: only Ubuntu24.04+ support QT6
