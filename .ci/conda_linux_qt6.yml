@@ -1,4 +1,4 @@
-name: python3.13
+name: python3.13_qt6
 channels:
   - conda-forge
 dependencies:

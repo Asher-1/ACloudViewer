@@ -10,7 +10,9 @@
 #include "Application.h"
 #include "Native.h"
 #define GLFW_EXPOSE_NATIVE_X11 1
+#ifdef CLOUDVIEWER_GLFW_HAS_WAYLAND
 #define GLFW_EXPOSE_NATIVE_WAYLAND 1
+#endif
 #include <GLFW/glfw3native.h>
 #include <memory.h>
 
@@ -22,9 +24,13 @@ void* GetNativeDrawable(GLFWwindow* glfw_window) {
     const int platform = glfwGetPlatform();
     if (platform == GLFW_PLATFORM_X11) {
         return (void*)glfwGetX11Window(glfw_window);
-    } else if (platform == GLFW_PLATFORM_WAYLAND) {
+    }
+#ifdef CLOUDVIEWER_GLFW_HAS_WAYLAND
+    else if (platform == GLFW_PLATFORM_WAYLAND) {
         return (void*)glfwGetWaylandWindow(glfw_window);
-    } else {
+    }
+#endif
+    else {
         return nullptr;
     }
 }

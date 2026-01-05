@@ -9,20 +9,23 @@ find_package(PkgConfig QUIET)
 
 # Note: Only Ubuntu 22.04+ has Wayland 1.20+ packages (wayland-client wayland-protocols xkbcommon)
 # WL_MARSHAL_FLAG_DESTROY was introduced in Wayland 1.20+
-# Only check version and potentially disable Wayland when BUILD_WITH_CONDA is ON
-# Otherwise, enable Wayland if dependencies are available (no version check)
+# GLFW 3.4 requires Wayland >= 1.20, so we always check the version
 set(GLFW_BUILD_WAYLAND_OPTION OFF)
-if(UNIX AND NOT APPLE AND PKG_CONFIG_FOUND AND PKG_CONFIG_EXECUTABLE)
-    # Check if wayland packages are available via pkg-config
-    execute_process(
-        COMMAND ${PKG_CONFIG_EXECUTABLE} --exists wayland-client wayland-protocols xkbcommon
-        RESULT_VARIABLE WAYLAND_PKG_RESULT
-        OUTPUT_QUIET
-        ERROR_QUIET
-    )
-    if(WAYLAND_PKG_RESULT EQUAL 0)
-        if(BUILD_WITH_CONDA)
-            # With conda: Check Wayland version - GLFW 3.4 requires >= 1.20
+if(UNIX AND NOT APPLE)
+    if(NOT PKG_CONFIG_FOUND)
+        message(STATUS "pkg-config not found, disabling GLFW_BUILD_WAYLAND")
+    elseif(NOT PKG_CONFIG_EXECUTABLE)
+        message(STATUS "pkg-config executable not set, disabling GLFW_BUILD_WAYLAND")
+    else()
+        # Check if wayland packages are available via pkg-config
+        execute_process(
+            COMMAND ${PKG_CONFIG_EXECUTABLE} --exists wayland-client wayland-protocols xkbcommon
+            RESULT_VARIABLE WAYLAND_PKG_RESULT
+            OUTPUT_QUIET
+            ERROR_QUIET
+        )
+        if(WAYLAND_PKG_RESULT EQUAL 0)
+            # Check Wayland version - GLFW 3.4 requires >= 1.20
             execute_process(
                 COMMAND ${PKG_CONFIG_EXECUTABLE} --modversion wayland-client
                 OUTPUT_VARIABLE WAYLAND_VERSION
@@ -35,33 +38,21 @@ if(UNIX AND NOT APPLE AND PKG_CONFIG_FOUND AND PKG_CONFIG_EXECUTABLE)
                 if(VERSION_MATCH)
                     string(REGEX REPLACE "^([0-9]+)\\.([0-9]+).*" "\\1" WAYLAND_MAJOR "${WAYLAND_VERSION}")
                     string(REGEX REPLACE "^([0-9]+)\\.([0-9]+).*" "\\2" WAYLAND_MINOR "${WAYLAND_VERSION}")
-                    if(WAYLAND_MAJOR GREATER_EQUAL 1)
-                        if(WAYLAND_MAJOR GREATER 1 OR WAYLAND_MINOR GREATER_EQUAL 20)
-                            set(GLFW_BUILD_WAYLAND_OPTION ON)
-                            message(STATUS "Wayland ${WAYLAND_VERSION} found (>= 1.20), enabling GLFW_BUILD_WAYLAND")
-                        else()
-                            message(STATUS "Wayland ${WAYLAND_VERSION} found but too old (need >= 1.20), disabling GLFW_BUILD_WAYLAND")
-                        endif()
+                    if(WAYLAND_MAJOR GREATER 1 OR (WAYLAND_MAJOR EQUAL 1 AND WAYLAND_MINOR GREATER_EQUAL 20))
+                        set(GLFW_BUILD_WAYLAND_OPTION ON)
+                        message(STATUS "Wayland ${WAYLAND_VERSION} found (>= 1.20), enabling GLFW_BUILD_WAYLAND")
                     else()
-                        message(STATUS "Wayland version check failed, disabling GLFW_BUILD_WAYLAND")
+                        message(STATUS "Wayland ${WAYLAND_VERSION} found but too old (need >= 1.20), disabling GLFW_BUILD_WAYLAND")
                     endif()
                 else()
-                    message(STATUS "Could not parse Wayland version, disabling GLFW_BUILD_WAYLAND")
+                    message(STATUS "Could not parse Wayland version '${WAYLAND_VERSION}', disabling GLFW_BUILD_WAYLAND")
                 endif()
             else()
                 message(STATUS "Could not determine Wayland version, disabling GLFW_BUILD_WAYLAND")
             endif()
         else()
-            # Without conda: Enable Wayland if dependencies are available (no version check)
-            set(GLFW_BUILD_WAYLAND_OPTION ON)
-            message(STATUS "Wayland dependencies found, enabling GLFW_BUILD_WAYLAND")
+            message(STATUS "Wayland dependencies not found via pkg-config, disabling GLFW_BUILD_WAYLAND")
         endif()
-    else()
-        message(STATUS "Wayland dependencies not found via pkg-config, disabling GLFW_BUILD_WAYLAND")
-    endif()
-else()
-    if(NOT PKG_CONFIG_FOUND)
-        message(STATUS "pkg-config not found, disabling GLFW_BUILD_WAYLAND")
     endif()
 endif()
 
@@ -88,3 +79,5 @@ ExternalProject_Get_Property(ext_glfw INSTALL_DIR)
 set(GLFW_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(GLFW_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
 set(GLFW_LIBRARIES ${GLFW_LIB_NAME})
+# Export Wayland option to parent scope so it can be used for compile definitions
+set(GLFW_BUILD_WAYLAND_OPTION ${GLFW_BUILD_WAYLAND_OPTION} PARENT_SCOPE)

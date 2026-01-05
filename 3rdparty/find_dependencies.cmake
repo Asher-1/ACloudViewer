@@ -1020,8 +1020,34 @@ if(NOT USE_SYSTEM_GLFW)
     endif()
     list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM 3rdparty_glfw)
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_glfw)
+    # Add compile definition for Wayland support (custom GLFW build)
+    if(GLFW_BUILD_WAYLAND_OPTION)
+        target_compile_definitions(3rdparty_glfw INTERFACE CLOUDVIEWER_GLFW_HAS_WAYLAND)
+        message(STATUS "GLFW Wayland support enabled - adding CLOUDVIEWER_GLFW_HAS_WAYLAND definition")
+    endif()
 else()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_glfw)
+    # Check if system GLFW has Wayland support by looking for the symbol
+    if(UNIX AND NOT APPLE)
+        include(CheckCSourceCompiles)
+        set(CMAKE_REQUIRED_LIBRARIES glfw)
+        check_c_source_compiles("
+            #define GLFW_EXPOSE_NATIVE_WAYLAND 1
+            #include <GLFW/glfw3.h>
+            #include <GLFW/glfw3native.h>
+            int main() {
+                (void)glfwGetWaylandWindow;
+                return 0;
+            }
+        " SYSTEM_GLFW_HAS_WAYLAND)
+        unset(CMAKE_REQUIRED_LIBRARIES)
+        if(SYSTEM_GLFW_HAS_WAYLAND)
+            target_compile_definitions(3rdparty_glfw INTERFACE CLOUDVIEWER_GLFW_HAS_WAYLAND)
+            message(STATUS "System GLFW has Wayland support - adding CLOUDVIEWER_GLFW_HAS_WAYLAND definition")
+        else()
+            message(STATUS "System GLFW does not have Wayland support")
+        endif()
+    endif()
 endif()
 if(TARGET 3rdparty_x11)
     target_link_libraries(3rdparty_glfw INTERFACE 3rdparty_x11)
