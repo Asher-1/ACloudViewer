@@ -3153,7 +3153,8 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(vtkPolyData* polyData) {
     m_spreadsheetTable->setHorizontalHeaderLabels(headers);
 
     // Populate rows
-    int rowCount = std::min(1000, ids.size());  // Limit to 1000 rows
+    int rowCount =
+            std::min(1000, static_cast<int>(ids.size()));  // Limit to 1000 rows
     m_spreadsheetTable->setRowCount(rowCount);
 
     for (int row = 0; row < rowCount; ++row) {

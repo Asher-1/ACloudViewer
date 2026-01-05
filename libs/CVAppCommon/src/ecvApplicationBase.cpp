@@ -55,7 +55,10 @@ void ecvApplicationBase::InitOpenGL() {
 //         ////enables automatic scaling based on the monitor's pixel density
 //         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 // #endif
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)) && \
+        (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+        // These attributes are deprecated in Qt6 (high DPI is enabled by
+        // default)
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
         QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif

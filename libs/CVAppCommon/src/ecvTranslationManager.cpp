@@ -7,6 +7,7 @@
 
 #include "ecvTranslationManager.h"
 
+#include <QActionGroup>
 #include <QDebug>
 #include <QDir>
 #include <QGlobalStatic>

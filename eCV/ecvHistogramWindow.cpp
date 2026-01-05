@@ -825,12 +825,12 @@ void ccHistogramWindow::wheelEvent(QWheelEvent* e) {
         return;
     }
 
-    if (e->delta() < 0) {
+    if (qtCompatWheelEventDelta(e) < 0) {
         if (m_histoValues.size() > 4) {
             setNumberOfClasses(std::max<size_t>(4, m_histoValues.size() - 4));
             refresh();
         }
-    } else  // if (e->delta() > 0)
+    } else  // if (qtCompatWheelEventDelta(e) > 0)
     {
         setNumberOfClasses(m_histoValues.size() + 4);
         refresh();

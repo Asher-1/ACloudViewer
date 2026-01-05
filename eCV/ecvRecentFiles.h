@@ -29,7 +29,7 @@
 class QAction;
 class QMenu;
 class QString;
-class QStringList;
+#include <QStringList>  // QStringList is a type alias in Qt6, cannot forward declare
 
 class ecvRecentFiles : public QObject {
     Q_OBJECT

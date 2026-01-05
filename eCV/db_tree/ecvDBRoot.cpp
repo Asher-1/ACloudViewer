@@ -8,13 +8,14 @@
 #include "ecvDBRoot.h"
 
 // Qt
+#include <QtCompat.h>
+
 #include <QApplication>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
 #include <QMimeData>
-#include <QRegExp>
 #include <QSettings>
 #include <QStandardItemModel>
 #include <QTreeView>

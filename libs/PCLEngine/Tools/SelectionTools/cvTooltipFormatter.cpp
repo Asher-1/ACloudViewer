@@ -20,7 +20,8 @@
 #include <vtkStringArray.h>
 
 // Qt
-#include <QRegExp>
+#include <QtCompat.h>
+
 #include <QStringList>
 
 //-----------------------------------------------------------------------------
@@ -62,7 +63,7 @@ QString cvTooltipFormatter::getPlainTooltipInfo(vtkPolyData* polyData,
 
     // Simple HTML tag removal
     QString plainText = htmlTooltip;
-    plainText.remove(QRegExp("<[^>]*>"));
+    plainText.remove(QtCompatRegExp("<[^>]*>"));
     plainText.replace("&nbsp;", " ");
 
     return plainText;
