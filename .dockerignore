@@ -1,4 +1,5 @@
 build
+build_app
 tags
 .clangd
 .vscode

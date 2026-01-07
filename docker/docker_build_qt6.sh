@@ -54,13 +54,86 @@ print_usage_and_exit_docker_build_qt6() {
     exit 1
 }
 
+# Check if Docker image exists locally
+docker_image_exists() {
+    local image="$1"
+    docker image inspect "$image" >/dev/null 2>&1
+}
+
+# Pull Docker image with retry logic
+docker_pull_with_retry() {
+    local image="$1"
+    local max_attempts=3
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        echo "[docker_pull_with_retry] Attempt $attempt/$max_attempts: Pulling ${image}..."
+        if docker pull "$image"; then
+            echo "[docker_pull_with_retry] Successfully pulled ${image}"
+            return 0
+        else
+            if [ $attempt -lt $max_attempts ]; then
+                echo "[docker_pull_with_retry] Failed to pull ${image}, retrying in 5 seconds..."
+                sleep 5
+            else
+                echo "[docker_pull_with_retry] Failed to pull ${image} after $max_attempts attempts"
+                return 1
+            fi
+        fi
+        attempt=$((attempt + 1))
+    done
+}
+
+# Ensure base image is available (local or pulled)
+ensure_base_image() {
+    local base_image="$1"
+    
+    if docker_image_exists "$base_image"; then
+        echo "[ensure_base_image] Base image ${base_image} exists locally"
+        return 0
+    else
+        echo "[ensure_base_image] Base image ${base_image} not found locally, attempting to pull..."
+        if docker_pull_with_retry "$base_image"; then
+            return 0
+        else
+            echo "[ensure_base_image] ERROR: Could not pull ${base_image}. Please check your network connection or Docker configuration."
+            echo "[ensure_base_image] You can try manually: docker pull ${base_image}"
+            return 1
+        fi
+    fi
+}
+
 ci_build_qt6() {
-    # For Qt6, use system Qt6 path
-    QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt6"
+    # Set QT_BASE_DIR based on Ubuntu version:
+    # 
+    # Qt6 installation layouts differ by Ubuntu version:
+    #
+    # focal (20.04) - aqtinstall:
+    #   - QT_BASE_DIR=/opt/qt6/6.5.3/gcc_64
+    #   - lib: ${QT_BASE_DIR}/lib
+    #   - plugins: ${QT_BASE_DIR}/plugins
+    #   - bin: ${QT_BASE_DIR}/bin
+    #
+    # jammy (22.04) / noble (24.04) - apt:
+    #   - QT_BASE_DIR=/usr/lib/x86_64-linux-gnu/qt6
+    #   - lib: /usr/lib/x86_64-linux-gnu (NOT ${QT_BASE_DIR}/lib)
+    #   - plugins: ${QT_BASE_DIR}/plugins
+    #   - bin: /usr/lib/qt6/bin
+    #
+    # Note: For apt-installed Qt6, the directory structure is non-standard,
+    # so we set QT_BASE_DIR to the qt6 subdirectory where plugins are located.
+    # The actual lib path is handled separately in Dockerfile.ci.qt6
+    if [ "${UBUNTU_VERSION}" = "${UBUNTU_FOCAL}" ]; then
+        QT_BASE_DIR="/opt/qt6/6.5.3/gcc_64"
+    else
+        # For apt-installed Qt6, use the qt6 directory (where plugins are)
+        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt6"
+    fi
 
     echo "[ci_build_qt6()] DOCKER_TAG=${DOCKER_TAG}"
     echo "[ci_build_qt6()] BASE_IMAGE=${BASE_IMAGE}"
-    echo "[ci_build_qt6()] QT_BASE_DIR: ${QT_BASE_DIR}"
+    echo "[ci_build_qt6()] UBUNTU_VERSION=${UBUNTU_VERSION}"
+    echo "[ci_build_qt6()] QT_BASE_DIR=${QT_BASE_DIR}"
     echo "[ci_build_qt6()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
     echo "[ci_build_qt6()] CMAKE_VERSION=${CMAKE_VERSION}"
     echo "[ci_build_qt6()] PYTHON_VERSION=${PYTHON_VERSION}"
@@ -69,6 +142,12 @@ ci_build_qt6() {
     echo "[ci_build_qt6()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build_qt6()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[ci_build_qt6()] Using VTK 9.4.2, PCL 1.15.1, Qt6"
+
+    # Ensure base image is available before building
+    if ! ensure_base_image "${BASE_IMAGE}"; then
+        echo "[ci_build_qt6()] ERROR: Failed to ensure base image ${BASE_IMAGE}"
+        return 1
+    fi
 
     pushd "${HOST_CLOUDVIEWER_ROOT}"
     docker build \

@@ -481,7 +481,8 @@ ccColorScale::Shared ccColorScalesManager::getScale(QString UUID) const {
 
 void ccColorScalesManager::addScale(ccColorScale::Shared scale) {
     if (!scale || scale->getUuid().isEmpty()) {
-        CVLog::Error("[ccColorScalesManager::addScale] Invalid scale/UUID!");
+        CVLog::Error(QStringLiteral(
+                "[ccColorScalesManager::addScale] Invalid scale/UUID!"));
         assert(false);
         return;
     }

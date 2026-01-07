@@ -63,10 +63,14 @@ RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
     fi
 
 # Update apt and install libs needed by Qt6
+# First install basic tools, then setup Kitware repo with proper key handling
 RUN apt-get clean && apt-get update --fix-missing -y \
-    && apt-get install apt-utils software-properties-common tzdata --fix-missing -y \
-    && apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc \
-    && apt-add-repository --yes "deb https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
+    && apt-get install -y apt-utils software-properties-common tzdata gnupg ca-certificates curl wget \
+    && mkdir -p /usr/share/keyrings \
+    && curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc \
+       | gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
+       | tee /etc/apt/sources.list.d/kitware.list >/dev/null \
     && apt-get update --fix-missing -y \
     && apt-get install --fix-missing -yq --no-install-recommends \
         build-essential \
@@ -186,43 +190,77 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libasound2-dev \
         # For Qt6 positioning
         libgstreamer1.0-dev \
-        libgstreamer-plugins-base1.0-dev
+        libgstreamer-plugins-base1.0-dev \
+        # For PCL atomic operations
+        libatomic1
 
 # Qt6 version for aqtinstall (used for Ubuntu 20.04 focal)
 ENV QT6_VERSION=6.5.3
 ENV QT6_INSTALL_DIR=/opt/qt6
 
 # Install Qt6 from Ubuntu repository (for jammy/noble) or via aqtinstall (for focal)
-RUN apt-get -y update && \
+# IMPORTANT: This step MUST install Qt6 and verify Qt6Config.cmake exists
+# CACHE_BUST: 2026-01-06-v2 - Force rebuild of this layer
+RUN set -ex && \
+    echo "=== Qt6 Installation Layer (cache bust: 2026-01-06-v2) ===" && \
+    apt-get -y update && \
     UBUNTU_CODENAME=$(lsb_release -c --short) && \
+    echo "=== Installing Qt6 for Ubuntu ${UBUNTU_CODENAME} ===" && \
     if [ "$UBUNTU_CODENAME" = "noble" ] || [ "$UBUNTU_CODENAME" = "jammy" ]; then \
         # Ubuntu 22.04+ has Qt6 in repos
-        apt-get install -qy \
+        echo "Installing Qt6 packages from Ubuntu repository..." && \
+        apt-get install -y \
             qt6-base-dev \
             qt6-base-dev-tools \
+            qt6-base-private-dev \
             qt6-tools-dev \
             qt6-tools-dev-tools \
             qt6-declarative-dev \
-            qt6-svg-dev \
-            qt6-websockets-dev \
-            qt6-5compat-dev \
+            qt6-declarative-private-dev \
+            libqt6svg6-dev \
+            libqt6svgwidgets6 \
+            libqt6websockets6-dev \
+            libqt6core5compat6-dev \
             qt6-image-formats-plugins \
             qt6-l10n-tools \
             qml6-module-qtquick \
             qml6-module-qtquick-controls \
             qml6-module-qtquick-layouts \
             qml6-module-qtquick-window \
+            qml6-module-qtqml \
+            qml6-module-qtqml-workerscript \
             libqt6opengl6-dev \
+            libqt6sql6 \
             libqt6sql6-sqlite \
-            libqt6concurrent6; \
+            libqt6concurrent6 \
+            libqt6qml6 \
+            libqt6quick6 \
+            libqt6quickwidgets6 && \
+        echo "=== Qt6 packages installed ===" && \
+        echo "Installed Qt6 packages:" && \
+        dpkg -l | grep -i qt6 | head -20 && \
+        echo "=== Searching for Qt6Config.cmake ===" && \
+        QT6_CONFIG_PATH=$(find /usr -name "Qt6Config.cmake" 2>/dev/null | head -1) && \
+        if [ -n "$QT6_CONFIG_PATH" ]; then \
+            echo "SUCCESS: Qt6Config.cmake found at: $QT6_CONFIG_PATH"; \
+            QT6_CMAKE_DIR=$(dirname "$QT6_CONFIG_PATH"); \
+            echo "Qt6_DIR should be: $QT6_CMAKE_DIR"; \
+        else \
+            echo "ERROR: Qt6Config.cmake NOT found after apt install!"; \
+            echo "Listing /usr/lib/x86_64-linux-gnu/cmake/:"; \
+            ls -la /usr/lib/x86_64-linux-gnu/cmake/ 2>/dev/null || echo "Directory does not exist"; \
+            echo "Checking apt-cache for qt6-base-dev:"; \
+            apt-cache show qt6-base-dev 2>/dev/null | head -20 || echo "Package not found"; \
+            exit 1; \
+        fi; \
         # Noble has additional packages
         if [ "$UBUNTU_CODENAME" = "noble" ]; then \
-            apt-get install -qy qt6-quick3d-dev qt6-shader-baker || true; \
+            apt-get install -y qt6-quick3d-dev qt6-shader-baker || true; \
         fi; \
     elif [ "$UBUNTU_CODENAME" = "focal" ]; then \
         # Ubuntu 20.04 Focal - use aqtinstall to install Qt6
-        echo "Installing Qt6 via aqtinstall for Ubuntu 20.04..."; \
-        apt-get install -qy \
+        echo "Installing Qt6 via aqtinstall for Ubuntu 20.04..." && \
+        apt-get install -y \
             python3-pip \
             libfontconfig1-dev \
             libfreetype6-dev \
@@ -245,53 +283,183 @@ RUN apt-get -y update && \
             libxcb-xinerama0-dev \
             libxkbcommon-dev \
             libxkbcommon-x11-dev \
-            libatspi2.0-dev; \
-        pip3 install aqtinstall; \
+            libatspi2.0-dev && \
+        pip3 install aqtinstall && \
         aqt install-qt linux desktop ${QT6_VERSION} gcc_64 \
             --outputdir ${QT6_INSTALL_DIR} \
-            -m qtcharts qtwebsockets qt5compat qtimageformats; \
+            -m qtcharts qtwebsockets qt5compat qtimageformats qtdeclarative qtquick3d qtshadertools && \
+        echo "=== aqtinstall completed ===" && \
+        QT6_CONFIG_PATH=$(find ${QT6_INSTALL_DIR} -name "Qt6Config.cmake" 2>/dev/null | head -1) && \
+        if [ -n "$QT6_CONFIG_PATH" ]; then \
+            echo "SUCCESS: Qt6Config.cmake found at: $QT6_CONFIG_PATH"; \
+        else \
+            echo "ERROR: Qt6Config.cmake NOT found after aqtinstall!"; \
+            ls -laR ${QT6_INSTALL_DIR}/ 2>/dev/null | head -50 || echo "Cannot list ${QT6_INSTALL_DIR}"; \
+            exit 1; \
+        fi; \
     else \
         echo "Unsupported Ubuntu version: $UBUNTU_CODENAME"; \
         exit 1; \
     fi && \
     ldconfig && rm -rf /var/lib/apt/lists/*
 
-# Create unified Qt6 environment setup script
-# This script will be sourced before building VTK, PCL, and ACloudViewer
-# For focal (aqtinstall): /opt/qt6/6.5.3/gcc_64
-# For jammy/noble (apt): /usr/lib/x86_64-linux-gnu/cmake/Qt6
-RUN echo '#!/bin/bash' > /opt/setup_qt6_env.sh && \
-    echo '# Auto-detect and export Qt6 environment variables' >> /opt/setup_qt6_env.sh && \
-    echo 'if [ -z "${QT6_DIR:-}" ]; then' >> /opt/setup_qt6_env.sh && \
-    echo '    UBUNTU_CODENAME=$(lsb_release -c --short 2>/dev/null || echo "unknown")' >> /opt/setup_qt6_env.sh && \
-    echo '    if [ "$UBUNTU_CODENAME" = "focal" ]; then' >> /opt/setup_qt6_env.sh && \
-    echo '        export QT6_DIR=/opt/qt6/6.5.3/gcc_64/lib/cmake/Qt6' >> /opt/setup_qt6_env.sh && \
-    echo '        export Qt6_DIR=$QT6_DIR' >> /opt/setup_qt6_env.sh && \
-    echo '        export PATH=/opt/qt6/6.5.3/gcc_64/bin:$PATH' >> /opt/setup_qt6_env.sh && \
-    echo '        export LD_LIBRARY_PATH=/opt/qt6/6.5.3/gcc_64/lib:$LD_LIBRARY_PATH' >> /opt/setup_qt6_env.sh && \
-    echo '        export CMAKE_PREFIX_PATH=$QT6_DIR:$CMAKE_PREFIX_PATH' >> /opt/setup_qt6_env.sh && \
-    echo '    else' >> /opt/setup_qt6_env.sh && \
-    echo '        export QT6_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt6' >> /opt/setup_qt6_env.sh && \
-    echo '        export Qt6_DIR=$QT6_DIR' >> /opt/setup_qt6_env.sh && \
-    echo '        export CMAKE_PREFIX_PATH=$QT6_DIR:$CMAKE_PREFIX_PATH' >> /opt/setup_qt6_env.sh && \
-    echo '    fi' >> /opt/setup_qt6_env.sh && \
-    echo 'fi' >> /opt/setup_qt6_env.sh && \
-    echo 'echo "QT6_DIR=$QT6_DIR"' >> /opt/setup_qt6_env.sh && \
-    chmod +x /opt/setup_qt6_env.sh && \
-    ln -sf /opt/setup_qt6_env.sh /etc/profile.d/qt6.sh
-
 # Set USE_QT6 flag for build scripts
 ENV USE_QT6=ON
 
-CMD ["/bin/bash", "-c", "source /root/.bashrc && exec bash"]
-RUN echo "QT_BASE_DIR=${QT_BASE_DIR}"
+# Create unified Qt6 environment setup script (immediately after Qt6 installation)
+# This script will be sourced before building VTK, PCL, and ACloudViewer
+# Variables follow the same pattern as Qt5 in Dockerfile.ci:
+#   QT6_DIR = Qt installation root (like QT_DIR for Qt5)
+#   Qt6_DIR = Path to Qt6Config.cmake directory (for CMake find_package)
+#   QT6_QMAKE = Path to qmake executable (like QT_QMAKE_EXECUTABLE for Qt5)
+#   CMAKE_PREFIX_PATH = CMake search path (like Qt5)
+# NOTE: Dynamically detect Qt6Config.cmake path at build time to support different Ubuntu versions
+RUN set -ex && \
+    UBUNTU_CODENAME=$(lsb_release -c --short) && \
+    echo "=== Detecting Qt6 installation paths for $UBUNTU_CODENAME ===" && \
+    # Find Qt6Config.cmake in common locations
+    QT6_CONFIG_PATH="" && \
+    for search_path in \
+        "/opt/qt6/6.5.3/gcc_64/lib/cmake/Qt6/Qt6Config.cmake" \
+        "/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake" \
+        "/usr/lib/cmake/Qt6/Qt6Config.cmake" \
+        "/usr/lib/aarch64-linux-gnu/cmake/Qt6/Qt6Config.cmake"; do \
+        if [ -f "$search_path" ]; then \
+            QT6_CONFIG_PATH="$search_path"; \
+            echo "Found Qt6Config.cmake at: $QT6_CONFIG_PATH"; \
+            break; \
+        fi; \
+    done && \
+    # If not found in common paths, search the filesystem
+    if [ -z "$QT6_CONFIG_PATH" ]; then \
+        echo "Searching for Qt6Config.cmake..."; \
+        QT6_CONFIG_PATH=$(find /usr /opt -name "Qt6Config.cmake" 2>/dev/null | head -1); \
+    fi && \
+    if [ -z "$QT6_CONFIG_PATH" ]; then \
+        echo "ERROR: Qt6Config.cmake not found!"; \
+        echo "Listing potential Qt6 directories:"; \
+        ls -la /usr/lib/cmake/ 2>/dev/null | grep -i qt || true; \
+        ls -la /usr/lib/x86_64-linux-gnu/cmake/ 2>/dev/null | grep -i qt || true; \
+        ls -la /opt/qt6/ 2>/dev/null || true; \
+        exit 1; \
+    fi && \
+    # Extract directories from the found path
+    QT6_CMAKE_DIR=$(dirname "$QT6_CONFIG_PATH") && \
+    echo "Qt6_DIR (CMake config): $QT6_CMAKE_DIR" && \
+    # Determine QT6_DIR (installation root) and QT6_QMAKE based on path
+    if echo "$QT6_CMAKE_DIR" | grep -q "/opt/qt6"; then \
+        # aqtinstall path: /opt/qt6/6.5.3/gcc_64/lib/cmake/Qt6
+        QT6_ROOT=$(echo "$QT6_CMAKE_DIR" | sed 's|/lib/cmake/Qt6$||') && \
+        QT6_QMAKE_PATH="$QT6_ROOT/bin/qmake"; \
+    else \
+        # System Qt6: /usr/lib/cmake/Qt6 or /usr/lib/x86_64-linux-gnu/cmake/Qt6
+        QT6_ROOT="/usr" && \
+        QT6_QMAKE_PATH="/usr/bin/qmake6"; \
+    fi && \
+    echo "QT6_DIR (root): $QT6_ROOT" && \
+    echo "QT6_QMAKE: $QT6_QMAKE_PATH" && \
+    # Generate setup script with detected paths
+    echo '#!/bin/bash' > /opt/setup_qt6_env.sh && \
+    echo "# Qt6 environment variables - auto-generated for $UBUNTU_CODENAME" >> /opt/setup_qt6_env.sh && \
+    echo "# Qt6Config.cmake found at: $QT6_CONFIG_PATH" >> /opt/setup_qt6_env.sh && \
+    echo "export QT6_DIR=$QT6_ROOT" >> /opt/setup_qt6_env.sh && \
+    echo "export Qt6_DIR=$QT6_CMAKE_DIR" >> /opt/setup_qt6_env.sh && \
+    echo "export QT6_QMAKE=$QT6_QMAKE_PATH" >> /opt/setup_qt6_env.sh && \
+    echo "export CMAKE_PREFIX_PATH=$QT6_CMAKE_DIR:\${CMAKE_PREFIX_PATH:-}" >> /opt/setup_qt6_env.sh && \
+    # Add PATH and LD_LIBRARY_PATH for aqtinstall (non-system Qt6)
+    if [ "$QT6_ROOT" != "/usr" ]; then \
+        echo "export PATH=$QT6_ROOT/bin:\$PATH" >> /opt/setup_qt6_env.sh && \
+        echo "export LD_LIBRARY_PATH=$QT6_ROOT/lib:\${LD_LIBRARY_PATH:-}" >> /opt/setup_qt6_env.sh; \
+    fi && \
+    echo 'echo "=== Qt6 Environment ==="' >> /opt/setup_qt6_env.sh && \
+    echo 'echo "QT6_DIR=$QT6_DIR"' >> /opt/setup_qt6_env.sh && \
+    echo 'echo "Qt6_DIR=$Qt6_DIR"' >> /opt/setup_qt6_env.sh && \
+    echo 'echo "QT6_QMAKE=$QT6_QMAKE"' >> /opt/setup_qt6_env.sh && \
+    echo 'echo "CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"' >> /opt/setup_qt6_env.sh && \
+    echo 'if [ -f "$Qt6_DIR/Qt6Config.cmake" ]; then echo "Qt6Config.cmake verified at $Qt6_DIR"; else echo "ERROR: Qt6Config.cmake NOT found at $Qt6_DIR"; exit 1; fi' >> /opt/setup_qt6_env.sh && \
+    chmod +x /opt/setup_qt6_env.sh && \
+    echo "=== Generated setup_qt6_env.sh ===" && \
+    cat /opt/setup_qt6_env.sh && \
+    echo "=== Testing setup_qt6_env.sh ===" && \
+    /bin/bash -c "source /opt/setup_qt6_env.sh" && \
+    ln -sf /opt/setup_qt6_env.sh /etc/profile.d/qt6.sh && \
+    cat /opt/setup_qt6_env.sh
+
+# Set Qt6 environment variables based on installation method
+# Qt6 installation paths differ between apt and aqtinstall:
+#
+# apt-installed Qt6 (jammy/noble):
+#   - QT_BASE_DIR=/usr (but Qt6 libs are in /usr/lib/x86_64-linux-gnu)
+#   - qmake: /usr/bin/qmake6 -> /usr/lib/qt6/bin/qmake6
+#   - plugins: /usr/lib/x86_64-linux-gnu/qt6/plugins
+#   - cmake: /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake
+#
+# aqtinstall Qt6 (focal):
+#   - QT_BASE_DIR=/opt/qt6/6.5.3/gcc_64
+#   - qmake: /opt/qt6/6.5.3/gcc_64/bin/qmake
+#   - plugins: /opt/qt6/6.5.3/gcc_64/plugins
+#   - cmake: /opt/qt6/6.5.3/gcc_64/lib/cmake/Qt6/Qt6Config.cmake
+#
+# Note: QT_BASE_DIR ARG is set in docker_build_qt6.sh based on UBUNTU_VERSION
+# For system Qt6, QT_BASE_DIR=/usr is used but actual paths are more complex
+
+# Verify Qt6 installation and set environment
+RUN set -ex && \
+    UBUNTU_CODENAME=$(lsb_release -c --short) && \
+    echo "=== Qt6 Environment Setup for $UBUNTU_CODENAME ===" && \
+    if [ "$UBUNTU_CODENAME" = "focal" ]; then \
+        echo "Focal detected: Qt6 installed via aqtinstall"; \
+        QT6_ROOT="/opt/qt6/6.5.3/gcc_64"; \
+        QT6_LIB_DIR="$QT6_ROOT/lib"; \
+        QT6_PLUGINS_DIR="$QT6_ROOT/plugins"; \
+        QT6_BIN_DIR="$QT6_ROOT/bin"; \
+    else \
+        echo "Jammy/Noble detected: Qt6 installed via apt"; \
+        QT6_ROOT="/usr"; \
+        QT6_LIB_DIR="/usr/lib/x86_64-linux-gnu"; \
+        QT6_PLUGINS_DIR="/usr/lib/x86_64-linux-gnu/qt6/plugins"; \
+        QT6_BIN_DIR="/usr/lib/qt6/bin"; \
+    fi && \
+    echo "QT6_ROOT=$QT6_ROOT" && \
+    echo "QT6_LIB_DIR=$QT6_LIB_DIR" && \
+    echo "QT6_PLUGINS_DIR=$QT6_PLUGINS_DIR" && \
+    echo "QT6_BIN_DIR=$QT6_BIN_DIR" && \
+    # Verify paths exist
+    test -d "$QT6_LIB_DIR" || (echo "ERROR: QT6_LIB_DIR does not exist: $QT6_LIB_DIR" && exit 1) && \
+    test -d "$QT6_PLUGINS_DIR" || (echo "ERROR: QT6_PLUGINS_DIR does not exist: $QT6_PLUGINS_DIR" && exit 1) && \
+    echo "Qt6 paths verified successfully"
+
+# Set Qt6 paths in ENV
+# QT_BASE_DIR values (passed from docker_build_qt6.sh):
+#   - focal: /opt/qt6/6.5.3/gcc_64
+#   - jammy/noble: /usr/lib/x86_64-linux-gnu/qt6
 ENV QT_BASE_DIR=${QT_BASE_DIR} \
     QT_ROOT=${QT_BASE_DIR} \
     QTDIR=${QT_BASE_DIR} \
     QT_DIR=${QT_BASE_DIR} \
-    PATH=${QT_BASE_DIR}/bin:$PATH \
-    LD_LIBRARY_PATH=${QT_BASE_DIR}/lib:$LD_LIBRARY_PATH \
-    PKG_CONFIG_PATH=${QT_BASE_DIR}/lib/pkgconfig:$PKG_CONFIG_PATH
+    QT_PLUGIN_PATH=${QT_BASE_DIR}/plugins
+
+# Add Qt6 paths to environment (handles both apt and aqtinstall installations)
+# This RUN command dynamically sets paths based on the actual installation
+RUN set -ex && \
+    UBUNTU_CODENAME=$(lsb_release -c --short) && \
+    if [ "$UBUNTU_CODENAME" = "focal" ]; then \
+        # aqtinstall: standard layout
+        echo 'export PATH=/opt/qt6/6.5.3/gcc_64/bin:$PATH' >> /etc/profile.d/qt6-paths.sh && \
+        echo 'export LD_LIBRARY_PATH=/opt/qt6/6.5.3/gcc_64/lib:${LD_LIBRARY_PATH:-}' >> /etc/profile.d/qt6-paths.sh && \
+        echo 'export PKG_CONFIG_PATH=/opt/qt6/6.5.3/gcc_64/lib/pkgconfig:${PKG_CONFIG_PATH:-}' >> /etc/profile.d/qt6-paths.sh && \
+        echo 'export QT_PLUGIN_PATH=/opt/qt6/6.5.3/gcc_64/plugins' >> /etc/profile.d/qt6-paths.sh; \
+    else \
+        # apt: system paths (libs in /usr/lib/x86_64-linux-gnu, bin in /usr/lib/qt6/bin)
+        echo 'export PATH=/usr/lib/qt6/bin:/usr/bin:$PATH' >> /etc/profile.d/qt6-paths.sh && \
+        echo 'export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}' >> /etc/profile.d/qt6-paths.sh && \
+        echo 'export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH:-}' >> /etc/profile.d/qt6-paths.sh && \
+        echo 'export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt6/plugins' >> /etc/profile.d/qt6-paths.sh; \
+    fi && \
+    chmod +x /etc/profile.d/qt6-paths.sh && \
+    cat /etc/profile.d/qt6-paths.sh
+
+CMD ["/bin/bash", "-c", "source /root/.bashrc && exec bash"]
 
 # pyenv
 # The pyenv python paths are used during docker run, in this way docker run
@@ -328,9 +496,9 @@ ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
 
-# ACloudViewer repo
-# Always keep /root/ACloudViewer as the WORKDIR
-COPY . ${ACloudViewer_DEV}/ACloudViewer
+# Only copy dependency installation scripts first (for better Docker cache utilization)
+# The full source code will be copied later before building
+COPY util/install_deps_ubuntu.sh ${ACloudViewer_DEV}/ACloudViewer/util/
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # ACloudViewer C++ dependencies
@@ -339,17 +507,21 @@ RUN ./util/install_deps_ubuntu.sh assume-yes
 # ACloudViewer PCL+VTK dependencies
 
 # Update eigen to 3.4+
+# Install to /usr to match system paths expected by VTK/PCL CMake configs
 WORKDIR /opt
 RUN mv -f /usr/include/eigen3 /usr/include/eigen337.bak || true
 RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz -O "/opt/eigen-3.4.0.tar.gz"
 RUN tar -xvf eigen-3.4.0.tar.gz && \
     cd eigen-3.4.0 && \
     mkdir -p build && cd build && \
-    cmake .. && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr .. && \
     make install "-j$(nproc)" \
     && ldconfig \
     && rm -rf /opt/eigen-3.4.0 \
-    && rm -rf /opt/eigen-3.4.0.tar.gz
+    && rm -rf /opt/eigen-3.4.0.tar.gz \
+    && echo "=== Verifying Eigen3 installation ===" \
+    && ls -la /usr/include/eigen3/ | head -10 \
+    && ls -la /usr/share/eigen3/cmake/ 2>/dev/null || ls -la /usr/lib/cmake/eigen3/ 2>/dev/null || echo "Eigen3 cmake config location unknown"
     
 # Install metslib for pcl
 WORKDIR /opt
@@ -392,20 +564,24 @@ RUN unzip xerces-c-3.2.3.zip \
 # Install VTK 9.4.2 with Qt6 support
 WORKDIR /opt
 RUN wget https://vtk.org/files/release/9.4/VTK-${VTK_VERSION}.tar.gz -O "/opt/VTK-${VTK_VERSION}.tar.gz"
-RUN source /opt/setup_qt6_env.sh && \
+RUN set -ex && \
+    source /opt/setup_qt6_env.sh && \
     tar -zxvf VTK-${VTK_VERSION}.tar.gz && \
     cd VTK-${VTK_VERSION} && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
             -DVTK_GROUP_ENABLE_Qt=YES \
             -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=WANT \
             -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
             -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
             -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
             -DVTK_QT_VERSION:STRING=6 \
             -DBUILD_SHARED_LIBS:BOOL=ON \
-            -DCMAKE_PREFIX_PATH:PATH=${QT6_DIR} .. && \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT6_QMAKE} \
+            -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH} .. 2>&1 \
+    || (echo "=== CMake Error Log ===" && cat CMakeFiles/CMakeError.log 2>/dev/null && \
+        echo "=== CMake Output Log (last 100 lines) ===" && tail -100 CMakeFiles/CMakeOutput.log 2>/dev/null; exit 1) && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
     rm -rf /opt/VTK-${VTK_VERSION} /opt/VTK-${VTK_VERSION}.tar.gz
@@ -413,7 +589,8 @@ RUN source /opt/setup_qt6_env.sh && \
 # Install PCL 1.15.1
 WORKDIR /opt
 RUN wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-${PCL_VERSION}/source.zip -O "/opt/pcl-${PCL_VERSION}.zip"
-RUN source /opt/setup_qt6_env.sh && \
+RUN set -ex && \
+    source /opt/setup_qt6_env.sh && \
     unzip pcl-${PCL_VERSION}.zip && \
     cd pcl && \
     mkdir -p build && cd build && \
@@ -423,7 +600,10 @@ RUN source /opt/setup_qt6_env.sh && \
             -DBUILD_examples=OFF \
             -DBUILD_surface_on_nurbs=ON \
             -DPCL_ENABLE_MARCHNATIVE=OFF \
-            -DCMAKE_PREFIX_PATH:PATH=${QT6_DIR} .. && \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT6_QMAKE} \
+            -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH} .. 2>&1 \
+    || (echo "=== PCL CMake Error Log ===" && cat CMakeFiles/CMakeError.log 2>/dev/null && \
+        echo "=== PCL CMakeOutput.log (last 200 lines) ===" && tail -200 CMakeFiles/CMakeOutput.log 2>/dev/null; exit 1) && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
     rm -rf /opt/pcl /opt/pcl-${PCL_VERSION}.zip
@@ -433,7 +613,11 @@ RUN rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
+# Now copy the full ACloudViewer source code (after all dependencies are installed)
+# This maximizes Docker cache utilization - dependency layers are cached
+COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+
 # Build ACloudViewer app installer
 RUN echo "Start Build ACloudViewer apps installer..."                           \
     && rm -rf ${ACloudViewer_BUILD}/*                                           \
