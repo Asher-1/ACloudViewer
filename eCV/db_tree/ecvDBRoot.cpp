@@ -2231,7 +2231,7 @@ void ccDBRoot::exportImages() {
             duplicateNameCounter[baseName] += 1;
         }
 
-        baseName += ".png";
+        baseName += QStringLiteral(".png");
         QString filename = saveDirectory.absoluteFilePath(baseName);
 
         bool skipImage = false;

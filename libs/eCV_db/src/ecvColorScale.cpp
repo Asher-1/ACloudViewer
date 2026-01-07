@@ -61,7 +61,8 @@ ccColorScale::Shared ccColorScale::copy(
         newCS->m_customLabels = m_customLabels;
         newCS->update();
     } catch (const std::bad_alloc&) {
-        CVLog::Warning("Not enough memory to copy the color scale");
+        CVLog::Warning(
+                QStringLiteral("Not enough memory to copy the color scale"));
         return ccColorScale::Shared(nullptr);
     }
 
@@ -374,16 +375,17 @@ bool ccColorScale::saveAsXML(QString filename) const {
                 // Properties
                 stream.writeStartElement(s_xmlColorScaleProperties);
                 {
-                    stream.writeTextElement("name", getName());
-                    stream.writeTextElement("uuid", getUuid());
-                    stream.writeTextElement("absolute",
-                                            isRelative() ? "0" : "1");
+                    stream.writeTextElement(QStringLiteral("name"), getName());
+                    stream.writeTextElement(QStringLiteral("uuid"), getUuid());
+                    stream.writeTextElement(QStringLiteral("absolute"),
+                                            isRelative() ? QStringLiteral("0")
+                                                         : QStringLiteral("1"));
                     if (!isRelative()) {
                         stream.writeTextElement(
-                                "minValue",
+                                QStringLiteral("minValue"),
                                 QString::number(m_absoluteMinValue, 'g', 12));
                         stream.writeTextElement(
-                                "range",
+                                QStringLiteral("range"),
                                 QString::number(m_absoluteRange, 'g', 12));
                     }
                 }
@@ -397,20 +399,23 @@ bool ccColorScale::saveAsXML(QString filename) const {
                         for (QList<ccColorScaleElement>::const_iterator it =
                                      m_steps.begin();
                              it != m_steps.end(); ++it) {
-                            stream.writeStartElement("step");
+                            stream.writeStartElement(QStringLiteral("step"));
                             {
                                 const ccColorScaleElement& elem = *it;
                                 const QColor& color = elem.getColor();
                                 double relativePos = elem.getRelativePos();
 
                                 stream.writeAttribute(
-                                        "r", QString::number(color.red()));
+                                        QStringLiteral("r"),
+                                        QString::number(color.red()));
                                 stream.writeAttribute(
-                                        "g", QString::number(color.green()));
+                                        QStringLiteral("g"),
+                                        QString::number(color.green()));
                                 stream.writeAttribute(
-                                        "b", QString::number(color.blue()));
+                                        QStringLiteral("b"),
+                                        QString::number(color.blue()));
                                 stream.writeAttribute(
-                                        "pos",
+                                        QStringLiteral("pos"),
                                         QString::number(relativePos, 'g', 12));
                             }
                             stream.writeEndElement();  // step
@@ -423,13 +428,17 @@ bool ccColorScale::saveAsXML(QString filename) const {
                                      m_customLabels.begin();
                              it != m_customLabels.end(); ++it) {
                             {
-                                stream.writeStartElement("label");
+                                stream.writeStartElement(
+                                        QStringLiteral("label"));
                                 {
                                     stream.writeAttribute(
-                                            "val", QString::number(it->value,
-                                                                   'g', 12));
+                                            QStringLiteral("val"),
+                                            QString::number(it->value, 'g',
+                                                            12));
                                     if (!it->text.isEmpty()) {
-                                        stream.writeAttribute("text", it->text);
+                                        stream.writeAttribute(
+                                                QStringLiteral("text"),
+                                                it->text);
                                     }
                                 }
                                 stream.writeEndElement();  // label
@@ -478,7 +487,8 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
 
         // read version number
         QXmlStreamAttributes attributes = stream.attributes();
-        if (attributes.size() == 0 || attributes[0].name() != "version") {
+        if (attributes.size() == 0 ||
+            attributes[0].name() != QStringLiteral("version")) {
             break;
         }
         bool ok = false;
@@ -511,25 +521,25 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
             CVLog::Print(QString("[XML] Item '%1': '%2'")
                                  .arg(itemName.toString(), itemValue));
 
-            if (itemName == "name") {
+            if (itemName == QStringLiteral("name")) {
                 scale->setName(itemValue);
                 --missingItems;
-            } else if (itemName == "uuid") {
+            } else if (itemName == QStringLiteral("uuid")) {
                 scale->setUuid(itemValue);
                 --missingItems;
-            } else if (itemName == "absolute") {
-                if (itemValue == "1") {
+            } else if (itemName == QStringLiteral("absolute")) {
+                if (itemValue == QStringLiteral("1")) {
                     scale->setAbsolute(
                             0,
                             1);  // the true values will be updated afterwards
                     missingItems += 2;  // we need the minValue and range items!
                 }
                 --missingItems;
-            } else if (itemName == "minValue") {
+            } else if (itemName == QStringLiteral("minValue")) {
                 scale->m_absoluteMinValue = itemValue.toDouble(&ok);
                 if (!ok) break;
                 --missingItems;
-            } else if (itemName == "range") {
+            } else if (itemName == QStringLiteral("range")) {
                 scale->m_absoluteRange = itemValue.toDouble(&ok);
                 if (!ok) break;
                 --missingItems;
@@ -557,7 +567,7 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
         try {
             while (!stream.atEnd()) {
                 if (!stream.readNextStartElement()) break;
-                if (stream.name() == "step") {
+                if (stream.name() == QStringLiteral("step")) {
                     QXmlStreamAttributes attributes = stream.attributes();
                     int attributeCount = attributes.size();
                     if (attributeCount < 4) {
@@ -570,13 +580,13 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
                         QString name =
                                 attributes[i].name().toString().toUpper();
                         QString value = attributes[i].value().toString();
-                        if (name == "R")
+                        if (name == QStringLiteral("R"))
                             rgb.setRed(value.toInt());
-                        else if (name == "G")
+                        else if (name == QStringLiteral("G"))
                             rgb.setGreen(value.toInt());
-                        else if (name == "B")
+                        else if (name == QStringLiteral("B"))
                             rgb.setBlue(value.toInt());
-                        else if (name == "POS")
+                        else if (name == QStringLiteral("POS"))
                             pos = value.toDouble();
                         else
                             --attributeCount;
@@ -592,7 +602,7 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
                     stream.skipCurrentElement();
 
                     scale->insert(ccColorScaleElement(pos, rgb), false);
-                } else if (stream.name() == "label") {
+                } else if (stream.name() == QStringLiteral("label")) {
                     QXmlStreamAttributes attributes = stream.attributes();
                     int attributeCount = attributes.size();
                     if (attributeCount < 1) {
@@ -605,20 +615,21 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
                     for (int i = 0; i < attributes.size(); ++i) {
                         QString name =
                                 attributes[i].name().toString().toUpper();
-                        if (name == "VAL") {
+                        if (name == QStringLiteral("VAL")) {
                             QString valueStr = attributes[i].value().toString();
                             bool ok = false;
                             value = valueStr.toDouble(&ok);
                             if (!ok) {
                                 CVLog::Warning(
-                                        QString("[ccColorScale::LoadFromXML] "
+                                        QStringLiteral(
+                                                "[ccColorScale::LoadFromXML] "
                                                 "Invalid value:") +
                                         valueStr);
                                 value = std::numeric_limits<
                                         double>::quiet_NaN();
                                 dataError = true;
                             }
-                        } else if (name == "TEXT") {
+                        } else if (name == QStringLiteral("TEXT")) {
                             text = attributes[i].value().toString();
                         }
                     }

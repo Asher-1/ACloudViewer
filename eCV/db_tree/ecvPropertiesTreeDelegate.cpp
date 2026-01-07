@@ -1087,21 +1087,21 @@ void ccPropertiesTreeDelegate::fillWithPointKdTree(ccKdTree* _obj) {
 void ccPropertiesTreeDelegate::fillWithImage(ccImage* _obj) {
     assert(_obj && m_model);
 
-    addSeparator("Image");
+    addSeparator(tr("Image"));
 
     // image width
-    appendRow(ITEM("Width"), ITEM(QString::number(_obj->getW())));
+    appendRow(ITEM(tr("Width")), ITEM(QString::number(_obj->getW())));
 
     // image height
-    appendRow(ITEM("Height"), ITEM(QString::number(_obj->getH())));
+    appendRow(ITEM(tr("Height")), ITEM(QString::number(_obj->getH())));
 
     // transparency
-    appendRow(ITEM("Alpha"), PERSISTENT_EDITOR(OBJECT_IMAGE_ALPHA), true);
+    appendRow(ITEM(tr("Alpha")), PERSISTENT_EDITOR(OBJECT_IMAGE_ALPHA), true);
 
     if (_obj->getAssociatedSensor()) {
-        addSeparator("Sensor");
+        addSeparator(tr("Sensor"));
         //"Set Viewport" button (shortcut to associated sensor)
-        appendRow(ITEM("Apply Viewport"),
+        appendRow(ITEM(tr("Apply Viewport")),
                   PERSISTENT_EDITOR(OBJECT_APPLY_IMAGE_VIEWPORT), true);
     }
 }
@@ -1210,19 +1210,19 @@ void ccPropertiesTreeDelegate::fillWithSensor(ccSensor* _obj) {
 void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj) {
     assert(_obj && m_model);
 
-    addSeparator("TLS/GBL Sensor");
+    addSeparator(tr("TLS/GBL Sensor"));
 
     // Uncertainty
-    appendRow(ITEM("Uncertainty"), PERSISTENT_EDITOR(OBJECT_SENSOR_UNCERTAINTY),
-              true);
+    appendRow(ITEM(tr("Uncertainty")),
+              PERSISTENT_EDITOR(OBJECT_SENSOR_UNCERTAINTY), true);
 
     // angles
-    addSeparator("Angular viewport (degrees)");
+    addSeparator(tr("Angular viewport (degrees)"));
     {
         // Angular range (yaw)
         PointCoordinateType yawMin = _obj->getMinYaw();
         PointCoordinateType yawMax = _obj->getMaxYaw();
-        appendRow(ITEM("Yaw span"),
+        appendRow(ITEM(tr("Yaw span")),
                   ITEM(QString("[%1 ; %2]")
                                .arg(cloudViewer::RadiansToDegrees(yawMin), 0,
                                     'f', 2)
@@ -1231,14 +1231,14 @@ void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj) {
 
         // Angular steps (yaw)
         PointCoordinateType yawStep = _obj->getYawStep();
-        appendRow(ITEM("Yaw step"),
+        appendRow(ITEM(tr("Yaw step")),
                   ITEM(QString("%1").arg(cloudViewer::RadiansToDegrees(yawStep),
                                          0, 'f', 4)));
 
         // Angular range (pitch)
         PointCoordinateType pitchMin = _obj->getMinPitch();
         PointCoordinateType pitchMax = _obj->getMaxPitch();
-        appendRow(ITEM("Pitch span"),
+        appendRow(ITEM(tr("Pitch span")),
                   ITEM(QString("[%1 ; %2]")
                                .arg(cloudViewer::RadiansToDegrees(pitchMin), 0,
                                     'f', 2)
@@ -1248,7 +1248,7 @@ void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj) {
         // Angular steps (pitch)
         PointCoordinateType pitchStep = _obj->getPitchStep();
         appendRow(
-                ITEM("Pitch step"),
+                ITEM(tr("Pitch step")),
                 ITEM(QString("%1").arg(cloudViewer::RadiansToDegrees(pitchStep),
                                        0, 'f', 4)));
     }
@@ -1260,49 +1260,50 @@ void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj) {
 void ccPropertiesTreeDelegate::fillWithCameraSensor(ccCameraSensor* _obj) {
     assert(_obj && m_model);
 
-    addSeparator("Camera Sensor");
+    addSeparator(tr("Camera Sensor"));
 
     const ccCameraSensor::IntrinsicParameters& params =
             _obj->getIntrinsicParameters();
 
     // Focal
-    appendRow(ITEM("Vert. focal"),
-              ITEM(QString::number(params.vertFocal_pix) + " pix."));
+    appendRow(ITEM(tr("Vert. focal")),
+              ITEM(QString::number(params.vertFocal_pix) + tr(" pix.")));
 
     // Array size
-    appendRow(ITEM("Array size"), ITEM(QString("%1 x %2")
-                                               .arg(params.arrayWidth)
-                                               .arg(params.arrayHeight)));
+    appendRow(ITEM(tr("Array size")), ITEM(QString("%1 x %2")
+                                                   .arg(params.arrayWidth)
+                                                   .arg(params.arrayHeight)));
 
     // Principal point
-    appendRow(ITEM("Principal point"),
+    appendRow(ITEM(tr("Principal point")),
               ITEM(QString("(%1 ; %2)")
                            .arg(params.principal_point[0])
                            .arg(params.principal_point[1])));
 
     // Pixel size
     if (params.pixelSize_mm[0] != 0 || params.pixelSize_mm[1] != 0) {
-        appendRow(ITEM("Pixel size"),
+        appendRow(ITEM(tr("Pixel size")),
                   ITEM(QString("%1 x %2")
                                .arg(params.pixelSize_mm[0])
                                .arg(params.pixelSize_mm[1])));
     }
 
     // Field of view
-    appendRow(ITEM("Field of view"),
+    appendRow(ITEM(tr("Field of view")),
               ITEM(QString::number(
                            cloudViewer::RadiansToDegrees(params.vFOV_rad)) +
-                   " deg."));
+                   tr(" deg.")));
 
     // Skewness
-    appendRow(ITEM("Skew"), ITEM(QString::number(params.skew)));
+    appendRow(ITEM(tr("Skew")), ITEM(QString::number(params.skew)));
 
-    addSeparator("Frustum display");
+    addSeparator(tr("Frustum display"));
 
     // Draw frustum
-    appendRow(ITEM("Show lines"), CHECKABLE_ITEM(_obj->frustumIsDrawn(),
-                                                 OBJECT_SENSOR_DRAW_FRUSTUM));
-    appendRow(ITEM("Show side planes"),
+    appendRow(
+            ITEM(tr("Show lines")),
+            CHECKABLE_ITEM(_obj->frustumIsDrawn(), OBJECT_SENSOR_DRAW_FRUSTUM));
+    appendRow(ITEM(tr("Show side planes")),
               CHECKABLE_ITEM(_obj->frustumPlanesAreDrawn(),
                              OBJECT_SENSOR_DRAW_FRUSTUM_PLANES));
 
@@ -1313,10 +1314,10 @@ void ccPropertiesTreeDelegate::fillWithCameraSensor(ccCameraSensor* _obj) {
 void ccPropertiesTreeDelegate::fillWithMaterialSet(ccMaterialSet* _obj) {
     assert(_obj && m_model);
 
-    addSeparator("Material set");
+    addSeparator(tr("Material set"));
 
     // Count
-    appendRow(ITEM("Count"), ITEM(QString::number(_obj->size())));
+    appendRow(ITEM(tr("Count")), ITEM(QString::number(_obj->size())));
 
     // ccMaterialSet objects are 'shareable'
     fillWithShareable(_obj);
@@ -1331,9 +1332,9 @@ void ccPropertiesTreeDelegate::fillWithShareable(CCShareable* _obj) {
     unsigned linkCount =
             _obj->getLinkCount();  // if we display it, it means it is a member
                                    // of the DB --> i.e. link is already >1
-    appendRow(ITEM(tr("Shared")),
-              ITEM(linkCount < 3 ? QString("No")
-                                 : QString("Yes (%1)").arg(linkCount - 1)));
+    appendRow(
+            ITEM(tr("Shared")),
+            ITEM(linkCount < 3 ? tr("No") : tr("Yes (%1)").arg(linkCount - 1)));
 }
 
 template <class Type, int N, class ComponentType>
@@ -2371,6 +2372,26 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                     // Note: Tooltip settings have been moved to
                     // cvSelectionLabelPropertiesDialog and are now configured
                     // through the label properties dialog
+
+                    // Connect extractedObjectReady signal to MainWindow::addToDB
+                    // This ensures extracted objects are added to the DB tree
+                    connect(selectionWidget,
+                            &cvSelectionPropertiesWidget::extractedObjectReady,
+                            mainWindow,
+                            [mainWindow](ccHObject* obj) {
+                                if (obj) {
+                                    CVLog::Print(QString("[Extract] Adding "
+                                                         "extracted object '%1' "
+                                                         "to DB tree")
+                                                         .arg(obj->getName()));
+                                    mainWindow->addToDB(obj,
+                                                        true,   // updateZoom
+                                                        true,   // autoExpandDBTree
+                                                        false,  // checkDimensions
+                                                        true);  // autoRedraw
+                                }
+                            },
+                            Qt::UniqueConnection);
 
                     // Set selection manager - this also sets up the shared
                     // highlighter so color settings are synchronized across all
