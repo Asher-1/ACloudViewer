@@ -459,14 +459,22 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
 
 void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
                                              int screenHeight) {
+    Q_UNUSED(screenWidth);
+    Q_UNUSED(screenHeight);
+
     // Get all dock widgets
     QList<QDockWidget*> dockWidgets =
             m_mainWindow->findChildren<QDockWidget*>();
 
-    // Setup dock widgets based on screen resolution
+    // Setup dock widgets based on their registered positions
     for (QDockWidget* dw : dockWidgets) {
         if (m_bottomDockWidgets.contains(dw)) {
             m_mainWindow->addDockWidget(Qt::BottomDockWidgetArea, dw);
+        } else if (m_rightSideDockWidgets.contains(dw)) {
+            // Right side dock widgets should be hidden by default in default
+            // layout
+            m_mainWindow->addDockWidget(Qt::RightDockWidgetArea, dw);
+            dw->hide();  // Hide by default for cleaner initial layout
         }
         // Other dock widgets are handled by MainWindow
     }
@@ -593,6 +601,12 @@ void ecvLayoutManager::registerLeftSideToolBar(QToolBar* toolbar) {
 void ecvLayoutManager::registerBottomDockWidget(QDockWidget* dockWidget) {
     if (dockWidget) {
         m_bottomDockWidgets.insert(dockWidget);
+    }
+}
+
+void ecvLayoutManager::registerRightSideDockWidget(QDockWidget* dockWidget) {
+    if (dockWidget) {
+        m_rightSideDockWidgets.insert(dockWidget);
     }
 }
 

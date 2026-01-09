@@ -11,7 +11,7 @@
 
 #include "cvSelectionBase.h"
 #include "cvSelectionData.h"
-#include "cvSelectionTypes.h"  // For SelectionModifier enum
+// cvSelectionTypes.h merged into cvSelectionData.h
 
 // VTK includes (need full definitions for template instantiation)
 #include <vtkCellPicker.h>  // Full definition needed for vtkSmartPointer<vtkCellPicker>

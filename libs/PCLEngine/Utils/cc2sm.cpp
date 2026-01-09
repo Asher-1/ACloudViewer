@@ -1150,6 +1150,19 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
     bool showNorms =
             showTriNormals || (mesh->hasNormals() && mesh->normalsShown());
 
+    // IMPORTANT: For Find Data / selection tools, always export normals if
+    // available regardless of display setting. This ensures tooltip can show
+    // normal values. The display setting only affects rendering, not data
+    // availability.
+    bool hasNormalsForExport = mesh->hasTriNormals() || mesh->hasNormals();
+
+    CVLog::PrintDebug(
+            QString("[cc2smReader::getVtkPolyDataFromMeshCloud] "
+                    "hasTriNormals=%1, hasNormals=%2, hasNormalsForExport=%3")
+                    .arg(mesh->hasTriNormals())
+                    .arg(mesh->hasNormals())
+                    .arg(hasNormalsForExport));
+
     // Pre-allocate VTK data structures (same size as getPclCloud2)
     // IMPORTANT: Use triNum * dimension (not visibleTriNum) to match
     // getPclCloud2
@@ -1162,14 +1175,17 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
         colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
         colors->SetNumberOfComponents(3);
         colors->SetNumberOfTuples(static_cast<vtkIdType>(totalPoints));
-        colors->SetName("Colors");
+        colors->SetName("RGB");
     }
 
+    // Create normals array if normals exist (for Find Data / selection)
+    // Use hasNormalsForExport to always export normals data
     vtkSmartPointer<vtkFloatArray> normals = nullptr;
-    if (showNorms) {
+    if (hasNormalsForExport) {
         normals = vtkSmartPointer<vtkFloatArray>::New();
         normals->SetNumberOfComponents(3);
         normals->SetNumberOfTuples(static_cast<vtkIdType>(totalPoints));
+        normals->SetName("Normals");  // Explicit name for Find Data detection
     }
 
     vtkSmartPointer<vtkCellArray> polys = vtkSmartPointer<vtkCellArray>::New();
@@ -1179,9 +1195,11 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
     const NormsIndexesTableType* triNormals = mesh->getTriNormsTable();
 
     // in the case we need normals (i.e. lighting)
+    // Use hasNormalsForExport instead of showNorms to always populate normal
+    // data
     NormsIndexesTableType* normalsIndexesTable = nullptr;
     ccNormalVectors* compressedNormals = nullptr;
-    if (showNorms) {
+    if (hasNormalsForExport) {
         normalsIndexesTable = m_cc_cloud->normals();
         compressedNormals = ccNormalVectors::GetUniqueInstance();
     }
@@ -1235,10 +1253,13 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
                 colorPtr[2] = rgb->b;
             }
 
-            // Set normal if needed (same logic as getPclCloud2)
-            if (showNorms) {
-                if (showTriNormals) {
-                    assert(triNormals);
+            // Set normal if available (for Find Data / selection)
+            // Use hasNormalsForExport to always export normals data regardless
+            // of display setting
+            if (hasNormalsForExport) {
+                // Use tri normals if available, otherwise use vertex normals
+                bool useTriNormals = mesh->hasTriNormals() && triNormals;
+                if (useTriNormals) {
                     int n1 = 0;
                     int n2 = 0;
                     int n3 = 0;
@@ -1257,7 +1278,7 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
                                               triNormals->at(n3))
                                               .u
                                     : nullptr);
-                } else {
+                } else if (normalsIndexesTable && compressedNormals) {
                     N1 = compressedNormals
                                  ->getNormal(normalsIndexesTable->at(tsi->i1))
                                  .u;
@@ -1306,7 +1327,7 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
     if (showColors) {
         // Set scalar array name for tooltip display
         // If showing scalar field, use the scalar field name; otherwise use
-        // "Colors"
+        // "RGB"
         if (showSF && mesh->hasDisplayedScalarField()) {
             // Cast to ccPointCloud to access scalar field methods
             ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(
@@ -1322,17 +1343,18 @@ bool cc2smReader::getVtkPolyDataFromMeshCloud(
                                               "Set scalar array name: %1")
                                               .arg(sfName));
                 } else {
-                    colors->SetName("Colors");
+                    colors->SetName("RGB");
                 }
             } else {
-                colors->SetName("Colors");
+                colors->SetName("RGB");
             }
         } else {
-            colors->SetName("Colors");
+            colors->SetName("RGB");
         }
         polydata->GetPointData()->SetScalars(colors);
     }
-    if (showNorms) {
+    // Always set normals if available (for Find Data / selection tools)
+    if (hasNormalsForExport && normals) {
         polydata->GetPointData()->SetNormals(normals);
     }
 

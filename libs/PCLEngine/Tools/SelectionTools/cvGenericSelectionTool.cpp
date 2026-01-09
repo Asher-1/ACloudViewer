@@ -10,7 +10,8 @@
 #include "PclUtils/PCLVis.h"
 #include "cvSelectionBase.h"
 #include "cvSelectionPipeline.h"
-#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
+// cvSelectionTypes.h merged into cvSelectionData.h  // For SelectionMode and
+// SelectionModifier enums
 #include "cvViewSelectionManager.h"
 
 // VTK

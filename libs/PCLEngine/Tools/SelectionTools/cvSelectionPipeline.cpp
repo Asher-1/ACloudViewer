@@ -7,6 +7,8 @@
 
 #include "cvSelectionPipeline.h"
 
+#include "cvHardwareSelector.h"
+
 // LOCAL
 #include "PclUtils/PCLVis.h"
 #include "cvSelectionData.h"
@@ -14,15 +16,25 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
+// STL
+#include <cmath>
+
 // Qt
+#include <QApplication>
+#include <QCheckBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QLabel>
 #include <QSet>
+#include <QSettings>
+#include <QStyle>
+#include <QVBoxLayout>
 
 // VTK
 #include <vtkActor.h>
 #include <vtkCellData.h>
 #include <vtkDataObject.h>
 #include <vtkDataSet.h>
-#include <vtkHardwareSelector.h>
 #include <vtkIdTypeArray.h>
 #include <vtkInformation.h>
 #include <vtkIntArray.h>
@@ -146,7 +158,11 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
         return nullptr;
     }
 
-    vtkIdType numPoints = polygon->GetNumberOfTuples() / 2;
+    // The polygon array has 2 components (x, y) per tuple
+    // Each tuple represents one vertex, so GetNumberOfTuples() == number of
+    // vertices NOTE: Don't divide by 2! The array is structured as 2-component
+    // tuples.
+    vtkIdType numPoints = polygon->GetNumberOfTuples();
     CVLog::Print(QString("[cvSelectionPipeline] Execute polygon selection: %1 "
                          "vertices, type=%2")
                          .arg(numPoints)
@@ -198,11 +214,12 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
         return nullptr;
     }
 
-    // Step 3: Create or reuse hardware selector
+    // Step 3: Create or reuse cvHardwareSelector (ParaView-style)
     if (!m_hardwareSelector) {
-        m_hardwareSelector = vtkSmartPointer<vtkHardwareSelector>::New();
+        m_hardwareSelector = vtkSmartPointer<cvHardwareSelector>::New();
+        m_hardwareSelector->SetPointPickingRadius(m_pointPickingRadius);
         CVLog::Print(
-                "[cvSelectionPipeline] Created hardware selector for polygon");
+                "[cvSelectionPipeline] Created cvHardwareSelector for polygon");
     }
 
     m_hardwareSelector->SetRenderer(m_renderer);
@@ -304,12 +321,9 @@ vtkSmartPointer<vtkIdTypeArray> cvSelectionPipeline::extractSelectionIds(
     vtkIdTypeArray* selectionList =
             vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
     if (!selectionList) {
-        CVLog::Print("[cvSelectionPipeline] No selection list in node");
+        CVLog::PrintDebug("[cvSelectionPipeline] No selection list in node");
         return nullptr;
     }
-
-    CVLog::Print(QString("[cvSelectionPipeline] Extracted %1 IDs")
-                         .arg(selectionList->GetNumberOfTuples()));
 
     // Return a copy (automatic memory management)
     vtkSmartPointer<vtkIdTypeArray> copy =
@@ -374,9 +388,10 @@ bool cvSelectionPipeline::captureBuffersForFastPreSelection() {
         return false;
     }
 
-    // Create hardware selector if needed
+    // Create cvHardwareSelector if needed (ParaView-style)
     if (!m_hardwareSelector) {
-        m_hardwareSelector = vtkSmartPointer<vtkHardwareSelector>::New();
+        m_hardwareSelector = vtkSmartPointer<cvHardwareSelector>::New();
+        m_hardwareSelector->SetPointPickingRadius(m_pointPickingRadius);
     }
 
     m_hardwareSelector->SetRenderer(m_renderer);
@@ -407,6 +422,12 @@ cvSelectionPipeline::PixelSelectionInfo
 cvSelectionPipeline::getPixelSelectionInfo(int x, int y, bool selectCells) {
     PixelSelectionInfo result;
 
+    // CRITICAL: Check if invalidation is in progress
+    // This prevents crashes when mouse events arrive during cache invalidation
+    if (m_invalidating) {
+        return result;  // Return empty result - safe to skip this hover update
+    }
+
     if (!m_viewer || !m_renderer) {
         CVLog::Warning(
                 "[cvSelectionPipeline::getPixelSelectionInfo] Invalid viewer "
@@ -417,10 +438,6 @@ cvSelectionPipeline::getPixelSelectionInfo(int x, int y, bool selectCells) {
     // PARAVIEW STYLE: Always do fresh hardware selection, NO CACHING
     // Caching causes stale actor problems and incorrect IDs
     // Reference: ParaView never caches for hover/tooltip - always fresh render
-
-    CVLog::PrintDebug(
-            "[cvSelectionPipeline::getPixelSelectionInfo] Performing fresh "
-            "hardware selection (ParaView style)");
 
     // Do a single-pixel hardware selection
     int region[4] = {x, y, x, y};
@@ -478,9 +495,6 @@ void cvSelectionPipeline::enterSelectionMode() {
     // switches to INTERACTION_MODE_SELECTION which tells it to cache
     // selection render buffers for faster repeated selections.
     // Reference: vtkPVRenderView::SetInteractionMode
-
-    CVLog::Print(
-            "[cvSelectionPipeline] Entered selection mode (caching enabled)");
 }
 
 //-----------------------------------------------------------------------------
@@ -499,13 +513,14 @@ void cvSelectionPipeline::exitSelectionMode() {
     // Note: vtkSmartPointer uses = nullptr instead of Reset() (unlike
     // std::shared_ptr)
     m_hardwareSelector = nullptr;
-
-    CVLog::Print(
-            "[cvSelectionPipeline] Exited selection mode (cache released)");
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPipeline::invalidateCachedSelection() {
+    // Set invalidating flag to prevent concurrent access
+    // This prevents crashes when mouse events arrive during invalidation
+    m_invalidating = true;
+
     // Clear the selection cache
     clearCache();
 
@@ -518,12 +533,21 @@ void cvSelectionPipeline::invalidateCachedSelection() {
     // Clear last selection
     m_lastSelection = nullptr;
 
+    // Clear invalidating flag
+    m_invalidating = false;
+
     CVLog::PrintDebug("[cvSelectionPipeline] Invalidated cached selection");
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPipeline::setPointPickingRadius(unsigned int radius) {
     m_pointPickingRadius = radius;
+
+    // Update cvHardwareSelector if it exists
+    if (m_hardwareSelector) {
+        m_hardwareSelector->SetPointPickingRadius(radius);
+    }
+
     CVLog::Print(QString("[cvSelectionPipeline] Point picking radius set to %1 "
                          "pixels")
                          .arg(radius));
@@ -532,6 +556,18 @@ void cvSelectionPipeline::setPointPickingRadius(unsigned int radius) {
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
         int region[4], FieldAssociation fieldAssociation) {
+    // Reference: ParaView's vtkPVRenderView::Select() and
+    // vtkPVHardwareSelector::Select() This method now uses cvHardwareSelector
+    // which is adapted from ParaView's vtkPVHardwareSelector for consistent
+    // behavior.
+
+    // CRITICAL: Check if invalidation is in progress
+    // This prevents crashes when selection is attempted during cache
+    // invalidation
+    if (m_invalidating) {
+        return nullptr;  // Safe to return - selection will be retried later
+    }
+
     if (!m_viewer || !m_renderer) {
         return nullptr;
     }
@@ -542,44 +578,48 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
         return nullptr;
     }
 
-    // CRITICAL FIX: Convert screen coordinates to VTK/OpenGL coordinates
-    // VTK uses OpenGL coordinate system: origin at bottom-left, Y increases
-    // upward Mouse events use screen coordinates: origin at top-left, Y
-    // increases downward ParaView reference:
-    // vtkPVRenderView::ConvertDisplayToRenderCoordinate
+    // IMPORTANT: region coordinates come from VTK's interactor events
+    // (GetEventPosition), which already use VTK coordinate system:
+    // origin at bottom-left, Y increases upward.
+    // NO coordinate conversion needed here!
 
-    int* renderWindowSize = renderWindow->GetSize();
-    int windowHeight = renderWindowSize[1];
-
-    // Convert Y coordinates (flip vertically)
+    // Ensure region is properly ordered (x1 <= x2, y1 <= y2)
     int vtk_region[4];
-    vtk_region[0] = region[0];                     // X1 (no change)
-    vtk_region[1] = windowHeight - region[3] - 1;  // Y1 (flip from Y2)
-    vtk_region[2] = region[2];                     // X2 (no change)
-    vtk_region[3] = windowHeight - region[1] - 1;  // Y2 (flip from Y1)
+    vtk_region[0] = std::min(region[0], region[2]);  // X1
+    vtk_region[1] = std::min(region[1], region[3]);  // Y1
+    vtk_region[2] = std::max(region[0], region[2]);  // X2
+    vtk_region[3] = std::max(region[1], region[3]);  // Y2
 
-    CVLog::PrintDebug(
-            QString("[cvSelectionPipeline] Coordinate conversion: "
-                    "Screen[%1,%2,%3,%4] -> VTK[%5,%6,%7,%8] (windowHeight=%9)")
-                    .arg(region[0])
-                    .arg(region[1])
-                    .arg(region[2])
-                    .arg(region[3])
-                    .arg(vtk_region[0])
-                    .arg(vtk_region[1])
-                    .arg(vtk_region[2])
-                    .arg(vtk_region[3])
-                    .arg(windowHeight));
+    CVLog::PrintDebug(QString("[cvSelectionPipeline] Selection region: "
+                              "Input[%1,%2,%3,%4] -> Normalized[%5,%6,%7,%8]")
+                              .arg(region[0])
+                              .arg(region[1])
+                              .arg(region[2])
+                              .arg(region[3])
+                              .arg(vtk_region[0])
+                              .arg(vtk_region[1])
+                              .arg(vtk_region[2])
+                              .arg(vtk_region[3]));
 
-    // Create or reuse hardware selector
+    // ParaView-style: Disable buffer swapping during selection to avoid
+    // clobbering the user's view (BUG #16042 in ParaView)
+    // Reference: vtkPVRenderView::PrepareSelect() lines 966-967
+    int previousSwapBuffers = renderWindow->GetSwapBuffers();
+    renderWindow->SwapBuffersOff();
+
+    // Create or reuse cvHardwareSelector (ParaView-style)
+    // Reference: vtkPVRenderView uses vtkPVHardwareSelector
     if (!m_hardwareSelector) {
-        m_hardwareSelector = vtkSmartPointer<vtkHardwareSelector>::New();
-        CVLog::Print("[cvSelectionPipeline] Created hardware selector");
+        m_hardwareSelector = vtkSmartPointer<cvHardwareSelector>::New();
+        m_hardwareSelector->SetPointPickingRadius(m_pointPickingRadius);
+        CVLog::PrintDebug(
+                QString("[cvSelectionPipeline] Created cvHardwareSelector "
+                        "(ParaView-style) with PointPickingRadius=%1")
+                        .arg(m_pointPickingRadius));
     }
 
+    // Configure selector
     m_hardwareSelector->SetRenderer(m_renderer);
-    m_hardwareSelector->SetArea(vtk_region[0], vtk_region[1], vtk_region[2],
-                                vtk_region[3]);
 
     // Set field association
     if (fieldAssociation == FIELD_ASSOCIATION_CELLS) {
@@ -590,57 +630,45 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
                 vtkDataObject::FIELD_ASSOCIATION_POINTS);
     }
 
-    // Perform selection (returns smart pointer automatically)
-    vtkSmartPointer<vtkSelection> selection = m_hardwareSelector->Select();
+    // Log current state for debugging
+    CVLog::PrintDebug(
+            QString("[cvSelectionPipeline] cvHardwareSelector config: "
+                    "FieldAssociation=%1, PointPickingRadius=%2")
+                    .arg(fieldAssociation == FIELD_ASSOCIATION_CELLS ? "CELLS"
+                                                                     : "POINTS")
+                    .arg(m_pointPickingRadius));
 
-    // ParaView-style Point Picking Radius support
-    // Reference: vtkPVHardwareSelector::Select() lines 105-130
-    // If selecting points with a single-pixel region and no hit found,
-    // search in a radius around the click point
-    if (fieldAssociation == FIELD_ASSOCIATION_POINTS &&
-        m_pointPickingRadius > 0 && region[0] == region[2] &&
-        region[1] == region[3])  // Single point click
-    {
-        bool hasSelection = (selection && selection->GetNumberOfNodes() > 0);
-        if (!hasSelection) {
-            CVLog::Print(
-                    QString("[cvSelectionPipeline] No direct hit, searching "
-                            "in radius %1 pixels...")
-                            .arg(m_pointPickingRadius));
+    // Perform selection using cvHardwareSelector::Select()
+    // This method handles:
+    // - Buffer caching (NeedToRenderForSelection check)
+    // - Point picking radius (automatic radius search if no direct hit)
+    // ParaView-style: First try exact selection, only use radius if nothing
+    // found Reference: vtkPVHardwareSelector::Select() lines 105-131
+    vtkSmartPointer<vtkSelection> selection;
+    selection.TakeReference(m_hardwareSelector->Select(vtk_region));
 
-            // Use GetPixelInformation to find nearest point in radius
-            unsigned int pos[2] = {static_cast<unsigned int>(region[0]),
-                                   static_cast<unsigned int>(region[1])};
-            unsigned int out_pos[2];
-
-            vtkHardwareSelector::PixelInformation info =
-                    m_hardwareSelector->GetPixelInformation(
-                            pos, m_pointPickingRadius, out_pos);
-
-            if (info.Valid) {
-                CVLog::Print(QString("[cvSelectionPipeline] Found point at "
-                                     "nearby pixel (%1, %2)")
-                                     .arg(out_pos[0])
-                                     .arg(out_pos[1]));
-
-                // Re-generate selection at the found position
-                selection.TakeReference(m_hardwareSelector->GenerateSelection(
-                        out_pos[0], out_pos[1], out_pos[0], out_pos[1]));
-            }
-        }
-    }
+    // ParaView-style: Restore swap buffers setting
+    renderWindow->SetSwapBuffers(previousSwapBuffers);
 
     if (!selection) {
-        CVLog::Warning("[cvSelectionPipeline] Hardware selector returned null");
+        CVLog::Warning(
+                "[cvSelectionPipeline] cvHardwareSelector returned null");
         return nullptr;
+    }
+
+    // Log result (debug level - this is called frequently during hover)
+    if (selection->GetNumberOfNodes() > 0) {
+        vtkSelectionNode* node = selection->GetNode(0);
+        if (node && node->GetSelectionList()) {
+            vtkIdType numIds = node->GetSelectionList()->GetNumberOfTuples();
+            CVLog::PrintDebug(
+                    QString("[cvSelectionPipeline] Selection completed: %1 IDs")
+                            .arg(numIds));
+        }
     }
 
     // Cache last selection for getPolyData() operations
     m_lastSelection = selection;
-
-    CVLog::Print(QString("[cvSelectionPipeline] Hardware selection completed, "
-                         "nodes: %1")
-                         .arg(selection->GetNumberOfNodes()));
 
     return selection;
 }
@@ -749,13 +777,18 @@ QMap<vtkProp*, vtkDataSet*> cvSelectionPipeline::extractDataFromSelection(
                 vtkDataSet* data = mapper->GetInput();
                 if (data) {
                     result[prop] = data;
-                    CVLog::PrintDebug(
+                    CVLog::Print(
                             QString("[cvSelectionPipeline] Extracted data from "
-                                    "actor: %1 points, %2 cells")
+                                    "actor: %1 points, %2 cells, type=%3")
                                     .arg(data->GetNumberOfPoints())
-                                    .arg(data->GetNumberOfCells()));
+                                    .arg(data->GetNumberOfCells())
+                                    .arg(data->GetClassName()));
                 }
             }
+        } else {
+            CVLog::Warning(
+                    QString("[cvSelectionPipeline] prop is not vtkActor: %1")
+                            .arg(prop ? prop->GetClassName() : "null"));
         }
     }
 
@@ -834,7 +867,27 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
         vtkDataSet* data = it.value();
 
         vtkActor* actor = vtkActor::SafeDownCast(prop);
+
+        // Handle both vtkPolyData and other data types (e.g.,
+        // vtkUnstructuredGrid) The mapper's input might be vtkPolyData or
+        // another data type
         vtkPolyData* polyData = vtkPolyData::SafeDownCast(data);
+
+        // If data is not vtkPolyData, try to get it from the actor's mapper
+        if (!polyData && actor) {
+            vtkMapper* mapper = actor->GetMapper();
+            if (mapper) {
+                polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
+            }
+        }
+
+        // Log the conversion attempt
+        CVLog::Print(QString("[cvSelectionPipeline] Actor conversion: "
+                             "prop=%1, data=%2, actor=%3, polyData=%4")
+                             .arg(prop ? "valid" : "null")
+                             .arg(data ? data->GetClassName() : "null")
+                             .arg(actor ? "valid" : "null")
+                             .arg(polyData ? "valid" : "null"));
 
         if (actor && polyData) {
             // Get Z-value from selection node if available
@@ -868,10 +921,16 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
             info.zValue = zValue;
             result.addActorInfo(info);
 
-            CVLog::PrintDebug(QString("[cvSelectionPipeline] Added actor info: "
-                                      "%1 points, %2 cells")
-                                      .arg(polyData->GetNumberOfPoints())
-                                      .arg(polyData->GetNumberOfCells()));
+            CVLog::Print(QString("[cvSelectionPipeline] Added actor info: "
+                                 "%1 points, %2 cells")
+                                 .arg(polyData->GetNumberOfPoints())
+                                 .arg(polyData->GetNumberOfCells()));
+        } else {
+            CVLog::Warning(
+                    QString("[cvSelectionPipeline] Failed to add actor info: "
+                            "actor=%1, polyData=%2")
+                            .arg(actor ? "valid" : "null")
+                            .arg(polyData ? "valid" : "null"));
         }
     }
 
@@ -897,25 +956,11 @@ cvSelectionData cvSelectionPipeline::convertSelectionToData(
         return cvSelectionData();
     }
 
-    // Extract IDs
-    vtkSmartPointer<vtkIdTypeArray> ids =
-            extractSelectionIds(vtkSel, fieldAssoc);
-
-    if (!ids || ids->GetNumberOfTuples() == 0) {
-        CVLog::Print(QString("[cvSelectionPipeline] No %1 selected in %2")
-                             .arg(fieldAssoc == FIELD_ASSOCIATION_CELLS
-                                          ? "cells"
-                                          : "points")
-                             .arg(errorContext));
-        return cvSelectionData();
-    }
-
-    // Convert to cvSelectionData
-    cvSelectionData::FieldAssociation cvFieldAssoc =
-            (fieldAssoc == FIELD_ASSOCIATION_CELLS) ? cvSelectionData::CELLS
-                                                    : cvSelectionData::POINTS;
-
-    return cvSelectionData(ids, cvFieldAssoc);
+    // Use convertToCvSelectionData to properly extract actor info
+    // This ensures source object lookup will work for direct extraction
+    // Note: convertToCvSelectionData expects
+    // cvSelectionPipeline::FieldAssociation
+    return convertToCvSelectionData(vtkSel, fieldAssoc);
 }
 
 //-----------------------------------------------------------------------------
@@ -1004,16 +1049,36 @@ cvSelectionData cvSelectionPipeline::combineSelections(
             QString("[cvSelectionPipeline] combineSelections: operation=%1")
                     .arg(operation));
 
-    // Check compatibility
+    // Handle empty selections first (before field association check!)
+    // If sel1 is empty, use sel2's field association
+    // If sel2 is empty, use sel1's field association
+    if (sel1.isEmpty()) {
+        CVLog::Print("[cvSelectionPipeline] sel1 is empty, returning sel2");
+        return sel2;
+    }
+    if (sel2.isEmpty()) {
+        CVLog::Print("[cvSelectionPipeline] sel2 is empty, returning sel1");
+        return sel1;
+    }
+
+    // Handle DEFAULT (replace with sel2) BEFORE checking field association
+    // ParaView behavior: When switching selection types (e.g., cells to
+    // points), the new selection should replace the old one, not fail
+    if (operation == OPERATION_DEFAULT) {
+        CVLog::Print(
+                "[cvSelectionPipeline] OPERATION_DEFAULT: replacing with sel2");
+        return sel2;
+    }
+
+    // Check compatibility (only when both are non-empty AND not replacing)
+    // This is only for ADDITION/SUBTRACTION/TOGGLE operations
     if (sel1.fieldAssociation() != sel2.fieldAssociation()) {
         CVLog::Warning(
                 "[cvSelectionPipeline] Cannot combine selections "
-                "with different field associations");
-        return cvSelectionData();
-    }
-
-    // Handle DEFAULT (replace with sel2)
-    if (operation == OPERATION_DEFAULT) {
+                "with different field associations (operation=%1). "
+                "Replacing with new selection instead.");
+        // ParaView behavior: When field associations differ and trying to
+        // add/subtract, just use the new selection
         return sel2;
     }
 
@@ -1082,7 +1147,40 @@ cvSelectionData cvSelectionPipeline::combineSelections(
         resultArray->InsertNextValue(id);
     }
 
-    return cvSelectionData(resultArray, sel1.fieldAssociation());
+    cvSelectionData result(resultArray, sel1.fieldAssociation());
+
+    // CRITICAL: Preserve actor info from sel2 (the new selection)
+    // This allows source object lookup to work correctly for extraction
+    // Reference: ParaView maintains representation info across selection
+    // operations
+    for (int i = 0; i < sel2.actorCount(); ++i) {
+        result.addActorInfo(sel2.actorInfo(i));
+    }
+    // Also add actor info from sel1 if not already present (for
+    // ADDITION/TOGGLE)
+    if (operation == OPERATION_ADDITION || operation == OPERATION_TOGGLE) {
+        for (int i = 0; i < sel1.actorCount(); ++i) {
+            // Check if actor already exists in result
+            bool found = false;
+            for (int j = 0; j < result.actorCount(); ++j) {
+                if (result.actorInfo(j).actor == sel1.actorInfo(i).actor) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                result.addActorInfo(sel1.actorInfo(i));
+            }
+        }
+    }
+
+    CVLog::Print(
+            QString("[cvSelectionPipeline] combineSelections result: %1 IDs, "
+                    "%2 actors")
+                    .arg(result.count())
+                    .arg(result.actorCount()));
+
+    return result;
 }
 
 //-----------------------------------------------------------------------------
@@ -1246,4 +1344,75 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::refinePolygonSelection(
                          .arg(refinedSelection->GetNumberOfNodes()));
 
     return refinedSelection;
+}
+
+//-----------------------------------------------------------------------------
+// Static Utility Methods (merged from cvSelectionToolHelper)
+//-----------------------------------------------------------------------------
+bool cvSelectionPipeline::promptUser(const QString& settingsKey,
+                                     const QString& title,
+                                     const QString& message,
+                                     QWidget* parent) {
+    // Check if user has disabled this instruction
+    QSettings settings;
+    QString key = QString("SelectionTools/DontShowAgain/%1").arg(settingsKey);
+    bool dontShow = settings.value(key, false).toBool();
+
+    if (dontShow) {
+        return false;  // Don't show dialog
+    }
+
+    // Create custom dialog (ParaView-style)
+    QDialog dialog(parent);
+    dialog.setWindowTitle(title);
+    dialog.setModal(true);  // Modal - blocks until user responds
+
+    QVBoxLayout* mainLayout = new QVBoxLayout(&dialog);
+    mainLayout->setContentsMargins(20, 20, 20, 20);
+    mainLayout->setSpacing(15);
+
+    // Icon + message text
+    QHBoxLayout* contentLayout = new QHBoxLayout();
+
+    // Information icon
+    QLabel* iconLabel = new QLabel(&dialog);
+    QIcon infoIcon =
+            dialog.style()->standardIcon(QStyle::SP_MessageBoxInformation);
+    iconLabel->setPixmap(infoIcon.pixmap(32, 32));
+    iconLabel->setAlignment(Qt::AlignTop);
+    contentLayout->addWidget(iconLabel);
+
+    // Message text
+    QLabel* textLabel = new QLabel(message, &dialog);
+    textLabel->setWordWrap(true);
+    textLabel->setTextFormat(Qt::RichText);
+    textLabel->setMinimumWidth(400);
+    contentLayout->addWidget(textLabel, 1);
+
+    mainLayout->addLayout(contentLayout);
+
+    // "Don't show this message again" checkbox (ParaView-style)
+    QCheckBox* dontShowAgainCheckBox = new QCheckBox(
+            QObject::tr("Do not show this message again"), &dialog);
+    mainLayout->addWidget(dontShowAgainCheckBox);
+
+    // OK button
+    QDialogButtonBox* buttonBox =
+            new QDialogButtonBox(QDialogButtonBox::Ok, &dialog);
+    QObject::connect(buttonBox, &QDialogButtonBox::accepted, &dialog,
+                     &QDialog::accept);
+    mainLayout->addWidget(buttonBox);
+
+    // Show dialog (modal - exec() blocks until user responds)
+    dialog.exec();
+
+    // Save preference if user checked "don't show again"
+    if (dontShowAgainCheckBox->isChecked()) {
+        settings.setValue(key, true);
+        CVLog::Print(QString("[cvSelectionPipeline::promptUser] User checked "
+                             "'don't show again' for key: %1")
+                             .arg(settingsKey));
+    }
+
+    return true;
 }

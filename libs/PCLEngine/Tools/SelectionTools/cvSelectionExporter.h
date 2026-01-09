@@ -87,6 +87,45 @@ public:
             const cvSelectionData& selectionData,
             const ExportOptions& options = ExportOptions());
 
+    //=========================================================================
+    // Direct Extraction from ccPointCloud/ccMesh (bypasses VTK conversion)
+    //=========================================================================
+
+    /**
+     * @brief Export selected points directly from source ccPointCloud
+     *
+     * This method bypasses VTK→ccPointCloud conversion by using the source
+     * ccPointCloud's partialClone method directly with selected indices.
+     * This preserves all scalar fields, normals, RGB colors, etc.
+     *
+     * @param sourceCloud Source point cloud (original data)
+     * @param selectionData Selection data (must be POINTS)
+     * @param options Export options
+     * @return Pointer to created ccPointCloud, or nullptr on failure
+     * @note Caller takes ownership of returned object if not added to scene
+     */
+    static ccPointCloud* exportFromSourceCloud(
+            ccPointCloud* sourceCloud,
+            const cvSelectionData& selectionData,
+            const ExportOptions& options = ExportOptions());
+
+    /**
+     * @brief Export selected cells directly from source ccMesh
+     *
+     * This method bypasses VTK→ccMesh conversion by extracting triangles
+     * directly from the source ccMesh using selected cell indices.
+     *
+     * @param sourceMesh Source mesh (original data)
+     * @param selectionData Selection data (must be CELLS)
+     * @param options Export options
+     * @return Pointer to created ccMesh, or nullptr on failure
+     * @note Caller takes ownership of returned object if not added to scene
+     */
+    static ccMesh* exportFromSourceMesh(
+            ccMesh* sourceMesh,
+            const cvSelectionData& selectionData,
+            const ExportOptions& options = ExportOptions());
+
     /**
      * @brief Export selection to file (uses eCV_io module)
      * @param polyData Source mesh data

@@ -299,13 +299,20 @@
         <file>Resources/images/pcl/insert_from_file.png</file>
         <file>Resources/images/pcl/frustum_selection.png</file>
         <file>Resources/images/pcl/3dtree.png</file>
-        <file>Resources/images/svg/pqPointData.png</file>
         <file>Resources/images/svg/pqPointData.svg</file>
         <file>Resources/images/svg/pqCellData.svg</file>
+        <file>Resources/images/svg/pqApply.svg</file>
+        <file>Resources/images/svg/pqCancel.svg</file>
+        <file>Resources/images/svg/pqReset.svg</file>
         <file>Resources/images/svg/pqPaste.png</file>
         <file>Resources/images/svg/pqNodeMapData.png</file>
         <file>Resources/images/svg/pqInvert.png</file>
         <file>Resources/images/svg/pqSolidColor.png</file>
+        <file>Resources/images/svg/pqGlobalData.svg</file>
+        <file>Resources/images/svg/pqAutoApply.svg</file>
+        <file>Resources/images/svg/pqExtractSelection.svg</file>
+        <file>Resources/images/svg/pqFindData.svg</file>
+        <file>Resources/images/svg/pqLock.svg</file>
         <file>Resources/images/font/pqBold24.png</file>
         <file>Resources/images/font/pqItalics24.png</file>
         <file>Resources/images/font/pqShadow24.png</file>

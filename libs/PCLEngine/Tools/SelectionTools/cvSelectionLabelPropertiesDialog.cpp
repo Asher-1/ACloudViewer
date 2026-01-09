@@ -111,7 +111,7 @@ void cvSelectionLabelPropertiesDialog::setupUi() {
     QLabel* cellFormatLabel = new QLabel(tr("Cell Label Format"));
     m_cellFormatEdit = new QLineEdit();
     m_cellFormatEdit->setText(m_properties.cellLabelFormat);
-    m_cellFormatEdit->setPlaceholderText(tr("e.g., ID: %s"));
+    m_cellFormatEdit->setPlaceholderText(tr("Leave empty for auto format"));
     connect(m_cellFormatEdit, &QLineEdit::textChanged,
             [this](const QString& text) {
                 m_properties.cellLabelFormat = text;
@@ -141,7 +141,7 @@ void cvSelectionLabelPropertiesDialog::setupUi() {
     QLabel* pointFormatLabel = new QLabel(tr("Point Label Format"));
     m_pointFormatEdit = new QLineEdit();
     m_pointFormatEdit->setText(m_properties.pointLabelFormat);
-    m_pointFormatEdit->setPlaceholderText(tr("e.g., ID: %s"));
+    m_pointFormatEdit->setPlaceholderText(tr("Leave empty for auto format"));
     connect(m_pointFormatEdit, &QLineEdit::textChanged,
             [this](const QString& text) {
                 m_properties.pointLabelFormat = text;

@@ -11,22 +11,17 @@
 // Qt - must be included before qPCL.h for MOC to work correctly
 #include <QtCore/QMap>
 #include <QtCore/QObject>
-#include <QtCore/QPointer>
 // clang-format on
 
 // LOCAL
 #include "cvGenericSelectionTool.h"
-#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
+#include "cvSelectionData.h"  // Contains SelectionMode, SelectionModifier enums  // For SelectionMode and SelectionModifier enums
 #include "qPCL.h"
 
-// Include cvRenderViewSelectionTool.h for QPointer template instantiation
-// Note: cvRenderViewSelectionTool.h no longer needs cvViewSelectionManager's
-// full definition since enums are now in cvSelectionTypes.h
-#include "cvRenderViewSelectionTool.h"
+// ECV_DB_LIB
+#include <ecvHObject.h>
 
 // Forward declarations
-// Note: cvRenderViewSelectionTool must be fully defined for QPointer template
-// instantiation
 class cvSelectionData;
 class cvSelectionHistory;
 class cvSelectionAlgebra;
@@ -38,6 +33,9 @@ class cvSelectionHighlighter;
 class vtkIntArray;
 class vtkIdTypeArray;
 class vtkPolyData;
+class ccHObject;
+class ccPointCloud;
+class ccMesh;
 
 namespace PclUtils {
 class PCLVis;
@@ -84,18 +82,21 @@ public:
     // ecvGenericVisualizer3D* getVisualizer() const;
 
     /**
-     * @brief Enable a selection mode
+     * @brief Enable a selection mode (legacy - state tracking only)
      * @param mode The selection mode to enable
      *
-     * If another mode is active, it will be disabled first.
-     * This ensures only one selection mode is active at a time.
+     * Note: In the new architecture, cvRenderViewSelectionReaction handles
+     * all selection logic. This method only updates internal state for
+     * compatibility.
      */
     void enableSelection(SelectionMode mode);
 
     /**
-     * @brief Disable the current selection mode
+     * @brief Disable the current selection mode (legacy - state tracking only)
      *
-     * Restores the previous interactor style and cleans up resources.
+     * Note: In the new architecture, cvRenderViewSelectionReaction handles
+     * all selection logic. This method only updates internal state for
+     * compatibility.
      */
     void disableSelection();
 
@@ -285,6 +286,41 @@ public:
     vtkPolyData* getPolyData() const;
 
     /**
+     * @brief Set the source object for selection operations
+     *
+     * This stores a reference to the original ccPointCloud/ccMesh that
+     * the current selection was made on. Used for direct extraction
+     * without VTK→ccHObject conversion.
+     *
+     * @param obj The source object (ccPointCloud or ccMesh)
+     */
+    void setSourceObject(ccHObject* obj);
+
+    /**
+     * @brief Get the source object for the current selection
+     * @return The source ccHObject or nullptr if invalid/not set
+     */
+    ccHObject* getSourceObject() const;
+
+    /**
+     * @brief Get the source object as ccPointCloud
+     * @return ccPointCloud pointer or nullptr if not a point cloud
+     */
+    ccPointCloud* getSourcePointCloud() const;
+
+    /**
+     * @brief Get the source object as ccMesh
+     * @return ccMesh pointer or nullptr if not a mesh
+     */
+    ccMesh* getSourceMesh() const;
+
+    /**
+     * @brief Check if the source object is still valid
+     * @return True if source object pointer is valid
+     */
+    bool isSourceObjectValid() const;
+
+    /**
      * @brief Notify that scene data has been updated
      *
      * Call this method when the 3D scene data changes (e.g., point cloud
@@ -402,33 +438,6 @@ signals:
     void zoomToBoxRequested(int region[4]);
     void zoomToBoxRequested(int xmin, int ymin, int xmax, int ymax);
 
-public:
-    /**
-     * @brief Get or create a selection tool for the given mode
-     * @param mode The selection mode
-     * @return The selection tool (cached or newly created)
-     *
-     * This is public to allow cvSelectionToolController to access it.
-     */
-    cvRenderViewSelectionTool* getOrCreateTool(SelectionMode mode);
-
-protected:
-    /**
-     * @brief Clean up inactive tools to free resources
-     */
-    void cleanupInactiveTools();
-
-private slots:
-    /**
-     * @brief Handle selection completion from a tool
-     */
-    void onToolSelectionCompleted();
-
-    /**
-     * @brief Handle selection change from a tool
-     */
-    void onToolSelectionChanged();
-
 private:
     // Singleton constructor/destructor
     explicit cvViewSelectionManager(QObject* parent = nullptr);
@@ -443,15 +452,6 @@ private:
     SelectionMode m_currentMode;
     SelectionModifier m_currentModifier;
     bool m_isActive;
-
-    // Current tool
-    QPointer<cvRenderViewSelectionTool> m_currentTool;
-
-    // Tool cache (lazy creation)
-    QMap<SelectionMode, QPointer<cvRenderViewSelectionTool>> m_toolCache;
-
-    // Maximum number of cached tools
-    static const int MAX_CACHED_TOOLS = 5;
 
     // Selection state (encapsulated - no VTK exposure in MainWindow)
     // Note: Stored as VTK array + field association for backward compatibility
@@ -475,4 +475,8 @@ private:
     // Grow selection settings (ParaView-style)
     bool m_growRemoveSeed = false;
     bool m_growRemoveIntermediateLayers = false;
+
+    // Source object for direct extraction (avoid VTK→ccHObject conversion)
+    // Note: ccHObject is not a QObject, so we use a raw pointer
+    ccHObject* m_sourceObject;
 };

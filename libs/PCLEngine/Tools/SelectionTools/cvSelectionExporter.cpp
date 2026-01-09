@@ -9,6 +9,7 @@
 
 // CV_CORE_LIB
 #include <CVLog.h>
+#include <ReferenceCloud.h>
 
 // ECV_DB_LIB
 #include <ecvGenericMesh.h>
@@ -32,6 +33,8 @@
 #include <vtkCellData.h>
 #include <vtkDataArray.h>
 #include <vtkExtractSelection.h>
+#include <vtkFieldData.h>
+#include <vtkFloatArray.h>
 #include <vtkGeometryFilter.h>
 #include <vtkIdTypeArray.h>
 #include <vtkPointData.h>
@@ -41,6 +44,7 @@
 #include <vtkSelectionNode.h>
 #include <vtkSmartPointer.h>
 #include <vtkTriangle.h>
+#include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
 
 // Qt
@@ -179,6 +183,332 @@ ccPointCloud* cvSelectionExporter::exportToPointCloud(
 }
 
 //-----------------------------------------------------------------------------
+ccPointCloud* cvSelectionExporter::exportFromSourceCloud(
+        ccPointCloud* sourceCloud,
+        const cvSelectionData& selectionData,
+        const ExportOptions& options) {
+    CVLog::Print(
+            "[cvSelectionExporter::exportFromSourceCloud] START - Direct "
+            "extraction from source ccPointCloud");
+
+    if (!sourceCloud) {
+        CVLog::Error("[cvSelectionExporter] sourceCloud is nullptr");
+        return nullptr;
+    }
+
+    if (selectionData.isEmpty()) {
+        CVLog::Error("[cvSelectionExporter] Selection is empty");
+        return nullptr;
+    }
+
+    if (selectionData.fieldAssociation() != cvSelectionData::POINTS) {
+        CVLog::Error(
+                "[cvSelectionExporter] Selection must be POINTS for point "
+                "cloud export");
+        return nullptr;
+    }
+
+    // Get selected point IDs
+    const QVector<vtkIdType>& selectedIds = selectionData.ids();
+    if (selectedIds.isEmpty()) {
+        CVLog::Error("[cvSelectionExporter] No point IDs in selection");
+        return nullptr;
+    }
+
+    CVLog::Print(QString("[cvSelectionExporter] Source cloud '%1' has %2 "
+                         "points, %3 scalar fields")
+                         .arg(sourceCloud->getName())
+                         .arg(sourceCloud->size())
+                         .arg(sourceCloud->getNumberOfScalarFields()));
+
+    // Validate IDs and create ReferenceCloud
+    unsigned int cloudSize = sourceCloud->size();
+    cloudViewer::ReferenceCloud refCloud(sourceCloud);
+    if (!refCloud.reserve(static_cast<unsigned>(selectedIds.size()))) {
+        CVLog::Error(
+                "[cvSelectionExporter] Failed to reserve memory for "
+                "reference cloud");
+        return nullptr;
+    }
+
+    int validCount = 0;
+    int invalidCount = 0;
+    for (vtkIdType id : selectedIds) {
+        if (id >= 0 && static_cast<unsigned int>(id) < cloudSize) {
+            refCloud.addPointIndex(static_cast<unsigned>(id));
+            ++validCount;
+        } else {
+            ++invalidCount;
+        }
+    }
+
+    if (invalidCount > 0) {
+        CVLog::Warning(
+                QString("[cvSelectionExporter] Filtered %1 invalid point IDs "
+                        "(out of range [0, %2))")
+                        .arg(invalidCount)
+                        .arg(cloudSize));
+    }
+
+    if (validCount == 0) {
+        CVLog::Error(
+                "[cvSelectionExporter] No valid point IDs after filtering");
+        return nullptr;
+    }
+
+    CVLog::Print(QString("[cvSelectionExporter] Creating partial clone with %1 "
+                         "points from source cloud")
+                         .arg(validCount));
+
+    // Use partialClone to extract selected points with all attributes
+    int warnings = 0;
+    ccPointCloud* result = sourceCloud->partialClone(&refCloud, &warnings);
+
+    if (!result) {
+        CVLog::Error("[cvSelectionExporter] partialClone failed");
+        return nullptr;
+    }
+
+    // Log any warnings from partialClone
+    if (warnings & ccPointCloud::WRN_OUT_OF_MEM_FOR_COLORS) {
+        CVLog::Warning(
+                "[cvSelectionExporter] partialClone: out of memory for "
+                "colors");
+    }
+    if (warnings & ccPointCloud::WRN_OUT_OF_MEM_FOR_NORMALS) {
+        CVLog::Warning(
+                "[cvSelectionExporter] partialClone: out of memory for "
+                "normals");
+    }
+    if (warnings & ccPointCloud::WRN_OUT_OF_MEM_FOR_SFS) {
+        CVLog::Warning(
+                "[cvSelectionExporter] partialClone: out of memory for "
+                "scalar fields");
+    }
+    if (warnings & ccPointCloud::WRN_OUT_OF_MEM_FOR_FWF) {
+        CVLog::Warning(
+                "[cvSelectionExporter] partialClone: out of memory for "
+                "full waveform data");
+    }
+
+    // Set name
+    QString cloudName = options.name.isEmpty()
+                                ? QString("Selection_%1_points").arg(validCount)
+                                : options.name;
+    result->setName(cloudName);
+
+    CVLog::Print(QString("[cvSelectionExporter] SUCCESS: Created point cloud "
+                         "'%1' with %2 points, %3 scalar fields, "
+                         "hasColors=%4, hasNormals=%5")
+                         .arg(cloudName)
+                         .arg(result->size())
+                         .arg(result->getNumberOfScalarFields())
+                         .arg(result->hasColors() ? "yes" : "no")
+                         .arg(result->hasNormals() ? "yes" : "no"));
+
+    // Save to file if requested
+    if (options.saveToFile && !options.filename.isEmpty()) {
+        if (!saveObjectToFile(result, options.filename, options.writeAscii,
+                              options.compressed)) {
+            CVLog::Warning(QString("[cvSelectionExporter] Failed to save point "
+                                   "cloud to file: %1")
+                                   .arg(options.filename));
+        }
+    }
+
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+ccMesh* cvSelectionExporter::exportFromSourceMesh(
+        ccMesh* sourceMesh,
+        const cvSelectionData& selectionData,
+        const ExportOptions& options) {
+    CVLog::Print(
+            "[cvSelectionExporter::exportFromSourceMesh] START - Direct "
+            "extraction from source ccMesh");
+
+    if (!sourceMesh) {
+        CVLog::Error("[cvSelectionExporter] sourceMesh is nullptr");
+        return nullptr;
+    }
+
+    if (selectionData.isEmpty()) {
+        CVLog::Error("[cvSelectionExporter] Selection is empty");
+        return nullptr;
+    }
+
+    if (selectionData.fieldAssociation() != cvSelectionData::CELLS) {
+        CVLog::Error(
+                "[cvSelectionExporter] Selection must be CELLS for mesh "
+                "export");
+        return nullptr;
+    }
+
+    // Get associated point cloud (vertices)
+    ccGenericPointCloud* vertices = sourceMesh->getAssociatedCloud();
+    if (!vertices) {
+        CVLog::Error(
+                "[cvSelectionExporter] Source mesh has no associated "
+                "vertex cloud");
+        return nullptr;
+    }
+
+    ccPointCloud* pcVertices = dynamic_cast<ccPointCloud*>(vertices);
+    if (!pcVertices) {
+        CVLog::Error(
+                "[cvSelectionExporter] Source mesh vertices is not a "
+                "ccPointCloud");
+        return nullptr;
+    }
+
+    // Get selected triangle IDs
+    const QVector<vtkIdType>& selectedIds = selectionData.ids();
+    if (selectedIds.isEmpty()) {
+        CVLog::Error("[cvSelectionExporter] No triangle IDs in selection");
+        return nullptr;
+    }
+
+    CVLog::Print(QString("[cvSelectionExporter] Source mesh '%1' has %2 "
+                         "triangles, %3 vertices")
+                         .arg(sourceMesh->getName())
+                         .arg(sourceMesh->size())
+                         .arg(vertices->size()));
+
+    // Collect unique vertex indices from selected triangles
+    unsigned int meshSize = sourceMesh->size();
+    QSet<unsigned int> uniqueVertexIndices;
+    QVector<unsigned int> validTriangleIds;
+
+    for (vtkIdType id : selectedIds) {
+        if (id >= 0 && static_cast<unsigned int>(id) < meshSize) {
+            cloudViewer::VerticesIndexes* tri =
+                    sourceMesh->getTriangleVertIndexes(
+                            static_cast<unsigned>(id));
+            if (tri) {
+                uniqueVertexIndices.insert(tri->i1);
+                uniqueVertexIndices.insert(tri->i2);
+                uniqueVertexIndices.insert(tri->i3);
+                validTriangleIds.append(static_cast<unsigned int>(id));
+            }
+        }
+    }
+
+    if (validTriangleIds.isEmpty()) {
+        CVLog::Error(
+                "[cvSelectionExporter] No valid triangle IDs after "
+                "filtering");
+        return nullptr;
+    }
+
+    CVLog::Print(QString("[cvSelectionExporter] Selected %1 triangles using %2 "
+                         "unique vertices")
+                         .arg(validTriangleIds.size())
+                         .arg(uniqueVertexIndices.size()));
+
+    // Create reference cloud for vertices
+    cloudViewer::ReferenceCloud refCloud(pcVertices);
+    if (!refCloud.reserve(static_cast<unsigned>(uniqueVertexIndices.size()))) {
+        CVLog::Error(
+                "[cvSelectionExporter] Failed to reserve memory for "
+                "reference cloud");
+        return nullptr;
+    }
+
+    // Build old→new vertex index mapping
+    QMap<unsigned int, unsigned int> oldToNewVertexIndex;
+    QList<unsigned int> vertexList = uniqueVertexIndices.values();
+    std::sort(vertexList.begin(), vertexList.end());
+
+    for (int i = 0; i < vertexList.size(); ++i) {
+        unsigned int oldIdx = vertexList[i];
+        refCloud.addPointIndex(oldIdx);
+        oldToNewVertexIndex[oldIdx] = static_cast<unsigned int>(i);
+    }
+
+    // Create new vertex cloud using partialClone
+    int warnings = 0;
+    ccPointCloud* newVertices = pcVertices->partialClone(&refCloud, &warnings);
+    if (!newVertices) {
+        CVLog::Error(
+                "[cvSelectionExporter] Failed to create vertex cloud via "
+                "partialClone");
+        return nullptr;
+    }
+
+    // Create new mesh
+    QString meshName = options.name.isEmpty()
+                               ? QString("Selection_%1_triangles")
+                                         .arg(validTriangleIds.size())
+                               : options.name;
+    ccMesh* result = new ccMesh(newVertices);
+    result->setName(meshName);
+
+    // newVertices is now owned by result mesh
+    newVertices->setEnabled(false);
+    result->addChild(newVertices);
+
+    // Reserve space for triangles
+    if (!result->reserve(static_cast<unsigned>(validTriangleIds.size()))) {
+        CVLog::Error(
+                "[cvSelectionExporter] Failed to reserve memory for mesh "
+                "triangles");
+        delete result;
+        return nullptr;
+    }
+
+    // Add triangles with remapped vertex indices
+    for (unsigned int oldTriIdx : validTriangleIds) {
+        cloudViewer::VerticesIndexes* oldTri =
+                sourceMesh->getTriangleVertIndexes(oldTriIdx);
+        if (oldTri) {
+            unsigned int newI1 = oldToNewVertexIndex[oldTri->i1];
+            unsigned int newI2 = oldToNewVertexIndex[oldTri->i2];
+            unsigned int newI3 = oldToNewVertexIndex[oldTri->i3];
+            result->addTriangle(newI1, newI2, newI3);
+        }
+    }
+
+    // Copy per-triangle materials if source has them
+    if (sourceMesh->hasMaterials()) {
+        // TODO: Copy materials for selected triangles
+        CVLog::PrintDebug(
+                "[cvSelectionExporter] Material copying not yet implemented "
+                "for mesh extraction");
+    }
+
+    // Copy per-triangle normals if source has them
+    if (sourceMesh->hasTriNormals()) {
+        // TODO: Copy triangle normals for selected triangles
+        CVLog::PrintDebug(
+                "[cvSelectionExporter] Triangle normal copying not "
+                "yet implemented for mesh extraction");
+    }
+
+    result->showColors(sourceMesh->colorsShown());
+    result->showNormals(sourceMesh->normalsShown());
+    result->showSF(sourceMesh->sfShown());
+
+    CVLog::Print(QString("[cvSelectionExporter] SUCCESS: Created mesh '%1' "
+                         "with %2 triangles, %3 vertices")
+                         .arg(meshName)
+                         .arg(result->size())
+                         .arg(newVertices->size()));
+
+    // Save to file if requested
+    if (options.saveToFile && !options.filename.isEmpty()) {
+        if (!saveObjectToFile(result, options.filename, options.writeAscii,
+                              options.compressed)) {
+            CVLog::Warning(QString("[cvSelectionExporter] Failed to save mesh "
+                                   "to file: %1")
+                                   .arg(options.filename));
+        }
+    }
+
+    return result;
+}
+
+//-----------------------------------------------------------------------------
 bool cvSelectionExporter::exportToFile(vtkPolyData* polyData,
                                        const cvSelectionData& selectionData,
                                        const QString& filename,
@@ -232,79 +562,318 @@ bool cvSelectionExporter::exportToFile(vtkPolyData* polyData,
 //-----------------------------------------------------------------------------
 vtkPolyData* cvSelectionExporter::extractSelection(
         vtkPolyData* polyData, const cvSelectionData& selectionData) {
+    CVLog::Print("[cvSelectionExporter::extractSelection] START");
+
     if (!polyData || selectionData.isEmpty()) {
+        CVLog::Error("[cvSelectionExporter] extractSelection: Invalid input");
         return nullptr;
     }
 
-    // Create selection node
-    vtkSmartPointer<vtkSelectionNode> selectionNode =
-            vtkSmartPointer<vtkSelectionNode>::New();
-    selectionNode->SetContentType(vtkSelectionNode::INDICES);
+    CVLog::Print(QString("[cvSelectionExporter] Source polyData: %1 points, "
+                         "%2 cells")
+                         .arg(polyData->GetNumberOfPoints())
+                         .arg(polyData->GetNumberOfCells()));
 
-    if (selectionData.fieldAssociation() == cvSelectionData::CELLS) {
-        selectionNode->SetFieldType(vtkSelectionNode::CELL);
+    // Get and validate VTK array
+    vtkSmartPointer<vtkIdTypeArray> vtkArray = selectionData.vtkArray();
+    if (!vtkArray || vtkArray->GetNumberOfTuples() == 0) {
+        CVLog::Error(
+                "[cvSelectionExporter] extractSelection: Selection array is "
+                "null or empty");
+        return nullptr;
+    }
+
+    bool isPointSelection =
+            (selectionData.fieldAssociation() == cvSelectionData::POINTS);
+    CVLog::Print(QString("[cvSelectionExporter] Selection type: %1, count: %2")
+                         .arg(isPointSelection ? "POINTS" : "CELLS")
+                         .arg(vtkArray->GetNumberOfTuples()));
+
+    // Validate selection IDs against polyData bounds
+    vtkIdType maxValidId = isPointSelection ? polyData->GetNumberOfPoints()
+                                            : polyData->GetNumberOfCells();
+
+    // Filter out invalid IDs to prevent crashes
+    vtkSmartPointer<vtkIdTypeArray> validArray =
+            vtkSmartPointer<vtkIdTypeArray>::New();
+    for (vtkIdType i = 0; i < vtkArray->GetNumberOfTuples(); ++i) {
+        vtkIdType id = vtkArray->GetValue(i);
+        if (id >= 0 && id < maxValidId) {
+            validArray->InsertNextValue(id);
+        }
+    }
+
+    CVLog::Print(QString("[cvSelectionExporter] Valid IDs: %1 of %2")
+                         .arg(validArray->GetNumberOfTuples())
+                         .arg(vtkArray->GetNumberOfTuples()));
+
+    if (validArray->GetNumberOfTuples() == 0) {
+        CVLog::Error(
+                QString("[cvSelectionExporter] extractSelection: No valid IDs "
+                        "(all %1 IDs are out of range [0, %2))")
+                        .arg(vtkArray->GetNumberOfTuples())
+                        .arg(maxValidId));
+        return nullptr;
+    }
+
+    if (validArray->GetNumberOfTuples() < vtkArray->GetNumberOfTuples()) {
+        CVLog::Warning(
+                QString("[cvSelectionExporter] extractSelection: Filtered "
+                        "%1 invalid IDs (kept %2 of %3)")
+                        .arg(vtkArray->GetNumberOfTuples() -
+                             validArray->GetNumberOfTuples())
+                        .arg(validArray->GetNumberOfTuples())
+                        .arg(vtkArray->GetNumberOfTuples()));
+    }
+
+    vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
+
+    // For POINT selections, directly copy selected points to new polydata
+    // vtkGeometryFilter doesn't handle point-only extractions well
+    if (isPointSelection) {
+        vtkIdType numSelectedPoints = validArray->GetNumberOfTuples();
+        CVLog::Print(QString("[cvSelectionExporter] Creating result with %1 "
+                             "points")
+                             .arg(numSelectedPoints));
+
+        // Create new points array
+        vtkSmartPointer<vtkPoints> newPoints =
+                vtkSmartPointer<vtkPoints>::New();
+        newPoints->SetNumberOfPoints(numSelectedPoints);
+
+        // Create vertex cells for each point (so they can be rendered)
+        vtkSmartPointer<vtkCellArray> vertices =
+                vtkSmartPointer<vtkCellArray>::New();
+
+        // Copy point data arrays
+        vtkPointData* srcPointData = polyData->GetPointData();
+        vtkPointData* dstPointData = result->GetPointData();
+
+        // Log source point data info
+        if (srcPointData) {
+            CVLog::Print(
+                    QString("[cvSelectionExporter] Source has %1 arrays, "
+                            "normals=%2, scalars=%3, tcoords=%4")
+                            .arg(srcPointData->GetNumberOfArrays())
+                            .arg(srcPointData->GetNormals() ? "yes" : "no")
+                            .arg(srcPointData->GetScalars() ? "yes" : "no")
+                            .arg(srcPointData->GetTCoords() ? "yes" : "no"));
+
+            // Log details of each array for debugging
+            for (int a = 0; a < srcPointData->GetNumberOfArrays(); ++a) {
+                vtkDataArray* arr = srcPointData->GetArray(a);
+                if (arr) {
+                    CVLog::PrintDebug(
+                            QString("[cvSelectionExporter]   Array[%1]: "
+                                    "name='%2', components=%3, tuples=%4, "
+                                    "type=%5")
+                                    .arg(a)
+                                    .arg(arr->GetName() ? arr->GetName()
+                                                        : "(unnamed)")
+                                    .arg(arr->GetNumberOfComponents())
+                                    .arg(arr->GetNumberOfTuples())
+                                    .arg(arr->GetClassName()));
+                }
+            }
+        }
+
+        // Copy selected points and their data
+        CVLog::Print("[cvSelectionExporter] Copying points...");
+        for (vtkIdType i = 0; i < numSelectedPoints; ++i) {
+            vtkIdType srcId = validArray->GetValue(i);
+            double pt[3];
+            polyData->GetPoint(srcId, pt);
+            newPoints->SetPoint(i, pt);
+
+            // Add vertex cell
+            vertices->InsertNextCell(1);
+            vertices->InsertCellPoint(i);
+        }
+
+        // Set points first
+        result->SetPoints(newPoints);
+        result->SetVerts(vertices);
+
+        CVLog::Print(QString("[cvSelectionExporter] Result has %1 points, %2 "
+                             "cells")
+                             .arg(result->GetNumberOfPoints())
+                             .arg(result->GetNumberOfCells()));
+
+        // Now copy point data arrays AFTER setting points
+        if (srcPointData && numSelectedPoints > 0) {
+            // Copy each named array
+            for (int a = 0; a < srcPointData->GetNumberOfArrays(); ++a) {
+                vtkDataArray* srcArray = srcPointData->GetArray(a);
+                if (!srcArray) continue;
+
+                // Skip arrays without names (coordinate arrays)
+                const char* arrName = srcArray->GetName();
+                if (!arrName || strlen(arrName) == 0) {
+                    CVLog::PrintDebug(QString("[cvSelectionExporter] Skipping "
+                                              "unnamed array[%1]")
+                                              .arg(a));
+                    continue;
+                }
+
+                vtkSmartPointer<vtkDataArray> dstArray;
+                dstArray.TakeReference(srcArray->NewInstance());
+                dstArray->SetName(arrName);
+                dstArray->SetNumberOfComponents(
+                        srcArray->GetNumberOfComponents());
+                dstArray->SetNumberOfTuples(numSelectedPoints);
+
+                int numComp = srcArray->GetNumberOfComponents();
+
+                // Debug: Check source array values for first few points
+                if (numSelectedPoints > 0 && numComp == 1) {
+                    vtkIdType firstSrcId = validArray->GetValue(0);
+                    double firstVal = srcArray->GetTuple1(firstSrcId);
+                    CVLog::PrintDebug(QString("[cvSelectionExporter] Array "
+                                              "'%1': srcId[0]=%2 -> value=%3")
+                                              .arg(arrName)
+                                              .arg(firstSrcId)
+                                              .arg(firstVal));
+                }
+
+                // Copy data for each selected point using appropriate method
+                for (vtkIdType i = 0; i < numSelectedPoints; ++i) {
+                    vtkIdType srcId = validArray->GetValue(i);
+
+                    // Bounds check
+                    if (srcId < 0 || srcId >= srcArray->GetNumberOfTuples()) {
+                        CVLog::Warning(
+                                QString("[cvSelectionExporter] Invalid srcId "
+                                        "%1 for array '%2' (max=%3)")
+                                        .arg(srcId)
+                                        .arg(arrName)
+                                        .arg(srcArray->GetNumberOfTuples()));
+                        continue;
+                    }
+
+                    // Use GetTuple/SetTuple for all component types
+                    double* tuple = srcArray->GetTuple(srcId);
+                    dstArray->SetTuple(i, tuple);
+                }
+
+                // Debug: Verify copied values
+                if (numSelectedPoints > 0 && numComp == 1) {
+                    double copiedVal = dstArray->GetTuple1(0);
+                    CVLog::PrintDebug(QString("[cvSelectionExporter] Array "
+                                              "'%1': copied[0] = %2")
+                                              .arg(arrName)
+                                              .arg(copiedVal));
+                }
+
+                dstPointData->AddArray(dstArray);
+            }
+
+            // Set active arrays (normals, scalars, tcoords) from copied arrays
+            // The arrays were already copied in the loop above - we just need
+            // to set them as "active" in the destination point data
+
+            // Set active normals if source has them
+            vtkDataArray* srcNormals = srcPointData->GetNormals();
+            if (srcNormals && srcNormals->GetName()) {
+                vtkDataArray* dstNormals =
+                        dstPointData->GetArray(srcNormals->GetName());
+                if (dstNormals) {
+                    dstPointData->SetNormals(dstNormals);
+                }
+            }
+
+            // Set active scalars (colors) if source has them
+            vtkDataArray* srcScalars = srcPointData->GetScalars();
+            if (srcScalars && srcScalars->GetName()) {
+                vtkDataArray* dstScalars =
+                        dstPointData->GetArray(srcScalars->GetName());
+                if (dstScalars) {
+                    dstPointData->SetScalars(dstScalars);
+                }
+            }
+
+            // Set active TCoords if source has them
+            vtkDataArray* srcTCoords = srcPointData->GetTCoords();
+            if (srcTCoords && srcTCoords->GetName()) {
+                vtkDataArray* dstTCoords =
+                        dstPointData->GetArray(srcTCoords->GetName());
+                if (dstTCoords) {
+                    dstPointData->SetTCoords(dstTCoords);
+                }
+            }
+        }
+
+        CVLog::Print(QString("[cvSelectionExporter] Extracted %1 points "
+                             "directly (point selection)")
+                             .arg(numSelectedPoints));
     } else {
-        selectionNode->SetFieldType(vtkSelectionNode::POINT);
+        // For CELL selections, use vtkExtractSelection + vtkGeometryFilter
+        vtkSmartPointer<vtkSelectionNode> selectionNode =
+                vtkSmartPointer<vtkSelectionNode>::New();
+        selectionNode->SetContentType(vtkSelectionNode::INDICES);
+        selectionNode->SetFieldType(vtkSelectionNode::CELL);
+        selectionNode->SetSelectionList(validArray);
+
+        vtkSmartPointer<vtkSelection> selection =
+                vtkSmartPointer<vtkSelection>::New();
+        selection->AddNode(selectionNode);
+
+        vtkSmartPointer<vtkExtractSelection> extractor =
+                vtkSmartPointer<vtkExtractSelection>::New();
+        extractor->SetInputData(0, polyData);
+        extractor->SetInputData(1, selection);
+        extractor->Update();
+
+        vtkUnstructuredGrid* extracted =
+                vtkUnstructuredGrid::SafeDownCast(extractor->GetOutput());
+
+        if (!extracted || extracted->GetNumberOfPoints() == 0) {
+            CVLog::Error("[cvSelectionExporter] Cell extraction failed");
+            return nullptr;
+        }
+
+        CVLog::PrintDebug(QString("[cvSelectionExporter] Extracted %1 points, "
+                                  "%2 cells (cell selection)")
+                                  .arg(extracted->GetNumberOfPoints())
+                                  .arg(extracted->GetNumberOfCells()));
+
+        // Convert to polydata
+        vtkSmartPointer<vtkGeometryFilter> geometryFilter =
+                vtkSmartPointer<vtkGeometryFilter>::New();
+        geometryFilter->SetInputData(extracted);
+        geometryFilter->Update();
+
+        vtkPolyData* filteredOutput = geometryFilter->GetOutput();
+        if (!filteredOutput || filteredOutput->GetNumberOfPoints() == 0) {
+            CVLog::Warning(
+                    "[cvSelectionExporter] Geometry filter produced no output");
+            return nullptr;
+        }
+
+        result->DeepCopy(filteredOutput);
     }
 
-    selectionNode->SetSelectionList(selectionData.vtkArray());
-
-    // Create selection
-    vtkSmartPointer<vtkSelection> selection =
-            vtkSmartPointer<vtkSelection>::New();
-    selection->AddNode(selectionNode);
-
-    // Extract selection
-    vtkSmartPointer<vtkExtractSelection> extractor =
-            vtkSmartPointer<vtkExtractSelection>::New();
-    extractor->SetInputData(0, polyData);
-    extractor->SetInputData(1, selection);
-    extractor->Update();
-
-    vtkUnstructuredGrid* extracted =
-            vtkUnstructuredGrid::SafeDownCast(extractor->GetOutput());
-
-    if (!extracted) {
-        CVLog::Error("[cvSelectionExporter] Extraction failed");
-        return nullptr;
-    }
-
-    // Validate extracted data
-    vtkIdType numPoints = extracted->GetNumberOfPoints();
-    vtkIdType numCells = extracted->GetNumberOfCells();
-
-    if (numPoints == 0) {
+    if (result->GetNumberOfPoints() == 0) {
         CVLog::Warning("[cvSelectionExporter] Extraction produced 0 points");
         return nullptr;
     }
 
-    CVLog::PrintDebug(
-            QString("[cvSelectionExporter] Extracted %1 points, %2 cells")
-                    .arg(numPoints)
-                    .arg(numCells));
-
-    // Convert vtkUnstructuredGrid to vtkPolyData using vtkGeometryFilter
-    // Note: ShallowCopy from vtkUnstructuredGrid to vtkPolyData doesn't work
-    // correctly for all cases, especially for point-only selections
-    vtkSmartPointer<vtkGeometryFilter> geometryFilter =
-            vtkSmartPointer<vtkGeometryFilter>::New();
-    geometryFilter->SetInputData(extracted);
-    geometryFilter->Update();
-
-    vtkPolyData* filteredOutput = geometryFilter->GetOutput();
-    if (!filteredOutput || filteredOutput->GetNumberOfPoints() == 0) {
-        CVLog::Warning(
-                "[cvSelectionExporter] Geometry filter produced no output");
-        return nullptr;
+    // Copy field data (metadata like DatasetName) from source to result
+    vtkFieldData* srcFieldData = polyData->GetFieldData();
+    if (srcFieldData && srcFieldData->GetNumberOfArrays() > 0) {
+        vtkFieldData* dstFieldData = result->GetFieldData();
+        for (int i = 0; i < srcFieldData->GetNumberOfArrays(); ++i) {
+            vtkAbstractArray* arr = srcFieldData->GetAbstractArray(i);
+            if (arr) {
+                dstFieldData->AddArray(arr);
+            }
+        }
+        CVLog::PrintDebug(
+                QString("[cvSelectionExporter] Copied %1 field data arrays")
+                        .arg(srcFieldData->GetNumberOfArrays()));
     }
 
-    // Create result and deep copy to ensure proper memory management
-    vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
-    result->DeepCopy(filteredOutput);
-
-    // Return raw pointer (caller must manage) - for backward compatibility
-    // Note: Caller is responsible for calling Delete() on the returned pointer
-    result->Register(nullptr);  // Increment ref count for caller
+    // Return raw pointer (caller must manage)
+    result->Register(nullptr);
     return result.Get();
 }
 
@@ -497,4 +1066,232 @@ bool cvSelectionExporter::saveObjectToFileWithDialog(ccHObject* object,
                          .arg(selectedFilename));
 
     return true;
+}
+
+//=============================================================================
+// Batch Export Implementation (merged from cvSelectionExporterBatch.cpp)
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+QList<ccMesh*> cvSelectionExporter::batchExportToMeshes(
+        vtkPolyData* polyData,
+        const QList<cvSelectionData>& selections,
+        const QString& baseName) {
+    QList<ccMesh*> meshes;
+
+    if (!polyData || selections.isEmpty()) {
+        CVLog::Error(
+                "[cvSelectionExporter] Invalid parameters for batch export");
+        return meshes;
+    }
+
+    int index = 1;
+    for (const cvSelectionData& selection : selections) {
+        if (selection.isEmpty()) {
+            CVLog::Warning(
+                    QString("[cvSelectionExporter] Skipping empty selection %1")
+                            .arg(index));
+            ++index;
+            continue;
+        }
+
+        if (selection.fieldAssociation() != cvSelectionData::CELLS) {
+            CVLog::Warning(QString("[cvSelectionExporter] Skipping non-cell "
+                                   "selection %1")
+                                   .arg(index));
+            ++index;
+            continue;
+        }
+
+        QString name =
+                QString("%1_%2").arg(baseName).arg(index, 3, 10, QChar('0'));
+        cvSelectionExporter::ExportOptions opts;
+        opts.name = name;
+        ccMesh* mesh = exportToMesh(polyData, selection, opts);
+
+        if (mesh) {
+            meshes.append(mesh);
+            CVLog::Print(QString("[cvSelectionExporter] Batch exported mesh "
+                                 "%1/%2: %3")
+                                 .arg(index)
+                                 .arg(selections.size())
+                                 .arg(name));
+        } else {
+            CVLog::Error(
+                    QString("[cvSelectionExporter] Failed to export mesh %1")
+                            .arg(index));
+        }
+
+        ++index;
+    }
+
+    CVLog::Print(
+            QString("[cvSelectionExporter] Batch export complete: %1/%2 meshes")
+                    .arg(meshes.size())
+                    .arg(selections.size()));
+
+    return meshes;
+}
+
+//-----------------------------------------------------------------------------
+QList<ccPointCloud*> cvSelectionExporter::batchExportToPointClouds(
+        vtkPolyData* polyData,
+        const QList<cvSelectionData>& selections,
+        const QString& baseName) {
+    QList<ccPointCloud*> clouds;
+
+    if (!polyData || selections.isEmpty()) {
+        CVLog::Error(
+                "[cvSelectionExporter] Invalid parameters for batch export");
+        return clouds;
+    }
+
+    int index = 1;
+    for (const cvSelectionData& selection : selections) {
+        if (selection.isEmpty()) {
+            CVLog::Warning(
+                    QString("[cvSelectionExporter] Skipping empty selection %1")
+                            .arg(index));
+            ++index;
+            continue;
+        }
+
+        if (selection.fieldAssociation() != cvSelectionData::POINTS) {
+            CVLog::Warning(QString("[cvSelectionExporter] Skipping non-point "
+                                   "selection %1")
+                                   .arg(index));
+            ++index;
+            continue;
+        }
+
+        QString name =
+                QString("%1_%2").arg(baseName).arg(index, 3, 10, QChar('0'));
+        cvSelectionExporter::ExportOptions opts;
+        opts.name = name;
+        ccPointCloud* cloud = exportToPointCloud(polyData, selection, opts);
+
+        if (cloud) {
+            clouds.append(cloud);
+            CVLog::Print(QString("[cvSelectionExporter] Batch exported cloud "
+                                 "%1/%2: %3")
+                                 .arg(index)
+                                 .arg(selections.size())
+                                 .arg(name));
+        } else {
+            CVLog::Error(
+                    QString("[cvSelectionExporter] Failed to export cloud %1")
+                            .arg(index));
+        }
+
+        ++index;
+    }
+
+    CVLog::Print(
+            QString("[cvSelectionExporter] Batch export complete: %1/%2 clouds")
+                    .arg(clouds.size())
+                    .arg(selections.size()));
+
+    return clouds;
+}
+
+//-----------------------------------------------------------------------------
+int cvSelectionExporter::batchExportToFiles(
+        vtkPolyData* polyData,
+        const QList<cvSelectionData>& selections,
+        const QString& outputDir,
+        const QString& format,
+        const QString& baseName,
+        std::function<void(int)> progressCallback) {
+    if (!polyData || selections.isEmpty() || outputDir.isEmpty()) {
+        CVLog::Error(
+                "[cvSelectionExporter] Invalid parameters for batch export to "
+                "files");
+        return 0;
+    }
+
+    // Create output directory if it doesn't exist
+    QDir dir;
+    if (!dir.exists(outputDir)) {
+        if (!dir.mkpath(outputDir)) {
+            CVLog::Error(QString("[cvSelectionExporter] Failed to create "
+                                 "output directory: %1")
+                                 .arg(outputDir));
+            return 0;
+        }
+    }
+
+    int successCount = 0;
+    int totalCount = selections.size();
+
+    for (int i = 0; i < totalCount; ++i) {
+        const cvSelectionData& selection = selections[i];
+        int index = i + 1;
+
+        if (selection.isEmpty()) {
+            CVLog::Warning(
+                    QString("[cvSelectionExporter] Skipping empty selection %1")
+                            .arg(index));
+            if (progressCallback) {
+                progressCallback((index * 100) / totalCount);
+            }
+            continue;
+        }
+
+        // Build filename
+        QString filename = QString("%1/%2_%3.%4")
+                                   .arg(outputDir)
+                                   .arg(baseName)
+                                   .arg(index, 3, 10, QChar('0'))
+                                   .arg(format.toLower());
+
+        // Export directly to file
+        bool success = cvSelectionExporter::exportToFile(
+                polyData, selection, filename, false, false);
+
+        if (success) {
+            ++successCount;
+            CVLog::Print(QString("[cvSelectionExporter] Exported %1/%2: %3")
+                                 .arg(index)
+                                 .arg(totalCount)
+                                 .arg(filename));
+        } else {
+            CVLog::Error(QString("[cvSelectionExporter] Failed to export %1/%2")
+                                 .arg(index)
+                                 .arg(totalCount));
+        }
+
+        // Progress callback
+        if (progressCallback) {
+            progressCallback((index * 100) / totalCount);
+        }
+    }
+
+    CVLog::Print(QString("[cvSelectionExporter] Batch export complete: %1/%2 "
+                         "files exported to %3")
+                         .arg(successCount)
+                         .arg(totalCount)
+                         .arg(outputDir));
+
+    return successCount;
+}
+
+//-----------------------------------------------------------------------------
+bool cvSelectionExporter::exportNumbered(vtkPolyData* polyData,
+                                         const cvSelectionData& selection,
+                                         const QString& outputPath,
+                                         int number) {
+    if (!polyData || selection.isEmpty() || outputPath.isEmpty()) {
+        return false;
+    }
+
+    // Replace %1 with number
+    QString filename = outputPath.arg(number, 3, 10, QChar('0'));
+
+    // Determine format from extension
+    QFileInfo fileInfo(filename);
+    QString format = fileInfo.suffix().toLower();
+
+    // Export directly to file
+    return cvSelectionExporter::exportToFile(polyData, selection, filename,
+                                             false, false);
 }

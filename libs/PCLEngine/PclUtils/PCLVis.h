@@ -32,6 +32,7 @@ class TextureRenderManager;
 #include <ecvColorTypes.h>
 #include <ecvDrawContext.h>
 #include <ecvGenericVisualizer3D.h>
+#include <ecvHObject.h>
 
 // VTK
 #include <vtkBoundingBox.h>  // needed for iVar
@@ -50,6 +51,8 @@ class vtkRenderWindow;
 class vtkMatrix4x4;
 class ccGenericMesh;
 class ccPointCloud;
+class ccMesh;
+class ccHObject;
 class ccBBox;
 class ecvOrientedBBox;
 class ccSensor;
@@ -441,6 +444,67 @@ public:
                              int scalarFieldIndex,
                              int viewport = 0);
 
+    /**
+     * @brief Sync ALL scalar fields from ccPointCloud to VTK polydata
+     *
+     * This method ensures all scalar fields in the ccPointCloud are available
+     * in the VTK polydata for selection/extraction operations.
+     *
+     * @param viewID The cloud ID
+     * @param cloud The ccPointCloud containing scalar fields
+     * @param viewport Viewport ID
+     */
+    void syncAllScalarFieldsToVTK(const std::string& viewID,
+                                  ccPointCloud* cloud,
+                                  int viewport = 0);
+
+    /**
+     * @brief Set the source object for selection operations
+     *
+     * This stores a reference to the original ccHObject (ccPointCloud or
+     * ccMesh) that is being visualized. Used for direct extraction during
+     * selection operations to bypass VTK→ccHObject conversion.
+     * Supports multiple objects in the scene via viewID mapping.
+     *
+     * @param obj The source object (ccPointCloud or ccMesh)
+     * @param viewID The view ID for the object
+     */
+    void setCurrentSourceObject(ccHObject* obj, const std::string& viewID);
+
+    /**
+     * @brief Remove a source object from the map
+     * @param viewID The view ID of the object to remove
+     */
+    void removeSourceObject(const std::string& viewID);
+
+    /**
+     * @brief Get the source object for a given viewID
+     * @param viewID The view ID to look up
+     * @return The source ccHObject or nullptr if not found
+     */
+    ccHObject* getSourceObject(const std::string& viewID) const;
+
+    /**
+     * @brief Get the source object as ccPointCloud
+     * @param viewID The view ID to look up
+     * @return ccPointCloud pointer or nullptr if not a point cloud
+     */
+    ccPointCloud* getSourceCloud(const std::string& viewID) const;
+
+    /**
+     * @brief Get the source object as ccMesh
+     * @param viewID The view ID to look up
+     * @return ccMesh pointer or nullptr if not a mesh
+     */
+    ccMesh* getSourceMesh(const std::string& viewID) const;
+
+    /**
+     * @brief Check if a source object exists for the given viewID
+     * @param viewID The view ID to check
+     * @return true if source object exists
+     */
+    bool hasSourceObject(const std::string& viewID) const;
+
     void setPointCloudUniqueColor(double r,
                                   double g,
                                   double b,
@@ -640,6 +704,11 @@ protected:
     vtkSmartPointer<vtkPropPicker> m_propPicker;
 
     std::vector<int> m_selected_slice;
+
+    // Source objects for selection operations (allows direct extraction)
+    // Maps viewID -> ccHObject* to support multiple objects in the scene
+    // Note: ccHObject is not a QObject, so we use raw pointers
+    std::map<std::string, ccHObject*> m_sourceObjectMap;
 };
 
 typedef std::shared_ptr<PCLVis> PCLVisPtr;
