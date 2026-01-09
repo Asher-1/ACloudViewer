@@ -90,6 +90,9 @@ public:  // Configuration
     //! Register a dock widget to be placed at the bottom
     void registerBottomDockWidget(QDockWidget* dockWidget);
 
+    //! Register a dock widget to be placed on the right side
+    void registerRightSideDockWidget(QDockWidget* dockWidget);
+
     //! Set icon size and style for a toolbar based on screen resolution
     //! This is the unified method for setting toolbar icon size across all
     //! toolbars
@@ -127,6 +130,8 @@ private:
     QSet<QToolBar*> m_rightSideToolBars;     //! Toolbars on the right side
     QSet<QToolBar*> m_leftSideToolBars;      //! Toolbars on the left side
     QSet<QDockWidget*> m_bottomDockWidgets;  //! Dock widgets at the bottom
+    QSet<QDockWidget*>
+            m_rightSideDockWidgets;  //! Dock widgets on the right side
 };
 
 #endif  // ECV_LAYOUT_MANAGER_H

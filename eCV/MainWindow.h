@@ -78,6 +78,7 @@ class cvViewSelectionManager;
 class cvSelectionData;
 class cvSelectionHighlighter;
 class cvSelectionToolController;
+class cvFindDataDockWidget;
 #endif
 
 class ecvUpdateDlg;
@@ -119,6 +120,9 @@ class MainWindow : public QMainWindow,
 protected:
     MainWindow();
     ~MainWindow() override;
+
+    //! Override to add custom actions to right-click menu on toolbars
+    QMenu* createPopupMenu() override;
 
 public:  // static method
     //! Static shortcut to MainWindow::updateUI
@@ -766,6 +770,11 @@ private:
     //! Selection tool controller (manages all selection tools, ParaView-style)
     //! This is a singleton, but we keep a pointer for convenience
     cvSelectionToolController* m_selectionController;
+
+    //! Find Data dock widget (ParaView-style selection properties panel)
+    //! This is a standalone dock that can be shown/hidden independently of
+    //! selection tools
+    cvFindDataDockWidget* m_findDataDock;
 #endif
 
     QVBoxLayout* m_layout;
@@ -807,6 +816,9 @@ private:
 
     //! List of actions for shortcut management
     QList<QAction*> m_actions;
+
+    //! Selection properties widget toggle action (Find Data panel)
+    QAction* m_selectionPropsAction = nullptr;
 
 private:
 #ifdef BUILD_RECONSTRUCTION

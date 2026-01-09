@@ -16,6 +16,7 @@
 #include <QScreen>
 #include <QSettings>
 #include <QThread>
+#include <QTimer>
 
 // Standard
 #include <algorithm>
@@ -181,11 +182,10 @@
 #include <Tools/Common/CurveFitting.h>
 #include <Tools/FilterTools/PclFiltersTool.h>
 #include <Tools/MeasurementTools/PclMeasurementTools.h>
-// Selection Tools - Using centralized controller (ParaView-style architecture)
+#include <Tools/SelectionTools/cvFindDataDockWidget.h>
 #include <Tools/SelectionTools/cvSelectionData.h>
 #include <Tools/SelectionTools/cvSelectionHighlighter.h>
-#include <Tools/SelectionTools/cvSelectionHistory.h>
-#include <Tools/SelectionTools/cvSelectionManipulationTool.h>
+#include <Tools/SelectionTools/cvSelectionStorage.h>
 #include <Tools/SelectionTools/cvSelectionToolController.h>
 #include <Tools/SelectionTools/cvViewSelectionManager.h>
 #include <Tools/TransformTools/PclTransformTool.h>
@@ -298,6 +298,7 @@ MainWindow::MainWindow()
       m_dssTool(nullptr),
 #ifdef USE_PCL_BACKEND
       m_selectionController(nullptr),
+      m_findDataDock(nullptr),
 #endif
       m_layout(nullptr),
       m_uiManager(nullptr),
@@ -367,6 +368,53 @@ MainWindow::MainWindow()
 
     // Register Console dock widget as a bottom dock widget
     m_layoutManager->registerBottomDockWidget(m_ui->consoleDock);
+
+    // Create Find Data dock widget (ParaView-style selection properties panel)
+    // This dock is independent of selection tool state and can be shown/hidden
+    // by the user
+#ifdef USE_PCL_BACKEND
+    {
+        m_findDataDock = new cvFindDataDockWidget(this);
+        // Add dock to the right side (like ParaView)
+        addDockWidget(Qt::RightDockWidgetArea, m_findDataDock);
+
+        // Hide by default (user can show it via View menu)
+        m_findDataDock->hide();
+
+        // Connect extractedObjectReady to add extracted objects to scene
+        connect(m_findDataDock, &cvFindDataDockWidget::extractedObjectReady,
+                this, [this](ccHObject* obj) {
+                    if (obj) {
+                        CVLog::Print(QString("[Extract] Adding extracted "
+                                             "object '%1' "
+                                             "to database")
+                                             .arg(obj->getName()));
+                        addToDB(obj, true, true, false);
+                    }
+                });
+
+        // Register with layout manager for proper default layout handling
+        m_layoutManager->registerRightSideDockWidget(m_findDataDock);
+
+        // Add Find Data dock's toggle action to Toolbars menu
+        // Using QDockWidget's built-in toggleViewAction for standard behavior
+        QAction* selectionPropsAction = m_findDataDock->toggleViewAction();
+        selectionPropsAction->setText(tr("Find Data (Selection)"));
+        m_ui->menuToolbars->addAction(selectionPropsAction);
+
+        // Store action for external access (e.g., sync with selection tool
+        // state)
+        m_selectionPropsAction = selectionPropsAction;
+    }
+
+    // Initialize selection controller AFTER m_findDataDock is created
+    // This ensures configure() can properly set up the dock widget
+    initSelectionController();
+#else
+    CVLog::Warning(
+            "[MainWindow] USE_PCL_BACKEND not defined - Find Data dock not "
+            "created");
+#endif
 
     // advanced widgets not handled by QDesigner
     {  // view mode pop-up menu
@@ -556,6 +604,19 @@ MainWindow::~MainWindow() {
     // if we flush the console, it will try to display the console window while
     // we are destroying everything!
     ecvConsole::ReleaseInstance(false);
+}
+
+QMenu* MainWindow::createPopupMenu() {
+    // Call the base class implementation to get the standard toolbar actions
+    QMenu* menu = QMainWindow::createPopupMenu();
+
+    // Add separator and custom actions
+    if (menu && m_selectionPropsAction) {
+        menu->addSeparator();
+        menu->addAction(m_selectionPropsAction);
+    }
+
+    return menu;
 }
 
 // MainWindow Initialization
@@ -1041,10 +1102,9 @@ void MainWindow::connectActions() {
             &MainWindow::setGlobalZoom);
 
     // "Edit > Selection" menu - Initialize selection controller
-    // (ParaView-style)
-#ifdef USE_PCL_BACKEND
-    initSelectionController();
-#endif
+    // NOTE: initSelectionController() is called AFTER m_findDataDock is created
+    // (in MainWindow constructor), not here. See the note below.
+    // The actual initialization is done after m_findDataDock is created.
 
     connect(m_ui->actionLockRotationAxis, &QAction::triggered, this,
             &MainWindow::toggleLockRotationAxis);
@@ -2152,6 +2212,34 @@ void MainWindow::addToDB(ccHObject* obj,
     } else if (autoRedraw) {
         refreshObject(obj);
     }
+
+#ifdef USE_PCL_BACKEND
+    // ParaView-style: When new entities are added, refresh Data Producer combo
+    // but do NOT disable selection tools (ParaView doesn't do this)
+    // Reference: ParaView's pqSelectionManager::onSourceAdded() simply connects
+    // to the new source's selectionChanged signal without disabling selection
+    if (m_findDataDock) {
+        // Use QTimer to defer the refresh to ensure VTK actors are fully
+        // created
+        QTimer::singleShot(100, this, [this]() {
+            if (m_findDataDock) {
+                m_findDataDock->refreshDataProducers();
+                CVLog::PrintDebug(
+                        "[MainWindow::addToDB] Data Producer combo refreshed "
+                        "after "
+                        "adding new entity");
+            }
+        });
+    }
+
+    // Invalidate cached selection data since scene content changed
+    // This ensures stale polydata references are not used
+    // Note: Do NOT disable selection tools - user may be in the middle of
+    // selection
+    if (m_selectionController) {
+        m_selectionController->invalidateCache();
+    }
+#endif
 }
 
 void MainWindow::doActionEditCamera() {
@@ -4543,22 +4631,24 @@ void MainWindow::initSelectionController() {
             &cvSelectionToolController::selectionFinished, this,
             &MainWindow::onSelectionFinished);
 
+    // Note: Selection tool state is now decoupled from Find Data dock
+    // visibility (per ParaView design). The dock can be shown/hidden
+    // independently by the user through the View menu. Selection tools work
+    // regardless of dock visibility.
     connect(m_selectionController,
             &cvSelectionToolController::selectionToolStateChanged, this,
             [this](bool active) {
-                if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
-                    m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(
-                            active);
-                    m_ccRoot->updatePropertiesView();
-                }
+                Q_UNUSED(active);
+                // Dock visibility is now user-controlled, not tied to tool
+                // state The user can show/hide the Find Data dock independently
             });
 
     connect(m_selectionController,
             &cvSelectionToolController::selectionPropertiesUpdateRequested,
             this, [this](const cvSelectionData& data) {
-                if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
-                    m_ccRoot->getPropertiesDelegate()
-                            ->updateSelectionProperties(data);
+                // Update the Find Data dock with new selection data
+                if (m_findDataDock) {
+                    m_findDataDock->updateSelection(data);
                 }
             });
 
@@ -4607,9 +4697,26 @@ void MainWindow::initSelectionController() {
                 m_ccRoot->getPropertiesDelegate());
     }
 
-    CVLog::PrintDebug(
-            "[MainWindow] Selection controller initialized (ParaView-style "
-            "architecture)");
+    if (m_findDataDock) {
+        ecvGenericVisualizer3D* visualizer = ecvDisplayTools::GetVisualizer3D();
+        cvSelectionHighlighter* highlighter =
+                m_selectionController->highlighter();
+        cvViewSelectionManager* manager = getSelectionManager();
+
+        CVLog::PrintDebug(
+                QString("[MainWindow::initSelectionController] Calling "
+                        "configure: "
+                        "highlighter=%1, manager=%2, visualizer=%3")
+                        .arg(highlighter != nullptr)
+                        .arg(manager != nullptr)
+                        .arg(visualizer != nullptr));
+
+        m_findDataDock->configure(highlighter, manager, visualizer);
+    } else {
+        CVLog::Warning(
+                "[MainWindow::initSelectionController] m_findDataDock is "
+                "nullptr!");
+    }
 }
 
 void MainWindow::disableAllSelectionTools(void* except) {
@@ -4617,12 +4724,6 @@ void MainWindow::disableAllSelectionTools(void* except) {
     if (m_selectionController) {
         // Pass nullptr to disable all tools
         m_selectionController->disableAllTools(nullptr);
-    }
-
-    // Hide selection properties when all tools are disabled
-    if (except == nullptr && m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
-        m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(false);
-        m_ccRoot->updatePropertiesView();
     }
 }
 
@@ -4655,24 +4756,23 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
     m_ui->actionShrinkSelection->setEnabled(hasSelection);
     m_ui->actionClearSelection->setEnabled(hasSelection);
 
-    // Update selection properties widget
-    if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
-        if (m_ccRoot->getPropertiesDelegate()->areSelectionToolsActive()) {
-            m_ccRoot->getPropertiesDelegate()->updateSelectionProperties(
-                    selectionData);
-        }
+    // Update Find Data dock widget with selection data
+    // (Selection properties are now in standalone cvFindDataDockWidget)
+    if (m_findDataDock) {
+        m_findDataDock->updateSelection(selectionData);
     }
 
-    // Handle highlighting via the shared highlighter in the controller
-    cvSelectionHighlighter* highlighter =
-            m_selectionController ? m_selectionController->highlighter()
-                                  : nullptr;
-    if (highlighter) {
-        if (!hasSelection) {
+    // NOTE: Highlighting is already done in
+    // cvRenderViewSelectionReaction::finalizeSelection() Do NOT call
+    // highlighter->highlightSelection() here again as it causes double
+    // highlighting and potential crashes due to actor management issues. We
+    // only need to clear highlights when selection is empty.
+    if (!hasSelection) {
+        cvSelectionHighlighter* highlighter =
+                m_selectionController ? m_selectionController->highlighter()
+                                      : nullptr;
+        if (highlighter) {
             highlighter->clearHighlights();
-        } else {
-            highlighter->highlightSelection(selectionData,
-                                            cvSelectionHighlighter::SELECTED);
         }
     }
 
@@ -4690,48 +4790,13 @@ void MainWindow::onSelectionToolActivated(QAction* action) {
                     .arg(action ? action->text() : "unknown")
                     .arg(isSelectionTool ? "activated" : "deactivated"));
 
-    // Notify properties delegate about selection tool state
+    // Set visualizer for other property editors if needed
     if (m_ccRoot && m_ccRoot->getPropertiesDelegate()) {
         if (isSelectionTool) {
             ecvGenericVisualizer3D* viewer = ecvDisplayTools::GetVisualizer3D();
             if (viewer) {
                 m_ccRoot->getPropertiesDelegate()->setVisualizer(viewer);
             }
-
-            // Get shared highlighter from controller
-            if (m_selectionController) {
-                cvSelectionHighlighter* highlighter =
-                        m_selectionController->highlighter();
-                if (highlighter) {
-                    m_ccRoot->getPropertiesDelegate()->setHighlighter(
-                            highlighter);
-                }
-            }
-        }
-
-        // Activate/deactivate selection tools display
-        m_ccRoot->getPropertiesDelegate()->setSelectionToolsActive(
-                isSelectionTool);
-
-        // Force refresh the properties view
-        if (isSelectionTool) {
-            ccHObject* currentObj =
-                    m_ccRoot->getPropertiesDelegate()->getCurrentObject();
-            if (!currentObj) {
-                ccHObject* root = m_ccRoot->getRootEntity();
-                if (root && root->getChildrenNumber() > 0) {
-                    for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {
-                        ccHObject* child = root->getChild(i);
-                        if (child && child->isEnabled()) {
-                            m_ccRoot->selectEntity(child);
-                            break;
-                        }
-                    }
-                }
-            }
-            m_ccRoot->updatePropertiesView();
-        } else {
-            m_ccRoot->updatePropertiesView();
         }
     }
 }
@@ -7136,7 +7201,7 @@ void MainWindow::doActionComparePlanes() {
 // help
 void MainWindow::help() {
     QDesktopServices::openUrl(
-            QUrl(QLatin1String("https://asher-1.github.io/docs")));
+            QUrl(QStringLiteral("https://asher-1.github.io/docs")));
     ecvConsole::Print(
             tr("[ACloudViewer help] https://asher-1.github.io/docs!"));
 }

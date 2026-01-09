@@ -16,7 +16,7 @@
 #include <QVariant>
 // clang-format on
 
-#include "cvSelectionFilter.h"
+#include "cvSelectionAlgebra.h"  // Contains cvSelectionFilter
 #include "qPCL.h"
 
 // Forward declarations

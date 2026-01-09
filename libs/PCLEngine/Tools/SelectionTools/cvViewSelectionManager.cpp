@@ -7,27 +7,23 @@
 
 #include "cvViewSelectionManager.h"
 
-#include "cvBlockSelectionTool.h"
-#include "cvFrustumSelectionTool.h"
-#include "cvPolygonSelectionTool.h"
-#include "cvRenderViewSelectionTool.h"
 #include "cvSelectionData.h"
-#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
-#include "cvSurfaceSelectionTool.h"
-#include "cvTooltipSelectionTool.h"
-#include "cvZoomBoxSelectionTool.h"
+// cvSelectionTypes.h merged into cvSelectionData.h  // For SelectionMode and
+// SelectionModifier enums
 
 // Selection utility modules
-#include "cvSelectionAlgebra.h"
+#include "cvSelectionAlgebra.h"  // Contains cvSelectionFilter
 #include "cvSelectionAnnotation.h"
-#include "cvSelectionBookmarks.h"
-#include "cvSelectionFilter.h"
 #include "cvSelectionHighlighter.h"
-#include "cvSelectionHistory.h"
 #include "cvSelectionPipeline.h"
+#include "cvSelectionStorage.h"  // Contains cvSelectionHistory and cvSelectionBookmarks
 
 // LOCAL
 #include "PclUtils/PCLVis.h"
+
+// ECV_DB_LIB
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -54,7 +50,6 @@ cvViewSelectionManager::cvViewSelectionManager(QObject* parent)
       m_currentMode(static_cast<SelectionMode>(-1)),
       m_currentModifier(SelectionModifier::SELECTION_DEFAULT),
       m_isActive(false),
-      m_currentTool(nullptr),
       m_currentSelection(nullptr),
       m_currentSelectionFieldAssociation(0),
       m_history(nullptr),
@@ -63,7 +58,8 @@ cvViewSelectionManager::cvViewSelectionManager(QObject* parent)
       m_filter(nullptr),
       m_bookmarks(nullptr),
       m_annotations(nullptr),
-      m_highlighter(nullptr) {
+      m_highlighter(nullptr),
+      m_sourceObject(nullptr) {
     // Initialize utility modules (ParaView-style architecture)
     m_history = new cvSelectionHistory(this);
     m_algebra = new cvSelectionAlgebra(this);
@@ -95,14 +91,6 @@ cvViewSelectionManager::~cvViewSelectionManager() {
     // Smart pointer handles cleanup automatically
     m_currentSelection = nullptr;
 
-    // Clean up all cached tools
-    for (auto tool : m_toolCache) {
-        if (tool) {
-            delete tool;
-        }
-    }
-    m_toolCache.clear();
-
     // Clean up highlighter (not a QObject, so manual cleanup)
     delete m_highlighter;
     m_highlighter = nullptr;
@@ -113,7 +101,7 @@ cvViewSelectionManager::~cvViewSelectionManager() {
 }
 
 //-----------------------------------------------------------------------------
-// Override setVisualizer to handle tool cache updates
+// Override setVisualizer to handle utility module updates
 void cvViewSelectionManager::setVisualizer(ecvGenericVisualizer3D* viewer) {
     if (getVisualizer() == viewer) {
         return;
@@ -125,13 +113,6 @@ void cvViewSelectionManager::setVisualizer(ecvGenericVisualizer3D* viewer) {
     }
 
     cvGenericSelectionTool::setVisualizer(viewer);
-
-    // Update visualizer for all cached tools
-    for (auto tool : m_toolCache) {
-        if (tool) {
-            tool->setVisualizer(viewer);
-        }
-    }
 
     // Update visualizer for utility modules
     if (m_annotations && getPCLVis()) {
@@ -154,6 +135,9 @@ void cvViewSelectionManager::setVisualizer(ecvGenericVisualizer3D* viewer) {
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::enableSelection(SelectionMode mode) {
+    // NOTE: In the new architecture, cvRenderViewSelectionReaction handles
+    // all selection logic. This method only updates internal state.
+
     // Special handling for non-interactive modes
     if (mode == SelectionMode::CLEAR_SELECTION) {
         clearSelection();
@@ -168,48 +152,22 @@ void cvViewSelectionManager::enableSelection(SelectionMode mode) {
         return;
     }
 
-    // Check if this is compatible with current mode
-    if (m_isActive && m_currentTool) {
-        if (!isCompatible(m_currentMode, mode)) {
-            // Not compatible, disable current first
-            disableSelection();
-        }
-    }
-
-    // Get or create the tool
-    cvRenderViewSelectionTool* tool = getOrCreateTool(mode);
-    if (!tool) {
-        CVLog::Warning(QString("[cvViewSelectionManager] Failed to create tool "
-                               "for mode %1")
-                               .arg(static_cast<int>(mode)));
-        return;
-    }
-
-    // Set the selection modifier
-    tool->setSelectionModifier(m_currentModifier);
-
-    // Disable previous tool if it's different
-    if (m_currentTool && m_currentTool != tool) {
-        m_currentTool->disable();
-    }
-
-    // Enable the new tool
-    m_currentTool = tool;
+    // Update internal state
     m_currentMode = mode;
     m_isActive = true;
-
-    tool->enable();
 
     emit modeChanged(mode);
 }
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::disableSelection() {
-    if (!m_isActive || !m_currentTool) {
+    // NOTE: In the new architecture, cvRenderViewSelectionReaction handles
+    // all selection logic. This method only updates internal state.
+
+    if (!m_isActive) {
         return;
     }
 
-    m_currentTool->disable();
     m_isActive = false;
     m_currentMode = static_cast<SelectionMode>(-1);
 
@@ -217,9 +175,7 @@ void cvViewSelectionManager::disableSelection() {
 }
 
 //-----------------------------------------------------------------------------
-bool cvViewSelectionManager::isSelectionActive() const {
-    return m_isActive && m_currentTool && m_currentTool->isEnabled();
-}
+bool cvViewSelectionManager::isSelectionActive() const { return m_isActive; }
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::setSelectionModifier(SelectionModifier modifier) {
@@ -228,12 +184,6 @@ void cvViewSelectionManager::setSelectionModifier(SelectionModifier modifier) {
     }
 
     m_currentModifier = modifier;
-
-    // Update current tool if active
-    if (m_currentTool) {
-        m_currentTool->setSelectionModifier(modifier);
-    }
-
     emit modifierChanged(modifier);
 }
 
@@ -271,24 +221,41 @@ void cvViewSelectionManager::expandSelection(int layers,
     // Reference: pqRenderViewSelectionReaction::actionTriggered()
     // GROW_SELECTION case
 
-    if (!m_algebra || !hasSelection()) {
-        CVLog::Warning(
-                "[cvViewSelectionManager] No selection or algebra module to "
-                "expand");
+    if (!m_algebra) {
+        CVLog::Warning("[cvViewSelectionManager] No algebra module available");
         return;
     }
 
-    // Get polyData
+    if (!hasSelection()) {
+        CVLog::Warning(
+                "[cvViewSelectionManager] No selection to expand (grow/shrink "
+                "requires an existing selection)");
+        return;
+    }
+
+    // Note: We can't reliably detect if m_sourceObject has been deleted in C++
+    // without causing undefined behavior. We rely on the application to clear
+    // m_sourceObject when objects are deleted (e.g., via
+    // clearCurrentSelection()).
+
+    // Get polyData with enhanced fallback
+    // Reference: ParaView's selection expansion uses the source data
     vtkPolyData* polyData = getPolyData();
+
     if (!polyData) {
         CVLog::Warning(
                 "[cvViewSelectionManager] No polyData available for expand "
-                "operation");
+                "operation. Make sure you have data loaded in the viewer.");
         return;
     }
 
     // Get current selection as cvSelectionData
     cvSelectionData current = currentSelection();
+    CVLog::Print(QString("[cvViewSelectionManager] Expand selection: %1 "
+                         "%2, layers=%3")
+                         .arg(current.count())
+                         .arg(current.fieldTypeString())
+                         .arg(layers));
 
     // Use algebra module to expand selection
     cvSelectionData result = m_algebra->expandSelection(
@@ -305,10 +272,24 @@ void cvViewSelectionManager::expandSelection(int layers,
             m_history->pushSelection(result, operationName);
         }
 
-        CVLog::PrintDebug(QString("[cvViewSelectionManager] %1: %2 -> %3")
-                                  .arg(operationName)
-                                  .arg(current.count())
-                                  .arg(result.count()));
+        // Update highlight (ParaView-style: visually reflect expanded
+        // selection)
+        if (m_highlighter) {
+            if (!result.isEmpty()) {
+                m_highlighter->highlightSelection(
+                        polyData, result.vtkArray(),
+                        static_cast<int>(result.fieldAssociation()),
+                        cvSelectionHighlighter::SELECTED);
+            } else {
+                m_highlighter->clearHighlights();
+            }
+        }
+
+        CVLog::Print(QString("[cvViewSelectionManager] %1: %2 -> %3 %4")
+                             .arg(operationName)
+                             .arg(current.count())
+                             .arg(result.count())
+                             .arg(result.fieldTypeString()));
         emit selectionChanged();
     } else if (layers > 0) {
         CVLog::Warning(
@@ -373,166 +354,6 @@ bool cvViewSelectionManager::isCompatible(SelectionMode mode1,
     }
 
     return false;
-}
-
-//-----------------------------------------------------------------------------
-cvRenderViewSelectionTool* cvViewSelectionManager::getOrCreateTool(
-        SelectionMode mode) {
-    // Check cache first
-    if (m_toolCache.contains(mode) && m_toolCache[mode]) {
-        return m_toolCache[mode];
-    }
-
-    // Create new tool based on mode
-    // ParaView-style: use specific tool classes for different modes
-    cvRenderViewSelectionTool* tool = nullptr;
-
-    switch (mode) {
-        // Tooltip and Interactive modes: use cvTooltipSelectionTool
-        // (unified class supporting both modes)
-        // Reference: pqRenderViewSelectionReaction lines 92-109
-        case SelectionMode::HOVER_CELLS_TOOLTIP:
-        case SelectionMode::HOVER_POINTS_TOOLTIP:
-        case SelectionMode::SELECT_SURFACE_CELLS_INTERACTIVELY:
-        case SelectionMode::SELECT_SURFACE_POINTS_INTERACTIVELY:
-        case SelectionMode::SELECT_SURFACE_CELLDATA_INTERACTIVELY:
-        case SelectionMode::SELECT_SURFACE_POINTDATA_INTERACTIVELY:
-            tool = new cvTooltipSelectionTool(mode, this);
-            // NOTE: ESC key handling is centralized in
-            // MainWindow::handleEscapeKey()
-            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
-                                      "cvTooltipSelectionTool for mode %1")
-                                      .arg(static_cast<int>(mode)));
-            break;
-
-        // Surface selection modes: use cvSurfaceSelectionTool
-        case SelectionMode::SELECT_SURFACE_CELLS:
-        case SelectionMode::SELECT_SURFACE_POINTS:
-            tool = new cvSurfaceSelectionTool(mode, this);
-            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
-                                      "cvSurfaceSelectionTool for mode %1")
-                                      .arg(static_cast<int>(mode)));
-            break;
-
-        // Polygon selection modes: use cvPolygonSelectionTool
-        case SelectionMode::SELECT_SURFACE_CELLS_POLYGON:
-        case SelectionMode::SELECT_SURFACE_POINTS_POLYGON:
-        case SelectionMode::SELECT_CUSTOM_POLYGON:  // Custom polygon also uses
-                                                    // polygon tool
-            tool = new cvPolygonSelectionTool(mode, this);
-            // For custom polygon, connect the custom signal
-            if (mode == SelectionMode::SELECT_CUSTOM_POLYGON) {
-                connect(qobject_cast<cvPolygonSelectionTool*>(tool),
-                        &cvPolygonSelectionTool::polygonCompleted, this,
-                        &cvViewSelectionManager::customPolygonSelected);
-            }
-            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
-                                      "cvPolygonSelectionTool for mode %1")
-                                      .arg(static_cast<int>(mode)));
-            break;
-
-        // Frustum selection modes: use cvFrustumSelectionTool
-        case SelectionMode::SELECT_FRUSTUM_CELLS:
-        case SelectionMode::SELECT_FRUSTUM_POINTS:
-        case SelectionMode::SELECT_FRUSTUM_BLOCKS:
-            tool = new cvFrustumSelectionTool(mode, this);
-            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
-                                      "cvFrustumSelectionTool for mode %1")
-                                      .arg(static_cast<int>(mode)));
-            break;
-
-        // Block selection mode: use cvBlockSelectionTool
-        case SelectionMode::SELECT_BLOCKS:
-            tool = new cvBlockSelectionTool(mode, this);
-            CVLog::PrintDebug(QString("[cvViewSelectionManager] Created "
-                                      "cvBlockSelectionTool for mode %1")
-                                      .arg(static_cast<int>(mode)));
-            break;
-
-        // Zoom to box mode: use cvZoomBoxSelectionTool
-        case SelectionMode::ZOOM_TO_BOX: {
-            cvZoomBoxSelectionTool* zoomTool = new cvZoomBoxSelectionTool(this);
-            // Connect zoom completed signal to manager's signal
-            connect(zoomTool, &cvZoomBoxSelectionTool::zoomToBoxCompleted, this,
-                    [this](int xmin, int ymin, int xmax, int ymax) {
-                        int region[4] = {xmin, ymin, xmax, ymax};
-                        emit zoomToBoxRequested(region);
-                        emit zoomToBoxRequested(xmin, ymin, xmax, ymax);
-                    });
-            tool = zoomTool;
-            CVLog::Print(
-                    "[cvViewSelectionManager] Created cvZoomBoxSelectionTool");
-            break;
-        }
-
-        // Fallback for unknown modes: use base class
-        default:
-            tool = new cvRenderViewSelectionTool(mode, this);
-            CVLog::Warning(QString("[cvViewSelectionManager] Using base class "
-                                   "for unknown mode %1")
-                                   .arg(static_cast<int>(mode)));
-            break;
-    }
-
-    if (!tool) {
-        CVLog::Error(QString("[cvViewSelectionManager] Failed to create tool "
-                             "for mode %1")
-                             .arg(static_cast<int>(mode)));
-        return nullptr;
-    }
-
-    if (getVisualizer()) {
-        tool->setVisualizer(getVisualizer());
-    }
-
-    // Set manager reference (for pipeline access)
-    tool->setSelectionManager(this);
-
-    // Connect common signals
-    connect(tool, &cvRenderViewSelectionTool::selectionCompleted, this,
-            &cvViewSelectionManager::onToolSelectionCompleted);
-    connect(tool, &cvRenderViewSelectionTool::selectionChanged, this,
-            &cvViewSelectionManager::onToolSelectionChanged);
-
-    // Cache the tool
-    m_toolCache[mode] = tool;
-
-    // Clean up if too many tools cached
-    if (m_toolCache.size() > MAX_CACHED_TOOLS) {
-        cleanupInactiveTools();
-    }
-
-    return tool;
-}
-
-//-----------------------------------------------------------------------------
-void cvViewSelectionManager::cleanupInactiveTools() {
-    // Remove inactive tools that are not recently used
-    QList<SelectionMode> toRemove;
-
-    for (auto it = m_toolCache.begin(); it != m_toolCache.end(); ++it) {
-        if (!it.value()) {
-            toRemove.append(it.key());
-        } else if (!it.value()->isEnabled() && it.value() != m_currentTool) {
-            // Delete the tool
-            delete it.value();
-            toRemove.append(it.key());
-        }
-    }
-
-    for (SelectionMode mode : toRemove) {
-        m_toolCache.remove(mode);
-    }
-}
-
-//-----------------------------------------------------------------------------
-void cvViewSelectionManager::onToolSelectionCompleted() {
-    emit selectionCompleted();
-}
-
-//-----------------------------------------------------------------------------
-void cvViewSelectionManager::onToolSelectionChanged() {
-    emit selectionChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -788,8 +609,6 @@ vtkPolyData* cvViewSelectionManager::getPolyData() const {
         }
     }
 
-    CVLog::Warning(
-            "[cvViewSelectionManager::getPolyData] No polyData available");
     return nullptr;
 }
 
@@ -836,6 +655,9 @@ void cvViewSelectionManager::clearCurrentSelection() {
 
     m_currentSelectionFieldAssociation = -1;
 
+    // Clear source object reference
+    m_sourceObject = nullptr;
+
     // Clear pipeline cache
     if (m_pipeline) {
         m_pipeline->invalidateCachedSelection();
@@ -845,4 +667,66 @@ void cvViewSelectionManager::clearCurrentSelection() {
     cvSelectionData emptySelection;
     emit selectionChanged(emptySelection);
     emit selectionChanged();  // Legacy signal
+}
+
+//-----------------------------------------------------------------------------
+void cvViewSelectionManager::setSourceObject(ccHObject* obj) {
+    m_sourceObject = obj;
+    if (obj) {
+        CVLog::PrintDebug(QString("[cvViewSelectionManager] Source object set: "
+                                  "'%1' (type=%2)")
+                                  .arg(obj->getName())
+                                  .arg(obj->getClassID()));
+    } else {
+        CVLog::PrintDebug("[cvViewSelectionManager] Source object cleared");
+    }
+}
+
+//-----------------------------------------------------------------------------
+ccHObject* cvViewSelectionManager::getSourceObject() const {
+    return m_sourceObject;
+}
+
+//-----------------------------------------------------------------------------
+ccPointCloud* cvViewSelectionManager::getSourcePointCloud() const {
+    ccHObject* obj = getSourceObject();
+    if (!obj) return nullptr;
+
+    // Note: We can't reliably detect if obj has been deleted in C++ without
+    // causing undefined behavior. The caller must ensure the object is still
+    // valid. We rely on the application to clear m_sourceObject when objects
+    // are deleted (e.g., via clearCurrentSelection()).
+
+    // Check if it's a point cloud
+    if (obj->isA(CV_TYPES::POINT_CLOUD)) {
+        return static_cast<ccPointCloud*>(obj);
+    }
+    return nullptr;
+}
+
+//-----------------------------------------------------------------------------
+ccMesh* cvViewSelectionManager::getSourceMesh() const {
+    ccHObject* obj = getSourceObject();
+    if (!obj) return nullptr;
+
+    // Note: We can't reliably detect if obj has been deleted in C++ without
+    // causing undefined behavior. The caller must ensure the object is still
+    // valid. We rely on the application to clear m_sourceObject when objects
+    // are deleted (e.g., via clearCurrentSelection()).
+
+    // Check if it's a mesh
+    if (obj->isKindOf(CV_TYPES::MESH)) {
+        return static_cast<ccMesh*>(obj);
+    }
+    return nullptr;
+}
+
+//-----------------------------------------------------------------------------
+bool cvViewSelectionManager::isSourceObjectValid() const {
+    // Note: In C++, there's no reliable way to detect if a raw pointer points
+    // to a deleted object without causing undefined behavior. We rely on the
+    // application to clear m_sourceObject when objects are deleted.
+    // The actual safety check happens in getSourcePointCloud/getSourceMesh
+    // where we verify the object is still accessible before using it.
+    return m_sourceObject != nullptr;
 }

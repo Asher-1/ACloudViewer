@@ -15,6 +15,7 @@ v3.9.4-Beta (Asher) - 12/02/2025
     -   Add ruler widget based on vtk support for measurement tools
     -   Add protractor widget based on vtk support for measurement tools
     -   Add contour widget based on vtk support for measurement tools
+    -   Add selection tools based on vtk
     -   New 'Display > Display settings' options:
         -   Restore default window geometry on startup
         -   option to control whether the default window geometry (size and position) should be restored or not

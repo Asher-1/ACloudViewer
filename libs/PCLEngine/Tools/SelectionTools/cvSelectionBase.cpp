@@ -110,10 +110,6 @@ vtkPolyData* cvSelectionBase::getPolyDataForSelection(
         }
     }
 
-    if (!polyData) {
-        CVLog::Warning("[cvSelectionBase] No polyData available for selection");
-    }
-
     return polyData;
 }
 

@@ -24,6 +24,7 @@
 #include <ecvHObjectCaster.h>
 #include <ecvImage.h>
 #include <ecvMaterialSet.h>
+#include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 #include <ecvScalarField.h>
@@ -58,6 +59,10 @@ void PCLDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
         auto renderer = vtkSmartPointer<vtkRenderer>::New();
         auto renderWindow =
                 vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+        // CRITICAL: Disable multisampling for hardware selection to work
+        // ParaView does this in vtkPVRenderView.cxx line 453
+        // MultiSamples interferes with vtkHardwareSelector's pixel reading
+        renderWindow->SetMultiSamples(0);
         renderWindow->AddRenderer(renderer);
         auto interactorStyle =
                 vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
@@ -101,6 +106,14 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
     bool firstShow = !m_visualizer3D->contains(viewID);
     bool hasRedrawn = false;
 
+    // Create local context to pass entity's redraw state
+    // This ensures updateShadingMode() in PCLVis updates normals/colors when
+    // needed
+    CC_DRAW_CONTEXT localContext = context;
+    if (ecvCloud->isRedraw()) {
+        localContext.forceRedraw = true;
+    }
+
     if (ecvCloud->isRedraw() || firstShow) {
         if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
             PCLCloud::Ptr pclCloud =
@@ -109,28 +122,28 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
             if (!pclCloud) {
                 return;
             }
-            m_visualizer3D->draw(context, pclCloud);
-            m_visualizer3D->updateNormals(context, pclCloud);
+            m_visualizer3D->draw(localContext, pclCloud);
+            m_visualizer3D->updateNormals(localContext, pclCloud);
             hasRedrawn = true;
         } else {
             m_visualizer3D->resetScalarColor(viewID, true, viewport);
-            if (!updateEntityColor(context, ecvCloud)) {
+            if (!updateEntityColor(localContext, ecvCloud)) {
                 PCLCloud::Ptr pclCloud =
                         cc2smReader(ecvCloud, true)
-                                .getAsSM(!context.drawParam.showSF);
+                                .getAsSM(!localContext.drawParam.showSF);
                 if (!pclCloud) {
                     return;
                 }
-                m_visualizer3D->draw(context, pclCloud);
-                m_visualizer3D->updateNormals(context, pclCloud);
+                m_visualizer3D->draw(localContext, pclCloud);
+                m_visualizer3D->updateNormals(localContext, pclCloud);
                 hasRedrawn = true;
             } else {
-                if (context.drawParam.showNorms) {
+                if (localContext.drawParam.showNorms) {
                     PCLCloud::Ptr pointNormals =
                             cc2smReader(ecvCloud).getPointNormals();
-                    m_visualizer3D->updateNormals(context, pointNormals);
+                    m_visualizer3D->updateNormals(localContext, pointNormals);
                 } else {
-                    m_visualizer3D->updateNormals(context, nullptr);
+                    m_visualizer3D->updateNormals(localContext, nullptr);
                 }
             }
         }
@@ -140,9 +153,25 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
         m_visualizer3D->setPointSize(context.defaultPointSize, viewID,
                                      viewport);
 
-        // Ensure scalar field data is available in VTK for tooltips
-        // Always update when SF is shown (to handle SF switching)
-        if (context.drawParam.showSF && ecvCloud->sfShown()) {
+        // Set the source object for direct extraction during selection
+        // operations This allows bypassing VTK→ccPointCloud conversion when
+        // extracting selections
+        if (firstShow || hasRedrawn) {
+            m_visualizer3D->setCurrentSourceObject(ecvCloud, viewID);
+        }
+
+        // Sync ALL scalar fields to VTK on first show or force redraw
+        // This ensures all SFs are available for selection/extraction (Find
+        // Data)
+        if (firstShow || localContext.forceRedraw) {
+            unsigned numSFs = ecvCloud->getNumberOfScalarFields();
+            for (unsigned i = 0; i < numSFs; ++i) {
+                m_visualizer3D->addScalarFieldToVTK(
+                        viewID, ecvCloud, static_cast<int>(i), viewport);
+            }
+        }
+        // Also ensure current SF is updated for tooltip display
+        else if (context.drawParam.showSF && ecvCloud->sfShown()) {
             int sfIdx = ecvCloud->getCurrentDisplayedScalarFieldIndex();
             if (sfIdx >= 0) {
                 // Add/update scalar field to VTK for tooltip display
@@ -196,6 +225,13 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
     int viewport = context.defaultViewPort;
     context.visFiltering = true;
     bool firstShow = !m_visualizer3D->contains(viewID);
+
+    // Set forceRedraw based on entity's redraw state
+    // This ensures updateShadingMode() in PCLVis updates normals/colors when
+    // needed
+    if (mesh->isRedraw()) {
+        context.forceRedraw = true;
+    }
 
     if (mesh->isRedraw() || firstShow) {
         CVLog::PrintDebug(
@@ -313,6 +349,14 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
     if (m_visualizer3D->contains(viewID)) {
         m_visualizer3D->setMeshRenderingMode(context.meshRenderingMode, viewID,
                                              viewport);
+
+        // Set the source mesh for direct extraction during selection operations
+        // This allows bypassing VTK→ccMesh conversion when extracting
+        // selections Cast to ccMesh for source object tracking
+        ccMesh* ccMeshObj = dynamic_cast<ccMesh*>(mesh);
+        if (ccMeshObj && (firstShow || mesh->isRedraw())) {
+            m_visualizer3D->setCurrentSourceObject(ccMeshObj, viewID);
+        }
 
         if ((!context.drawParam.showColors && !context.drawParam.showSF) ||
             mesh->isColorOverridden()) {

@@ -51,26 +51,91 @@
 #endif
 
 ccPointCloud* vtk2cc::ConvertToPointCloud(vtkPolyData* polydata, bool silent) {
-    if (!polydata) return nullptr;
+    if (!polydata) {
+        if (!silent) {
+            CVLog::Warning("[vtk2cc::ConvertToPointCloud] polydata is nullptr");
+        }
+        return nullptr;
+    }
 
-    // Set the colors of the pcl::PointCloud (if the pcl::PointCloud supports
-    // colors and the input vtkPolyData has colors)
-    vtkUnsignedCharArray* colors = vtkUnsignedCharArray::SafeDownCast(
-            polydata->GetPointData()->GetScalars());
+    vtkIdType pointCount = polydata->GetNumberOfPoints();
 
-    // Set the normals of the pcl::PointCloud (if the pcl::PointCloud supports
-    // normals and the input vtkPolyData has normals)
-    vtkFloatArray* normals =
-            vtkFloatArray::SafeDownCast(polydata->GetPointData()->GetNormals());
+    // Check for empty polydata
+    if (pointCount == 0) {
+        if (!silent) {
+            CVLog::Warning(
+                    "[vtk2cc::ConvertToPointCloud] polydata has 0 points");
+        }
+        return nullptr;
+    }
+
+    vtkPointData* pointData = polydata->GetPointData();
+    vtkFieldData* fieldData = polydata->GetFieldData();
+
+    // Get colors - ONLY use colors if:
+    // 1. "HasSourceRGB" flag is set in FieldData (indicating actual source RGB
+    // data)
+    // 2. OR we find a specifically named "RGB" or "Colors" array with unsigned
+    // char data This prevents scalar field data from being mistakenly treated
+    // as colors
+    vtkUnsignedCharArray* colors = nullptr;
+    bool hasSourceRGBFlag = false;
+
+    // Check for HasSourceRGB flag first
+    if (fieldData) {
+        vtkIntArray* hasRGBArray =
+                vtkIntArray::SafeDownCast(fieldData->GetArray("HasSourceRGB"));
+        if (hasRGBArray && hasRGBArray->GetValue(0) == 1) {
+            hasSourceRGBFlag = true;
+        }
+    }
+
+    if (pointData) {
+        // STRICT: Only use colors if HasSourceRGB flag is explicitly set
+        // This prevents scalar fields (like curvature shown as color) from
+        // being mistakenly treated as actual RGB color data
+        if (hasSourceRGBFlag) {
+            // Look for explicitly named RGB arrays WITH 3 or 4 components
+            const char* colorArrayNames[] = {"RGB", "Colors", "rgba", "rgb"};
+            for (const char* name : colorArrayNames) {
+                vtkDataArray* arr = pointData->GetArray(name);
+                if (arr) {
+                    if (arr->GetNumberOfComponents() == 3 ||
+                        arr->GetNumberOfComponents() == 4) {
+                        colors = vtkUnsignedCharArray::SafeDownCast(arr);
+                        if (colors) break;
+                    }
+                }
+            }
+        }
+        // Note: We intentionally do NOT fall back to searching by array name
+        // without the HasSourceRGB flag. This prevents scalar fields
+        // (curvature, intensity, etc.) from being confused with actual RGB
+        // colors.
+    }
+
+    // Get normals - first try active normals, then fallback to named arrays
+    vtkFloatArray* normals = nullptr;
+    if (pointData) {
+        // First try active normals
+        normals = vtkFloatArray::SafeDownCast(pointData->GetNormals());
+
+        // If no active normals, look for arrays named "Normals"
+        if (!normals) {
+            vtkDataArray* arr = pointData->GetArray("Normals");
+            if (arr && arr->GetNumberOfComponents() == 3) {
+                normals = vtkFloatArray::SafeDownCast(arr);
+            }
+        }
+    }
 
     // create cloud
     ccPointCloud* cloud = new ccPointCloud("vertices");
 
-    vtkIdType pointCount = polydata->GetNumberOfPoints();
     if (!cloud->resize(static_cast<unsigned>(pointCount))) {
         if (!silent) {
-            CVLog::Warning(
-                    QString("[getPointCloudFromPolyData] not enough memory!"));
+            CVLog::Warning(QString(
+                    "[vtk2cc::ConvertToPointCloud] not enough memory!"));
         }
         delete cloud;
         cloud = nullptr;
@@ -128,14 +193,29 @@ ccPointCloud* vtk2cc::ConvertToPointCloud(vtkPolyData* polydata, bool silent) {
     }
 
     // Copy scalar fields (labels, intensity, etc.) from point data
-    vtkPointData* pointData = polydata->GetPointData();
-    if (pointData) {
+    if (pointData && pointCount > 0) {
         int numArrays = pointData->GetNumberOfArrays();
+
         for (int i = 0; i < numArrays; ++i) {
             vtkDataArray* dataArray = pointData->GetArray(i);
 
             // Only handle single-component (scalar) arrays
             if (!dataArray || dataArray->GetNumberOfComponents() != 1) {
+                continue;
+            }
+
+            // Check if the array has valid data
+            if (dataArray->GetNumberOfTuples() < pointCount) {
+                if (!silent) {
+                    CVLog::Warning(
+                            QString("[vtk2cc] Scalar array %1 has only %2 "
+                                    "tuples but pointCount is %3")
+                                    .arg(dataArray->GetName()
+                                                 ? dataArray->GetName()
+                                                 : "(unnamed)")
+                                    .arg(dataArray->GetNumberOfTuples())
+                                    .arg(pointCount));
+                }
                 continue;
             }
 
@@ -154,6 +234,17 @@ ccPointCloud* vtk2cc::ConvertToPointCloud(vtkPolyData* polydata, bool silent) {
             if (!scalarField->reserveSafe(static_cast<unsigned>(pointCount))) {
                 if (!silent) {
                     CVLog::Warning(QString("[vtk2cc] Failed to allocate scalar "
+                                           "field: %1")
+                                           .arg(arrayName));
+                }
+                scalarField->release();
+                continue;
+            }
+
+            // Resize to ensure space is allocated
+            if (!scalarField->resizeSafe(static_cast<unsigned>(pointCount))) {
+                if (!silent) {
+                    CVLog::Warning(QString("[vtk2cc] Failed to resize scalar "
                                            "field: %1")
                                            .arg(arrayName));
                 }
@@ -180,14 +271,6 @@ ccPointCloud* vtk2cc::ConvertToPointCloud(vtkPolyData* polydata, bool silent) {
                 }
                 scalarField->release();
             } else {
-                if (!silent) {
-                    CVLog::Print(QString("[vtk2cc] Added scalar field '%1' [%2 "
-                                         "- %3]")
-                                         .arg(arrayName)
-                                         .arg(scalarField->getMin())
-                                         .arg(scalarField->getMax()));
-                }
-
                 // Auto-detect and display label fields
                 QString fieldName = QString(arrayName).toLower();
                 if (fieldName.contains("label") ||
@@ -196,11 +279,6 @@ ccPointCloud* vtk2cc::ConvertToPointCloud(vtkPolyData* polydata, bool silent) {
                     fieldName.contains("cluster")) {
                     cloud->setCurrentDisplayedScalarField(sfIdx);
                     cloud->showSF(true);
-                    if (!silent) {
-                        CVLog::Print(QString("[vtk2cc] Label field '%1' "
-                                             "auto-displayed")
-                                             .arg(arrayName));
-                    }
                 }
             }
         }

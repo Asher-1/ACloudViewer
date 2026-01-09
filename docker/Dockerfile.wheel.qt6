@@ -35,10 +35,6 @@ ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV PACKAGE=${PACKAGE}
 ENV QT_BASE_DIR=${QT_BASE_DIR}
 
-# Updated versions for Qt6 build
-ENV VTK_VERSION=9.4.2
-ENV PCL_VERSION=1.15.1
-
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=all
@@ -98,7 +94,7 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         tk-dev \
         libxml2-dev \
         libxmlsec1-dev \
-        libffi-dev \ 
+        libffi-dev \
         liblzma-dev \
         ca-certificates \
         # for opencv
@@ -109,7 +105,6 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
-        libhdf5-dev \
         # for colmap
         libatlas-base-dev \
         # for package
@@ -133,20 +128,11 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         nasm \
         flex \
         fontconfig \
-        # for pcl
-        libopenni-dev \
-        libopenni2-dev \
-        libjsoncpp-dev \
         # libgdal-dev \
         libcgal-dev \
-        libusb-1.0-0-dev \
         libeigen3-dev \
         libboost-all-dev \
         libglew-dev \
-        'libqhull*' \
-        libqhull-dev \
-        libflann1.9 \
-        libflann-dev \
         # for Qt6 XCB/X11 backend
         libxcb-xkb1 \
         libxcb-xkb-dev \
@@ -190,9 +176,7 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libasound2-dev \
         # For Qt6 positioning
         libgstreamer1.0-dev \
-        libgstreamer-plugins-base1.0-dev \
-        # For PCL atomic operations
-        libatomic1
+        libgstreamer-plugins-base1.0-dev
 
 # Install Qt6 from Ubuntu repository (Ubuntu 22.04+: jammy, noble, oracular)
 # IMPORTANT: This step MUST install Qt6 and verify Qt6Config.cmake exists
@@ -255,14 +239,7 @@ RUN set -ex && \
 # Set USE_QT6 flag for build scripts
 ENV USE_QT6=ON
 
-# Create unified Qt6 environment setup script (immediately after Qt6 installation)
-# This script will be sourced before building VTK, PCL, and ACloudViewer
-# Variables follow the same pattern as Qt5 in Dockerfile.ci:
-#   QT6_DIR = Qt installation root (like QT_DIR for Qt5)
-#   Qt6_DIR = Path to Qt6Config.cmake directory (for CMake find_package)
-#   QT6_QMAKE = Path to qmake executable (like QT_QMAKE_EXECUTABLE for Qt5)
-#   CMAKE_PREFIX_PATH = CMake search path (like Qt5)
-# NOTE: For apt-installed Qt6 on Ubuntu 22.04+, paths are standardized
+# Create unified Qt6 environment setup script
 RUN set -ex && \
     UBUNTU_CODENAME=$(lsb_release -c --short) && \
     echo "=== Detecting Qt6 installation paths for $UBUNTU_CODENAME ===" && \
@@ -270,9 +247,6 @@ RUN set -ex && \
     QT6_CONFIG_PATH=$(find /usr -name "Qt6Config.cmake" 2>/dev/null | head -1) && \
     if [ -z "$QT6_CONFIG_PATH" ]; then \
         echo "ERROR: Qt6Config.cmake not found!"; \
-        echo "Listing potential Qt6 directories:"; \
-        ls -la /usr/lib/cmake/ 2>/dev/null | grep -i qt || true; \
-        ls -la /usr/lib/x86_64-linux-gnu/cmake/ 2>/dev/null | grep -i qt || true; \
         exit 1; \
     fi && \
     # Extract directories from the found path
@@ -296,37 +270,11 @@ RUN set -ex && \
     echo 'echo "Qt6_DIR=$Qt6_DIR"' >> /opt/setup_qt6_env.sh && \
     echo 'echo "QT6_QMAKE=$QT6_QMAKE"' >> /opt/setup_qt6_env.sh && \
     echo 'echo "CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"' >> /opt/setup_qt6_env.sh && \
-    echo 'if [ -f "$Qt6_DIR/Qt6Config.cmake" ]; then echo "Qt6Config.cmake verified at $Qt6_DIR"; else echo "ERROR: Qt6Config.cmake NOT found at $Qt6_DIR"; exit 1; fi' >> /opt/setup_qt6_env.sh && \
     chmod +x /opt/setup_qt6_env.sh && \
     echo "=== Generated setup_qt6_env.sh ===" && \
     cat /opt/setup_qt6_env.sh && \
-    echo "=== Testing setup_qt6_env.sh ===" && \
     /bin/bash -c "source /opt/setup_qt6_env.sh" && \
-    ln -sf /opt/setup_qt6_env.sh /etc/profile.d/qt6.sh && \
-    cat /opt/setup_qt6_env.sh
-
-# Verify Qt6 installation and set environment
-# For apt-installed Qt6 (Ubuntu 22.04+):
-#   - QT_BASE_DIR=/usr/lib/x86_64-linux-gnu/qt6
-#   - lib: /usr/lib/x86_64-linux-gnu
-#   - plugins: /usr/lib/x86_64-linux-gnu/qt6/plugins
-#   - bin: /usr/lib/qt6/bin
-#   - cmake: /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake
-RUN set -ex && \
-    UBUNTU_CODENAME=$(lsb_release -c --short) && \
-    echo "=== Qt6 Environment Setup for $UBUNTU_CODENAME ===" && \
-    QT6_ROOT="/usr" && \
-    QT6_LIB_DIR="/usr/lib/x86_64-linux-gnu" && \
-    QT6_PLUGINS_DIR="/usr/lib/x86_64-linux-gnu/qt6/plugins" && \
-    QT6_BIN_DIR="/usr/lib/qt6/bin" && \
-    echo "QT6_ROOT=$QT6_ROOT" && \
-    echo "QT6_LIB_DIR=$QT6_LIB_DIR" && \
-    echo "QT6_PLUGINS_DIR=$QT6_PLUGINS_DIR" && \
-    echo "QT6_BIN_DIR=$QT6_BIN_DIR" && \
-    # Verify paths exist
-    test -d "$QT6_LIB_DIR" || (echo "ERROR: QT6_LIB_DIR does not exist: $QT6_LIB_DIR" && exit 1) && \
-    test -d "$QT6_PLUGINS_DIR" || (echo "ERROR: QT6_PLUGINS_DIR does not exist: $QT6_PLUGINS_DIR" && exit 1) && \
-    echo "Qt6 paths verified successfully"
+    ln -sf /opt/setup_qt6_env.sh /etc/profile.d/qt6.sh
 
 # Set Qt6 paths in ENV
 # QT_BASE_DIR is set to /usr/lib/x86_64-linux-gnu/qt6 (passed from docker_build_qt6.sh)
@@ -372,144 +320,54 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
 
-# deploy package installer
-WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-linux-amd.zip -O "/root/QtIFW-4.6.1-linux-amd.zip"
-RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
-ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
+# Checkout CloudViewer-ML torch271 branch
+# TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
+ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b torch271 ${CLOUDVIEWER_ML_ROOT}
 
+# ACloudViewer repo
+# Always keep /root/ACloudViewer as the WORKDIR
 ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
 
 # Only copy dependency installation scripts first (for better Docker cache utilization)
-# The full source code will be copied later before building
 COPY util/install_deps_ubuntu.sh ${ACloudViewer_DEV}/ACloudViewer/util/
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # ACloudViewer C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes
+RUN ./util/install_deps_ubuntu.sh assume-yes \
+&& rm -rf /var/lib/apt/lists/*
 
-# ACloudViewer PCL+VTK dependencies
-
-# Update eigen to 3.4+
-# Install to /usr to match system paths expected by VTK/PCL CMake configs
-WORKDIR /opt
-RUN mv -f /usr/include/eigen3 /usr/include/eigen337.bak || true
-RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz -O "/opt/eigen-3.4.0.tar.gz"
-RUN tar -xvf eigen-3.4.0.tar.gz && \
-    cd eigen-3.4.0 && \
-    mkdir -p build && cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/usr .. && \
-    make install "-j$(nproc)" \
-    && ldconfig \
-    && rm -rf /opt/eigen-3.4.0 \
-    && rm -rf /opt/eigen-3.4.0.tar.gz \
-    && echo "=== Verifying Eigen3 installation ===" \
-    && ls -la /usr/include/eigen3/ | head -10 \
-    && ls -la /usr/share/eigen3/cmake/ 2>/dev/null || ls -la /usr/lib/cmake/eigen3/ 2>/dev/null || echo "Eigen3 cmake config location unknown"
-    
-# Install metslib for pcl
-WORKDIR /opt
-RUN wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz -O "/opt/metslib-0.5.3.tgz"
-RUN tar -xvf metslib-0.5.3.tgz && \
-    cd metslib-0.5.3 && \
-    sh ./configure && \
-    make && \
-    make install \
-    && ldconfig \
-    && rm -rf /opt/metslib-0.5.3 \
-    && rm -rf /opt/metslib-0.5.3.tgz
-
-# Install laszip
-WORKDIR /opt
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "/opt/laszip-src-3.4.3.tar.gz"
-RUN tar -xvf laszip-src-3.4.3.tar.gz && \
-    cd laszip-src-3.4.3 && \
-    mkdir -p build && cd build && \
-    cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" \
-    && ldconfig \
-    && rm -rf /opt/laszip-src-3.4.3 \
-    && rm -rf /opt/laszip-src-3.4.3.zip
-
-# Install xerces-c
-WORKDIR /opt
-RUN wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/opt/xerces-c-3.2.3.zip"
-RUN unzip xerces-c-3.2.3.zip \
-    && cd ./xerces-c-3.2.3 \
-    && chmod +x configure \
-    && ./configure --prefix=/usr \
-    && make \
-    && make install \
-    && make clean \
-    && rm -rf /opt/xerces-c-3.2.3 \
-    && rm -rf /opt/xerces-c-3.2.3.zip
-
-# Install VTK 9.4.2 with Qt6 support
-WORKDIR /opt
-RUN wget https://vtk.org/files/release/9.4/VTK-${VTK_VERSION}.tar.gz -O "/opt/VTK-${VTK_VERSION}.tar.gz"
-RUN set -ex && \
-    source /opt/setup_qt6_env.sh && \
-    tar -zxvf VTK-${VTK_VERSION}.tar.gz && \
-    cd VTK-${VTK_VERSION} && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DVTK_GROUP_ENABLE_Qt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=DONT_WANT \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
-            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
-            -DVTK_QT_VERSION:STRING=6 \
-            -DBUILD_SHARED_LIBS:BOOL=ON \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT6_QMAKE} \
-            -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH} .. 2>&1 \
-    || (echo "=== CMake Error Log ===" && cat CMakeFiles/CMakeError.log 2>/dev/null && \
-        echo "=== CMake Output Log (last 100 lines) ===" && tail -100 CMakeFiles/CMakeOutput.log 2>/dev/null; exit 1) && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/VTK-${VTK_VERSION} /opt/VTK-${VTK_VERSION}.tar.gz
-
-# Install PCL 1.15.1
-WORKDIR /opt
-RUN wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-${PCL_VERSION}/source.zip -O "/opt/pcl-${PCL_VERSION}.zip"
-RUN set -ex && \
-    source /opt/setup_qt6_env.sh && \
-    unzip pcl-${PCL_VERSION}.zip && \
-    cd pcl && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DBUILD_GPU=OFF \
-            -DBUILD_apps=OFF \
-            -DBUILD_examples=OFF \
-            -DBUILD_surface_on_nurbs=ON \
-            -DPCL_ENABLE_MARCHNATIVE=OFF \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT6_QMAKE} \
-            -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH} .. 2>&1 \
-    || (echo "=== PCL CMake Error Log ===" && cat CMakeFiles/CMakeError.log 2>/dev/null && \
-        echo "=== PCL CMakeOutput.log (last 200 lines) ===" && tail -200 CMakeFiles/CMakeOutput.log 2>/dev/null; exit 1) && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/pcl /opt/pcl-${PCL_VERSION}.zip
-
-# save disk space
-RUN rm -rf /var/lib/apt/lists/*
+# ACloudViewer Jupyter dependencies
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
+ && apt-get install -y nodejs \
+ && rm -rf /var/lib/apt/lists/* \
+ && node --version \
+ && npm install -g yarn \
+ && yarn --version
 
 RUN mkdir -p ${ACloudViewer_INSTALL}
+
+# no need to test wheel and will test it in ci later!
+ENV IGNORE_TEST=ON
 
 # Now copy the full ACloudViewer source code (after all dependencies are installed)
 # This maximizes Docker cache utilization - dependency layers are cached
 COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
-# Build ACloudViewer app installer
-RUN echo "Start Build ACloudViewer apps installer..."                           \
-    && rm -rf ${ACloudViewer_BUILD}/*                                           \
-    && ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}         \
+# Build cloudviewer wheel with Qt6
+RUN echo "Build cloudviewer wheel for ${PYTHON_VERSION} with Qt6..." \
+    && rm -rf ${ACloudViewer_BUILD}/* \
+    && ./docker/build_cloudviewer_whl.sh ${PYTHON_VERSION} \
     && rm -rf ${ACloudViewer_BUILD}/*
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
-RUN echo "Docker ci build done with Qt6, VTK 9.4.2, and PCL 1.15.1."
+RUN echo "Docker wheel build done with Qt6."
 

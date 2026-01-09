@@ -349,7 +349,11 @@ bool MeshTextureApplier::ApplyTraditionalTextures(
                 vtkSmartPointer<vtkFloatArray>::New();
         coordinates->SetNumberOfComponents(2);
         std::stringstream ss;
-        ss << "TCoords" << tex_id;
+        if (mesh.tex_coordinates.size() == 1) {
+            ss << "TCoords";
+        } else {
+            ss << "TCoords" << tex_id;
+        }
         std::string coords_name = ss.str();
         coordinates->SetName(coords_name.c_str());
 

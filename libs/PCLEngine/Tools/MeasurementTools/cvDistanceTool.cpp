@@ -33,7 +33,10 @@
 #include "cvMeasurementToolsCommon.h"
 
 // ECV_DB_LIB
+#include <ecv2DLabel.h>
 #include <ecvBBox.h>
+#include <ecvGenericMesh.h>
+#include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
 
 namespace {
@@ -371,7 +374,106 @@ void cvDistanceTool::showWidget(bool state) {
     update();
 }
 
-ccHObject* cvDistanceTool::getOutput() { return nullptr; }
+ccHObject* cvDistanceTool::getOutput() {
+    // Export distance measurement as cc2DLabel with 2 points
+    // Returns a new cc2DLabel that can be added to the DB tree
+
+    if (!m_entity) {
+        CVLog::Warning(
+                "[cvDistanceTool::getOutput] No entity associated with this "
+                "measurement");
+        return nullptr;
+    }
+
+    // Get the point coordinates
+    double p1[3], p2[3];
+    getPoint1(p1);
+    getPoint2(p2);
+
+    // Try to get the associated point cloud
+    ccGenericPointCloud* cloud = nullptr;
+    if (m_entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        cloud = static_cast<ccGenericPointCloud*>(m_entity);
+    } else if (m_entity->isKindOf(CV_TYPES::MESH)) {
+        ccGenericMesh* mesh = static_cast<ccGenericMesh*>(m_entity);
+        if (mesh) {
+            cloud = mesh->getAssociatedCloud();
+        }
+    }
+
+    if (!cloud || cloud->size() == 0) {
+        CVLog::Warning(
+                "[cvDistanceTool::getOutput] Could not find associated point "
+                "cloud or cloud is empty");
+        return nullptr;
+    }
+
+    // Find the nearest points in the cloud for both measurement endpoints
+    unsigned nearestIndex1 = 0;
+    unsigned nearestIndex2 = 0;
+    double minDist1 = std::numeric_limits<double>::max();
+    double minDist2 = std::numeric_limits<double>::max();
+
+    CCVector3 point1(static_cast<PointCoordinateType>(p1[0]),
+                     static_cast<PointCoordinateType>(p1[1]),
+                     static_cast<PointCoordinateType>(p1[2]));
+    CCVector3 point2(static_cast<PointCoordinateType>(p2[0]),
+                     static_cast<PointCoordinateType>(p2[1]),
+                     static_cast<PointCoordinateType>(p2[2]));
+
+    for (unsigned i = 0; i < cloud->size(); ++i) {
+        const CCVector3* P = cloud->getPoint(i);
+        if (!P) continue;
+
+        double d1 = (*P - point1).norm2d();
+        if (d1 < minDist1) {
+            minDist1 = d1;
+            nearestIndex1 = i;
+        }
+
+        double d2 = (*P - point2).norm2d();
+        if (d2 < minDist2) {
+            minDist2 = d2;
+            nearestIndex2 = i;
+        }
+    }
+
+    // Create a new 2D label with the two points
+    cc2DLabel* label = new cc2DLabel(
+            QString("Distance: %1").arg(getMeasurementValue(), 0, 'f', 6));
+
+    // Add the two picked points to the label
+    if (!label->addPickedPoint(cloud, nearestIndex1)) {
+        CVLog::Warning(
+                "[cvDistanceTool::getOutput] Failed to add first point to "
+                "label");
+        delete label;
+        return nullptr;
+    }
+
+    if (!label->addPickedPoint(cloud, nearestIndex2)) {
+        CVLog::Warning(
+                "[cvDistanceTool::getOutput] Failed to add second point to "
+                "label");
+        delete label;
+        return nullptr;
+    }
+
+    // Configure the label display settings
+    label->setVisible(true);
+    label->setEnabled(true);
+    label->setDisplayedIn2D(true);
+    label->displayPointLegend(true);
+    label->setCollapsed(false);
+
+    // Set a position for the label (relative to screen)
+    label->setPosition(0.05f, 0.95f);
+
+    CVLog::Print(QString("[cvDistanceTool] Exported distance measurement: %1")
+                         .arg(getMeasurementValue(), 0, 'f', 6));
+
+    return label;
+}
 
 double cvDistanceTool::getMeasurementValue() const {
     if (m_configUi) {

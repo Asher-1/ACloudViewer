@@ -20,12 +20,9 @@
 #include "matrixDisplayDlg.h"
 #include "sfEditDlg.h"
 
-#ifdef USE_PCL_BACKEND
-// PCL Selection Tools
-#include <PCLEngine/Tools/SelectionTools/cvSelectionData.h>
-#include <PCLEngine/Tools/SelectionTools/cvSelectionPropertiesWidget.h>
-#include <PCLEngine/Tools/SelectionTools/cvViewSelectionManager.h>
-#endif
+// Note: PCL Selection Tools includes removed. Selection properties are now
+// handled by cvFindDataDockWidget in a standalone dock, not integrated into
+// the properties tree delegate.
 
 // ECV_DB_LIB
 #include <ecv2DLabel.h>
@@ -140,15 +137,10 @@ ccPropertiesTreeDelegate::ccPropertiesTreeDelegate(QStandardItemModel* model,
       m_currentObject(nullptr),
       m_model(model),
       m_view(view),
-      m_selectionToolsActive(false),
       m_viewer(nullptr),
-      m_lastFocusItemRole(OBJECT_NO_PROPERTY)
-#ifdef USE_PCL_BACKEND
-      ,
-      m_highlighter(nullptr),
-      m_selectionPropertiesWidget(nullptr)
-#endif
-{
+      m_lastFocusItemRole(OBJECT_NO_PROPERTY) {
+    // Note: Selection properties are now handled by cvFindDataDockWidget,
+    // a standalone dock widget that is decoupled from the properties tree.
     assert(m_model && m_view);
 }
 
@@ -180,12 +172,8 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
             case OBJECT_HISTORY_MATRIX_EDITOR:
             case OBJECT_GLTRANS_MATRIX_EDITOR:
                 return QSize(250, 140);
-            case OBJECT_SELECTION_PROPERTIES:
-                // Selection properties widget should be large enough to show
-                // all content When shown alone (no DB object), it will fill the
-                // entire view When shown with other properties, it gets a
-                // reasonable default size
-                return QSize(300, 400);
+                // Note: OBJECT_SELECTION_PROPERTIES case removed - selection
+                // properties are now in standalone cvFindDataDockWidget
         }
     }
 
@@ -241,12 +229,8 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
         }
     }
 
-    // Selection Tools Properties (ParaView-style)
-    // Show selection properties FIRST when any selection tool is active
-    // Place at TOP of properties tree for maximum visibility and accessibility
-    if (m_selectionToolsActive) {
-        fillWithSelectionProperties();
-    }
+    // Note: Selection properties are no longer shown in the properties tree.
+    // They are now displayed in the standalone cvFindDataDockWidget.
 
     if (m_currentObject->isHierarchy())
         if (!m_currentObject->isA(
@@ -361,14 +345,6 @@ void ccPropertiesTreeDelegate::appendWideRow(
         if (openPersistentEditor && m_view) {
             QModelIndex index = m_model->index(m_model->rowCount() - 1, 0);
             if (index.isValid()) {
-                // Check if this is selection properties to add debug logging
-                if (item->data().isValid() &&
-                    item->data().toInt() == OBJECT_SELECTION_PROPERTIES) {
-                    CVLog::PrintDebug(QString("[ccPropertiesTreeDelegate] "
-                                              "Opening persistent editor for "
-                                              "selection properties at row %1")
-                                              .arg(index.row()));
-                }
                 m_view->openPersistentEditor(index);
             } else {
                 CVLog::Warning(
@@ -417,171 +393,10 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
     }
 }
 
-void ccPropertiesTreeDelegate::fillWithSelectionProperties() {
-    assert(m_model);
-
-#ifdef USE_PCL_BACKEND
-    // Add separator for selection tools section
-    addSeparator(tr("Selection Tools"));
-
-    // Add wide row for selection properties widget (ParaView-style)
-    // This will display the cvSelectionPropertiesWidget with all tabs
-    // Ensure persistent editor is opened by explicitly passing true
-    QStandardItem* item = PERSISTENT_EDITOR(OBJECT_SELECTION_PROPERTIES);
-    appendWideRow(item, true);
-
-    // Force view update to ensure editor is created and displayed
-    if (m_view) {
-        m_view->update();
-    }
-#endif
-}
-
-void ccPropertiesTreeDelegate::setSelectionToolsActive(bool active) {
-    CVLog::Print(
-            QString("[ccPropertiesTreeDelegate::setSelectionToolsActive] "
-                    "called with active=%1, current m_selectionToolsActive=%2, "
-                    "m_currentObject=%3")
-                    .arg(active)
-                    .arg(m_selectionToolsActive)
-                    .arg(m_currentObject ? "yes" : "no"));
-
-    if (m_selectionToolsActive != active) {
-        m_selectionToolsActive = active;
-
-        if (active) {
-            // CRITICAL FIX: When activating selection tools, clear any stale
-            // selection data This prevents crashes from dangling pointers to
-            // deleted objects
-            emit requestClearSelection();
-
-            // When selection tools become active, always show selection
-            // properties even if no object is selected in DB tree
-            if (m_currentObject) {
-                // SAFETY: Validate object before updating - it might be a
-                // dangling pointer
-                try {
-                    CVLog::Print(
-                            "[ccPropertiesTreeDelegate] Updating model with "
-                            "selection properties");
-                    updateModel();
-                } catch (...) {
-                    CVLog::Error(
-                            "[ccPropertiesTreeDelegate] CRASH AVOIDED: "
-                            "m_currentObject is invalid, clearing");
-                    m_currentObject = nullptr;
-                    showSelectionPropertiesOnly();
-                }
-            } else {
-                // Show only selection properties when no object is selected
-                CVLog::Print(
-                        "[ccPropertiesTreeDelegate] Showing selection "
-                        "properties only (no object)");
-                showSelectionPropertiesOnly();
-            }
-        } else {
-            // CRITICAL FIX: When deactivating, clear selection data to avoid
-            // stale references
-            emit requestClearSelection();
-
-            // When selection tools are deactivated
-            if (m_currentObject) {
-                // SAFETY: Validate object before updating
-                try {
-                    CVLog::Print(
-                            "[ccPropertiesTreeDelegate] Updating model without "
-                            "selection properties");
-                    updateModel();  // Refresh to remove selection properties
-                                    // section
-                } catch (...) {
-                    CVLog::Error(
-                            "[ccPropertiesTreeDelegate] CRASH AVOIDED: "
-                            "m_currentObject is invalid, clearing");
-                    m_currentObject = nullptr;
-                    clearModel();
-                }
-            } else {
-                // Clear the model when no object and no selection tools
-                CVLog::Print("[ccPropertiesTreeDelegate] Clearing model");
-                clearModel();
-            }
-        }
-    } else {
-        CVLog::Print(
-                "[ccPropertiesTreeDelegate] Selection tools active state "
-                "unchanged, skipping update");
-    }
-}
-
-void ccPropertiesTreeDelegate::showSelectionPropertiesOnly() {
-#ifdef USE_PCL_BACKEND
-    if (!m_model) {
-        CVLog::Warning(
-                "[ccPropertiesTreeDelegate::showSelectionPropertiesOnly] Model "
-                "is null");
-        return;
-    }
-
-    unbind();
-
-    // Clear and setup model
-    m_model->removeRows(0, m_model->rowCount());
-    m_model->setColumnCount(2);
-    m_model->setHeaderData(0, Qt::Horizontal, tr("Property"));
-    m_model->setHeaderData(1, Qt::Horizontal, tr("State/Value"));
-
-    // When no object is selected, show selection properties widget alone
-    // without separator This allows it to occupy the entire properties panel
-    QStandardItem* item = PERSISTENT_EDITOR(OBJECT_SELECTION_PROPERTIES);
-    appendWideRow(item, true);
-
-    // Reconnect signals
-    connect(m_model, &QStandardItemModel::itemChanged, this,
-            &ccPropertiesTreeDelegate::updateItem);
-
-    // Force view update to ensure editor is created and displayed
-    if (m_view) {
-        // Try to cast to QTreeView for advanced configuration
-        QTreeView* treeView = qobject_cast<QTreeView*>(m_view);
-        if (treeView && m_model->rowCount() > 0) {
-            treeView->expandAll();
-
-            // Hide the header to maximize space for the widget
-            if (treeView->header()) {
-                treeView->header()->hide();
-            }
-
-            // Make the row fill the entire view height
-            QModelIndex index = m_model->index(0, 0);
-            if (index.isValid()) {
-                // Calculate available height (view height minus margins)
-                int availableHeight = treeView->viewport()->height();
-
-                // Get the widget and ensure it expands
-                QWidget* widget = treeView->indexWidget(index);
-                if (widget) {
-                    widget->setSizePolicy(QSizePolicy::Expanding,
-                                          QSizePolicy::Expanding);
-                    widget->setMinimumHeight(availableHeight);
-                }
-            }
-        }
-
-        m_view->update();
-        // Also ensure the view is visible and enabled
-        m_view->setVisible(true);
-        m_view->setEnabled(true);
-    } else {
-        CVLog::Warning(
-                "[ccPropertiesTreeDelegate::showSelectionPropertiesOnly] View "
-                "is null");
-    }
-
-    CVLog::PrintDebug(
-            "[ccPropertiesTreeDelegate] Showing selection properties only (no "
-            "object selected, occupying full panel)");
-#endif
-}
+// Note: fillWithSelectionProperties, setSelectionToolsActive, and
+// showSelectionPropertiesOnly have been removed. Selection properties are now
+// displayed in the standalone cvFindDataDockWidget, which is decoupled from
+// the properties tree and selection tool state (following ParaView design).
 
 void ccPropertiesTreeDelegate::clearModel() {
     if (!m_model) return;
@@ -1376,8 +1191,8 @@ bool ccPropertiesTreeDelegate::isWideEditor(int itemData) const {
         case OBJECT_SENSOR_MATRIX_EDITOR:
         case OBJECT_HISTORY_MATRIX_EDITOR:
         case OBJECT_GLTRANS_MATRIX_EDITOR:
-        case OBJECT_SELECTION_PROPERTIES:  // Selection properties widget spans
-                                           // both columns
+        // Note: OBJECT_SELECTION_PROPERTIES removed - selection properties
+        // are now in standalone cvFindDataDockWidget
         case TREE_VIEW_HEADER:
             return true;
         default:
@@ -1399,9 +1214,8 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
     int itemData = item->data().toInt();
 
-    // Selection properties can be created even without a current object
-    // (when selection tools are active but no DB object is selected)
-    if (itemData != OBJECT_SELECTION_PROPERTIES && !m_currentObject) {
+    // All editors require a current object
+    if (!m_currentObject) {
         return nullptr;
     }
     if (item->column() == 0 && !isWideEditor(itemData)) {
@@ -1893,28 +1707,8 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = spinBox;
         } break;
-        case OBJECT_SELECTION_PROPERTIES: {
-#ifdef USE_PCL_BACKEND
-            // Create selection properties widget (ParaView-style)
-            cvSelectionPropertiesWidget* selectionWidget =
-                    new cvSelectionPropertiesWidget(parent);
-
-            // Widget will be configured by MainWindow with visualizer and
-            // highlighter This is done in setEditorData
-
-            outputWidget = selectionWidget;
-
-            CVLog::PrintDebug(
-                    "[ccPropertiesTreeDelegate] Created selection properties "
-                    "widget");
-#else
-            // If USE_PCL_BACKEND is not defined, return nullptr to avoid assert
-            CVLog::Warning(
-                    "[ccPropertiesTreeDelegate] Selection properties requested "
-                    "but USE_PCL_BACKEND is not defined");
-            return nullptr;
-#endif
-        } break;
+        // Note: OBJECT_SELECTION_PROPERTIES case removed - selection
+        // properties are now in standalone cvFindDataDockWidget
         default:
             return QStyledItemDelegate::createEditor(parent, option, index);
     }
@@ -1997,15 +1791,8 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
 
     int itemData = item->data().toInt();
 
-    // Selection properties can be configured even without a current object
-    // (when selection tools are active but no DB object is selected)
-    if (itemData == OBJECT_SELECTION_PROPERTIES) {
-        // Handle selection properties separately - doesn't require
-        // m_currentObject
-    } else {
-        // All other properties require a current object
-        if (!m_currentObject) return;
-    }
+    // All properties require a current object
+    if (!m_currentObject) return;
 
     if (item->column() == 0 && !isWideEditor(itemData)) return;
 
@@ -2347,88 +2134,8 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             SetComboBoxIndex(editor, currentIndex);
             break;
         }
-        case OBJECT_SELECTION_PROPERTIES: {
-#ifdef USE_PCL_BACKEND
-            cvSelectionPropertiesWidget* selectionWidget =
-                    qobject_cast<cvSelectionPropertiesWidget*>(editor);
-            if (selectionWidget) {
-                // Configure widget with visualizer
-                // Get from delegate first, fallback to ecvDisplayTools
-                ecvGenericVisualizer3D* viewer = m_viewer;
-                if (!viewer) {
-                    viewer = ecvDisplayTools::GetVisualizer3D();
-                }
-                if (viewer) {
-                    selectionWidget->setVisualizer(viewer);
-                }
-
-                // Store widget reference for later updates
-                // This allows us to update the widget when selection changes
-                m_selectionPropertiesWidget = selectionWidget;
-
-                // Connect signals to MainWindow and configure selection manager
-                MainWindow* mainWindow = MainWindow::TheInstance();
-                if (mainWindow) {
-                    // Note: Tooltip settings have been moved to
-                    // cvSelectionLabelPropertiesDialog and are now configured
-                    // through the label properties dialog
-
-                    // Connect extractedObjectReady signal to MainWindow::addToDB
-                    // This ensures extracted objects are added to the DB tree
-                    connect(selectionWidget,
-                            &cvSelectionPropertiesWidget::extractedObjectReady,
-                            mainWindow,
-                            [mainWindow](ccHObject* obj) {
-                                if (obj) {
-                                    CVLog::Print(QString("[Extract] Adding "
-                                                         "extracted object '%1' "
-                                                         "to DB tree")
-                                                         .arg(obj->getName()));
-                                    mainWindow->addToDB(obj,
-                                                        true,   // updateZoom
-                                                        true,   // autoExpandDBTree
-                                                        false,  // checkDimensions
-                                                        true);  // autoRedraw
-                                }
-                            },
-                            Qt::UniqueConnection);
-
-                    // Set selection manager - this also sets up the shared
-                    // highlighter so color settings are synchronized across all
-                    // tooltip tools Note: This works even when m_currentObject
-                    // is null (no DB object selected)
-                    cvViewSelectionManager* selectionManager =
-                            mainWindow->getSelectionManager();
-                    if (selectionManager) {
-                        selectionWidget->setSelectionManager(selectionManager);
-
-                        // Get current selection and update the widget
-                        // This ensures export buttons are enabled if there's
-                        // already a selection
-                        if (selectionManager->hasSelection()) {
-                            const cvSelectionData& currentSelection =
-                                    selectionManager->currentSelection();
-                            selectionWidget->updateSelection(currentSelection);
-                            CVLog::PrintDebug(
-                                    QString("[ecvPropertiesTreeDelegate] "
-                                            "Initialized with existing "
-                                            "selection: %1 %2")
-                                            .arg(currentSelection.count())
-                                            .arg(currentSelection
-                                                         .fieldTypeString()));
-                        }
-                    }
-                }
-
-                CVLog::PrintDebug(
-                        QString("[ecvPropertiesTreeDelegate] Selection "
-                                "properties "
-                                "widget configured (currentObject: %1)")
-                                .arg(m_currentObject ? "yes" : "no"));
-            }
-#endif
-            break;
-        }
+        // Note: OBJECT_SELECTION_PROPERTIES case removed - selection
+        // properties are now in standalone cvFindDataDockWidget
         default:
             QStyledItemDelegate::setEditorData(editor, index);
             break;
@@ -2764,19 +2471,8 @@ void ccPropertiesTreeDelegate::updateModel() {
     fillModel(m_currentObject);
 }
 
-#ifdef USE_PCL_BACKEND
-void ccPropertiesTreeDelegate::updateSelectionProperties(
-        const cvSelectionData& selectionData) {
-    if (m_selectionPropertiesWidget) {
-        // Update the widget with new selection data
-        m_selectionPropertiesWidget->updateSelection(selectionData);
-        CVLog::PrintDebug(QString("[ccPropertiesTreeDelegate] Updated "
-                                  "selection properties: %1 %2")
-                                  .arg(selectionData.count())
-                                  .arg(selectionData.fieldTypeString()));
-    }
-}
-#endif
+// Note: updateSelectionProperties has been removed. Selection properties
+// updates are now handled directly by cvFindDataDockWidget.
 
 QMap<QString, QString> ccPropertiesTreeDelegate::getCurrentMeshTexturePathMap()
         const {

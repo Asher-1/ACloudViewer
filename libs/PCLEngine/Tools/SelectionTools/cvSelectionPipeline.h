@@ -13,16 +13,17 @@
 #include <QtCore/QHash>
 #include <QtCore/QMap>
 #include <QtCore/QString>
+#include <QWidget>
 // clang-format on
 
 #include "cvSelectionData.h"
 #include "qPCL.h"
 
 // VTK
-#include <vtkHardwareSelector.h>  // Full definition needed for vtkSmartPointer<vtkHardwareSelector>
 #include <vtkSmartPointer.h>
 
 // Forward declarations
+class cvHardwareSelector;
 class vtkSelection;
 class vtkIntArray;
 class vtkIdTypeArray;
@@ -75,6 +76,26 @@ public:
 
     explicit cvSelectionPipeline(QObject* parent = nullptr);
     ~cvSelectionPipeline() override;
+
+    //=========================================================================
+    // Static Utility Methods (merged from cvSelectionToolHelper)
+    //=========================================================================
+
+    /**
+     * @brief Shows instruction dialog if not disabled by user (ParaView-style)
+     *
+     * Similar to pqCoreUtilities::promptUser in ParaView.
+     *
+     * @param settingsKey Unique key for storing "don't show again" preference
+     * @param title Dialog title
+     * @param message Dialog message (can use HTML)
+     * @param parent Parent widget
+     * @return True if dialog was shown, false if user has disabled it
+     */
+    static bool promptUser(const QString& settingsKey,
+                           const QString& title,
+                           const QString& message,
+                           QWidget* parent = nullptr);
 
     /**
      * @brief Set the visualizer for selection operations
@@ -440,8 +461,9 @@ private:
     PclUtils::PCLVis* m_viewer;
     vtkRenderer* m_renderer;
 
-    // Hardware selector (reused for performance)
-    vtkSmartPointer<vtkHardwareSelector> m_hardwareSelector;
+    // Hardware selector (ParaView-style cvHardwareSelector)
+    // Reference: ParaView uses vtkPVHardwareSelector for optimized selection
+    vtkSmartPointer<cvHardwareSelector> m_hardwareSelector;
 
     // Last selection result (for getPolyData() operations)
     vtkSmartPointer<vtkSelection> m_lastSelection;
@@ -460,7 +482,15 @@ private:
     // Selection mode state (for cache optimization)
     bool m_inSelectionMode = false;
 
+    // Flag to prevent concurrent access during invalidation
+    // Set to true while invalidateCachedSelection() is running
+    bool m_invalidating = false;
+
     // Point picking radius (ParaView-style)
     // When selecting a single point, search in this radius if no direct hit
-    unsigned int m_pointPickingRadius = 5;
+    // ParaView code default is 0 (disabled), but settings XML sets it to 50
+    // Range: 0-100, where 0 disables radius-based selection
+    // We use 50 as default for better usability (ParaView settings default)
+    unsigned int m_pointPickingRadius =
+            50;  // ParaView settings default for usability
 };

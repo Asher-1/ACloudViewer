@@ -35,7 +35,10 @@
 #include "cvMeasurementToolsCommon.h"
 
 // ECV_DB_LIB
+#include <ecv2DLabel.h>
 #include <ecvBBox.h>
+#include <ecvGenericMesh.h>
+#include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
 
 namespace {
@@ -474,7 +477,130 @@ void cvProtractorTool::showWidget(bool state) {
     update();
 }
 
-ccHObject* cvProtractorTool::getOutput() { return nullptr; }
+ccHObject* cvProtractorTool::getOutput() {
+    // Export angle measurement as cc2DLabel with 3 points (triangle/plane)
+    // Returns a new cc2DLabel that can be added to the DB tree
+
+    if (!m_entity) {
+        CVLog::Warning(
+                "[cvProtractorTool::getOutput] No entity associated with this "
+                "measurement");
+        return nullptr;
+    }
+
+    // Get the point coordinates
+    double p1[3], center[3], p2[3];
+    getPoint1(p1);
+    getCenter(center);
+    getPoint2(p2);
+
+    // Try to get the associated point cloud
+    ccGenericPointCloud* cloud = nullptr;
+    if (m_entity->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        cloud = static_cast<ccGenericPointCloud*>(m_entity);
+    } else if (m_entity->isKindOf(CV_TYPES::MESH)) {
+        ccGenericMesh* mesh = static_cast<ccGenericMesh*>(m_entity);
+        if (mesh) {
+            cloud = mesh->getAssociatedCloud();
+        }
+    }
+
+    if (!cloud || cloud->size() == 0) {
+        CVLog::Warning(
+                "[cvProtractorTool::getOutput] Could not find associated point "
+                "cloud or cloud is empty");
+        return nullptr;
+    }
+
+    // Find the nearest points in the cloud for all three measurement endpoints
+    unsigned nearestIndex1 = 0;
+    unsigned nearestIndexC = 0;  // center
+    unsigned nearestIndex2 = 0;
+    double minDist1 = std::numeric_limits<double>::max();
+    double minDistC = std::numeric_limits<double>::max();
+    double minDist2 = std::numeric_limits<double>::max();
+
+    CCVector3 point1(static_cast<PointCoordinateType>(p1[0]),
+                     static_cast<PointCoordinateType>(p1[1]),
+                     static_cast<PointCoordinateType>(p1[2]));
+    CCVector3 pointC(static_cast<PointCoordinateType>(center[0]),
+                     static_cast<PointCoordinateType>(center[1]),
+                     static_cast<PointCoordinateType>(center[2]));
+    CCVector3 point2(static_cast<PointCoordinateType>(p2[0]),
+                     static_cast<PointCoordinateType>(p2[1]),
+                     static_cast<PointCoordinateType>(p2[2]));
+
+    for (unsigned i = 0; i < cloud->size(); ++i) {
+        const CCVector3* P = cloud->getPoint(i);
+        if (!P) continue;
+
+        double d1 = (*P - point1).norm2d();
+        if (d1 < minDist1) {
+            minDist1 = d1;
+            nearestIndex1 = i;
+        }
+
+        double dC = (*P - pointC).norm2d();
+        if (dC < minDistC) {
+            minDistC = dC;
+            nearestIndexC = i;
+        }
+
+        double d2 = (*P - point2).norm2d();
+        if (d2 < minDist2) {
+            minDist2 = d2;
+            nearestIndex2 = i;
+        }
+    }
+
+    // Create a new 2D label with the three points
+    // For angle/protractor measurements, the label displays as a triangle with
+    // angle info
+    cc2DLabel* label = new cc2DLabel(
+            QString("Angle: %1°").arg(getMeasurementValue(), 0, 'f', 2));
+
+    // Add the three picked points to the label
+    // Order: A (point1), B (center/vertex), C (point2) - center is the vertex
+    // of the angle
+    if (!label->addPickedPoint(cloud, nearestIndex1)) {
+        CVLog::Warning(
+                "[cvProtractorTool::getOutput] Failed to add first point (A) "
+                "to label");
+        delete label;
+        return nullptr;
+    }
+
+    if (!label->addPickedPoint(cloud, nearestIndexC)) {
+        CVLog::Warning(
+                "[cvProtractorTool::getOutput] Failed to add center point (B) "
+                "to label");
+        delete label;
+        return nullptr;
+    }
+
+    if (!label->addPickedPoint(cloud, nearestIndex2)) {
+        CVLog::Warning(
+                "[cvProtractorTool::getOutput] Failed to add second point (C) "
+                "to label");
+        delete label;
+        return nullptr;
+    }
+
+    // Configure the label display settings
+    label->setVisible(true);
+    label->setEnabled(true);
+    label->setDisplayedIn2D(true);
+    label->displayPointLegend(true);
+    label->setCollapsed(false);
+
+    // Set a position for the label (relative to screen)
+    label->setPosition(0.05f, 0.90f);
+
+    CVLog::Print(QString("[cvProtractorTool] Exported angle measurement: %1°")
+                         .arg(getMeasurementValue(), 0, 'f', 2));
+
+    return label;
+}
 
 double cvProtractorTool::getMeasurementValue() const {
     if (m_configUi) {

@@ -24,14 +24,14 @@
 #endif
 // clang-format on
 
-#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
+#include "cvSelectionData.h"  // Contains SelectionMode, SelectionModifier enums  // For SelectionMode and SelectionModifier enums
 #include "cvViewSelectionManager.h"
 #include "qPCL.h"
 
 class QAction;
 class QMenu;
 class QToolBar;
-class cvSelectionReaction;
+class cvRenderViewSelectionReaction;
 class cvSelectionData;
 class cvSelectionHighlighter;
 class cvSelectionHistory;
@@ -170,9 +170,14 @@ public:
      * @brief Register an action for a selection mode
      * @param action The QAction to register
      * @param mode The selection mode
-     * @return The created cvSelectionReaction
+     * @return The created cvRenderViewSelectionReaction
+     *
+     * This method uses the simplified architecture that aligns with ParaView's
+     * pqRenderViewSelectionReaction pattern. All selection logic is contained
+     * in a single class without the need for intermediate manager/tool layers.
      */
-    cvSelectionReaction* registerAction(QAction* action, SelectionMode mode);
+    cvRenderViewSelectionReaction* registerAction(QAction* action,
+                                                  SelectionMode mode);
 
     /**
      * @brief Register the selection modifier action group
@@ -195,7 +200,7 @@ public:
      * @brief Disable all selection tools
      * @param except Tool to keep active (nullptr to disable all)
      */
-    void disableAllTools(cvSelectionReaction* except = nullptr);
+    void disableAllTools(cvRenderViewSelectionReaction* except = nullptr);
 
     /**
      * @brief Check if any selection tool is active
@@ -233,6 +238,14 @@ public:
      * @param active Whether selection tools are active
      */
     void setSelectionPropertiesActive(bool active);
+
+    /**
+     * @brief Invalidate cached selection data
+     *
+     * Call this when scene content changes (e.g., new entity added/removed)
+     * to ensure stale selection data is not used.
+     */
+    void invalidateCache();
 
 signals:
     /**
@@ -305,7 +318,7 @@ private:
     QPointer<QObject> m_propertiesDelegate;
 
     // Reactions for each selection mode
-    QMap<SelectionMode, QPointer<cvSelectionReaction>> m_reactions;
+    QMap<SelectionMode, QPointer<cvRenderViewSelectionReaction>> m_reactions;
 
     // Store actions for ESC handling
     SelectionActions m_actions;

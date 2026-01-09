@@ -7,12 +7,13 @@
 
 #include "cvSelectionToolController.h"
 
-#include "cvSelectionBookmarks.h"
+#include "cvRenderViewSelectionReaction.h"
 #include "cvSelectionData.h"
 #include "cvSelectionHighlighter.h"
-#include "cvSelectionHistory.h"
-#include "cvSelectionReaction.h"
-#include "cvSelectionTypes.h"  // For SelectionMode and SelectionModifier enums
+#include "cvSelectionPipeline.h"  // For invalidateCachedSelection
+#include "cvSelectionStorage.h"  // Contains cvSelectionHistory and cvSelectionBookmarks
+// cvSelectionTypes.h merged into cvSelectionData.h  // For SelectionMode and
+// SelectionModifier enums
 #include "cvViewSelectionManager.h"
 
 // CV_CORE_LIB
@@ -78,65 +79,78 @@ void cvSelectionToolController::setVisualizer(ecvGenericVisualizer3D* viewer) {
     if (m_manager) {
         m_manager->setVisualizer(viewer);
     }
+
+    // Update all registered reactions with the visualizer
+    // This is necessary because reactions may be registered before
+    // the visualizer is set
+    for (auto reaction : m_reactions) {
+        if (reaction) {
+            reaction->setVisualizer(viewer);
+        }
+    }
+
+    CVLog::PrintDebug(
+            QString("[cvSelectionToolController] Visualizer set, updated %1 "
+                    "reactions")
+                    .arg(m_reactions.size()));
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionReaction* cvSelectionToolController::registerAction(
+cvRenderViewSelectionReaction* cvSelectionToolController::registerAction(
         QAction* action, SelectionMode mode) {
     if (!action) {
         CVLog::Warning(
-                "[cvSelectionToolController] Cannot register null action");
+                "[cvSelectionToolController] Cannot register null action "
+                "(new)");
         return nullptr;
     }
 
-    // Create the reaction
-    cvSelectionReaction* reaction =
-            new cvSelectionReaction(action, mode, m_modifierGroup);
+    // Create the new simplified reaction (ParaView-style)
+    cvRenderViewSelectionReaction* reaction =
+            new cvRenderViewSelectionReaction(action, mode, m_modifierGroup);
+
+    // Set visualizer if already available
+    if (m_manager && m_manager->getVisualizer()) {
+        reaction->setVisualizer(m_manager->getVisualizer());
+    }
 
     // Connect selection finished signal
-    connect(reaction, &cvSelectionReaction::selectionFinished, this,
+    connect(reaction, &cvRenderViewSelectionReaction::selectionFinished, this,
             &cvSelectionToolController::onSelectionFinished);
 
     // Connect zoom to box signal if applicable
     if (mode == SelectionMode::ZOOM_TO_BOX) {
-        connect(reaction, &cvSelectionReaction::zoomToBoxRequested, this,
-                &cvSelectionToolController::zoomToBoxRequested);
+        connect(reaction, &cvRenderViewSelectionReaction::zoomToBoxCompleted,
+                this, &cvSelectionToolController::zoomToBoxRequested);
     }
 
     // Monitor action state changes to track when selection tools are active
-    // This enables selection properties panel display
-    // NOTE: ZOOM_TO_BOX is excluded from selection tools - it doesn't produce
-    // selection data and shouldn't show selection properties panel
     if (action->isCheckable()) {
         connect(action, &QAction::toggled, this, [this, mode](bool checked) {
             CVLog::PrintDebug(
-                    QString("[cvSelectionToolController] Action for mode %1 %2")
+                    QString("[cvSelectionToolController] Action (new) for mode "
+                            "%1 %2")
                             .arg(static_cast<int>(mode))
                             .arg(checked ? "checked" : "unchecked"));
 
             // For ZOOM_TO_BOX, don't update selection properties state
-            // It's not a selection tool and shouldn't affect the properties
-            // panel
             if (mode == SelectionMode::ZOOM_TO_BOX) {
                 return;
             }
 
             // Update selection tools active state
-            // A tool is active if any reaction's action is checked
-            // EXCLUDE ZOOM_TO_BOX from this check - it's not a selection tool
             bool anyActive = false;
             for (auto it = m_reactions.constBegin();
                  it != m_reactions.constEnd(); ++it) {
                 SelectionMode reactionMode = it.key();
-                // Skip ZOOM_TO_BOX - it doesn't produce selection data
                 if (reactionMode == SelectionMode::ZOOM_TO_BOX) {
                     continue;
                 }
 
-                QPointer<cvSelectionReaction> reaction = it.value();
-                if (reaction && reaction->parentAction() &&
-                    reaction->parentAction()->isCheckable() &&
-                    reaction->parentAction()->isChecked()) {
+                QPointer<cvRenderViewSelectionReaction> r = it.value();
+                if (r && r->parentAction() &&
+                    r->parentAction()->isCheckable() &&
+                    r->parentAction()->isChecked()) {
                     anyActive = true;
                     break;
                 }
@@ -166,26 +180,33 @@ void cvSelectionToolController::registerModifierActions(QAction* addAction,
     m_toggleAction = toggleAction;
 
     // Create action group for mutual exclusivity
+    // Reference: pqStandardViewFrameActionsImplementation.cxx lines 266-285
     m_modifierGroup = new QActionGroup(this);
-    m_modifierGroup->setExclusive(false);  // Allow none to be checked
+    // Set non-exclusive to allow unchecking by clicking on the same button
+    // We manually manage exclusivity in onModifierChanged
+    m_modifierGroup->setExclusive(false);
 
     if (addAction) {
+        addAction->setCheckable(true);
         addAction->setData(
                 static_cast<int>(SelectionModifier::SELECTION_ADDITION));
         m_modifierGroup->addAction(addAction);
     }
     if (subtractAction) {
+        subtractAction->setCheckable(true);
         subtractAction->setData(
                 static_cast<int>(SelectionModifier::SELECTION_SUBTRACTION));
         m_modifierGroup->addAction(subtractAction);
     }
     if (toggleAction) {
+        toggleAction->setCheckable(true);
         toggleAction->setData(
                 static_cast<int>(SelectionModifier::SELECTION_TOGGLE));
         m_modifierGroup->addAction(toggleAction);
     }
 
-    // Connect modifier changes
+    // Connect modifier changes using triggered signal
+    // Reference: pqStandardViewFrameActionsImplementation.cxx lines 284-285
     connect(m_modifierGroup, &QActionGroup::triggered, this,
             &cvSelectionToolController::onModifierChanged);
 
@@ -200,7 +221,9 @@ void cvSelectionToolController::registerManipulationActions(
     m_shrinkAction = shrinkAction;
     m_clearAction = clearAction;
 
-    // Register these with reactions
+    // Register these with new architecture reactions
+    // These are non-checkable instant actions, handled properly by
+    // cvRenderViewSelectionReaction
     if (growAction) {
         registerAction(growAction, SelectionMode::GROW_SELECTION);
     }
@@ -212,14 +235,16 @@ void cvSelectionToolController::registerManipulationActions(
     }
 
     CVLog::PrintDebug(
-            "[cvSelectionToolController] Registered manipulation actions");
+            "[cvSelectionToolController] Registered manipulation actions "
+            "(using new architecture)");
 }
 
 //-----------------------------------------------------------------------------
-void cvSelectionToolController::disableAllTools(cvSelectionReaction* except) {
+void cvSelectionToolController::disableAllTools(
+        cvRenderViewSelectionReaction* except) {
+    // Disable all reactions
     for (auto reaction : m_reactions) {
         if (reaction && reaction != except && reaction->isActive()) {
-            // Trigger the action to toggle it off
             if (reaction->parentAction() &&
                 reaction->parentAction()->isCheckable()) {
                 reaction->parentAction()->blockSignals(true);
@@ -229,11 +254,8 @@ void cvSelectionToolController::disableAllTools(cvSelectionReaction* except) {
         }
     }
 
-    // End the active reaction if it's not the exception
-    if (cvSelectionReaction::activeReaction() &&
-        cvSelectionReaction::activeReaction() != except) {
-        // The endSelection is called automatically when action is unchecked
-    }
+    // End any active reaction
+    cvRenderViewSelectionReaction::endActiveSelection();
 
     // Update selection properties panel
     if (except == nullptr) {
@@ -245,7 +267,7 @@ void cvSelectionToolController::disableAllTools(cvSelectionReaction* except) {
 
 //-----------------------------------------------------------------------------
 bool cvSelectionToolController::isAnyToolActive() const {
-    return cvSelectionReaction::activeReaction() != nullptr;
+    return cvRenderViewSelectionReaction::activeReaction() != nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -322,9 +344,15 @@ void cvSelectionToolController::setSelectionPropertiesActive(bool active) {
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::onSelectionFinished(
         const cvSelectionData& selectionData) {
-    // Update selection in manager
+    // CRITICAL: Block manager's signal to prevent double emission of
+    // selectionFinished The manager's selectionChanged is connected to emit
+    // selectionFinished, and we're already inside onSelectionFinished called
+    // from reaction's emit. This prevents:
+    // reaction->selectionFinished->here->manager->selectionChanged->selectionFinished(again!)
     if (m_manager) {
+        m_manager->blockSignals(true);
         m_manager->setCurrentSelection(selectionData);
+        m_manager->blockSignals(false);
     }
 
     // Update manipulation action states
@@ -369,39 +397,72 @@ void cvSelectionToolController::redoSelection() {
 
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::onModifierChanged(QAction* action) {
-    if (!action || !m_manager) {
+    // Reference:
+    // pqStandardViewFrameActionsImplementation::manageGroupExclusivity() lines
+    // 851-866
+    if (!action) {
         return;
     }
 
-    QVariant data = action->data();
-    if (!data.isValid()) {
+    // Handle non-checkable actions (shouldn't happen but be safe)
+    if (!action->isCheckable()) {
         return;
     }
 
+    // Implement ParaView-style group exclusivity management
+    // When an action is checked, uncheck all others in the group
+    // When an action is unchecked (by clicking it again), revert to default
     if (action->isChecked()) {
-        m_manager->setSelectionModifier(
-                static_cast<SelectionModifier>(data.toInt()));
-
-        QString modeName;
-        switch (data.toInt()) {
-            case static_cast<int>(SelectionModifier::SELECTION_ADDITION):
-                modeName = "ADD (Ctrl)";
-                break;
-            case static_cast<int>(SelectionModifier::SELECTION_SUBTRACTION):
-                modeName = "SUBTRACT (Shift)";
-                break;
-            case static_cast<int>(SelectionModifier::SELECTION_TOGGLE):
-                modeName = "TOGGLE (Ctrl+Shift)";
-                break;
-            default:
-                modeName = "DEFAULT";
-                break;
+        // Manually uncheck other actions in the group
+        // This is the key to ParaView's "manageGroupExclusivity" behavior
+        if (m_modifierGroup) {
+            for (QAction* groupAction : m_modifierGroup->actions()) {
+                if (groupAction != action && groupAction->isChecked()) {
+                    groupAction->blockSignals(true);
+                    groupAction->setChecked(false);
+                    groupAction->blockSignals(false);
+                }
+            }
         }
-        CVLog::PrintDebug(
-                QString("[cvSelectionToolController] Selection modifier: %1")
-                        .arg(modeName));
+
+        // Set the modifier
+        if (m_manager) {
+            QVariant data = action->data();
+            if (data.isValid()) {
+                m_manager->setSelectionModifier(
+                        static_cast<SelectionModifier>(data.toInt()));
+
+                QString modeName;
+                switch (data.toInt()) {
+                    case static_cast<int>(
+                            SelectionModifier::SELECTION_ADDITION):
+                        modeName = "ADD (Ctrl)";
+                        break;
+                    case static_cast<int>(
+                            SelectionModifier::SELECTION_SUBTRACTION):
+                        modeName = "SUBTRACT (Shift)";
+                        break;
+                    case static_cast<int>(SelectionModifier::SELECTION_TOGGLE):
+                        modeName = "TOGGLE (Ctrl+Shift)";
+                        break;
+                    default:
+                        modeName = "DEFAULT";
+                        break;
+                }
+                CVLog::PrintDebug(
+                        QString("[cvSelectionToolController] Selection "
+                                "modifier: %1")
+                                .arg(modeName));
+            }
+        }
     } else {
-        m_manager->setSelectionModifier(SelectionModifier::SELECTION_DEFAULT);
+        // Action was unchecked - revert to default
+        if (m_manager) {
+            m_manager->setSelectionModifier(
+                    SelectionModifier::SELECTION_DEFAULT);
+            CVLog::PrintDebug(
+                    "[cvSelectionToolController] Selection modifier: DEFAULT");
+        }
     }
 }
 
@@ -428,6 +489,10 @@ void cvSelectionToolController::setupActions(const SelectionActions& actions) {
         registerModifierActions(actions.addSelection, actions.subtractSelection,
                                 actions.toggleSelection);
     }
+
+    // NOTE: Using registerAction() for simplified ParaView-aligned architecture
+    // cvRenderViewSelectionReaction handles all selection logic directly
+    // without the intermediate cvRenderViewSelectionTool layer
 
     // Register surface selection actions
     if (actions.selectSurfaceCells) {
@@ -492,12 +557,13 @@ void cvSelectionToolController::setupActions(const SelectionActions& actions) {
         registerAction(actions.zoomToBox, SelectionMode::ZOOM_TO_BOX);
     }
 
-    // Register manipulation actions
+    // Register manipulation actions (still using old API as they are simple)
     registerManipulationActions(actions.growSelection, actions.shrinkSelection,
                                 actions.clearSelection);
 
     CVLog::PrintDebug(
-            "[cvSelectionToolController] All selection actions registered");
+            "[cvSelectionToolController] All selection actions registered "
+            "(using new ParaView-aligned architecture)");
 }
 
 //-----------------------------------------------------------------------------
@@ -507,4 +573,21 @@ void cvSelectionToolController::connectHighlighter() {
     CVLog::PrintDebug(
             "[cvSelectionToolController] Highlighter connection established "
             "via manager");
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionToolController::invalidateCache() {
+    if (m_manager) {
+        // Invalidate cached selection in the pipeline
+        cvSelectionPipeline* pipeline = m_manager->getPipeline();
+        if (pipeline) {
+            pipeline->invalidateCachedSelection();
+            CVLog::PrintDebug(
+                    "[cvSelectionToolController] Selection cache invalidated "
+                    "(scene content changed)");
+        }
+
+        // Clear source object since scene changed
+        m_manager->setSourceObject(nullptr);
+    }
 }
