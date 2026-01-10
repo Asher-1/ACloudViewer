@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ACloudViewer - 专业的3D点云和网格处理软件，支持Windows、Linux和macOS">
+    <meta name="keywords" content="点云处理,3D重建,点云可视化,开源软件,CloudCompare,Open3D">
+    <title>ACloudViewer - 现代化3D数据处理系统</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <img src="images/ACloudViewer_logo_horizontal.png" alt="ACloudViewer Logo" class="logo">
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home">首页</a></li>
+                <li><a href="#features">特性</a></li>
+                <li><a href="#download">下载</a></li>
+                <li><a href="#quickstart">快速开始</a></li>
+                <li><a href="#gallery">展示</a></li>
+                <li><a href="https://github.com/Asher-1/ACloudViewer" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-overlay"></div>
+        <div class="container hero-content">
+            <h1 class="hero-title animate-fade-in">ACloudViewer</h1>
+            <p class="hero-subtitle animate-fade-in-delay">现代化的3D数据处理系统</p>
+            <p class="hero-description animate-fade-in-delay-2">
+                专业的点云和三角网格处理软件 | 支持海量数据 | 跨平台解决方案
+            </p>
+            <div class="hero-buttons animate-fade-in-delay-3">
+                <a href="#download" class="btn btn-primary">
+                    <i class="fas fa-download"></i> 立即下载
+                </a>
+                <a href="#quickstart" class="btn btn-secondary">
+                    <i class="fas fa-rocket"></i> 快速开始
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <i class="fas fa-star"></i>
+                    <span>开源</span>
+                </div>
+                <div class="stat">
+                    <i class="fas fa-users"></i>
+                    <span>活跃社区</span>
+                </div>
+                <div class="stat">
+                    <i class="fas fa-globe"></i>
+                    <span>跨平台</span>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about">
+        <div class="container">
+            <h2 class="section-title">关于 ACloudViewer</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>
+                        ACloudViewer 是一个开源的3D点云和三角网格处理软件库。它支持快速开发处理3D数据的软件，
+                        高度基于 CloudCompare、Open3D、ParaView 和 COLMAP，并集成了PCL库。
+                    </p>
+                    <p>
+                        最初设计用于比较两个3D点云（如激光扫描获得的点云）或点云与三角网格之间的差异。
+                        它依赖于针对此特定用例高度优化的八叉树结构，能够处理海量点云数据
+                        （通常超过1000万点，在2GB内存下最多可达1.2亿点）。
+                    </p>
+                </div>
+                <div class="about-badges">
+                    <img src="https://img.shields.io/badge/version-3.9.4--Beta-blue" alt="Version">
+                    <img src="https://img.shields.io/badge/license-GPL--2.0%20%7C%20MIT-green" alt="License">
+                    <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey" alt="Platform">
+                    <img src="https://img.shields.io/badge/python-3.10--3.12-blue" alt="Python">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">核心特性</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <h3>3D数据结构</h3>
+                    <p>强大的3D数据结构和处理算法，支持点云、网格和各种几何体</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3>场景重建</h3>
+                    <p>基于COLMAP的场景重建系统，支持从图像到3D模型的完整流程</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-vector-square"></i>
+                    </div>
+                    <h3>表面对齐</h3>
+                    <p>高精度的点云配准算法，包括ICP、RANSAC等多种方法</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h3>3D可视化</h3>
+                    <p>基于VTK和OpenGL的高性能渲染引擎，支持PBR物理渲染</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>机器学习</h3>
+                    <p>集成PyTorch和TensorFlow，支持3D深度学习应用</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3>GPU加速</h3>
+                    <p>核心3D操作的GPU加速，支持CUDA 12.x</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>C++ & Python</h3>
+                    <p>提供C++和Python双语言API，灵活易用</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-plug"></i>
+                    </div>
+                    <h3>插件系统</h3>
+                    <p>丰富的插件生态系统，支持自定义功能扩展</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download">
+        <div class="container">
+            <h2 class="section-title">下载 ACloudViewer</h2>
+            <p class="section-subtitle">选择适合您系统的版本</p>
+            
+            <!-- Beta Version -->
+            <div class="version-section">
+                <div class="version-header">
+                    <span class="version-badge beta">🚀 Beta 版本: Devel packages from the main branch</span>
+                    <span class="release-date">发布日期: 2025年10月15日 | Commit: main</span>
+                </div>
+                <p class="version-description">最新的测试版本，包含最新功能和改进</p>
+                
+                <div class="download-grid">
+                    <!-- Windows Beta -->
+                    <div class="download-card compact">
+                        <div class="os-icon-small">
+                            <i class="fab fa-windows"></i>
+                        </div>
+                        <h4>Windows</h4>
+                        <div class="download-buttons">
+                            <a href="https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bd236e24-win-cpu-amd64.exe" class="btn btn-download-small">
+                                <i class="fas fa-download"></i> 下载
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- macOS Beta -->
+                    <div class="download-card compact">
+                        <div class="os-icon-small">
+                            <i class="fab fa-apple"></i>
+                        </div>
+                        <h4>macOS</h4>
+                        <div class="download-buttons">
+                            <a href="https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bd236e24-mac-cpu-ARM64.dmg" class="btn btn-download-small">
+                                <i class="fas fa-download"></i> 下载
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Linux Beta -->
+                    <div class="download-card compact">
+                        <div class="os-icon-small">
+                            <i class="fab fa-linux"></i>
+                        </div>
+                        <h4>Linux</h4>
+                        <div class="download-buttons">
+                            <a href="https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bd236e24-ubuntu20.04-cpu-amd64.run" class="btn btn-download-small">
+                                <i class="fas fa-download"></i> 下载
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Stable Releases -->
+            <div class="version-section stable">
+                <div class="version-header">
+                    <span class="version-badge stable">✅ 稳定版本</span>
+                </div>
+                <p class="version-description">经过测试的稳定版本，推荐用于生产环境</p>
+                
+                <!-- Version Tabs -->
+                <div class="version-tabs">
+                    <button class="version-tab active" data-version="3.9.3">v3.9.3</button>
+                    <button class="version-tab" data-version="3.9.2">v3.9.2</button>
+                    <button class="version-tab" data-version="3.9.1">v3.9.1</button>
+                </div>
+
+                <!-- v3.9.3 Downloads -->
+                <div class="version-content active" id="version-3.9.3">
+                    <div class="download-grid">
+                        <div class="download-card compact">
+                            <div class="os-icon-small"><i class="fab fa-windows"></i></div>
+                            <h4>Windows</h4>
+                            <div class="download-buttons">
+                                <a href="https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.3/ACloudViewer-3.9.3-win-cpu-amd64.exe" class="btn btn-download-small">
+                                    <i class="fas fa-download"></i> 下载
+                                </a>
+                            </div>
+                        </div>
+                        <div class="download-card compact">
+                            <div class="os-icon-small"><i class="fab fa-apple"></i></div>
+                            <h4>macOS</h4>
+                            <div class="download-buttons">
+                                <a href="https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.3/ACloudViewer-3.9.3-mac-cpu-ARM64.dmg" class="btn btn-download-small">
+                                    <i class="fas fa-download"></i> 下载
+                                </a>
+                            </div>
+                        </div>
+                        <div class="download-card compact">
+                            <div class="os-icon-small"><i class="fab fa-linux"></i></div>
+                            <h4>Linux</h4>
+                            <div class="download-buttons">
+                                <a href="https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.3/ACloudViewer-3.9.3-ubuntu18.04-cpu-amd64.run" class="btn btn-download-small">
+                                    <i class="fas fa-download"></i> 下载
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- v3.9.2 Downloads -->
+                <div class="version-content" id="version-3.9.2">
+                    <div class="download-grid">
+                        <div class="download-card compact">
+                            <div class="os-icon-small"><i class="fab fa-windows"></i></div>
+                            <h4>Windows</h4>
+                            <div class="download-buttons">
+                                <a href="https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.2/ACloudViewer-3.9.2-2024-12-24-win-cpu-amd64.exe" class="btn btn-download-small">
+                                    <i class="fas fa-download"></i> 下载
+                                </a>
+                            </div>
+                        </div>
+                        <div class="download-card compact">
+                            <div class="os-icon-small"><i class="fab fa-apple"></i></div>
+                            <h4>macOS</h4>
+                            <div class="download-buttons">
+                                <a href="https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.2/ACloudViewer-3.9.2-2024-12-24-mac-cpu-X64.dmg" class="btn btn-download-small">
+                                    <i class="fas fa-download"></i> 下载
+                                </a>
+                            </div>
+                        </div>
+                        <div class="download-card compact">
+                            <div class="os-icon-small"><i class="fab fa-linux"></i></div>
+                            <h4>Linux</h4>
+                            <div class="download-buttons">
+                                <a href="https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.2/ACloudViewer-3.9.2-2024-12-25-ubuntu18.04-cpu-amd64.run" class="btn btn-download-small">
+                                    <i class="fas fa-download"></i> 下载
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- v3.9.1 Downloads -->
+                <div class="version-content" id="version-3.9.1">
+                    <div class="download-grid">
+                        <div class="download-card compact">
+                            <div class="os-icon-small"><i class="fab fa-windows"></i></div>
+                            <h4>Windows</h4>
+                            <div class="download-buttons">
+                                <a href="https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.1/ACloudViewer-3.9.1-2024-12-18-win-cpu-amd64.exe" class="btn btn-download-small">
+                                    <i class="fas fa-download"></i> 下载
+                                </a>
+                            </div>
+                        </div>
+                        <div class="download-card compact">
+                            <div class="os-icon-small"><i class="fab fa-apple"></i></div>
+                            <h4>macOS</h4>
+                            <div class="download-buttons">
+                                <a href="https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.1/ACloudViewer-3.9.1-2024-11-11-mac-cpu-ARM64.dmg" class="btn btn-download-small">
+                                    <i class="fas fa-download"></i> 下载
+                                </a>
+                            </div>
+                        </div>
+                        <div class="download-card compact">
+                            <div class="os-icon-small"><i class="fab fa-linux"></i></div>
+                            <h4>Linux</h4>
+                            <div class="download-buttons">
+                                <a href="https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.1/ACloudViewer-3.9.1-2024-11-17-ubuntu18.04-cpu-amd64.run" class="btn btn-download-small">
+                                    <i class="fas fa-download"></i> 下载
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="all-releases">
+                <a href="https://github.com/Asher-1/ACloudViewer/releases" target="_blank" class="btn btn-outline">
+                    <i class="fas fa-history"></i> 查看完整版本历史
+                </a>
+            </div>
+
+            <!-- Python Package -->
+            <div class="python-install">
+                <h3><i class="fab fa-python"></i> Python 安装</h3>
+                <div class="code-block">
+                    <code>pip install cloudviewer</code>
+                    <button class="copy-btn" data-clipboard="pip install cloudviewer">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <p class="install-note">
+                    支持 Python 3.10-3.12 | Ubuntu 20.04+, macOS 10.15+, Windows 10+ (64-bit)
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quickstart" class="quickstart">
+        <div class="container">
+            <h2 class="section-title">快速开始</h2>
+            <div class="quickstart-tabs">
+                <button class="tab-btn active" data-tab="python">Python</button>
+                <button class="tab-btn" data-tab="cpp">C++</button>
+                <button class="tab-btn" data-tab="gui">GUI应用</button>
+            </div>
+
+            <!-- Python Tab -->
+            <div class="tab-content active" id="python-tab">
+                <h3>Python 快速入门</h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>安装</h4>
+                            <div class="code-block">
+                                <code>pip install cloudviewer</code>
+                                <button class="copy-btn" data-clipboard="pip install cloudviewer">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>验证安装</h4>
+                            <div class="code-block">
+                                <code>python -c "import cloudViewer as cv3d; print(cv3d.__version__)"</code>
+                                <button class="copy-btn" data-clipboard='python -c "import cloudViewer as cv3d; print(cv3d.__version__)"'>
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>运行示例</h4>
+                            <div class="code-block">
+<code>import cloudViewer as cv3d
+
+# 创建球体网格
+mesh = cv3d.geometry.ccMesh.create_sphere()
+mesh.compute_vertex_normals()
+
+# 可视化
+cv3d.visualization.draw(mesh, raw_mode=True)</code>
+                                <button class="copy-btn" data-clipboard='import cloudViewer as cv3d
+
+# 创建球体网格
+mesh = cv3d.geometry.ccMesh.create_sphere()
+mesh.compute_vertex_normals()
+
+# 可视化
+cv3d.visualization.draw(mesh, raw_mode=True)'>
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- C++ Tab -->
+            <div class="tab-content" id="cpp-tab">
+                <h3>C++ 快速入门</h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>克隆仓库</h4>
+                            <div class="code-block">
+                                <code>git clone --recursive https://github.com/Asher-1/ACloudViewer.git</code>
+                                <button class="copy-btn" data-clipboard="git clone --recursive https://github.com/Asher-1/ACloudViewer.git">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>构建项目</h4>
+                            <div class="code-block">
+<code>cd ACloudViewer
+mkdir build && cd build
+cmake ..
+make -j$(nproc)</code>
+                                <button class="copy-btn" data-clipboard="cd ACloudViewer
+mkdir build && cd build
+cmake ..
+make -j$(nproc)">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>运行示例</h4>
+                            <div class="code-block">
+                                <code>./bin/ACloudViewer</code>
+                                <button class="copy-btn" data-clipboard="./bin/ACloudViewer">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="quickstart-note">
+                    详细编译说明请参考 <a href="https://github.com/Asher-1/ACloudViewer/blob/master/BUILD.md" target="_blank">BUILD.md</a>
+                </p>
+            </div>
+
+            <!-- GUI Tab -->
+            <div class="tab-content" id="gui-tab">
+                <h3>GUI 应用使用</h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>下载并安装</h4>
+                            <p>从<a href="#download">下载区域</a>选择适合您系统的安装包</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>启动应用</h4>
+                            <p>双击桌面图标或从开始菜单启动 ACloudViewer</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>导入数据</h4>
+                            <p>File → Open 选择您的点云或网格文件</p>
+                            <p class="supported-formats">
+                                支持格式: PLY, PCD, LAS, LAZ, E57, OBJ, STL, FBX 等
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery">
+        <div class="container">
+            <h2 class="section-title">应用展示</h2>
+            <p class="section-subtitle">探索 ACloudViewer 在不同领域的强大应用</p>
+            
+            <!-- Gallery Tabs -->
+            <div class="gallery-tabs">
+                <button class="gallery-tab active" data-gallery="ui">用户界面</button>
+                <button class="gallery-tab" data-gallery="reconstruction">3D重建</button>
+                <button class="gallery-tab" data-gallery="annotation">语义标注</button>
+                <button class="gallery-tab" data-gallery="ml">机器学习</button>
+                <button class="gallery-tab" data-gallery="visualization">可视化</button>
+            </div>
+
+            <!-- UI Gallery -->
+            <div class="gallery-content active" id="gallery-ui">
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <img src="images/CloudViewerApp.png" alt="CloudViewer应用">
+                        <div class="gallery-overlay">
+                            <h3>CloudViewer 应用</h3>
+                            <p>轻量级的点云查看器</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/AbstractionLayers.png" alt="架构层次">
+                        <div class="gallery-overlay">
+                            <h3>系统架构</h3>
+                            <p>模块化设计，从底层到应用层的完整抽象</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reconstruction Gallery -->
+            <div class="gallery-content" id="gallery-reconstruction">
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <img src="images/Reconstruction.png" alt="三维重建">
+                        <div class="gallery-overlay">
+                            <h3>场景重建</h3>
+                            <p>基于COLMAP的完整3D重建流程</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/real-time-3D-Reconstruction.png" alt="实时重建">
+                        <div class="gallery-overlay">
+                            <h3>实时3D重建</h3>
+                            <p>GPU加速的实时点云重建与融合</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/ICP-registration.png" alt="ICP配准">
+                        <div class="gallery-overlay">
+                            <h3>ICP点云配准</h3>
+                            <p>高性能的迭代最近点算法，支持多尺度配准</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Annotation Gallery -->
+            <div class="gallery-content" id="gallery-annotation">
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <img src="images/ACloudViewerMainUI.png" alt="主界面">
+                        <div class="gallery-overlay">
+                            <h3>主界面</h3>
+                            <p>现代化的用户界面，功能强大且易用</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/SemanticAnnotation.png" alt="语义标注">
+                        <div class="gallery-overlay">
+                            <h3>语义标注工具</h3>
+                            <p>智能的3D语义分割和标注功能</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/SenceCloud.png" alt="场景点云">
+                        <div class="gallery-overlay">
+                            <h3>大规模场景标注</h3>
+                            <p>处理海量点云数据的语义标注，支持上亿点渲染</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Machine Learning Gallery -->
+            <div class="gallery-content" id="gallery-ml">
+                <div class="gallery-grid">
+                    <div class="gallery-item gallery-item-wide">
+                        <img src="images/getting_started_ml_visualizer.gif" alt="ML可视化">
+                        <div class="gallery-overlay">
+                            <h3>机器学习可视化</h3>
+                            <p>实时可视化3D机器学习模型训练和推理过程</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Gallery -->
+            <div class="gallery-content" id="gallery-visualization">
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <img src="images/jupyter_visualizer.png" alt="Jupyter可视化">
+                        <div class="gallery-overlay">
+                            <h3>Jupyter 集成</h3>
+                            <p>在Jupyter Notebook中交互式可视化3D数据</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/CloudViewerApp.png" alt="高级渲染">
+                        <div class="gallery-overlay">
+                            <h3>PBR渲染</h3>
+                            <p>基于物理的渲染，支持材质、光照和阴影</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Resources Section -->
+    <section class="resources">
+        <div class="container">
+            <h2 class="section-title">学习资源</h2>
+            <div class="resources-grid">
+                <a href="https://github.com/Asher-1/ACloudViewer" target="_blank" class="resource-card">
+                    <i class="fab fa-github"></i>
+                    <h3>GitHub 仓库</h3>
+                    <p>源代码、Issues 和贡献</p>
+                </a>
+                <a href="https://github.com/Asher-1/ACloudViewer/tree/master/examples" target="_blank" class="resource-card">
+                    <i class="fas fa-code"></i>
+                    <h3>示例代码</h3>
+                    <p>C++ 和 Python 示例</p>
+                </a>
+                <a href="https://github.com/Asher-1/ACloudViewer/blob/master/BUILD.md" target="_blank" class="resource-card">
+                    <i class="fas fa-book"></i>
+                    <h3>编译文档</h3>
+                    <p>详细的编译说明</p>
+                </a>
+                <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w" target="_blank" class="resource-card">
+                    <i class="fab fa-youtube"></i>
+                    <h3>视频教程</h3>
+                    <p>功能演示和教程</p>
+                </a>
+                <a href="https://github.com/Asher-1/ACloudViewer/blob/master/CONTRIBUTING.md" target="_blank" class="resource-card">
+                    <i class="fas fa-users"></i>
+                    <h3>贡献指南</h3>
+                    <p>如何为项目做贡献</p>
+                </a>
+                <a href="https://github.com/Asher-1/CloudViewer-ML" target="_blank" class="resource-card">
+                    <i class="fas fa-brain"></i>
+                    <h3>CloudViewer-ML</h3>
+                    <p>3D机器学习扩展</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>ACloudViewer</h3>
+                    <p>现代化的3D数据处理系统</p>
+                    <div class="social-links">
+                        <a href="https://github.com/Asher-1/ACloudViewer" target="_blank">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w" target="_blank">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>快速链接</h4>
+                    <ul>
+                        <li><a href="#features">特性</a></li>
+                        <li><a href="#download">下载</a></li>
+                        <li><a href="#quickstart">快速开始</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/releases">版本发布</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>文档</h4>
+                    <ul>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/blob/master/BUILD.md">编译指南</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/tree/master/examples">示例代码</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/blob/master/CONTRIBUTING.md">贡献指南</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/blob/master/CHANGELOG.md">更新日志</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>社区</h4>
+                    <ul>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/issues">问题反馈</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/discussions">讨论区</a></li>
+                        <li><a href="mailto:ludahai19@163.com">联系我们</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 ACloudViewer. Licensed under GPL-2.0 | MIT License.</p>
+                <p>Based on CloudCompare, Open3D, ParaView and COLMAP</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop" class="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

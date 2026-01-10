@@ -1,0 +1,55 @@
+name: Update Website Download Links
+
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+  schedule:
+    # 每天UTC时间0点运行（北京时间早上8点）
+    - cron: '0 0 * * *'
+
+jobs:
+  update-downloads:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install requests jinja2
+          
+      - name: Fetch releases and update website
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python docs/automation/scripts/update_download_links.py
+          
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet docs/index.html; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs/index.html
+          git commit -m "chore: auto-update download links from releases [skip ci]"
+          git push
+

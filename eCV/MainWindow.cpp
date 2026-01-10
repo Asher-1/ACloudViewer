@@ -7201,9 +7201,9 @@ void MainWindow::doActionComparePlanes() {
 // help
 void MainWindow::help() {
     QDesktopServices::openUrl(
-            QUrl(QStringLiteral("https://asher-1.github.io/docs")));
+            QUrl(QStringLiteral("https://asher-1.github.io/ACloudViewer/docs")));
     ecvConsole::Print(
-            tr("[ACloudViewer help] https://asher-1.github.io/docs!"));
+            tr("[ACloudViewer help] https://asher-1.github.io/ACloudViewer/docs!"));
 }
 
 // Change theme: Windows/Darcula

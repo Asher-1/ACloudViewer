@@ -1,6 +1,6 @@
 ## Compiling
 
-PS: Please refer this first [Compilation of ACloudViewer 3.19+ (with CMake)](./doc/cloudviewer-dependency.md)
+PS: Please refer this first [Compilation of ACloudViewer 3.19+ (with CMake)](./docs/guides/QUICKSTART.md)
 
 ## Prerequisites
 

@@ -1,11 +1,11 @@
 Build from source
 =====================
 
-[**Linux building**](compiling-cloudviewer-linux.md)
+[**Linux building**](building/compiling-cloudviewer-linux.md)
 
-[**MacOS building**](compiling-cloudviewer-macos.md)
+[**MacOS building**](building/compiling-cloudviewer-macos.md)
 
-[**Windows building**](compiling-cloudviewer-windows.md)
+[**Windows building**](building/compiling-cloudviewer-windows.md)
 
 
 System requirements
