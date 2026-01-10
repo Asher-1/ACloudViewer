@@ -297,9 +297,9 @@ Remember that you can reach out with questions, requests, or feedback through th
 
 [e-mail](ludahai19@163.com)
 
-[Documentation](https://asher-1.github.io/docs)
+[Documentation](https://asher-1.github.io/ACloudViewer/docs)
 
-[Downloads](https://asher-1.github.io/downloads)
+[Downloads](https://asher-1.github.io/ACloudViewer/downloads)
 
 
 v3.7.0 (Asher) - 11/12/2020
@@ -310,7 +310,7 @@ We are excited to present ACloudViewer 3.7.0!
 
 CloudViewer 0.3.7 introduces a brand new 3D Machine Learning module, nicknamed [CloudViewer-ML](https://github.com/Asher-1/CloudViewer-ML). CloudViewer-ML is an extension of your favorite library to bring support for 3D domain-specific operators, models, algorithms, and datasets. In a nutshell, users can now create new applications combining the power of 3D data and state-of-the-art neural networks! CloudViewer-ML is included in all the binary releases of CloudViewer 0.3.7.
 
-CloudViewer-ML comes with support for [Pytorch +1.4](https://pytorch.org/) and [TensorFlow +2.2](https://www.tensorflow.org), the two most popular machine learning frameworks. The first iteration of this module features a 3D semantic segmentation toolset, including training and inference capabilities for [RandlaNet](https://arxiv.org/abs/1911.11236) and [KPConv](https://arxiv.org/abs/1904.08889). The toolset supports popular datasets such as [SemanticKITTI](http://semantic-kitti.org), [Semantic3D](http://www.semantic3d.net), 3D Semantic Parsing of Large-Scale Indoor Spaces S3DIS, [Toronto3D](https://arxiv.org/abs/2003.08284), [Paris-Lille-3D](https://npm3d.fr/paris-lille-3d) and [Electricity3D](https://asher-1.github.io). CloudViewer-ML also provides a new model zoo compatible with Pytorch and TensorFlow, so that users can enjoy state-of-the-art semantic segmentation models without hassles.
+CloudViewer-ML comes with support for [Pytorch +1.4](https://pytorch.org/) and [TensorFlow +2.2](https://www.tensorflow.org), the two most popular machine learning frameworks. The first iteration of this module features a 3D semantic segmentation toolset, including training and inference capabilities for [RandlaNet](https://arxiv.org/abs/1911.11236) and [KPConv](https://arxiv.org/abs/1904.08889). The toolset supports popular datasets such as [SemanticKITTI](http://semantic-kitti.org), [Semantic3D](http://www.semantic3d.net), 3D Semantic Parsing of Large-Scale Indoor Spaces S3DIS, [Toronto3D](https://arxiv.org/abs/2003.08284), [Paris-Lille-3D](https://npm3d.fr/paris-lille-3d) and [Electricity3D](https://asher-1.github.io/ACloudViewer/). CloudViewer-ML also provides a new model zoo compatible with Pytorch and TensorFlow, so that users can enjoy state-of-the-art semantic segmentation models without hassles.
 
 We have endowed the new CloudViewer-ML module with a new data viewer tool. Users can now inspect their datasets and model’s predictions in an intuitive and simple way. This visualization tool includes support for Pytorch and TensorFlow frameworks and is fully customizable due to its Pythonic nature.
 
@@ -330,9 +330,9 @@ Remember that you can reach out with questions, requests, or feedback through th
 
 [e-mail](ludahai19@163.com)
 
-[Discourse forum](https://asher-1.github.io)
+[Discourse forum](https://asher-1.github.io/ACloudViewer/)
 
-[Discord network](https://asher-1.github.io)
+[Discord network](https://asher-1.github.io/ACloudViewer/)
 
 The ACloudViewer team
 
@@ -1033,7 +1033,7 @@ v1.0.0 (Asher) - 10/22/2019
 - Enhancements:
     - When a picking operation is active, the ESC key will cancel it
     - qBroom plugin:
-        - now has a wiki documentation: http://asher-1.github.io/docs
+        - now has a wiki documentation: https://asher-1.github.io/ACloudViewer/docs
     - qAnimation plugin:
         - new output option 'zoom' (alternative to the existing 'super resolution' option)
         - the plugin doesn't spam the Console at each frame if the 'super resolution' option is > 1 ;)

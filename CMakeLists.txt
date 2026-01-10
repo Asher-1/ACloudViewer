@@ -405,7 +405,7 @@ project(ACloudViewer
     # Set PROJECT_DESCRIPTION
     DESCRIPTION "ACloudViewer: A Modern Library for 3D Data Processing."
     # Set PROJECT_HOMEPAGE_URL
-    HOMEPAGE_URL "https://asher-1.github.io"
+    HOMEPAGE_URL "https://asher-1.github.io/ACloudViewer/"
     LANGUAGES C CXX)
 message(STATUS "ACloudViewer ${CLOUDVIEWER_VERSION_FULL}")
 
@@ -494,8 +494,8 @@ endif()
 
 # set additional info
 set(PROJECT_EMAIL "ludahai19@gmail.com")
-set(PROJECT_HOME "https://asher-1.github.io")
-set(PROJECT_DOCS "https://asher-1.github.io/docs")
+set(PROJECT_HOME "https://asher-1.github.io/ACloudViewer/")
+set(PROJECT_DOCS "https://asher-1.github.io/ACloudViewer/docs")
 set(PROJECT_CODE "https://github.com/Asher-1/ACloudViewer")
 set(PROJECT_ISSUES "https://github.com/Asher-1/ACloudViewer/issues")
 
