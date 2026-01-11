@@ -8,15 +8,12 @@
 #include "cvViewSelectionManager.h"
 
 #include "cvSelectionData.h"
-// cvSelectionTypes.h merged into cvSelectionData.h  // For SelectionMode and
-// SelectionModifier enums
 
 // Selection utility modules
-#include "cvSelectionAlgebra.h"  // Contains cvSelectionFilter
+#include "cvSelectionAlgebra.h"
 #include "cvSelectionAnnotation.h"
 #include "cvSelectionHighlighter.h"
 #include "cvSelectionPipeline.h"
-#include "cvSelectionStorage.h"  // Contains cvSelectionHistory and cvSelectionBookmarks
 
 // LOCAL
 #include "PclUtils/PCLVis.h"
@@ -29,7 +26,7 @@
 #include <CVLog.h>
 
 // VTK
-#include <vtkHardwareSelector.h>  // Full definition needed for copy assignment operator
+#include <vtkHardwareSelector.h>
 #include <vtkIdTypeArray.h>
 #include <vtkIntArray.h>
 #include <vtkPolyData.h>
@@ -52,29 +49,20 @@ cvViewSelectionManager::cvViewSelectionManager(QObject* parent)
       m_isActive(false),
       m_currentSelection(nullptr),
       m_currentSelectionFieldAssociation(0),
-      m_history(nullptr),
       m_algebra(nullptr),
       m_pipeline(nullptr),
       m_filter(nullptr),
-      m_bookmarks(nullptr),
       m_annotations(nullptr),
       m_highlighter(nullptr),
       m_sourceObject(nullptr) {
     // Initialize utility modules (ParaView-style architecture)
-    m_history = new cvSelectionHistory(this);
+    // Note: m_history and m_bookmarks removed - UI not implemented
     m_algebra = new cvSelectionAlgebra(this);
     m_pipeline = new cvSelectionPipeline(this);
     m_filter = new cvSelectionFilter(this);
-    m_bookmarks = new cvSelectionBookmarks(this);
     m_annotations = new cvSelectionAnnotationManager(this);
     m_highlighter =
             new cvSelectionHighlighter();  // Shared highlighter for all tools
-
-    // Connect history signals
-    connect(m_history, &cvSelectionHistory::selectionRestored, this,
-            [this](const cvSelectionData& data) { setCurrentSelection(data); });
-    connect(m_history, &cvSelectionHistory::historyChanged, this,
-            [this]() { emit selectionChanged(); });
 
     CVLog::PrintDebug(
             "[cvViewSelectionManager] Initialized with utility modules");
@@ -94,10 +82,6 @@ cvViewSelectionManager::~cvViewSelectionManager() {
     // Clean up highlighter (not a QObject, so manual cleanup)
     delete m_highlighter;
     m_highlighter = nullptr;
-
-    // Utility modules will be automatically deleted by Qt parent-child
-    // relationship
-    CVLog::PrintDebug("[cvViewSelectionManager] Destroyed");
 }
 
 //-----------------------------------------------------------------------------
@@ -192,12 +176,11 @@ void cvViewSelectionManager::clearSelection() {
     // Clear current selection
     setCurrentSelection(nullptr, 0);
 
-    // Push to history
-    if (m_history) {
-        m_history->pushSelection(cvSelectionData(), "Clear Selection");
-    }
+    // Reset number of layers and original selection when clearing
+    // Reference: ParaView's selection source resets NumberOfLayers when cleared
+    m_numberOfLayers = 0;
+    m_originalSelection = cvSelectionData();  // Clear original selection
 
-    CVLog::PrintDebug("[cvViewSelectionManager] Clear selection");
     emit selectionChanged();
 }
 
@@ -218,8 +201,9 @@ void cvViewSelectionManager::expandSelection(int layers,
                                              bool removeSeed,
                                              bool removeIntermediateLayers) {
     // ParaView-compatible expand selection
-    // Reference: pqRenderViewSelectionReaction::actionTriggered()
-    // GROW_SELECTION case
+    // Reference: vtkSMSelectionHelper::ExpandSelection()
+    // ParaView ALWAYS expands/shrinks from the ORIGINAL selection, not the
+    // current one This is the key difference that makes grow/shrink reversible
 
     if (!m_algebra) {
         CVLog::Warning("[cvViewSelectionManager] No algebra module available");
@@ -233,13 +217,7 @@ void cvViewSelectionManager::expandSelection(int layers,
         return;
     }
 
-    // Note: We can't reliably detect if m_sourceObject has been deleted in C++
-    // without causing undefined behavior. We rely on the application to clear
-    // m_sourceObject when objects are deleted (e.g., via
-    // clearCurrentSelection()).
-
     // Get polyData with enhanced fallback
-    // Reference: ParaView's selection expansion uses the source data
     vtkPolyData* polyData = getPolyData();
 
     if (!polyData) {
@@ -249,31 +227,48 @@ void cvViewSelectionManager::expandSelection(int layers,
         return;
     }
 
-    // Get current selection as cvSelectionData
-    cvSelectionData current = currentSelection();
-    CVLog::Print(QString("[cvViewSelectionManager] Expand selection: %1 "
-                         "%2, layers=%3")
-                         .arg(current.count())
-                         .arg(current.fieldTypeString())
-                         .arg(layers));
+    // ParaView-style: Calculate the NEW total number of layers
+    int newNumberOfLayers = m_numberOfLayers + layers;
 
-    // Use algebra module to expand selection
-    cvSelectionData result = m_algebra->expandSelection(
-            polyData, current, layers, removeSeed, removeIntermediateLayers);
+    // Ensure it doesn't go negative
+    if (newNumberOfLayers < 0) {
+        newNumberOfLayers = 0;
+    }
 
-    if (!result.isEmpty() || layers < 0) {
-        // For shrink (layers < 0), empty result is valid (shrunk to nothing)
-        setCurrentSelection(result);
+    // ParaView-style: ALWAYS expand from the original selection
+    // Use the stored original selection as the base
+    cvSelectionData baseSelection = m_originalSelection.isEmpty()
+                                            ? currentSelection()
+                                            : m_originalSelection;
 
-        // Push to history
-        QString operationName =
-                layers > 0 ? "Grow Selection" : "Shrink Selection";
-        if (m_history) {
-            m_history->pushSelection(result, operationName);
-        }
+    // Expand from the original selection with the NEW total number of layers
+    cvSelectionData result;
+    if (newNumberOfLayers == 0) {
+        // No layers = return to original selection
+        result = baseSelection;
+        // CVLog::Print("[cvViewSelectionManager] Returning to original
+        // selection");
+    } else {
+        // Expand the original selection by newNumberOfLayers
+        result = m_algebra->expandSelection(polyData, baseSelection,
+                                            newNumberOfLayers, removeSeed,
+                                            removeIntermediateLayers);
+    }
 
-        // Update highlight (ParaView-style: visually reflect expanded
-        // selection)
+    if (!result.isEmpty() || newNumberOfLayers == 0) {
+        // Don't reset layers since this is a grow/shrink operation
+        setCurrentSelection(result, false);
+
+        // Update number of layers
+        m_numberOfLayers = newNumberOfLayers;
+
+        CVLog::PrintDebug(
+                QString("[cvViewSelectionManager] Updated NumberOfLayers: %1")
+                        .arg(m_numberOfLayers));
+
+        // History removed - UI not implemented
+
+        // Update highlight
         if (m_highlighter) {
             if (!result.isEmpty()) {
                 m_highlighter->highlightSelection(
@@ -285,24 +280,25 @@ void cvViewSelectionManager::expandSelection(int layers,
             }
         }
 
-        CVLog::Print(QString("[cvViewSelectionManager] %1: %2 -> %3 %4")
-                             .arg(operationName)
-                             .arg(current.count())
-                             .arg(result.count())
-                             .arg(result.fieldTypeString()));
+        QString operationName =
+                layers > 0 ? "Grow Selection" : "Shrink Selection";
+        CVLog::Print(
+                QString("[cvViewSelectionManager] %1: %2 -> %3 %4 (layers=%5)")
+                        .arg(operationName)
+                        .arg(baseSelection.count())
+                        .arg(result.count())
+                        .arg(result.fieldTypeString())
+                        .arg(m_numberOfLayers));
         emit selectionChanged();
-    } else if (layers > 0) {
+    } else {
         CVLog::Warning(
-                "[cvViewSelectionManager] Grow resulted in empty selection");
+                "[cvViewSelectionManager] Expand resulted in empty selection");
     }
 }
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::setGrowSelectionRemoveSeed(bool remove) {
     m_growRemoveSeed = remove;
-    CVLog::Print(
-            QString("[cvViewSelectionManager] GrowSelectionRemoveSeed = %1")
-                    .arg(remove));
 }
 
 //-----------------------------------------------------------------------------
@@ -372,16 +368,30 @@ const cvSelectionData& cvViewSelectionManager::currentSelection() const {
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::setCurrentSelection(
-        const cvSelectionData& selectionData) {
+        const cvSelectionData& selectionData, bool resetLayers) {
     // Convert cvSelectionData to VTK array for internal storage
     setCurrentSelection(selectionData.vtkArray(),
-                        static_cast<int>(selectionData.fieldAssociation()));
+                        static_cast<int>(selectionData.fieldAssociation()),
+                        resetLayers);
+
+    // Store as original selection if this is a new selection (resetLayers=true)
+    // ParaView-style: Original selection is the base for all grow/shrink
+    // operations
+    if (resetLayers) {
+        m_originalSelection = selectionData;
+        m_numberOfLayers = 0;
+        CVLog::PrintDebug(QString("[cvViewSelectionManager] Stored original "
+                                  "selection: %1 %2")
+                                  .arg(selectionData.count())
+                                  .arg(selectionData.fieldTypeString()));
+    }
 }
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::setCurrentSelection(
         const vtkSmartPointer<vtkIdTypeArray>& selection,
-        int fieldAssociation) {
+        int fieldAssociation,
+        bool resetLayers) {
     // CRITICAL FIX: Validate selection pointer before use
     if (selection && selection.GetPointer() == nullptr) {
         CVLog::Error(
@@ -483,20 +493,13 @@ void cvViewSelectionManager::setCurrentSelection(
         }
     } else {
         m_currentSelectionFieldAssociation = 0;
-        CVLog::PrintDebug("[cvViewSelectionManager] Selection cleared");
     }
 
     // Create selection data object
     cvSelectionData selectionData(m_currentSelection,
                                   m_currentSelectionFieldAssociation);
 
-    // Push to history (only if not empty and history exists)
-    if (m_history && !selectionData.isEmpty()) {
-        m_history->pushSelection(selectionData,
-                                 QString("%1 %2 selected")
-                                         .arg(selectionData.count())
-                                         .arg(selectionData.fieldTypeString()));
-    }
+    // History removed - UI not implemented
 
     // Emit both new and legacy signals
     emit selectionChanged(selectionData);
@@ -509,44 +512,8 @@ bool cvViewSelectionManager::hasSelection() const {
 }
 
 //-----------------------------------------------------------------------------
-// Undo/redo operations (using cvSelectionHistory)
-//-----------------------------------------------------------------------------
-
-bool cvViewSelectionManager::undo() {
-    if (!m_history || !m_history->canUndo()) {
-        return false;
-    }
-
-    cvSelectionData restored = m_history->undo();
-    // Note: setCurrentSelection is already connected to history signals
-    // So it will be called automatically
-    return true;
-}
-
-//-----------------------------------------------------------------------------
-bool cvViewSelectionManager::redo() {
-    if (!m_history || !m_history->canRedo()) {
-        return false;
-    }
-
-    cvSelectionData restored = m_history->redo();
-    return true;
-}
-
-//-----------------------------------------------------------------------------
-bool cvViewSelectionManager::canUndo() const {
-    return m_history && m_history->canUndo();
-}
-
-//-----------------------------------------------------------------------------
-bool cvViewSelectionManager::canRedo() const {
-    return m_history && m_history->canRedo();
-}
-
-//-----------------------------------------------------------------------------
 // Algebra operations (using cvSelectionAlgebra)
 //-----------------------------------------------------------------------------
-
 cvSelectionData cvViewSelectionManager::performAlgebraOperation(
         int op,
         const cvSelectionData& selectionA,
@@ -562,13 +529,7 @@ cvSelectionData cvViewSelectionManager::performAlgebraOperation(
             static_cast<cvSelectionAlgebra::Operation>(op), selectionA,
             selectionB, polyData);
 
-    if (!result.isEmpty()) {
-        // Push to history
-        if (m_history) {
-            QString desc = QString("Algebra Operation %1").arg(op);
-            m_history->pushSelection(result, desc);
-        }
-    }
+    // History removed - UI not implemented
 
     return result;
 }
@@ -618,9 +579,6 @@ void cvViewSelectionManager::notifyDataUpdated() {
     // Reference: pqRenderViewSelectionReaction::clearSelectionCache()
     if (m_pipeline) {
         m_pipeline->invalidateCachedSelection();
-        CVLog::Print(
-                "[cvViewSelectionManager] Data updated - selection cache "
-                "invalidated");
     }
 }
 
@@ -672,14 +630,6 @@ void cvViewSelectionManager::clearCurrentSelection() {
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::setSourceObject(ccHObject* obj) {
     m_sourceObject = obj;
-    if (obj) {
-        CVLog::PrintDebug(QString("[cvViewSelectionManager] Source object set: "
-                                  "'%1' (type=%2)")
-                                  .arg(obj->getName())
-                                  .arg(obj->getClassID()));
-    } else {
-        CVLog::PrintDebug("[cvViewSelectionManager] Source object cleared");
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -690,7 +640,12 @@ ccHObject* cvViewSelectionManager::getSourceObject() const {
 //-----------------------------------------------------------------------------
 ccPointCloud* cvViewSelectionManager::getSourcePointCloud() const {
     ccHObject* obj = getSourceObject();
-    if (!obj) return nullptr;
+    if (!obj) {
+        CVLog::Print(
+                "[cvViewSelectionManager::getSourcePointCloud] No source "
+                "object");
+        return nullptr;
+    }
 
     // Note: We can't reliably detect if obj has been deleted in C++ without
     // causing undefined behavior. The caller must ensure the object is still
@@ -699,15 +654,31 @@ ccPointCloud* cvViewSelectionManager::getSourcePointCloud() const {
 
     // Check if it's a point cloud
     if (obj->isA(CV_TYPES::POINT_CLOUD)) {
-        return static_cast<ccPointCloud*>(obj);
+        ccPointCloud* cloud = static_cast<ccPointCloud*>(obj);
+        CVLog::PrintDebug(
+                QString("[cvViewSelectionManager::getSourcePointCloud] "
+                        "Returning point cloud '%1' with %2 points")
+                        .arg(cloud->getName())
+                        .arg(cloud->size()));
+        return cloud;
     }
+
+    CVLog::PrintDebug(
+            QString("[cvViewSelectionManager::getSourcePointCloud] "
+                    "Source object '%1' is not a point cloud (type=%2)")
+                    .arg(obj->getName())
+                    .arg(obj->getClassID()));
     return nullptr;
 }
 
 //-----------------------------------------------------------------------------
 ccMesh* cvViewSelectionManager::getSourceMesh() const {
     ccHObject* obj = getSourceObject();
-    if (!obj) return nullptr;
+    if (!obj) {
+        CVLog::Warning(
+                "[cvViewSelectionManager::getSourceMesh] No source object");
+        return nullptr;
+    }
 
     // Note: We can't reliably detect if obj has been deleted in C++ without
     // causing undefined behavior. The caller must ensure the object is still
@@ -716,8 +687,18 @@ ccMesh* cvViewSelectionManager::getSourceMesh() const {
 
     // Check if it's a mesh
     if (obj->isKindOf(CV_TYPES::MESH)) {
-        return static_cast<ccMesh*>(obj);
+        ccMesh* mesh = static_cast<ccMesh*>(obj);
+        CVLog::PrintDebug(QString("[cvViewSelectionManager::getSourceMesh] "
+                                  "Returning mesh '%1' with %2 triangles")
+                                  .arg(mesh->getName())
+                                  .arg(mesh->size()));
+        return mesh;
     }
+
+    CVLog::Warning(QString("[cvViewSelectionManager::getSourceMesh] "
+                           "Source object '%1' is not a mesh (type=%2)")
+                           .arg(obj->getName())
+                           .arg(obj->getClassID()));
     return nullptr;
 }
 
@@ -728,5 +709,6 @@ bool cvViewSelectionManager::isSourceObjectValid() const {
     // application to clear m_sourceObject when objects are deleted.
     // The actual safety check happens in getSourcePointCloud/getSourceMesh
     // where we verify the object is still accessible before using it.
-    return m_sourceObject != nullptr;
+    bool isValid = (m_sourceObject != nullptr);
+    return isValid;
 }

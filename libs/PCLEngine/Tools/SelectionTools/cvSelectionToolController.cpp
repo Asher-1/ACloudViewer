@@ -11,9 +11,6 @@
 #include "cvSelectionData.h"
 #include "cvSelectionHighlighter.h"
 #include "cvSelectionPipeline.h"  // For invalidateCachedSelection
-#include "cvSelectionStorage.h"  // Contains cvSelectionHistory and cvSelectionBookmarks
-// cvSelectionTypes.h merged into cvSelectionData.h  // For SelectionMode and
-// SelectionModifier enums
 #include "cvViewSelectionManager.h"
 
 // CV_CORE_LIB
@@ -326,12 +323,7 @@ cvSelectionHighlighter* cvSelectionToolController::highlighter() const {
 }
 
 //-----------------------------------------------------------------------------
-cvSelectionHistory* cvSelectionToolController::history() const {
-    if (m_manager) {
-        return m_manager->getHistory();
-    }
-    return nullptr;
-}
+// history() removed - UI not implemented
 
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::setSelectionPropertiesActive(bool active) {
@@ -381,19 +373,7 @@ void cvSelectionToolController::onSelectionFinished(
                     .arg(selectionData.fieldTypeString()));
 }
 
-//-----------------------------------------------------------------------------
-void cvSelectionToolController::undoSelection() {
-    if (m_manager && m_manager->canUndo()) {
-        m_manager->undo();
-    }
-}
-
-//-----------------------------------------------------------------------------
-void cvSelectionToolController::redoSelection() {
-    if (m_manager && m_manager->canRedo()) {
-        m_manager->redo();
-    }
-}
+// undoSelection/redoSelection removed - UI not implemented
 
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::onModifierChanged(QAction* action) {

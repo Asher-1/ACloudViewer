@@ -14,7 +14,6 @@
 #include <vtkCell.h>
 #include <vtkCellData.h>
 #include <vtkDataArray.h>
-#include <vtkExpandMarkedElements.h>
 #include <vtkFieldData.h>
 #include <vtkIdList.h>
 #include <vtkKdTreePointLocator.h>
@@ -281,7 +280,7 @@ cvSelectionData cvSelectionAlgebra::growSelection(
         // Outermost = currentSet - previousLayerSet
         resultSet = currentSet;
         resultSet.subtract(previousLayerSet);
-        CVLog::Print(
+        CVLog::PrintDebug(
                 QString("[cvSelectionAlgebra] Removed intermediate layers, "
                         "keeping outermost: %1 cells")
                         .arg(resultSet.size()));
@@ -290,7 +289,7 @@ cvSelectionData cvSelectionAlgebra::growSelection(
     if (removeSeed) {
         // Remove the original seed elements
         resultSet.subtract(seedSet);
-        CVLog::Print(
+        CVLog::PrintDebug(
                 QString("[cvSelectionAlgebra] Removed seed, result: %1 cells")
                         .arg(resultSet.size()));
     }
@@ -300,13 +299,14 @@ cvSelectionData cvSelectionAlgebra::growSelection(
         resultIds.append(id);
     }
 
-    CVLog::Print(QString("[cvSelectionAlgebra] Grow %1 layers (removeSeed=%2, "
-                         "removeIntermediate=%3): %4 -> %5 cells")
-                         .arg(layers)
-                         .arg(removeSeed)
-                         .arg(removeIntermediateLayers)
-                         .arg(input.count())
-                         .arg(resultIds.size()));
+    CVLog::PrintDebug(
+            QString("[cvSelectionAlgebra] Grow %1 layers (removeSeed=%2, "
+                    "removeIntermediate=%3): %4 -> %5 cells")
+                    .arg(layers)
+                    .arg(removeSeed)
+                    .arg(removeIntermediateLayers)
+                    .arg(input.count())
+                    .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, cvSelectionData::CELLS);
 }
@@ -349,7 +349,7 @@ cvSelectionData cvSelectionAlgebra::shrinkSelection(
         resultIds.append(id);
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionAlgebra] Shrink %1 iterations: %2 -> %3 cells")
                     .arg(iterations)
                     .arg(input.count())
@@ -382,7 +382,7 @@ cvSelectionData cvSelectionAlgebra::extractBoundary(
         }
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionAlgebra] Boundary extraction: %1 -> %2 cells")
                     .arg(input.count())
                     .arg(boundaryIds.size()));
@@ -472,96 +472,107 @@ cvSelectionData cvSelectionAlgebra::expandSelection(
 
     // Handle grow (layers > 0) and shrink (layers < 0) separately
     if (layers > 0) {
-        // GROW: Use VTK's vtkExpandMarkedElements filter (ParaView-style)
-        int association =
-                isPointSelection ? vtkDataObject::POINT : vtkDataObject::CELL;
+        QSet<qint64> currentSet;
+        // Convert input ids to QSet
+        for (qint64 id : input.ids()) {
+            currentSet.insert(id);
+        }
 
-        // Create a copy of the polyData to work with
-        vtkSmartPointer<vtkPolyData> workingData =
-                vtkSmartPointer<vtkPolyData>::New();
-        workingData->ShallowCopy(polyData);
+        QSet<qint64> seedSet =
+                currentSet;  // Save original selection for removeSeed
 
-        // Create marked elements array
-        // ParaView uses vtkSignedCharArray with 1 for selected, 0 for not
-        // selected
-        vtkSmartPointer<vtkSignedCharArray> markedArray =
-                vtkSmartPointer<vtkSignedCharArray>::New();
-        markedArray->SetName("__cvMarkedElements");
+        // Iteratively expand
+        for (int iter = 0; iter < layers; ++iter) {
+            QSet<qint64> newElements;
 
-        if (isPointSelection) {
-            markedArray->SetNumberOfTuples(workingData->GetNumberOfPoints());
-            markedArray->FillComponent(0, 0);  // Initialize to 0
+            // Find all neighbors of current selection
+            for (qint64 id : currentSet) {
+                QSet<vtkIdType> neighbors;
+                if (isPointSelection) {
+                    neighbors = getPointNeighbors(polyData,
+                                                  static_cast<vtkIdType>(id));
+                } else {
+                    neighbors = getCellNeighbors(polyData,
+                                                 static_cast<vtkIdType>(id));
+                }
 
-            // Mark selected points
-            for (qint64 id : input.ids()) {
-                if (id >= 0 && id < workingData->GetNumberOfPoints()) {
-                    markedArray->SetValue(static_cast<vtkIdType>(id), 1);
+                // Add neighbors that are not already in the set
+                for (vtkIdType neighborId : neighbors) {
+                    if (!currentSet.contains(static_cast<qint64>(neighborId))) {
+                        newElements.insert(static_cast<qint64>(neighborId));
+                    }
                 }
             }
 
-            workingData->GetPointData()->AddArray(markedArray);
-        } else {
-            markedArray->SetNumberOfTuples(workingData->GetNumberOfCells());
-            markedArray->FillComponent(0, 0);  // Initialize to 0
-
-            // Mark selected cells
-            for (qint64 id : input.ids()) {
-                if (id >= 0 && id < workingData->GetNumberOfCells()) {
-                    markedArray->SetValue(static_cast<vtkIdType>(id), 1);
-                }
+            // Add new elements to current set
+            if (newElements.isEmpty()) {
+                CVLog::PrintDebug(QString("[cvSelectionAlgebra] Grow stopped "
+                                          "at iteration %1: no new neighbors")
+                                          .arg(iter + 1));
+                break;
             }
 
-            workingData->GetCellData()->AddArray(markedArray);
+            currentSet.unite(newElements);
         }
 
-        // Use VTK's vtkExpandMarkedElements filter (ParaView-style)
-        vtkSmartPointer<vtkExpandMarkedElements> expander =
-                vtkSmartPointer<vtkExpandMarkedElements>::New();
-        expander->SetInputDataObject(workingData);
-        expander->SetInputArrayToProcess(0, 0, 0, association,
-                                         "__cvMarkedElements");
-        expander->SetNumberOfLayers(layers);
-        expander->SetRemoveSeed(removeSeed);
-        expander->SetRemoveIntermediateLayers(removeIntermediateLayers);
-        expander->Update();
-
-        // Extract the result
-        vtkPolyData* result =
-                vtkPolyData::SafeDownCast(expander->GetOutputDataObject(0));
-        if (!result) {
-            CVLog::Error(
-                    "[cvSelectionAlgebra] vtkExpandMarkedElements failed to "
-                    "produce output");
-            return input;
+        // Apply removeSeed if requested
+        if (removeSeed) {
+            currentSet.subtract(seedSet);
         }
 
-        // Extract IDs of marked elements from the result
-        vtkSignedCharArray* resultArray =
-                isPointSelection ? vtkSignedCharArray::SafeDownCast(
-                                           result->GetPointData()->GetArray(
-                                                   "__cvMarkedElements"))
-                                 : vtkSignedCharArray::SafeDownCast(
-                                           result->GetCellData()->GetArray(
-                                                   "__cvMarkedElements"));
+        // Apply removeIntermediateLayers if requested
+        // This keeps only the outermost layer
+        if (removeIntermediateLayers && layers > 1) {
+            // We need to keep only elements that were added in the last
+            // iteration This requires re-doing the expansion layer by layer
+            QSet<qint64> layerSet = seedSet;
 
-        if (!resultArray) {
-            CVLog::Error(
-                    "[cvSelectionAlgebra] Failed to get marked elements array "
-                    "from result");
-            return input;
+            for (int iter = 0; iter < layers; ++iter) {
+                QSet<qint64> nextLayerSet;
+
+                // Find neighbors of current layer
+                for (qint64 id : layerSet) {
+                    QSet<vtkIdType> neighbors;
+                    if (isPointSelection) {
+                        neighbors = getPointNeighbors(
+                                polyData, static_cast<vtkIdType>(id));
+                    } else {
+                        neighbors = getCellNeighbors(
+                                polyData, static_cast<vtkIdType>(id));
+                    }
+
+                    for (vtkIdType neighborId : neighbors) {
+                        if (!currentSet.contains(
+                                    static_cast<qint64>(neighborId)) ||
+                            layerSet.contains(
+                                    static_cast<qint64>(neighborId))) {
+                            continue;
+                        }
+                        nextLayerSet.insert(static_cast<qint64>(neighborId));
+                    }
+                }
+
+                if (iter == layers - 1) {
+                    // This is the final layer
+                    currentSet = nextLayerSet;
+                    break;
+                }
+
+                layerSet = nextLayerSet;
+                if (layerSet.isEmpty()) {
+                    break;
+                }
+            }
         }
 
-        // Collect marked IDs
+        // Convert back to QVector
         QVector<qint64> expandedIds;
-        vtkIdType numElements = resultArray->GetNumberOfTuples();
-        for (vtkIdType i = 0; i < numElements; ++i) {
-            if (resultArray->GetValue(i) != 0) {
-                expandedIds.append(static_cast<qint64>(i));
-            }
+        for (qint64 id : currentSet) {
+            expandedIds.append(id);
         }
 
-        CVLog::Print(
-                QString("[cvSelectionAlgebra] VTK grow: %1 layers, %2 -> %3 "
+        CVLog::PrintDebug(
+                QString("[cvSelectionAlgebra] Grow: %1 layers, %2 -> %3 "
                         "%4 (removeSeed=%5, removeIntermediate=%6)")
                         .arg(layers)
                         .arg(input.ids().size())
@@ -586,63 +597,114 @@ cvSelectionData cvSelectionAlgebra::expandSelection(
         // This is the standard morphological erosion operation
         int shrinkLayers = -layers;  // Convert negative to positive
 
-        QSet<vtkIdType> currentSet(input.ids().begin(), input.ids().end());
+        // Check if this is a mesh with topology (has cells)
+        // Note: For point selections on meshes, we still need cells to
+        // determine connectivity
+        vtkIdType numCells = polyData->GetNumberOfCells();
+        bool hasMeshTopology = (numCells > 0);
 
-        // Iteratively remove boundary elements
+        if (!hasMeshTopology) {
+            CVLog::Warning(
+                    "[cvSelectionAlgebra] Shrink operation requires mesh "
+                    "topology. "
+                    "Pure point clouds without cells are not supported. "
+                    "Returning input unchanged.");
+            return input;
+        }
+
+        CVLog::PrintDebug(
+                QString("[cvSelectionAlgebra] Starting shrink: %1 %2, %3 "
+                        "layers")
+                        .arg(input.ids().size())
+                        .arg(isPointSelection ? "points" : "cells")
+                        .arg(shrinkLayers));
+
+        // Convert input ids to QSet with correct type
+        QSet<qint64> currentSet;
+        for (qint64 id : input.ids()) {
+            currentSet.insert(id);
+        }
+
+        // Improved shrink logic: Find elements that have AT LEAST ONE
+        // unselected neighbor This ensures we can properly erode the selection
+        // boundary
         for (int iter = 0; iter < shrinkLayers; ++iter) {
-            QSet<vtkIdType> newSet;
+            QSet<qint64>
+                    boundaryElements;  // Elements to remove (on the boundary)
+            QSet<qint64>
+                    interiorElements;  // Elements to keep (in the interior)
 
-            // Keep only elements that are NOT on the boundary
-            for (vtkIdType id : currentSet) {
-                bool isBoundary = false;
+            // Classify each element as boundary or interior
+            for (qint64 id : currentSet) {
+                QSet<vtkIdType> neighbors;
 
                 if (isPointSelection) {
-                    // For points: check if any neighbor point is not selected
-                    QSet<vtkIdType> neighbors = getPointNeighbors(polyData, id);
-                    for (vtkIdType neighborId : neighbors) {
-                        if (!currentSet.contains(neighborId)) {
-                            isBoundary = true;
-                            break;
-                        }
-                    }
+                    neighbors = getPointNeighbors(polyData,
+                                                  static_cast<vtkIdType>(id));
                 } else {
-                    // For cells: check if any neighbor cell is not selected
-                    QSet<vtkIdType> neighbors = getCellNeighbors(polyData, id);
-                    for (vtkIdType neighborId : neighbors) {
-                        if (!currentSet.contains(neighborId)) {
-                            isBoundary = true;
-                            break;
-                        }
+                    neighbors = getCellNeighbors(polyData,
+                                                 static_cast<vtkIdType>(id));
+                }
+
+                // Count how many neighbors are outside the current selection
+                int neighborsOutside = 0;
+                for (vtkIdType neighborId : neighbors) {
+                    if (!currentSet.contains(static_cast<qint64>(neighborId))) {
+                        neighborsOutside++;
                     }
                 }
 
-                if (!isBoundary) {
-                    newSet.insert(id);
+                // An element is on the boundary if:
+                // 1. It has no neighbors (isolated element), OR
+                // 2. At least one of its neighbors is NOT in the selection
+                bool isBoundary = (neighbors.isEmpty() || neighborsOutside > 0);
+
+                if (isBoundary) {
+                    boundaryElements.insert(id);
+                } else {
+                    interiorElements.insert(id);
                 }
             }
 
-            // If no elements were removed, stop
-            if (newSet.size() == currentSet.size()) {
-                CVLog::PrintDebug(
+            CVLog::PrintDebug(
+                    QString("[cvSelectionAlgebra] Shrink iteration %1: "
+                            "found %2 boundary, %3 interior elements")
+                            .arg(iter + 1)
+                            .arg(boundaryElements.size())
+                            .arg(interiorElements.size()));
+
+            // If no boundary elements found, we cannot shrink further
+            if (boundaryElements.isEmpty()) {
+                CVLog::Warning(
                         QString("[cvSelectionAlgebra] Shrink stopped at "
-                                "iteration %1: no boundary elements")
-                                .arg(iter + 1));
+                                "iteration %1: "
+                                "no boundary elements found (all %2 %3 have "
+                                "all neighbors selected)")
+                                .arg(iter + 1)
+                                .arg(currentSet.size())
+                                .arg(isPointSelection ? "points" : "cells"));
                 break;
             }
 
-            currentSet = newSet;
+            // Remove boundary elements (keep only interior)
+            currentSet = interiorElements;
 
+            // If selection becomes empty, stop
             if (currentSet.isEmpty()) {
+                CVLog::PrintDebug(
+                        QString("[cvSelectionAlgebra] Shrink iteration "
+                                "%1: selection shrunk to empty")
+                                .arg(iter + 1));
                 break;
             }
         }
 
         QVector<qint64> shrunkIds;
-        for (vtkIdType id : currentSet) {
-            shrunkIds.append(static_cast<qint64>(id));
+        for (qint64 id : currentSet) {
+            shrunkIds.append(id);
         }
 
-        CVLog::Print(
+        CVLog::PrintDebug(
                 QString("[cvSelectionAlgebra] Shrink: %1 layers, %2 -> %3 %4")
                         .arg(shrinkLayers)
                         .arg(input.ids().size())
@@ -741,11 +803,12 @@ cvSelectionData cvSelectionAlgebra::growPointSelection(
         resultIds.append(id);
     }
 
-    CVLog::Print(QString("[cvSelectionAlgebra] Grow points %1 layers: %2 -> %3 "
-                         "points")
-                         .arg(layers)
-                         .arg(input.count())
-                         .arg(resultIds.size()));
+    CVLog::PrintDebug(
+            QString("[cvSelectionAlgebra] Grow points %1 layers: %2 -> %3 "
+                    "points")
+                    .arg(layers)
+                    .arg(input.count())
+                    .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, cvSelectionData::POINTS);
 }
@@ -826,11 +889,12 @@ cvSelectionData cvSelectionAlgebra::shrinkPointSelection(
         resultIds.append(id);
     }
 
-    CVLog::Print(QString("[cvSelectionAlgebra] Shrink points %1 iterations: %2 "
-                         "-> %3 points")
-                         .arg(iterations)
-                         .arg(input.count())
-                         .arg(resultIds.size()));
+    CVLog::PrintDebug(
+            QString("[cvSelectionAlgebra] Shrink points %1 iterations: %2 "
+                    "-> %3 points")
+                    .arg(iterations)
+                    .arg(input.count())
+                    .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, cvSelectionData::POINTS);
 }
@@ -1006,10 +1070,11 @@ cvSelectionData cvSelectionFilter::filterByAttributeRange(
         }
     }
 
-    CVLog::Print(QString("[cvSelectionFilter] Attribute range filter: %1 -> %2 "
-                         "items")
-                         .arg(inputIds.size())
-                         .arg(filteredIds.size()));
+    CVLog::PrintDebug(
+            QString("[cvSelectionFilter] Attribute range filter: %1 -> %2 "
+                    "items")
+                    .arg(inputIds.size())
+                    .arg(filteredIds.size()));
 
     return cvSelectionData(filteredIds, input.fieldAssociation());
 }
@@ -1079,10 +1144,11 @@ cvSelectionData cvSelectionFilter::filterByAttributeComparison(
         }
     }
 
-    CVLog::Print(QString("[cvSelectionFilter] Attribute comparison filter: %1 "
-                         "-> %2 items")
-                         .arg(inputIds.size())
-                         .arg(filteredIds.size()));
+    CVLog::PrintDebug(
+            QString("[cvSelectionFilter] Attribute comparison filter: %1 "
+                    "-> %2 items")
+                    .arg(inputIds.size())
+                    .arg(filteredIds.size()));
 
     return cvSelectionData(filteredIds, input.fieldAssociation());
 }
@@ -1117,9 +1183,9 @@ cvSelectionData cvSelectionFilter::filterByArea(vtkPolyData* polyData,
         }
     }
 
-    CVLog::Print(QString("[cvSelectionFilter] Area filter: %1 -> %2 cells")
-                         .arg(inputIds.size())
-                         .arg(filteredIds.size()));
+    CVLog::PrintDebug(QString("[cvSelectionFilter] Area filter: %1 -> %2 cells")
+                              .arg(inputIds.size())
+                              .arg(filteredIds.size()));
 
     return cvSelectionData(filteredIds, cvSelectionData::CELLS);
 }
@@ -1169,7 +1235,7 @@ cvSelectionData cvSelectionFilter::filterByNormalAngle(
         }
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionFilter] Normal angle filter: %1 -> %2 cells")
                     .arg(inputIds.size())
                     .arg(filteredIds.size()));
@@ -1232,7 +1298,7 @@ cvSelectionData cvSelectionFilter::filterByBoundingBox(
         }
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionFilter] Bounding box filter: %1 -> %2 items")
                     .arg(inputIds.size())
                     .arg(filteredIds.size()));
@@ -1302,9 +1368,10 @@ cvSelectionData cvSelectionFilter::filterByDistanceFromPoint(
         }
     }
 
-    CVLog::Print(QString("[cvSelectionFilter] Distance filter: %1 -> %2 items")
-                         .arg(inputIds.size())
-                         .arg(filteredIds.size()));
+    CVLog::PrintDebug(
+            QString("[cvSelectionFilter] Distance filter: %1 -> %2 items")
+                    .arg(inputIds.size())
+                    .arg(filteredIds.size()));
 
     return cvSelectionData(filteredIds, input.fieldAssociation());
 }
@@ -1340,7 +1407,7 @@ cvSelectionData cvSelectionFilter::filterByNeighborCount(
         }
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionFilter] Neighbor count filter: %1 -> %2 cells")
                     .arg(inputIds.size())
                     .arg(filteredIds.size()));
@@ -1356,9 +1423,6 @@ cvSelectionData cvSelectionFilter::combineAND(const cvSelectionData& a,
     }
 
     if (a.fieldAssociation() != b.fieldAssociation()) {
-        CVLog::Warning(
-                "[cvSelectionFilter] Cannot combine selections with different "
-                "field associations");
         return cvSelectionData();
     }
 
@@ -1368,10 +1432,10 @@ cvSelectionData cvSelectionFilter::combineAND(const cvSelectionData& a,
 
     QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
 
-    CVLog::Print(QString("[cvSelectionFilter] AND: %1 & %2 = %3")
-                         .arg(a.count())
-                         .arg(b.count())
-                         .arg(resultIds.size()));
+    CVLog::PrintDebug(QString("[cvSelectionFilter] AND: %1 & %2 = %3")
+                              .arg(a.count())
+                              .arg(b.count())
+                              .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, a.fieldAssociation());
 }
@@ -1383,9 +1447,6 @@ cvSelectionData cvSelectionFilter::combineOR(const cvSelectionData& a,
     if (b.isEmpty()) return a;
 
     if (a.fieldAssociation() != b.fieldAssociation()) {
-        CVLog::Warning(
-                "[cvSelectionFilter] Cannot combine selections with different "
-                "field associations");
         return cvSelectionData();
     }
 
@@ -1395,10 +1456,10 @@ cvSelectionData cvSelectionFilter::combineOR(const cvSelectionData& a,
 
     QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
 
-    CVLog::Print(QString("[cvSelectionFilter] OR: %1 U %2 = %3")
-                         .arg(a.count())
-                         .arg(b.count())
-                         .arg(resultIds.size()));
+    CVLog::PrintDebug(QString("[cvSelectionFilter] OR: %1 U %2 = %3")
+                              .arg(a.count())
+                              .arg(b.count())
+                              .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, a.fieldAssociation());
 }
@@ -1424,9 +1485,9 @@ cvSelectionData cvSelectionFilter::invert(vtkPolyData* polyData,
         }
     }
 
-    CVLog::Print(QString("[cvSelectionFilter] Invert: %1 -> %2")
-                         .arg(input.count())
-                         .arg(invertedIds.size()));
+    CVLog::PrintDebug(QString("[cvSelectionFilter] Invert: %1 -> %2")
+                              .arg(input.count())
+                              .arg(invertedIds.size()));
 
     return cvSelectionData(invertedIds, input.fieldAssociation());
 }

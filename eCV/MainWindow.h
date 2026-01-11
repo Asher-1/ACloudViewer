@@ -623,10 +623,8 @@ private slots:
     void onSelectionFinished(const cvSelectionData& selectionData);
     void onSelectionRestored(const cvSelectionData& selection);
     void onSelectionToolActivated(QAction* action);
-    void onSelectionHistoryChanged();
-    void onBookmarksChanged();
-    void undoSelection();
-    void redoSelection();
+    // onSelectionHistoryChanged/onBookmarksChanged removed - UI not implemented
+    // undoSelection/redoSelection removed - UI not implemented
 #endif
 
 public slots
