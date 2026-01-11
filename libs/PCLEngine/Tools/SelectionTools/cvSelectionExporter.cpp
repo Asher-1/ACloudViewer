@@ -156,7 +156,7 @@ ccPointCloud* cvSelectionExporter::exportToPointCloud(
         return nullptr;
     }
 
-    CVLog::Print(QString("[cvSelectionExporter] Created point cloud '%1' "
+    CVLog::PrintDebug(QString("[cvSelectionExporter] Created point cloud '%1' "
                          "with %2 points")
                          .arg(cloudName)
                          .arg(cloud->size()));
@@ -452,8 +452,6 @@ bool cvSelectionExporter::exportToFile(vtkPolyData* polyData,
 //-----------------------------------------------------------------------------
 vtkPolyData* cvSelectionExporter::extractSelection(
         vtkPolyData* polyData, const cvSelectionData& selectionData) {
-    CVLog::Print("[cvSelectionExporter::extractSelection] START");
-
     if (!polyData || selectionData.isEmpty()) {
         CVLog::Error("[cvSelectionExporter] extractSelection: Invalid input");
         return nullptr;
@@ -525,7 +523,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
 
         // Log source point data info
         if (srcPointData) {
-            CVLog::Print(
+            CVLog::PrintDebug(
                     QString("[cvSelectionExporter] Source has %1 arrays, "
                             "normals=%2, scalars=%3, tcoords=%4")
                             .arg(srcPointData->GetNumberOfArrays())

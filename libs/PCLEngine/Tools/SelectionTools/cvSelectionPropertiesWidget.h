@@ -181,6 +181,11 @@ private slots:
     void onClearClicked();
     void updateAttributeCombo();
     void updateDataProducerCombo();
+    void addQueryRow(int index = -1, const QString& attribute = QString(),
+                     const QString& op = QString(),
+                     const QString& value = QString());
+    void removeQueryRow(int index);
+    void updateQueryRowButtons();
     void performFindData(const QString& attribute,
                          const QString& op,
                          const QString& value,
@@ -331,6 +336,22 @@ private:
     QPushButton* m_resetButton;
     QPushButton* m_clearButton;
     QVBoxLayout* m_queriesLayout;
+
+    // Query row structure to manage multiple conditions
+    struct QueryRow {
+        QComboBox* attributeCombo;
+        QComboBox* operatorCombo;
+        QLineEdit* valueEdit;
+        QPushButton* plusButton;
+        QPushButton* minusButton;
+        QWidget* container;
+        
+        // Comparison operator needed for QList
+        bool operator==(const QueryRow& other) const {
+            return container == other.container;
+        }
+    };
+    QList<QueryRow> m_queryRows;
 
     // === Selected Data Spreadsheet ===
     cvExpanderButton* m_selectedDataSpreadsheetExpander;

@@ -1,149 +1,224 @@
-# ACloudViewer 网站文档
+# ACloudViewer Website Documentation
 
-这个目录包含了 ACloudViewer 的官方网站和相关文档。
+> This directory contains the official website and related documentation for ACloudViewer.
 
-🌐 **在线访问**: https://asher-1.github.io/ACloudViewer/
+> 🌐 **Live Site**: https://asher-1.github.io/ACloudViewer/docs
 
-## 📁 目录结构
+## 📁 Directory Structure
 
 ```
 docs/
-├── index.html              # 网站主页
-├── styles.css              # 网站样式
-├── script.js               # 网站脚本
-├── .nojekyll              # GitHub Pages 配置
-├── 404.html               # 404 错误页面
-├── robots.txt             # 搜索引擎配置
-├── sitemap.xml            # 网站地图
+├── index.html              # Main homepage
+├── styles.css              # Website styles
+├── script.js               # Website scripts
+├── .nojekyll              # GitHub Pages config
+├── 404.html               # 404 error page
+├── robots.txt             # Search engine config
+├── sitemap.xml            # Site map
 │
-├── images/                # 图片资源
+├── images/                # Image assets
 │   ├── ACloudViewer_logo_horizontal.png
-│   ├── ACloudViewerMainUI.png
+│   ├── Annotaion.png
 │   ├── SemanticAnnotation.png
 │   └── ...
 │
-├── gifs/                  # 动画资源
+├── gifs/                  # Animation assets
 │   ├── visualizer_predictions.gif
 │   └── ...
 │
-├── automation/            # 🤖 自动化系统
-│   ├── README.md          # 自动化完整指南
-│   ├── SUMMARY.md         # 自动化系统总结
-│   └── scripts/           # 自动化脚本
-│       ├── update_download_links.py  # 下载链接更新脚本
-│       ├── requirements.txt          # Python 依赖
-│       └── README.md                 # 脚本文档
+├── automation/            # 🤖 Automation system
+│   ├── README.md          # Complete automation guide
+│   ├── SUMMARY.md         # Automation system summary
+│   └── scripts/           # Automation scripts
+│       ├── update_download_links.py  # Download link updater
+│       ├── requirements.txt          # Python dependencies
+│       └── README.md                 # Script documentation
 │
-├── guides/                # 📚 用户指南
-│   ├── QUICKSTART.md      # 快速开始
-│   ├── cloudviewer-dependency.md  # 依赖说明
-│   └── building/          # 编译指南
+├── guides/                # 📚 User guides
+│   ├── QUICKSTART.md      # Quick start guide
+│   ├── DOCUMENTATION_SETUP.md  # 📚 API documentation setup guide
+│   ├── cloudviewer-dependency.md  # Dependency documentation
+│   └── building/          # Build guides
 │       ├── compiling-cloudviewer-linux.md
 │       ├── compiling-cloudviewer-macos.md
 │       └── compiling-cloudviewer-windows.md
 │
-└── maintenance/           # 🔧 维护文档
-    ├── WEBSITE_GUIDE.md   # 网站维护指南
-    ├── DEPLOYMENT.md      # 部署文档
-    ├── DOWNLOAD_LINKS.md  # 下载链接管理
-    ├── GALLERY_UPDATE.md  # 图库更新日志
-    └── GALLERY_ANNOTATION_UPDATE.md  # 图库标注更新日志
+├── maintenance/           # 🔧 Maintenance docs
+│   ├── WEBSITE_GUIDE.md   # Website maintenance guide
+│   ├── DEPLOYMENT.md      # Deployment documentation
+│   ├── DOWNLOAD_LINKS.md  # Download link management
+│   ├── GALLERY_UPDATE.md  # Gallery update log
+│   └── GALLERY_ANNOTATION_UPDATE.md  # Gallery annotation update log
+│
+├── build_docs.sh          # 🚀 Documentation build script
+├── Makefile              # Documentation build commands (generated)
+├── Doxyfile              # Doxygen configuration
+├── source/               # Sphinx documentation source (generated)
+└── html/                 # Generated API documentation (Sphinx output)
 ```
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 本地预览网站
+### Preview Website Locally
 
 ```bash
-cd doc
+cd docs
 python3 -m http.server 8080
 ```
 
-然后访问 http://localhost:8080
+> **Tip**: Then visit http://localhost:8080 to preview the website
 
-### 运行自动化更新
+### 📚 Setup API Documentation System (NEW!)
+
+**Quick Start (Recommended - Use cloudViewer Environment)**:
+
+```bash
+# Step 1: Activate cloudViewer environment
+conda activate cloudViewer
+# or if using venv:
+# source /path/to/cloudViewer/bin/activate
+
+# Step 2: Navigate to docs
+cd docs
+
+# Step 3: Install documentation dependencies
+pip install -r requirements.txt
+
+# Step 4: Install Doxygen
+brew install doxygen graphviz  # macOS
+# or: sudo apt-get install doxygen graphviz  # Linux
+
+# Step 5: Build documentation
+./build_docs.sh
+
+# Step 6: Preview documentation
+python3 -m http.server 8000 --directory html
+```
+
+> **📖 Documentation**:
+> - **Quick Start**: [DOCUMENTATION_QUICK_START.md](DOCUMENTATION_QUICK_START.md) - 5-minute guide
+> - **Complete Guide**: [guides/DOCUMENTATION_SETUP.md](guides/DOCUMENTATION_SETUP.md) - Full instructions
+
+### Run Automation Update
 
 ```bash
 cd /Users/asher/develop/code/github/ACloudViewer
 python3 docs/automation/scripts/update_download_links.py
 ```
 
-## 📖 文档导航
+> **Note**: This script automatically fetches the latest version info from GitHub Releases and updates the website
 
-### 对于用户
+## 📖 Documentation Navigation
 
-- **[快速开始](guides/QUICKSTART.md)** - 快速上手 ACloudViewer
-- **[编译指南](guides/building/)** - 从源码编译
-- **[依赖说明](guides/cloudviewer-dependency.md)** - 了解项目依赖
+### For Users
 
-### 对于开发者
+> If you're a user of ACloudViewer, start with these guides:
 
-- **[自动化系统](automation/README.md)** - 了解网站自动化更新系统
-- **[脚本文档](automation/scripts/README.md)** - 自动化脚本详细说明
+- **[Quick Start](guides/QUICKSTART.md)** - Get started with ACloudViewer quickly
+- **[API Documentation Setup](guides/DOCUMENTATION_SETUP.md)** - 📚 Set up Sphinx documentation system
+- **[Build Guide](guides/building/)** - Compile from source code
+- **[Dependencies](guides/cloudviewer-dependency.md)** - Understand project dependencies
 
-### 对于维护者
+### For Developers
 
-- **[网站维护](maintenance/WEBSITE_GUIDE.md)** - 网站管理和维护
-- **[部署指南](maintenance/DEPLOYMENT.md)** - 网站部署说明
-- **[下载链接管理](maintenance/DOWNLOAD_LINKS.md)** - 管理下载链接
+> If you want to understand or improve the automation system:
 
-## 🤖 自动化系统
+- **[Automation System](automation/README.md)** - Learn about the automated website update system
+- **[Script Documentation](automation/scripts/README.md)** - Detailed script documentation
 
-本网站采用**完全自动化**的更新系统：
+### For Maintainers
 
-- ✅ **自动触发**：Release 发布时自动更新
-- ✅ **定时检查**：每天自动检查新版本
-- ✅ **智能识别**：自动识别 Beta 和稳定版本
-- ✅ **零维护**：无需人工干预
+> If you're responsible for website maintenance and deployment:
 
-详情请查看 [自动化系统文档](automation/README.md)
+- **[Website Maintenance](maintenance/WEBSITE_GUIDE.md)** - Website management and maintenance
+- **[Deployment Guide](maintenance/DEPLOYMENT.md)** - Website deployment instructions
+- **[Download Link Management](maintenance/DOWNLOAD_LINKS.md)** - Manage download links
 
-## 🔧 维护
+## 📚 API Documentation System (NEW!)
 
-### 更新网站内容
+> ACloudViewer now supports **automatic API documentation generation**, similar to Open3D:
+>
+> - ✅ **Sphinx-based**: Industry-standard documentation tool
+> - ✅ **Auto-generation**: From C++ (Doxygen) and Python code
+> - ✅ **Multi-version**: Separate docs for each release
+> - ✅ **Beautiful UI**: Read the Docs theme
+> - ✅ **Searchable**: Full-text search support
+> - ✅ **CI/CD Ready**: GitHub Actions integration
 
-1. 编辑 `index.html`、`styles.css` 或 `script.js`
-2. 提交并推送到 GitHub
-3. GitHub Pages 会自动部署
+See [Documentation Setup Guide](guides/DOCUMENTATION_SETUP.md) for complete instructions
 
-### 添加新图片
+### Quick Setup
 
-1. 将图片放到 `images/` 或 `gifs/` 目录
-2. 在 HTML 中使用相对路径引用：`images/your-image.png`
-3. 提交并推送
+```bash
+cd docs
+./build_docs.sh  # Build documentation (includes setup and build)
+```
 
-### 更新自动化脚本
+## 🤖 Automation System
 
-1. 编辑 `automation/scripts/update_download_links.py`
-2. 本地测试：`python3 docs/automation/scripts/update_download_links.py`
-3. 提交并推送
+> This website uses a **fully automated** update system:
+> 
+> - ✅ **Auto-triggered**: Updates automatically when releases are published
+> - ✅ **Scheduled checks**: Daily automatic version checks
+> - ✅ **Smart detection**: Automatically identifies Beta and stable versions
+> - ✅ **Zero maintenance**: No manual intervention required
 
-## 📝 贡献
+See [Automation System Documentation](automation/README.md) for details
 
-欢迎贡献！请参考以下指南：
+## 🔧 Maintenance
 
-- **网站改进**：编辑 HTML/CSS/JS 文件
-- **文档更新**：编辑 `guides/` 或 `maintenance/` 中的 Markdown 文件
-- **自动化优化**：改进 `automation/scripts/` 中的脚本
+### Update Website Content
 
-提交 PR 前请：
-1. 本地测试所有更改
-2. 确保链接正确
-3. 验证自动化脚本运行正常
+> Updating the website is a three-step process:
 
-## 🔗 相关链接
+1. Edit `index.html`, `styles.css`, or `script.js`
+2. Commit and push to GitHub
+3. GitHub Pages will deploy automatically
 
-- **GitHub 仓库**: https://github.com/Asher-1/ACloudViewer
+### Add New Images
+
+> Steps to add image assets:
+
+1. Place images in `images/` or `gifs/` directory
+2. Reference with relative path in HTML: `images/your-image.png`
+3. Commit and push
+
+### Update Automation Scripts
+
+> When modifying automation scripts:
+
+1. Edit `automation/scripts/update_download_links.py`
+2. Test locally: `python3 docs/automation/scripts/update_download_links.py`
+3. Commit and push after verification
+
+## 📝 Contributing
+
+> Contributions are welcome! Follow these guidelines:
+
+- **Website improvements**: Edit HTML/CSS/JS files
+- **Documentation updates**: Edit Markdown files in `guides/` or `maintenance/`
+- **Automation enhancements**: Improve scripts in `automation/scripts/`
+
+> **Before submitting a PR, please**:
+> 1. Test all changes locally
+> 2. Ensure all links are correct
+> 3. Verify automation scripts run properly
+
+## 🔗 Related Links
+
+> Important project links:
+
+- **GitHub Repository**: https://github.com/Asher-1/ACloudViewer
 - **Releases**: https://github.com/Asher-1/ACloudViewer/releases
 - **Issues**: https://github.com/Asher-1/ACloudViewer/issues
 - **Actions**: https://github.com/Asher-1/ACloudViewer/actions
 
-## 📄 许可证
+## 📄 License
 
-本文档遵循 ACloudViewer 项目的许可证。
+> This documentation follows the ACloudViewer project license.
 
 ---
 
-**维护**: ACloudViewer Team  
-**最后更新**: 2026-01-10  
-**自动化**: ✅ Fully Automated
+> **Maintained by**: ACloudViewer Team  
+> **Last Updated**: 2026-01-10  
+> **Automation**: ✅ Fully Automated

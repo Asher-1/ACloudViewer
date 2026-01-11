@@ -25,6 +25,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         CXX_VISIBILITY_PRESET hidden
         )
 
+# Add QDarkStyleSheet resources
+target_sources(${PROJECT_NAME}
+        PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/QDarkStyleSheet/qdarkstyle/dark/darkstyle.qrc
+        ${CMAKE_CURRENT_LIST_DIR}/QDarkStyleSheet/qdarkstyle/light/lightstyle.qrc
+)
+
 if (OPTION_SUPPORT_GAMEPADS)
     if(USE_QT6)
         # Qt6 does not include Gamepad module - it was removed in Qt6

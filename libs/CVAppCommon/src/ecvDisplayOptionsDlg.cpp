@@ -10,20 +10,30 @@
 #include "ui_displayOptionsDlg.h"
 
 // local
+#include "ecvApplicationBase.h"
+#include "ecvPersistentSettings.h"
 #include "ecvQtHelpers.h"
+#include "ecvSettingManager.h"
 
 // ECV_DB_LIB
 #include <ecvColorTypes.h>
 
+// CV_CORE_LIB
+#include <CVLog.h>
+
 // Qt
 #include <QColor>
 #include <QColorDialog>
+#include <QSettings>
+#include <QStyleFactory>
 
 // Default 'min cloud size' for LoD  when VBOs are activated
 static const double s_defaultMaxVBOCloudSizeM = 50.0;
 
 ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
-    : QDialog(parent, Qt::Tool), m_ui(new Ui::DisplayOptionsDlg()) {
+    : QDialog(parent, Qt::Tool), 
+      m_ui(new Ui::DisplayOptionsDlg()),
+      m_defaultAppStyleIndex(-1) {
     m_ui->setupUi(this);
 
     connect(m_ui->ambientColorButton, &QAbstractButton::clicked, this,
@@ -112,6 +122,11 @@ ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
             static_cast<void (QComboBox::*)(int)>(
                     &QComboBox::currentIndexChanged),
             this, &ccDisplayOptionsDlg::changeAutoComputeOctreeOption);
+    
+    connect(m_ui->appStyleComboBox,
+            static_cast<void (QComboBox::*)(int)>(
+                    &QComboBox::currentIndexChanged),
+            this, &ccDisplayOptionsDlg::changeAppStyle);
 
     connect(m_ui->okButton, &QAbstractButton::clicked, this,
             &ccDisplayOptionsDlg::doAccept);
@@ -121,6 +136,9 @@ ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
             &ccDisplayOptionsDlg::reset);
     connect(m_ui->cancelButton, &QAbstractButton::clicked, this,
             &ccDisplayOptionsDlg::doReject);
+    
+    // Populate application style combo box
+    populateAppStyleComboBox();
 
     oldParameters = parameters = ecvGui::Parameters();
     oldOptions = options = ecvOptions::Instance();
@@ -425,14 +443,64 @@ void ccDisplayOptionsDlg::doReject() {
 void ccDisplayOptionsDlg::reset() {
     parameters.reset();
     options.reset();
+    
+    // Reset app style to default
+    if (m_defaultAppStyleIndex >= 0)
+    {
+        m_ui->appStyleComboBox->setCurrentIndex(m_defaultAppStyleIndex);
+    }
+    
     refresh();
 }
 
 void ccDisplayOptionsDlg::apply() {
     ecvGui::Set(parameters);
     ecvOptions::Set(options);
+    
+    // Apply application style
+    {
+        QString style = m_ui->appStyleComboBox->currentText();
+        ecvApp->setAppStyle(style);
+    }
 
     emit aspectHasChanged();
+}
+
+void ccDisplayOptionsDlg::changeAppStyle(int index) {
+    // Optional: could add live preview here
+    Q_UNUSED(index);
+}
+
+void ccDisplayOptionsDlg::populateAppStyleComboBox() {
+    // Get currently active style
+    // Get the current/default style from settings
+    // (matching CloudCompare's approach using QSettings)
+    QSettings settings;
+    settings.beginGroup(ecvPS::AppStyle());
+    const QString defaultStyleName = settings.value("style").toString();
+    settings.endGroup();
+    
+    // Fill with all available Qt styles
+    QStringList appStyles = QStyleFactory::keys();
+    for (const QString& style : appStyles)
+    {
+        m_ui->appStyleComboBox->addItem(style);
+    }
+    
+    // Add custom dark/light themes from QDarkStyleSheet
+    m_ui->appStyleComboBox->addItem(QStringLiteral("QDarkStyleSheet::Light"));
+    m_ui->appStyleComboBox->addItem(QStringLiteral("QDarkStyleSheet::Dark"));
+    
+    // Find and set the current style (matching CloudCompare's logic)
+    for (int i = 0; i < m_ui->appStyleComboBox->count(); ++i)
+    {
+        if (m_ui->appStyleComboBox->itemText(i).compare(defaultStyleName, Qt::CaseInsensitive) == 0)
+        {
+            m_defaultAppStyleIndex = i;
+        }
+    }
+
+    m_ui->appStyleComboBox->setCurrentIndex(m_defaultAppStyleIndex);
 }
 
 void ccDisplayOptionsDlg::doAccept() {

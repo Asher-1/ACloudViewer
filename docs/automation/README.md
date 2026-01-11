@@ -1,266 +1,267 @@
-# ACloudViewer 网站自动化更新系统完整指南
+# ACloudViewer Website Automation System - Complete Guide
 
-## 🎯 概述
+## 🎯 Overview
 
-这是一个**完全自动化、零人工维护**的网站下载链接更新系统。当您在GitHub上发布新版本时，网站会自动更新下载链接，无需任何人工干预。
+> This is a **fully automated, zero-maintenance** website download link update system. When you publish a new version on GitHub, the website automatically updates download links without any manual intervention.
 
-## ✨ 主要特性
+## ✨ Key Features
 
-- ✅ **完全自动化**：无需手动更新网站
-- ✅ **实时同步**：Release发布后自动触发更新
-- ✅ **智能识别**：自动区分Beta版和稳定版
-- ✅ **平台识别**：自动识别Windows、macOS、Linux安装包
-- ✅ **定时检查**：每天自动检查并同步最新版本
-- ✅ **零依赖**：使用Python标准库，无需额外安装包
+- ✅ **Fully Automated**: No manual website updates required
+- ✅ **Real-time Sync**: Automatically triggered after release publication
+- ✅ **Smart Detection**: Automatically distinguishes Beta and stable versions
+- ✅ **Platform Recognition**: Automatically identifies Windows, macOS, Linux packages
+- ✅ **Scheduled Checks**: Daily automatic version checks and synchronization
+- ✅ **Zero Dependencies**: Uses Python standard library, no extra packages needed
 
-## 📁 文件结构
+## 📁 File Structure
 
 ```
 ACloudViewer/
 ├── .github/
 │   └── workflows/
-│       └── update-website-downloads.yml    # GitHub Actions工作流
-├── scripts/
-│   ├── update_download_links.py            # 自动更新脚本
-│   ├── requirements.txt                    # Python依赖（可选）
-│   └── README.md                          # 脚本详细文档
-├── doc/
-│   └── index.html                         # 网站首页（自动更新）
-└── AUTOMATION_GUIDE.md                    # 本文档
+│       └── update-website-downloads.yml    # GitHub Actions workflow
+├── docs/
+│   ├── automation/
+│   │   └── scripts/
+│   │       ├── update_download_links.py    # Auto-update script
+│   │       ├── requirements.txt            # Python dependencies (optional)
+│   │       └── README.md                   # Detailed script documentation
+│   └── index.html                          # Website homepage (auto-updated)
+└── docs/automation/README.md               # This document
 ```
 
-## 🚀 工作流程
+## 🚀 Workflow
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│  1. 开发者发布新版本                                        │
-│     └─> GitHub Release (main-devel或v3.x.x)               │
+│  1. Developer publishes new version                         │
+│     └─> GitHub Release (main-devel or v3.x.x)             │
 │                                                             │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│  2. 自动触发GitHub Actions                                  │
-│     ├─> 监听Release发布事件                                │
-│     ├─> 定时任务 (每天UTC 0点)                             │
-│     └─> 手动触发 (可选)                                     │
+│  2. Automatically trigger GitHub Actions                    │
+│     ├─> Listen for Release publish event                   │
+│     ├─> Scheduled task (daily at UTC 0:00)                │
+│     └─> Manual trigger (optional)                          │
 │                                                             │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│  3. Python脚本执行                                          │
-│     ├─> 调用GitHub API获取Releases数据                     │
-│     ├─> 识别Beta版本 (main-devel tag)                      │
-│     ├─> 识别稳定版本 (v3.9.3, v3.4.0等)                    │
-│     ├─> 匹配各平台安装包文件                               │
-│     └─> 生成新的HTML内容                                   │
+│  3. Python script executes                                  │
+│     ├─> Call GitHub API to fetch Releases data            │
+│     ├─> Identify Beta version (main-devel tag)            │
+│     ├─> Identify stable versions (v3.9.3, v3.4.0, etc.)   │
+│     ├─> Match platform-specific package files             │
+│     └─> Generate new HTML content                         │
 │                                                             │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│  4. 更新并提交                                              │
-│     ├─> 更新doc/index.html文件                             │
-│     ├─> Git commit变更                                     │
-│     └─> 自动推送到仓库                                      │
+│  4. Update and commit                                       │
+│     ├─> Update docs/index.html file                        │
+│     ├─> Git commit changes                                 │
+│     └─> Auto-push to repository                           │
 │                                                             │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│  5. GitHub Pages自动部署                                    │
-│     └─> 网站更新完成!                                       │
-│         https://asher-1.github.io/ACloudViewer/            │
+│  5. GitHub Pages auto-deploys                              │
+│     └─> Website update complete!                           │
+│         https://asher-1.github.io/ACloudViewer/docs       │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🔧 系统组件
+## 🔧 System Components
 
-### 1. GitHub Actions工作流
+### 1. GitHub Actions Workflow
 
-**文件**: `.github/workflows/update-website-downloads.yml`
+**File**: `.github/workflows/update-website-downloads.yml`
 
-**触发条件**:
-- 📦 **Release发布**: 当有新的Release发布或编辑时
-- ⏰ **定时任务**: 每天UTC 0点（北京时间早上8点）
-- 🖱️ **手动触发**: 在GitHub Actions页面手动运行
+**Trigger Conditions**:
+- 📦 **Release Published**: When a new Release is published or edited
+- ⏰ **Scheduled Task**: Daily at UTC 0:00 (8:00 AM Beijing Time)
+- 🖱️ **Manual Trigger**: Manually run from GitHub Actions page
 
-**工作流程**:
+**Workflow Steps**:
 ```yaml
-1. Checkout代码
-2. 安装Python 3.11
-3. 运行更新脚本
-4. 检查是否有变更
-5. 自动提交并推送（如果有变更）
+1. Checkout code
+2. Install Python 3.11
+3. Run update script
+4. Check for changes
+5. Auto-commit and push (if changes exist)
 ```
 
-### 2. Python更新脚本
+### 2. Python Update Script
 
-**文件**: `docs/automation/scripts/update_download_links.py`
+**File**: `docs/automation/scripts/update_download_links.py`
 
-**核心功能**:
+**Core Functions**:
 
-#### 版本识别
+#### Version Identification
 
 ```python
-# Beta版本识别
+# Beta version identification
 def get_beta_release(releases):
     """
-    识别条件:
-    - Tag名称 = 'main-devel'
-    - 标记为pre-release
+    Identification criteria:
+    - Tag name = 'main-devel'
+    - Marked as pre-release
     """
     
-# 稳定版本识别  
+# Stable version identification  
 def get_stable_releases(releases, limit=3):
     """
-    识别条件:
-    - 非pre-release
-    - Tag格式: v3.9.3, v3.4.0等
-    - 排除main-devel
-    - 获取最新3个版本
+    Identification criteria:
+    - Not a pre-release
+    - Tag format: v3.9.3, v3.4.0, etc.
+    - Exclude main-devel
+    - Get latest 3 versions
     """
 ```
 
-#### 平台识别
+#### Platform Recognition
 
-自动识别以下平台的安装包：
+> Automatically recognizes packages for the following platforms:
 
-| 平台 | 匹配模式 | 示例文件名 |
-|------|---------|-----------|
+| Platform | Match Pattern | Example Filename |
+|----------|--------------|------------------|
 | **Windows** | `*.exe` | `ACloudViewer-3.9.3+d236e24-win-cpu-amd64.exe` |
 | **macOS** | `*.dmg`, `*.pkg` | `ACloudViewer-3.9.3+d236e24-mac-cpu-ARM64.dmg` |
 | **Linux** | `*.run`, `*.deb`, `*.rpm`, `*.appimage` | `ACloudViewer-3.9.3+d236e24-ubuntu20.04-cpu-amd64.run` |
 | **Ubuntu** | `*.deb` | `ACloudViewer-ubuntu-20.04.deb` |
 
-#### HTML生成
+#### HTML Generation
 
 ```python
-# 生成Beta版本区域
+# Generate Beta version section
 def generate_beta_section(beta_release):
     """
-    生成包含:
-    - 版本名称
-    - 发布日期
+    Generates:
+    - Version name
+    - Release date
     - Commit SHA
-    - 各平台下载链接
+    - Download links for each platform
     """
 
-# 生成稳定版本区域
+# Generate stable version section
 def generate_stable_section(stable_releases):
     """
-    生成包含:
-    - 版本切换标签
-    - 每个版本的下载链接
-    - 支持最多3个历史版本
+    Generates:
+    - Version switching tabs
+    - Download links for each version
+    - Supports up to 3 historical versions
     """
 ```
 
-## 📋 使用指南
+## 📋 Usage Guide
 
-### 开发者：发布新版本
+### For Developers: Publishing New Versions
 
-#### 发布Beta版本
+#### Publishing Beta Version
 
 ```bash
-# 1. 在main分支上开发新功能
+# 1. Develop new features on main branch
 git checkout main
 git add .
 git commit -m "feat: add new feature"
 git push origin main
 
-# 2. GitHub Actions会自动:
-#    - 构建并发布到main-devel tag
-#    - 触发网站更新workflow
-#    - 自动更新网站下载链接
+# 2. GitHub Actions will automatically:
+#    - Build and publish to main-devel tag
+#    - Trigger website update workflow
+#    - Auto-update website download links
 ```
 
-#### 发布稳定版本
+#### Publishing Stable Version
 
 ```bash
-# 1. 创建新的release标签
+# 1. Create new release tag
 git tag -a v3.10.0 -m "Release v3.10.0"
 git push origin v3.10.0
 
-# 2. 在GitHub上创建Release:
-#    - 访问: https://github.com/Asher-1/ACloudViewer/releases/new
-#    - 选择标签: v3.10.0
-#    - 填写Release notes
-#    - 上传编译好的安装包:
+# 2. Create Release on GitHub:
+#    - Visit: https://github.com/Asher-1/ACloudViewer/releases/new
+#    - Select tag: v3.10.0
+#    - Fill in Release notes
+#    - Upload compiled packages:
 #      * Windows: *.exe
 #      * macOS: *.dmg
 #      * Linux: *.run
-#    - 点击"Publish release"
+#    - Click "Publish release"
 
-# 3. 系统自动:
-#    - 触发更新workflow
-#    - 识别新版本
-#    - 更新网站下载链接
-#    - 部署到GitHub Pages
+# 3. System automatically:
+#    - Triggers update workflow
+#    - Identifies new version
+#    - Updates website download links
+#    - Deploys to GitHub Pages
 ```
 
-### 维护者：监控和管理
+### For Maintainers: Monitoring and Management
 
-#### 查看自动化运行状态
+#### View Automation Run Status
 
-1. 访问 Actions 页面: https://github.com/Asher-1/ACloudViewer/actions
-2. 查找 "Update Website Download Links" workflow
-3. 检查最近的运行记录
+1. Visit Actions page: https://github.com/Asher-1/ACloudViewer/actions
+2. Find "Update Website Download Links" workflow
+3. Check recent run records
 
-#### 手动触发更新
+#### Manually Trigger Update
 
-1. 访问 Actions 页面
-2. 选择 "Update Website Download Links"
-3. 点击 "Run workflow"
-4. 选择分支（通常是main）
-5. 点击 "Run workflow" 按钮
+1. Visit Actions page
+2. Select "Update Website Download Links"
+3. Click "Run workflow"
+4. Select branch (usually main)
+5. Click "Run workflow" button
 
-#### 本地测试
+#### Local Testing
 
 ```bash
-# 1. 进入项目目录
+# 1. Enter project directory
 cd /Users/asher/develop/code/github/ACloudViewer
 
-# 2. 运行更新脚本
+# 2. Run update script
 python3 docs/automation/scripts/update_download_links.py
 
-# 3. 查看变更
-git diff doc/index.html
+# 3. View changes
+git diff docs/index.html
 
-# 4. 本地预览
-cd doc
+# 4. Local preview
+cd docs
 python3 -m http.server 8080
-# 访问 http://localhost:8080
+# Visit http://localhost:8080
 ```
 
-## 🛠️ 配置和定制
+## 🛠️ Configuration and Customization
 
-### 修改获取的稳定版本数量
+### Modify Number of Stable Versions Retrieved
 
-编辑 `scripts/update_download_links.py`:
+Edit `docs/automation/scripts/update_download_links.py`:
 
 ```python
-# 找到这一行并修改数字
-stable_releases = get_stable_releases(releases, limit=5)  # 默认是3
+# Find this line and modify the number
+stable_releases = get_stable_releases(releases, limit=5)  # Default is 3
 ```
 
-### 添加新的平台识别
+### Add New Platform Recognition
 
-编辑 `scripts/update_download_links.py`，在 `PLATFORM_PATTERNS` 中添加：
+Edit `docs/automation/scripts/update_download_links.py`, add to `PLATFORM_PATTERNS`:
 
 ```python
 PLATFORM_PATTERNS = {
     'windows': {...},
     'macos': {...},
     'linux': {...},
-    # 添加新平台
+    # Add new platform
     'android': {
         'patterns': [r'android.*\.(apk|aab)$', r'\.(apk|aab)$'],
         'display_name': 'Android'
@@ -268,170 +269,169 @@ PLATFORM_PATTERNS = {
 }
 ```
 
-### 修改定时任务频率
+### Modify Scheduled Task Frequency
 
-编辑 `.github/workflows/update-website-downloads.yml`:
+Edit `.github/workflows/update-website-downloads.yml`:
 
 ```yaml
 schedule:
-  # 每6小时运行一次
+  # Run every 6 hours
   - cron: '0 */6 * * *'
   
-  # 每周一运行一次
+  # Run every Monday
   - cron: '0 0 * * 1'
   
-  # 每月1号运行一次
+  # Run on 1st of each month
   - cron: '0 0 1 * *'
 ```
 
-## 🔍 故障排查
+## 🔍 Troubleshooting
 
-### 问题1: 网站没有更新
+### Issue 1: Website Not Updated
 
-**可能原因**:
-- GitHub Actions运行失败
-- 没有找到合适的安装包文件
-- Git提交权限问题
+**Possible Causes**:
+- GitHub Actions run failed
+- No suitable package files found
+- Git commit permission issue
 
-**解决方法**:
+**Solutions**:
 ```bash
-# 1. 检查Actions运行日志
-访问: https://github.com/Asher-1/ACloudViewer/actions
+# 1. Check Actions run logs
+Visit: https://github.com/Asher-1/ACloudViewer/actions
 
-# 2. 查看失败原因
-点击失败的workflow run -> 查看详细日志
+# 2. View failure reason
+Click failed workflow run -> View detailed logs
 
-# 3. 本地复现问题
+# 3. Reproduce issue locally
 python3 docs/automation/scripts/update_download_links.py
 ```
 
-### 问题2: 找不到某个平台的下载链接
+### Issue 2: Platform Download Link Not Found
 
-**可能原因**:
-- Release中没有上传该平台的安装包
-- 文件名不符合识别规则
+**Possible Causes**:
+- Platform package not uploaded in Release
+- Filename doesn't match recognition rules
 
-**解决方法**:
+**Solutions**:
 ```bash
-# 1. 检查Release assets
-访问: https://github.com/Asher-1/ACloudViewer/releases/tag/main-devel
+# 1. Check Release assets
+Visit: https://github.com/Asher-1/ACloudViewer/releases/tag/main-devel
 
-# 2. 确认文件名格式
+# 2. Confirm filename format
 Windows: *.exe
-macOS: *.dmg 或 *.pkg
-Linux: *.run 或 *.deb 或 *.rpm
+macOS: *.dmg or *.pkg
+Linux: *.run or *.deb or *.rpm
 
-# 3. 如果文件名特殊，修改PLATFORM_PATTERNS
-编辑 scripts/update_download_links.py 添加新的匹配模式
+# 3. If filename is special, modify PLATFORM_PATTERNS
+Edit docs/automation/scripts/update_download_links.py to add new match patterns
 ```
 
-### 问题3: API速率限制
+### Issue 3: API Rate Limit
 
-**错误信息**: `API rate limit exceeded`
+**Error Message**: `API rate limit exceeded`
 
-**解决方法**:
+**Solutions**:
 ```yaml
-# GitHub Actions自动使用GITHUB_TOKEN
-# 本地测试时设置token:
+# GitHub Actions automatically uses GITHUB_TOKEN
+# For local testing, set token:
 export GITHUB_TOKEN=your_personal_access_token
 python3 docs/automation/scripts/update_download_links.py
 ```
 
-### 问题4: SSL证书错误
+### Issue 4: SSL Certificate Error
 
-**错误信息**: `SSL: CERTIFICATE_VERIFY_FAILED`
+**Error Message**: `SSL: CERTIFICATE_VERIFY_FAILED`
 
-**解决方法**:
+**Solutions**:
 ```bash
 # macOS
 /Applications/Python\ 3.x/Install\ Certificates.command
 
-# 或使用脚本内置的fallback机制（已实现）
+# Or use built-in fallback mechanism in script (already implemented)
 ```
 
-## 📊 监控指标
+## 📊 Monitoring Metrics
 
-### 成功指标
+### Success Indicators
 
-- ✅ GitHub Actions运行成功（绿色勾）
-- ✅ 网站显示最新版本号
-- ✅ 下载链接可以正常点击下载
-- ✅ 每个平台的安装包都有对应链接
+- ✅ GitHub Actions run successful (green checkmark)
+- ✅ Website displays latest version number
+- ✅ Download links work normally
+- ✅ Each platform has corresponding links
 
-### 检查清单
+### Checklist
 
-每次发布新版本后，请验证：
+> After each new version release, verify:
 
 ```
-□ Beta版本号是否更新
-□ Beta版本的Commit SHA是否正确
-□ Beta版本的发布日期是否正确
-□ Windows下载链接是否有效
-□ macOS下载链接是否有效
-□ Linux下载链接是否有效
-□ 稳定版本标签是否正确
-□ 历史版本是否保留（最新3个）
-□ 点击下载能否正常下载文件
+□ Beta version number updated
+□ Beta version Commit SHA correct
+□ Beta version release date correct
+□ Windows download link valid
+□ macOS download link valid
+□ Linux download link valid
+□ Stable version tabs correct
+□ Historical versions preserved (latest 3)
+□ Download works normally when clicked
 ```
 
-## 🔒 安全性
+## 🔒 Security
 
-### Token安全
-- ✅ 使用GitHub自动提供的 `GITHUB_TOKEN`
-- ✅ Token自动过期，无需手动管理
-- ✅ 最小权限原则：只请求 `contents: write`
+### Token Security
+- ✅ Uses GitHub-provided `GITHUB_TOKEN`
+- ✅ Token auto-expires, no manual management needed
+- ✅ Minimum permissions principle: only requests `contents: write`
 
-### 代码审查
-- ✅ 所有更改都产生Git提交
-- ✅ 可以通过Git历史审查所有变更
-- ✅ 支持回滚到任意版本
+### Code Review
+- ✅ All changes produce Git commits
+- ✅ Can review all changes through Git history
+- ✅ Supports rollback to any version
 
-### 防止无限循环
-- ✅ 提交消息包含 `[skip ci]`
-- ✅ 只在有实际变更时才提交
-- ✅ 避免触发连锁反应
+### Prevent Infinite Loop
+- ✅ Commit message includes `[skip ci]`
+- ✅ Only commits when actual changes exist
+- ✅ Avoids triggering chain reactions
 
-## 📚 相关资源
+## 📚 Related Resources
 
-### 文档
-- [GitHub Actions文档](https://docs.github.com/en/actions)
+### Documentation
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [GitHub Releases API](https://docs.github.com/en/rest/releases)
-- [GitHub Pages配置](https://docs.github.com/en/pages)
+- [GitHub Pages Configuration](https://docs.github.com/en/pages)
 
-### 项目链接
-- [ACloudViewer 仓库](https://github.com/Asher-1/ACloudViewer)
-- [Releases页面](https://github.com/Asher-1/ACloudViewer/releases)
-- [Actions页面](https://github.com/Asher-1/ACloudViewer/actions)
-- [网站地址](https://asher-1.github.io/ACloudViewer/)
+### Project Links
+- [ACloudViewer Repository](https://github.com/Asher-1/ACloudViewer)
+- [Releases Page](https://github.com/Asher-1/ACloudViewer/releases)
+- [Actions Page](https://github.com/Asher-1/ACloudViewer/actions)
+- [Website URL](https://asher-1.github.io/ACloudViewer/docs)
 
-### 脚本文档
-- [详细脚本文档](scripts/README.md)
-- [Python脚本源码](scripts/update_download_links.py)
-- [工作流配置](.github/workflows/update-website-downloads.yml)
+### Script Documentation
+- [Detailed Script Documentation](scripts/README.md)
+- [Python Script Source Code](scripts/update_download_links.py)
+- [Workflow Configuration](.github/workflows/update-website-downloads.yml)
 
-## 🎉 总结
+## 🎉 Summary
 
-恭喜！您现在拥有了一个**完全自动化、零维护**的网站更新系统！
+> Congratulations! You now have a **fully automated, zero-maintenance** website update system!
 
-### 核心优势
+### Core Advantages
 
-1. **零人工维护**: 发布版本后一切自动完成
-2. **实时同步**: Release发布即刻更新网站
-3. **智能识别**: 自动识别版本类型和平台
-4. **稳定可靠**: 定时检查确保同步
-5. **易于扩展**: 支持添加新平台和自定义配置
+1. **Zero Manual Maintenance**: Everything auto-completes after version release
+2. **Real-time Sync**: Website updates immediately after Release publication
+3. **Smart Recognition**: Auto-identifies version types and platforms
+4. **Stable and Reliable**: Scheduled checks ensure synchronization
+5. **Easy to Extend**: Supports adding new platforms and custom configuration
 
-### 下一步
+### Next Steps
 
-- 📦 发布新版本测试系统
-- 🔍 监控第一次自动更新
-- 📝 根据需要调整配置
-- 🎯 享受自动化带来的便利！
+- 📦 Publish new version to test system
+- 🔍 Monitor first automatic update
+- 📝 Adjust configuration as needed
+- 🎯 Enjoy the convenience of automation!
 
 ---
 
-**最后更新**: 2026-01-10  
-**作者**: ACloudViewer Team  
-**版本**: 1.0.0  
-**维护**: Automated by GitHub Actions ⚡️
-
+> **Last Updated**: 2026-01-10  
+> **Author**: ACloudViewer Team  
+> **Version**: 1.0.0  
+> **Maintenance**: Automated by GitHub Actions ⚡️
