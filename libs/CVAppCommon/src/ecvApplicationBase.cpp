@@ -118,45 +118,36 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
     settings.beginGroup(ecvPS::AppStyle());
     {
         QString styleKey = settings.value("style", QString()).toString();
-        
+
         // Apply platform-appropriate default if no saved style
-        if (styleKey.isEmpty())
-        {
+        if (styleKey.isEmpty()) {
 #ifdef Q_OS_MAC
-            // macOS: Use Fusion for consistent button borders (ParaView approach)
+            // macOS: Use Fusion for consistent button borders (ParaView
+            // approach)
             styleKey = "Fusion";
 #endif
         }
-        
+
         // Apply the style using Qt API directly (safe in constructor)
-        if (!styleKey.isEmpty())
-        {
-            if (styleKey == "QDarkStyleSheet::Dark")
-            {
+        if (!styleKey.isEmpty()) {
+            if (styleKey == "QDarkStyleSheet::Dark") {
                 QFile f(":/qdarkstyle/dark/darkstyle.qss");
-                if (f.open(QFile::ReadOnly | QFile::Text))
-                {
+                if (f.open(QFile::ReadOnly | QFile::Text)) {
                     QTextStream ts(&f);
                     setStyleSheet(ts.readAll());
                     f.close();
                 }
-            }
-            else if (styleKey == "QDarkStyleSheet::Light")
-            {
+            } else if (styleKey == "QDarkStyleSheet::Light") {
                 QFile f(":/qdarkstyle/light/lightstyle.qss");
-                if (f.open(QFile::ReadOnly | QFile::Text))
-                {
+                if (f.open(QFile::ReadOnly | QFile::Text)) {
                     QTextStream ts(&f);
                     setStyleSheet(ts.readAll());
                     f.close();
                 }
-            }
-            else
-            {
+            } else {
                 // Qt native style
-                QStyle* style = QStyleFactory::create(styleKey);
-                if (style)
-                {
+                QStyle *style = QStyleFactory::create(styleKey);
+                if (style) {
                     setStyle(style);
                 }
             }
@@ -300,22 +291,18 @@ void ecvApplicationBase::setupPaths() {
     }
 }
 
-bool ecvApplicationBase::setAppStyle(const QString& styleKey)
-{
+bool ecvApplicationBase::setAppStyle(const QString &styleKey) {
     // Helper lambda to load stylesheet from resources
-    const auto loadStyleSheet = [this](const QString& resourcePath) -> bool
-    {
+    const auto loadStyleSheet = [this](const QString &resourcePath) -> bool {
         QFile f(resourcePath);
-        if (!f.exists())
-        {
+        if (!f.exists()) {
             return false;
         }
-        
-        if (!f.open(QFile::ReadOnly | QFile::Text))
-        {
+
+        if (!f.open(QFile::ReadOnly | QFile::Text)) {
             return false;
         }
-        
+
         QTextStream ts(&f);
         setStyleSheet(ts.readAll());
         f.close();
@@ -323,35 +310,30 @@ bool ecvApplicationBase::setAppStyle(const QString& styleKey)
     };
 
     // Handle custom stylesheets
-    if (styleKey == "QDarkStyleSheet::Dark")
-    {
+    if (styleKey == "QDarkStyleSheet::Dark") {
         // Load dark stylesheet from resources
-        if (!loadStyleSheet(":/qdarkstyle/dark/darkstyle.qss"))
-        {
+        if (!loadStyleSheet(":/qdarkstyle/dark/darkstyle.qss")) {
             return false;
         }
-    }
-    else if (styleKey == "QDarkStyleSheet::Light")
-    {
+    } else if (styleKey == "QDarkStyleSheet::Light") {
         // Load light stylesheet from resources
-        if (!loadStyleSheet(":/qdarkstyle/light/lightstyle.qss"))
-        {
+        if (!loadStyleSheet(":/qdarkstyle/light/lightstyle.qss")) {
             return false;
         }
-    }
-    else
-    {
+    } else {
         // Use Qt native styles (Fusion, Windows, macOS, etc.)
-        QStyle* style = QStyleFactory::create(styleKey);
-        if (!style)
-        {
-            CVLog::Warning(QStringLiteral("Invalid style key or style couldn't be created: %1").arg(styleKey));
+        QStyle *style = QStyleFactory::create(styleKey);
+        if (!style) {
+            CVLog::Warning(QStringLiteral("Invalid style key or style couldn't "
+                                          "be created: %1")
+                                   .arg(styleKey));
             return false;
         }
 
         // Clear any existing stylesheet
         setStyleSheet(QString());
-        CVLog::Print(QStringLiteral("Applying application style: %1").arg(styleKey));
+        CVLog::Print(
+                QStringLiteral("Applying application style: %1").arg(styleKey));
         setStyle(style);
     }
 

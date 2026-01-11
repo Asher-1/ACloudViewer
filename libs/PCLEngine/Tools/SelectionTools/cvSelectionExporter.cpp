@@ -157,9 +157,9 @@ ccPointCloud* cvSelectionExporter::exportToPointCloud(
     }
 
     CVLog::PrintDebug(QString("[cvSelectionExporter] Created point cloud '%1' "
-                         "with %2 points")
-                         .arg(cloudName)
-                         .arg(cloud->size()));
+                              "with %2 points")
+                              .arg(cloudName)
+                              .arg(cloud->size()));
 
     // Save to file if requested
     if (options.saveToFile && !options.filename.isEmpty()) {
