@@ -321,9 +321,10 @@ void cvRenderViewSelectionReaction::updateEnableState() {
             break;
 
         case SelectionMode::SHRINK_SELECTION:
-            // Enable if selection can be shrunk (has layers > 0)
-            // Simplified: just check if has selection
-            m_parentAction->setEnabled(manager->hasSelection());
+            // Enable if selection can be shrunk (has layers >= 1)
+            // Reference: pqRenderViewSelectionReaction::updateEnableState()
+            // lines 184-212 - checks NumberOfLayers property
+            m_parentAction->setEnabled(manager->canShrinkSelection());
             break;
 
         case SelectionMode::SELECT_SURFACE_CELLDATA_INTERACTIVELY:
@@ -536,7 +537,7 @@ void cvRenderViewSelectionReaction::endSelection() {
         m_parentAction->blockSignals(false);
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvRenderViewSelectionReaction] Selection mode %1 ended")
                     .arg(static_cast<int>(m_mode)));
 }
@@ -1283,7 +1284,7 @@ int cvRenderViewSelectionReaction::getSelectionModifier() {
         for (QAction* maction : m_modifierGroup->actions()) {
             if (maction && maction->isChecked() && maction->data().isValid()) {
                 selectionModifier = maction->data().toInt();
-                CVLog::Print(
+                CVLog::PrintDebug(
                         QString("[getSelectionModifier] From modifierGroup: "
                                 "action='%1', modifier=%2")
                                 .arg(maction->text())
@@ -1499,21 +1500,10 @@ void cvRenderViewSelectionReaction::finalizeSelection(
         vtkActor* primaryActor = combined.primaryActor();
         if (primaryActor) {
             std::string viewID = pclVis->getIdByActor(primaryActor);
-            CVLog::Print(QString("[finalizeSelection] Actor lookup: "
-                                 "primaryActor=%1, "
-                                 "viewID='%2'")
-                                 .arg(reinterpret_cast<quintptr>(primaryActor),
-                                      0, 16)
-                                 .arg(QString::fromStdString(viewID)));
             if (!viewID.empty()) {
                 ccHObject* sourceObj = pclVis->getSourceObject(viewID);
                 if (sourceObj) {
                     manager->setSourceObject(sourceObj);
-                    CVLog::Print(
-                            QString("[finalizeSelection] Source object set: "
-                                    "'%1' (type=%2)")
-                                    .arg(sourceObj->getName())
-                                    .arg(sourceObj->getClassID()));
                 } else {
                     CVLog::Warning(
                             QString("[finalizeSelection] No source object "

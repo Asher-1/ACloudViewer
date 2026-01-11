@@ -373,7 +373,7 @@ bool cvSelectionHighlighter::highlightSelection(
         return false;
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionHighlighter] Highlighting %1 %2 in mode %3")
                     .arg(selectionData.count())
                     .arg(selectionData.fieldTypeString())
@@ -428,11 +428,6 @@ bool cvSelectionHighlighter::highlightElement(vtkPolyData* polyData,
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::clearHighlights() {
-    CVLog::Print(
-            "[cvSelectionHighlighter::clearHighlights] Clearing all "
-            "highlight actors");
-
-    // Remove all highlight actors (ParaView-style multi-level)
     removeActorFromVisualizer(m_hoverActorId);
     removeActorFromVisualizer(m_preselectedActorId);
     removeActorFromVisualizer(m_selectedActorId);
@@ -449,9 +444,6 @@ void cvSelectionHighlighter::clearHighlights() {
         vtkRenderWindow* renWin = pclVis->getRenderWindow();
         if (renWin) {
             renWin->Render();
-            CVLog::Print(
-                    "[cvSelectionHighlighter::clearHighlights] Render "
-                    "window updated");
         }
     }
 }
@@ -944,7 +936,7 @@ void cvSelectionHighlighter::setLabelProperties(
         emit propertiesChanged();
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionPropertiesWidget] Label properties applied: "
                     "opacity=%1, pointSize=%2, lineWidth=%3")
                     .arg(props.opacity)
@@ -958,10 +950,10 @@ void cvSelectionHighlighter::setPointLabelArray(const QString& arrayName,
     m_pointLabelArrayName = arrayName;
     m_pointLabelVisible = visible && !arrayName.isEmpty();
 
-    CVLog::Print(QString("[cvSelectionHighlighter] Point label array set: "
-                         "'%1', visible=%2")
-                         .arg(arrayName)
-                         .arg(m_pointLabelVisible));
+    CVLog::PrintDebug(QString("[cvSelectionHighlighter] Point label array set: "
+                              "'%1', visible=%2")
+                              .arg(arrayName)
+                              .arg(m_pointLabelVisible));
 
     // Update label rendering
     updateLabelActor(true);  // true = point labels
@@ -976,10 +968,10 @@ void cvSelectionHighlighter::setCellLabelArray(const QString& arrayName,
     m_cellLabelArrayName = arrayName;
     m_cellLabelVisible = visible && !arrayName.isEmpty();
 
-    CVLog::Print(QString("[cvSelectionHighlighter] Cell label array set: "
-                         "'%1', visible=%2")
-                         .arg(arrayName)
-                         .arg(m_cellLabelVisible));
+    CVLog::PrintDebug(QString("[cvSelectionHighlighter] Cell label array set: "
+                              "'%1', visible=%2")
+                              .arg(arrayName)
+                              .arg(m_cellLabelVisible));
 
     // Update label rendering
     updateLabelActor(false);  // false = cell labels
@@ -1171,7 +1163,7 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
     // Add to renderer
     renderer->AddActor2D(labelActor);
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionHighlighter] Added %1 labels with array '%2'")
                     .arg(isPointLabels ? "point" : "cell")
                     .arg(arrayName));

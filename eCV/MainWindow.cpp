@@ -185,7 +185,6 @@
 #include <Tools/SelectionTools/cvFindDataDockWidget.h>
 #include <Tools/SelectionTools/cvSelectionData.h>
 #include <Tools/SelectionTools/cvSelectionHighlighter.h>
-#include <Tools/SelectionTools/cvSelectionStorage.h>
 #include <Tools/SelectionTools/cvSelectionToolController.h>
 #include <Tools/SelectionTools/cvViewSelectionManager.h>
 #include <Tools/TransformTools/PclTransformTool.h>
@@ -385,11 +384,17 @@ MainWindow::MainWindow()
         connect(m_findDataDock, &cvFindDataDockWidget::extractedObjectReady,
                 this, [this](ccHObject* obj) {
                     if (obj) {
-                        CVLog::Print(QString("[Extract] Adding extracted "
-                                             "object '%1' "
-                                             "to database")
-                                             .arg(obj->getName()));
-                        addToDB(obj, true, true, false);
+                        addToDB(obj, false, true, false);
+                        // Refresh data producer list after adding new object
+                        // Use QTimer to delay refresh until VTK rendering is
+                        // complete
+                        if (m_findDataDock) {
+                            QTimer::singleShot(100, this, [this]() {
+                                if (m_findDataDock) {
+                                    m_findDataDock->refreshDataProducers();
+                                }
+                            });
+                        }
                     }
                 });
 
@@ -2232,13 +2237,6 @@ void MainWindow::addToDB(ccHObject* obj,
         });
     }
 
-    // Invalidate cached selection data since scene content changed
-    // This ensures stale polydata references are not used
-    // Note: Do NOT disable selection tools - user may be in the middle of
-    // selection
-    if (m_selectionController) {
-        m_selectionController->invalidateCache();
-    }
 #endif
 }
 
@@ -4813,36 +4811,6 @@ void MainWindow::onSelectionRestored(const cvSelectionData& selection) {
         }
     }
 }
-
-void MainWindow::onSelectionHistoryChanged() {
-    if (m_selectionController) {
-        cvSelectionHistory* history = m_selectionController->history();
-        if (history) {
-            CVLog::PrintDebug(
-                    QString("[MainWindow] Selection history changed - "
-                            "Can undo: %1, Can redo: %2")
-                            .arg(history->canUndo())
-                            .arg(history->canRedo()));
-        }
-    }
-}
-
-void MainWindow::onBookmarksChanged() {
-    CVLog::PrintDebug("[MainWindow] Selection bookmarks changed");
-}
-
-void MainWindow::undoSelection() {
-    if (m_selectionController) {
-        m_selectionController->undoSelection();
-    }
-}
-
-void MainWindow::redoSelection() {
-    if (m_selectionController) {
-        m_selectionController->redoSelection();
-    }
-}
-
 #endif
 
 //=============================================================================
@@ -8028,9 +7996,7 @@ void MainWindow::doActionComputeDistanceMap() {
             } else {
                 gridCloud->setCurrentDisplayedScalarField(sfIdx);
                 gridCloud->showSF(true);
-                // gridCloud->setDisplay(entity->getDisplay());
                 gridCloud->shrinkToFit();
-                // entity->prepareDisplayForRefresh();
                 addToDB(gridCloud);
             }
         }
@@ -8546,7 +8512,6 @@ void MainWindow::doActionRegister() {
                 }
             }
 
-            // data->prepareDisplayForRefresh_recursive();
             data->setName(data->getName() + tr(".registered"));
             // avoid rendering other object this time
             ecvDisplayTools::SetRedrawRecursive(false);
@@ -9514,16 +9479,12 @@ void MainWindow::doActionFilterByValue() {
 
             if (resultInside) {
                 ent->setEnabled(false);
-                // resultInside->setDisplay(ent->getDisplay());
-                // resultInside->prepareDisplayForRefresh();
                 addToDB(resultInside);
 
                 results.push_back(resultInside);
             }
             if (resultOutside) {
                 ent->setEnabled(false);
-                // resultOutside->setDisplay(ent->getDisplay());
-                // resultOutside->prepareDisplayForRefresh();
                 resultOutside->setName(resultOutside->getName() + ".outside");
                 addToDB(resultOutside);
 
@@ -9539,8 +9500,6 @@ void MainWindow::doActionFilterByValue() {
             m_ccRoot->selectEntities(results);
         }
     }
-
-    // refreshAll();
 }
 
 void MainWindow::doActionScalarFieldFromColor() {
@@ -9892,8 +9851,6 @@ void MainWindow::doRemoveDuplicatePoints() {
                         filteredCloud->deleteScalarField(sfIdx2);
                         filteredCloud->setName(
                                 tr("%1.clean").arg(cloud->getName()));
-                        // filteredCloud->setDisplay(cloud->getDisplay());
-                        // filteredCloud->prepareDisplayForRefresh();
                         addToDB(filteredCloud);
                         if (first) {
                             m_ccRoot->unselectAllEntities();
@@ -10177,7 +10134,6 @@ void MainWindow::doActionEditGlobalShiftAndScale() {
                     // we update its shift & scale info) but we apply the
                     // transformation to all its children?!
                     ent->applyGLTransformation_recursive(&transMat);
-                    // ent->prepareDisplayForRefresh_recursive();
 
                     CVLog::Warning(
                             tr("[Global Shift/Scale] To preserve its original "
