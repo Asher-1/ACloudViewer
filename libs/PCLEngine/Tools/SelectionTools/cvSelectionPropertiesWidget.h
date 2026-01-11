@@ -181,7 +181,8 @@ private slots:
     void onClearClicked();
     void updateAttributeCombo();
     void updateDataProducerCombo();
-    void addQueryRow(int index = -1, const QString& attribute = QString(),
+    void addQueryRow(int index = -1,
+                     const QString& attribute = QString(),
                      const QString& op = QString(),
                      const QString& value = QString());
     void removeQueryRow(int index);
@@ -345,7 +346,7 @@ private:
         QPushButton* plusButton;
         QPushButton* minusButton;
         QWidget* container;
-        
+
         // Comparison operator needed for QList
         bool operator==(const QueryRow& other) const {
             return container == other.container;

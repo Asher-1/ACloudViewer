@@ -27,7 +27,8 @@ void cvQueryValueWidget::setType(ValueType type) {
 
 QMap<QString, QString> cvQueryValueWidget::values() const {
     QMap<QString, QString> result;
-    for (auto it = m_lineEdits.constBegin(); it != m_lineEdits.constEnd(); ++it) {
+    for (auto it = m_lineEdits.constBegin(); it != m_lineEdits.constEnd();
+         ++it) {
         result[it.key()] = it.value()->text();
     }
     return result;
@@ -74,8 +75,8 @@ void cvQueryValueWidget::rebuildUI() {
             vbox->addWidget(edit);
             m_lineEdits["value"] = edit;
 
-            connect(edit, &QLineEdit::textChanged, 
-                    this, &cvQueryValueWidget::valueChanged);
+            connect(edit, &QLineEdit::textChanged, this,
+                    &cvQueryValueWidget::valueChanged);
             break;
         }
 
@@ -101,10 +102,10 @@ void cvQueryValueWidget::rebuildUI() {
             hbox->addWidget(label, 0);
             hbox->addWidget(editMax, 1);
 
-            connect(editMin, &QLineEdit::textChanged,
-                    this, &cvQueryValueWidget::valueChanged);
-            connect(editMax, &QLineEdit::textChanged,
-                    this, &cvQueryValueWidget::valueChanged);
+            connect(editMin, &QLineEdit::textChanged, this,
+                    &cvQueryValueWidget::valueChanged);
+            connect(editMax, &QLineEdit::textChanged, this,
+                    &cvQueryValueWidget::valueChanged);
             break;
         }
 
@@ -134,12 +135,12 @@ void cvQueryValueWidget::rebuildUI() {
             grid->addWidget(editY, 0, 1);
             grid->addWidget(editZ, 0, 2);
 
-            connect(editX, &QLineEdit::textChanged,
-                    this, &cvQueryValueWidget::valueChanged);
-            connect(editY, &QLineEdit::textChanged,
-                    this, &cvQueryValueWidget::valueChanged);
-            connect(editZ, &QLineEdit::textChanged,
-                    this, &cvQueryValueWidget::valueChanged);
+            connect(editX, &QLineEdit::textChanged, this,
+                    &cvQueryValueWidget::valueChanged);
+            connect(editY, &QLineEdit::textChanged, this,
+                    &cvQueryValueWidget::valueChanged);
+            connect(editZ, &QLineEdit::textChanged, this,
+                    &cvQueryValueWidget::valueChanged);
 
             if (m_type == LOCATION_WITH_TOLERANCE) {
                 auto* editTolerance = new QLineEdit(this);
@@ -148,8 +149,8 @@ void cvQueryValueWidget::rebuildUI() {
                 m_lineEdits["value_tolerance"] = editTolerance;
                 grid->addWidget(editTolerance, 1, 0, 1, 3);
 
-                connect(editTolerance, &QLineEdit::textChanged,
-                        this, &cvQueryValueWidget::valueChanged);
+                connect(editTolerance, &QLineEdit::textChanged, this,
+                        &cvQueryValueWidget::valueChanged);
             }
             break;
         }
@@ -165,7 +166,6 @@ cvQueryConditionWidget::cvQueryConditionWidget(QWidget* parent)
       m_termCombo(new QComboBox(this)),
       m_operatorCombo(new QComboBox(this)),
       m_valueWidget(new cvQueryValueWidget(this)) {
-    
     m_termCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     m_operatorCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
@@ -178,15 +178,17 @@ cvQueryConditionWidget::cvQueryConditionWidget(QWidget* parent)
 
     connect(m_termCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &cvQueryConditionWidget::onTermChanged);
-    connect(m_operatorCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &cvQueryConditionWidget::onOperatorChanged);
-    connect(m_valueWidget, &cvQueryValueWidget::valueChanged,
-            this, &cvQueryConditionWidget::conditionChanged);
+    connect(m_operatorCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &cvQueryConditionWidget::onOperatorChanged);
+    connect(m_valueWidget, &cvQueryValueWidget::valueChanged, this,
+            &cvQueryConditionWidget::conditionChanged);
 }
 
-void cvQueryConditionWidget::updateTerms(const QStringList& arrayNames,
-                                          const QMap<QString, int>& arrayComponents,
-                                          bool isPointData) {
+void cvQueryConditionWidget::updateTerms(
+        const QStringList& arrayNames,
+        const QMap<QString, int>& arrayComponents,
+        bool isPointData) {
     const QSignalBlocker blocker(m_termCombo);
     m_termCombo->clear();
 
@@ -196,15 +198,16 @@ void cvQueryConditionWidget::updateTerms(const QStringList& arrayNames,
     // Add arrays
     for (const QString& arrayName : arrayNames) {
         int numComponents = arrayComponents.value(arrayName, 1);
-        
+
         if (numComponents == 1) {
             // Single component array
             addTerm(arrayName, ARRAY, arrayName);
         } else if (numComponents > 1) {
-            // Multi-component: add magnitude first, then components (lowercase 'magnitude' to match ParaView)
+            // Multi-component: add magnitude first, then components (lowercase
+            // 'magnitude' to match ParaView)
             addTerm(QString("%1 (magnitude)").arg(arrayName), ARRAY,
                     QString("mag(%1)").arg(arrayName));
-            
+
             // Component names
             QStringList compNames;
             if (numComponents == 3) {
@@ -256,21 +259,23 @@ void cvQueryConditionWidget::setExpression(const QString& expr) {
     // Try to match against all operators
     for (int termType = CELL_CONTAINING_POINT; termType >= 0; --termType) {
         populateOperators(static_cast<TermType>(termType));
-        
+
         for (int i = 0; i < m_operatorCombo->count(); ++i) {
-            QRegularExpression regex = m_operatorCombo->itemData(i, ExprRegExRole)
-                                       .toRegularExpression();
+            QRegularExpression regex =
+                    m_operatorCombo->itemData(i, ExprRegExRole)
+                            .toRegularExpression();
             QRegularExpressionMatch match = regex.match(expr);
-            
+
             if (match.hasMatch()) {
                 // Found a match!
                 setCurrentTerm(match.captured("term"));
                 m_operatorCombo->setCurrentIndex(i);
-                
+
                 // Extract values
                 QMap<QString, QString> values;
-                for (const QString& key : {"value", "value_min", "value_max",
-                                           "value_x", "value_y", "value_z", "value_tolerance"}) {
+                for (const QString& key :
+                     {"value", "value_min", "value_max", "value_x", "value_y",
+                      "value_z", "value_tolerance"}) {
                     QString capturedValue = match.captured(key);
                     if (!capturedValue.isNull() && !capturedValue.isEmpty()) {
                         values[key] = capturedValue;
@@ -324,40 +329,42 @@ void cvQueryConditionWidget::populateOperators(TermType termType) {
     switch (termType) {
         case ARRAY:
             addOperator("is", VT::SINGLE_VALUE, "{term} == {value}");
-            addOperator("is in range", VT::RANGE_PAIR, 
+            addOperator("is in range", VT::RANGE_PAIR,
                         "({term} > {value_min}) & ({term} < {value_max})");
-            addOperator("is one of", VT::COMMA_SEPARATED_VALUES, 
+            addOperator("is one of", VT::COMMA_SEPARATED_VALUES,
                         "isin({term}, [{value}])");
             addOperator("is >=", VT::SINGLE_VALUE, "{term} >= {value}");
             addOperator("is <=", VT::SINGLE_VALUE, "{term} <= {value}");
             addOperator("is min", VT::NO_VALUE, "{term} == min({term})");
             addOperator("is max", VT::NO_VALUE, "{term} == max({term})");
-            addOperator("is min per block", VT::NO_VALUE, 
+            addOperator("is min per block", VT::NO_VALUE,
                         "{term} == min_per_block({term})");
-            addOperator("is max per block", VT::NO_VALUE, 
+            addOperator("is max per block", VT::NO_VALUE,
                         "{term} == max_per_block({term})");
             addOperator("is NaN", VT::NO_VALUE, "isnan({term})");
             addOperator("is <= mean", VT::NO_VALUE, "{term} <= mean({term})");
             addOperator("is >= mean", VT::NO_VALUE, "{term} >= mean({term})");
-            addOperator("is mean", VT::SINGLE_VALUE, 
+            addOperator("is mean", VT::SINGLE_VALUE,
                         "abs({term} - mean({term})) <= {value}");
             break;
 
         case POINT_NEAREST_TO:
             addOperator("nearest to", VT::LOCATION_WITH_TOLERANCE,
-                        "pointIsNear([({value_x}, {value_y}, {value_z}),], {value_tolerance}, {term})");
+                        "pointIsNear([({value_x}, {value_y}, {value_z}),], "
+                        "{value_tolerance}, {term})");
             break;
 
         case CELL_CONTAINING_POINT:
             addOperator("containing", VT::LOCATION,
-                        "cellContainsPoint({term}, [({value_x}, {value_y}, {value_z}),])");
+                        "cellContainsPoint({term}, [({value_x}, {value_y}, "
+                        "{value_z}),])");
             break;
     }
 }
 
 void cvQueryConditionWidget::updateValueWidget() {
     auto valueType = static_cast<cvQueryValueWidget::ValueType>(
-        m_operatorCombo->currentData(ValueTypeRole).toInt());
+            m_operatorCombo->currentData(ValueTypeRole).toInt());
     m_valueWidget->setType(valueType);
 }
 
@@ -365,8 +372,10 @@ QString cvQueryConditionWidget::currentTerm() const {
     return m_termCombo->currentData(NameRole).toString();
 }
 
-cvQueryConditionWidget::TermType cvQueryConditionWidget::currentTermType() const {
-    return static_cast<TermType>(m_termCombo->currentData(TermTypeRole).toInt());
+cvQueryConditionWidget::TermType cvQueryConditionWidget::currentTermType()
+        const {
+    return static_cast<TermType>(
+            m_termCombo->currentData(TermTypeRole).toInt());
 }
 
 void cvQueryConditionWidget::setCurrentTerm(const QString& term) {
@@ -376,7 +385,7 @@ void cvQueryConditionWidget::setCurrentTerm(const QString& term) {
             return;
         }
     }
-    
+
     // Term not found - add as unknown
     m_termCombo->insertItem(0, term + "(?)");
     m_termCombo->setItemData(0, ARRAY, TermTypeRole);
@@ -384,21 +393,24 @@ void cvQueryConditionWidget::setCurrentTerm(const QString& term) {
     m_termCombo->setCurrentIndex(0);
 }
 
-void cvQueryConditionWidget::addOperator(const QString& text,
-                                          cvQueryValueWidget::ValueType valueType,
-                                          const QString& expressionTemplate) {
+void cvQueryConditionWidget::addOperator(
+        const QString& text,
+        cvQueryValueWidget::ValueType valueType,
+        const QString& expressionTemplate) {
     int index = m_operatorCombo->count();
     m_operatorCombo->addItem(text);
     m_operatorCombo->setItemData(index, valueType, ValueTypeRole);
     m_operatorCombo->setItemData(index, expressionTemplate, ExprTemplateRole);
 
     // Create regex for parsing
-    QRegularExpression regex = QueryExpressionUtils::createRegex(expressionTemplate);
+    QRegularExpression regex =
+            QueryExpressionUtils::createRegex(expressionTemplate);
     m_operatorCombo->setItemData(index, regex, ExprRegExRole);
 }
 
-void cvQueryConditionWidget::addTerm(const QString& text, TermType type, 
-                                      const QString& internalName) {
+void cvQueryConditionWidget::addTerm(const QString& text,
+                                     TermType type,
+                                     const QString& internalName) {
     int index = m_termCombo->count();
     m_termCombo->addItem(text);
     m_termCombo->setItemData(index, type, TermTypeRole);
@@ -411,34 +423,35 @@ void cvQueryConditionWidget::addTerm(const QString& text, TermType type,
 
 namespace QueryExpressionUtils {
 
-QString formatExpression(const QString& templateStr, const QMap<QString, QString>& values) {
+QString formatExpression(const QString& templateStr,
+                         const QMap<QString, QString>& values) {
     QString result = templateStr;
-    
+
     // Check for empty values (except term which should always exist)
     for (auto it = values.constBegin(); it != values.constEnd(); ++it) {
         if (it.key() != "term" && it.value().isEmpty()) {
             return QString();  // Invalid expression
         }
     }
-    
+
     // Replace all placeholders
     for (auto it = values.constBegin(); it != values.constEnd(); ++it) {
         QString placeholder = QString("{%1}").arg(it.key());
         result.replace(placeholder, it.value());
     }
-    
+
     return result;
 }
 
 QRegularExpression createRegex(const QString& templateStr) {
     QString pattern = templateStr;
-    
+
     // Escape special regex characters in the template
     pattern.replace("(", "\\(").replace(")", "\\)");
     pattern.replace("[", "\\[").replace("]", "\\]");
     pattern.replace("+", "\\+").replace("*", "\\*");
     pattern.replace(".", "\\.");
-    
+
     // Define capture patterns for different types (matching ParaView exactly)
     QMap<QString, QString> capturePatterns;
     // Note: the term can include "accl", "mag(accl)", "accl[:,0]", etc.
@@ -453,30 +466,33 @@ QRegularExpression createRegex(const QString& templateStr) {
     capturePatterns["value_y"] = R"([a-zA-Z0-9_.\-]+)";
     capturePatterns["value_z"] = R"([a-zA-Z0-9_.\-]+)";
     capturePatterns["value_tolerance"] = R"([a-zA-Z0-9_.\-]+)";
-    
+
     // Replace placeholders with named capture groups
-    // First occurrence gets the full capture group, subsequent ones are back-references
+    // First occurrence gets the full capture group, subsequent ones are
+    // back-references
     QMap<QString, bool> usedKeys;
-    for (auto it = capturePatterns.constBegin(); it != capturePatterns.constEnd(); ++it) {
+    for (auto it = capturePatterns.constBegin();
+         it != capturePatterns.constEnd(); ++it) {
         QString placeholder = QString("{%1}").arg(it.key());
         int firstOccurrence = pattern.indexOf(placeholder);
-        
+
         if (firstOccurrence != -1) {
             // Replace first occurrence with named capture group
             pattern.replace(firstOccurrence, placeholder.length(),
                             QString("(?<%1>%2)").arg(it.key(), it.value()));
             usedKeys[it.key()] = true;
-            
+
             // Replace remaining occurrences with back-reference
             pattern.replace(placeholder, QString("\\g{%1}").arg(it.key()));
         }
     }
-    
+
     QRegularExpression regex("^" + pattern + "$");
     if (!regex.isValid()) {
-        CVLog::Warning(QString("[QueryExpressionUtils] Invalid regex: %1").arg(regex.errorString()));
+        CVLog::Warning(QString("[QueryExpressionUtils] Invalid regex: %1")
+                               .arg(regex.errorString()));
     }
-    
+
     return regex;
 }
 
@@ -484,7 +500,7 @@ QStringList splitByAnd(const QString& expression) {
     QStringList result;
     int parentCount = 0;
     int start = 0;
-    
+
     for (int pos = 0; pos < expression.size(); ++pos) {
         if (expression[pos] == '(') {
             ++parentCount;
@@ -502,7 +518,7 @@ QStringList splitByAnd(const QString& expression) {
             start = pos + 1;
         }
     }
-    
+
     // Add last term
     if (start < expression.size()) {
         QString term = expression.mid(start).trimmed();
@@ -513,9 +529,8 @@ QStringList splitByAnd(const QString& expression) {
             result.append(term);
         }
     }
-    
+
     return result;
 }
 
 }  // namespace QueryExpressionUtils
-

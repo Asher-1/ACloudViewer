@@ -13,15 +13,15 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMap>
+#include <QRegularExpression>
+#include <QString>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QMap>
-#include <QString>
-#include <QRegularExpression>
 
 /**
  * @brief cvQueryValueWidget - Dynamic value input widget
- * 
+ *
  * Based on ParaView's pqValueWidget, this widget dynamically creates
  * different UI components based on the ValueType. It supports:
  * - NO_VALUE: No input (for operators like "is min", "is max")
@@ -55,7 +55,8 @@ public:
 
     /**
      * Get current values as a map (key -> value).
-     * Keys are: "value", "value_min", "value_max", "value_x", "value_y", "value_z", "value_tolerance"
+     * Keys are: "value", "value_min", "value_max", "value_x", "value_y",
+     * "value_z", "value_tolerance"
      */
     QMap<QString, QString> values() const;
 
@@ -81,10 +82,10 @@ private:
 
 /**
  * @brief cvQueryConditionWidget - Single query condition widget
- * 
+ *
  * Based on ParaView's pqQueryWidget, represents one query condition row:
  * [Term Combo] [Operator Combo] [Value Widget]
- * 
+ *
  * The widget automatically updates the operator list and value widget
  * based on the selected term type.
  */
@@ -93,9 +94,9 @@ class cvQueryConditionWidget : public QWidget {
 
 public:
     enum TermType {
-        ARRAY,                      // Regular array field (ID, NormalX, etc.)
-        POINT_NEAREST_TO,          // Point nearest to location
-        CELL_CONTAINING_POINT,     // Cell containing a point
+        ARRAY,                  // Regular array field (ID, NormalX, etc.)
+        POINT_NEAREST_TO,       // Point nearest to location
+        CELL_CONTAINING_POINT,  // Cell containing a point
     };
 
     explicit cvQueryConditionWidget(QWidget* parent = nullptr);
@@ -104,7 +105,7 @@ public:
     /**
      * Update the widget with available terms from data
      */
-    void updateTerms(const QStringList& arrayNames, 
+    void updateTerms(const QStringList& arrayNames,
                      const QMap<QString, int>& arrayComponents,
                      bool isPointData);
 
@@ -133,18 +134,20 @@ private slots:
 private:
     void populateOperators(TermType termType);
     void updateValueWidget();
-    
+
     QString currentTerm() const;
     TermType currentTermType() const;
     void setCurrentTerm(const QString& term);
 
     // Helper to add operator with its metadata
-    void addOperator(const QString& text, 
+    void addOperator(const QString& text,
                      cvQueryValueWidget::ValueType valueType,
                      const QString& expressionTemplate);
 
     // Helper to add term with its metadata
-    void addTerm(const QString& text, TermType type, const QString& internalName);
+    void addTerm(const QString& text,
+                 TermType type,
+                 const QString& internalName);
 
     QComboBox* m_termCombo;
     QComboBox* m_operatorCombo;
@@ -162,23 +165,23 @@ private:
  * @brief Helper functions for expression formatting and parsing
  */
 namespace QueryExpressionUtils {
-    /**
-     * Format expression template with values
-     * e.g., fmt("{term} >= {value}", {{"term", "NormalX"}, {"value", "0.5"}}) 
-     *       -> "NormalX >= 0.5"
-     */
-    QString formatExpression(const QString& templateStr, const QMap<QString, QString>& values);
+/**
+ * Format expression template with values
+ * e.g., fmt("{term} >= {value}", {{"term", "NormalX"}, {"value", "0.5"}})
+ *       -> "NormalX >= 0.5"
+ */
+QString formatExpression(const QString& templateStr,
+                         const QMap<QString, QString>& values);
 
-    /**
-     * Create regex pattern from expression template for parsing
-     */
-    QRegularExpression createRegex(const QString& templateStr);
+/**
+ * Create regex pattern from expression template for parsing
+ */
+QRegularExpression createRegex(const QString& templateStr);
 
-    /**
-     * Split compound expression by AND operator (&)
-     * e.g., "(NormalX >= 0.5) & (NormalY <= 1.0)" -> ["NormalX >= 0.5", "NormalY <= 1.0"]
-     */
-    QStringList splitByAnd(const QString& expression);
-}
-
-
+/**
+ * Split compound expression by AND operator (&)
+ * e.g., "(NormalX >= 0.5) & (NormalY <= 1.0)" -> ["NormalX >= 0.5", "NormalY
+ * <= 1.0"]
+ */
+QStringList splitByAnd(const QString& expression);
+}  // namespace QueryExpressionUtils
