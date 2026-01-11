@@ -16,7 +16,7 @@ local.properties
 .loadpath
 
 # Documentation auto-generated files
-docs/downloads_data.json
+# docs/downloads_data.json is now tracked in git for GitHub Pages deployment
 # External tool builders
 .externalToolBuilders/
 # Locally stored "Eclipse launch configurations"

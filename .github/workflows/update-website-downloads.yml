@@ -43,6 +43,36 @@ jobs:
             exit 1
           fi
           
-      # Note: downloads_data.json is in .gitignore, so it won't be committed to git
-      # but it will be included in GitHub Pages deployment automatically
+      - name: Check for meaningful changes
+        id: check_changes
+        run: |
+          if [ ! -f "docs/downloads_data.json" ]; then
+            echo "New file, need to commit"
+            echo "changed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # 比较实际的下载数据，忽略 generated_at 时间戳
+          OLD_DATA=$(git show HEAD:docs/downloads_data.json 2>/dev/null | jq 'del(.generated_at)' || echo "{}")
+          NEW_DATA=$(cat docs/downloads_data.json | jq 'del(.generated_at)')
+          
+          if [ "$OLD_DATA" = "$NEW_DATA" ]; then
+            echo "✅ No meaningful changes detected (only timestamp changed)"
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "📦 Download data has changed!"
+            echo "changed=true" >> $GITHUB_OUTPUT
+            
+            # 显示变化摘要
+            echo "Version count - Old: $(echo "$OLD_DATA" | jq '.version_metadata | length'), New: $(echo "$NEW_DATA" | jq '.version_metadata | length')"
+          fi
+          
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -f docs/downloads_data.json
+          git commit -m "chore: update downloads_data.json [skip ci]"
+          git push
 
