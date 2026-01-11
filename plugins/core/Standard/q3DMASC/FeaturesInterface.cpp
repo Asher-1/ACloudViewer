@@ -8,6 +8,7 @@
 #include "FeaturesInterface.h"
 
 // qCC_db
+#include <QtCompat.h>
 #include <ecvScalarField.h>
 
 // system
@@ -142,9 +143,9 @@ bool Feature::SaveSources(const Source::Set& sources, QString filename) {
     }
 
     QTextStream stream(&file);
-    stream << "#Features_SF" << endl;
+    stream << "#Features_SF" << QtCompat::endl;
     for (const Source& s : sources) {
-        stream << s.type << ":" << s.name << endl;
+        stream << s.type << ":" << s.name << QtCompat::endl;
     }
 
     return true;

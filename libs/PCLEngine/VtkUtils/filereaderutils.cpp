@@ -234,7 +234,7 @@ void NastranFileReader::run() {
                 qDebug() << "Resizing point array from " << nPoints
                          << " points to " << newSize
                          << " points because we need to insert point index "
-                         << psi << endl;
+                         << psi;
                 nPoints = newSize;
                 pts->GetData()->Resize(nPoints);
                 pts->SetNumberOfPoints(nPoints);
@@ -287,7 +287,7 @@ void NastranFileReader::run() {
                 qDebug() << "Resizing point array from " << nPoints
                          << " points to " << newSize
                          << " points because we need to insert point index "
-                         << psi << endl;
+                         << psi;
                 nPoints = newSize;
                 pts->GetData()->Resize(nPoints);
                 pts->SetNumberOfPoints(nPoints);
@@ -721,8 +721,7 @@ void AnsysFileReader::run() {
             } else {
                 qDebug() << "The file " << fileName()
                          << " contained cells "
-                            "that are not hexes."
-                         << endl;
+                            "that are not hexes.";
 
                 fatalError = true;
                 break;
@@ -735,7 +734,7 @@ void AnsysFileReader::run() {
                     *comma2 = '\0';
                     char *cols = comma + 1;
                     qDebug() << "Coordinate data stored in " << atoi(cols)
-                             << " columns." << endl;
+                             << " columns.";
                     recognized = true;
                 }
             }
@@ -749,11 +748,10 @@ void AnsysFileReader::run() {
                 qDebug() << "firstFieldWidth=" << firstFieldWidth
                          << ", fieldStart=" << fieldStart
                          << ", fieldWidth=" << fieldWidth
-                         << ", expectedLineLength=" << expectedLineLength
-                         << endl;
+                         << ", expectedLineLength=" << expectedLineLength;
                 readingCoordinates = true;
             } else {
-                qDebug() << "Malformed format string: " << line << endl;
+                qDebug() << "Malformed format string: " << line;
                 fatalError = true;
             }
         } else if (STRNCASECMP(line, "EBLOCK", 6) == 0) {
@@ -764,7 +762,7 @@ void AnsysFileReader::run() {
                     *comma2 = '\0';
                     char *cols = comma + 1;
                     qDebug() << "Connectivity data stored in " << atoi(cols)
-                             << " columns." << endl;
+                             << " columns.";
                     recognized = true;
                 }
             }
@@ -778,11 +776,10 @@ void AnsysFileReader::run() {
                 qDebug() << "firstFieldWidth=" << firstFieldWidth
                          << ", fieldStart=" << fieldStart
                          << ", fieldWidth=" << fieldWidth
-                         << ", expectedLineLength=" << expectedLineLength
-                         << endl;
+                         << ", expectedLineLength=" << expectedLineLength;
                 readingConnectivity = true;
             } else {
-                qDebug() << "Malformed format string: " << line << endl;
+                qDebug() << "Malformed format string: " << line;
                 fatalError = true;
             }
         } else if (STRNCASECMP(line, "/COM", 4) == 0) {
@@ -885,7 +882,7 @@ void AnsysFileReader::interpret(const char *fmt,
                                 int &linelen) const {
     int i0, i1, i2;
 
-    qDebug() << "avtANSYSFileFormat::Interpret: " << fmt << endl;
+    qDebug() << "avtANSYSFileFormat::Interpret: " << fmt;
 
     // Example: 6e16.9
     if (sscanf(fmt, "%de%d.%d", &i0, &i1, &i2) == 3) {
@@ -897,7 +894,7 @@ void AnsysFileReader::interpret(const char *fmt,
         linelen = i0 * i1;
         fieldWidth = i1;
     } else {
-        qDebug() << "Invalid format string: " << fmt << endl;
+        qDebug() << "Invalid format string: " << fmt;
     }
 }
 

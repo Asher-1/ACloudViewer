@@ -1344,6 +1344,197 @@ ccMesh* ccMesh::cloneMesh(ccGenericPointCloud* vertices /*=0*/,
     return cloneMesh;
 }
 
+ccMesh* ccMesh::partialClone(const std::vector<unsigned>& triangleIndices,
+                             int* warnings /*=nullptr*/) const {
+    assert(m_associatedCloud);
+
+    if (triangleIndices.empty()) {
+        CVLog::Warning("[ccMesh::partialClone] Empty triangle selection");
+        return nullptr;
+    }
+
+    unsigned triNum = size();
+
+    // Verify all triangle indices are valid
+    for (unsigned triIdx : triangleIndices) {
+        if (triIdx >= triNum) {
+            CVLog::Error(QString("[ccMesh::partialClone] Triangle index %1 out "
+                                 "of range [0, %2)")
+                                 .arg(triIdx)
+                                 .arg(triNum));
+            return nullptr;
+        }
+    }
+
+    // Build set of unique vertices used by selected triangles
+    std::set<unsigned> usedVerticesSet;
+    for (unsigned triIdx : triangleIndices) {
+        const cloudViewer::VerticesIndexes* tri =
+                getTriangleVertIndexes(triIdx);
+        usedVerticesSet.insert(tri->i1);
+        usedVerticesSet.insert(tri->i2);
+        usedVerticesSet.insert(tri->i3);
+    }
+
+    // Create mapping from old vertex indices to new vertex indices
+    std::map<unsigned, unsigned> vertexIndexMap;
+    unsigned newVertexIndex = 0;
+    for (unsigned oldIdx : usedVerticesSet) {
+        vertexIndexMap[oldIdx] = newVertexIndex++;
+    }
+
+    // Clone the used vertices
+    cloudViewer::ReferenceCloud refCloud(m_associatedCloud);
+    if (!refCloud.reserve(static_cast<unsigned>(usedVerticesSet.size()))) {
+        CVLog::Error(
+                "[ccMesh::partialClone] Not enough memory for vertex reference "
+                "cloud");
+        return nullptr;
+    }
+
+    for (unsigned oldIdx : usedVerticesSet) {
+        refCloud.addPointIndex(oldIdx);
+    }
+
+    ccGenericPointCloud* newVertices = nullptr;
+    if (m_associatedCloud->isA(CV_TYPES::POINT_CLOUD)) {
+        int cloneWarnings = 0;
+        newVertices = static_cast<ccPointCloud*>(m_associatedCloud)
+                              ->partialClone(&refCloud, &cloneWarnings);
+        if (warnings) {
+            *warnings = cloneWarnings;
+        }
+    } else {
+        newVertices = m_associatedCloud->clone();
+    }
+
+    if (!newVertices) {
+        CVLog::Error("[ccMesh::partialClone] Failed to clone vertices");
+        return nullptr;
+    }
+
+    // Create new mesh
+    ccMesh* partialMesh = new ccMesh(newVertices);
+    if (!partialMesh->reserve(static_cast<unsigned>(triangleIndices.size()))) {
+        delete newVertices;
+        delete partialMesh;
+        CVLog::Error(
+                "[ccMesh::partialClone] Not enough memory for mesh triangles");
+        return nullptr;
+    }
+
+    // Add triangles with remapped vertex indices
+    for (unsigned oldTriIdx : triangleIndices) {
+        const cloudViewer::VerticesIndexes* tri =
+                getTriangleVertIndexes(oldTriIdx);
+        partialMesh->addTriangle(vertexIndexMap[tri->i1],
+                                 vertexIndexMap[tri->i2],
+                                 vertexIndexMap[tri->i3]);
+    }
+
+    // Clone triangle normals if present
+    if (m_triNormals && m_triNormalIndexes) {
+        if (partialMesh->reservePerTriangleNormalIndexes()) {
+            NormsIndexesTableType* clonedNormsTable = m_triNormals->clone();
+            if (clonedNormsTable) {
+                partialMesh->setTriNormsTable(clonedNormsTable, true);
+                partialMesh->addChild(clonedNormsTable);
+
+                // Copy normal indexes for selected triangles
+                for (unsigned oldTriIdx : triangleIndices) {
+                    int i1, i2, i3;
+                    getTriangleNormalIndexes(oldTriIdx, i1, i2, i3);
+                    partialMesh->addTriangleNormalIndexes(i1, i2, i3);
+                }
+            } else {
+                CVLog::Warning(
+                        "[ccMesh::partialClone] Failed to clone triangle "
+                        "normals table");
+                partialMesh->removePerTriangleNormalIndexes();
+            }
+        } else {
+            CVLog::Warning(
+                    "[ccMesh::partialClone] Failed to reserve triangle normal "
+                    "indexes");
+        }
+    }
+
+    // Clone materials if present
+    if (m_materials && m_triMtlIndexes) {
+        if (partialMesh->reservePerTriangleMtlIndexes()) {
+            ccMaterialSet* clonedMaterials = getMaterialSet()->clone();
+            if (clonedMaterials) {
+                partialMesh->setMaterialSet(clonedMaterials, true);
+                partialMesh->addChild(clonedMaterials);
+
+                // Copy material indexes for selected triangles
+                for (unsigned oldTriIdx : triangleIndices) {
+                    int mtlIdx = getTriangleMtlIndex(oldTriIdx);
+                    partialMesh->addTriangleMtlIndex(mtlIdx);
+                }
+            } else {
+                CVLog::Warning(
+                        "[ccMesh::partialClone] Failed to clone materials");
+                partialMesh->removePerTriangleMtlIndexes();
+            }
+        } else {
+            CVLog::Warning(
+                    "[ccMesh::partialClone] Failed to reserve triangle "
+                    "material indexes");
+        }
+    }
+
+    // Clone texture coordinates if present
+    if (m_texCoords && m_texCoordIndexes) {
+        if (partialMesh->reservePerTriangleTexCoordIndexes()) {
+            TextureCoordsContainer* clonedTexCoords = m_texCoords->clone();
+            if (clonedTexCoords) {
+                partialMesh->setTexCoordinatesTable(clonedTexCoords);
+
+                // Copy texture coordinate indexes for selected triangles
+                for (unsigned oldTriIdx : triangleIndices) {
+                    int t1, t2, t3;
+                    getTriangleTexCoordinatesIndexes(oldTriIdx, t1, t2, t3);
+                    partialMesh->addTriangleTexCoordIndexes(t1, t2, t3);
+                }
+            } else {
+                CVLog::Warning(
+                        "[ccMesh::partialClone] Failed to clone texture "
+                        "coordinates");
+                partialMesh->removePerTriangleTexCoordIndexes();
+            }
+        } else {
+            CVLog::Warning(
+                    "[ccMesh::partialClone] Failed to reserve triangle texture "
+                    "coordinate indexes");
+        }
+    }
+
+    // Set display properties
+    newVertices->setEnabled(false);
+    partialMesh->addChild(newVertices);
+
+    if (hasNormals() && !partialMesh->hasNormals()) {
+        partialMesh->computeNormals(!hasTriNormals());
+    }
+
+    partialMesh->showNormals(normalsShown());
+    partialMesh->showColors(colorsShown());
+    partialMesh->showSF(sfShown());
+    partialMesh->showMaterials(materialsShown());
+    partialMesh->setName(getName() + QString(".partial"));
+    partialMesh->setVisible(isVisible());
+    partialMesh->setEnabled(isEnabled());
+    partialMesh->importParametersFrom(this);
+
+    CVLog::Print(QString("[ccMesh::partialClone] Created partial mesh: %1 "
+                         "triangles, %2 vertices")
+                         .arg(triangleIndices.size())
+                         .arg(usedVerticesSet.size()));
+
+    return partialMesh;
+}
+
 ccMesh* ccMesh::TriangulateTwoPolylines(ccPolyline* p1,
                                         ccPolyline* p2,
                                         CCVector3* projectionDir /*=0*/) {
@@ -3572,8 +3763,14 @@ int ccMesh::getTriangleMtlIndex(unsigned triangleIndex) const {
     return m_triMtlIndexes->at(triangleIndex);
 }
 
-bool ccMesh::toFile_MeOnly(QFile& out) const {
-    if (!ccGenericMesh::toFile_MeOnly(out)) return false;
+bool ccMesh::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 29) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccGenericMesh::toFile_MeOnly(out, dataVersion)) return false;
 
     // we can't save the associated cloud here (as it may be shared by multiple
     // meshes) so instead we save it's unique ID (dataVersion>=20) WARNING: the
@@ -3668,6 +3865,13 @@ bool ccMesh::toFile_MeOnly(QFile& out) const {
     }
 
     return true;
+}
+
+short ccMesh::minimumFileVersion_MeOnly() const {
+    short minVersion =
+            std::max(static_cast<short>(29),
+                     ccSerializationHelper::GenericArrayToFileMinVersion());
+    return std::max(minVersion, ccGenericMesh::minimumFileVersion_MeOnly());
 }
 
 bool ccMesh::fromFile_MeOnly(QFile& in,

@@ -60,6 +60,15 @@ public:
     **/
     virtual void logMessage(const QString& message, int level) = 0;
 
+    //! Prints out a verbose formatted message in console
+    /** Works just like the 'printf' command.
+        \return always 'true'
+    **/
+    static bool PrintVerbose(const char* format, ...);
+
+    //! QString version of ccLog::PrintVerbose
+    static bool PrintVerbose(const QString& message);
+
     //! Prints out a formatted message in console
     /** Works just like the 'printf' command.
             \return always return 'true'
@@ -71,6 +80,15 @@ public:
         LogMessage(message, LOG_STANDARD);
         return true;
     }
+
+    //! Prints out an important formatted message in console
+    /** Works just like the 'printf' command.
+        \return always 'true'
+    **/
+    static bool PrintHigh(const char* format, ...);
+
+    //! QString version of ccLog::PrintHigh
+    static bool PrintHigh(const QString& message);
 
     //! Same as Print, but works only in debug mode
     /** Works just like the 'printf' command.

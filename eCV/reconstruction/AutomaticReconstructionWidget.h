@@ -7,14 +7,14 @@
 
 #pragma once
 
-#include "OptionsWidget.h"
 #include "controllers/AutomaticReconstructionController.h"
+#include "ui/options_widget.h"
 
 namespace cloudViewer {
 class ReconstructionWidget;
 class ThreadControlWidget;
 
-class AutomaticReconstructionWidget : public OptionsWidget {
+class AutomaticReconstructionWidget : public colmap::OptionsWidget {
 public:
     AutomaticReconstructionWidget(ReconstructionWidget* main_window);
 

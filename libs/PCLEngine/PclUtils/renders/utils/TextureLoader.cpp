@@ -10,9 +10,8 @@
 #include <CVLog.h>
 #include <CVTools.h>
 #include <FileSystem.h>
+#include <Utils/sm2cc.h>
 #include <ecvMaterial.h>
-
-#include "sm2cc.h"
 
 // Qt
 #include <QImage>

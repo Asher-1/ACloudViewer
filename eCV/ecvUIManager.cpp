@@ -255,7 +255,11 @@ void QUIWidget::setTranslator(const QString &qmFile) {
 }
 
 void QUIWidget::setCode() {
-#if (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    // Qt6: QTextCodec is removed, UTF-8 is used by default
+    // No need to set codec in Qt6
+    Q_UNUSED(0);  // Suppress unused variable warning
+#elif (QT_VERSION <= QT_VERSION_CHECK(5, 0, 0))
 #if _MSC_VER
     QTextCodec *codec = QTextCodec::codecForName("gbk");
 #else
@@ -518,7 +522,7 @@ QString QUIWidget::byteArrayToAsciiStr(const QByteArray &data) {
     int len = data.size();
 
     for (int i = 0; i < len; i++) {
-        // 0x20为空格,空格以下都是不可见字符
+        // 0x20 is space, characters below space are invisible
         char b = data.at(i);
 
         if (0x00 == b) {
@@ -914,11 +918,11 @@ QByteArray QUIWidget::asciiStrToByteArray(const QString &str) {
                     continue;
                 }
             } else if (letter == "\\") {
-                // 如果连着的是多个\\则对应添加\对应的16进制0x5C
+                // If there are multiple consecutive \\, add the corresponding hex 0x5C for \
                 buffer.append(0x5C);
                 continue;
             } else {
-                // 将对应的\[前面的\\也要加入
+                // Also add the \\ before the corresponding \[
                 buffer.append(0x5C);
                 buffer.append(letter.toLatin1());
                 continue;
@@ -943,11 +947,13 @@ QString QUIWidget::byteArrayToHexStr(const QByteArray &data) {
 }
 
 QString QUIWidget::getFileName(const QString &filter, QString defaultDir) {
-    return QFileDialog::getOpenFileName(0, "选择文件", defaultDir, filter);
+    return QFileDialog::getOpenFileName(0, QStringLiteral("Select File"),
+                                        defaultDir, filter);
 }
 
 QStringList QUIWidget::getFileNames(const QString &filter, QString defaultDir) {
-    return QFileDialog::getOpenFileNames(0, "选择文件", defaultDir, filter);
+    return QFileDialog::getOpenFileNames(0, QStringLiteral("Select File"),
+                                         defaultDir, filter);
 }
 
 QString QUIWidget::getFolderName() {
@@ -988,7 +994,7 @@ bool QUIWidget::fileIsExist(const QString &strFile) {
 bool QUIWidget::copyFile(const QString &sourceFile, const QString &targetFile) {
     bool ok;
     ok = QFile::copy(sourceFile, targetFile);
-    // 将复制过去的文件只读属性取消
+    // Remove read-only attribute from the copied file
     ok = QFile::setPermissions(targetFile, QFile::WriteOwner);
     return ok;
 }
@@ -1018,7 +1024,7 @@ void QUIWidget::deleteDirectory(const QString &path) {
 //     QTcpSocket tcpClient;
 //     tcpClient.abort();
 //     tcpClient.connectToHost(ip, port);
-//     //超时没有连接上则判断不在线
+//     // If connection timeout, consider it offline
 //     return tcpClient.waitForConnected(timeout);
 // }
 //
@@ -1069,7 +1075,7 @@ void QUIWidget::deleteDirectory(const QString &path) {
 //
 // bool QUIWidget::isWebOk()
 //{
-//     //能接通百度IP说明可以通外网
+//     // If Baidu IP is reachable, it means internet access is available
 //     return ipLive("115.239.211.112", 80);
 // }
 
@@ -1264,7 +1270,7 @@ void QUIWidget::initControl() {
 }
 
 void QUIWidget::initForm() {
-    // 设置图形字体
+    // Set icon font
     setIcon(QUIWidget::Lab_Ico, QUIConfig::IconMain, 11);
     setIcon(QUIWidget::BtnMenu, QUIConfig::IconMenu);
     setIcon(QUIWidget::BtnMenu_Min, QUIConfig::IconMin);
@@ -1279,7 +1285,7 @@ void QUIWidget::initForm() {
     this->setWindowFlags((Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
                           Qt::WindowMinMaxButtonsHint));
 
-    // 设置标题及对齐方式
+    // Set title and alignment
     title = "QUI Demo";
     alignment = Qt::AlignLeft | Qt::AlignVCenter;
     minHide = false;
@@ -1287,25 +1293,19 @@ void QUIWidget::initForm() {
 
     setVisible(QUIWidget::BtnMenu, false);
 
-    // 绑定事件过滤器监听鼠标移动
+    // Install event filter to monitor mouse movement
     this->installEventFilter(this);
     this->widgetTitle->installEventFilter(this);
 
-    // 添加换肤菜单
+    // Add theme menu
     QStringList name;
-    name << "银色"
-         << "蓝色"
-         << "浅蓝色"
-         << "深蓝色"
-         << "灰色"
-         << "浅灰色"
-         << "深灰色"
-         << "黑色"
-         << "浅黑色"
-         << "深黑色"
-         << "PS黑色"
-         << "黑色扁平"
-         << "白色扁平";
+    name << QStringLiteral("Silvery") << QStringLiteral("Blue")
+         << QStringLiteral("Light Blue") << QStringLiteral("Dark Blue")
+         << QStringLiteral("Gray") << QStringLiteral("Light Gray")
+         << QStringLiteral("Dark Gray") << QStringLiteral("Black")
+         << QStringLiteral("Light Black") << QStringLiteral("Dark Black")
+         << QStringLiteral("PS Black") << QStringLiteral("Flat Black")
+         << QStringLiteral("Flat White");
 
     foreach (QString str, name) {
         QAction *action = new QAction(str, this);
@@ -1318,44 +1318,46 @@ void QUIWidget::createTrayMenu() {
     restoreWinAction = new QAction(tr("restore(&R)"), this);
     quitAction = new QAction(tr("exit(&Q)"), this);
 
-    // 恢复窗口
+    // Restore window
     connect(restoreWinAction, SIGNAL(triggered(bool)), this,
             SLOT(showWindow()));
 
-    // 退出程序
+    // Quit application
     connect(quitAction, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
 
-    // 添加菜单
+    // Add menu
     // Qt5/Qt6 Compatibility: QDesktopWidget removed in Qt6
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     trayMenu = new QMenu(nullptr);
 #else
     trayMenu = new QMenu((QWidget *)QApplication::desktop());
 #endif
-    trayMenu->addAction(restoreWinAction);  // 将控件绑定到菜单
+    trayMenu->addAction(restoreWinAction);  // Bind control to menu
 
-    // 添加分隔符
+    // Add separator
     trayMenu->addSeparator();
     trayMenu->addAction(quitAction);
 
-    // 判断系统是否支持托盘图标显示
+    // Check if system supports system tray icon
     if (!QSystemTrayIcon::isSystemTrayAvailable()) {
         return;
     }
 
-    // 实例化托盘图标控件
+    // Instantiate system tray icon control
     m_systemTray = new QSystemTrayIcon(this);
-    m_systemTray->setIcon(QIcon(Settings::APP_LOGO));  // 设置托盘图标显示
-    m_systemTray->setToolTip(Settings::TITLE);         // 显示提示信息
-    m_systemTray->showMessage("托盘", "托盘管理", QSystemTrayIcon::Information,
-                              10000);
-    m_systemTray->setContextMenu(trayMenu);  // 绑定托盘菜单
-    m_systemTray->show();                    // 在任务栏显示图标
+    m_systemTray->setIcon(QIcon(Settings::APP_LOGO));  // Set system tray icon
+    m_systemTray->setToolTip(Settings::TITLE);         // Show tooltip
+    m_systemTray->showMessage(QStringLiteral("Tray"),
+                              QStringLiteral("Tray Management"),
+                              QSystemTrayIcon::Information, 10000);
+    m_systemTray->setContextMenu(trayMenu);  // Bind tray menu
+    m_systemTray->show();                    // Show icon in taskbar
 
     connect(m_systemTray, &QSystemTrayIcon::activated, this,
-            &QUIWidget::activeTray);  // 点击托盘，执行相应的动作
+            &QUIWidget::activeTray);  // Click tray to execute corresponding
+                                      // action
     connect(m_systemTray, &QSystemTrayIcon::messageClicked, this,
-            &QUIWidget::showWindow);  // 点击消息框，显示主窗口
+            &QUIWidget::showWindow);  // Click message box to show main window
 }
 
 void QUIWidget::activeTray(QSystemTrayIcon::ActivationReason reason) {
@@ -1368,10 +1370,11 @@ void QUIWidget::activeTray(QSystemTrayIcon::ActivationReason reason) {
             break;
         case QSystemTrayIcon::Trigger:
             m_systemTray->showMessage(
-                    "Information",              // 消息窗口标题
-                    "There is a new message!",  // 消息内容
-                    QSystemTrayIcon::MessageIcon::Information,  // 消息窗口图标
-                    5000);  // 消息窗口显示时长
+                    "Information",              // Message window title
+                    "There is a new message!",  // Message content
+                    QSystemTrayIcon::MessageIcon::Information,  // Message
+                                                                // window icon
+                    5000);  // Message window display duration
             break;
     }
 }
@@ -1381,43 +1384,43 @@ void QUIWidget::changeStyle() {
     QString name = act->text();
     QString qssFile = ":/qss/blue.css";
 
-    if (name == "银色") {
+    if (name == QStringLiteral("Silvery")) {
         qssFile = ":/qss/silvery.css";
         setStyle(QUIWidget::Style_Silvery);
-    } else if (name == "蓝色") {
+    } else if (name == QStringLiteral("Blue")) {
         qssFile = ":/qss/blue.css";
         setStyle(QUIWidget::Style_Blue);
-    } else if (name == "浅蓝色") {
+    } else if (name == QStringLiteral("Light Blue")) {
         qssFile = ":/qss/lightblue.css";
         setStyle(QUIWidget::Style_LightBlue);
-    } else if (name == "深蓝色") {
+    } else if (name == QStringLiteral("Dark Blue")) {
         qssFile = ":/qss/darkblue.css";
         setStyle(QUIWidget::Style_DarkBlue);
-    } else if (name == "灰色") {
+    } else if (name == QStringLiteral("Gray")) {
         qssFile = ":/qss/gray.css";
         setStyle(QUIWidget::Style_Gray);
-    } else if (name == "浅灰色") {
+    } else if (name == QStringLiteral("Light Gray")) {
         qssFile = ":/qss/lightgray.css";
         setStyle(QUIWidget::Style_LightGray);
-    } else if (name == "深灰色") {
+    } else if (name == QStringLiteral("Dark Gray")) {
         qssFile = ":/qss/darkgray.css";
         setStyle(QUIWidget::Style_DarkGray);
-    } else if (name == "黑色") {
+    } else if (name == QStringLiteral("Black")) {
         qssFile = ":/qss/black.css";
         setStyle(QUIWidget::Style_Black);
-    } else if (name == "浅黑色") {
+    } else if (name == QStringLiteral("Light Black")) {
         qssFile = ":/qss/lightblack.css";
         setStyle(QUIWidget::Style_LightBlack);
-    } else if (name == "深黑色") {
+    } else if (name == QStringLiteral("Dark Black")) {
         qssFile = ":/qss/darkblack.css";
         setStyle(QUIWidget::Style_DarkBlack);
-    } else if (name == "PS黑色") {
+    } else if (name == QStringLiteral("PS Black")) {
         qssFile = ":/qss/psblack.css";
         setStyle(QUIWidget::Style_PSBlack);
-    } else if (name == "黑色扁平") {
+    } else if (name == QStringLiteral("Flat Black")) {
         qssFile = ":/qss/flatblack.css";
         setStyle(QUIWidget::Style_FlatBlack);
-    } else if (name == "白色扁平") {
+    } else if (name == QStringLiteral("Flat White")) {
         qssFile = ":/qss/flatwhite.css";
         setStyle(QUIWidget::Style_FlatWhite);
     }
@@ -1466,7 +1469,7 @@ void QUIWidget::setPixmap(QUIWidget::Widget widget,
                           const QString &file,
                           const QSize &size) {
     QPixmap pix = QPixmap(file);
-    // 按照宽高比自动缩放
+    // Auto-scale according to aspect ratio
     pix = pix.scaled(size, Qt::KeepAspectRatio);
 
     if (widget == QUIWidget::Lab_Ico) {
@@ -1536,11 +1539,11 @@ void QUIWidget::setMinHide(bool minHide) {
 }
 
 void QUIWidget::setMainWidget(MainWindow *mainWidget) {
-    // 一个QUI窗体对象只能设置一个主窗体
+    // A QUI widget object can only set one main widget
     if (this->mainWidget == 0) {
-        // 将子窗体添加到布局
+        // Add child widget to layout
         this->widget->layout()->addWidget(mainWidget);
-        // 自动设置大小
+        // Auto-set size
         resize(mainWidget->width(),
                mainWidget->height() + this->widgetTitle->height());
 
@@ -1873,8 +1876,8 @@ void QUIMessageBox::initControl() {
     widgetMain->raise();
     frame->raise();
 
-    this->btnOk->setText("确定");
-    this->btnCancel->setText("取消");
+    this->btnOk->setText(QStringLiteral("OK"));
+    this->btnCancel->setText(QStringLiteral("Cancel"));
 
     connect(this->btnOk, SIGNAL(clicked()), this, SLOT(on_btnOk_clicked()));
     connect(this->btnMenu_Close, SIGNAL(clicked(bool)), this,
@@ -1946,16 +1949,16 @@ void QUIMessageBox::setMessage(const QString &msg, int type, int closeSec) {
         this->labIcoMain->setStyleSheet(
                 "border-image: url(:/image/msg_info.png);");
         this->btnCancel->setVisible(false);
-        this->labTitle->setText("提示");
+        this->labTitle->setText(QStringLiteral("Information"));
     } else if (type == 1) {
         this->labIcoMain->setStyleSheet(
                 "border-image: url(:/image/msg_question.png);");
-        this->labTitle->setText("询问");
+        this->labTitle->setText(QStringLiteral("Question"));
     } else if (type == 2) {
         this->labIcoMain->setStyleSheet(
                 "border-image: url(:/image/msg_error.png);");
         this->btnCancel->setVisible(false);
-        this->labTitle->setText("错误");
+        this->labTitle->setText(QStringLiteral("Error"));
     }
 
     this->labInfo->setText(msg);
@@ -2159,9 +2162,9 @@ void QUIInputBox::initControl() {
     setTabOrder(txtValue, btnOk);
     setTabOrder(btnOk, btnCancel);
 
-    this->labTitle->setText("输入框");
-    this->btnOk->setText("确定");
-    this->btnCancel->setText("取消");
+    this->labTitle->setText(QStringLiteral("Input Box"));
+    this->btnOk->setText(QStringLiteral("OK"));
+    this->btnCancel->setText(QStringLiteral("Cancel"));
 
     connect(this->btnOk, SIGNAL(clicked()), this, SLOT(on_btnOk_clicked()));
     connect(this->btnMenu_Close, SIGNAL(clicked(bool)), this,
@@ -2489,7 +2492,8 @@ void IconHelper::setStyle(QWidget *widget,
     widget->setStyleSheet(qss.join(""));
 
     for (int i = 0; i < btnCount; i++) {
-        // 存储对应按钮对象,方便鼠标移上去的时候切换图片
+        // Store corresponding button object for easy image switching on mouse
+        // hover
         QPixmap pixNormal = getPixmap(normalTextColor, QChar(pixChar.at(i)),
                                       iconSize, iconWidth, iconHeight);
         QPixmap pixDark = getPixmap(darkTextColor, QChar(pixChar.at(i)),
@@ -2534,7 +2538,8 @@ void IconHelper::setStyle(QFrame *frame,
     frame->setStyleSheet(qss.join(""));
 
     for (int i = 0; i < btnCount; i++) {
-        // 存储对应按钮对象,方便鼠标移上去的时候切换图片
+        // Store corresponding button object for easy image switching on mouse
+        // hover
         QPixmap pixNormal = getPixmap(normalTextColor, QChar(pixChar.at(i)),
                                       iconSize, iconWidth, iconHeight);
         QPixmap pixDark = getPixmap(darkTextColor, QChar(pixChar.at(i)),
@@ -2620,7 +2625,8 @@ void QUIConfig::NewConfig() {
 }
 
 bool QUIConfig::CheckConfig() {
-    // 如果配置文件大小为0,则以初始值继续运行,并生成配置文件
+    // If config file size is 0, continue with initial values and generate
+    // config file
     QFile file(QUIConfig::ConfigFile);
 
     if (file.size() == 0) {
@@ -2628,7 +2634,8 @@ bool QUIConfig::CheckConfig() {
         return false;
     }
 
-    // 如果配置文件不完整,则以初始值继续运行,并生成配置文件
+    // If config file is incomplete, continue with initial values and generate
+    // config file
     if (file.open(QFile::ReadOnly)) {
         bool ok = true;
 

@@ -1,0 +1,128 @@
+name: Documentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release documentation'
+        required: false
+        default: 'ON'
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # For uploading artifacts and releases
+      pages: write     # For deploying to GitHub Pages
+      id-token: write  # For GitHub Pages deployment
+    env:
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+    
+    steps:
+      - name: Checkout ACloudViewer source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper git operations
+      
+      - name: Maximize build space
+        run: |
+          echo "🧹 Cleaning up disk space..."
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build documentation Docker image
+        run: |
+          echo "🐳 Building documentation Docker image..."
+          docker build \
+            --build-arg BASE_IMAGE=ubuntu:22.04 \
+            --build-arg DEVELOPER_BUILD=${DEVELOPER_BUILD} \
+            -t acloudviewer-ci:docs \
+            -f docker/Dockerfile.docs \
+            .
+      
+      - name: Extract documentation from Docker
+        run: |
+          echo "📦 Extracting documentation..."
+          docker run \
+            -v "${GITHUB_WORKSPACE}:/opt/mount" \
+            --rm acloudviewer-ci:docs \
+            bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/ \
+                  && chown $(id -u):$(id -g) /opt/mount/acloudviewer-*-docs.tar.gz"
+          
+          # Rename to use GitHub SHA
+          mv acloudviewer-*-docs.tar.gz acloudviewer-${GITHUB_SHA}-docs.tar.gz
+          
+          # Extract for GitHub Pages deployment
+          mkdir -p docs-output
+          tar -xzf acloudviewer-${GITHUB_SHA}-docs.tar.gz -C docs-output/
+          
+          echo "✅ Documentation extracted"
+          ls -lh acloudviewer-${GITHUB_SHA}-docs.tar.gz
+          ls -la docs-output/
+      
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: acloudviewer-${{ github.sha }}-docs
+          path: acloudviewer-${{ github.sha }}-docs.tar.gz
+          if-no-files-found: error
+          compression-level: 0  # Already compressed
+      
+      - name: Update main-devel release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "📤 Uploading to main-devel release..."
+          gh release upload main-devel \
+            acloudviewer-${{ github.sha }}-docs.tar.gz \
+            --clobber
+          gh release view main-devel
+      
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs-output
+          destination_dir: docs/html
+          keep_files: true  # Keep existing files (downloads_data.json, etc.)
+          commit_message: "docs: deploy documentation from ${{ github.sha }}"
+      
+      - name: Comment on PR with documentation preview
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const artifactName = 'acloudviewer-${{ github.sha }}-docs';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `📚 **Documentation Preview**\n\n` +
+                    `Documentation has been built successfully!\n\n` +
+                    `- **Artifact**: \`${artifactName}\`\n` +
+                    `- **Download**: Available in workflow run artifacts\n` +
+                    `- **Size**: ${fs.statSync('acloudviewer-${{ github.sha }}-docs.tar.gz').size / 1024 / 1024} MB\n\n` +
+                    `After merge, documentation will be automatically deployed to:\n` +
+                    `https://asher-1.github.io/ACloudViewer/docs/html/`
+            });
+

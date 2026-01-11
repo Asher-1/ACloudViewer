@@ -14,6 +14,7 @@
 #include <QIntValidator>
 
 // common
+#include <QtCompat.h>
 #include <ecvPickingHub.h>
 
 // ECV_DB_LIB
@@ -4018,14 +4019,14 @@ void ccCompass::exportToSVG() {
         // write svg header
         svg_stream << QString::asprintf("<svg width=\"%d\" height=\"%d\">",
                                         width, height)
-                   << endl;
+                   << QtCompat::endl;
 
         // write the image
         svg_stream << QString::asprintf(
                               "<image height = \"%d\" width = \"%d\" "
                               "xlink:href = \"data:image/png;base64,",
                               height, width)
-                   << ba.toBase64() << "\"/>" << endl;
+                   << ba.toBase64() << "\"/>" << QtCompat::endl;
 
         // recursively write traces
         int count = writeTracesSVG(m_app->dbRootObject(), &svg_stream, height,
@@ -4034,7 +4035,7 @@ void ccCompass::exportToSVG() {
         // TODO: write scale bar
 
         // write end tag for svg file
-        svg_stream << "</svg>" << endl;
+        svg_stream << "</svg>" << QtCompat::endl;
 
         // close file
         svg_stream.flush();
@@ -4100,7 +4101,7 @@ int ccCompass::writeTracesSVG(ccHObject* object,
         }
 
         // end polyline
-        *out << "\"/>" << endl;
+        *out << "\"/>" << QtCompat::endl;
 
         n++;  // a polyline has been written
     }
@@ -4175,14 +4176,14 @@ void ccCompass::onSave() {
         // write headers
         plane_stream << "Name,Strike,Dip,Dip_Dir,Cx,Cy,Cz,Nx,Ny,Nz,Sample_"
                         "Radius,RMS,Gx,Gy,Gz,Length"
-                     << endl;
+                     << QtCompat::endl;
         trace_stream << "Name,Trace_id,Point_id,Start_x,Start_y,Start_z,End_x,"
                         "End_y,End_z,Cost,Cost_Mode"
-                     << endl;
+                     << QtCompat::endl;
         lineation_stream << "Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge,Length"
-                         << endl;
+                         << QtCompat::endl;
         thickness_stream << "Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge,Thickness"
-                         << endl;
+                         << QtCompat::endl;
 
         // write data for all objects in the db tree (n.b. we loop through the
         // dbRoots children rathern than just passing db_root so the naming is
@@ -4315,7 +4316,7 @@ int ccCompass::writePlanes(ccHObject* object,
         }
 
         // write length of trace associated with this plane
-        *out << std::max(P->getXWidth(), P->getYWidth()) << endl;
+        *out << std::max(P->getXWidth(), P->getYWidth()) << QtCompat::endl;
         n++;
     } else if (object->isKindOf(
                        CV_TYPES::PLANE))  // not one of our planes, but a plane
@@ -4349,9 +4350,9 @@ int ccCompass::writePlanes(ccHObject* object,
         // write global position
         if (ss != nullptr) {
             CCVector3d G = ss->toGlobal3d(L);
-            *out << G.x << "," << G.y << "," << G.z << endl;
+            *out << G.x << "," << G.y << "," << G.z << QtCompat::endl;
         } else {
-            *out << endl;
+            *out << QtCompat::endl;
         }
 
         n++;
@@ -4415,7 +4416,7 @@ int ccCompass::writeTraces(ccHObject* object,
                 *out << p->toGlobal3d(end).y << ",";
                 *out << p->toGlobal3d(end).z << ",";
                 *out << cost << ",";
-                *out << ccTrace::COST_MODE << endl;
+                *out << ccTrace::COST_MODE << QtCompat::endl;
             }
         }
         n++;
@@ -4459,7 +4460,7 @@ int ccCompass::writeLineations(ccHObject* object,
              << object->getMetaData("Ez").toString() << ",";
         *out << object->getMetaData("Trend").toString() << ","
              << object->getMetaData("Plunge").toString() << ","
-             << object->getMetaData("Length").toString() << endl;
+             << object->getMetaData("Length").toString() << QtCompat::endl;
         n++;
     }
 

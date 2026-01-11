@@ -18,7 +18,6 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QSettings>
-#include <QTextStream>
 #include <QtGui>
 
 // ECV_DB_LIB

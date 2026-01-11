@@ -241,7 +241,9 @@ void ecvSettingManager::Init(const QString& fileName) {
     s_manager.instance->m_iniFile = QSharedPointer<QSettings>(
             new QSettings(configPath, QSettings::IniFormat));
     // s_manager.instance->m_iniFile->setIniCodec(QTextCodec::codecForName("System"));
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     s_manager.instance->m_iniFile->setIniCodec("utf8");  // set coding
+#endif
     QFile file(configPath);
     if (false == file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         s_manager.instance->m_iniFile->beginGroup("section");
@@ -253,7 +255,9 @@ void ecvSettingManager::Init(const QString& fileName) {
     QSettings::setDefaultFormat(QSettings::NativeFormat);
     s_manager.instance->m_iniFile = QSharedPointer<QSettings>(new QSettings());
     // s_manager.instance->m_iniFile->setIniCodec(QTextCodec::codecForName("System"));
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     s_manager.instance->m_iniFile->setIniCodec("utf8");  // set coding
+#endif
 #endif
 }
 
@@ -390,6 +394,7 @@ QString ecvSettingManager::applicationName() const {
     return s_manager.instance->m_iniFile->applicationName();
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 void ecvSettingManager::setIniCodec(QTextCodec* codec) {
     s_manager.instance->m_iniFile->setIniCodec(codec);
 }
@@ -401,3 +406,4 @@ void ecvSettingManager::setIniCodec(const char* codecName) {
 QTextCodec* ecvSettingManager::iniCoxdec() const {
     return s_manager.instance->m_iniFile->iniCodec();
 }
+#endif

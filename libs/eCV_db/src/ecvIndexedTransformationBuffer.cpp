@@ -169,8 +169,15 @@ bool ccIndexedTransformationBuffer::getInterpolatedTransformation(
     return true;
 }
 
-bool ccIndexedTransformationBuffer::toFile_MeOnly(QFile& out) const {
-    if (!ccHObject::toFile_MeOnly(out)) return false;
+bool ccIndexedTransformationBuffer::toFile_MeOnly(QFile& out,
+                                                  short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 34) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccHObject::toFile_MeOnly(out, dataVersion)) return false;
 
     // vector size (dataVersion>=34)
     uint32_t count = static_cast<uint32_t>(size());
@@ -179,7 +186,7 @@ bool ccIndexedTransformationBuffer::toFile_MeOnly(QFile& out) const {
     // transformations (dataVersion>=34)
     for (ccIndexedTransformationBuffer::const_iterator it = begin();
          it != end(); ++it)
-        if (!it->toFile(out)) return false;
+        if (!it->toFile(out, dataVersion)) return false;
 
     // display options
     {
@@ -195,6 +202,17 @@ bool ccIndexedTransformationBuffer::toFile_MeOnly(QFile& out) const {
     }
 
     return true;
+}
+
+short ccIndexedTransformationBuffer::minimumFileVersion_MeOnly() const {
+    short minVersion = std::max(static_cast<short>(34),
+                                ccHObject::minimumFileVersion_MeOnly());
+    if (!empty()) {
+        minVersion = std::max(
+                minVersion, front().minimumFileVersion());  // we assume they
+                                                            // are all the same
+    }
+    return minVersion;
 }
 
 bool ccIndexedTransformationBuffer::fromFile_MeOnly(

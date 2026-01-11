@@ -43,6 +43,9 @@ if (USE_PCL_BACKEND)
     # Utility module
     file(GLOB_RECURSE VtkExtensions_Utility_List ${QVTK_EXTENSIONS}/Utility/*)
     source_group("VTKExtensions\\Utility" FILES ${VtkExtensions_Utility_List})
+    # ConstrainedWidgets module
+    file(GLOB_RECURSE VtkExtensions_ConstrainedWidgets_List ${QVTK_EXTENSIONS}/ConstrainedWidgets/*)
+    source_group("VTKExtensions\\ConstrainedWidgets" FILES ${VtkExtensions_ConstrainedWidgets_List})
 
     set(VtkExtensions_list
             ${VtkExtensions_Core_List}
@@ -53,6 +56,7 @@ if (USE_PCL_BACKEND)
             ${VtkExtensions_InteractionStyle_List}
             ${VtkExtensions_Views_List}
             ${VtkExtensions_Utility_List}
+            ${VtkExtensions_ConstrainedWidgets_List}
             )
 
     # VTK UTILS MODULE
@@ -66,16 +70,34 @@ if (USE_PCL_BACKEND)
     source_group("Tools" FILES ${Basic_list})
     file(GLOB_RECURSE AnnotationTools_list ${QPCL_TOOLS}/AnnotationTools/*)
     source_group("Tools\\AnnotationTools" FILES ${AnnotationTools_list})
+    file(GLOB_RECURSE CameraTools_list ${QPCL_TOOLS}/CameraTools/*)
+    source_group("Tools\\CameraTools" FILES ${CameraTools_list})
+    file(GLOB_RECURSE ColorTools_list ${QPCL_TOOLS}/ColorTools/*)
+    source_group("Tools\\ColorTools" FILES ${ColorTools_list})
+    file(GLOB_RECURSE Common_list ${QPCL_TOOLS}/Common/*)
+    source_group("Tools\\Common" FILES ${Common_list})
     file(GLOB_RECURSE FilterTools_list ${QPCL_TOOLS}/FilterTools/*)
     source_group("Tools\\FilterTools" FILES ${FilterTools_list})
+    file(GLOB_RECURSE MeasurementTools_list ${QPCL_TOOLS}/MeasurementTools/*)
+    source_group("Tools\\MeasurementTools" FILES ${MeasurementTools_list})
+    file(GLOB_RECURSE PickingTools_list ${QPCL_TOOLS}/PickingTools/*)
+    source_group("Tools\\PickingTools" FILES ${PickingTools_list})
     file(GLOB_RECURSE TransformTools_list ${QPCL_TOOLS}/TransformTools/*)
     source_group("Tools\\TransformTools" FILES ${TransformTools_list})
+    file(GLOB_RECURSE SelectionTools_list ${QPCL_TOOLS}/SelectionTools/*)
+    source_group("Tools\\SelectionTools" FILES ${SelectionTools_list})
 
     set(Tools_list
             ${Basic_list}
             ${AnnotationTools_list}
+            ${CameraTools_list}
+            ${ColorTools_list}
+            ${Common_list}
             ${FilterTools_list}
-            ${TransformTools_list})
+            ${MeasurementTools_list}
+            ${PickingTools_list}
+            ${TransformTools_list}
+            ${SelectionTools_list})
 
     # PCL VISUALIZATION MODULE
     if (WIN32 OR UNIX)
@@ -85,23 +107,15 @@ if (USE_PCL_BACKEND)
         source_group("visualization" FILES ${PclVis_list})
     endif ()
 
-    # PCL UTILS MODULE
+    # UTILS MODULE (Core conversion utilities)
+    SET(QPCL_CORE_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/Utils)
+    file(GLOB_RECURSE Utils_list ${QPCL_CORE_UTILS}/*)
+    source_group("Utils" FILES ${Utils_list})
+
+    # PCL UTILS MODULE (Legacy utilities)
     SET(QPCL_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/PclUtils)
     file(GLOB_RECURSE PclUtils_list ${QPCL_UTILS}/*)
     source_group("PclUtils" FILES ${PclUtils_list})
-
-    # VTK WIDGETS MODULE
-    SET(QVTK_WIDGETS ${CMAKE_CURRENT_SOURCE_DIR}/VtkWidgets)
-    # filter module
-    file(GLOB_RECURSE VtkWidgets_filters_list ${QVTK_WIDGETS}/filters/*)
-    source_group("VtkWidgets\\filters" FILES ${VtkWidgets_filters_list})
-
-    # smallWidgets module
-    file(GLOB_RECURSE VtkWidgets_smallWidgets_list ${QVTK_WIDGETS}/smallWidgets/*)
-    source_group("VtkWidgets\\smallWidgets" FILES ${VtkWidgets_smallWidgets_list})
-
-    set(Widget_list ${VtkWidgets_filters_list}
-            ${VtkWidgets_smallWidgets_list})
 
     add_library(${PROJECT_NAME} SHARED
             ${header_list}
@@ -110,8 +124,17 @@ if (USE_PCL_BACKEND)
             ${VtkExtensions_list}
             ${Tools_list}
             ${PclVis_list}
-            ${PclUtils_list}
-            ${Widget_list})
+            ${Utils_list}
+            ${PclUtils_list})
+
+    # Enable AUTOMOC and AUTOUIC for this target as we now use QObject based classes
+    set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON AUTOUIC ON)
+
+    # Enable automatic symbol export on Windows to avoid MOC issues with export macros
+    if (WIN32)
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    endif ()
 
     if (MSVC)
         # fix compiling error on windows platform for deprecated flag in pcl
@@ -119,7 +142,10 @@ if (USE_PCL_BACKEND)
     endif ()
 
     target_include_directories(${PROJECT_NAME} PUBLIC
-            ${PCL_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/PclUtils")
+            ${PCL_INCLUDE_DIRS}
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/Utils"
+            "${CMAKE_CURRENT_SOURCE_DIR}/PclUtils")
 
     if (CMAKE_VERSION VERSION_LESS 3.13)
         link_directories(${PCL_LIBRARY_DIRS})

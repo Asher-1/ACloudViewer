@@ -36,6 +36,7 @@ struct dbTreeSelectionInfo {
     size_t groupCount;
     size_t polylineCount;
     size_t planeCount;
+    size_t circleCount;
     size_t meshCount;
     size_t imageCount;
     size_t sensorCount;
@@ -87,6 +88,11 @@ public:
     void hidePropertiesView();
     //! Updates properties view
     void updatePropertiesView();
+
+    //! Get properties tree delegate
+    ccPropertiesTreeDelegate* getPropertiesDelegate() {
+        return m_ccPropDelegate;
+    }
 
     //! Adds an element to the DB tree
     void addElement(ccHObject* object, bool autoExpand = true);
@@ -213,6 +219,7 @@ protected slots:
     void sortChildrenZA();
     void sortChildrenType();
     void selectByTypeAndName();
+    void exportImages();
 
     inline void toggleSelectedEntities() {
         toggleSelectedEntitiesProperty(TG_ENABLE);
@@ -300,6 +307,8 @@ protected:
     QAction* m_sortChildrenType;
     //! Context menu action: select object by type and/or by name
     QAction* m_selectByTypeAndName;
+    //! Context menu action: export images
+    QAction* m_exportImages;
     //! Context menu action: delete selected entities
     QAction* m_deleteSelectedEntities;
     //! Context menu action: enabled/disable selected entities

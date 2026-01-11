@@ -7,9 +7,10 @@
 
 #include "PoissonReconstruction.h"
 
+#include <Utils/cc2sm.h>
+#include <Utils/sm2cc.h>
+
 #include "PclUtils/PCLModules.h"
-#include "PclUtils/cc2sm.h"
-#include "PclUtils/sm2cc.h"
 #include "dialogs/PoissonReconstructionDlg.h"
 
 // ECV_DB_LIB

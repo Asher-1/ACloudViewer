@@ -155,17 +155,23 @@ void PythonHighlighter::highlightPythonBlock(const QString &text)
     // Do other syntax formatting
     for (const auto &rule : m_highlightingRules)
     {
-        index = rule.pattern.indexIn(text, 0);
+        // Use QtCompatRegExpWrapper for unified QRegExp-like API (works in both Qt5 and Qt6)
+        QtCompatRegExpWrapper wrapper(rule.pattern);
+        index = wrapper.indexIn(text, 0);
 
         // We actually want the index of the nth match
         while (index >= 0)
         {
-            index = rule.pattern.pos(rule.matchIndex);
-            int length = rule.pattern.cap(rule.matchIndex).length();
+            index = wrapper.pos(rule.matchIndex);
+            int length = wrapper.cap(rule.matchIndex).length();
             if (length > 0)
             {
                 setFormat(index, length, rule.format);
-                index = rule.pattern.indexIn(text, index + length);
+                index = wrapper.indexIn(text, index + length);
+            }
+            else
+            {
+                index = -1;
             }
         }
     }
@@ -188,6 +194,9 @@ bool PythonHighlighter::matchMultiLine(const QString &text, const HighlightingRu
 {
     int start, add, end, length;
 
+    // Use QtCompatRegExpWrapper for unified QRegExp-like API (works in both Qt5 and Qt6)
+    QtCompatRegExpWrapper wrapper(rule.pattern);
+
     // If inside triple-single quotes, start at 0
     if (previousBlockState() == rule.matchIndex)
     {
@@ -197,20 +206,20 @@ bool PythonHighlighter::matchMultiLine(const QString &text, const HighlightingRu
     // Otherwise, look for the delimiter on this line
     else
     {
-        start = rule.pattern.indexIn(text);
+        start = wrapper.indexIn(text);
         // Move past this match
-        add = rule.pattern.matchedLength();
+        add = wrapper.matchedLength();
     }
 
     // As long as there's a delimiter match on this line...
     while (start >= 0)
     {
         // Look for the ending delimiter
-        end = rule.pattern.indexIn(text, start + add);
+        end = wrapper.indexIn(text, start + add);
         // Ending delimiter on this line?
         if (end >= add)
         {
-            length = end - start + add + rule.pattern.matchedLength();
+            length = end - start + add + wrapper.matchedLength();
             setCurrentBlockState(0);
         }
         // No; multi-line string
@@ -224,7 +233,7 @@ bool PythonHighlighter::matchMultiLine(const QString &text, const HighlightingRu
         setFormat(start, length, rule.format);
 
         // Look for the next match
-        start = rule.pattern.indexIn(text, start + length);
+        start = wrapper.indexIn(text, start + length);
     }
 
     // Return True if still inside a multi-line string, False otherwise

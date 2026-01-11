@@ -122,9 +122,6 @@ ccBBox cc2Point5DimEditor::getCustomBBox() const {
 void cc2Point5DimEditor::update2DDisplayZoom(ccBBox& box) {
     if (!ecvDisplayTools::GetMainWindow() || !m_grid.isValid()) return;
 
-    // equivalent to 'ccGLWindow::updateConstellationCenterAndZoom' but we take
-    // aspect ratio into account
-
     // we compute the pixel size (in world coordinates)
     {
         ecvViewportParameters params = ecvDisplayTools::GetViewportParameters();

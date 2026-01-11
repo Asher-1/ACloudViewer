@@ -20,7 +20,9 @@
 
 // QT
 #include <QDir>
-#include <QTextStream>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 
 ccCameraSensor::IntrinsicParameters::IntrinsicParameters()
     : vertFocal_pix(1.0f),
@@ -416,11 +418,17 @@ void ccCameraSensor::computeProjectionMatrix() {
     m_projectionMatrixIsValid = true;
 }
 
-bool ccCameraSensor::toFile_MeOnly(QFile& out) const {
-    if (!ccSensor::toFile_MeOnly(out)) return false;
+bool ccCameraSensor::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 38) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccSensor::toFile_MeOnly(out, dataVersion)) return false;
 
     // projection matrix (35 <= dataVersion < 38)
-    // if (!m_projectionMatrix.toFile(out))
+    // if (!m_projectionMatrix.toFile(out, dataVersion))
     //	return WriteError();
 
     /** various parameters (dataVersion>=35) **/
@@ -492,6 +500,12 @@ bool ccCameraSensor::toFile_MeOnly(QFile& out) const {
     outStream << m_frustumInfos.center.z;
 
     return true;
+}
+
+short ccCameraSensor::minimumFileVersion_MeOnly() const {
+    // Camera sensor with intrinsic/distortion params requires version 43+
+    return std::max(static_cast<short>(43),
+                    ccSensor::minimumFileVersion_MeOnly());
 }
 
 bool ccCameraSensor::fromFile_MeOnly(QFile& in,
@@ -2239,16 +2253,17 @@ bool ccCameraSensor::OrthoRectifyAsImages(
             QTextStream stream(&f);
             stream.setRealNumberNotation(QTextStream::FixedNotation);
             stream.setRealNumberPrecision(6);
-            stream << "PixelSize" << ' ' << pixelSize << endl;
+            stream << "PixelSize" << ' ' << pixelSize << QtCompat::endl;
             stream << "Global3DBBox" << ' ' << globalCorners[0] << ' '
                    << globalCorners[1] << ' ' << globalCorners[2] << ' '
-                   << globalCorners[3] << endl;
+                   << globalCorners[3] << QtCompat::endl;
             int globalWidth = static_cast<int>(
                     ceil((globalCorners[2] - globalCorners[0]) / pixelSize));
             int globalHeight = static_cast<int>(
                     ceil((globalCorners[3] - globalCorners[1]) / pixelSize));
             stream << "Global2DBBox" << ' ' << 0 << ' ' << 0 << ' '
-                   << globalWidth - 1 << ' ' << globalHeight - 1 << endl;
+                   << globalWidth - 1 << ' ' << globalHeight - 1
+                   << QtCompat::endl;
         }
     }
 
@@ -2353,7 +2368,8 @@ bool ccCameraSensor::OrthoRectifyAsImages(
                        << ' ' << maxC[0] << ' ' << maxC[1] << ' ';
                 stream << "Local2DBBox" << ' ' << xShiftGlobal << ' '
                        << yShiftGlobal << ' ' << xShiftGlobal + (double)(w - 1)
-                       << ' ' << yShiftGlobal + (double)(h - 1) << endl;
+                       << ' ' << yShiftGlobal + (double)(h - 1)
+                       << QtCompat::endl;
                 f.close();
             }
         }

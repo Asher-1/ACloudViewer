@@ -794,7 +794,10 @@ void ColorPickerPopup::regenerateGrid() {
     // one.
     if (grid) delete grid;
     grid = new QGridLayout(this);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     grid->setMargin(1);
+#endif
+    grid->setContentsMargins(1, 1, 1, 1);
     grid->setSpacing(0);
 
     int ccol = 0, crow = 0;

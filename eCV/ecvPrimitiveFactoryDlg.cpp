@@ -21,6 +21,7 @@
 #include <ecvCone.h>
 #include <ecvCoordinateSystem.h>
 #include <ecvCylinder.h>
+#include <ecvDisc.h>
 #include <ecvDish.h>
 #include <ecvDisplayTools.h>
 #include <ecvGenericPrimitive.h>
@@ -150,6 +151,11 @@ void ecvPrimitiveFactoryDlg::createPrimitive() {
             }
             primitive = new ccCoordinateSystem(&mat);
 
+        } break;
+        // Disc
+        case 8: {
+            primitive = new ccDisc(static_cast<PointCoordinateType>(
+                    discRadiusDoubleSpinBox->value()));
         } break;
     }
 

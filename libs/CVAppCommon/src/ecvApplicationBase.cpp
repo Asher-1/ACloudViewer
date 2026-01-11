@@ -6,9 +6,14 @@
 // ----------------------------------------------------------------------------
 
 #include <QDir>
+#include <QFile>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QString>
+#include <QStyle>
+#include <QStyleFactory>
 #include <QSurfaceFormat>
+#include <QTextStream>
 #include <QTranslator>
 #include <QtGlobal>
 
@@ -20,8 +25,13 @@
 
 // Common
 #include "ecvApplicationBase.h"
+#include "ecvPersistentSettings.h"
 #include "ecvPluginManager.h"
+#include "ecvSettingManager.h"
 #include "ecvTranslationManager.h"
+
+// CV_CORE_LIB
+#include <CVLog.h>
 
 #if (QT_VERSION < QT_VERSION_CHECK(5, 5, 0))
 #error ACloudViewer does not support versions of Qt prior to 5.5
@@ -55,7 +65,10 @@ void ecvApplicationBase::InitOpenGL() {
 //         ////enables automatic scaling based on the monitor's pixel density
 //         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 // #endif
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)) && \
+        (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+        // These attributes are deprecated in Qt6 (high DPI is enabled by
+        // default)
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
         QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
@@ -96,6 +109,60 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
     // See https://doc.qt.io/qt-5/qcoreapplication.html#locale-settings
     setlocale(LC_NUMERIC, "C");
 #endif
+
+    // Restore the style from persistent settings
+    // (matching CloudCompare's approach - using QSettings directly)
+    // Note: We use Qt API directly here instead of setAppStyle() because
+    // CVLog and ecvSettingManager are not yet initialized in the constructor
+    QSettings settings;
+    settings.beginGroup(ecvPS::AppStyle());
+    {
+        QString styleKey = settings.value("style", QString()).toString();
+        
+        // Apply platform-appropriate default if no saved style
+        if (styleKey.isEmpty())
+        {
+#ifdef Q_OS_MAC
+            // macOS: Use Fusion for consistent button borders (ParaView approach)
+            styleKey = "Fusion";
+#endif
+        }
+        
+        // Apply the style using Qt API directly (safe in constructor)
+        if (!styleKey.isEmpty())
+        {
+            if (styleKey == "QDarkStyleSheet::Dark")
+            {
+                QFile f(":/qdarkstyle/dark/darkstyle.qss");
+                if (f.open(QFile::ReadOnly | QFile::Text))
+                {
+                    QTextStream ts(&f);
+                    setStyleSheet(ts.readAll());
+                    f.close();
+                }
+            }
+            else if (styleKey == "QDarkStyleSheet::Light")
+            {
+                QFile f(":/qdarkstyle/light/lightstyle.qss");
+                if (f.open(QFile::ReadOnly | QFile::Text))
+                {
+                    QTextStream ts(&f);
+                    setStyleSheet(ts.readAll());
+                    f.close();
+                }
+            }
+            else
+            {
+                // Qt native style
+                QStyle* style = QStyleFactory::create(styleKey);
+                if (style)
+                {
+                    setStyle(style);
+                }
+            }
+        }
+    }
+    settings.endGroup();
 
     ccPluginManager::get().setPaths(m_PluginPaths);
 
@@ -231,4 +298,65 @@ void ecvApplicationBase::setupPaths() {
             m_PluginPaths << path;
         }
     }
+}
+
+bool ecvApplicationBase::setAppStyle(const QString& styleKey)
+{
+    // Helper lambda to load stylesheet from resources
+    const auto loadStyleSheet = [this](const QString& resourcePath) -> bool
+    {
+        QFile f(resourcePath);
+        if (!f.exists())
+        {
+            return false;
+        }
+        
+        if (!f.open(QFile::ReadOnly | QFile::Text))
+        {
+            return false;
+        }
+        
+        QTextStream ts(&f);
+        setStyleSheet(ts.readAll());
+        f.close();
+        return true;
+    };
+
+    // Handle custom stylesheets
+    if (styleKey == "QDarkStyleSheet::Dark")
+    {
+        // Load dark stylesheet from resources
+        if (!loadStyleSheet(":/qdarkstyle/dark/darkstyle.qss"))
+        {
+            return false;
+        }
+    }
+    else if (styleKey == "QDarkStyleSheet::Light")
+    {
+        // Load light stylesheet from resources
+        if (!loadStyleSheet(":/qdarkstyle/light/lightstyle.qss"))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        // Use Qt native styles (Fusion, Windows, macOS, etc.)
+        QStyle* style = QStyleFactory::create(styleKey);
+        if (!style)
+        {
+            CVLog::Warning(QStringLiteral("Invalid style key or style couldn't be created: %1").arg(styleKey));
+            return false;
+        }
+
+        // Clear any existing stylesheet
+        setStyleSheet(QString());
+        CVLog::Print(QStringLiteral("Applying application style: %1").arg(styleKey));
+        setStyle(style);
+    }
+
+    // Save to persistent settings (must be after successful style application)
+    ecvSettingManager::setValue(ecvPS::AppStyle(), "style", styleKey);
+
+    return true;
 }

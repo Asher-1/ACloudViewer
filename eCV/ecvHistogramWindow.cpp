@@ -19,11 +19,12 @@
 #include <ImageFileFilter.h>
 
 // Qt
+#include <QtCompat.h>
+
 #include <QCloseEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QSettings>
-#include <QTextStream>
 
 // System
 #include <assert.h>
@@ -824,12 +825,12 @@ void ccHistogramWindow::wheelEvent(QWheelEvent* e) {
         return;
     }
 
-    if (e->delta() < 0) {
+    if (qtCompatWheelEventDelta(e) < 0) {
         if (m_histoValues.size() > 4) {
             setNumberOfClasses(std::max<size_t>(4, m_histoValues.size() - 4));
             refresh();
         }
-    } else  // if (e->delta() > 0)
+    } else  // if (qtCompatWheelEventDelta(e) > 0)
     {
         setNumberOfClasses(m_histoValues.size() + 4);
         refresh();
@@ -883,7 +884,7 @@ bool ccHistogramWindowDlg::exportToCSV(QString filename) const {
     stream.setRealNumberNotation(QTextStream::FixedNotation);
 
     // header
-    stream << "Class; Value; Class start; Class end;" << endl;
+    stream << "Class; Value; Class start; Class end;" << QtCompat::endl;
 
     // data
     {
@@ -900,7 +901,7 @@ bool ccHistogramWindowDlg::exportToCSV(QString filename) const {
             stream << s_csvSep;
             stream << minVal + step;  // max value
             stream << s_csvSep;
-            stream << endl;
+            stream << QtCompat::endl;
         }
     }
 

@@ -1,0 +1,12 @@
+name: qt_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - ninja
+  - eigen=3.4.*
+  - boost=1.88.*
+  - qt6-main>=6.4.*
+  - zlib=1.3.*
+  - ffmpeg=7.1.*
+  - laszip

@@ -631,7 +631,7 @@ public:
     neighbours found
     **/
     int findNeighborsInASphereStartingFromCell(
-            NearestNeighboursSphericalSearchStruct& nNSS,
+            NearestNeighboursSearchStruct& nNSS,
             double radius,
             bool sortValues = true) const;
 

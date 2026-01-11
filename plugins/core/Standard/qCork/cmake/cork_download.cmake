@@ -174,7 +174,7 @@ echo \"Cork build completed successfully\"
     
     ExternalProject_Add(ext_cork
         PREFIX cork
-        GIT_REPOSITORY https://github.com/cloudcompare/cork.git
+        GIT_REPOSITORY https://github.com/Asher-1/cork.git
         GIT_TAG master
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/cork"
         UPDATE_COMMAND ""

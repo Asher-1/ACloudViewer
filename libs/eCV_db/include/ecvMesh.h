@@ -80,6 +80,15 @@ public:
                       NormsIndexesTableType* clonedNormsTable = nullptr,
                       TextureCoordsContainer* cloneTexCoords = nullptr);
 
+    //! Creates a new mesh from a selection of triangles (partial clone)
+    /** Similar to ccPointCloud::partialClone but for meshes.
+        \param triangleIndices Indices of triangles to include in the partial
+    clone \param warnings [optional] to store warnings \return a partial clone
+    of this mesh (or nullptr if an error occurred)
+    **/
+    ccMesh* partialClone(const std::vector<unsigned>& triangleIndices,
+                         int* warnings = nullptr) const;
+
     static inline cloudViewer::VerticesIndexes GetOrderedTriangle(int vidx0,
                                                                   int vidx1,
                                                                   int vidx2) {
@@ -1418,7 +1427,8 @@ protected:
 protected:
     // inherited from ccHObject
     void drawMeOnly(CC_DRAW_CONTEXT& context) override;
-    bool toFile_MeOnly(QFile& out) const override;
+    bool toFile_MeOnly(QFile& out, short dataVersion) const override;
+    short minimumFileVersion_MeOnly() const override;
     bool fromFile_MeOnly(QFile& in,
                          short dataVersion,
                          int flags,

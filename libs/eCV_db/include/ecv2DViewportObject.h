@@ -33,11 +33,12 @@ public:
 
 protected:
     // inherited from ccHObject
-    virtual bool toFile_MeOnly(QFile& out) const override;
-    virtual bool fromFile_MeOnly(QFile& in,
-                                 short dataVersion,
-                                 int flags,
-                                 LoadedIDMap& oldToNewIDMap) override;
+    bool toFile_MeOnly(QFile& out, short dataVersion) const override;
+    short minimumFileVersion_MeOnly() const override;
+    bool fromFile_MeOnly(QFile& in,
+                         short dataVersion,
+                         int flags,
+                         LoadedIDMap& oldToNewIDMap) override;
 
     //! Viewport parameters
     ecvViewportParameters m_params;

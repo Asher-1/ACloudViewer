@@ -304,7 +304,11 @@ bool MultiTextureRenderer::Apply(vtkLODActor* actor,
             // Use global texture index (tex_id) to find corresponding TCoords
             // array This matches the naming convention in
             // ApplyTexturesFromMaterialSet
-            ss << "TCoords" << tex_id;
+            if (last_tex_id == 1) {
+                ss << "TCoords";
+            } else {
+                ss << "TCoords" << tex_id;
+            }
             std::string coords_name = ss.str();
 
             // Check if the texture coordinates array exists

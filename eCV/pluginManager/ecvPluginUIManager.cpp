@@ -244,6 +244,14 @@ QAction *ccPluginUIManager::actionShowPCLAlgorithmToolbar() {
     return m_showPCLAlgorithmToolbar;
 }
 
+bool ccPluginUIManager::isPythonPluginToolbar(QToolBar *toolbar) {
+    if (!toolbar) {
+        return false;
+    }
+    // Python plugin name is "Python Plugin" (from info.json)
+    return toolbar->objectName() == "Python Plugin";
+}
+
 void ccPluginUIManager::updateMenus() {
     QWidget *active3DView = m_appInterface->getActiveWindow();
     const bool hasActiveView = (active3DView != nullptr);

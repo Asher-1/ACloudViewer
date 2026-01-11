@@ -66,8 +66,6 @@ public:
     // present only)
     //	**/
     // DGM: too dangerous, we can't change this behavior on the fly
-    // void setPickingMode(ccGLWindow::PICKING_MODE mode, bool
-    // autoEnableOnActivatedWindow = true);
 
     //! Manual start / stop of the picking mode on the active window
     void togglePickingMode(bool state);

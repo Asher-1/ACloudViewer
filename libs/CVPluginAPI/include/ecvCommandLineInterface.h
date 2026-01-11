@@ -18,6 +18,7 @@
 // Qt
 #include <QSharedPointer>
 #include <QString>
+#include <QStringList>
 
 // System
 #include <vector>
@@ -26,7 +27,6 @@ class ccGenericMesh;
 class ecvProgressDialog;
 
 class QDialog;
-class QStringList;
 
 enum class CL_ENTITY_TYPE { GROUP, CLOUD, MESH };
 

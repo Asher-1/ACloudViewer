@@ -203,7 +203,6 @@ bool ecvAnimationParamDlg::start() {
 }
 
 void ecvAnimationParamDlg::linkWith(QMdiSubWindow* qWin) {
-    // corresponding ccGLWindow
     QWidget* associatedWin =
             (qWin ? static_cast<QWidget*>(qWin->widget()) : nullptr);
 

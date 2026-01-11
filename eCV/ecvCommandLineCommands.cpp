@@ -2316,8 +2316,8 @@ bool CommandComputeMeshVolume::process(ccCommandLineInterface& cmd) {
         cmd.print(volumeStr);
 
         if (outFile.isOpen()) {
-            outStream << titleStr << endl;
-            outStream << volumeStr << endl;
+            outStream << titleStr << QtCompat::endl;
+            outStream << volumeStr << QtCompat::endl;
         }
     }
 
@@ -2787,8 +2787,9 @@ bool CommandMatchBestFitPlane::process(ccCommandLineInterface& cmd) {
             QTextStream txtStream(&txtFile);
 
             txtStream << QObject::tr("Filename: %1").arg(outputFilename)
-                      << endl;
-            txtStream << QObject::tr("Fitting RMS: %1").arg(rms) << endl;
+                      << QtCompat::endl;
+            txtStream << QObject::tr("Fitting RMS: %1").arg(rms)
+                      << QtCompat::endl;
 
             // We always consider the normal with a positive 'Z' by default!
             if (N.z < 0.0) {
@@ -2800,7 +2801,7 @@ bool CommandMatchBestFitPlane::process(ccCommandLineInterface& cmd) {
                                  .arg(N.x, 0, 'f', precision)
                                  .arg(N.y, 0, 'f', precision)
                                  .arg(N.z, 0, 'f', precision)
-                      << endl;
+                      << QtCompat::endl;
 
             // we compute strike & dip by the way
             {
@@ -2809,7 +2810,7 @@ bool CommandMatchBestFitPlane::process(ccCommandLineInterface& cmd) {
                 ccNormalVectors::ConvertNormalToDipAndDipDir(N, dip, dipDir);
                 txtStream << ccNormalVectors::ConvertDipAndDipDirToString(
                                      dip, dipDir)
-                          << endl;
+                          << QtCompat::endl;
             }
 
             // compute the transformation matrix that would make this normal
@@ -2820,8 +2821,9 @@ bool CommandMatchBestFitPlane::process(ccCommandLineInterface& cmd) {
             makeZPosMatrix.applyRotation(Gt);
             makeZPosMatrix.setTranslation(C - Gt);
 
-            txtStream << "Orientation matrix:" << endl;
-            txtStream << makeZPosMatrix.toString(precision, ' ') << endl;
+            txtStream << "Orientation matrix:" << QtCompat::endl;
+            txtStream << makeZPosMatrix.toString(precision, ' ')
+                      << QtCompat::endl;
 
             // close the text file
             txtFile.close();
@@ -4916,7 +4918,7 @@ bool CommandICP::process(ccCommandLineInterface& cmd) {
             txtFile.open(QIODevice::WriteOnly | QIODevice::Text);
             QTextStream txtStream(&txtFile);
             txtStream << transMat.toString(cmd.numericalPrecision(), ' ')
-                      << endl;
+                      << QtCompat::endl;
             txtFile.close();
         }
 

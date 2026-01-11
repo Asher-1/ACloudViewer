@@ -50,6 +50,18 @@ public:
 
     const QString &translationPath() const;
 
+    /**
+     * @brief Set the application style
+     * @param styleKey Style name (from QStyleFactory::keys() or custom like "QDarkStyleSheet::Dark")
+     * @return true if successful, false otherwise
+     * 
+     * Supported style keys:
+     * - Any Qt native style (e.g., "Fusion", "Windows", "macOS")
+     * - "QDarkStyleSheet::Dark" - Dark theme (if available)
+     * - "QDarkStyleSheet::Light" - Light theme (if available)
+     */
+    bool setAppStyle(const QString& styleKey);
+
 private:
     void setupPaths();
 

@@ -91,8 +91,8 @@ struct CV_CORE_LIB_API hash_enum_class {
     template <typename T>
     std::size_t operator()(T t) const {
         return static_cast<std::size_t>(t);
-    }
-};
+    }  // namespace utility
+};  // namespace cloudViewer
 
 // Format string by replacing embedded format specifiers with their respective
 // values, see `printf` for more details. This is a modified implementation

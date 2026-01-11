@@ -8,8 +8,9 @@
 #pragma once
 
 // LOCAL
-#include "../../qPCL.h"
-#include "PclUtils/PCLCloud.h"
+#include <Utils/PCLCloud.h>
+
+#include "qPCL.h"
 
 // ECV_DB_LIB
 #include <ecvGenericFiltersTool.h>

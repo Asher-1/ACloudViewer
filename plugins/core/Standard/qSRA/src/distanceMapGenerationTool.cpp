@@ -23,7 +23,8 @@
 // Qt
 #include <QFile>
 #include <QMainWindow>
-#include <QTextStream>
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 
 // Meta-data key for profile (polyline) origin
 const char PROFILE_ORIGIN_KEY[] = "ProfileOrigin";
@@ -1294,7 +1295,7 @@ bool DistanceMapGenerationTool::SaveMapAsCSVMatrix(
         }
 
         // eol
-        stream << QString("\n");
+        stream << QtCompat::endl;
     }
 
     // for each line

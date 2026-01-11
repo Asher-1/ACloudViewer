@@ -54,7 +54,8 @@ void define_ccMaterial(py::module &m)
         .def("releaseTexture", &ccMaterial::releaseTexture)
         .def("compare", &ccMaterial::compare, py::arg("mtl"))
         .def("isSerializable", &ccMaterial::isSerializable)
-        .def("toFile", &ccMaterial::toFile)
+        .def("toFile", &ccMaterial::toFile, py::arg("out"), py::arg("dataVersion"))
+        .def("minimumFileVersion", &ccMaterial::minimumFileVersion)
         .def("fromFile", &ccMaterial::fromFile)
         .def("getUniqueIdentifier", &ccMaterial::getUniqueIdentifier);
 

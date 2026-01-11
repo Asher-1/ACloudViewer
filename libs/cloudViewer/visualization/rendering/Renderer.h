@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <functional>
+#include <memory>
+
 #include "visualization/rendering/MaterialModifier.h"
 #include "visualization/rendering/RendererHandle.h"
 

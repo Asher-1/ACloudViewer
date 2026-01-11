@@ -4,7 +4,7 @@
 
 This library provides data structures and algorithms for working with 3D point cloud data.
 
-It was originally part of the [ACloudViewer repository](https://asher-1.github.io) (as "CVLib").
+It was originally part of the [ACloudViewer repository](https://asher-1.github.io/ACloudViewer/) (as "CVLib").
 
 We have separated it into its own repository because it is useful on its own without having to download the entire ACloudViewer repository. This makes it easier to work with and gives this part of the ACloudViewer project some visibility it would not otherwise have.
 

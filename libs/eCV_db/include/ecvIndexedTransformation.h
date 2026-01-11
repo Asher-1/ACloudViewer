@@ -84,12 +84,13 @@ public:
     virtual bool fromAsciiFile(QString filename);
 
     // inherited from ccSerializableObject
-    virtual bool isSerializable() const { return true; }
-    virtual bool toFile(QFile& out) const;
-    virtual bool fromFile(QFile& in,
-                          short dataVersion,
-                          int flags,
-                          LoadedIDMap& oldToNewIDMap);
+    bool isSerializable() const override { return true; }
+    bool toFile(QFile& out, short dataVersion) const override;
+    short minimumFileVersion() const override;
+    bool fromFile(QFile& in,
+                  short dataVersion,
+                  int flags,
+                  LoadedIDMap& oldToNewIDMap) override;
 
 protected:
     //! Associated index (e.g. timestamp)

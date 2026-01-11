@@ -907,8 +907,14 @@ bool ccGBLSensor::applyViewport() {
     return true;
 }
 
-bool ccGBLSensor::toFile_MeOnly(QFile& out) const {
-    if (!ccSensor::toFile_MeOnly(out)) return false;
+bool ccGBLSensor::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 38) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccSensor::toFile_MeOnly(out, dataVersion)) return false;
 
     // rotation order (dataVersion>=34)
     uint32_t rotOrder = m_rotationOrder;
@@ -931,6 +937,12 @@ bool ccGBLSensor::toFile_MeOnly(QFile& out) const {
     outStream << m_yawAnglesAreShifted;
 
     return true;
+}
+
+short ccGBLSensor::minimumFileVersion_MeOnly() const {
+    // GBL sensor requires version 38+
+    return std::max(static_cast<short>(38),
+                    ccSensor::minimumFileVersion_MeOnly());
 }
 
 bool ccGBLSensor::fromFile_MeOnly(QFile& in,

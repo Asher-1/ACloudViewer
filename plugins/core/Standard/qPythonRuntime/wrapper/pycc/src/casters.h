@@ -231,8 +231,10 @@ template <> struct type_caster<QVariant>
         case QVariant::TextLength:
             Q_FALLTHROUGH();
         case QVariant::TextFormat:
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
             Q_FALLTHROUGH();
         case QVariant::Matrix:
+#endif
             Q_FALLTHROUGH();
         case QVariant::Transform:
             Q_FALLTHROUGH();

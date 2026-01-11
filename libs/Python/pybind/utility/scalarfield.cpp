@@ -255,14 +255,19 @@ void pybind_scalarfield(py::module& m) {
                  "Returns whether object is serializable of not.")
             .def(
                     "to_file",
-                    [](const ccScalarField& sf, const std::string& filename) {
+                    [](const ccScalarField& sf, const std::string& filename,
+                       short dataVersion) {
                         QFile out(filename.c_str());
                         if (!out.open(QIODevice::WriteOnly)) {
                             return false;
                         }
-                        return sf.toFile(out);
+                        return sf.toFile(out, dataVersion);
                     },
-                    "Saves data to binary stream", "filename"_a)
+                    "Saves data to binary stream", "filename"_a,
+                    "data_version"_a)
+            .def("minimum_file_version", &ccScalarField::minimumFileVersion,
+                 "Returns the minimum file version required to save this "
+                 "object")
             .def(
                     "from_file",
                     [](ccScalarField& sf, const std::string& filename,

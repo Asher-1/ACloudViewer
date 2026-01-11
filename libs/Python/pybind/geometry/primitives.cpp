@@ -13,6 +13,7 @@
 #include <ecvCone.h>
 #include <ecvCoordinateSystem.h>
 #include <ecvCylinder.h>
+#include <ecvDisc.h>
 #include <ecvDish.h>
 #include <ecvExtru.h>
 #include <ecvFacet.h>
@@ -866,6 +867,57 @@ void pybind_primitives(py::module& m) {
 
     docstring::ClassMethodDocInject(m, "ccExtru", "get_thickness");
     docstring::ClassMethodDocInject(m, "ccExtru", "get_profile");
+
+    // cloudViewer.geometry.ccDisc
+    py::class_<ccDisc, PyGenericPrimitive<ccDisc>, std::shared_ptr<ccDisc>,
+               ccGenericPrimitive>
+            pydisc(m, "ccDisc", "The 3D disc primitive.");
+    py::detail::bind_default_constructor<ccDisc>(pydisc);
+    py::detail::bind_copy_functions<ccDisc>(pydisc);
+    pydisc.def(py::init([](const std::string& name) {
+                   return new ccDisc(name.c_str());
+               }),
+               "Simplified constructor", "name"_a = "Disc")
+            .def(py::init([](PointCoordinateType radius,
+                             const Eigen::Matrix4d& trans_matrix,
+                             unsigned precision, const std::string& name) {
+                     const ccGLMatrix matrix =
+                             ccGLMatrix::FromEigenMatrix(trans_matrix);
+                     auto prim = new ccDisc(radius, &matrix, name.c_str(),
+                                            precision);
+                     prim->clearTriNormals();
+                     return prim;
+                 }),
+                 "Disc is defined in the XY plane by default: "
+                 "\n"
+                 "-param radius disc radius; "
+                 "\n"
+                 "-param trans_matrix optional 3D transformation (can be set "
+                 "afterwards with ccDrawableObject::setGLTransformation); "
+                 "\n"
+                 "-param precision drawing precision (angular step = "
+                 "360/precision); "
+                 "\n"
+                 "-param name name.",
+                 "radius"_a, "trans_matrix"_a = Eigen::Matrix4d::Identity(),
+                 "precision"_a = 72, "name"_a = "Disc")
+            .def("__repr__",
+                 [](const ccDisc& disc) {
+                     std::string info =
+                             fmt::format("ccDisc with faces {} and radius {}",
+                                         disc.size(), disc.getRadius());
+                     return info;
+                 })
+            .def("get_radius", &ccDisc::getRadius, "Returns disc radius.")
+            .def("set_radius", &ccDisc::setRadius, "Sets disc radius.",
+                 "radius"_a);
+
+    docstring::ClassMethodDocInject(m, "ccDisc", "get_radius");
+    docstring::ClassMethodDocInject(
+            m, "ccDisc", "set_radius",
+            {{"radius",
+              "disc radius, warning changes primitive content "
+              "(calls ccGenericPrimitive::updateRepresentation)."}});
 
     // cloudViewer.geometry.ccBox
     py::class_<ccCoordinateSystem, PyGenericPrimitive<ccCoordinateSystem>,

@@ -22,10 +22,6 @@
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#include <QTextCodec>
-#endif
-
 #include <CVLog.h>
 
 #include <ui_InstallDialog.h>
@@ -312,11 +308,7 @@ void PackageManager::refreshInstalledPackagesList()
     }
 
     const QString output =
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        QString::fromUtf8(m_pythonProcess->readAllStandardOutput());
-#else
-        QTextCodec::codecForName("utf-8")->toUnicode(m_pythonProcess->readAllStandardOutput());
-#endif
+        qtCompatCodecForName("utf-8")->toUnicode(m_pythonProcess->readAllStandardOutput());
 
     const auto lines = qtCompatSplitRefChar(output, '\n');
 
@@ -362,11 +354,7 @@ void PackageManager::refreshInstalledPackagesList()
     }
 
     const QString errorOutput =
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        QString::fromUtf8(m_pythonProcess->readAllStandardError());
-#else
-        QTextCodec::codecForName("utf-8")->toUnicode(m_pythonProcess->readAllStandardError());
-#endif
+        qtCompatCodecForName("utf-8")->toUnicode(m_pythonProcess->readAllStandardError());
 
     if (!errorOutput.isEmpty())
     {
@@ -488,11 +476,7 @@ void PackageManager::executeCommand(const QStringList &arguments)
         if (m_pythonProcess->waitForReadyRead())
         {
             const QString output =
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-                QString::fromUtf8(m_pythonProcess->readAll());
-#else
-                QTextCodec::codecForName("utf-8")->toUnicode(m_pythonProcess->readAll());
-#endif
+                qtCompatCodecForName("utf-8")->toUnicode(m_pythonProcess->readAll());
             m_outputDialog->appendPlainText(output);
             QApplication::processEvents();
         }

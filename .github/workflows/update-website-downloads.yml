@@ -1,0 +1,48 @@
+name: Update Website Download Links
+
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+  schedule:
+    # 每天UTC时间0点运行（北京时间早上8点）
+    - cron: '0 0 * * *'
+
+jobs:
+  update-downloads:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Scan releases and generate download data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 docs/automation/scripts/scan_releases.py
+          echo "✅ downloads_data.json generated successfully"
+          
+      - name: Verify downloads_data.json
+        run: |
+          if [ -f "docs/downloads_data.json" ]; then
+            echo "✅ downloads_data.json exists"
+            echo "File size: $(du -h docs/downloads_data.json | cut -f1)"
+            echo "Versions found: $(jq '.version_metadata | length' docs/downloads_data.json)"
+          else
+            echo "❌ downloads_data.json not found!"
+            exit 1
+          fi
+          
+      # Note: downloads_data.json is in .gitignore, so it won't be committed to git
+      # but it will be included in GitHub Pages deployment automatically
+

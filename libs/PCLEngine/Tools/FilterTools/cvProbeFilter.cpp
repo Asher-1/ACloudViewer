@@ -27,7 +27,7 @@
 #include <vtkSphereWidget.h>
 #include <vtkTransform.h>
 
-#include "Tools/qcustomplot.h"
+#include "Tools/Common/qcustomplot.h"
 #include "ui_cvGenericFilterDlg.h"
 #include "ui_cvProbeFilterDlg.h"
 

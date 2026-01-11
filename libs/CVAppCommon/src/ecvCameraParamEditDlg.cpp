@@ -252,7 +252,7 @@ bool ecvCameraParamEditDlg::start() {
 }
 
 void ecvCameraParamEditDlg::linkWith(QMdiSubWindow* qWin) {
-    // corresponding ccGLWindow
+    // corresponding MainWindow
     QWidget* associatedWin =
             (qWin ? static_cast<QWidget*>(qWin->widget()) : nullptr);
 
@@ -626,8 +626,8 @@ bool ecvCameraParamEditDlg::ConfigureCustomViewpoints(QWidget* parentWidget) {
     // user modifies the configuration
     QString currentConfig =
             ecvGenericCameraTool::CurrentCameraParam.toString().c_str();
-    ecvCustomViewpointButtonDlg dialog(parentWidget, nullptr, toolTips, configs,
-                                       currentConfig);
+    ecvCustomViewpointButtonDlg dialog(parentWidget, Qt::WindowFlags(),
+                                       toolTips, configs, currentConfig);
     if (dialog.exec() == QDialog::Accepted) {
         // save the new configuration into the app wide settings.
         configs = dialog.getConfigurations();

@@ -26,7 +26,11 @@ see quazip/(un)zip.h files for details. Basically it's the zlib license.
 
 static QFile::Permissions permissionsFromExternalAttr(quint32 externalAttr) {
     quint32 uPerm = (externalAttr & 0xFFFF0000u) >> 16;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QFile::Permissions perm{};
+#else
     QFile::Permissions perm = 0;
+#endif
     if ((uPerm & 0400) != 0) perm |= QFile::ReadOwner;
     if ((uPerm & 0200) != 0) perm |= QFile::WriteOwner;
     if ((uPerm & 0100) != 0) perm |= QFile::ExeOwner;

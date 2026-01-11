@@ -36,8 +36,9 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 #include <vtkSmartPointer.h>
 
 // QPCL_ENGINE_LIB
-#include "PclUtils/PCLCloud.h"
-#include "ScaleBar.h"
+#include <Utils/PCLCloud.h>
+
+#include "ScaleBarWidget.h"
 
 // SYSTEM
 #include <assert.h>
@@ -176,7 +177,7 @@ protected:
     /** \brief Internal pointer to widget which contains a set of axes */
     vtkSmartPointer<vtkOrientationMarkerWidget> m_axesWidget;
 
-    ScaleBar* m_scaleBar = nullptr;
+    ScaleBarWidget* m_scaleBar = nullptr;
 
     VtkWidgetPrivate* d_ptr;
 };

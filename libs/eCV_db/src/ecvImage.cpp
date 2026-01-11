@@ -140,8 +140,14 @@ void ccImage::onDeletionOf(const ccHObject* obj) {
     ccHObject::onDeletionOf(obj);
 }
 
-bool ccImage::toFile_MeOnly(QFile& out) const {
-    if (!ccHObject::toFile_MeOnly(out)) return false;
+bool ccImage::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 38) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccHObject::toFile_MeOnly(out, dataVersion)) return false;
 
     // we can't save the associated sensor here (as it may be shared by multiple
     // images) so instead we save it's unique ID (dataVersion>=38) WARNING: the
@@ -166,6 +172,11 @@ bool ccImage::toFile_MeOnly(QFile& out) const {
     outStream << fakeString;  // formerly: 'complete filename'
 
     return true;
+}
+
+short ccImage::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(38),
+                    ccHObject::minimumFileVersion_MeOnly());
 }
 
 bool ccImage::fromFile_MeOnly(QFile& in,

@@ -62,10 +62,14 @@ RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
     fi
 
 # Update apt and install libs needed by Qt
+# First install basic tools, then setup Kitware repo with proper key handling
 RUN apt-get clean && apt-get update --fix-missing -y \
-    && apt-get install apt-utils software-properties-common tzdata --fix-missing -y \
-    && apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc \
-    && apt-add-repository --yes "deb https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
+    && apt-get install -y apt-utils software-properties-common tzdata gnupg ca-certificates curl \
+    && mkdir -p /usr/share/keyrings \
+    && curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc \
+       | gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
+       | tee /etc/apt/sources.list.d/kitware.list >/dev/null \
     && apt-get update --fix-missing -y \
     && apt-get install --fix-missing -yq --no-install-recommends \
         build-essential \

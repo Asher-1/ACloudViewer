@@ -250,8 +250,14 @@ void ccGenericMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
     }
 }
 
-bool ccGenericMesh::toFile_MeOnly(QFile& out) const {
-    if (!ccHObject::toFile_MeOnly(out)) return false;
+bool ccGenericMesh::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 29) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccHObject::toFile_MeOnly(out, dataVersion)) return false;
 
     //'show wired' state (dataVersion>=20)
     if (out.write(reinterpret_cast<const char*>(&m_showWired), sizeof(bool)) <
@@ -278,6 +284,11 @@ bool ccGenericMesh::toFile_MeOnly(QFile& out) const {
         return WriteError();
 
     return true;
+}
+
+short ccGenericMesh::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(29),
+                    ccHObject::minimumFileVersion_MeOnly());
 }
 
 bool ccGenericMesh::fromFile_MeOnly(QFile& in,
