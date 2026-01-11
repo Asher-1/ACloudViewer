@@ -57,7 +57,7 @@ cvSelectionPipeline::cvSelectionPipeline(QObject* parent)
       m_cachingEnabled(true),
       m_cacheHits(0),
       m_cacheMisses(0) {
-    CVLog::PrintDebug("[cvSelectionPipeline] Created");
+    // CVLog::PrintDebug("[cvSelectionPipeline] Created");
 }
 
 //-----------------------------------------------------------------------------
@@ -98,14 +98,6 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executeRectangleSelection(
         emit errorOccurred("Invalid viewer or renderer");
         return nullptr;
     }
-
-    CVLog::Print(QString("[cvSelectionPipeline] Execute rectangle selection: "
-                         "[%1, %2, %3, %4], type=%5")
-                         .arg(region[0])
-                         .arg(region[1])
-                         .arg(region[2])
-                         .arg(region[3])
-                         .arg(type));
 
     // Check cache first
     if (m_cachingEnabled) {
@@ -163,11 +155,6 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
     // vertices NOTE: Don't divide by 2! The array is structured as 2-component
     // tuples.
     vtkIdType numPoints = polygon->GetNumberOfTuples();
-    CVLog::Print(QString("[cvSelectionPipeline] Execute polygon selection: %1 "
-                         "vertices, type=%2")
-                         .arg(numPoints)
-                         .arg(type));
-
     // Validate polygon
     if (numPoints < 3) {
         CVLog::Warning("[cvSelectionPipeline] Polygon needs at least 3 points");
@@ -199,13 +186,6 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
         return nullptr;
     }
 
-    CVLog::Print(QString("[cvSelectionPipeline] Polygon bounding box: [%1, %2, "
-                         "%3, %4]")
-                         .arg(minX)
-                         .arg(minY)
-                         .arg(maxX)
-                         .arg(maxY));
-
     // Step 2: Get render window
     vtkRenderWindow* renderWindow = m_viewer->getRenderWindow();
     if (!renderWindow) {
@@ -218,8 +198,6 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
     if (!m_hardwareSelector) {
         m_hardwareSelector = vtkSmartPointer<cvHardwareSelector>::New();
         m_hardwareSelector->SetPointPickingRadius(m_pointPickingRadius);
-        CVLog::Print(
-                "[cvSelectionPipeline] Created cvHardwareSelector for polygon");
     }
 
     m_hardwareSelector->SetRenderer(m_renderer);
@@ -289,11 +267,6 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
         }
     }
 
-    CVLog::Print(QString("[cvSelectionPipeline] Polygon selection completed "
-                         "(pixel-precise): %1 nodes, %2 total items")
-                         .arg(smartSelection->GetNumberOfNodes())
-                         .arg(totalItems));
-
     emit selectionCompleted(smartSelection);
     return smartSelection;
 }
@@ -321,7 +294,6 @@ vtkSmartPointer<vtkIdTypeArray> cvSelectionPipeline::extractSelectionIds(
     vtkIdTypeArray* selectionList =
             vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
     if (!selectionList) {
-        CVLog::PrintDebug("[cvSelectionPipeline] No selection list in node");
         return nullptr;
     }
 
@@ -350,7 +322,7 @@ void cvSelectionPipeline::clearCache() {
     // Smart pointers handle cleanup automatically
     m_selectionCache.clear();
 
-    CVLog::PrintDebug("[cvSelectionPipeline] Cache cleared");
+    // CVLog::PrintDebug("[cvSelectionPipeline] Cache cleared");
 }
 
 //-----------------------------------------------------------------------------
@@ -536,7 +508,7 @@ void cvSelectionPipeline::invalidateCachedSelection() {
     // Clear invalidating flag
     m_invalidating = false;
 
-    CVLog::PrintDebug("[cvSelectionPipeline] Invalidated cached selection");
+    // CVLog::PrintDebug("[cvSelectionPipeline] Invalidated cached selection");
 }
 
 //-----------------------------------------------------------------------------
@@ -703,10 +675,6 @@ void cvSelectionPipeline::cacheSelection(const QString& key,
     vtkSmartPointer<vtkSelection> copy = vtkSmartPointer<vtkSelection>::New();
     copy->DeepCopy(selection);
     m_selectionCache.insert(key, copy);
-
-    CVLog::Print(QString("[cvSelectionPipeline] Cached selection, size: %1/%2")
-                         .arg(m_selectionCache.size())
-                         .arg(MAX_CACHE_SIZE));
 }
 
 //-----------------------------------------------------------------------------
@@ -777,7 +745,7 @@ QMap<vtkProp*, vtkDataSet*> cvSelectionPipeline::extractDataFromSelection(
                 vtkDataSet* data = mapper->GetInput();
                 if (data) {
                     result[prop] = data;
-                    CVLog::Print(
+                    CVLog::PrintDebug(
                             QString("[cvSelectionPipeline] Extracted data from "
                                     "actor: %1 points, %2 cells, type=%3")
                                     .arg(data->GetNumberOfPoints())
@@ -791,10 +759,6 @@ QMap<vtkProp*, vtkDataSet*> cvSelectionPipeline::extractDataFromSelection(
                             .arg(prop ? prop->GetClassName() : "null"));
         }
     }
-
-    CVLog::Print(QString("[cvSelectionPipeline::extractDataFromSelection] "
-                         "Extracted %1 data objects")
-                         .arg(result.size()));
 
     return result;
 }
@@ -825,7 +789,7 @@ vtkDataSet* cvSelectionPipeline::getPrimaryDataFromSelection(
     }
 
     if (primaryData) {
-        CVLog::Print(
+        CVLog::PrintDebug(
                 QString("[cvSelectionPipeline::getPrimaryDataFromSelection] "
                         "Primary data: %1 points, %2 cells")
                         .arg(primaryData->GetNumberOfPoints())
@@ -881,14 +845,6 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
             }
         }
 
-        // Log the conversion attempt
-        CVLog::Print(QString("[cvSelectionPipeline] Actor conversion: "
-                             "prop=%1, data=%2, actor=%3, polyData=%4")
-                             .arg(prop ? "valid" : "null")
-                             .arg(data ? data->GetClassName() : "null")
-                             .arg(actor ? "valid" : "null")
-                             .arg(polyData ? "valid" : "null"));
-
         if (actor && polyData) {
             // Get Z-value from selection node if available
             // Z-value represents depth (closer to camera = smaller value)
@@ -920,11 +876,6 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
             info.polyData = polyData;
             info.zValue = zValue;
             result.addActorInfo(info);
-
-            CVLog::Print(QString("[cvSelectionPipeline] Added actor info: "
-                                 "%1 points, %2 cells")
-                                 .arg(polyData->GetNumberOfPoints())
-                                 .arg(polyData->GetNumberOfCells()));
         } else {
             CVLog::Warning(
                     QString("[cvSelectionPipeline] Failed to add actor info: "
@@ -934,10 +885,10 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
         }
     }
 
-    CVLog::Print(QString("[cvSelectionPipeline::convertToCvSelectionData] "
-                         "Created selection: %1 IDs, %2 actors")
-                         .arg(result.count())
-                         .arg(result.actorCount()));
+    CVLog::PrintDebug(QString("[cvSelectionPipeline::convertToCvSelectionData] "
+                              "Created selection: %1 IDs, %2 actors")
+                              .arg(result.count())
+                              .arg(result.actorCount()));
 
     return result;
 }
@@ -968,13 +919,6 @@ cvSelectionData cvSelectionPipeline::convertSelectionToData(
 //-----------------------------------------------------------------------------
 
 cvSelectionData cvSelectionPipeline::selectCellsOnSurface(const int region[4]) {
-    CVLog::Print(QString("[cvSelectionPipeline] selectCellsOnSurface: [%1, %2, "
-                         "%3, %4]")
-                         .arg(region[0])
-                         .arg(region[1])
-                         .arg(region[2])
-                         .arg(region[3]));
-
     vtkSmartPointer<vtkSelection> vtkSel =
             executeRectangleSelection(const_cast<int*>(region), SURFACE_CELLS);
 
@@ -985,13 +929,6 @@ cvSelectionData cvSelectionPipeline::selectCellsOnSurface(const int region[4]) {
 //-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPipeline::selectPointsOnSurface(
         const int region[4]) {
-    CVLog::Print(QString("[cvSelectionPipeline] selectPointsOnSurface: [%1, "
-                         "%2, %3, %4]")
-                         .arg(region[0])
-                         .arg(region[1])
-                         .arg(region[2])
-                         .arg(region[3]));
-
     vtkSmartPointer<vtkSelection> vtkSel =
             executeRectangleSelection(const_cast<int*>(region), SURFACE_POINTS);
 
@@ -1002,7 +939,7 @@ cvSelectionData cvSelectionPipeline::selectPointsOnSurface(
 //-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPipeline::selectCellsInPolygon(
         vtkIntArray* polygon) {
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionPipeline] selectCellsInPolygon: %1 vertices")
                     .arg(polygon ? polygon->GetNumberOfTuples() : 0));
 
@@ -1021,7 +958,7 @@ cvSelectionData cvSelectionPipeline::selectCellsInPolygon(
 //-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPipeline::selectPointsInPolygon(
         vtkIntArray* polygon) {
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionPipeline] selectPointsInPolygon: %1 vertices")
                     .arg(polygon ? polygon->GetNumberOfTuples() : 0));
 
@@ -1045,38 +982,34 @@ cvSelectionData cvSelectionPipeline::combineSelections(
         const cvSelectionData& sel1,
         const cvSelectionData& sel2,
         CombineOperation operation) {
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionPipeline] combineSelections: operation=%1")
                     .arg(operation));
 
     // Handle empty selections first (before field association check!)
-    // If sel1 is empty, use sel2's field association
-    // If sel2 is empty, use sel1's field association
-    if (sel1.isEmpty()) {
-        CVLog::Print("[cvSelectionPipeline] sel1 is empty, returning sel2");
-        return sel2;
-    }
+    // ParaView behavior (vtkSMSelectionHelper::CombineSelection line 156-159):
+    // - If sel1 is empty and deepCopy=false, return true (no-op, result is
+    // sel2)
+    // - If sel2 is empty, return false (cannot combine)
     if (sel2.isEmpty()) {
-        CVLog::Print("[cvSelectionPipeline] sel2 is empty, returning sel1");
-        return sel1;
+        return sel1;  // Return sel1 unchanged
+    }
+
+    if (sel1.isEmpty()) {
+        // ParaView: when first selection is empty, result is second selection
+        return sel2;
     }
 
     // Handle DEFAULT (replace with sel2) BEFORE checking field association
     // ParaView behavior: When switching selection types (e.g., cells to
     // points), the new selection should replace the old one, not fail
     if (operation == OPERATION_DEFAULT) {
-        CVLog::Print(
-                "[cvSelectionPipeline] OPERATION_DEFAULT: replacing with sel2");
         return sel2;
     }
 
     // Check compatibility (only when both are non-empty AND not replacing)
     // This is only for ADDITION/SUBTRACTION/TOGGLE operations
     if (sel1.fieldAssociation() != sel2.fieldAssociation()) {
-        CVLog::Warning(
-                "[cvSelectionPipeline] Cannot combine selections "
-                "with different field associations (operation=%1). "
-                "Replacing with new selection instead.");
         // ParaView behavior: When field associations differ and trying to
         // add/subtract, just use the new selection
         return sel2;
@@ -1104,16 +1037,17 @@ cvSelectionData cvSelectionPipeline::combineSelections(
         case OPERATION_ADDITION:
             // Union: sel1 | sel2
             resultSet = set1 + set2;
-            CVLog::Print(QString("[cvSelectionPipeline] ADDITION: %1 + %2 = %3")
-                                 .arg(set1.size())
-                                 .arg(set2.size())
-                                 .arg(resultSet.size()));
+            CVLog::PrintDebug(
+                    QString("[cvSelectionPipeline] ADDITION: %1 + %2 = %3")
+                            .arg(set1.size())
+                            .arg(set2.size())
+                            .arg(resultSet.size()));
             break;
 
         case OPERATION_SUBTRACTION:
             // Difference: sel1 & !sel2
             resultSet = set1 - set2;
-            CVLog::Print(
+            CVLog::PrintDebug(
                     QString("[cvSelectionPipeline] SUBTRACTION: %1 - %2 = %3")
                             .arg(set1.size())
                             .arg(set2.size())
@@ -1123,10 +1057,11 @@ cvSelectionData cvSelectionPipeline::combineSelections(
         case OPERATION_TOGGLE:
             // XOR: sel1 ^ sel2
             resultSet = (set1 - set2) + (set2 - set1);
-            CVLog::Print(QString("[cvSelectionPipeline] TOGGLE: %1 ^ %2 = %3")
-                                 .arg(set1.size())
-                                 .arg(set2.size())
-                                 .arg(resultSet.size()));
+            CVLog::PrintDebug(
+                    QString("[cvSelectionPipeline] TOGGLE: %1 ^ %2 = %3")
+                            .arg(set1.size())
+                            .arg(set2.size())
+                            .arg(resultSet.size()));
             break;
 
         default:
@@ -1174,7 +1109,7 @@ cvSelectionData cvSelectionPipeline::combineSelections(
         }
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionPipeline] combineSelections result: %1 IDs, "
                     "%2 actors")
                     .arg(result.count())

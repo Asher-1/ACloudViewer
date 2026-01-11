@@ -62,7 +62,7 @@ void PCLDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
         // CRITICAL: Disable multisampling for hardware selection to work
         // ParaView does this in vtkPVRenderView.cxx line 453
         // MultiSamples interferes with vtkHardwareSelector's pixel reading
-        renderWindow->SetMultiSamples(0);
+        // renderWindow->SetMultiSamples(0);
         renderWindow->AddRenderer(renderer);
         auto interactorStyle =
                 vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
@@ -168,6 +168,49 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
             for (unsigned i = 0; i < numSFs; ++i) {
                 m_visualizer3D->addScalarFieldToVTK(
                         viewID, ecvCloud, static_cast<int>(i), viewport);
+            }
+
+            // For point clouds without scalar fields, we still need to set
+            // DatasetName This ensures they appear in the Data Producer combo
+            // (ParaView style)
+            if (numSFs == 0) {
+                vtkActor* actor = m_visualizer3D->getActorById(viewID);
+                if (actor && actor->GetMapper()) {
+                    vtkPolyData* polyData = vtkPolyData::SafeDownCast(
+                            actor->GetMapper()->GetInput());
+                    if (polyData) {
+                        vtkFieldData* fieldData = polyData->GetFieldData();
+                        if (fieldData) {
+                            vtkStringArray* datasetNameArray =
+                                    vtkStringArray::SafeDownCast(
+                                            fieldData->GetAbstractArray(
+                                                    "DatasetName"));
+                            if (!datasetNameArray) {
+                                // DatasetName not yet added, create it
+                                QString cloudName = ecvCloud->getName();
+                                if (!cloudName.isEmpty()) {
+                                    vtkSmartPointer<vtkStringArray>
+                                            newDatasetNameArray =
+                                                    vtkSmartPointer<
+                                                            vtkStringArray>::
+                                                            New();
+                                    newDatasetNameArray->SetName("DatasetName");
+                                    newDatasetNameArray->SetNumberOfTuples(1);
+                                    newDatasetNameArray->SetValue(
+                                            0, cloudName.toStdString());
+                                    fieldData->AddArray(newDatasetNameArray);
+
+                                    CVLog::PrintDebug(
+                                            QString("[PCLDisplayTools] Added "
+                                                    "DatasetName for point "
+                                                    "cloud "
+                                                    "without SFs: '%1'")
+                                                    .arg(cloudName));
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         // Also ensure current SF is updated for tooltip display

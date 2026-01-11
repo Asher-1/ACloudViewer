@@ -110,7 +110,27 @@ void pybind_trianglemesh(py::module& m) {
                         return std::shared_ptr<ccMesh>(
                                 mesh.cloneMesh(cloud.get()));
                     },
-                    "Returns vertices number.", "cloud"_a = nullptr)
+                    "Returns a complete clone of the mesh.",
+                    "cloud"_a = nullptr)
+            .def(
+                    "partial_clone",
+                    [](const ccMesh& mesh,
+                       const std::vector<unsigned>& triangle_indices) {
+                        int warnings = 0;
+                        ccMesh* result =
+                                mesh.partialClone(triangle_indices, &warnings);
+                        if (warnings != 0) {
+                            cloudViewer::utility::LogWarning(
+                                    "partialClone completed with warnings: {}",
+                                    warnings);
+                        }
+                        return std::shared_ptr<ccMesh>(result);
+                    },
+                    "Creates a partial clone from selected triangles. "
+                    "Automatically handles vertex remapping, normals, "
+                    "materials, "
+                    "and texture coordinates.",
+                    "triangle_indices"_a)
             .def(
                     "merge",
                     [](ccMesh& mesh, const ccMesh& input_mesh,

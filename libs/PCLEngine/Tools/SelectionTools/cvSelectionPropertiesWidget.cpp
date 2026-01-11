@@ -10,14 +10,12 @@
 // LOCAL
 #include "PclUtils/PCLVis.h"
 #include "cvExpanderButton.h"
-#include "cvFilterConfigDialog.h"
 #include "cvMultiColumnHeaderView.h"
 #include "cvSelectionAlgebra.h"
 #include "cvSelectionAnnotation.h"
 #include "cvSelectionExporter.h"
-#include "cvSelectionHighlighter.h"  // Contains cvTooltipFormatter
+#include "cvSelectionHighlighter.h"
 #include "cvSelectionLabelPropertiesDialog.h"
-#include "cvSelectionStorage.h"  // Contains cvSelectionHistory and cvSelectionBookmarks
 #include "cvViewSelectionManager.h"
 
 // ECV_DB_LIB
@@ -121,6 +119,7 @@ cvSelectionPropertiesWidget::cvSelectionPropertiesWidget(QWidget* parent)
       m_selectionCount(0),
       m_volume(0.0),
       m_selectionNameCounter(0),
+      m_extractCounter(0),
       m_lastHighlightedId(-1),
       // Expander buttons and containers (ParaView-style collapsible sections)
       m_selectedDataExpander(nullptr),
@@ -146,8 +145,6 @@ cvSelectionPropertiesWidget::cvSelectionPropertiesWidget(QWidget* parent)
       m_attributeCombo(nullptr),
       m_operatorCombo(nullptr),
       m_valueEdit(nullptr),
-      m_addQueryButton(nullptr),
-      m_removeQueryButton(nullptr),
       m_processIdSpinBox(nullptr),
       m_findDataButton(nullptr),
       m_resetButton(nullptr),
@@ -160,12 +157,7 @@ cvSelectionPropertiesWidget::cvSelectionPropertiesWidget(QWidget* parent)
       m_algebraOpCombo(nullptr),
       m_applyAlgebraButton(nullptr),
       m_extractBoundaryButton(nullptr),
-      m_filterTypeCombo(nullptr),
-      m_applyFilterButton(nullptr),
-      m_bookmarkCombo(nullptr),
-      m_saveBookmarkButton(nullptr),
-      m_loadBookmarkButton(nullptr),
-      m_batchExportBookmarksButton(nullptr),
+      // Filter UI removed - not implemented
       m_addAnnotationButton(nullptr),
       // Legacy color/opacity controls
       m_hoverColorButton(nullptr),
@@ -800,23 +792,6 @@ void cvSelectionPropertiesWidget::setupCreateSelectionSection() {
     m_valueEdit->setToolTip(tr("Enter comparison value"));
     queryLayout->addWidget(m_valueEdit);
 
-    // Add query button (+)
-    m_addQueryButton = new QToolButton();
-    m_addQueryButton->setText(tr("+"));
-    m_addQueryButton->setToolTip(tr("Add another query"));
-    connect(m_addQueryButton, &QToolButton::clicked, this,
-            &cvSelectionPropertiesWidget::onAddQueryClicked);
-    queryLayout->addWidget(m_addQueryButton);
-
-    // Remove query button (-)
-    m_removeQueryButton = new QToolButton();
-    m_removeQueryButton->setText(tr("-"));
-    m_removeQueryButton->setToolTip(tr("Remove this query"));
-    m_removeQueryButton->setEnabled(false);  // Disabled for first query
-    connect(m_removeQueryButton, &QToolButton::clicked, this,
-            &cvSelectionPropertiesWidget::onRemoveQueryClicked);
-    queryLayout->addWidget(m_removeQueryButton);
-
     mainLayout->addLayout(queryLayout);
 
     // Container for additional queries
@@ -1336,9 +1311,7 @@ void cvSelectionPropertiesWidget::setSelectionManager(
     m_selectionManager = manager;
 
     // Update bookmark combo when manager is set
-    if (m_selectionManager && m_selectionManager->getBookmarks()) {
-        updateBookmarkCombo();
-    }
+    // Bookmark functionality removed - UI not implemented
 
     // Update data producer combo
     updateDataProducerCombo();
@@ -1388,27 +1361,7 @@ void cvSelectionPropertiesWidget::setSelectionManager(
     }
 }
 
-//-----------------------------------------------------------------------------
-void cvSelectionPropertiesWidget::updateBookmarkCombo() {
-    if (!m_selectionManager || !m_selectionManager->getBookmarks()) {
-        return;
-    }
-
-    // Legacy UI check - these elements may be nullptr in simplified UI
-    if (!m_bookmarkCombo) {
-        return;
-    }
-
-    m_bookmarkCombo->clear();
-    QStringList names = m_selectionManager->getBookmarks()->bookmarkNames();
-    m_bookmarkCombo->addItems(names);
-    if (m_loadBookmarkButton) {
-        m_loadBookmarkButton->setEnabled(!names.isEmpty());
-    }
-    if (m_batchExportBookmarksButton) {
-        m_batchExportBookmarksButton->setEnabled(!names.isEmpty());
-    }
-}
+// updateBookmarkCombo removed - UI not implemented
 
 //-----------------------------------------------------------------------------
 bool cvSelectionPropertiesWidget::updateSelection(
@@ -1554,12 +1507,8 @@ bool cvSelectionPropertiesWidget::updateSelection(
     if (m_extractBoundaryButton) {
         m_extractBoundaryButton->setEnabled(isCells && m_selectionCount > 0);
     }
-    if (m_applyFilterButton) {
-        m_applyFilterButton->setEnabled(m_selectionCount > 0);
-    }
-    if (m_saveBookmarkButton) {
-        m_saveBookmarkButton->setEnabled(m_selectionCount > 0);
-    }
+    // Filter button removed - UI not implemented
+    // Bookmark button removed - UI not implemented
     if (m_addAnnotationButton) {
         m_addAnnotationButton->setEnabled(m_selectionCount > 0);
     }
@@ -2081,10 +2030,12 @@ void cvSelectionPropertiesWidget::onExportToMeshClicked() {
     // This bypasses VTK→ccMesh conversion and preserves all attributes
     if (m_selectionManager && m_selectionManager->isSourceObjectValid()) {
         ccMesh* sourceMesh = m_selectionManager->getSourceMesh();
+
         if (sourceMesh) {
-            CVLog::Print(QString("[cvSelectionPropertiesWidget] Using direct "
-                                 "extraction from source mesh '%1'")
-                                 .arg(sourceMesh->getName()));
+            // CVLog::Print(QString("[cvSelectionPropertiesWidget] Using direct
+            // "
+            //                      "extraction from source mesh '%1'")
+            //                      .arg(sourceMesh->getName()));
 
             cvSelectionExporter::ExportOptions options;
             ccMesh* mesh = nullptr;
@@ -2105,23 +2056,19 @@ void cvSelectionPropertiesWidget::onExportToMeshClicked() {
             }
 
             if (mesh && mesh->size() > 0) {
-                mesh->setName("Selection (Mesh)");
-                mesh->setEnabled(true);
+                // ParaView-style naming: ExtractSelection1, ExtractSelection2,
+                // ...
+                m_extractCounter++;
+                QString meshName =
+                        QString("ExtractSelection%1").arg(m_extractCounter);
+                mesh->setName(meshName);
+                // ParaView behavior: Extract objects are hidden by default
+                // This prevents them from blocking selection of the original
+                // object
+                mesh->setEnabled(false);
                 mesh->setVisible(true);
-
-                CVLog::Print(
-                        QString("[cvSelectionPropertiesWidget] Created "
-                                "mesh with %1 triangles (direct extraction)")
-                                .arg(mesh->size()));
-
                 emit extractedObjectReady(mesh);
                 emit extractSelectionRequested();
-
-                QMessageBox::information(
-                        this, tr("Export Successful"),
-                        tr("Successfully extracted %1 cells as a new mesh.\n"
-                           "The object has been added to the DB Tree.")
-                                .arg(mesh->size()));
                 return;
             } else {
                 if (mesh) {
@@ -2204,30 +2151,19 @@ void cvSelectionPropertiesWidget::onExportToMeshClicked() {
     }
 
     if (mesh && mesh->size() > 0) {
-        mesh->setName("Selection (Mesh)");
-        mesh->setEnabled(true);
+        // ParaView-style naming: ExtractSelection1, ExtractSelection2, ...
+        m_extractCounter++;
+        QString meshName = QString("ExtractSelection%1").arg(m_extractCounter);
+        mesh->setName(meshName);
+        // ParaView behavior: Extract objects are hidden by default
+        // This prevents them from blocking selection of the original object
+        mesh->setEnabled(false);
         mesh->setVisible(true);
-
-        CVLog::Print(QString("[cvSelectionPropertiesWidget] Created mesh with "
-                             "%1 cells")
-                             .arg(mesh->size()));
 
         // Emit signal for main application to add to DB Tree
         // The main application should connect to this signal and call addToDB()
         emit extractedObjectReady(mesh);
         emit extractSelectionRequested();
-
-        // ParaView behavior: Keep selection visible after extract
-        // Selection is only cleared when user explicitly deletes it
-        CVLog::Print(QString("[cvSelectionPropertiesWidget] Exported %1 cells "
-                             "as mesh (selection preserved)")
-                             .arg(mesh->size()));
-
-        QMessageBox::information(
-                this, tr("Export Successful"),
-                tr("Successfully extracted %1 cells as a new mesh.\n"
-                   "The object has been added to the DB Tree.")
-                        .arg(mesh->size()));
     } else {
         // Clean up empty mesh if created
         if (mesh) {
@@ -2245,10 +2181,6 @@ void cvSelectionPropertiesWidget::onExportToMeshClicked() {
 }
 
 void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
-    CVLog::Print(
-            "[cvSelectionPropertiesWidget::onExportToPointCloudClicked] "
-            "Starting export...");
-
     if (m_selectionData.isEmpty()) {
         CVLog::Warning("[cvSelectionPropertiesWidget] No selection to export");
         QMessageBox::warning(this, tr("Export Failed"),
@@ -2257,42 +2189,30 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
         return;
     }
 
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Selection has %1 IDs, "
-                         "type=%2")
-                         .arg(m_selectionData.count())
-                         .arg(m_selectionData.fieldAssociation() ==
-                                              cvSelectionData::POINTS
-                                      ? "POINTS"
-                                      : "CELLS"));
-
     // First, try to use direct extraction from source ccPointCloud if available
     // This bypasses VTK→ccPointCloud conversion and preserves all attributes
-    CVLog::Print(
-            QString("[cvSelectionPropertiesWidget] Checking direct extraction: "
+    CVLog::PrintDebug(
+            QString("[cvSelectionPropertiesWidget] Extract point cloud check: "
                     "manager=%1, sourceValid=%2")
-                    .arg(m_selectionManager != nullptr)
+                    .arg(m_selectionManager != nullptr ? "yes" : "no")
                     .arg(m_selectionManager
-                                 ? m_selectionManager->isSourceObjectValid()
-                                 : false));
+                                 ? (m_selectionManager->isSourceObjectValid()
+                                            ? "yes"
+                                            : "no")
+                                 : "N/A"));
 
     if (m_selectionManager && m_selectionManager->isSourceObjectValid()) {
         ccPointCloud* sourceCloud = m_selectionManager->getSourcePointCloud();
-        CVLog::Print(QString("[cvSelectionPropertiesWidget] "
-                             "getSourcePointCloud returned: %1")
-                             .arg(sourceCloud != nullptr
-                                          ? sourceCloud->getName()
-                                          : "nullptr"));
+        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] "
+                                  "getSourcePointCloud returned: %1")
+                                  .arg(sourceCloud != nullptr
+                                               ? sourceCloud->getName()
+                                               : "nullptr"));
         if (sourceCloud) {
-            CVLog::Print(QString("[cvSelectionPropertiesWidget] Using direct "
-                                 "extraction from source cloud '%1'")
-                                 .arg(sourceCloud->getName()));
-
             // For cell selection on point cloud, convert to point selection
             cvSelectionData exportSelection = m_selectionData;
             if (m_selectionData.fieldAssociation() == cvSelectionData::CELLS) {
-                CVLog::Print(
-                        "[cvSelectionPropertiesWidget] Converting cell "
-                        "selection to point selection");
+                // Converting cell selection to point selection
                 exportSelection = cvSelectionData(m_selectionData.ids(),
                                                   cvSelectionData::POINTS);
             }
@@ -2316,23 +2236,26 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
             }
 
             if (cloud && cloud->size() > 0) {
-                cloud->setName("Selection (Points)");
-                cloud->setEnabled(true);
+                // ParaView-style naming: ExtractSelection1, ExtractSelection2,
+                // ...
+                m_extractCounter++;
+                QString cloudName =
+                        QString("ExtractSelection%1").arg(m_extractCounter);
+                cloud->setName(cloudName);
+                // ParaView behavior: Extract objects are hidden by default
+                // This prevents them from blocking selection of the original
+                // object
+                cloud->setEnabled(false);
                 cloud->setVisible(true);
 
                 CVLog::Print(QString("[cvSelectionPropertiesWidget] Created "
-                                     "point cloud with %1 points (direct "
+                                     "point cloud '%1' with %2 points (direct "
                                      "extraction)")
+                                     .arg(cloudName)
                                      .arg(cloud->size()));
 
                 emit extractedObjectReady(cloud);
                 emit extractSelectionRequested();
-
-                QMessageBox::information(
-                        this, tr("Export Successful"),
-                        tr("Successfully extracted %1 points as a new point "
-                           "cloud.\nThe object has been added to the DB Tree.")
-                                .arg(cloud->size()));
                 return;
             } else {
                 if (cloud) {
@@ -2348,7 +2271,6 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
     }
 
     // Fall back to VTK-based extraction if direct extraction not available
-    CVLog::Print("[cvSelectionPropertiesWidget] Using VTK-based extraction");
 
     // ParaView behavior: Allow both POINTS and CELLS selections for point cloud
     // export For point clouds, cell IDs ARE point IDs (each vertex is a cell)
@@ -2381,12 +2303,6 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
         return;
     }
 
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Got polyData with %1 "
-                         "points, %2 cells, %3 polys")
-                         .arg(polyData->GetNumberOfPoints())
-                         .arg(polyData->GetNumberOfCells())
-                         .arg(polyData->GetNumberOfPolys()));
-
     // Determine if this is a cell selection on a point cloud
     // For point clouds, cell IDs ARE point IDs (each vertex is a cell)
     bool isCellSelectionOnPointCloud =
@@ -2410,13 +2326,14 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
         }
     }
 
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Validation: %1 valid "
-                         "IDs, %2 invalid IDs (maxId=%3, type=%4)")
-                         .arg(validCount)
-                         .arg(invalidCount)
-                         .arg(maxId)
-                         .arg(isCellSelectionOnPointCloud ? "cells->points"
-                                                          : "points"));
+    // CVLog::Print(QString("[cvSelectionPropertiesWidget] Validation: %1 valid
+    // "
+    //                      "IDs, %2 invalid IDs (maxId=%3, type=%4)")
+    //                      .arg(validCount)
+    //                      .arg(invalidCount)
+    //                      .arg(maxId)
+    //                      .arg(isCellSelectionOnPointCloud ? "cells->points"
+    //                                                       : "points"));
 
     if (!hasValidIds) {
         CVLog::Error(
@@ -2470,12 +2387,18 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
     }
 
     if (cloud && cloud->size() > 0) {
-        cloud->setName("Selection (Points)");
-        cloud->setEnabled(true);
+        // ParaView-style naming: ExtractSelection1, ExtractSelection2, ...
+        m_extractCounter++;
+        QString cloudName = QString("ExtractSelection%1").arg(m_extractCounter);
+        cloud->setName(cloudName);
+        // ParaView behavior: Extract objects are hidden by default
+        // This prevents them from blocking selection of the original object
+        cloud->setEnabled(false);
         cloud->setVisible(true);
 
         CVLog::Print(QString("[cvSelectionPropertiesWidget] Created point "
-                             "cloud with %1 points")
+                             "cloud '%1' with %2 points")
+                             .arg(cloudName)
                              .arg(cloud->size()));
 
         // Emit signal for main application to add to DB Tree
@@ -2488,12 +2411,6 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
         CVLog::Print(QString("[cvSelectionPropertiesWidget] Exported %1 points "
                              "as point cloud (selection preserved)")
                              .arg(cloud->size()));
-
-        QMessageBox::information(
-                this, tr("Export Successful"),
-                tr("Successfully extracted %1 points as a new point cloud.\n"
-                   "The object has been added to the DB Tree.")
-                        .arg(cloud->size()));
     } else {
         // Clean up empty cloud if created
         if (cloud) {
@@ -2628,13 +2545,14 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
     if (isPointData) {
         double pt[3];
         polyData->GetPoint(id, pt);
-        CVLog::Print(QString("[cvSelectionPropertiesWidget] RED highlight: %1 "
-                             "ID=%2 at (%3, %4, %5)")
-                             .arg(dataType)
-                             .arg(id)
-                             .arg(pt[0], 0, 'f', 4)
-                             .arg(pt[1], 0, 'f', 4)
-                             .arg(pt[2], 0, 'f', 4));
+        CVLog::PrintDebug(
+                QString("[cvSelectionPropertiesWidget] RED highlight: %1 "
+                        "ID=%2 at (%3, %4, %5)")
+                        .arg(dataType)
+                        .arg(id)
+                        .arg(pt[0], 0, 'f', 4)
+                        .arg(pt[1], 0, 'f', 4)
+                        .arg(pt[2], 0, 'f', 4));
     } else {
         vtkCell* cell = polyData->GetCell(id);
         if (cell) {
@@ -2644,16 +2562,17 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
             int subId = 0;
             cell->EvaluateLocation(subId, pcoords, center, weights);
             delete[] weights;
-            CVLog::Print(QString("[cvSelectionPropertiesWidget] RED highlight: "
-                                 "%1 ID=%2 "
-                                 "(Type:%3, Points:%4) center=(%5, %6, %7)")
-                                 .arg(dataType)
-                                 .arg(id)
-                                 .arg(cell->GetCellType())
-                                 .arg(cell->GetNumberOfPoints())
-                                 .arg(center[0], 0, 'f', 4)
-                                 .arg(center[1], 0, 'f', 4)
-                                 .arg(center[2], 0, 'f', 4));
+            CVLog::PrintDebug(
+                    QString("[cvSelectionPropertiesWidget] RED highlight: "
+                            "%1 ID=%2 "
+                            "(Type:%3, Points:%4) center=(%5, %6, %7)")
+                            .arg(dataType)
+                            .arg(id)
+                            .arg(cell->GetCellType())
+                            .arg(cell->GetNumberOfPoints())
+                            .arg(center[0], 0, 'f', 4)
+                            .arg(center[1], 0, 'f', 4)
+                            .arg(center[2], 0, 'f', 4));
         }
     }
 
@@ -2713,48 +2632,6 @@ void cvSelectionPropertiesWidget::onAlgebraOperationTriggered() {
 }
 
 //-----------------------------------------------------------------------------
-void cvSelectionPropertiesWidget::onFilterOperationTriggered() {
-    if (!m_selectionManager || m_selectionData.isEmpty() ||
-        !m_filterTypeCombo) {
-        return;
-    }
-
-    int filterType = m_filterTypeCombo->currentData().toInt();
-    auto filterEnum = static_cast<cvSelectionFilter::FilterType>(filterType);
-
-    // Get polyData for filter operations
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
-    if (!polyData) {
-        QMessageBox::warning(this, tr("Filter Operation"),
-                             tr("No mesh data available for filtering."));
-        return;
-    }
-
-    // Show configuration dialog (ParaView-style)
-    cvFilterConfigDialog dialog(filterEnum, polyData, this);
-    if (dialog.exec() == QDialog::Accepted) {
-        QMap<QString, QVariant> params = dialog.getParameters();
-        cvSelectionFilter::FilterType finalType = dialog.getFilterType();
-
-        CVLog::Print(QString("[cvSelectionPropertiesWidget] Applying filter "
-                             "type %1 with %2 parameters")
-                             .arg(static_cast<int>(finalType))
-                             .arg(params.size()));
-
-        // Apply filter through selection manager
-        cvSelectionFilter* filter = m_selectionManager->getFilter();
-        if (filter) {
-            // Filter application is now handled by onFilterOperationTriggered()
-            // which shows cvFilterConfigDialog for parameter configuration
-            QMessageBox::information(
-                    this, tr("Filter Applied"),
-                    tr("Filter configuration saved. Implementation of filter "
-                       "application pending."));
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onExtractBoundaryClicked() {
     if (!m_selectionManager || m_selectionData.isEmpty()) {
         return;
@@ -2788,173 +2665,11 @@ void cvSelectionPropertiesWidget::onExtractBoundaryClicked() {
 }
 
 //-----------------------------------------------------------------------------
-void cvSelectionPropertiesWidget::onSaveBookmarkClicked() {
-    if (!m_selectionManager || m_selectionData.isEmpty()) {
-        return;
-    }
-
-    cvSelectionBookmarks* bookmarks = m_selectionManager->getBookmarks();
-    if (!bookmarks) {
-        return;
-    }
-
-    // Show input dialog for bookmark name
-    bool ok;
-    QString name = QInputDialog::getText(this, tr("Save Bookmark"),
-                                         tr("Bookmark name:"),
-                                         QLineEdit::Normal, QString(), &ok);
-
-    if (ok && !name.isEmpty()) {
-        if (bookmarks->addBookmark(name, m_selectionData)) {
-            updateBookmarkCombo();
-            emit bookmarkRequested(name);
-            CVLog::Print(
-                    QString("[cvSelectionPropertiesWidget] Saved bookmark: %1")
-                            .arg(name));
-        } else {
-            QMessageBox::warning(this, tr("Save Bookmark"),
-                                 tr("Failed to save bookmark '%1'.\n"
-                                    "It may already exist.")
-                                         .arg(name));
-        }
-    }
-}
 
 //-----------------------------------------------------------------------------
-void cvSelectionPropertiesWidget::onLoadBookmarkClicked() {
-    if (!m_selectionManager || !m_bookmarkCombo) {
-        return;
-    }
-
-    cvSelectionBookmarks* bookmarks = m_selectionManager->getBookmarks();
-    if (!bookmarks) {
-        return;
-    }
-
-    QString name = m_bookmarkCombo->currentText();
-    if (name.isEmpty()) {
-        return;
-    }
-
-    cvSelectionBookmarks::Bookmark bookmark = bookmarks->getBookmark(name);
-    if (!bookmark.selection.isEmpty()) {
-        m_selectionManager->setCurrentSelection(bookmark.selection);
-        CVLog::Print(
-                QString("[cvSelectionPropertiesWidget] Loaded bookmark: %1")
-                        .arg(name));
-    }
-}
+// onLoadBookmarkClicked removed - UI not implemented
 
 //-----------------------------------------------------------------------------
-void cvSelectionPropertiesWidget::onBatchExportBookmarksClicked() {
-    if (!m_selectionManager) {
-        return;
-    }
-
-    cvSelectionBookmarks* bookmarks = m_selectionManager->getBookmarks();
-    if (!bookmarks) {
-        return;
-    }
-
-    QStringList bookmarkNames = bookmarks->bookmarkNames();
-    if (bookmarkNames.isEmpty()) {
-        QMessageBox::information(this, tr("Batch Export"),
-                                 tr("No bookmarks available to export."));
-        return;
-    }
-
-    // Get output directory
-    QString outputDir = QFileDialog::getExistingDirectory(
-            this, tr("Select Output Directory for Batch Export"),
-            QDir::homePath(),
-            QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-    if (outputDir.isEmpty()) {
-        return;  // User cancelled
-    }
-
-    // Get file format
-    QStringList formats;
-    formats << "PLY (*.ply)" << "OBJ (*.obj)" << "STL (*.stl)"
-            << "BIN (*.bin)";
-    bool ok;
-    QString formatChoice =
-            QInputDialog::getItem(this, tr("Select Format"),
-                                  tr("Export format:"), formats, 0, false, &ok);
-
-    if (!ok || formatChoice.isEmpty()) {
-        return;  // User cancelled
-    }
-
-    // Extract format extension
-    QString format = "ply";  // default
-    if (formatChoice.contains("obj", Qt::CaseInsensitive)) {
-        format = "obj";
-    } else if (formatChoice.contains("stl", Qt::CaseInsensitive)) {
-        format = "stl";
-    } else if (formatChoice.contains("bin", Qt::CaseInsensitive)) {
-        format = "bin";
-    }
-
-    // Get polyData
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
-    if (!polyData) {
-        QMessageBox::warning(this, tr("Batch Export"),
-                             tr("No mesh data available for export."));
-        return;
-    }
-
-    // Collect all bookmark selections
-    QList<cvSelectionData> selections;
-    for (const QString& name : bookmarkNames) {
-        cvSelectionBookmarks::Bookmark bookmark = bookmarks->getBookmark(name);
-        if (!bookmark.selection.isEmpty()) {
-            selections.append(bookmark.selection);
-        }
-    }
-
-    if (selections.isEmpty()) {
-        QMessageBox::warning(this, tr("Batch Export"),
-                             tr("No valid selections found in bookmarks."));
-        return;
-    }
-
-    // Show progress dialog
-    QProgressDialog progress(tr("Exporting bookmarks..."), tr("Cancel"), 0, 100,
-                             this);
-    progress.setWindowModality(Qt::WindowModal);
-    progress.setMinimumDuration(0);
-    progress.setValue(0);
-
-    // Perform batch export
-    int successCount = cvSelectionExporter::batchExportToFiles(
-            polyData, selections, outputDir, format, "bookmark",
-            [&progress](int percent) {
-                progress.setValue(percent);
-                QApplication::processEvents();
-            });
-
-    progress.setValue(100);
-
-    // Show result
-    if (successCount > 0) {
-        QMessageBox::information(
-                this, tr("Batch Export Complete"),
-                tr("Successfully exported %1 of %2 bookmarks to:\n%3")
-                        .arg(successCount)
-                        .arg(selections.size())
-                        .arg(outputDir));
-    } else {
-        QMessageBox::warning(this, tr("Batch Export Failed"),
-                             tr("Failed to export bookmarks."));
-    }
-
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Batch exported %1/%2 "
-                         "bookmarks to %3")
-                         .arg(successCount)
-                         .arg(selections.size())
-                         .arg(outputDir));
-}
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onAddAnnotationClicked() {
@@ -3089,7 +2804,6 @@ void cvSelectionPropertiesWidget::onPointLabelsClicked() {
         if (m_highlighter) {
             m_highlighter->setPointLabelArray("ID", true);
         }
-        CVLog::Print("[cvSelectionPropertiesWidget] Point labels set to ID");
     });
 
     m_pointLabelsMenu->addSeparator();
@@ -3303,7 +3017,7 @@ void cvSelectionPropertiesWidget::onLabelPropertiesApplied(
         }
     }
 
-    CVLog::Print(
+    CVLog::PrintDebug(
             QString("[cvSelectionPropertiesWidget] Label properties applied: "
                     "opacity=%1, pointSize=%2, lineWidth=%3")
                     .arg(props.opacity)
@@ -3439,9 +3153,10 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
 
     emit selectionAdded(saved.data);
 
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Added selection: %1 "
-                         "(+ button disabled until new selection)")
-                         .arg(saved.name));
+    CVLog::PrintDebug(
+            QString("[cvSelectionPropertiesWidget] Added selection: %1 "
+                    "(+ button disabled until new selection)")
+                    .arg(saved.name));
 }
 
 //-----------------------------------------------------------------------------
@@ -3990,23 +3705,13 @@ void cvSelectionPropertiesWidget::onFreezeClicked() {
                                  .arg(QDateTime::currentDateTime().toString(
                                          "yyyyMMdd_HHmmss"));
 
-    if (m_selectionManager && m_selectionManager->getBookmarks()) {
-        m_selectionManager->getBookmarks()->addBookmark(frozenName,
-                                                        m_selectionData);
-        updateBookmarkCombo();
-        CVLog::Print(
-                QString("[cvSelectionPropertiesWidget] Selection frozen as: %1")
-                        .arg(frozenName));
+    // Bookmark functionality removed - UI not implemented
+    CVLog::Print(
+            QString("[cvSelectionPropertiesWidget] Selection frozen as: %1")
+                    .arg(frozenName));
 
-        QMessageBox::information(this, tr("Freeze Selection"),
-                                 tr("Selection frozen as bookmark: %1\n"
-                                    "Load it anytime from the Advanced tab.")
-                                         .arg(frozenName));
-    } else {
-        CVLog::Warning(
-                "[cvSelectionPropertiesWidget] Selection manager or bookmarks "
-                "not available");
-    }
+    QMessageBox::information(this, tr("Freeze Selection"),
+                             tr("Selection frozen as: %1").arg(frozenName));
 
     emit freezeSelectionRequested();
 }
@@ -4038,27 +3743,23 @@ void cvSelectionPropertiesWidget::onExtractClicked() {
         // A mesh has polygons (triangles/quads), a point cloud only has
         // vertices
         isSourceMesh = (polyData->GetNumberOfPolys() > 0);
-        CVLog::Print(QString("[cvSelectionPropertiesWidget::onExtractClicked] "
-                             "Source: %1 points, %2 cells, %3 polys -> %4")
-                             .arg(polyData->GetNumberOfPoints())
-                             .arg(polyData->GetNumberOfCells())
-                             .arg(polyData->GetNumberOfPolys())
-                             .arg(isSourceMesh ? "mesh" : "point cloud"));
+        CVLog::PrintDebug(
+                QString("[cvSelectionPropertiesWidget::onExtractClicked] "
+                        "Source: %1 points, %2 cells, %3 polys -> %4")
+                        .arg(polyData->GetNumberOfPoints())
+                        .arg(polyData->GetNumberOfCells())
+                        .arg(polyData->GetNumberOfPolys())
+                        .arg(isSourceMesh ? "mesh" : "point cloud"));
     }
 
     if (isCells && isSourceMesh) {
         // Cell selection on mesh -> export as mesh
         onExportToMeshClicked();
-        CVLog::Print(
-                "[cvSelectionPropertiesWidget] Extracted selection as Mesh");
     } else {
         // Point selection OR cell selection on point cloud -> export as point
         // cloud For cell selection on point cloud, the cell IDs ARE the point
         // IDs (each vertex is a cell in VTK point cloud representation)
         onExportToPointCloudClicked();
-        CVLog::Print(
-                "[cvSelectionPropertiesWidget] Extracted selection as Point "
-                "Cloud");
     }
 
     emit extractSelectionRequested();
@@ -4136,8 +3837,8 @@ void cvSelectionPropertiesWidget::onPlotOverTimeClicked() {
     // Create QCustomPlot widget
     QCustomPlot* customPlot = new QCustomPlot(plotDialog);
     customPlot->setMinimumHeight(400);
-    customPlot->xAxis->setLabel(tr("Value"));
-    customPlot->yAxis->setLabel(tr("Count"));
+    customPlot->xAxis->setLabel(tr("Index / Timestamp"));
+    customPlot->yAxis->setLabel(tr("Attribute Value"));
     customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom |
                                 QCP::iSelectPlottables);
     customPlot->legend->setVisible(true);
@@ -4150,84 +3851,94 @@ void cvSelectionPropertiesWidget::onPlotOverTimeClicked() {
     // Helper to update plot
     auto updatePlot = [customPlot, polyData, selectionIds,
                        isPointData](const QString& attrName) {
-        customPlot->clearPlottables();
+        // Clear all existing plots before drawing new ones
+        while (customPlot->plottableCount() > 0) {
+            customPlot->removePlottable(0);
+        }
+        customPlot->clearGraphs();
 
-        if (selectionIds.isEmpty()) return;
+        if (selectionIds.isEmpty()) {
+            customPlot->replot();
+            return;
+        }
 
         const QVector<qint64>& ids = selectionIds;
 
-        QVector<double> values;
-        values.reserve(ids.size());
+        // Collect X (timestamp or ID) and Y (attribute value) data
+        QVector<double> xData;  // timestamps or indices
+        QVector<double> yData;  // attribute values
+        xData.reserve(ids.size());
+        yData.reserve(ids.size());
 
-        // Collect values
-        for (qint64 id : ids) {
+        // Try to find timestamp array in field data
+        vtkDataSetAttributes* data =
+                isPointData ? static_cast<vtkDataSetAttributes*>(
+                                      polyData->GetPointData())
+                            : static_cast<vtkDataSetAttributes*>(
+                                      polyData->GetCellData());
+
+        vtkDataArray* timestampArray = nullptr;
+        if (data) {
+            // Common timestamp field names
+            const char* timestampNames[] = {"TimeValue", "Time",
+                                            "timestamp", "time_value",
+                                            "TimeStep",  nullptr};
+            for (int i = 0; timestampNames[i] != nullptr; ++i) {
+                timestampArray = data->GetArray(timestampNames[i]);
+                if (timestampArray) break;
+            }
+        }
+
+        // Collect Y values (attribute) and X values (timestamp or index)
+        for (int idx = 0; idx < ids.size(); ++idx) {
+            qint64 id = ids[idx];
             if (id < 0) continue;
 
-            double val = 0.0;
+            double yVal = 0.0;
             if (attrName == "__X__" || attrName == "__Y__" ||
                 attrName == "__Z__") {
                 if (id < polyData->GetNumberOfPoints()) {
                     double pt[3];
                     polyData->GetPoint(id, pt);
-                    val = (attrName == "__X__")   ? pt[0]
-                          : (attrName == "__Y__") ? pt[1]
-                                                  : pt[2];
+                    yVal = (attrName == "__X__")   ? pt[0]
+                           : (attrName == "__Y__") ? pt[1]
+                                                   : pt[2];
                 }
             } else {
-                vtkDataSetAttributes* data =
-                        isPointData ? static_cast<vtkDataSetAttributes*>(
-                                              polyData->GetPointData())
-                                    : static_cast<vtkDataSetAttributes*>(
-                                              polyData->GetCellData());
-
                 if (data) {
                     vtkDataArray* arr =
                             data->GetArray(attrName.toUtf8().constData());
                     if (arr && id >= 0 && id < arr->GetNumberOfTuples()) {
-                        val = arr->GetTuple1(id);
+                        yVal = arr->GetTuple1(id);
                     }
                 }
             }
-            values.append(val);
+
+            // Get X value (timestamp if available, otherwise index)
+            double xVal = idx;  // default to index
+            if (timestampArray && id >= 0 &&
+                id < timestampArray->GetNumberOfTuples()) {
+                xVal = timestampArray->GetTuple1(id);
+            }
+
+            xData.append(xVal);
+            yData.append(yVal);
         }
 
-        if (values.isEmpty()) return;
+        if (yData.isEmpty()) return;
 
-        // Calculate histogram bins
-        double minVal = *std::min_element(values.begin(), values.end());
-        double maxVal = *std::max_element(values.begin(), values.end());
-
-        int numBins = std::min(50, static_cast<int>(values.size() / 2));
-        numBins = std::max(10, numBins);
-
-        double binWidth = (maxVal - minVal) / numBins;
-        if (binWidth <= 0) binWidth = 1.0;
-
-        QVector<double> bins(numBins, 0);
-        QVector<double> binCenters(numBins);
-
-        for (int i = 0; i < numBins; ++i) {
-            binCenters[i] = minVal + binWidth * (i + 0.5);
-        }
-
-        for (double val : values) {
-            int binIdx = static_cast<int>((val - minVal) / binWidth);
-            binIdx = std::min(binIdx, numBins - 1);
-            binIdx = std::max(binIdx, 0);
-            bins[binIdx]++;
-        }
-
-        // Create bars
-        QCPBars* bars = new QCPBars(customPlot->xAxis, customPlot->yAxis);
-        bars->setWidth(binWidth * 0.9);
-        bars->setData(binCenters, bins);
-        bars->setBrush(QColor(0, 100, 180, 150));
-        bars->setPen(QPen(QColor(0, 80, 140)));
-        bars->setName(attrName.startsWith("__") ? attrName.mid(2, 1) + " Coord"
-                                                : attrName);
+        // Create line graph
+        QCPGraph* graph = customPlot->addGraph();
+        graph->setData(xData, yData);
+        graph->setPen(QPen(QColor(0, 100, 180), 2));
+        graph->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 5));
+        graph->setName(attrName.startsWith("__") ? attrName.mid(2, 1) + " Coord"
+                                                 : attrName);
 
         customPlot->rescaleAxes();
-        customPlot->xAxis->setLabel(attrName.startsWith("__")
+        customPlot->xAxis->setLabel(timestampArray ? tr("Timestamp")
+                                                   : tr("Index"));
+        customPlot->yAxis->setLabel(attrName.startsWith("__")
                                             ? attrName.mid(2, 1) + " Coordinate"
                                             : attrName);
         customPlot->replot();
@@ -4388,11 +4099,6 @@ void cvSelectionPropertiesWidget::onDataProducerChanged(int index) {
     if (m_attributeCombo) m_attributeCombo->setEnabled(hasProducer);
     if (m_operatorCombo) m_operatorCombo->setEnabled(hasProducer);
     if (m_valueEdit) m_valueEdit->setEnabled(hasProducer);
-    if (m_addQueryButton) m_addQueryButton->setEnabled(hasProducer);
-    if (m_removeQueryButton) {
-        m_removeQueryButton->setEnabled(hasProducer && m_queriesLayout &&
-                                        m_queriesLayout->count() > 0);
-    }
 
     // Update available attributes based on selected data producer
     updateAttributeCombo();
@@ -4487,21 +4193,6 @@ void cvSelectionPropertiesWidget::onClearClicked() {
     onResetClicked();
 
     CVLog::Print("[cvSelectionPropertiesWidget] Selection and query cleared.");
-}
-
-//-----------------------------------------------------------------------------
-void cvSelectionPropertiesWidget::onAddQueryClicked() {
-    // Add another query row (for AND/OR combinations)
-    // TODO: Implement multiple query rows
-    QMessageBox::information(
-            this, tr("Add Query"),
-            tr("Multiple query rows feature is under development."));
-}
-
-//-----------------------------------------------------------------------------
-void cvSelectionPropertiesWidget::onRemoveQueryClicked() {
-    // Remove this query row
-    // TODO: Implement query row removal
 }
 
 //-----------------------------------------------------------------------------
@@ -4685,16 +4376,6 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
             isCell ? static_cast<vtkDataSetAttributes*>(polyData->GetCellData())
                    : static_cast<vtkDataSetAttributes*>(
                              polyData->GetPointData());
-
-    // Debug: Log available VTK arrays
-    CVLog::Print(
-            QString("[updateAttributeCombo] PolyData: %1 points, %2 "
-                    "cells, Normals=%3, Scalars=%4, TCoords=%5")
-                    .arg(polyData->GetNumberOfPoints())
-                    .arg(polyData->GetNumberOfCells())
-                    .arg(attrData && attrData->GetNormals() ? "yes" : "no")
-                    .arg(attrData && attrData->GetScalars() ? "yes" : "no")
-                    .arg(attrData && attrData->GetTCoords() ? "yes" : "no"));
 
     // Add ID first (like ParaView - just "ID", not "PointID")
     m_attributeCombo->addItem(tr("ID"));
@@ -4983,9 +4664,6 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
     } else if (isCell) {
         m_attributeCombo->addItem(tr("Cell"));
     }
-
-    CVLog::Print(QString("[updateAttributeCombo] Combo populated with %1 items")
-                         .arg(m_attributeCombo->count()));
 
     if (m_attributeCombo->count() > 0) {
         m_attributeCombo->setCurrentIndex(0);

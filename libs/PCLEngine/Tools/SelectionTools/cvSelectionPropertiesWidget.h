@@ -179,8 +179,6 @@ private slots:
     void onFindDataClicked();
     void onResetClicked();
     void onClearClicked();
-    void onAddQueryClicked();
-    void onRemoveQueryClicked();
     void updateAttributeCombo();
     void updateDataProducerCombo();
     void performFindData(const QString& attribute,
@@ -202,10 +200,8 @@ private slots:
     void onExportToPointCloudClicked();
     void onSelectionTableItemClicked(QTableWidgetItem* item);
     void onAlgebraOperationTriggered();
-    void onFilterOperationTriggered();
-    void onSaveBookmarkClicked();
-    void onLoadBookmarkClicked();
-    void onBatchExportBookmarksClicked();
+    // Filter methods removed - UI not implemented
+    // Bookmark methods removed - UI not implemented
     void onAddAnnotationClicked();
     void onExtractBoundaryClicked();
 
@@ -239,7 +235,7 @@ private:
                          int mode);
     void highlightSingleItem(qint64 id);
     qint64 extractIdFromItemText(const QString& itemText);
-    void updateBookmarkCombo();
+    // updateBookmarkCombo removed - UI not implemented
     void updateSelectionEditorTable();
     QString generateSelectionName();
     QColor generateSelectionColor() const;
@@ -330,8 +326,6 @@ private:
     QComboBox* m_attributeCombo;
     QComboBox* m_operatorCombo;
     QLineEdit* m_valueEdit;
-    QToolButton* m_addQueryButton;
-    QToolButton* m_removeQueryButton;
     QSpinBox* m_processIdSpinBox;
     QPushButton* m_findDataButton;
     QPushButton* m_resetButton;
@@ -370,13 +364,9 @@ private:
     QComboBox* m_algebraOpCombo;           // Algebra operations combo
     QPushButton* m_applyAlgebraButton;     // Apply algebra operation
     QPushButton* m_extractBoundaryButton;  // Extract boundary
-    QComboBox* m_filterTypeCombo;          // Filter type combo
-    QPushButton* m_applyFilterButton;      // Apply filter
-    QComboBox* m_bookmarkCombo;            // Bookmarks combo
-    QPushButton* m_saveBookmarkButton;     // Save bookmark
-    QPushButton* m_loadBookmarkButton;     // Load bookmark
-    QPushButton* m_batchExportBookmarksButton;  // Batch export bookmarks
-    QPushButton* m_addAnnotationButton;         // Add annotation
+    // Filter UI removed - not implemented
+    // Bookmark UI removed - not implemented
+    QPushButton* m_addAnnotationButton;  // Add annotation
 
     // Legacy color/opacity controls (may be nullptr in simplified UI)
     QPushButton* m_hoverColorButton;
@@ -402,6 +392,10 @@ private:
 
     // Selection name counter
     int m_selectionNameCounter;
+
+    // Extract counter (ParaView-style: ExtractSelection1, ExtractSelection2,
+    // ...) Shared between mesh and point cloud for unified indexing
+    int m_extractCounter;
 
     // Selection colors palette (like ParaView)
     static const QColor s_selectionColors[];
