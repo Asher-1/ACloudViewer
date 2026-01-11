@@ -768,35 +768,24 @@ void cvSelectionPropertiesWidget::setupCreateSelectionSection() {
 
     mainLayout->addLayout(criteriaLayout);
 
-    // Query row: Attribute | Operator | Value | + | -
-    QHBoxLayout* queryLayout = new QHBoxLayout();
-    queryLayout->setSpacing(3);
-
-    // Attribute combo
-    m_attributeCombo = new QComboBox();
-    m_attributeCombo->setMinimumWidth(80);
-    m_attributeCombo->setToolTip(tr("Select attribute to query"));
-    queryLayout->addWidget(m_attributeCombo);
-
-    // Operator combo
-    m_operatorCombo = new QComboBox();
-    m_operatorCombo->addItems({tr("is"), tr(">="), tr("<="), tr(">"), tr("<"),
-                               tr("!="), tr("is min"), tr("is max"),
-                               tr("is <= mean"), tr("is >= mean")});
-    m_operatorCombo->setToolTip(tr("Select comparison operator"));
-    queryLayout->addWidget(m_operatorCombo);
-
-    // Value input
-    m_valueEdit = new QLineEdit();
-    m_valueEdit->setPlaceholderText(tr("value"));
-    m_valueEdit->setToolTip(tr("Enter comparison value"));
-    queryLayout->addWidget(m_valueEdit);
-
-    mainLayout->addLayout(queryLayout);
-
-    // Container for additional queries
+    // Container for query rows (multiple conditions with +/- buttons)
     m_queriesLayout = new QVBoxLayout();
+    m_queriesLayout->setSpacing(3);
     mainLayout->addLayout(m_queriesLayout);
+
+    // Add the first query row
+    addQueryRow();
+
+    // Keep legacy pointers for compatibility (pointing to first row)
+    if (!m_queryRows.isEmpty()) {
+        m_attributeCombo = m_queryRows[0].attributeCombo;
+        m_operatorCombo = m_queryRows[0].operatorCombo;
+        m_valueEdit = m_queryRows[0].valueEdit;
+    } else {
+        m_attributeCombo = nullptr;
+        m_operatorCombo = nullptr;
+        m_valueEdit = nullptr;
+    }
 
     // === Selection Qualifiers ===
     QLabel* qualifiersLabel = new QLabel(tr("<b>Selection Qualifiers</b>"));
@@ -4113,66 +4102,104 @@ void cvSelectionPropertiesWidget::onElementTypeChanged(int index) {
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onFindDataClicked() {
-    // Execute the query and create selection
-    if (!m_attributeCombo || !m_operatorCombo || !m_valueEdit) {
+    // Execute the query with support for multiple query rows
+    if (m_queryRows.isEmpty()) {
+        CVLog::Warning("[cvSelectionPropertiesWidget] No query rows available");
         return;
     }
 
-    QString attribute = m_attributeCombo->currentText();
-    QString op = m_operatorCombo->currentText();
-    QString value = m_valueEdit->text();
     QString dataProducer = m_dataProducerCombo
                                    ? m_dataProducerCombo->currentText()
                                    : QString();
     QString elementType = m_elementTypeCombo ? m_elementTypeCombo->currentText()
                                              : tr("Point");
-
-    if (attribute.isEmpty()) {
-        QMessageBox::warning(this, tr("Find Data"),
-                             tr("Please select an attribute to query."));
-        return;
-    }
+    bool isCell = (elementType == tr("Cell"));
 
     // Special operators that don't need a value
     QStringList noValueOps = {tr("is min"), tr("is max"), tr("is <= mean"),
                               tr("is >= mean")};
-    if (value.isEmpty() && !noValueOps.contains(op)) {
-        QMessageBox::warning(this, tr("Find Data"),
-                             tr("Please enter a value to compare."));
-        return;
+
+    // Validate all query rows and collect conditions
+    QVector<QPair<QString, QString>> queries;  // attribute, operator, value stored as pair
+    QStringList queryDescriptions;
+
+    for (int i = 0; i < m_queryRows.size(); ++i) {
+        const QueryRow& row = m_queryRows[i];
+        QString attribute = row.attributeCombo->currentText();
+        QString op = row.operatorCombo->currentText();
+        QString value = row.valueEdit->text();
+
+        if (attribute.isEmpty()) {
+            QMessageBox::warning(this, tr("Find Data"),
+                                 tr("Please select an attribute in query row %1.").arg(i + 1));
+            return;
+        }
+
+        if (value.isEmpty() && !noValueOps.contains(op)) {
+            QMessageBox::warning(this, tr("Find Data"),
+                                 tr("Please enter a value in query row %1.").arg(i + 1));
+            return;
+        }
+
+        queryDescriptions.append(QString("%1 %2 %3").arg(attribute).arg(op).arg(value));
     }
 
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Find Data: %1 %2 %3 "
-                         "(Element: %4)")
-                         .arg(attribute)
-                         .arg(op)
-                         .arg(value)
+    CVLog::Print(QString("[cvSelectionPropertiesWidget] Find Data with %1 condition(s): %2 (Element: %3)")
+                         .arg(m_queryRows.size())
+                         .arg(queryDescriptions.join(" AND "))
                          .arg(elementType));
 
-    // Emit signal for external handling
-    emit findDataRequested(dataProducer, elementType, attribute, op, value);
+    // For backward compatibility, emit signal for the first condition
+    if (!m_queryRows.isEmpty()) {
+        const QueryRow& firstRow = m_queryRows[0];
+        emit findDataRequested(dataProducer, elementType, 
+                               firstRow.attributeCombo->currentText(),
+                               firstRow.operatorCombo->currentText(),
+                               firstRow.valueEdit->text());
+    }
 
-    // Perform the query locally
-    performFindData(attribute, op, value, elementType == tr("Cell"));
+    // Perform the query with all conditions (combined with AND logic)
+    // Start with first query
+    if (!m_queryRows.isEmpty()) {
+        const QueryRow& firstRow = m_queryRows[0];
+        performFindData(firstRow.attributeCombo->currentText(),
+                        firstRow.operatorCombo->currentText(),
+                        firstRow.valueEdit->text(),
+                        isCell);
+
+        // For additional rows, we would need to perform intersection with current selection
+        // This requires more complex logic to combine multiple selection queries
+        // For now, we apply only the first condition as a starting implementation
+        // TODO: Implement AND logic for multiple query conditions
+        if (m_queryRows.size() > 1) {
+            CVLog::Warning(QString("[cvSelectionPropertiesWidget] Multiple query conditions detected (%1 rows). "
+                                   "Currently only the first condition is applied. "
+                                   "Full AND logic implementation is pending.")
+                           .arg(m_queryRows.size()));
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onResetClicked() {
-    // Reset query to default state
-    if (m_attributeCombo) {
-        m_attributeCombo->setCurrentIndex(0);
+    // Reset all query rows to default state
+    for (auto& row : m_queryRows) {
+        if (row.attributeCombo && row.attributeCombo->count() > 0) {
+            row.attributeCombo->setCurrentIndex(0);
+        }
+        if (row.operatorCombo) {
+            row.operatorCombo->setCurrentIndex(0);
+        }
+        if (row.valueEdit) {
+            row.valueEdit->clear();
+        }
     }
-    if (m_operatorCombo) {
-        m_operatorCombo->setCurrentIndex(0);
-    }
-    if (m_valueEdit) {
-        m_valueEdit->clear();
-    }
+    
     if (m_processIdSpinBox) {
         m_processIdSpinBox->setValue(-1);
     }
 
-    // Remove additional query rows
+    // Remove additional query rows (keep only the first one)
     while (m_queriesLayout && m_queriesLayout->count() > 0) {
         QLayoutItem* item = m_queriesLayout->takeAt(0);
         if (item->widget()) {
@@ -4193,6 +4220,149 @@ void cvSelectionPropertiesWidget::onClearClicked() {
     onResetClicked();
 
     CVLog::Print("[cvSelectionPropertiesWidget] Selection and query cleared.");
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::addQueryRow(int index, const QString& attribute,
+                                               const QString& op,
+                                               const QString& value) {
+    if (index == -1) {
+        index = m_queryRows.size();
+    }
+
+    QueryRow row;
+
+    // Create container widget for this row
+    row.container = new QWidget(m_createSelectionContainer);
+    QHBoxLayout* rowLayout = new QHBoxLayout(row.container);
+    rowLayout->setContentsMargins(0, 0, 0, 0);
+    rowLayout->setSpacing(3);
+
+    // Attribute combo
+    row.attributeCombo = new QComboBox(row.container);
+    row.attributeCombo->setMinimumWidth(80);
+    row.attributeCombo->setToolTip(tr("Select attribute to query"));
+    rowLayout->addWidget(row.attributeCombo);
+
+    // Operator combo
+    row.operatorCombo = new QComboBox(row.container);
+    row.operatorCombo->addItems({tr("is"), tr(">="), tr("<="), tr(">"), tr("<"),
+                                  tr("!="), tr("is min"), tr("is max"),
+                                  tr("is <= mean"), tr("is >= mean")});
+    row.operatorCombo->setToolTip(tr("Select comparison operator"));
+    if (!op.isEmpty()) {
+        int opIndex = row.operatorCombo->findText(op);
+        if (opIndex >= 0) {
+            row.operatorCombo->setCurrentIndex(opIndex);
+        }
+    }
+    rowLayout->addWidget(row.operatorCombo);
+
+    // Value input
+    row.valueEdit = new QLineEdit(row.container);
+    row.valueEdit->setPlaceholderText(tr("value"));
+    row.valueEdit->setToolTip(tr("Enter comparison value"));
+    if (!value.isEmpty()) {
+        row.valueEdit->setText(value);
+    }
+    rowLayout->addWidget(row.valueEdit, 1);  // stretch factor 1
+
+    // Plus button (add row after this one)
+    row.plusButton = new QPushButton(row.container);
+    QIcon plusIcon(":/Resources/images/svg/pqPlus.svg");
+    if (plusIcon.isNull()) {
+        row.plusButton->setText("+");
+    } else {
+        row.plusButton->setIcon(plusIcon);
+    }
+    row.plusButton->setToolTip(tr("Add query condition"));
+    row.plusButton->setMaximumWidth(32);
+    rowLayout->addWidget(row.plusButton);
+
+    // Minus button (remove this row)
+    row.minusButton = new QPushButton(row.container);
+    QIcon minusIcon(":/Resources/images/svg/pqMinus.svg");
+    if (minusIcon.isNull()) {
+        row.minusButton->setText("-");
+    } else {
+        row.minusButton->setIcon(minusIcon);
+    }
+    row.minusButton->setToolTip(tr("Remove query condition"));
+    row.minusButton->setMaximumWidth(32);
+    rowLayout->addWidget(row.minusButton);
+
+    row.container->setLayout(rowLayout);
+
+    // Insert into layout and list
+    m_queriesLayout->insertWidget(index, row.container);
+    m_queryRows.insert(index, row);
+
+    // Connect signals
+    connect(row.plusButton, &QPushButton::clicked, [this, row]() {
+        int idx = m_queryRows.indexOf(row);
+        if (idx >= 0) {
+            addQueryRow(idx + 1);
+        }
+    });
+
+    connect(row.minusButton, &QPushButton::clicked, [this, row]() {
+        int idx = m_queryRows.indexOf(row);
+        if (idx >= 0) {
+            removeQueryRow(idx);
+        }
+    });
+
+    // Update attribute combo if first row
+    if (index == 0 && !attribute.isEmpty()) {
+        int attrIndex = row.attributeCombo->findText(attribute);
+        if (attrIndex >= 0) {
+            row.attributeCombo->setCurrentIndex(attrIndex);
+        }
+    }
+
+    // Update button states (disable minus if only one row)
+    updateQueryRowButtons();
+
+    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Added query row at index %1").arg(index));
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::removeQueryRow(int index) {
+    if (index < 0 || index >= m_queryRows.size()) {
+        return;
+    }
+
+    // Can't remove if only one row
+    if (m_queryRows.size() <= 1) {
+        CVLog::Warning("[cvSelectionPropertiesWidget] Cannot remove the last query row");
+        return;
+    }
+
+    QueryRow row = m_queryRows.takeAt(index);
+
+    // Remove from layout and delete widgets
+    m_queriesLayout->removeWidget(row.container);
+    delete row.container;  // This will delete all child widgets
+
+    // Update legacy pointers if we removed the first row
+    if (index == 0 && !m_queryRows.isEmpty()) {
+        m_attributeCombo = m_queryRows[0].attributeCombo;
+        m_operatorCombo = m_queryRows[0].operatorCombo;
+        m_valueEdit = m_queryRows[0].valueEdit;
+    }
+
+    // Update button states
+    updateQueryRowButtons();
+
+    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Removed query row at index %1").arg(index));
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::updateQueryRowButtons() {
+    bool canRemove = (m_queryRows.size() > 1);
+    for (auto& row : m_queryRows) {
+        row.minusButton->setEnabled(canRemove);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -4297,11 +4467,27 @@ void cvSelectionPropertiesWidget::updateDataProducerCombo() {
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::updateAttributeCombo() {
-    if (!m_attributeCombo) {
+    // Update all query row attribute combos
+    if (m_queryRows.isEmpty()) {
         return;
     }
+    
+    // Store current selections to preserve them if possible
+    QStringList currentAttributes;
+    for (const auto& row : m_queryRows) {
+        if (row.attributeCombo && row.attributeCombo->count() > 0) {
+            currentAttributes.append(row.attributeCombo->currentText());
+        } else {
+            currentAttributes.append(QString());
+        }
+    }
 
-    m_attributeCombo->clear();
+    // Clear all attribute combos (but keep the legacy pointer updated)
+    for (auto& row : m_queryRows) {
+        if (row.attributeCombo) {
+            row.attributeCombo->clear();
+        }
+    }
 
     // ParaView behavior: ID fields should be associated with the selected Data
     // Producer IMPORTANT: Only use polyData from the SELECTED Data Producer,
@@ -4665,8 +4851,39 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
         m_attributeCombo->addItem(tr("Cell"));
     }
 
-    if (m_attributeCombo->count() > 0) {
-        m_attributeCombo->setCurrentIndex(0);
+    // Update all query rows with the same attributes
+    // First, collect all items from the first combo (which we just populated)
+    QStringList attributes;
+    if (!m_queryRows.isEmpty() && m_queryRows[0].attributeCombo) {
+        QComboBox* firstCombo = m_queryRows[0].attributeCombo;
+        for (int i = 0; i < firstCombo->count(); ++i) {
+            attributes.append(firstCombo->itemText(i));
+        }
+        
+        // Apply to all other combos
+        for (int rowIdx = 1; rowIdx < m_queryRows.size(); ++rowIdx) {
+            if (m_queryRows[rowIdx].attributeCombo) {
+                QString current = m_queryRows[rowIdx].attributeCombo->currentText();
+                m_queryRows[rowIdx].attributeCombo->clear();
+                m_queryRows[rowIdx].attributeCombo->addItems(attributes);
+                
+                // Try to restore previous selection
+                if (!current.isEmpty()) {
+                    int idx = m_queryRows[rowIdx].attributeCombo->findText(current);
+                    if (idx >= 0) {
+                        m_queryRows[rowIdx].attributeCombo->setCurrentIndex(idx);
+                    }
+                }
+            }
+        }
+    }
+
+    // Set first item as current for all combos if they're empty
+    for (auto& row : m_queryRows) {
+        if (row.attributeCombo && row.attributeCombo->count() > 0 && 
+            row.attributeCombo->currentIndex() < 0) {
+            row.attributeCombo->setCurrentIndex(0);
+        }
     }
 }
 
@@ -4931,6 +5148,9 @@ void cvSelectionPropertiesWidget::performFindData(const QString& attribute,
     if (pclVis) {
         pclVis->UpdateScreen();
     }
+
+    // Update the Selected Data spreadsheet table with the query results
+    updateSpreadsheetData(polyData);
 
     QMessageBox::information(this, tr("Find Data"),
                              tr("Selected %1 %2(s) matching '%3 %4 %5'")

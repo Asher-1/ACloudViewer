@@ -25,31 +25,24 @@ jobs:
         with:
           python-version: '3.11'
           
-      - name: Install dependencies
-        run: |
-          pip install requests jinja2
-          
-      - name: Fetch releases and update website
+      - name: Scan releases and generate download data
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python docs/automation/scripts/update_download_links.py
+          python3 docs/automation/scripts/scan_releases.py
+          echo "✅ downloads_data.json generated successfully"
           
-      - name: Check for changes
-        id: check_changes
+      - name: Verify downloads_data.json
         run: |
-          if git diff --quiet docs/index.html; then
-            echo "changed=false" >> $GITHUB_OUTPUT
+          if [ -f "docs/downloads_data.json" ]; then
+            echo "✅ downloads_data.json exists"
+            echo "File size: $(du -h docs/downloads_data.json | cut -f1)"
+            echo "Versions found: $(jq '.version_metadata | length' docs/downloads_data.json)"
           else
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "❌ downloads_data.json not found!"
+            exit 1
           fi
           
-      - name: Commit and push changes
-        if: steps.check_changes.outputs.changed == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add docs/index.html
-          git commit -m "chore: auto-update download links from releases [skip ci]"
-          git push
+      # Note: downloads_data.json is in .gitignore, so it won't be committed to git
+      # but it will be included in GitHub Pages deployment automatically
 

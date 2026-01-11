@@ -263,7 +263,7 @@ We welcome you to the 3.8.0 release of ACloudViewer. This release is full of exc
 
 ### Real-time 3D reconstruction
 We introduce a new CUDA accelerated pipeline including RGBD odometry, frame-to-model tracking, and volumetric integration.
-![Figure 1. Example of 3D reconstruction from an RGB-D sensor.](doc/images/real-time-3D-Reconstruction.png)
+![Figure 1. Example of 3D reconstruction from an RGB-D sensor.](docs/images/real-time-3D-Reconstruction.png)
 #### Odometry
 We introduce the tensor based real-time RGBD Odometry pipeline. In addition to the legacy Hybrid and Intensity based methods, we support the popular point-to-plane method.
 #### TSDFVoxelGrid
@@ -275,7 +275,7 @@ We have further enhanced our legacy offline reconstruction system by introducing
 
 ### Real-time point cloud registration
 We present a high-performance implementation of ICP using CloudViewer’ Tensor library. This module is one of the first on leveraging the new Neighbor search module and the newly crafted parallel kernels. This implementation brings support for multi-scale ICP, which allows us to do iterations on different resolutions in order to accelerate convergence while keeping computation low.
-![Figure 2. ICP registration of multiple point clouds from a driving dataset.](doc/images/ICP-registration.png)
+![Figure 2. ICP registration of multiple point clouds from a driving dataset.](docs/images/ICP-registration.png)
 ### New Neighbor Search module
 Neighbor search is at the core of many 3D algorithms. Therefore, it is critical to have access to a fast implementation able to execute a large number of queries in a fraction of a second. After months of development, the CloudViewer team is proud to present the new Neighbor Search module!
 
@@ -283,9 +283,9 @@ This module brings support for core search algorithms, such as KNN, Radius searc
 
 ### Web visualizer
 The need for visualizing complex 3D data in web environments has surged considerably in the past few years, in part thanks to the proliferation of sensors like LIDAR and RGBD cameras. New use cases, such as online dataset inspection and remote visualization are now an integral part of many tasks, requiring the crafting of ad-hoc tools, which often are cumbersome to use.
-![Figure 3. Standalone visualization of a semantic segmentation model in a browser.](doc/images/web_visualizer.png)
+![Figure 3. Standalone visualization of a semantic segmentation model in a browser.](docs/images/web_visualizer.png)
 In order to improve this situation, we introduce our new web-based visualization module, which enables 3D visualization from any browsers and any location. This module lets users run advanced rendering and visualization pipelines, both remote and locally through your web browser. All the power of CloudViewer’ rendering engine --including support for PBR materials, multiple lighting systems, 3D ML visualization, and many other features--, are now supported in your browser. This module also includes a Jupyter extension for interactive web-based visualization! This new feature allows you to run compute-intensive 3D processing in a dedicated server while visualizing the results remotely on any device through your browser.
-![Figure 4. Visualization of a 3D model on a Jupyter notebook.](doc/images/jupyter_visualizer.png)
+![Figure 4. Visualization of a 3D model on a Jupyter notebook.](docs/images/jupyter_visualizer.png)
 
 ### Build System
 Our pip packages now include support for CUDA 11.0, PyTorch 1.7.1, and TensorFlow 2.4.1 to enable RTX 3000 series devices. Please, notice that we provide custom PyTorch wheels for Linux to work around an incompatibility between CUDA 11, PyTorch, and extension modules such as CloudViewer-ML.

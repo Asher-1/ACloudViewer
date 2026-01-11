@@ -89,7 +89,7 @@ cloudViewer example reconstruction/gui
 ## ACloudViewer System
 
 <p align="center">
-  <img width="640" src="docs/images/ACloudViewerMainUI.png">
+  <img width="640" src="docs/images/Annotaion.png">
 </p>
 
 ACloudViewer is a standalone 3D viewer app based on QT5 available on Ubuntu and Windows.
@@ -123,7 +123,7 @@ Please stay tuned for MacOS. Download CloudViewer app from the
 ## CloudViewer-ML
 
 <p align="center">
-  <img width="640" src="docs/images/getting_started_ml_visualizer.gif">
+  <img width="640" src="docs/images/gifs/getting_started_ml_visualizer.gif">
 </p>
 
 CloudViewer-ML is an extension of CloudViewer for 3D machine learning tasks. It builds on

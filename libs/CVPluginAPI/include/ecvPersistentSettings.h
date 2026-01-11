@@ -103,4 +103,7 @@ public:
     static inline const QString Shortcuts() {
         return QStringLiteral("Shortcuts");
     }
+    static inline const QString AppStyle() {
+        return QStringLiteral("AppStyle");
+    }
 };
