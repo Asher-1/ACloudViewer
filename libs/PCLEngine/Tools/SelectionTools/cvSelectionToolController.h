@@ -228,10 +228,7 @@ public:
      */
     cvSelectionHighlighter* highlighter() const;
 
-    /**
-     * @brief Get the selection history
-     */
-    cvSelectionHistory* history() const;
+    // history() removed - UI not implemented
 
     /**
      * @brief Update selection properties widget state
@@ -287,15 +284,7 @@ public slots:
      */
     void onSelectionFinished(const cvSelectionData& selectionData);
 
-    /**
-     * @brief Undo selection
-     */
-    void undoSelection();
-
-    /**
-     * @brief Redo selection
-     */
-    void redoSelection();
+    // undoSelection/redoSelection removed - UI not implemented
 
     /**
      * @brief Handle modifier action changes

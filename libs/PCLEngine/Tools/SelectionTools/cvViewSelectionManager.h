@@ -23,11 +23,9 @@
 
 // Forward declarations
 class cvSelectionData;
-class cvSelectionHistory;
 class cvSelectionAlgebra;
 class cvSelectionPipeline;
 class cvSelectionFilter;
-class cvSelectionBookmarks;
 class cvSelectionAnnotationManager;
 class cvSelectionHighlighter;
 class vtkIntArray;
@@ -174,16 +172,22 @@ public:
     /**
      * @brief Set the current selection data
      * @param selectionData The selection data (will be copied)
+     * @param resetLayers If true, resets numberOfLayers to 0 (for new
+     * selections)
      */
-    void setCurrentSelection(const cvSelectionData& selectionData);
+    void setCurrentSelection(const cvSelectionData& selectionData,
+                             bool resetLayers = true);
 
     /**
      * @brief Set the current selection data (from VTK array - internal use)
      * @param selection The VTK selection array (smart pointer)
      * @param fieldAssociation 0 for cells, 1 for points
+     * @param resetLayers If true, resets numberOfLayers to 0 (for new
+     * selections)
      */
     void setCurrentSelection(const vtkSmartPointer<vtkIdTypeArray>& selection,
-                             int fieldAssociation);
+                             int fieldAssociation,
+                             bool resetLayers = true);
 
     /**
      * @brief Check if there is a current selection
@@ -195,11 +199,7 @@ public:
     // Utility module accessors (ParaView-style integration)
     //-------------------------------------------------------------------------
 
-    /**
-     * @brief Get the selection history manager
-     * @return Pointer to history manager (for undo/redo operations)
-     */
-    cvSelectionHistory* getHistory() { return m_history; }
+    // History (undo/redo) removed - UI not implemented
 
     /**
      * @brief Get the selection algebra utility
@@ -219,11 +219,7 @@ public:
      */
     cvSelectionFilter* getFilter() { return m_filter; }
 
-    /**
-     * @brief Get the bookmarks manager
-     * @return Pointer to bookmarks manager
-     */
-    cvSelectionBookmarks* getBookmarks() { return m_bookmarks; }
+    // Bookmarks removed - UI not implemented
 
     /**
      * @brief Get the annotation manager
@@ -245,27 +241,7 @@ public:
     // Advanced selection operations (using utility modules)
     //-------------------------------------------------------------------------
 
-    /**
-     * @brief Undo to previous selection
-     * @return True if undo was successful
-     */
-    bool undo();
-
-    /**
-     * @brief Redo to next selection
-     * @return True if redo was successful
-     */
-    bool redo();
-
-    /**
-     * @brief Check if undo is available
-     */
-    bool canUndo() const;
-
-    /**
-     * @brief Check if redo is available
-     */
-    bool canRedo() const;
+    // Undo/Redo removed - UI not implemented
 
     /**
      * @brief Perform algebra operation on selections
@@ -380,6 +356,23 @@ public:
     void expandSelection(int layers,
                          bool removeSeed = false,
                          bool removeIntermediateLayers = false);
+
+    /**
+     * @brief Check if the selection can be shrunk
+     * @return True if numberOfLayers >= 1, allowing at least one shrink
+     * operation
+     *
+     * Reference: ParaView's pqRenderViewSelectionReaction::updateEnableState()
+     * lines 184-212
+     */
+    bool canShrinkSelection() const { return m_numberOfLayers >= 1; }
+
+    /**
+     * @brief Get the current number of layers
+     * @return Number of times the selection has been grown (can be negative
+     * after shrinks)
+     */
+    int getNumberOfLayers() const { return m_numberOfLayers; }
     ///@}
 
 signals:
@@ -462,12 +455,11 @@ private:
     //-------------------------------------------------------------------------
     // Utility modules (ParaView-style architecture)
     //-------------------------------------------------------------------------
-    cvSelectionHistory* m_history;  ///< Undo/redo history
+    // Note: m_history and m_bookmarks removed - UI not implemented
     cvSelectionAlgebra*
             m_algebra;  ///< Set operations (union, intersection, etc.)
-    cvSelectionPipeline* m_pipeline;    ///< Hardware selection pipeline
-    cvSelectionFilter* m_filter;        ///< Advanced filtering
-    cvSelectionBookmarks* m_bookmarks;  ///< Save/load selections
+    cvSelectionPipeline* m_pipeline;  ///< Hardware selection pipeline
+    cvSelectionFilter* m_filter;      ///< Advanced filtering
     cvSelectionAnnotationManager* m_annotations;  ///< Annotation system
     cvSelectionHighlighter*
             m_highlighter;  ///< Shared highlighter for all tools
@@ -475,6 +467,16 @@ private:
     // Grow selection settings (ParaView-style)
     bool m_growRemoveSeed = false;
     bool m_growRemoveIntermediateLayers = false;
+
+    // Track number of layers for grow/shrink operations (ParaView-style)
+    // This allows us to determine when shrink should be disabled
+    int m_numberOfLayers = 0;
+
+    // Store the original selection (seed) for ParaView-style grow/shrink
+    // ParaView always expands/shrinks from the original selection, not from the
+    // current one Reference: vtkSelector.cxx line 139-148,
+    // vtkSMSelectionHelper::ExpandSelection
+    cvSelectionData m_originalSelection;
 
     // Source object for direct extraction (avoid VTK→ccHObject conversion)
     // Note: ccHObject is not a QObject, so we use a raw pointer
