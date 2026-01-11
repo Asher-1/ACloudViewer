@@ -1,0 +1,515 @@
+# FROM must be called before other ARGS except for ARG BASE_IMAGE
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Required build args, should be specified in docker_build.sh
+ARG DEVELOPER_BUILD
+ARG CMAKE_VERSION
+ARG PYTHON_VERSION
+ARG BUILD_SHARED_LIBS
+ARG BUILD_CUDA_MODULE
+ARG BUILD_TENSORFLOW_OPS
+ARG BUILD_PYTORCH_OPS
+ARG PACKAGE
+ARG QT_BASE_DIR
+ARG CI
+
+RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
+ && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
+ && if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
+ && if [ -z "${BUILD_SHARED_LIBS}"    ]; then echo "Error: ARG BUILD_SHARED_LIBS    not specified."; exit 1; fi \
+ && if [ -z "${BUILD_CUDA_MODULE}"    ]; then echo "Error: ARG BUILD_CUDA_MODULE    not specified."; exit 1; fi \
+ && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
+ && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
+ && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi 
+
+# Forward all ARG to ENV
+# ci_utils.sh may require these environment variables
+ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
+ENV CMAKE_VERSION=${CMAKE_VERSION}
+ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV BUILD_SHARED_LIBS=OFF
+ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
+ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+ENV PACKAGE=${PACKAGE}
+ENV QT_BASE_DIR=${QT_BASE_DIR}
+
+# Updated versions for Qt6 build
+ENV VTK_VERSION=9.4.2
+ENV PCL_VERSION=1.15.1
+
+# Env vars for the nvidia-container-runtime.
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=all
+
+# Prevent interactive inputs when installing packages
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
+
+# For bash-specific commands
+SHELL ["/bin/bash", "-c"]
+
+# Fix Nvidia repo key rotation issue
+# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
+# https://forums.developer.nvidia.com/t/18-04-cuda-docker-image-is-broken/212892/10
+# https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
+RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
+        export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn; \
+        apt-key del 7fa2af80; \
+        apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub; \
+        apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub; \
+    fi
+
+# Update apt and install libs needed by Qt6
+# First install basic tools, then setup Kitware repo with proper key handling
+RUN apt-get clean && apt-get update --fix-missing -y \
+    && apt-get install -y apt-utils software-properties-common tzdata gnupg ca-certificates curl wget \
+    && mkdir -p /usr/share/keyrings \
+    && curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc \
+       | gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
+       | tee /etc/apt/sources.list.d/kitware.list >/dev/null \
+    && apt-get update --fix-missing -y \
+    && apt-get install --fix-missing -yq --no-install-recommends \
+        build-essential \
+        ccache \
+        git  \
+        cmake \
+        wget \
+        curl \
+        vim \
+        tree \
+        apt-file \
+        net-tools \
+        mesa-utils \
+        # reference cloudViewer
+        libzstd-dev \
+        zlib1g \
+        zlib1g-dev \
+        libssl-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libncursesw5-dev \
+        libcurl4-openssl-dev \
+        xz-utils \
+        tk-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libffi-dev \ 
+        liblzma-dev \
+        ca-certificates \
+        # for opencv
+        libavcodec-dev \
+        libavformat-dev \
+        libavutil-dev \
+        libswscale-dev \
+        libjpeg-dev \
+        libpng-dev \
+        libtiff-dev \
+        libhdf5-dev \
+        # for colmap
+        libatlas-base-dev \
+        # for package
+        zip \
+        unzip \
+        locate \
+        automake \
+        xorg-dev \
+        libxi-dev \
+        openmpi-bin \
+        openmpi-common \
+        gfortran \
+        ninja-build \
+        libgtest-dev \
+        libusb-dev \
+        freeglut3-dev \
+        pkg-config \
+        libpcap-dev \
+        clang-format \
+        graphviz \
+        nasm \
+        flex \
+        fontconfig \
+        # for pcl
+        libopenni-dev \
+        libopenni2-dev \
+        libjsoncpp-dev \
+        # libgdal-dev \
+        libcgal-dev \
+        libusb-1.0-0-dev \
+        libeigen3-dev \
+        libboost-all-dev \
+        libglew-dev \
+        'libqhull*' \
+        libqhull-dev \
+        libflann1.9 \
+        libflann-dev \
+        # for Qt6 XCB/X11 backend
+        libxcb-xkb1 \
+        libxcb-xkb-dev \
+        libxcb-shape0 \
+        libxcb-shape0-dev \
+        libxcb-randr0 \
+        libxcb-randr0-dev \
+        libxcb-icccm4 \
+        libxcb-icccm4-dev \
+        libxcb-image0 \
+        libxcb-image0-dev \
+        libxcb-keysyms1 \
+        libxcb-keysyms1-dev \
+        libxcb-xinerama0 \
+        libxcb-xinerama0-dev \
+        libxkbcommon-x11-0 \
+        libxkbcommon-x11-dev \
+        libxcb-render-util0 \
+        libxcb-render-util0-dev \
+        libxcb-cursor0 \
+        libxcb-cursor-dev \
+        libxcb-util1 \
+        libxcb-util-dev \
+        libxcb-glx0 \
+        libxcb-glx0-dev \
+        # Additional Qt6 dependencies
+        libgl1-mesa-dev \
+        libglu1-mesa-dev \
+        libegl1-mesa-dev \
+        libwayland-dev \
+        libwayland-egl1 \
+        libxkbcommon-dev \
+        libvulkan-dev \
+        libinput-dev \
+        libmtdev-dev \
+        libts-dev \
+        libdrm-dev \
+        libgbm-dev \
+        # For Qt6 multimedia
+        libpulse-dev \
+        libasound2-dev \
+        # For Qt6 positioning
+        libgstreamer1.0-dev \
+        libgstreamer-plugins-base1.0-dev \
+        # For PCL atomic operations
+        libatomic1
+
+# Install Qt6 from Ubuntu repository (Ubuntu 22.04+: jammy, noble, oracular)
+# IMPORTANT: This step MUST install Qt6 and verify Qt6Config.cmake exists
+RUN set -ex && \
+    echo "=== Qt6 Installation Layer ===" && \
+    apt-get -y update && \
+    UBUNTU_CODENAME=$(lsb_release -c --short) && \
+    echo "=== Installing Qt6 for Ubuntu ${UBUNTU_CODENAME} ===" && \
+    if [ "$UBUNTU_CODENAME" != "noble" ] && [ "$UBUNTU_CODENAME" != "jammy" ] && [ "$UBUNTU_CODENAME" != "oracular" ]; then \
+        echo "ERROR: Unsupported Ubuntu version: $UBUNTU_CODENAME. Only Ubuntu 22.04 (jammy), 24.04 (noble), and 26.04 (oracular) are supported."; \
+        exit 1; \
+    fi && \
+    echo "Installing Qt6 packages from Ubuntu repository..." && \
+    apt-get install -y \
+        qt6-base-dev \
+        qt6-base-dev-tools \
+        qt6-base-private-dev \
+        qt6-tools-dev \
+        qt6-tools-dev-tools \
+        qt6-declarative-dev \
+        qt6-declarative-private-dev \
+        libqt6svg6-dev \
+        libqt6svgwidgets6 \
+        libqt6websockets6-dev \
+        libqt6core5compat6-dev \
+        qt6-image-formats-plugins \
+        qt6-l10n-tools \
+        qml6-module-qtqml \
+        qml6-module-qtqml-workerscript \
+        libqt6opengl6-dev \
+        libqt6sql6 \
+        libqt6sql6-sqlite \
+        libqt6concurrent6 \
+        libqt6qml6 \
+        libqt6quick6 \
+        libqt6quickwidgets6 && \
+    echo "=== Qt6 packages installed ===" && \
+    echo "Installed Qt6 packages:" && \
+    dpkg -l | grep -i qt6 | head -20 && \
+    echo "=== Searching for Qt6Config.cmake ===" && \
+    QT6_CONFIG_PATH=$(find /usr -name "Qt6Config.cmake" 2>/dev/null | head -1) && \
+    if [ -n "$QT6_CONFIG_PATH" ]; then \
+        echo "SUCCESS: Qt6Config.cmake found at: $QT6_CONFIG_PATH"; \
+        QT6_CMAKE_DIR=$(dirname "$QT6_CONFIG_PATH"); \
+        echo "Qt6_DIR should be: $QT6_CMAKE_DIR"; \
+    else \
+        echo "ERROR: Qt6Config.cmake NOT found after apt install!"; \
+        echo "Listing /usr/lib/x86_64-linux-gnu/cmake/:"; \
+        ls -la /usr/lib/x86_64-linux-gnu/cmake/ 2>/dev/null || echo "Directory does not exist"; \
+        echo "Checking apt-cache for qt6-base-dev:"; \
+        apt-cache show qt6-base-dev 2>/dev/null | head -20 || echo "Package not found"; \
+        exit 1; \
+    fi && \
+    # Noble and Oracular have additional packages
+    if [ "$UBUNTU_CODENAME" = "noble" ] || [ "$UBUNTU_CODENAME" = "oracular" ]; then \
+        apt-get install -y qt6-quick3d-dev qt6-shader-baker || true; \
+    fi && \
+    ldconfig && rm -rf /var/lib/apt/lists/*
+
+# Set USE_QT6 flag for build scripts
+ENV USE_QT6=ON
+
+# Create unified Qt6 environment setup script (immediately after Qt6 installation)
+# This script will be sourced before building VTK, PCL, and ACloudViewer
+# Variables follow the same pattern as Qt5 in Dockerfile.ci:
+#   QT6_DIR = Qt installation root (like QT_DIR for Qt5)
+#   Qt6_DIR = Path to Qt6Config.cmake directory (for CMake find_package)
+#   QT6_QMAKE = Path to qmake executable (like QT_QMAKE_EXECUTABLE for Qt5)
+#   CMAKE_PREFIX_PATH = CMake search path (like Qt5)
+# NOTE: For apt-installed Qt6 on Ubuntu 22.04+, paths are standardized
+RUN set -ex && \
+    UBUNTU_CODENAME=$(lsb_release -c --short) && \
+    echo "=== Detecting Qt6 installation paths for $UBUNTU_CODENAME ===" && \
+    # Find Qt6Config.cmake for system Qt6
+    QT6_CONFIG_PATH=$(find /usr -name "Qt6Config.cmake" 2>/dev/null | head -1) && \
+    if [ -z "$QT6_CONFIG_PATH" ]; then \
+        echo "ERROR: Qt6Config.cmake not found!"; \
+        echo "Listing potential Qt6 directories:"; \
+        ls -la /usr/lib/cmake/ 2>/dev/null | grep -i qt || true; \
+        ls -la /usr/lib/x86_64-linux-gnu/cmake/ 2>/dev/null | grep -i qt || true; \
+        exit 1; \
+    fi && \
+    # Extract directories from the found path
+    QT6_CMAKE_DIR=$(dirname "$QT6_CONFIG_PATH") && \
+    echo "Qt6_DIR (CMake config): $QT6_CMAKE_DIR" && \
+    # System Qt6 paths
+    QT6_ROOT="/usr" && \
+    QT6_QMAKE_PATH="/usr/bin/qmake6" && \
+    echo "QT6_DIR (root): $QT6_ROOT" && \
+    echo "QT6_QMAKE: $QT6_QMAKE_PATH" && \
+    # Generate setup script with detected paths
+    echo '#!/bin/bash' > /opt/setup_qt6_env.sh && \
+    echo "# Qt6 environment variables - auto-generated for $UBUNTU_CODENAME" >> /opt/setup_qt6_env.sh && \
+    echo "# Qt6Config.cmake found at: $QT6_CONFIG_PATH" >> /opt/setup_qt6_env.sh && \
+    echo "export QT6_DIR=$QT6_ROOT" >> /opt/setup_qt6_env.sh && \
+    echo "export Qt6_DIR=$QT6_CMAKE_DIR" >> /opt/setup_qt6_env.sh && \
+    echo "export QT6_QMAKE=$QT6_QMAKE_PATH" >> /opt/setup_qt6_env.sh && \
+    echo "export CMAKE_PREFIX_PATH=$QT6_CMAKE_DIR:\${CMAKE_PREFIX_PATH:-}" >> /opt/setup_qt6_env.sh && \
+    echo 'echo "=== Qt6 Environment ==="' >> /opt/setup_qt6_env.sh && \
+    echo 'echo "QT6_DIR=$QT6_DIR"' >> /opt/setup_qt6_env.sh && \
+    echo 'echo "Qt6_DIR=$Qt6_DIR"' >> /opt/setup_qt6_env.sh && \
+    echo 'echo "QT6_QMAKE=$QT6_QMAKE"' >> /opt/setup_qt6_env.sh && \
+    echo 'echo "CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"' >> /opt/setup_qt6_env.sh && \
+    echo 'if [ -f "$Qt6_DIR/Qt6Config.cmake" ]; then echo "Qt6Config.cmake verified at $Qt6_DIR"; else echo "ERROR: Qt6Config.cmake NOT found at $Qt6_DIR"; exit 1; fi' >> /opt/setup_qt6_env.sh && \
+    chmod +x /opt/setup_qt6_env.sh && \
+    echo "=== Generated setup_qt6_env.sh ===" && \
+    cat /opt/setup_qt6_env.sh && \
+    echo "=== Testing setup_qt6_env.sh ===" && \
+    /bin/bash -c "source /opt/setup_qt6_env.sh" && \
+    ln -sf /opt/setup_qt6_env.sh /etc/profile.d/qt6.sh && \
+    cat /opt/setup_qt6_env.sh
+
+# Verify Qt6 installation and set environment
+# For apt-installed Qt6 (Ubuntu 22.04+):
+#   - QT_BASE_DIR=/usr/lib/x86_64-linux-gnu/qt6
+#   - lib: /usr/lib/x86_64-linux-gnu
+#   - plugins: /usr/lib/x86_64-linux-gnu/qt6/plugins
+#   - bin: /usr/lib/qt6/bin
+#   - cmake: /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake
+RUN set -ex && \
+    UBUNTU_CODENAME=$(lsb_release -c --short) && \
+    echo "=== Qt6 Environment Setup for $UBUNTU_CODENAME ===" && \
+    QT6_ROOT="/usr" && \
+    QT6_LIB_DIR="/usr/lib/x86_64-linux-gnu" && \
+    QT6_PLUGINS_DIR="/usr/lib/x86_64-linux-gnu/qt6/plugins" && \
+    QT6_BIN_DIR="/usr/lib/qt6/bin" && \
+    echo "QT6_ROOT=$QT6_ROOT" && \
+    echo "QT6_LIB_DIR=$QT6_LIB_DIR" && \
+    echo "QT6_PLUGINS_DIR=$QT6_PLUGINS_DIR" && \
+    echo "QT6_BIN_DIR=$QT6_BIN_DIR" && \
+    # Verify paths exist
+    test -d "$QT6_LIB_DIR" || (echo "ERROR: QT6_LIB_DIR does not exist: $QT6_LIB_DIR" && exit 1) && \
+    test -d "$QT6_PLUGINS_DIR" || (echo "ERROR: QT6_PLUGINS_DIR does not exist: $QT6_PLUGINS_DIR" && exit 1) && \
+    echo "Qt6 paths verified successfully"
+
+# Set Qt6 paths in ENV
+# QT_BASE_DIR is set to /usr/lib/x86_64-linux-gnu/qt6 (passed from docker_build_qt6.sh)
+ENV QT_BASE_DIR=${QT_BASE_DIR} \
+    QT_ROOT=${QT_BASE_DIR} \
+    QTDIR=${QT_BASE_DIR} \
+    QT_DIR=${QT_BASE_DIR} \
+    QT_PLUGIN_PATH=${QT_BASE_DIR}/plugins
+
+# Add Qt6 paths to environment (for apt-installed Qt6)
+RUN set -ex && \
+    echo 'export PATH=/usr/lib/qt6/bin:/usr/bin:$PATH' >> /etc/profile.d/qt6-paths.sh && \
+    echo 'export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}' >> /etc/profile.d/qt6-paths.sh && \
+    echo 'export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH:-}' >> /etc/profile.d/qt6-paths.sh && \
+    echo 'export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt6/plugins' >> /etc/profile.d/qt6-paths.sh && \
+    chmod +x /etc/profile.d/qt6-paths.sh && \
+    cat /etc/profile.d/qt6-paths.sh
+
+CMD ["/bin/bash", "-c", "source /root/.bashrc && exec bash"]
+
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. cloudViewer) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Dependencies: cmake
+ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
+ && cmake --version
+
+# deploy package installer
+WORKDIR /root
+RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-linux-amd.zip -O "/root/QtIFW-4.6.1-linux-amd.zip"
+RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
+ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
+
+ENV ACloudViewer_DEV=/root \
+    ACloudViewer_BUILD=/root/ACloudViewer/build \
+    ACloudViewer_INSTALL=/root/install
+
+# Only copy dependency installation scripts first (for better Docker cache utilization)
+# The full source code will be copied later before building
+COPY util/install_deps_ubuntu.sh ${ACloudViewer_DEV}/ACloudViewer/util/
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+
+# ACloudViewer C++ dependencies
+RUN ./util/install_deps_ubuntu.sh assume-yes
+
+# ACloudViewer PCL+VTK dependencies
+
+# Update eigen to 3.4+
+# Install to /usr to match system paths expected by VTK/PCL CMake configs
+WORKDIR /opt
+RUN mv -f /usr/include/eigen3 /usr/include/eigen337.bak || true
+RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz -O "/opt/eigen-3.4.0.tar.gz"
+RUN tar -xvf eigen-3.4.0.tar.gz && \
+    cd eigen-3.4.0 && \
+    mkdir -p build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr .. && \
+    make install "-j$(nproc)" \
+    && ldconfig \
+    && rm -rf /opt/eigen-3.4.0 \
+    && rm -rf /opt/eigen-3.4.0.tar.gz \
+    && echo "=== Verifying Eigen3 installation ===" \
+    && ls -la /usr/include/eigen3/ | head -10 \
+    && ls -la /usr/share/eigen3/cmake/ 2>/dev/null || ls -la /usr/lib/cmake/eigen3/ 2>/dev/null || echo "Eigen3 cmake config location unknown"
+    
+# Install metslib for pcl
+WORKDIR /opt
+RUN wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz -O "/opt/metslib-0.5.3.tgz"
+RUN tar -xvf metslib-0.5.3.tgz && \
+    cd metslib-0.5.3 && \
+    sh ./configure && \
+    make && \
+    make install \
+    && ldconfig \
+    && rm -rf /opt/metslib-0.5.3 \
+    && rm -rf /opt/metslib-0.5.3.tgz
+
+# Install laszip
+WORKDIR /opt
+RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "/opt/laszip-src-3.4.3.tar.gz"
+RUN tar -xvf laszip-src-3.4.3.tar.gz && \
+    cd laszip-src-3.4.3 && \
+    mkdir -p build && cd build && \
+    cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" \
+    && ldconfig \
+    && rm -rf /opt/laszip-src-3.4.3 \
+    && rm -rf /opt/laszip-src-3.4.3.zip
+
+# Install xerces-c
+WORKDIR /opt
+RUN wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/opt/xerces-c-3.2.3.zip"
+RUN unzip xerces-c-3.2.3.zip \
+    && cd ./xerces-c-3.2.3 \
+    && chmod +x configure \
+    && ./configure --prefix=/usr \
+    && make \
+    && make install \
+    && make clean \
+    && rm -rf /opt/xerces-c-3.2.3 \
+    && rm -rf /opt/xerces-c-3.2.3.zip
+
+# Install VTK 9.4.2 with Qt6 support
+WORKDIR /opt
+RUN wget https://vtk.org/files/release/9.4/VTK-${VTK_VERSION}.tar.gz -O "/opt/VTK-${VTK_VERSION}.tar.gz"
+RUN set -ex && \
+    source /opt/setup_qt6_env.sh && \
+    tar -zxvf VTK-${VTK_VERSION}.tar.gz && \
+    cd VTK-${VTK_VERSION} && \
+    mkdir -p build && cd build && \
+    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DVTK_GROUP_ENABLE_Qt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=DONT_WANT \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
+            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
+            -DVTK_QT_VERSION:STRING=6 \
+            -DBUILD_SHARED_LIBS:BOOL=ON \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT6_QMAKE} \
+            -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH} .. 2>&1 \
+    || (echo "=== CMake Error Log ===" && cat CMakeFiles/CMakeError.log 2>/dev/null && \
+        echo "=== CMake Output Log (last 100 lines) ===" && tail -100 CMakeFiles/CMakeOutput.log 2>/dev/null; exit 1) && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig && \
+    rm -rf /opt/VTK-${VTK_VERSION} /opt/VTK-${VTK_VERSION}.tar.gz
+
+# Install PCL 1.15.1
+WORKDIR /opt
+RUN wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-${PCL_VERSION}/source.zip -O "/opt/pcl-${PCL_VERSION}.zip"
+RUN set -ex && \
+    source /opt/setup_qt6_env.sh && \
+    unzip pcl-${PCL_VERSION}.zip && \
+    cd pcl && \
+    mkdir -p build && cd build && \
+    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DBUILD_GPU=OFF \
+            -DBUILD_apps=OFF \
+            -DBUILD_examples=OFF \
+            -DBUILD_surface_on_nurbs=ON \
+            -DPCL_ENABLE_MARCHNATIVE=OFF \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT6_QMAKE} \
+            -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH} .. 2>&1 \
+    || (echo "=== PCL CMake Error Log ===" && cat CMakeFiles/CMakeError.log 2>/dev/null && \
+        echo "=== PCL CMakeOutput.log (last 200 lines) ===" && tail -200 CMakeFiles/CMakeOutput.log 2>/dev/null; exit 1) && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig && \
+    rm -rf /opt/pcl /opt/pcl-${PCL_VERSION}.zip
+
+# save disk space
+RUN rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p ${ACloudViewer_INSTALL}
+
+# Now copy the full ACloudViewer source code (after all dependencies are installed)
+# This maximizes Docker cache utilization - dependency layers are cached
+COPY . ${ACloudViewer_DEV}/ACloudViewer
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+
+# Build ACloudViewer app installer
+RUN echo "Start Build ACloudViewer apps installer..."                           \
+    && rm -rf ${ACloudViewer_BUILD}/*                                           \
+    && ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}         \
+    && rm -rf ${ACloudViewer_BUILD}/*
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+
+RUN echo "Docker ci build done with Qt6, VTK 9.4.2, and PCL 1.15.1."
+

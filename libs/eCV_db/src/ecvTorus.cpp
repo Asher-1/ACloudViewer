@@ -266,8 +266,14 @@ bool ccTorus::buildUp() {
     return true;
 }
 
-bool ccTorus::toFile_MeOnly(QFile& out) const {
-    if (!ccGenericPrimitive::toFile_MeOnly(out)) return false;
+bool ccTorus::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 21) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccGenericPrimitive::toFile_MeOnly(out, dataVersion)) return false;
 
     // parameters (dataVersion>=21)
     QDataStream outStream(&out);
@@ -278,6 +284,11 @@ bool ccTorus::toFile_MeOnly(QFile& out) const {
     outStream << m_angle_rad;
 
     return true;
+}
+
+short ccTorus::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(21),
+                    ccGenericPrimitive::minimumFileVersion_MeOnly());
 }
 
 bool ccTorus::fromFile_MeOnly(QFile& in,

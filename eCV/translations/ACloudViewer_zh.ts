@@ -6344,7 +6344,7 @@ Parameter</source>
     </message>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="449"/>
-        <source>Erow DB Tree</source>
+        <source>DB Tree</source>
         <translation>资源树</translation>
     </message>
     <message>
@@ -7758,7 +7758,7 @@ Parameter</source>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="670"/>
-        <source>[about] Asher, Welcome to corporation Erow: http://erow.cn !</source>
+        <source>[about] Asher, Welcome to corporation ACloudViewer: http://asher-1.github.io !</source>
         <translation></translation>
     </message>
     <message>

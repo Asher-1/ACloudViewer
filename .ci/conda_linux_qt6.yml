@@ -1,0 +1,12 @@
+name: python_qt6
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - ninja
+  - openssl
+  - libcurl=8.14.*
+  - qt6-main>=6.4.* # reconstruction
+  - xerces-c=3.2.* # reconstruction
+  - cgal=6.* # facets
+  - ffmpeg=7.1.*

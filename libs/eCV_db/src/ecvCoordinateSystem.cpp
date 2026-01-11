@@ -174,8 +174,14 @@ ccGenericPrimitive* ccCoordinateSystem::clone() const {
                                                  &m_transformation, getName()));
 }
 
-bool ccCoordinateSystem::toFile_MeOnly(QFile& out) const {
-    if (!ccGenericPrimitive::toFile_MeOnly(out)) return false;
+bool ccCoordinateSystem::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 52) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccGenericPrimitive::toFile_MeOnly(out, dataVersion)) return false;
 
     // parameters (dataVersion>=52)
     QDataStream outStream(&out);
@@ -183,6 +189,11 @@ bool ccCoordinateSystem::toFile_MeOnly(QFile& out) const {
     outStream << m_width;
 
     return true;
+}
+
+short ccCoordinateSystem::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(52),
+                    ccGenericPrimitive::minimumFileVersion_MeOnly());
 }
 
 bool ccCoordinateSystem::fromFile_MeOnly(QFile& in,

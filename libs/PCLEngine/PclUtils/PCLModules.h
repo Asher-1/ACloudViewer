@@ -14,8 +14,9 @@
 #endif
 
 // LOCAL
-#include "PCLCloud.h"
-#include "PCLConv.h"
+#include <Utils/PCLCloud.h>
+#include <Utils/PCLConv.h>
+
 #include "qPCL.h"
 
 // CV_CORE_LIB

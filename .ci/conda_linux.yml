@@ -3,10 +3,9 @@ channels:
   - conda-forge
 dependencies:
   - python=3.8
-  # - eigen=3.4.*
   - ninja
-  - libcurl=8.14.*
   - openssl
+  - libcurl=8.14.*
   - qt=5.15.* # reconstruction
   - xerces-c=3.2.* # reconstruction
   - cgal=5.* # facets

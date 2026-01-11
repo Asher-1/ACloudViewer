@@ -8,18 +8,21 @@
 #include "ecvDBRoot.h"
 
 // Qt
+#include <QtCompat.h>
+
 #include <QApplication>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
 #include <QMimeData>
-#include <QRegExp>
+#include <QSettings>
 #include <QStandardItemModel>
 #include <QTreeView>
 
 // LOCAL
 #include "MainWindow.h"
+#include "ecvProgressDialog.h"
 #include "ecvPropertiesTreeDelegate.h"
 #include "ecvSelectChildrenDlg.h"
 
@@ -36,6 +39,8 @@
 #include <ecvGenericPointCloud.h>
 #include <ecvGenericPrimitive.h>
 #include <ecvHObject.h>
+#include <ecvHObjectCaster.h>
+#include <ecvImage.h>
 #include <ecvMaterialSet.h>
 #include <ecvMesh.h>
 #include <ecvPlane.h>
@@ -153,6 +158,10 @@ private:
                                   ":/Resources/images/dbPolylineSymbol.png")),
                           {}});
 
+        const int circleIndex = mIconList.count();
+        mIconList.append(
+                {QIcon(QStringLiteral(":/Resources/images/dbCircle.png")), {}});
+
         const int octreeIndex = mIconList.count();
         mIconList.append(
                 {QIcon(QStringLiteral(":/Resources/images/dbOctreeSymbol.png")),
@@ -223,6 +232,7 @@ private:
                     {CV_TYPES::MESH_GROUP, subMeshIndex},
                     {CV_TYPES::SUB_MESH, subMeshIndex},
                     {CV_TYPES::POLY_LINE, polyLineIndex},
+                    {CV_TYPES::CIRCLE, circleIndex},
                     {CV_TYPES::POINT_OCTREE, octreeIndex},
                     {CV_TYPES::CALIBRATED_IMAGE, calibratedImageIndex},
                     {CV_TYPES::IMAGE, imageIndex},
@@ -238,7 +248,8 @@ private:
                     {CV_TYPES::LABEL_2D, labelIndex},
                     {CV_TYPES::VIEWPORT_2D_OBJECT, viewportObjIndex},
                     {CV_TYPES::VIEWPORT_2D_LABEL, viewportLabelIndex},
-                    {CV_TYPES::COORDINATESYSTEM, geomIndex}};
+                    {CV_TYPES::COORDINATESYSTEM, geomIndex},
+                    {CV_TYPES::DISC, geomIndex}};
     }
 
     IconPair mDefaultIcons;
@@ -275,6 +286,7 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
     m_sortChildrenZA = new QAction(tr("Sort children by name (Z-A)"), this);
     m_selectByTypeAndName =
             new QAction(tr("Select children by type and/or name"), this);
+    m_exportImages = new QAction(tr("Export images"), this);
     m_deleteSelectedEntities = new QAction(tr("Delete"), this);
     m_toggleSelectedEntities = new QAction(tr("Toggle"), this);
     m_toggleSelectedEntitiesVisibility =
@@ -310,6 +322,7 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
             &ccDBRoot::sortChildrenType);
     connect(m_selectByTypeAndName, &QAction::triggered, this,
             &ccDBRoot::selectByTypeAndName);
+    connect(m_exportImages, &QAction::triggered, this, &ccDBRoot::exportImages);
     connect(m_deleteSelectedEntities, &QAction::triggered, this,
             &ccDBRoot::deleteSelectedEntities);
     connect(m_toggleSelectedEntities, &QAction::triggered, this,
@@ -1181,11 +1194,12 @@ void ccDBRoot::updatePropertiesView() {
     assert(m_dbTreeWidget);
     QItemSelectionModel* qism = m_dbTreeWidget->selectionModel();
     QModelIndexList selectedIndexes = qism->selectedIndexes();
-    if (selectedIndexes.size() == 1)
+    if (selectedIndexes.size() == 1) {
         showPropertiesView(
                 static_cast<ccHObject*>(selectedIndexes[0].internalPointer()));
-    else
+    } else {
         hidePropertiesView();
+    }
 }
 
 void ccDBRoot::updateCCObject(ccHObject* object) {
@@ -1271,6 +1285,10 @@ size_t ccDBRoot::getSelectedEntities(ccHObject::Container& selectedEntities,
                 if (obj->isKindOf(CV_TYPES::PLANE)) info->planeCount++;
             } else if (obj->isKindOf(CV_TYPES::POLY_LINE)) {
                 info->polylineCount++;
+
+                if (obj->isKindOf(CV_TYPES::CIRCLE)) {
+                    info->circleCount++;
+                }
             } else if (obj->isKindOf(CV_TYPES::SENSOR)) {
                 info->sensorCount++;
                 if (obj->isKindOf(CV_TYPES::GBL_SENSOR)) info->gblSensorCount++;
@@ -1861,6 +1879,7 @@ void ccDBRoot::selectByTypeAndName() {
     scDlg.addType(tr("    Cone"), CV_TYPES::CONE);
     scDlg.addType(tr("    Box"), CV_TYPES::BOX);
     scDlg.addType(tr("    Dish"), CV_TYPES::DISH);
+    scDlg.addType(tr("    Disc"), CV_TYPES::DISC);
     scDlg.addType(tr("    Extrusion"), CV_TYPES::EXTRU);
     scDlg.addType(tr("Sensor"), CV_TYPES::SENSOR);
     scDlg.addType(tr("  GBL/TLS sensor"), CV_TYPES::GBL_SENSOR);
@@ -2105,6 +2124,131 @@ void ccDBRoot::editLabelScalarValue() {
     }
 }
 
+void ccDBRoot::exportImages() {
+    QItemSelectionModel* qism = m_dbTreeWidget->selectionModel();
+    QModelIndexList selectedIndexes = qism->selectedIndexes();
+    int selCount = selectedIndexes.size();
+    if (selCount == 0) {
+        return;
+    }
+
+    // find the images in the current selection
+    std::set<ccImage*> images;
+    try {
+        for (int i = 0; i < selCount; ++i) {
+            ccHObject* item = static_cast<ccHObject*>(
+                    selectedIndexes[i].internalPointer());
+            if (item->isKindOf(CV_TYPES::IMAGE)) {
+                images.insert(ccHObjectCaster::ToImage(item));
+            } else {
+                // look for the children
+                ccHObject::Container filteredChildren;
+                if (item->filterChildren(filteredChildren, true,
+                                         CV_TYPES::IMAGE) != 0) {
+                    for (ccHObject* obj : filteredChildren) {
+                        images.insert(ccHObjectCaster::ToImage(obj));
+                    }
+                }
+            }
+        }
+    } catch (const std::bad_alloc&) {
+        CVLog::Error(tr("Not enough memory"));
+        return;
+    }
+
+    if (images.empty()) {
+        CVLog::Warning(tr("No image in selection"));
+        return;
+    }
+
+    // get default export folder from persistent settings
+    QString saveDirectoryName;
+    {
+        QSettings settings;
+        settings.beginGroup("SaveFile");
+        QString currentPath =
+                settings.value("CurrentPath", QDir::homePath()).toString();
+
+        saveDirectoryName = QFileDialog::getExistingDirectory(
+                MainWindow::TheInstance(), tr("Choose destination directory"),
+                currentPath,
+                QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+        if (saveDirectoryName.isEmpty()) {
+            // process cancelled by the user
+            return;
+        }
+
+        // save last saving location
+        settings.setValue("CurrentPath", saveDirectoryName);
+        settings.endGroup();
+    }
+
+    QDir saveDirectory(saveDirectoryName);
+
+    if (false == saveDirectory.exists()) {
+        CVLog::Error(tr("Directory doesn't exist"));
+        return;
+    }
+
+    ecvProgressDialog pDlg(true, MainWindow::TheInstance());
+    pDlg.setRange(0, static_cast<int>(images.size()));
+    pDlg.setWindowTitle(tr("Export images"));
+    pDlg.start();
+    pDlg.show();
+    QCoreApplication::processEvents();
+
+    // Save the images to the provided directory
+    int overwriteImagesAnswer = QMessageBox::StandardButton::Default;
+    QMap<QString, size_t> duplicateNameCounter;
+    int imageCounter = 0;
+    for (const ccImage* image : images) {
+        QString baseName = image->getName();
+        {
+            // make sure the name is unique
+            if (duplicateNameCounter.contains(baseName)) {
+                baseName +=
+                        QString("_%1").arg(duplicateNameCounter[baseName] + 1);
+            }
+            duplicateNameCounter[baseName] += 1;
+        }
+
+        baseName += QStringLiteral(".png");
+        QString filename = saveDirectory.absoluteFilePath(baseName);
+
+        bool skipImage = false;
+        if (QFile(filename).exists()) {
+            if (overwriteImagesAnswer == QMessageBox::StandardButton::Default) {
+                // first time: ask the question to the user
+                overwriteImagesAnswer = QMessageBox::question(
+                        MainWindow::TheInstance(), tr("Overwriting files"),
+                        tr("Overwrite existing files?"),
+                        QMessageBox::StandardButton::YesToAll,
+                        QMessageBox::StandardButton::NoToAll);
+            }
+
+            if (overwriteImagesAnswer == QMessageBox::StandardButton::NoToAll) {
+                CVLog::Warning(tr("Image %1 has not been saved so as to not "
+                                  "overwrite an existing file")
+                                       .arg(baseName));
+                skipImage = true;
+            }
+        }
+
+        if (!skipImage) {
+            image->data().save(filename);
+        }
+
+        if (pDlg.isCancelRequested()) {
+            break;
+        }
+        pDlg.setValue(++imageCounter);
+    }
+
+    pDlg.stop();
+    CVLog::Print(tr("[Export images] %1 image(s) exported").arg(imageCounter));
+}
+
 void ccDBRoot::showContextMenu(const QPoint& menuPos) {
     m_contextMenuPos = menuPos;
 
@@ -2128,6 +2272,7 @@ void ccDBRoot::showContextMenu(const QPoint& menuPos) {
             bool hasExacltyOneGBLSenor = false;
             bool hasExactlyOnePlane = false;
             bool canEditLabelScalarValue = false;
+            bool hasImages = false;
             for (int i = 0; i < selCount; ++i) {
                 ccHObject* item = static_cast<ccHObject*>(
                         selectedIndexes[i].internalPointer());
@@ -2146,6 +2291,16 @@ void ccDBRoot::showContextMenu(const QPoint& menuPos) {
                     } else if (item->isKindOf(CV_TYPES::MESH)) {
                         toggleMaterials = true;
                         toggleOtherProperties = true;
+                    }
+                    if (item->isKindOf(CV_TYPES::IMAGE)) {
+                        hasImages = true;
+                    }
+
+                    // check for images in children
+                    ccHObject::Container filteredChildren;
+                    if (item->filterChildren(filteredChildren, true,
+                                             CV_TYPES::IMAGE) != 0) {
+                        hasImages = true;
                     }
 
                     if (selCount == 1) {
@@ -2222,6 +2377,11 @@ void ccDBRoot::showContextMenu(const QPoint& menuPos) {
                 menu.addAction(m_selectByTypeAndName);
                 menu.addSeparator();
                 menu.addAction(m_addEmptyGroup);
+            }
+
+            if (hasImages) {
+                menu.addSeparator();
+                menu.addAction(m_exportImages);
             }
 
             if (canEditLabelScalarValue) {

@@ -272,8 +272,14 @@ QString ccQuadric::getEquationString() const {
     return equationStr;
 }
 
-bool ccQuadric::toFile_MeOnly(QFile& out) const {
-    if (!ccGenericPrimitive::toFile_MeOnly(out)) return false;
+bool ccQuadric::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 35) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccGenericPrimitive::toFile_MeOnly(out, dataVersion)) return false;
 
     // parameters (dataVersion>=35)
     QDataStream outStream(&out);
@@ -285,6 +291,11 @@ bool ccQuadric::toFile_MeOnly(QFile& out) const {
     for (unsigned i = 0; i < 6; ++i) outStream << m_eq[i];
 
     return true;
+}
+
+short ccQuadric::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(35),
+                    ccGenericPrimitive::minimumFileVersion_MeOnly());
 }
 
 bool ccQuadric::fromFile_MeOnly(QFile& in,

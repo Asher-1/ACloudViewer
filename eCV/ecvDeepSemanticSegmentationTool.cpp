@@ -370,8 +370,12 @@ int ecvDeepSemanticSegmentationTool::startDetection() {
     s_computing = true;
     int progress = 0;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QFuture<void> future = QtConcurrent::run([this]() { this->doCompute(); });
+#else
     QFuture<void> future = QtConcurrent::run(
             this, &ecvDeepSemanticSegmentationTool::doCompute);
+#endif
     while (!future.isFinished()) {
 #if defined(CV_WINDOWS)
         ::Sleep(500);

@@ -12,11 +12,12 @@
 #endif
 
 // LOCAL
+#include <Utils/PCLCloud.h>
+
 #include <map>
 #include <mutex>
 #include <thread>
 
-#include "PCLCloud.h"
 #include "WidgetMap.h"
 #include "qPCL.h"
 
@@ -31,6 +32,7 @@ class TextureRenderManager;
 #include <ecvColorTypes.h>
 #include <ecvDrawContext.h>
 #include <ecvGenericVisualizer3D.h>
+#include <ecvHObject.h>
 
 // VTK
 #include <vtkBoundingBox.h>  // needed for iVar
@@ -48,7 +50,9 @@ class vtkAbstractWidget;
 class vtkRenderWindow;
 class vtkMatrix4x4;
 class ccGenericMesh;
-
+class ccPointCloud;
+class ccMesh;
+class ccHObject;
 class ccBBox;
 class ecvOrientedBBox;
 class ccSensor;
@@ -120,6 +124,12 @@ public:
 
     void addActorToRenderer(const vtkSmartPointer<vtkProp>& actor,
                             int viewport = 0);
+
+    /**
+     * @brief UpdateScreen - Updates/refreshes the render window
+     * This method forces a render update after actor changes
+     */
+    void UpdateScreen();
 
     /**
      * @brief setupInteractor override to init interactor_
@@ -418,6 +428,83 @@ public:
     void setPointSize(const unsigned char pointSize,
                       const std::string& viewID,
                       int viewport = 0);
+    void setScalarFieldName(const std::string& viewID,
+                            const std::string& scalarName,
+                            int viewport = 0);
+
+    /**
+     * @brief Add scalar field data from ccPointCloud to VTK polydata
+     * @param viewID The cloud ID
+     * @param cloud The ccPointCloud containing scalar field
+     * @param scalarFieldIndex Index of the scalar field to extract
+     * @param viewport Viewport ID
+     */
+    void addScalarFieldToVTK(const std::string& viewID,
+                             ccPointCloud* cloud,
+                             int scalarFieldIndex,
+                             int viewport = 0);
+
+    /**
+     * @brief Sync ALL scalar fields from ccPointCloud to VTK polydata
+     *
+     * This method ensures all scalar fields in the ccPointCloud are available
+     * in the VTK polydata for selection/extraction operations.
+     *
+     * @param viewID The cloud ID
+     * @param cloud The ccPointCloud containing scalar fields
+     * @param viewport Viewport ID
+     */
+    void syncAllScalarFieldsToVTK(const std::string& viewID,
+                                  ccPointCloud* cloud,
+                                  int viewport = 0);
+
+    /**
+     * @brief Set the source object for selection operations
+     *
+     * This stores a reference to the original ccHObject (ccPointCloud or
+     * ccMesh) that is being visualized. Used for direct extraction during
+     * selection operations to bypass VTK→ccHObject conversion.
+     * Supports multiple objects in the scene via viewID mapping.
+     *
+     * @param obj The source object (ccPointCloud or ccMesh)
+     * @param viewID The view ID for the object
+     */
+    void setCurrentSourceObject(ccHObject* obj, const std::string& viewID);
+
+    /**
+     * @brief Remove a source object from the map
+     * @param viewID The view ID of the object to remove
+     */
+    void removeSourceObject(const std::string& viewID);
+
+    /**
+     * @brief Get the source object for a given viewID
+     * @param viewID The view ID to look up
+     * @return The source ccHObject or nullptr if not found
+     */
+    ccHObject* getSourceObject(const std::string& viewID) const;
+
+    /**
+     * @brief Get the source object as ccPointCloud
+     * @param viewID The view ID to look up
+     * @return ccPointCloud pointer or nullptr if not a point cloud
+     */
+    ccPointCloud* getSourceCloud(const std::string& viewID) const;
+
+    /**
+     * @brief Get the source object as ccMesh
+     * @param viewID The view ID to look up
+     * @return ccMesh pointer or nullptr if not a mesh
+     */
+    ccMesh* getSourceMesh(const std::string& viewID) const;
+
+    /**
+     * @brief Check if a source object exists for the given viewID
+     * @param viewID The view ID to check
+     * @return true if source object exists
+     */
+    bool hasSourceObject(const std::string& viewID) const;
+
     void setPointCloudUniqueColor(double r,
                                   double g,
                                   double b,
@@ -444,6 +531,24 @@ public:
     void setShapeOpacity(double opacity,
                          const std::string& viewID,
                          int viewport = 0);
+
+    /**
+     * @brief Set opacity for mesh (textured or non-textured)
+     *
+     * This method properly handles transparency for meshes, including:
+     * - Meshes with textures: enables depth peeling and alpha blending
+     * - Meshes without textures: simple opacity setting
+     * - Automatic transparency rendering configuration when opacity < 1.0
+     *
+     * @param opacity Opacity value [0.0, 1.0] where 0.0 = fully
+     * transparent, 1.0 = opaque
+     * @param viewID The unique identifier of the mesh
+     * @param viewport The viewport ID (default: 0)
+     */
+    void setMeshOpacity(double opacity,
+                        const std::string& viewID,
+                        int viewport = 0);
+
     /*
      * value = 0, PCL_VISUALIZER_SHADING_FLAT
      * value = 1, PCL_VISUALIZER_SHADING_GOURAUD
@@ -599,6 +704,11 @@ protected:
     vtkSmartPointer<vtkPropPicker> m_propPicker;
 
     std::vector<int> m_selected_slice;
+
+    // Source objects for selection operations (allows direct extraction)
+    // Maps viewID -> ccHObject* to support multiple objects in the scene
+    // Note: ccHObject is not a QObject, so we use raw pointers
+    std::map<std::string, ccHObject*> m_sourceObjectMap;
 };
 
 typedef std::shared_ptr<PCLVis> PCLVisPtr;

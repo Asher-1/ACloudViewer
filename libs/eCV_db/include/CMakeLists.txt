@@ -12,6 +12,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvBox.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCameraSensor.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvChunk.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvCircle.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvClipBox.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScale.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScalesManager.h
@@ -22,6 +23,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvCylinder.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDepthBuffer.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDish.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvDisc.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTools.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDrawableObject.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDrawContext.h
@@ -37,6 +39,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericCameraTool.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericDisplayTools.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericFiltersTool.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvGenericMeasurementTools.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericMesh.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericPointCloud.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvGenericPrimitive.h
@@ -92,7 +95,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvTorus.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvViewportParameters.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvWaveform.h
-		${CMAKE_CURRENT_LIST_DIR}/ecvWidgetsInterface.h
 		${CMAKE_CURRENT_LIST_DIR}/Image.h
 		${CMAKE_CURRENT_LIST_DIR}/LineSet.h
 		${CMAKE_CURRENT_LIST_DIR}/Line3D.h
@@ -105,6 +107,10 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraIntrinsic.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraParameters.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraTrajectory.h
+		${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvKeySequences.h
+		${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvModalShortcut.h
+		${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvShortcutDecorator.h
+		${CMAKE_CURRENT_LIST_DIR}/widgets/ecvFontPropertyWidget.h
 )
 
 target_include_directories( ${PROJECT_NAME}

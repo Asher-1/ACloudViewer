@@ -14,19 +14,19 @@
 #endif
 
 /**
- * QUI无边框窗体控件 作者:feiyangqingyun(QQ:517216493)
- * 1:内置 N >= 12 套精美样式,可直接切换,也可自定义样式路径
- * 2:可设置部件(左上角图标/最小化按钮/最大化按钮/关闭按钮)的图标或者图片及是否可见
- * 3:可集成设计师插件,直接拖曳使用,所见即所得
- * 4:如果需要窗体可拖动大小,设置 setSizeGripEnabled(true);
- * 5:可设置全局样式 setStyle
- * 6:可弹出消息框 showMessageBoxInfo
- * 7:可弹出错误框 showMessageBoxError
- * 8:可弹出询问框 showMessageBoxError
- * 9:可弹出输入框 showInputBox
- * 10:集成图形字体设置方法及根据指定文字获取图片
- * 11:集成设置窗体居中显示/设置翻译文件/设置编码/设置延时/设置系统时间等静态方法
- * 12:集成获取应用程序文件名/ 等方法
+ * QUI Frameless Window Widget
+ * 1: Built-in N >= 12 beautiful styles, can be switched directly, or custom
+ * style paths can be set 2: Can set icons or images for widgets (top-left
+ * icon/minimize button/maximize button/close button) and their visibility 3:
+ * Can integrate designer plugin, drag and drop directly, WYSIWYG 4: If window
+ * resizing is needed, set setSizeGripEnabled(true); 5: Can set global style
+ * with setStyle 6: Can show message box with showMessageBoxInfo 7: Can show
+ * error box with showMessageBoxError 8: Can show question box with
+ * showMessageBoxQuestion 9: Can show input box with showInputBox 10: Integrated
+ * graphics font setting methods and get image from specified text 11:
+ * Integrated static methods for setting window center display/setting
+ * translation files/setting encoding/setting delay/setting system time, etc.
+ * 12: Integrated methods for getting application file name, etc.
  */
 
 #include <QPainterPath>
@@ -55,51 +55,51 @@ class QUIWidget : public QDialog
     Q_PROPERTY(Qt::Alignment alignment READ getAlignment WRITE setAlignment)
 
 public:
-    // 将部分对象作为枚举值暴露给外部
+    // Expose some objects as enum values to external
     enum Widget {
-        Lab_Ico = 0,         // 左上角图标
-        BtnMenu = 1,         // 下拉菜单按钮
-        BtnMenu_Min = 2,     // 最小化按钮
-        BtnMenu_Max = 3,     // 最大化按钮
-        BtnMenu_Normal = 4,  // 还原按钮
-        BtnMenu_Close = 5    // 关闭按钮
+        Lab_Ico = 0,         // Top-left icon
+        BtnMenu = 1,         // Dropdown menu button
+        BtnMenu_Min = 2,     // Minimize button
+        BtnMenu_Max = 3,     // Maximize button
+        BtnMenu_Normal = 4,  // Restore button
+        BtnMenu_Close = 5    // Close button
     };
 
-    // 样式枚举
+    // Style enumeration
     enum Style {
-        Style_Silvery = 0,     // 银色样式
-        Style_Blue = 1,        // 蓝色样式
-        Style_LightBlue = 2,   // 淡蓝色样式
-        Style_DarkBlue = 3,    // 深蓝色样式
-        Style_Gray = 4,        // 灰色样式
-        Style_LightGray = 5,   // 浅灰色样式
-        Style_DarkGray = 6,    // 深灰色样式
-        Style_Black = 7,       // 黑色样式
-        Style_LightBlack = 8,  // 浅黑色样式
-        Style_DarkBlack = 9,   // 深黑色样式
-        Style_PSBlack = 10,    // PS黑色样式
-        Style_FlatBlack = 11,  // 黑色扁平样式
-        Style_FlatWhite = 12   // 白色扁平样式
+        Style_Silvery = 0,     // Silvery style
+        Style_Blue = 1,        // Blue style
+        Style_LightBlue = 2,   // Light blue style
+        Style_DarkBlue = 3,    // Dark blue style
+        Style_Gray = 4,        // Gray style
+        Style_LightGray = 5,   // Light gray style
+        Style_DarkGray = 6,    // Dark gray style
+        Style_Black = 7,       // Black style
+        Style_LightBlack = 8,  // Light black style
+        Style_DarkBlack = 9,   // Dark black style
+        Style_PSBlack = 10,    // PS black style
+        Style_FlatBlack = 11,  // Flat black style
+        Style_FlatWhite = 12   // Flat white style
     };
 
-    // 全局静态方法集合开始--------------------------------
+    // Global static methods collection start--------------------------------
 public:
-    // 桌面宽度高度
+    // Desktop width and height
     static int deskWidth();
     static int deskHeight();
 
-    // 程序本身文件名称
+    // Application file name
     static QString appName();
-    // 程序当前所在路径
+    // Application current path
     static QString appPath();
 
-    // 新建目录
+    // Create new directory
     static void newDir(const QString &dirName);
 
-    // 写入消息到额外的的消息日志文件
+    // Write message to additional log file
     static void writeInfo(const QString &info, const QString &filePath = "log");
 
-    // 设置全局样式
+    // Set global style
     static void setStyle(QUIWidget::Style style);
     static void setStyle(QString &qssFile);
     static void setStyle(const QString &qssFile,
@@ -115,7 +115,7 @@ public:
                          QString &darkColorEnd,
                          QString &highColor);
 
-    // 根据QSS样式获取对应颜色值
+    // Get corresponding color values from QSS style
     static void getQssColor(const QString &qss,
                             QString &textColor,
                             QString &panelColor,
@@ -126,150 +126,150 @@ public:
                             QString &darkColorEnd,
                             QString &highColor);
 
-    // 设置窗体居中显示
+    // Set form to center display
     static void setFormInCenter(QWidget *frm);
-    // 设置翻译文件
+    // Set translation file
     static void setTranslator(const QString &qmFile = ":/image/qt_zh_CN.qm");
-    // 设置编码
+    // Set encoding
     static void setCode();
-    // 设置延时
+    // Set delay
     static void sleep(int sec);
-    // 设置系统时间
+    // Set system time
     static void setSystemDateTime(const QString &year,
                                   const QString &month,
                                   const QString &day,
                                   const QString &hour,
                                   const QString &min,
                                   const QString &sec);
-    // 设置开机自启动
+    // Set auto-start on boot
     static void runWithSystem(const QString &strName,
                               const QString &strPath,
                               bool autoRun = true);
 
-    // 判断是否是IP地址
+    // Check if it's an IP address
     static bool isIP(const QString &ip);
 
-    // 判断是否是MAC地址
+    // Check if it's a MAC address
     static bool isMac(const QString &mac);
 
-    // 判断是否是合法的电话号码
+    // Check if it's a valid phone number
     static bool isTel(const QString &tel);
 
-    // 判断是否是合法的邮箱地址
+    // Check if it's a valid email address
     static bool isEmail(const QString &email);
 
-    // 16进制字符串转10进制
+    // Convert hex string to decimal
     static int strHexToDecimal(const QString &strHex);
 
-    // 10进制字符串转10进制
+    // Convert decimal string to decimal
     static int strDecimalToDecimal(const QString &strDecimal);
 
-    // 2进制字符串转10进制
+    // Convert binary string to decimal
     static int strBinToDecimal(const QString &strBin);
 
-    // 16进制字符串转2进制字符串
+    // Convert hex string to binary string
     static QString strHexToStrBin(const QString &strHex);
 
-    // 10进制转2进制字符串一个字节
+    // Convert decimal to binary string (one byte)
     static QString decimalToStrBin1(int decimal);
 
-    // 10进制转2进制字符串两个字节
+    // Convert decimal to binary string (two bytes)
     static QString decimalToStrBin2(int decimal);
 
-    // 10进制转16进制字符串,补零.
+    // Convert decimal to hex string, zero-padded
     static QString decimalToStrHex(int decimal);
 
-    // int转字节数组
+    // Convert int to byte array
     static QByteArray intToByte(int i);
 
-    // 字节数组转int
+    // Convert byte array to int
     static int byteToInt(const QByteArray &data);
 
-    // ushort转字节数组
+    // Convert ushort to byte array
     static QByteArray ushortToByte(ushort i);
 
-    // 字节数组转ushort
+    // Convert byte array to ushort
     static int byteToUShort(const QByteArray &data);
 
-    // 异或加密算法
+    // XOR encryption algorithm
     static QString getXorEncryptDecrypt(const QString &str, char key);
 
-    // 异或校验
+    // XOR checksum
     static uchar getOrCode(const QByteArray &data);
 
-    // 计算校验码
+    // Calculate checksum
     static uchar getCheckCode(const QByteArray &data);
 
-    // 字节数组转Ascii字符串
+    // Convert byte array to ASCII string
     static QString byteArrayToAsciiStr(const QByteArray &data);
 
-    // 16进制字符串转字节数组
+    // Convert hex string to byte array
     static QByteArray hexStrToByteArray(const QString &str);
     static char convertHexChar(char ch);
 
-    // Ascii字符串转字节数组
+    // Convert ASCII string to byte array
     static QByteArray asciiStrToByteArray(const QString &str);
 
-    // 字节数组转16进制字符串
+    // Convert byte array to hex string
     static QString byteArrayToHexStr(const QByteArray &data);
 
-    // 获取选择的文件
+    // Get selected file
     static QString getFileName(
             const QString &filter,
             QString defaultDir = QCoreApplication::applicationDirPath());
 
-    // 获取选择的文件集合
+    // Get selected file collection
     static QStringList getFileNames(
             const QString &filter,
             QString defaultDir = QCoreApplication::applicationDirPath());
 
-    // 获取选择的目录
+    // Get selected directory
     static QString getFolderName();
 
-    // 获取文件名,含拓展名
+    // Get file name with extension
     static QString getFileNameWithExtension(const QString &strFilePath);
 
-    // 获取选择文件夹中的文件
+    // Get files in selected folder
     static QStringList getFolderFileNames(const QStringList &filter);
 
-    // 文件夹是否存在
+    // Check if folder exists
     static bool folderIsExist(const QString &strFolder);
 
-    // 文件是否存在
+    // Check if file exists
     static bool fileIsExist(const QString &strFile);
 
-    // 复制文件
+    // Copy file
     static bool copyFile(const QString &sourceFile, const QString &targetFile);
 
-    // 删除文件夹下所有文件
+    // Delete all files in folder
     static void deleteDirectory(const QString &path);
 
-    // 判断IP地址及端口是否在线
+    // Check if IP address and port are online
     static bool ipLive(const QString &ip, int port, int timeout = 1000);
 
-    // 获取网页所有源代码
+    // Get all source code of web page
     static QString getHtml(const QString &url);
 
-    // 获取本机公网IP地址
+    // Get local public IP address
     static QString getNetIP(const QString &webCode);
 
-    // 获取本机IP
+    // Get local IP
     static QString getLocalIP();
 
-    // Url地址转为IP地址
+    // Convert URL address to IP address
     static QString urlToIP(const QString &url);
 
-    // 判断是否通外网
+    // Check if internet access is available
     static bool isWebOk();
 
-    // 弹出消息框
+    // Show message box
     static void showMessageBoxInfo(const QString &info, int closeSec = 0);
-    // 弹出错误框
+    // Show error box
     static void showMessageBoxError(const QString &info, int closeSec = 0);
-    // 弹出询问框
+    // Show question box
     static int showMessageBoxQuestion(const QString &info);
 
-    // 弹出输入框
+    // Show input box
     static QString showInputBox(bool &ok,
                                 const QString &title,
                                 int type = 0,
@@ -277,7 +277,7 @@ public:
                                 QString defaultValue = QString(),
                                 bool pwd = false);
 
-    // 全局静态方法集合结束--------------------------------
+    // Global static methods collection end--------------------------------
 
 public:
     explicit QUIWidget(QWidget *parent = 0);
@@ -311,13 +311,13 @@ private:
     QAction *restoreWinAction;
 
 private:
-    bool max;        // 是否处于最大化状态
-    QRect location;  // 鼠标移动窗体后的坐标位置
+    bool max;        // Whether in maximized state
+    QRect location;  // Coordinate position after moving window with mouse
 
-    QString title;            // 标题
-    Qt::Alignment alignment;  // 标题文本对齐
-    bool minHide;             // 最小化隐藏
-    MainWindow *mainWidget;   // 主窗体对象
+    QString title;            // Title
+    Qt::Alignment alignment;  // Title text alignment
+    bool minHide;             // Minimize and hide
+    MainWindow *mainWidget;   // Main window object
 
 public:
     QLabel *getLabIco() const;
@@ -343,27 +343,15 @@ private:
     void keyPressEvent(QKeyEvent *event) override;
 
 private slots:
-    void initControl();  // 初始化控件
-    void initForm();     // 初始化窗体
-    void changeStyle();  // 更换样式
+    void initControl();  // Initialize controls
+    void initForm();     // Initialize form
+    void changeStyle();  // Change style
 
     void on_btnMenu_Min_clicked();
     void on_btnMenu_Max_clicked();
     void on_btnMenu_Close_clicked();
 
-    ////最小化隐藏界面
-    // void changeEvent(QEvent *event) override {
-    //	if (event->type()==QEvent::WindowStateChange &&
-    //		this->windowState() == Qt::WindowMinimized) {
-    //		m_systemTray->showMessage("Information",//消息窗口标题
-    //			"ACloudViewer",//消息内容
-    //			QSystemTrayIcon::MessageIcon::Information,//消息窗口图标
-    //			5000);//消息窗口显示时长
-    //	}
-    //	QDialog::changeEvent(event);
-    // };
-
-    // 恢复程序窗口
+    // Restore application window
     void showWindow() {
         // this->widget->show();
         this->setWindowState((this->windowState() & ~Qt::WindowMinimized) |
@@ -377,32 +365,32 @@ public slots:
     void toggleFullScreen(bool state);
 
 public Q_SLOTS:
-    // 设置部件图标
+    // Set widget icon
     void setIcon(QUIWidget::Widget widget, QChar str, quint32 size = 9);
     void setIconMain(QChar str, quint32 size = 9);
-    // 设置部件图片
+    // Set widget image
     void setPixmap(QUIWidget::Widget widget,
                    const QString &file,
                    const QSize &size = QSize(32, 32));
     void setWindowLogo(const QString &icon);
-    // 设置部件是否可见
+    // Set widget visibility
     void setVisible(QUIWidget::Widget widget, bool visible = true);
-    // 设置只有关闭按钮
+    // Set only close button
     void setOnlyCloseBtn();
 
-    // 设置标题栏高度
+    // Set title bar height
     void setTitleHeight(int height);
-    // 设置按钮统一宽度
+    // Set unified button width
     void setBtnWidth(int width);
 
-    // 设置标题及文本样式
+    // Set title and text style
     void setTitle(const QString &title);
     void setAlignment(Qt::Alignment alignment);
 
-    // 设置最小化隐藏
+    // Set minimize and hide
     void setMinHide(bool minHide);
 
-    // 设置主窗体
+    // Set main window
     void setMainWidget(MainWindow *mainWidget);
 
 Q_SIGNALS:
@@ -410,7 +398,7 @@ Q_SIGNALS:
     void closing();
 };
 
-// 弹出信息框类
+// Message box class
 class QUIMessageBox : public QDialog {
     Q_OBJECT
 
@@ -462,13 +450,13 @@ private:
     QPushButton *btnCancel;
 
 private:
-    int closeSec;    // 总显示时间
-    int currentSec;  // 当前已显示时间
+    int closeSec;    // Total display time
+    int currentSec;  // Current displayed time
 
 private slots:
-    void initControl();  // 初始化控件
-    void initForm();     // 初始化窗体
-    void checkSec();     // 校验倒计时
+    void initControl();  // Initialize controls
+    void initForm();     // Initialize form
+    void checkSec();     // Check countdown
 
 private slots:
     void on_btnOk_clicked();
@@ -479,7 +467,7 @@ public Q_SLOTS:
     void setMessage(const QString &msg, int type, int closeSec = 0);
 };
 
-// 弹出输入框类
+// Input box class
 class QUIInputBox : public QDialog {
     Q_OBJECT
 
@@ -530,14 +518,14 @@ private:
     QPushButton *btnCancel;
 
 private:
-    int closeSec;    // 总显示时间
-    int currentSec;  // 当前已显示时间
-    QString value;   // 当前值
+    int closeSec;    // Total display time
+    int currentSec;  // Current displayed time
+    QString value;   // Current value
 
 private slots:
-    void initControl();  // 初始化控件
-    void initForm();     // 初始化窗体
-    void checkSec();     // 校验倒计时
+    void initControl();  // Initialize controls
+    void initForm();     // Initialize form
+    void checkSec();     // Check countdown
 
 private slots:
     void on_btnOk_clicked();
@@ -555,7 +543,7 @@ public Q_SLOTS:
                       bool pwd = false);
 };
 
-// 图形字体处理类
+// Icon font processing class
 class IconHelper : public QObject {
     Q_OBJECT
 
@@ -583,10 +571,10 @@ public:
                       quint32 pixWidth = 10,
                       quint32 pixHeight = 10);
 
-    // 根据按钮获取该按钮对应的图标
+    // Get corresponding icon for button
     QPixmap getPixmap(QToolButton *btn, bool normal);
 
-    // 指定导航面板样式,不带图标
+    // Set navigation panel style without icons
     static void setStyle(QWidget *widget,
                          const QString &type = "left",
                          int borderWidth = 3,
@@ -596,7 +584,7 @@ public:
                          const QString &normalTextColor = "#54626F",
                          const QString &darkTextColor = "#FDFDFD");
 
-    // 指定导航面板样式,带图标和效果切换
+    // Set navigation panel style with icons and effect switching
     void setStyle(QWidget *widget,
                   QList<QToolButton *> btns,
                   QList<int> pixChar,
@@ -611,7 +599,7 @@ public:
                   const QString &normalTextColor = "#54626F",
                   const QString &darkTextColor = "#FDFDFD");
 
-    // 指定导航按钮样式,带图标和效果切换
+    // Set navigation button style with icons and effect switching
     void setStyle(QFrame *frame,
                   QList<QToolButton *> btns,
                   QList<int> pixChar,
@@ -627,40 +615,42 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event);
 
 private:
-    static IconHelper *self;    // 对象自身
-    QFont iconFont;             // 图形字体
-    QList<QToolButton *> btns;  // 按钮队列
-    QList<QPixmap> pixNormal;   // 正常图片队列
-    QList<QPixmap> pixDark;     // 加深图片队列
+    static IconHelper *self;    // Object itself
+    QFont iconFont;             // Icon font
+    QList<QToolButton *> btns;  // Button queue
+    QList<QPixmap> pixNormal;   // Normal image queue
+    QList<QPixmap> pixDark;     // Darkened image queue
 };
 
-// 全局变量控制
+// Global variable control
 class QUIConfig {
 public:
-    // 全局图标
-    static QChar IconMain;    // 标题栏左上角图标
-    static QChar IconMenu;    // 下拉菜单图标
-    static QChar IconMin;     // 最小化图标
-    static QChar IconMax;     // 最大化图标
-    static QChar IconNormal;  // 还原图标
-    static QChar IconClose;   // 关闭图标
+    // Global icons
+    static QChar IconMain;    // Top-left icon in title bar
+    static QChar IconMenu;    // Dropdown menu icon
+    static QChar IconMin;     // Minimize icon
+    static QChar IconMax;     // Maximize icon
+    static QChar IconNormal;  // Restore icon
+    static QChar IconClose;   // Close icon
 
-    static QString FontName;    // 全局字体名称
-    static int FontSize;        // 全局字体大小
-    static QString ConfigFile;  // 配置文件文件路径及名称
+    static QString FontName;    // Global font name
+    static int FontSize;        // Global font size
+    static QString ConfigFile;  // Config file path and name
 
-    // 样式表颜色值
-    static QString TextColor;         // 文字颜色
-    static QString PanelColor;        // 面板颜色
-    static QString BorderColor;       // 边框颜色
-    static QString NormalColorStart;  // 正常状态开始颜色
-    static QString NormalColorEnd;    // 正常状态结束颜色
-    static QString DarkColorStart;    // 加深状态开始颜色
-    static QString DarkColorEnd;      // 加深状态结束颜色
-    static QString HighColor;         // 高亮颜色
+    // Stylesheet color values
+    static QString TextColor;         // Text color
+    static QString PanelColor;        // Panel color
+    static QString BorderColor;       // Border color
+    static QString NormalColorStart;  // Normal state start color
+    static QString NormalColorEnd;    // Normal state end color
+    static QString DarkColorStart;    // Darkened state start color
+    static QString DarkColorEnd;      // Darkened state end color
+    static QString HighColor;         // Highlight color
 
-    static void ReadConfig();  // 读取配置文件,在main函数最开始加载程序载入
-    static void WriteConfig();  // 写入配置文件,在更改配置文件程序关闭时调用
-    static void NewConfig();    // 以初始值新建配置文件
-    static bool CheckConfig();  // 校验配置文件
+    static void ReadConfig();   // Read config file, called at the beginning of
+                                // main function when loading application
+    static void WriteConfig();  // Write config file, called when closing
+                                // application after changing config
+    static void NewConfig();    // Create new config file with initial values
+    static bool CheckConfig();  // Validate config file
 };

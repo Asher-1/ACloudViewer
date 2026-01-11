@@ -14,8 +14,10 @@
 #include "ecvUIManager.h"
 
 // CV_CORE_LIB
+#include <CPUInfo.h>
 #include <CVLog.h>
 #include <CVTools.h>
+#include <MemoryInfo.h>
 
 // ECV_DB_LIB
 #include <ecvColorScalesManager.h>
@@ -25,16 +27,14 @@
 // ECV_IO_LIB
 #include <FileIOFilter.h>
 #include <ecvGlobalShiftManager.h>
-#include <ecvWidgetsInterface.h>
-
-// QPCL_ENGINE_LIB
-#ifdef USE_PCL_BACKEND
-#include <VtkUtils/vtkWidgetsFactory.h>
-#endif
 
 // QT
 #include <QDir>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QSurfaceFormat>
+#else
 #include <QGLFormat>
+#endif
 #include <QMessageBox>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
@@ -51,19 +51,14 @@
 #include <QGamepadManager>
 #endif
 
-// System-specific includes for hardware info
-#ifdef Q_OS_LINUX
-#include <sys/sysinfo.h>
-#include <unistd.h>
-#endif
-#ifdef Q_OS_WIN
-#include <sysinfoapi.h>
-#include <windows.h>
+// System-specific includes
+#ifdef _WIN32
+#include <windows.h>  // For GetFileType, GetStdHandle, AttachConsole
+
+#include <cstdio>  // For freopen
 #endif
 #ifdef Q_OS_MAC
-#include <mach/mach.h>
-#include <sys/sysctl.h>
-#include <sys/types.h>
+#include <cstdlib>  // For putenv
 #endif
 
 // COMMON
@@ -84,37 +79,17 @@
 
 // Function to get total system memory in GB
 QString GetTotalMemoryInfo() {
-    QString memInfo;
+    using namespace cloudViewer::system;
 
-#ifdef Q_OS_LINUX
-    struct sysinfo si;
-    if (sysinfo(&si) == 0) {
-        unsigned long long totalRAM = si.totalram * si.mem_unit;
-        double totalGB = totalRAM / (1024.0 * 1024.0 * 1024.0);
-        memInfo = QString("RAM: %1 GB").arg(totalGB, 0, 'f', 2);
-    }
-#elif defined(Q_OS_WIN)
-    MEMORYSTATUSEX statex;
-    statex.dwLength = sizeof(statex);
-    if (GlobalMemoryStatusEx(&statex)) {
-        double totalGB = statex.ullTotalPhys / (1024.0 * 1024.0 * 1024.0);
-        memInfo = QString("RAM: %1 GB").arg(totalGB, 0, 'f', 2);
-    }
-#elif defined(Q_OS_MAC)
-    int mib[2] = {CTL_HW, HW_MEMSIZE};
-    int64_t physical_memory;
-    size_t length = sizeof(int64_t);
-    if (sysctl(mib, 2, &physical_memory, &length, NULL, 0) == 0) {
-        double totalGB = physical_memory / (1024.0 * 1024.0 * 1024.0);
-        memInfo = QString("RAM: %1 GB").arg(totalGB, 0, 'f', 2);
-    }
-#endif
+    MemoryInfo memInfo = getMemoryInfo();
 
-    if (memInfo.isEmpty()) {
-        memInfo = "RAM: Unable to detect";
+    if (memInfo.totalRam > 0) {
+        double totalGB = static_cast<double>(memInfo.totalRam) /
+                         (1024.0 * 1024.0 * 1024.0);
+        return QString("RAM: %1 GB").arg(totalGB, 0, 'f', 2);
     }
 
-    return memInfo;
+    return QString("RAM: Unable to detect");
 }
 
 // Function to get storage information
@@ -140,52 +115,42 @@ QString GetStorageInfo() {
 
 // Function to get CPU information
 QString GetCPUInfo() {
-    QString cpuInfo;
+    using namespace cloudViewer::utility;
 
-#ifdef Q_OS_LINUX
-    // Get number of processors
-    long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+    const CPUInfo& cpuInfo = CPUInfo::GetInstance();
+    int numCores = cpuInfo.NumCores();
+    int numThreads = cpuInfo.NumThreads();
+    std::string modelName = cpuInfo.ModelName();
 
-    // Try to read CPU model from /proc/cpuinfo
-    QFile file("/proc/cpuinfo");
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&file);
-        while (!in.atEnd()) {
-            QString line = in.readLine();
-            if (line.startsWith("model name")) {
-                QStringList parts = line.split(":");
-                if (parts.size() >= 2) {
-                    cpuInfo = QString("CPU: %1 (%2 cores)")
-                                      .arg(parts[1].trimmed())
-                                      .arg(nprocs);
-                    break;
-                }
-            }
+    if (numCores <= 0 && numThreads <= 0) {
+        return QString("CPU: Unable to detect");
+    }
+
+    QString result;
+    if (!modelName.empty()) {
+        // Show model name with cores and threads
+        if (numCores > 0) {
+            result = QString("CPU: %1 (%2 cores, %3 threads)")
+                             .arg(QString::fromStdString(modelName))
+                             .arg(numCores)
+                             .arg(numThreads);
+        } else {
+            result = QString("CPU: %1 (%2 threads)")
+                             .arg(QString::fromStdString(modelName))
+                             .arg(numThreads);
         }
-        file.close();
+    } else {
+        // Fallback: show only cores and threads
+        if (numCores > 0) {
+            result = QString("CPU: %1 cores, %2 threads")
+                             .arg(numCores)
+                             .arg(numThreads);
+        } else {
+            result = QString("CPU: %1 threads").arg(numThreads);
+        }
     }
 
-    if (cpuInfo.isEmpty()) {
-        cpuInfo = QString("CPU: %1 cores").arg(nprocs);
-    }
-#elif defined(Q_OS_WIN)
-    SYSTEM_INFO siSysInfo;
-    GetSystemInfo(&siSysInfo);
-    cpuInfo = QString("CPU: %1 cores").arg(siSysInfo.dwNumberOfProcessors);
-#elif defined(Q_OS_MAC)
-    int mib[2] = {CTL_HW, HW_NCPU};
-    int numCPU = 0;
-    size_t len = sizeof(numCPU);
-    if (sysctl(mib, 2, &numCPU, &len, NULL, 0) == 0) {
-        cpuInfo = QString("CPU: %1 cores").arg(numCPU);
-    }
-#endif
-
-    if (cpuInfo.isEmpty()) {
-        cpuInfo = "CPU: Unable to detect";
-    }
-
-    return cpuInfo;
+    return result;
 }
 
 // Function to get GPU information
@@ -270,14 +235,6 @@ void InitEnvironment() {
 
     // global structures initialization
     FileIOFilter::InitInternalFilters();  // load all known I/O filters
-
-#ifdef USE_PCL_BACKEND
-    DBLib::ecvWidgetsInterface::InitInternalInterfaces();
-    DBLib::ecvWidgetsInterface::Register(
-            VtkWidgetsFactory::GetFilterWidgetInterface());
-    DBLib::ecvWidgetsInterface::Register(
-            VtkWidgetsFactory::GetSmallWidgetsInterface());
-#endif
 
     // force pre-computed normals array initialization
     ccNormalVectors::GetUniqueInstance();
@@ -380,12 +337,15 @@ int main(int argc, char* argv[]) {
     QTimer splashTimer;
     // standard mode
     if (!commandLine) {
-#ifdef Q_OS_MAC
-        if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_3_3) ==
-            0) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QOpenGLContext context;
+        QSurfaceFormat format;
+        format.setVersion(2, 1);
+        context.setFormat(format);
+        if (!context.create() || !context.isValid()) {
             QMessageBox::critical(nullptr, QObject::tr("Error"),
                                   QObject::tr("This application needs OpenGL "
-                                              "3.3 at least to run!"));
+                                              "2.1 at least to run!"));
             return EXIT_FAILURE;
         }
 #else
@@ -444,8 +404,8 @@ int main(int argc, char* argv[]) {
 
             qui->setTitle(Settings::APP_TITLE);
 
-            // set align center
-            qui->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            // set align center - center the window title text
+            qui->setAlignment(Qt::AlignCenter);
 
             // set dragable
             qui->setSizeGripEnabled(true);
@@ -596,11 +556,6 @@ int main(int argc, char* argv[]) {
 
     // release main window
     MainWindow::DestroyInstance();
-
-#ifdef USE_PCL_BACKEND
-    // release widgets resource
-    DBLib::ecvWidgetsInterface::UnregisterAll();
-#endif
 
     // release io filters
     FileIOFilter::UnregisterAll();

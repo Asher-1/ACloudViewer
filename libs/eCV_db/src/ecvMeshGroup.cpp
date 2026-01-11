@@ -15,9 +15,14 @@ void ccMeshGroup::drawMeOnly(CC_DRAW_CONTEXT& context) {
     return;
 }
 
-bool ccMeshGroup::toFile_MeOnly(QFile& out) const {
+bool ccMeshGroup::toFile_MeOnly(QFile& out, short dataVersion) const {
     CVLog::Error("[Mesh groups are not handled any more!");
     return false;
+}
+
+short ccMeshGroup::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(29),
+                    ccGenericMesh::minimumFileVersion_MeOnly());
 }
 
 bool ccMeshGroup::fromFile_MeOnly(QFile& in,

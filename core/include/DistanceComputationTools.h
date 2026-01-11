@@ -348,6 +348,23 @@ public:  // distance to simple entities (triangles, planes, etc.)
             bool signedDistances = true,
             double* rms = nullptr);
 
+    //! Computes the distance between each point in a cloud and a disc
+    /** \param cloud a 3D point cloud
+            \param discCenter disc 3d center point
+            \param discRadius disc radius
+            \param rotationTransform rotation transformation matrix
+            \param signedDistances whether to compute the signed or positive
+    (absolute) distance (optional) \param[out] rms will be set with the Root
+    Mean Square (RMS) distance between a cloud and a disc (optional) \return
+    negative error code or a positive value in case of success
+    **/
+    static int computeCloud2DiscEquation(GenericIndexedCloudPersist* cloud,
+                                         const CCVector3& discCenter,
+                                         const PointCoordinateType discRadius,
+                                         const SquareMatrix& rotationTransform,
+                                         bool signedDistances = true,
+                                         double* rms = nullptr);
+
     //! Computes the distance between each point in a cloud and a plane
     /** \param cloud a 3D point cloud
             \param planeEquation plane equation: [a,b,c,d] as 'ax+by+cz=d' with
@@ -409,9 +426,12 @@ public:  // distance to simple entities (triangles, planes, etc.)
         ERROR_EMPTY_REFERENCECLOUD,
         ERROR_NULL_REFERENCEMESH,
         ERROR_EMPTY_REFERENCEMESH,
+        ERROR_NULL_REFERENCEPOLYLINE,
+        ERROR_TOOSMALL_REFERENCEPOLYLINE,
         NULL_PLANE_EQUATION,
         ERROR_NULL_OCTREE,
-        ERROR_NULL_OCTREE_AND_MESH_INTERSECTION,
+        ERROR_INVALID_OCTREE_AND_MESH_INTERSECTION,
+        ERROR_OCTREE_AND_MESH_INTERSECTION_MISMATCH,
         ERROR_CANT_USE_MAX_SEARCH_DIST_AND_CLOSEST_POINT_SET,
         ERROR_EXECUTE_FUNCTION_FOR_ALL_CELLS_AT_LEVEL_FAILURE,
         ERROR_EXECUTE_GET_POINTS_IN_CELL_BY_INDEX_FAILURE,
@@ -437,6 +457,8 @@ public:  // distance to simple entities (triangles, planes, etc.)
         ERROR_BUILD_OCTREE_FAILURE,
         ERROR_BUILD_FAST_MARCHING_FAILURE,
         ERROR_UNKOWN_ERRORMEASURES_TYPE,
+        ERROR_INTERNAL,
+        INVALID_INPUT,
         SUCCESS = 1,
     };
 
@@ -591,6 +613,42 @@ protected:
             OctreeAndMeshIntersection* theIntersection,
             Cloud2MeshDistancesComputationParams& params,
             GenericProgressCallback* progressCb = nullptr);
+
+    //! Computes the distances between a point cloud and a mesh projected into a
+    //! grid structure
+    /** This method is used by computeCloud2MeshDistances, after
+    intersectMeshWithOctree has been called. \param octree		the
+    cloud octree \param intersection	a specific structure corresponding the
+    intersection of the mesh with the grid \param params
+    parameters \param progressCb	the client method can get some
+    notification of the process progress through this callback mechanism (see
+    GenericProgressCallback) \return negative error code or a positive value in
+    case of success
+    **/
+    static int computeCloud2MeshDistancesWithOctree(
+            const DgmOctree* octree,
+            OctreeAndMeshIntersection* intersection,
+            Cloud2MeshDistancesComputationParams& params,
+            GenericProgressCallback* progressCb = nullptr);
+
+    //! Computes the distances between a point and a mesh projected into a grid
+    //! structure
+    /** \warning Distance Transform acceleration is not supported.
+        \warning No multi-thread support.
+        \warning No Closest Point Set support.
+
+        \param P				the point
+        \param distance			the output distance
+        \param intersection		a specific structure corresponding the
+    intersection of the mesh with the grid \param params
+    parameters \return negative error code or a positive value in case of
+    success
+    **/
+    static int computePoint2MeshDistancesWithOctree(
+            const CCVector3& P,
+            ScalarType& distance,
+            OctreeAndMeshIntersection* intersection,
+            Cloud2MeshDistancesComputationParams& params);
 
     //! Computes the "nearest neighbour distance" without local modeling for all
     //! points of an octree cell

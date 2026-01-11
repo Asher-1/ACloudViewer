@@ -8,7 +8,7 @@
 #include <FileSystem.h>
 #include <Logging.h>
 #include <ProgressReporters.h>
-#include <oneapi/tbb/parallel_sort.h>
+#include <tbb/parallel_sort.h>
 
 #include <Eigen/Dense>
 #include <cmath>

@@ -8,7 +8,11 @@
 #include <CVTypes.h>
 
 #include <QMainWindow>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QtOpenGLWidgets/QOpenGLWidget>
+#else
 #include <QOpenGLWidget>
+#endif
 #include <QProgressDialog>
 #include <QWidget>
 

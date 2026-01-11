@@ -46,6 +46,7 @@ target_include_directories( ${PROJECT_NAME}
 	PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR}/quazip/quazip
 		${ZLIB_INCLUDE_DIRS}
+		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/core/include>
 )
 
 target_compile_definitions( ${PROJECT_NAME} PUBLIC QUAZIP_STATIC )

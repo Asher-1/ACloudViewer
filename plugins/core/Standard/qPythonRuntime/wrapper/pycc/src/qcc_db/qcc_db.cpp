@@ -57,6 +57,8 @@ void define_ccSubMesh(py::module &m);
 void define_ccRasterGrid(py::module &m);
 void define_ccQuadric(py::module &m);
 void define_ccPolyline(py::module &m);
+void define_ccCircle(py::module &m);
+void define_ccDisc(py::module &m);
 
 template <class T> using observer_ptr = std::unique_ptr<T, py::nodelete>;
 
@@ -139,6 +141,7 @@ void define_qcc_db(py::module &m)
     define_ccDish(m);
     define_ccCone(m);
     define_ccCylinder(m);
+    define_ccDisc(m);
     define_ccQuadric(m);
     define_cc2DLabel(m);
     define_ccColorScale(m);
@@ -155,6 +158,7 @@ void define_qcc_db(py::module &m)
     define_ccGenericPointCloud(m);
     define_ccPointCloud(m);
     define_ccPolyline(m);
+    define_ccCircle(m);
     define_ccNormalVectors(m);
 
     define_ccLog(m);

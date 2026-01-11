@@ -9,6 +9,9 @@
 
 #include "ui_G3PointPlots.h"
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // CCPluginAPI
 #include <ecvPersistentSettings.h>
 
@@ -19,7 +22,6 @@
 #include <ImageFileFilter.h>
 
 #include <QSettings>
-#include <QTextStream>
 
 #include "AnglesCustomPlot.h"
 #include "WolmanCustomPlot.h"
@@ -91,21 +93,23 @@ bool G3PointPlots::exportToCSV(QString filename,
     // header
     if (dq_final)  // WolmanCustomPlot
     {
-        stream << "# D10 [mm], D50 [mm], D90 [mm]" << endl;
+        stream << "# D10 [mm], D50 [mm], D90 [mm]" << QtCompat::endl;
         stream << (*dq_final)(0) << " " << (*dq_final)(1) << " "
-               << (*dq_final)(2) << endl;
-        stream << "# std(D10) [mm], std(D50) [mm], std(D90) [mm]" << endl;
-        stream << (*edq)(0) << " " << (*edq)(1) << " " << (*edq)(2) << endl;
-        stream << "diameter [m], pdf" << endl;
+               << (*dq_final)(2) << QtCompat::endl;
+        stream << "# std(D10) [mm], std(D50) [mm], std(D90) [mm]"
+               << QtCompat::endl;
+        stream << (*edq)(0) << " " << (*edq)(1) << " " << (*edq)(2)
+               << QtCompat::endl;
+        stream << "diameter [m], pdf" << QtCompat::endl;
     } else  // AnglesCustomPlot
     {
-        stream << "angle [degree], counts" << endl;
+        stream << "angle [degree], counts" << QtCompat::endl;
     }
 
     // data
     {
         for (auto item : *container) {
-            stream << item.key << " " << item.value << endl;
+            stream << item.key << " " << item.value << QtCompat::endl;
         }
     }
 

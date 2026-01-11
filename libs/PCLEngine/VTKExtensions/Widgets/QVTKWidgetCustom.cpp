@@ -68,7 +68,7 @@
 #include <vld.h>
 #endif
 
-#include "ScaleBar.h"
+#include "ScaleBarWidget.h"
 
 // macroes
 #ifndef VTK_CREATE
@@ -243,7 +243,7 @@ void QVTKWidgetCustom::initVtk(
     this->m_camera = m_render->GetActiveCamera();
     this->m_renders = this->GetRenderWindow()->GetRenderers();
     if (!m_scaleBar) {
-        m_scaleBar = new ScaleBar(m_render);
+        m_scaleBar = new ScaleBarWidget(m_render);
     }
 }
 
@@ -561,11 +561,14 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
 
     emit m_tools->mouseWheelChanged(event);
 
+    // Qt5/Qt6 compatibility: get wheel delta
+    double delta = qtCompatWheelEventDelta(event);
+
     if (keyboardModifiers & Qt::AltModifier) {
         event->accept();
 
         // same shortcut as Meshlab: change the point size
-        float sizeModifier = (event->delta() < 0 ? -1.0f : 1.0f);
+        float sizeModifier = (delta < 0.0 ? -1.0f : 1.0f);
         ecvDisplayTools::SetPointSize(
                 m_tools->m_viewportParams.defaultPointSize + sizeModifier);
         ecvDisplayTools::SetRedrawRecursive(false);
@@ -578,9 +581,9 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
             static const int MAX_INCREMENT = 150;
             int increment = ecvViewportParameters::ZNearCoefToIncrement(
                     m_tools->m_viewportParams.zNearCoef, MAX_INCREMENT + 1);
-            int newIncrement = std::min(
-                    std::max(0, increment + (event->delta() < 0 ? -1 : 1)),
-                    MAX_INCREMENT);  // the zNearCoef must be < 1!
+            int newIncrement =
+                    std::min(std::max(0, increment + (delta < 0 ? -1 : 1)),
+                             MAX_INCREMENT);  // the zNearCoef must be < 1!
             if (newIncrement != increment) {
                 double newCoef = ecvViewportParameters::IncrementToZNearCoef(
                         newIncrement, MAX_INCREMENT + 1);
@@ -595,7 +598,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
         if (m_tools->m_viewportParams.perspectiveView) {
             // same shortcut as Meshlab: change the fov value
             float newFOV = (m_tools->m_viewportParams.fov_deg +
-                            (event->delta() < 0 ? -1.0f : 1.0f));
+                            (delta < 0 ? -1.0f : 1.0f));
             newFOV = std::min(std::max(1.0f, newFOV), 180.0f);
             if (newFOV != m_tools->m_viewportParams.fov_deg) {
                 ecvDisplayTools::SetFov(newFOV);
@@ -610,7 +613,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
 
         // see QWheelEvent documentation ("distance that the wheel is rotated,
         // in eighths of a degree")
-        float wheelDelta_deg = static_cast<float>(event->delta()) / 8;
+        float wheelDelta_deg = static_cast<float>(delta) / 8;
         m_tools->onWheelEvent(wheelDelta_deg);
         emit m_tools->mouseWheelRotated(wheelDelta_deg);
         emit m_tools->cameraParamChanged();
@@ -1349,6 +1352,32 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
             evt->accept();
         } break;
 
+        case QEvent::KeyPress: {
+            // Handle ESC key before VTK interactor processes it
+            // This ensures ESC works to exit selection tools
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);
+            if (keyEvent->key() == Qt::Key_Escape) {
+                CVLog::Print(
+                        "[QVTKWidgetCustom] ESC key pressed, forwarding to "
+                        "MainWindow");
+
+                // Handle fullscreen toggle
+                emit m_tools->exclusiveFullScreenToggled(false);
+
+                // Forward ESC to MainWindow to handle selection tools
+                if (m_win) {
+                    // Use postEvent to ensure it goes through MainWindow's
+                    // event loop
+                    QKeyEvent* newEvent =
+                            new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
+                                          keyEvent->modifiers());
+                    QCoreApplication::postEvent(m_win, newEvent);
+                }
+                evt->accept();
+                return true;  // Event handled, don't pass to VTK
+            }
+        } break;
+
         default: {
             // CVLog::Print("Unhandled event: %i", evt->type());
         } break;
@@ -1358,13 +1387,7 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
 }
 
 void QVTKWidgetCustom::keyPressEvent(QKeyEvent* event) {
-    switch (event->key()) {
-        case Qt::Key_Escape: {
-            emit m_tools->exclusiveFullScreenToggled(false);
-            break;
-        }
-        // Translation on macos: shift + three finger tap move
-        default:
-            QVTKOpenGLNativeWidget::keyPressEvent(event);
-    }
+    // ESC is already handled in event() before VTK processes it
+    // Other keys are passed to the base class
+    QVTKOpenGLNativeWidget::keyPressEvent(event);
 }

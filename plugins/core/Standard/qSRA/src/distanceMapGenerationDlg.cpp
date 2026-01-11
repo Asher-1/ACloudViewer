@@ -517,9 +517,6 @@ double DistanceMapGenerationDlg::getSpinboxAngularValue(
 void DistanceMapGenerationDlg::updateZoom(ccBBox& box) {
     if (!m_window || !box.isValid()) return;
 
-    // equivalent to 'ccGLWindow::updateConstellationCenterAndZoom' but we take
-    // aspect ratio into account
-
     // we get the bounding-box diagonal length
     PointCoordinateType bbDiag = box.getDiagNorm();
     if (cloudViewer::GreaterThanEpsilon(bbDiag)) {

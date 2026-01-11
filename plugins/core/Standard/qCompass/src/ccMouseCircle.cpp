@@ -126,8 +126,9 @@ bool ccMouseCircle::eventFilter(QObject* obj, QEvent* event) {
         // is control down
         if (wheelEvent->modifiers().testFlag(Qt::ControlModifier)) {
             // adjust radius
+            double delta = qtCompatWheelEventDelta(wheelEvent);
             ccMouseCircle::RADIUS -=
-                    ccMouseCircle::RADIUS_STEP * (wheelEvent->delta() / 100.0);
+                    ccMouseCircle::RADIUS_STEP * (delta / 100.0);
 
             // avoid really small radius
             if (ccMouseCircle::RADIUS < ccMouseCircle::RADIUS_STEP) {

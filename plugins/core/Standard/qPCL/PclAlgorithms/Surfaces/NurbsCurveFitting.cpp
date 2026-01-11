@@ -7,11 +7,12 @@
 
 #include "NurbsCurveFitting.h"
 
+#include <Utils/cc2sm.h>
+#include <Utils/sm2cc.h>
+
 #include "PclUtils/PCLModules.h"
-#include "PclUtils/cc2sm.h"
-#include "PclUtils/sm2cc.h"
-#include "Tools/CurveFitting.h"
-#include "Tools/ecvTools.h"  // must below above three
+#include "Tools/Common/CurveFitting.h"
+#include "Tools/Common/ecvTools.h"  // must below above three
 #include "dialogs/NurbsCurveFittingDlg.h"
 
 // ECV_DB_LIB

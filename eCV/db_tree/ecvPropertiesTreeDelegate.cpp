@@ -20,16 +20,23 @@
 #include "matrixDisplayDlg.h"
 #include "sfEditDlg.h"
 
+// Note: PCL Selection Tools includes removed. Selection properties are now
+// handled by cvFindDataDockWidget in a standalone dock, not integrated into
+// the properties tree delegate.
+
 // ECV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
 #include <ecv2DViewportObject.h>
 #include <ecvAdvancedTypes.h>
 #include <ecvCameraSensor.h>
+#include <ecvCircle.h>
 #include <ecvColorScalesManager.h>
 #include <ecvCone.h>
 #include <ecvCoordinateSystem.h>
+#include <ecvDisc.h>
 #include <ecvDisplayTools.h>
+#include <ecvDrawContext.h>
 #include <ecvFacet.h>
 #include <ecvGBLSensor.h>
 #include <ecvGenericPrimitive.h>
@@ -57,6 +64,7 @@
 #include <QComboBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QHeaderView>
 #include <QImageReader>
 #include <QLineEdit>
 #include <QLocale>
@@ -67,9 +75,12 @@
 #include <QSpinBox>
 #include <QStandardItemModel>
 #include <QToolButton>
+#include <QTreeView>
 
 // System
 #include <assert.h>
+
+#include <cmath>
 
 // Default 'None' string
 const char* ccPropertiesTreeDelegate::s_noneString = QT_TR_NOOP("None");
@@ -125,7 +136,11 @@ ccPropertiesTreeDelegate::ccPropertiesTreeDelegate(QStandardItemModel* model,
     : QStyledItemDelegate(parent),
       m_currentObject(nullptr),
       m_model(model),
-      m_view(view) {
+      m_view(view),
+      m_viewer(nullptr),
+      m_lastFocusItemRole(OBJECT_NO_PROPERTY) {
+    // Note: Selection properties are now handled by cvFindDataDockWidget,
+    // a standalone dock widget that is decoupled from the properties tree.
     assert(m_model && m_view);
 }
 
@@ -144,6 +159,7 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
             case OBJECT_OCTREE_TYPE:
             case OBJECT_COLOR_RAMP_STEPS:
             case OBJECT_CLOUD_POINT_SIZE:
+            case OBJECT_OPACITY:
                 return QSize(50, 24);
             case OBJECT_COLOR_SOURCE:
             case OBJECT_POLYLINE_WIDTH:
@@ -156,6 +172,8 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
             case OBJECT_HISTORY_MATRIX_EDITOR:
             case OBJECT_GLTRANS_MATRIX_EDITOR:
                 return QSize(250, 140);
+                // Note: OBJECT_SELECTION_PROPERTIES case removed - selection
+                // properties are now in standalone cvFindDataDockWidget
         }
     }
 
@@ -174,7 +192,17 @@ ccHObject* ccPropertiesTreeDelegate::getCurrentObject() {
 }
 
 void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
-    if (!hObject) return;
+    if (!hObject) {
+        CVLog::PrintDebug(
+                "[ccPropertiesTreeDelegate::fillModel] Called with nullptr, "
+                "clearing");
+        unbind();
+        if (m_model) {
+            m_model->removeRows(0, m_model->rowCount());
+        }
+        m_currentObject = nullptr;
+        return;
+    }
 
     unbind();
 
@@ -191,6 +219,18 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
         m_model->setHeaderData(0, Qt::Horizontal, tr("Property"));
         m_model->setHeaderData(1, Qt::Horizontal, tr("State/Value"));
     }
+
+    // Ensure header is visible when displaying normal properties
+    // (it may have been hidden when showing only selection properties)
+    if (m_view) {
+        QTreeView* treeView = qobject_cast<QTreeView*>(m_view);
+        if (treeView && treeView->header()) {
+            treeView->header()->show();
+        }
+    }
+
+    // Note: Selection properties are no longer shown in the properties tree.
+    // They are now displayed in the standalone cvFindDataDockWidget.
 
     if (m_currentObject->isHierarchy())
         if (!m_currentObject->isA(
@@ -302,9 +342,16 @@ void ccPropertiesTreeDelegate::appendWideRow(
 
     if (m_model) {
         m_model->appendRow(item);
-        if (openPersistentEditor)
-            m_view->openPersistentEditor(
-                    m_model->index(m_model->rowCount() - 1, 0));
+        if (openPersistentEditor && m_view) {
+            QModelIndex index = m_model->index(m_model->rowCount() - 1, 0);
+            if (index.isValid()) {
+                m_view->openPersistentEditor(index);
+            } else {
+                CVLog::Warning(
+                        "[ccPropertiesTreeDelegate] Invalid index for "
+                        "persistent editor");
+            }
+        }
     }
 }
 
@@ -344,6 +391,19 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
 
         appendRow(ITEM(it.key()), ITEM(value));
     }
+}
+
+// Note: fillWithSelectionProperties, setSelectionToolsActive, and
+// showSelectionPropertiesOnly have been removed. Selection properties are now
+// displayed in the standalone cvFindDataDockWidget, which is decoupled from
+// the properties tree and selection tool state (following ParaView design).
+
+void ccPropertiesTreeDelegate::clearModel() {
+    if (!m_model) return;
+
+    unbind();
+    m_model->removeRows(0, m_model->rowCount());
+    m_currentObject = nullptr;
 }
 
 void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
@@ -428,6 +488,16 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
     appendRow(ITEM(tr("Info")), ITEM(tr("Object ID: %1 - Children: %2")
                                              .arg(_obj->getUniqueID())
                                              .arg(_obj->getChildrenNumber())));
+
+    // opacity (transparency) - ParaView-style slider + spinbox [0.0, 1.0]
+    // Placed before Current Display as per ParaView's property panel layout
+    // Applies to point clouds, meshes, primitives, and other renderable objects
+    if (_obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
+        _obj->isKindOf(CV_TYPES::MESH) || _obj->isKindOf(CV_TYPES::PRIMITIVE) ||
+        _obj->isKindOf(CV_TYPES::POLY_LINE) ||
+        _obj->isKindOf(CV_TYPES::FACET)) {
+        appendRow(ITEM(tr("Opacity")), PERSISTENT_EDITOR(OBJECT_OPACITY), true);
+    }
 
     // display window
     if (!_obj->isLocked())
@@ -622,6 +692,9 @@ void ccPropertiesTreeDelegate::fillWithPrimitive(ccGenericPrimitive* _obj) {
     } else if (_obj->isKindOf(CV_TYPES::PLANE)) {
         // planar entity commons
         fillWithPlanarEntity(static_cast<ccPlane*>(_obj));
+    } else if (_obj->isA(CV_TYPES::DISC)) {
+        appendRow(ITEM(tr("Radius")), PERSISTENT_EDITOR(OBJECT_DISC_RADIUS),
+                  true);
     }
 }
 
@@ -723,6 +796,19 @@ void ccPropertiesTreeDelegate::fillWithMesh(ccGenericMesh* _obj) {
 
 void ccPropertiesTreeDelegate::fillWithPolyline(ccPolyline* _obj) {
     assert(_obj && m_model);
+    if (!_obj || !m_model) {
+        return;
+    }
+
+    if (_obj->isA(CV_TYPES::CIRCLE)) {
+        addSeparator(tr("Circle"));
+
+        appendRow(ITEM(tr("Drawing precision")),
+                  PERSISTENT_EDITOR(OBJECT_CIRCLE_RESOLUTION), true);
+
+        appendRow(ITEM(tr("Radius")), PERSISTENT_EDITOR(OBJECT_CIRCLE_RADIUS),
+                  true);
+    }
 
     addSeparator(tr("Polyline"));
 
@@ -816,21 +902,21 @@ void ccPropertiesTreeDelegate::fillWithPointKdTree(ccKdTree* _obj) {
 void ccPropertiesTreeDelegate::fillWithImage(ccImage* _obj) {
     assert(_obj && m_model);
 
-    addSeparator("Image");
+    addSeparator(tr("Image"));
 
     // image width
-    appendRow(ITEM("Width"), ITEM(QString::number(_obj->getW())));
+    appendRow(ITEM(tr("Width")), ITEM(QString::number(_obj->getW())));
 
     // image height
-    appendRow(ITEM("Height"), ITEM(QString::number(_obj->getH())));
+    appendRow(ITEM(tr("Height")), ITEM(QString::number(_obj->getH())));
 
     // transparency
-    appendRow(ITEM("Alpha"), PERSISTENT_EDITOR(OBJECT_IMAGE_ALPHA), true);
+    appendRow(ITEM(tr("Alpha")), PERSISTENT_EDITOR(OBJECT_IMAGE_ALPHA), true);
 
     if (_obj->getAssociatedSensor()) {
-        addSeparator("Sensor");
+        addSeparator(tr("Sensor"));
         //"Set Viewport" button (shortcut to associated sensor)
-        appendRow(ITEM("Apply Viewport"),
+        appendRow(ITEM(tr("Apply Viewport")),
                   PERSISTENT_EDITOR(OBJECT_APPLY_IMAGE_VIEWPORT), true);
     }
 }
@@ -939,19 +1025,19 @@ void ccPropertiesTreeDelegate::fillWithSensor(ccSensor* _obj) {
 void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj) {
     assert(_obj && m_model);
 
-    addSeparator("TLS/GBL Sensor");
+    addSeparator(tr("TLS/GBL Sensor"));
 
     // Uncertainty
-    appendRow(ITEM("Uncertainty"), PERSISTENT_EDITOR(OBJECT_SENSOR_UNCERTAINTY),
-              true);
+    appendRow(ITEM(tr("Uncertainty")),
+              PERSISTENT_EDITOR(OBJECT_SENSOR_UNCERTAINTY), true);
 
     // angles
-    addSeparator("Angular viewport (degrees)");
+    addSeparator(tr("Angular viewport (degrees)"));
     {
         // Angular range (yaw)
         PointCoordinateType yawMin = _obj->getMinYaw();
         PointCoordinateType yawMax = _obj->getMaxYaw();
-        appendRow(ITEM("Yaw span"),
+        appendRow(ITEM(tr("Yaw span")),
                   ITEM(QString("[%1 ; %2]")
                                .arg(cloudViewer::RadiansToDegrees(yawMin), 0,
                                     'f', 2)
@@ -960,14 +1046,14 @@ void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj) {
 
         // Angular steps (yaw)
         PointCoordinateType yawStep = _obj->getYawStep();
-        appendRow(ITEM("Yaw step"),
+        appendRow(ITEM(tr("Yaw step")),
                   ITEM(QString("%1").arg(cloudViewer::RadiansToDegrees(yawStep),
                                          0, 'f', 4)));
 
         // Angular range (pitch)
         PointCoordinateType pitchMin = _obj->getMinPitch();
         PointCoordinateType pitchMax = _obj->getMaxPitch();
-        appendRow(ITEM("Pitch span"),
+        appendRow(ITEM(tr("Pitch span")),
                   ITEM(QString("[%1 ; %2]")
                                .arg(cloudViewer::RadiansToDegrees(pitchMin), 0,
                                     'f', 2)
@@ -977,7 +1063,7 @@ void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj) {
         // Angular steps (pitch)
         PointCoordinateType pitchStep = _obj->getPitchStep();
         appendRow(
-                ITEM("Pitch step"),
+                ITEM(tr("Pitch step")),
                 ITEM(QString("%1").arg(cloudViewer::RadiansToDegrees(pitchStep),
                                        0, 'f', 4)));
     }
@@ -989,49 +1075,50 @@ void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj) {
 void ccPropertiesTreeDelegate::fillWithCameraSensor(ccCameraSensor* _obj) {
     assert(_obj && m_model);
 
-    addSeparator("Camera Sensor");
+    addSeparator(tr("Camera Sensor"));
 
     const ccCameraSensor::IntrinsicParameters& params =
             _obj->getIntrinsicParameters();
 
     // Focal
-    appendRow(ITEM("Vert. focal"),
-              ITEM(QString::number(params.vertFocal_pix) + " pix."));
+    appendRow(ITEM(tr("Vert. focal")),
+              ITEM(QString::number(params.vertFocal_pix) + tr(" pix.")));
 
     // Array size
-    appendRow(ITEM("Array size"), ITEM(QString("%1 x %2")
-                                               .arg(params.arrayWidth)
-                                               .arg(params.arrayHeight)));
+    appendRow(ITEM(tr("Array size")), ITEM(QString("%1 x %2")
+                                                   .arg(params.arrayWidth)
+                                                   .arg(params.arrayHeight)));
 
     // Principal point
-    appendRow(ITEM("Principal point"),
+    appendRow(ITEM(tr("Principal point")),
               ITEM(QString("(%1 ; %2)")
                            .arg(params.principal_point[0])
                            .arg(params.principal_point[1])));
 
     // Pixel size
     if (params.pixelSize_mm[0] != 0 || params.pixelSize_mm[1] != 0) {
-        appendRow(ITEM("Pixel size"),
+        appendRow(ITEM(tr("Pixel size")),
                   ITEM(QString("%1 x %2")
                                .arg(params.pixelSize_mm[0])
                                .arg(params.pixelSize_mm[1])));
     }
 
     // Field of view
-    appendRow(ITEM("Field of view"),
+    appendRow(ITEM(tr("Field of view")),
               ITEM(QString::number(
                            cloudViewer::RadiansToDegrees(params.vFOV_rad)) +
-                   " deg."));
+                   tr(" deg.")));
 
     // Skewness
-    appendRow(ITEM("Skew"), ITEM(QString::number(params.skew)));
+    appendRow(ITEM(tr("Skew")), ITEM(QString::number(params.skew)));
 
-    addSeparator("Frustum display");
+    addSeparator(tr("Frustum display"));
 
     // Draw frustum
-    appendRow(ITEM("Show lines"), CHECKABLE_ITEM(_obj->frustumIsDrawn(),
-                                                 OBJECT_SENSOR_DRAW_FRUSTUM));
-    appendRow(ITEM("Show side planes"),
+    appendRow(
+            ITEM(tr("Show lines")),
+            CHECKABLE_ITEM(_obj->frustumIsDrawn(), OBJECT_SENSOR_DRAW_FRUSTUM));
+    appendRow(ITEM(tr("Show side planes")),
               CHECKABLE_ITEM(_obj->frustumPlanesAreDrawn(),
                              OBJECT_SENSOR_DRAW_FRUSTUM_PLANES));
 
@@ -1042,10 +1129,10 @@ void ccPropertiesTreeDelegate::fillWithCameraSensor(ccCameraSensor* _obj) {
 void ccPropertiesTreeDelegate::fillWithMaterialSet(ccMaterialSet* _obj) {
     assert(_obj && m_model);
 
-    addSeparator("Material set");
+    addSeparator(tr("Material set"));
 
     // Count
-    appendRow(ITEM("Count"), ITEM(QString::number(_obj->size())));
+    appendRow(ITEM(tr("Count")), ITEM(QString::number(_obj->size())));
 
     // ccMaterialSet objects are 'shareable'
     fillWithShareable(_obj);
@@ -1060,9 +1147,9 @@ void ccPropertiesTreeDelegate::fillWithShareable(CCShareable* _obj) {
     unsigned linkCount =
             _obj->getLinkCount();  // if we display it, it means it is a member
                                    // of the DB --> i.e. link is already >1
-    appendRow(ITEM(tr("Shared")),
-              ITEM(linkCount < 3 ? QString("No")
-                                 : QString("Yes (%1)").arg(linkCount - 1)));
+    appendRow(
+            ITEM(tr("Shared")),
+            ITEM(linkCount < 3 ? tr("No") : tr("Yes (%1)").arg(linkCount - 1)));
 }
 
 template <class Type, int N, class ComponentType>
@@ -1104,6 +1191,8 @@ bool ccPropertiesTreeDelegate::isWideEditor(int itemData) const {
         case OBJECT_SENSOR_MATRIX_EDITOR:
         case OBJECT_HISTORY_MATRIX_EDITOR:
         case OBJECT_GLTRANS_MATRIX_EDITOR:
+        // Note: OBJECT_SELECTION_PROPERTIES removed - selection properties
+        // are now in standalone cvFindDataDockWidget
         case TREE_VIEW_HEADER:
             return true;
         default:
@@ -1117,13 +1206,18 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
         QWidget* parent,
         const QStyleOptionViewItem& option,
         const QModelIndex& index) const {
-    if (!m_model || !m_currentObject) return nullptr;
+    if (!m_model) return nullptr;
 
     QStandardItem* item = m_model->itemFromIndex(index);
 
     if (!item || !item->data().isValid()) return nullptr;
 
     int itemData = item->data().toInt();
+
+    // All editors require a current object
+    if (!m_currentObject) {
+        return nullptr;
+    }
     if (item->column() == 0 && !isWideEditor(itemData)) {
         // on the first column, only editors spanning on 2 columns are allowed
         return nullptr;
@@ -1135,15 +1229,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = new QComboBox(parent);
 
-            // std::vector<ccGLWindow*> glWindows;
-            // MainWindow::GetGLWindows(glWindows);
-
             comboBox->addItem(s_noneString);
-
-            // for (unsigned i = 0; i < glWindows.size(); ++i)
-            //{
-            //	comboBox->addItem(glWindows[i]->windowTitle());
-            // }
 
             connect(comboBox,
                     static_cast<void (QComboBox::*)(const QString&)>(
@@ -1283,6 +1369,18 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = spinBox;
         } break;
+        case OBJECT_CIRCLE_RESOLUTION: {
+            QSpinBox* spinBox = new QSpinBox(parent);
+            spinBox->setRange(4, 1024);
+            spinBox->setSingleStep(4);
+
+            connect(spinBox,
+                    static_cast<void (QSpinBox::*)(int)>(
+                            &QSpinBox::valueChanged),
+                    this, &ccPropertiesTreeDelegate::circleResolutionChanged);
+
+            outputWidget = spinBox;
+        } break;
         case OBJECT_SPHERE_RADIUS: {
             QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
             spinBox->setDecimals(6);
@@ -1293,6 +1391,32 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     static_cast<void (QDoubleSpinBox::*)(double)>(
                             &QDoubleSpinBox::valueChanged),
                     this, &ccPropertiesTreeDelegate::sphereRadiusChanged);
+
+            outputWidget = spinBox;
+        } break;
+        case OBJECT_CIRCLE_RADIUS: {
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
+            spinBox->setDecimals(7);
+            spinBox->setRange(1.0e-6, 1.0e6);
+            spinBox->setSingleStep(1.0);
+
+            connect(spinBox,
+                    static_cast<void (QDoubleSpinBox::*)(double)>(
+                            &QDoubleSpinBox::valueChanged),
+                    this, &ccPropertiesTreeDelegate::circleRadiusChanged);
+
+            outputWidget = spinBox;
+        } break;
+        case OBJECT_DISC_RADIUS: {
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
+            spinBox->setDecimals(7);
+            spinBox->setRange(1.0e-6, 1.0e6);
+            spinBox->setSingleStep(1.0);
+
+            connect(spinBox,
+                    static_cast<void (QDoubleSpinBox::*)(double)>(
+                            &QDoubleSpinBox::valueChanged),
+                    this, &ccPropertiesTreeDelegate::discRadiusChanged);
 
             outputWidget = spinBox;
         } break;
@@ -1345,6 +1469,64 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     &ccPropertiesTreeDelegate::imageAlphaChanged);
 
             outputWidget = slider;
+        } break;
+        case OBJECT_OPACITY: {
+            // ParaView-style opacity control: Slider + SpinBox combination
+            // Creates a horizontal layout with slider and numeric input
+            QWidget* container = new QWidget(parent);
+            QHBoxLayout* layout = new QHBoxLayout(container);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(4);
+
+            // Slider for quick adjustment
+            QSlider* slider = new QSlider(Qt::Horizontal, container);
+            slider->setRange(0, 100);  // 0% to 100% opacity
+            slider->setSingleStep(1);
+            slider->setPageStep(10);
+            slider->setTickPosition(QSlider::NoTicks);
+
+            // SpinBox for precise numeric input (ParaView style: shows
+            // 0.00-1.00)
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(container);
+            spinBox->setRange(0.0, 1.0);
+            spinBox->setDecimals(2);
+            spinBox->setSingleStep(0.01);
+            spinBox->setFixedWidth(60);
+
+            // Synchronize slider and spinbox (visual sync only, no opacity
+            // update)
+            connect(slider, &QSlider::valueChanged, this, [spinBox](int value) {
+                spinBox->blockSignals(true);
+                spinBox->setValue(value / 100.0);
+                spinBox->blockSignals(false);
+            });
+            connect(spinBox,
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                    [slider](double value) {
+                        slider->blockSignals(true);
+                        slider->setValue(static_cast<int>(value * 100));
+                        slider->blockSignals(false);
+                    });
+
+            // Connect BOTH slider and spinbox to opacity change handler
+            // Slider: direct connection
+            connect(slider, &QAbstractSlider::valueChanged, this,
+                    &ccPropertiesTreeDelegate::opacityChanged);
+            // SpinBox: convert double [0.0, 1.0] to int [0, 100] for handler
+            // Use const_cast because createEditor is const but opacityChanged
+            // is not
+            ccPropertiesTreeDelegate* self =
+                    const_cast<ccPropertiesTreeDelegate*>(this);
+            connect(spinBox,
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), self,
+                    [self](double value) {
+                        self->opacityChanged(static_cast<int>(value * 100));
+                    });
+
+            layout->addWidget(slider, 1);   // Stretch factor 1
+            layout->addWidget(spinBox, 0);  // Fixed size
+
+            outputWidget = container;
         } break;
         case OBJECT_SENSOR_INDEX: {
             ccSensor* sensor = ccHObjectCaster::ToSensor(m_currentObject);
@@ -1525,14 +1707,15 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = spinBox;
         } break;
+        // Note: OBJECT_SELECTION_PROPERTIES case removed - selection
+        // properties are now in standalone cvFindDataDockWidget
         default:
             return QStyledItemDelegate::createEditor(parent, option, index);
     }
 
     if (outputWidget) {
-        outputWidget->setFocusPolicy(
-                Qt::StrongFocus);  // Qt doc: << The returned editor widget
-                                   // should have Qt::StrongFocus >>
+        // Qt doc: << The returned editor widget should have Qt::StrongFocus >>
+        outputWidget->setFocusPolicy(Qt::StrongFocus);
     } else {
         // shouldn't happen
         assert(false);
@@ -1601,15 +1784,19 @@ void SetComboBoxIndex(QWidget* editor, int index) {
 
 void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                                              const QModelIndex& index) const {
-    if (!m_model || !m_currentObject) return;
+    if (!m_model) return;
 
     QStandardItem* item = m_model->itemFromIndex(index);
+    if (!item || !item->data().isValid()) return;
 
-    if (!item || !item->data().isValid() ||
-        (item->column() == 0 && !isWideEditor(item->data().toInt())))
-        return;
+    int itemData = item->data().toInt();
 
-    switch (item->data().toInt()) {
+    // All properties require a current object
+    if (!m_currentObject) return;
+
+    if (item->column() == 0 && !isWideEditor(itemData)) return;
+
+    switch (itemData) {
         case OBJECT_CURRENT_DISPLAY: {
             QComboBox* comboBox = qobject_cast<QComboBox*>(editor);
             if (!comboBox) {
@@ -1800,12 +1987,32 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                             : 0);
             break;
         }
+        case OBJECT_CIRCLE_RESOLUTION: {
+            ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+            assert(circle);
+            SetSpinBoxValue(editor, circle ? circle->getResolution() : 0);
+            break;
+        }
         case OBJECT_SPHERE_RADIUS: {
             ccSphere* sphere = ccHObjectCaster::ToSphere(m_currentObject);
             assert(sphere);
             SetDoubleSpinBoxValue(
                     editor,
                     sphere ? static_cast<double>(sphere->getRadius()) : 0.0);
+            break;
+        }
+        case OBJECT_CIRCLE_RADIUS: {
+            ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+            assert(circle);
+            SetDoubleSpinBoxValue(editor, circle ? circle->getRadius() : 0.0);
+            break;
+        }
+        case OBJECT_DISC_RADIUS: {
+            ccDisc* disc = ccHObjectCaster::ToDisc(m_currentObject);
+            assert(disc);
+            SetDoubleSpinBoxValue(
+                    editor,
+                    disc ? static_cast<double>(disc->getRadius()) : 0.0);
             break;
         }
         case OBJECT_CONE_HEIGHT: {
@@ -1840,6 +2047,27 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             assert(image);
             slider->setValue(static_cast<int>(image->getAlpha() * 255.0f));
             // slider->setTickPosition(QSlider::NoTicks);
+            break;
+        }
+        case OBJECT_OPACITY: {
+            // ParaView-style: editor is a container with slider + spinbox
+            QWidget* container = qobject_cast<QWidget*>(editor);
+            if (!container) return;
+
+            // Find the slider and spinbox in the container
+            QSlider* slider = container->findChild<QSlider*>();
+            QDoubleSpinBox* spinBox = container->findChild<QDoubleSpinBox*>();
+
+            // Get current opacity from the object [0.0, 1.0]
+            float opacity = m_currentObject->getOpacity();
+
+            // Set both controls (slider triggers spinbox sync via signal)
+            if (slider) {
+                slider->setValue(static_cast<int>(opacity * 100.0f));
+            }
+            if (spinBox) {
+                spinBox->setValue(static_cast<double>(opacity));
+            }
             break;
         }
         case OBJECT_SENSOR_INDEX: {
@@ -1906,6 +2134,8 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             SetComboBoxIndex(editor, currentIndex);
             break;
         }
+        // Note: OBJECT_SELECTION_PROPERTIES case removed - selection
+        // properties are now in standalone cvFindDataDockWidget
         default:
             QStyledItemDelegate::setEditorData(editor, index);
             break;
@@ -2241,6 +2471,9 @@ void ccPropertiesTreeDelegate::updateModel() {
     fillModel(m_currentObject);
 }
 
+// Note: updateSelectionProperties has been removed. Selection properties
+// updates are now handled directly by cvFindDataDockWidget.
+
 QMap<QString, QString> ccPropertiesTreeDelegate::getCurrentMeshTexturePathMap()
         const {
     if (!m_currentObject) {
@@ -2503,6 +2736,71 @@ void ccPropertiesTreeDelegate::octreeDisplayedLevelChanged(int val) {
     }
 }
 
+void ccPropertiesTreeDelegate::circleResolutionChanged(int val) {
+    if (!m_currentObject) {
+        return;
+    }
+
+    ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+    assert(circle);
+    if (!circle) return;
+
+    if (circle->getResolution() != static_cast<unsigned int>(val)) {
+        bool wasVisible = circle->isVisible();
+        circle->setResolution(val);
+        circle->setVisible(wasVisible);
+
+        updateCurrentEntity();
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_CIRCLE_RESOLUTION;
+
+        // we must also reset the properties display!
+        updateModel();
+    }
+}
+
+void ccPropertiesTreeDelegate::circleRadiusChanged(double val) {
+    if (!m_currentObject) return;
+
+    ccCircle* circle = ccHObjectCaster::ToCircle(m_currentObject);
+    assert(circle);
+    if (!circle) return;
+
+    if (circle->getRadius() != val) {
+        bool wasVisible = circle->isVisible();
+        circle->setRadius(val);
+        circle->setVisible(wasVisible);
+
+        updateCurrentEntity();
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_CIRCLE_RADIUS;
+
+        // we must also reset the properties display!
+        updateModel();
+    }
+}
+
+void ccPropertiesTreeDelegate::discRadiusChanged(double val) {
+    if (!m_currentObject) return;
+
+    ccDisc* disc = ccHObjectCaster::ToDisc(m_currentObject);
+    assert(disc);
+    if (!disc) return;
+
+    PointCoordinateType radius = static_cast<PointCoordinateType>(val);
+    if (disc->getRadius() != radius) {
+        disc->setRadius(radius);
+
+        updateCurrentEntity();
+
+        // record item role to force the scroll focus (see 'createEditor').
+        m_lastFocusItemRole = OBJECT_DISC_RADIUS;
+        updateModel();
+    }
+}
+
 void ccPropertiesTreeDelegate::primitivePrecisionChanged(int val) {
     if (!m_currentObject) return;
 
@@ -2609,6 +2907,49 @@ void ccPropertiesTreeDelegate::imageAlphaChanged(int val) {
         ecvDisplayTools::ChangeOpacity(
                 alpha, CVTools::FromQString(image->getViewId()));
     }
+}
+
+void ccPropertiesTreeDelegate::opacityChanged(int val) {
+    if (!m_currentObject) return;
+
+    // Convert slider value [0, 100] to opacity [0.0, 1.0]
+    float opacity = val / 100.0f;
+
+    // Check if opacity actually changed to avoid unnecessary updates
+    if (std::abs(m_currentObject->getOpacity() - opacity) < 0.001f) {
+        return;
+    }
+
+    // Store the new opacity in the object
+    m_currentObject->setOpacity(opacity);
+
+    // Determine entity type for proper property application
+    ENTITY_TYPE entityType = ENTITY_TYPE::ECV_POINT_CLOUD;  // Default
+
+    if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
+    } else if (m_currentObject->isKindOf(CV_TYPES::MESH) ||
+               m_currentObject->isKindOf(CV_TYPES::PRIMITIVE)) {
+        entityType = ENTITY_TYPE::ECV_MESH;
+    } else if (m_currentObject->isKindOf(CV_TYPES::POLY_LINE)) {
+        entityType = ENTITY_TYPE::ECV_LINES_3D;
+    } else if (m_currentObject->isKindOf(CV_TYPES::FACET)) {
+        entityType = ENTITY_TYPE::ECV_MESH;
+    }
+
+    // Create property parameter and apply opacity change
+    PROPERTY_PARAM param(m_currentObject, static_cast<double>(opacity));
+    param.entityType = entityType;
+    param.viewId = m_currentObject->getViewId();
+    param.viewport = 0;
+
+    // Apply the opacity change via display tools
+    ecvDisplayTools::ChangeEntityProperties(param, true);
+
+    CVLog::PrintDebug(QString("[ccPropertiesTreeDelegate::opacityChanged] "
+                              "Set opacity to %1 for object '%2'")
+                              .arg(opacity)
+                              .arg(m_currentObject->getName()));
 }
 
 void ccPropertiesTreeDelegate::applyImageViewport() {

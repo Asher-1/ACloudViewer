@@ -164,11 +164,7 @@ private:
     MatchMatrixWidget* match_matrix_widget_;
     ThreadControlWidget* thread_control_widget_;
 
-    QToolBar* file_toolbar_;
-    QToolBar* preprocessing_toolbar_;
     QToolBar* reconstruction_toolbar_;
-    QToolBar* render_toolbar_;
-    QToolBar* extras_toolbar_;
 
     QDockWidget* dock_log_widget_;
 

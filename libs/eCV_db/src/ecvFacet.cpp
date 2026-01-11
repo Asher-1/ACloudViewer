@@ -479,8 +479,14 @@ void ccFacet::drawMeOnly(CC_DRAW_CONTEXT& context) {
     }
 }
 
-bool ccFacet::toFile_MeOnly(QFile& out) const {
-    if (!ccHObject::toFile_MeOnly(out)) return false;
+bool ccFacet::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 32) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccHObject::toFile_MeOnly(out, dataVersion)) return false;
 
     // we can't save the origin points here (as it will be automatically saved
     // as a child) so instead we save it's unique ID (dataVersion>=32) WARNING:
@@ -543,12 +549,17 @@ bool ccFacet::toFile_MeOnly(QFile& out) const {
     if (out.write((const char*)&m_surface, sizeof(double)) < 0)
         return WriteError();
 
-    // Max edge length (dataVersion>=31)
+    // Max edge length (dataVersion>=32)
     if (out.write((const char*)&m_maxEdgeLength, sizeof(PointCoordinateType)) <
         0)
         return WriteError();
 
     return true;
+}
+
+short ccFacet::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(32),
+                    ccHObject::minimumFileVersion_MeOnly());
 }
 
 bool ccFacet::fromFile_MeOnly(QFile& in,
@@ -618,9 +629,9 @@ bool ccFacet::fromFile_MeOnly(QFile& in,
     // surface (dataVersion>=32)
     if (in.read((char*)&m_surface, sizeof(double)) < 0) return ReadError();
 
-    // Max edge length (dataVersion>=31)
+    // Max edge length (dataVersion>=32)
     if (in.read((char*)&m_maxEdgeLength, sizeof(PointCoordinateType)) < 0)
-        return WriteError();
+        return ReadError();
 
     return true;
 }

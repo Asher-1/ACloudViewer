@@ -9,7 +9,9 @@
 
 #include "FileIOFilter.h"
 
-//! CLOUDVIEWER  dedicated binary point cloud I/O filter
+class QWidget;
+
+//! CLOUDVIEWER dedicated binary point cloud I/O filter
 class ECV_IO_LIB_API BinFilter : public FileIOFilter {
 public:
     BinFilter();
@@ -19,6 +21,9 @@ public:
         return "CloudViewer entities (*.bin)";
     }
     static inline QString GetDefaultExtension() { return "bin"; }
+
+    //! Returns the last saved file version
+    static short GetLastSavedFileVersion();
 
     // inherited from FileIOFilter
     virtual CC_FILE_ERROR loadFile(const QString& filename,
@@ -39,7 +44,18 @@ public:
                                     const LoadParameters& parameters);
 
     //! new style BIN loading
-    static CC_FILE_ERROR LoadFileV2(QFile& in, ccHObject& container, int flags);
+    /** \param in the file to read from
+        \param container the container to load the entities into
+        \param flags the deserialization flags
+        \param parallel whether to use parallel loading
+        \param parentWidget the parent widget for progress dialogs
+        \return the error code
+    */
+    static CC_FILE_ERROR LoadFileV2(QFile& in,
+                                    ccHObject& container,
+                                    int flags,
+                                    bool parallel,
+                                    QWidget* parentWidget = nullptr);
 
     //! new style BIN saving
     static CC_FILE_ERROR SaveFileV2(QFile& out, ccHObject* object);

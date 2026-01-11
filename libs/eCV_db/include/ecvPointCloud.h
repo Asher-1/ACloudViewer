@@ -22,7 +22,12 @@
 #include "ecvWaveform.h"
 
 // Qt
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QOpenGLBuffer>
+#define QGLBuffer QOpenGLBuffer
+#else
 #include <QGLBuffer>
+#endif
 
 class ccMesh;
 class QGLBuffer;
@@ -375,43 +380,41 @@ public:  // scalar-fields management
 
 public:  // associated (scan) grid structure
     //! Grid structure
-    struct Grid {
+    struct ECV_DB_LIB_API Grid : public ccSerializableObject {
         //! Shared type
         using Shared = QSharedPointer<Grid>;
 
         //! Default constructor
-        Grid() : w(0), h(0), validCount(0), minValidIndex(0), maxValidIndex(0) {
-            sensorPosition.toIdentity();
-        }
+        Grid();
 
         //! Copy constructor
         /** \warning May throw a bad_alloc exception
          **/
-        Grid(const Grid& grid)
-            : w(grid.w),
-              h(grid.h),
-              validCount(grid.validCount),
-              minValidIndex(grid.minValidIndex),
-              maxValidIndex(grid.minValidIndex),
-              indexes(grid.indexes),
-              colors(grid.colors),
-              sensorPosition(grid.sensorPosition) {}
+        Grid(const Grid& grid) = default;
+
+        //! Inits the grid
+        bool init(unsigned rowCount, unsigned colCount, bool withRGB = false);
+
+        //! Sets an index at a given position inside the grid
+        void setIndex(unsigned row, unsigned col, int index);
+
+        //! Sets a color at a given position inside the grid
+        void setColor(unsigned row, unsigned col, const ecvColor::Rgb& rgb);
+
+        //! Updates the min and max valid indexes
+        void updateMinAndMaxValidIndexes();
 
         //! Converts the grid to an RGB image (needs colors)
-        QImage toImage() const {
-            if (colors.size() == w * h) {
-                QImage image(w, h, QImage::Format_ARGB32);
-                for (unsigned j = 0; j < h; ++j) {
-                    for (unsigned i = 0; i < w; ++i) {
-                        const ecvColor::Rgb& col = colors[j * w + i];
-                        image.setPixel(i, j, qRgb(col.r, col.g, col.b));
-                    }
-                }
-                return image;
-            } else {
-                return QImage();
-            }
-        }
+        QImage toImage() const;
+
+        // inherited from ccSerializableObject
+        inline bool isSerializable() const override { return true; }
+        bool toFile(QFile& out, short dataVersion) const override;
+        bool fromFile(QFile& in,
+                      short dataVersion,
+                      int flags,
+                      LoadedIDMap& oldToNewIDMap) override;
+        short minimumFileVersion() const override;
 
         //! Grid width
         unsigned w;
@@ -782,6 +785,46 @@ public:  // other methods
             \return success
     **/
     bool setRGBColor(const ecvColor::Rgb& col);
+
+    //! RGB filter types
+    enum RGB_FILTER_TYPES { NONE, BILATERAL, GAUSSIAN, MEAN, MEDIAN };
+
+    //! RGB filter options
+    struct RgbFilterOptions {
+        bool applyToSFduringRGB = false;
+        RGB_FILTER_TYPES filterType = RGB_FILTER_TYPES::NONE;
+        unsigned char burntOutColorThreshold = 0;
+        bool commandLine = false;
+        double sigmaSF = -1;
+        double spatialSigma = -1;
+        bool blendGrayscale = false;
+        unsigned char blendGrayscaleThreshold = 0;
+        double blendGrayscalePercent = 0.5;
+    };
+
+    //! Applies a spatial Gaussian filter on RGB colors
+    /** The "amplitude" of the Gaussian filter must be specified (sigma).
+        As 99% of the Gaussian distribution is between -3*sigma and +3*sigma
+    around the mean value, this filter will only look for neighbors within a
+    sphere of radius 3*sigma. One can also use the filter as a Bilateral filter.
+    In this case the weights are computed considering the difference of the
+    neighbors SF values with the current point SF value (also following a
+    Gaussian distribution). Warning: this method assumes the output scalar field
+    is set.
+        \param sigma filter variance
+        \param sigmaSF if strictly positive, the variance for the Bilateral
+    filter
+        \param filterParams filter options
+        \param progressCb the client application can get some notification of
+    the process progress through this callback mechanism (see
+    GenericProgressCallback)
+        \return success
+    **/
+    bool applyFilterToRGB(
+            PointCoordinateType sigma,
+            PointCoordinateType sigmaSF,
+            RgbFilterOptions filterParams,
+            cloudViewer::GenericProgressCallback* progressCb = nullptr);
 
     //! Inverts normals (if any)
     void invertNormals();
@@ -1276,7 +1319,8 @@ protected:
     // inherited from ccHObject
     void drawMeOnly(CC_DRAW_CONTEXT& context) override;
     void applyGLTransformation(const ccGLMatrix& trans) override;
-    bool toFile_MeOnly(QFile& out) const override;
+    bool toFile_MeOnly(QFile& out, short dataVersion) const override;
+    short minimumFileVersion_MeOnly() const override;
     bool fromFile_MeOnly(QFile& in,
                          short dataVersion,
                          int flags,

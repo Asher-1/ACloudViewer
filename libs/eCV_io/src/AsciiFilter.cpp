@@ -27,7 +27,6 @@
 #include <QFileInfo>
 #include <QScopedPointer>
 #include <QSharedPointer>
-#include <QTextStream>
 
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
@@ -214,7 +213,7 @@ CC_FILE_ERROR AsciiFilter::saveToFile(ccHObject* entity,
 
     // non static parameters
     int normalPrecision = 2 + sizeof(PointCoordinateType);
-    QChar separator = saveDialog.getSeparator();
+    QChar separator(saveDialog.getSeparator());
     bool saveFloatColors = saveDialog.saveFloatColors();
     bool saveAlphaChannel = saveDialog.saveAlphaChannel();
 

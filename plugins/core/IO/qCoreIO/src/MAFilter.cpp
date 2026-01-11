@@ -149,7 +149,7 @@ CC_FILE_ERROR MAFilter::saveToFile(ccHObject* entity,
     }
     if (fprintf(fp, "//Last modified: %s\n",
                 qPrintable(QDateTime::currentDateTime().toString(
-                        Qt::SystemLocaleShortDate))) < 0) {
+                        Qt::ISODateWithMs))) < 0) {
         fclose(fp);
         return CC_FERR_WRITING;
     }

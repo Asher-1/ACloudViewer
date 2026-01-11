@@ -12,7 +12,6 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QTextStream>
 #include <QXmlStreamReader>
 
 // Qt5/Qt6 Compatibility
@@ -69,21 +68,21 @@ enum Sections {
 QString ToName(Sections section) {
     switch (section) {
         case DOCUMENT:
-            return "DOCUMENT";
+            return QStringLiteral("DOCUMENT");
         case CHUNKS:
-            return "CHUNKS";
+            return QStringLiteral("CHUNKS");
         case CHUNK:
-            return "CHUNK";
+            return QStringLiteral("CHUNK");
         case SENSORS:
-            return "SENSORS";
+            return QStringLiteral("SENSORS");
         case CAMERAS:
-            return "CAMERAS";
+            return QStringLiteral("CAMERAS");
         case FRAMES:
-            return "FRAMES";
+            return QStringLiteral("FRAMES");
         case FRAME:
-            return "FRAME";
+            return QStringLiteral("FRAME");
         case TRANSFORM:
-            return "TRANSFORM";
+            return QStringLiteral("TRANSFORM");
         default:
             assert(false);
     }
@@ -138,31 +137,33 @@ bool DecodeTransformation(const QString& transformationValues,
 }
 
 static void DisplayCurrentNodeInfo(QXmlStreamReader& stream) {
-    CVLog::Warning("--> " + stream.name().toString() +
-                   (stream.isStartElement() ? " [start]" : "") +
-                   (stream.isEndElement() ? " [end]" : ""));
+    CVLog::Warning(
+            QStringLiteral("--> ") + stream.name().toString() +
+            (stream.isStartElement() ? QStringLiteral(" [start]") : QString()) +
+            (stream.isEndElement() ? QStringLiteral(" [end]") : QString()));
     for (int i = 0; i < stream.attributes().size(); ++i) {
-        CVLog::Warning(QString("\t") +
+        CVLog::Warning(QStringLiteral("\t") +
                        stream.attributes().at(i).qualifiedName().toString());
     }
 }
 
 static ccCameraSensor* DecodeSensor(QXmlStreamReader& stream, int& sensorId) {
-    assert(stream.name() == "sensor");
+    assert(stream.name() == QStringLiteral("sensor"));
     sensorId = -1;
 
     QXmlStreamAttributes sensorAttributes = stream.attributes();
-    if (!sensorAttributes.hasAttribute("type") ||
-        sensorAttributes.value("type") != "frame") {
+    if (!sensorAttributes.hasAttribute(QStringLiteral("type")) ||
+        sensorAttributes.value(QStringLiteral("type")) !=
+                QStringLiteral("frame")) {
         // unhandled sensor type
         return nullptr;
     }
-    if (!sensorAttributes.hasAttribute("id")) {
+    if (!sensorAttributes.hasAttribute(QStringLiteral("id"))) {
         // invalid sensor?!
         assert(false);
         return nullptr;
     }
-    sensorId = sensorAttributes.value("id").toInt();
+    sensorId = sensorAttributes.value(QStringLiteral("id")).toInt();
 
     ccCameraSensor* sensor = nullptr;
     ccCameraSensor::IntrinsicParameters params;
@@ -173,19 +174,24 @@ static ccCameraSensor* DecodeSensor(QXmlStreamReader& stream, int& sensorId) {
         DisplayCurrentNodeInfo(stream);
 #endif
 
-        if (stream.name() == "property") {
-            if (stream.attributes().value("name") == "pixel_width") {
-                params.pixelSize_mm[0] =
-                        stream.attributes().value("value").toDouble();
+        if (stream.name() == QStringLiteral("property")) {
+            if (stream.attributes().value(QStringLiteral("name")) ==
+                QStringLiteral("pixel_width")) {
+                params.pixelSize_mm[0] = stream.attributes()
+                                                 .value(QStringLiteral("value"))
+                                                 .toDouble();
                 // hasPixelSize = true;
-            } else if (stream.attributes().value("name") == "pixel_height") {
-                params.pixelSize_mm[1] =
-                        stream.attributes().value("value").toDouble();
+            } else if (stream.attributes().value(QStringLiteral("name")) ==
+                       QStringLiteral("pixel_height")) {
+                params.pixelSize_mm[1] = stream.attributes()
+                                                 .value(QStringLiteral("value"))
+                                                 .toDouble();
                 hasPixelSize = true;
             }
             stream.skipCurrentElement();
-        } else if (stream.name() == "calibration" &&
-                   stream.attributes().value("type") == "frame") {
+        } else if (stream.name() == QStringLiteral("calibration") &&
+                   stream.attributes().value(QStringLiteral("type")) ==
+                           QStringLiteral("frame")) {
             ccCameraSensor::ExtendedRadialDistortionParameters distParams;
             bool hasDistortion = false;
             bool hasResolution = false;
@@ -196,36 +202,40 @@ static ccCameraSensor* DecodeSensor(QXmlStreamReader& stream, int& sensorId) {
                 // DisplayCurrentNodeInfo(stream);
 #endif
 
-                if (stream.name() == "resolution") {
-                    int width = stream.attributes().value("width").toInt();
-                    int height = stream.attributes().value("height").toInt();
+                if (stream.name() == QStringLiteral("resolution")) {
+                    int width = stream.attributes()
+                                        .value(QStringLiteral("width"))
+                                        .toInt();
+                    int height = stream.attributes()
+                                         .value(QStringLiteral("height"))
+                                         .toInt();
                     if (width > 0 && height > 0) {
                         params.arrayWidth = width;
                         params.arrayHeight = height;
                         hasResolution = true;
                     }
                     stream.skipCurrentElement();
-                } else if (stream.name() == "fx") {
+                } else if (stream.name() == QStringLiteral("fx")) {
                     double horizFocal_pix = stream.readElementText().toDouble();
                     //++paramsCount;
-                } else if (stream.name() == "fy") {
+                } else if (stream.name() == QStringLiteral("fy")) {
                     params.vertFocal_pix = stream.readElementText().toDouble();
                     hasVertFocal = true;
-                } else if (stream.name() == "cx") {
+                } else if (stream.name() == QStringLiteral("cx")) {
                     params.principal_point[0] =
                             stream.readElementText().toDouble();
                     hasCentralPoint = true;
-                } else if (stream.name() == "cy") {
+                } else if (stream.name() == QStringLiteral("cy")) {
                     params.principal_point[1] =
                             stream.readElementText().toDouble();
                     hasCentralPoint = true;
-                } else if (stream.name() == "k1") {
+                } else if (stream.name() == QStringLiteral("k1")) {
                     distParams.k1 = stream.readElementText().toDouble();
                     hasDistortion = true;
-                } else if (stream.name() == "k2") {
+                } else if (stream.name() == QStringLiteral("k2")) {
                     distParams.k2 = stream.readElementText().toDouble();
                     hasDistortion = true;
-                } else if (stream.name() == "k3") {
+                } else if (stream.name() == QStringLiteral("k3")) {
                     distParams.k3 = stream.readElementText().toDouble();
                     hasDistortion = true;
                 } else {
@@ -271,35 +281,39 @@ static ccCameraSensor* DecodeSensor(QXmlStreamReader& stream, int& sensorId) {
 }
 
 static bool DecodeCamera(QXmlStreamReader& stream, CameraDesc& camera) {
-    assert(stream.name() == "camera");
+    assert(stream.name() == QStringLiteral("camera"));
 
     QXmlStreamAttributes cameraAttributes = stream.attributes();
-    if (!cameraAttributes.hasAttribute("id") ||
-        !cameraAttributes.hasAttribute("sensor_id") ||
-        !cameraAttributes.hasAttribute("label")) {
+    if (!cameraAttributes.hasAttribute(QStringLiteral("id")) ||
+        !cameraAttributes.hasAttribute(QStringLiteral("sensor_id")) ||
+        !cameraAttributes.hasAttribute(QStringLiteral("label"))) {
         // invalid camera?!
         assert(false);
         return false;
     }
 
-    camera.id = cameraAttributes.value("id").toInt();
-    camera.sensorId = cameraAttributes.value("sensor_id").toInt();
-    camera.imageFilename = cameraAttributes.value("label").toString();
+    camera.id = cameraAttributes.value(QStringLiteral("id")).toInt();
+    camera.sensorId =
+            cameraAttributes.value(QStringLiteral("sensor_id")).toInt();
+    camera.imageFilename =
+            cameraAttributes.value(QStringLiteral("label")).toString();
 
     while (stream.readNextStartElement()) {
 #ifdef _DEBUG
         // DisplayCurrentNodeInfo(stream);
 #endif
 
-        if (stream.name() == "transform") {
+        if (stream.name() == QStringLiteral("transform")) {
             QString transformationValues = stream.readElementText();
             DecodeTransformation<float>(transformationValues, camera.trans);
-        } else if (stream.name() == "reference") {
+        } else if (stream.name() == QStringLiteral("reference")) {
             QXmlStreamAttributes attributes = stream.attributes();
-            if (attributes.value("enabled").toString() == "true") {
-                CCVector3d T = {attributes.value("x").toDouble(),
-                                attributes.value("y").toDouble(),
-                                attributes.value("z").toDouble()};
+            if (attributes.value(QStringLiteral("enabled")).toString() ==
+                QStringLiteral("true")) {
+                CCVector3d T = {
+                        attributes.value(QStringLiteral("x")).toDouble(),
+                        attributes.value(QStringLiteral("y")).toDouble(),
+                        attributes.value(QStringLiteral("z")).toDouble()};
                 // What is exactly the "reference" point?!
                 // camera.trans.setTranslation(CCVector3::fromArray(T.u));
             }
@@ -397,7 +411,8 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
     QXmlStreamReader stream(&zipXML);
 
     // expected: "document"
-    if (!stream.readNextStartElement() || stream.name() != "document") {
+    if (!stream.readNextStartElement() ||
+        stream.name() != QStringLiteral("document")) {
         return CC_FERR_MALFORMED_FILE;
     }
 
@@ -416,8 +431,8 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
             // end of section?
             if (!sections.empty()) {
                 CVLog::PrintDebug(
-                        " < " + stream.name().toString() +
-                        QString(" [%1]").arg(ToName(sections.back())));
+                        QStringLiteral(" < ") + stream.name().toString() +
+                        QStringLiteral(" [%1]").arg(ToName(sections.back())));
                 sections.pop_back();
                 // stream.skipCurrentElement();
                 continue;
@@ -426,11 +441,11 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                 break;
             }
         }
-        CVLog::PrintDebug(" > " + stream.name().toString());
+        CVLog::PrintDebug(QStringLiteral(" > ") + stream.name().toString());
 
         switch (sections.back()) {
             case DOCUMENT:
-                if (stream.name() == "chunks") {
+                if (stream.name() == QStringLiteral("chunks")) {
                     sections.push_back(CHUNKS);
                 } else {
                     // not handled
@@ -439,7 +454,7 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                 break;
 
             case CHUNKS:
-                if (stream.name() == "chunk") {
+                if (stream.name() == QStringLiteral("chunk")) {
                     sections.push_back(CHUNK);
                 } else {
                     // not handled
@@ -448,16 +463,16 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                 break;
 
             case CHUNK:
-                if (stream.name() == "sensors") {
+                if (stream.name() == QStringLiteral("sensors")) {
                     sections.push_back(SENSORS);
-                } else if (stream.name() == "cameras") {
+                } else if (stream.name() == QStringLiteral("cameras")) {
                     sections.push_back(CAMERAS);
-                } else if (stream.name() == "frames") {
+                } else if (stream.name() == QStringLiteral("frames")) {
                     sections.push_back(FRAMES);
-                } else if (stream.name() == "transform") {
+                } else if (stream.name() == QStringLiteral("transform")) {
                     // inner loop
                     while (stream.readNextStartElement()) {
-                        if (stream.name() == "rotation") {
+                        if (stream.name() == QStringLiteral("rotation")) {
                             QString rotationValues = stream.readElementText();
                             if (DecodeRotation<double>(rotationValues,
                                                        globalTransform)) {
@@ -476,7 +491,7 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                 break;
 
             case SENSORS:
-                if (stream.name() == "sensor") {
+                if (stream.name() == QStringLiteral("sensor")) {
                     int sensorId = -1;
                     ccCameraSensor* sensor = DecodeSensor(stream, sensorId);
                     if (sensor) {
@@ -491,7 +506,7 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                 break;
 
             case CAMERAS:
-                if (stream.name() == "camera") {
+                if (stream.name() == QStringLiteral("camera")) {
                     CameraDesc camera;
                     ccGLMatrix trans;
                     if (DecodeCamera(stream, camera)) {
@@ -506,7 +521,7 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                 break;
 
             case FRAMES:
-                if (stream.name() == "frame") {
+                if (stream.name() == QStringLiteral("frame")) {
                     sections.push_back(FRAME);
                 } else {
                     // not handled
@@ -515,19 +530,24 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                 break;
 
             case FRAME:
-                if (stream.name() == "point_cloud" ||
-                    stream.name() == "dense_cloud") {
+                if (stream.name() == QStringLiteral("point_cloud") ||
+                    stream.name() == QStringLiteral("dense_cloud")) {
                     // inner loop
-                    bool denseCloud = (stream.name() == "dense_cloud");
+                    bool denseCloud =
+                            (stream.name() == QStringLiteral("dense_cloud"));
                     while (stream.readNextStartElement()) {
-                        if (stream.name() == "points") {
-                            if (stream.attributes().hasAttribute("path")) {
+                        if (stream.name() == QStringLiteral("points")) {
+                            if (stream.attributes().hasAttribute(
+                                        QStringLiteral("path"))) {
                                 CloudDesc desc;
-                                desc.filename = stream.attributes()
-                                                        .value("path")
-                                                        .toString();
-                                desc.type = (denseCloud ? "dense cloud"
-                                                        : "keypoints");
+                                desc.filename =
+                                        stream.attributes()
+                                                .value(QStringLiteral("path"))
+                                                .toString();
+                                desc.type =
+                                        (denseCloud
+                                                 ? QStringLiteral("dense cloud")
+                                                 : QStringLiteral("keypoints"));
                                 clouds.push_back(desc);
                             } else {
                                 assert(false);
@@ -535,24 +555,28 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                         }
                         stream.skipCurrentElement();
                     }
-                } else if (stream.name() == "model") {
+                } else if (stream.name() == QStringLiteral("model")) {
                     MeshDesc desc;
 
                     // inner loop
                     while (stream.readNextStartElement()) {
-                        if (stream.name() == "mesh") {
-                            if (stream.attributes().hasAttribute("path")) {
-                                desc.filename = stream.attributes()
-                                                        .value("path")
-                                                        .toString();
+                        if (stream.name() == QStringLiteral("mesh")) {
+                            if (stream.attributes().hasAttribute(
+                                        QStringLiteral("path"))) {
+                                desc.filename =
+                                        stream.attributes()
+                                                .value(QStringLiteral("path"))
+                                                .toString();
                             } else {
                                 assert(false);
                             }
-                        } else if (stream.name() == "texture") {
-                            if (stream.attributes().hasAttribute("path")) {
-                                desc.texture = stream.attributes()
-                                                       .value("path")
-                                                       .toString();
+                        } else if (stream.name() == QStringLiteral("texture")) {
+                            if (stream.attributes().hasAttribute(
+                                        QStringLiteral("path"))) {
+                                desc.texture =
+                                        stream.attributes()
+                                                .value(QStringLiteral("path"))
+                                                .toString();
                             } else {
                                 assert(false);
                             }
@@ -583,7 +607,7 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
         progressDialog.reset(new ecvProgressDialog(parameters.parentWidget));
         progressDialog->setRange(
                 0, cameras.size() + clouds.size() + meshes.size());
-        progressDialog->setWindowTitle("Loading data");
+        progressDialog->setWindowTitle(QStringLiteral("Loading data"));
         progressDialog->start();
     }
     bool wasCanceled = false;
@@ -591,7 +615,7 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
 
     // end of file: now we can sort the various extracted components
     QDir dir = QFileInfo(filename).dir();
-    ccHObject* imageGroup = new ccHObject("Images");
+    ccHObject* imageGroup = new ccHObject(QStringLiteral("Images"));
     if (progressDialog && !cameras.empty()) {
         progressDialog->setInfo(
                 QString("Loading %1 image(s)").arg(cameras.size()));
@@ -705,7 +729,8 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                 continue;
             }
 
-            if (desc.filename.endsWith(".oc3", Qt::CaseInsensitive)) {
+            if (desc.filename.endsWith(QStringLiteral(".oc3"),
+                                       Qt::CaseInsensitive)) {
                 CVLog::Warning(
                         QString("[Photoscan] OC3 format not supported. Can't "
                                 "import %1 from the Photoscan archive")
@@ -728,7 +753,7 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
                     FileIOFilter::LoadFromFile(tempFilename, params, result);
             if (newGroup) {
                 newGroup->setName(desc.type);
-                if (desc.type == "keypoints") {
+                if (desc.type == QStringLiteral("keypoints")) {
                     newGroup->setEnabled(false);
                 }
                 container.addChild(newGroup);
@@ -774,7 +799,8 @@ CC_FILE_ERROR PhotoScanFilter::loadFile(const QString& filename,
 
             bool success = false;
             if (!desc.texture.isEmpty() &&
-                desc.filename.endsWith("ply", Qt::CaseInsensitive)) {
+                desc.filename.endsWith(QStringLiteral("ply"),
+                                       Qt::CaseInsensitive)) {
                 QString tempTextureFilename = CreateTempFile(zip, desc.texture);
 
                 ccHObject tempContainer;

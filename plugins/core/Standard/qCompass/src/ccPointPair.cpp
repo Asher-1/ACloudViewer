@@ -135,7 +135,7 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context) {
                              unitD));  // sqrt = empirical (probably because the
                                        // marker size is already partly
                                        // compensated by
-                                       // ccGLWindow::computeActualPixelSize())
+                                       // ecvDisplayTools::computeActualPixelSize())
             }
             // glFunc->glScalef(scale, scale, scale);
             markerContext.transformInfo.setScale(

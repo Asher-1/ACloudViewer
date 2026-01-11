@@ -66,6 +66,8 @@ protected slots:
     void changeZoomSpeed(double);
 
     void changeAutoComputeOctreeOption(int);
+    
+    void changeAppStyle(int);
 
     void doAccept();
     void doReject();
@@ -98,7 +100,13 @@ protected:
     ecvGui::ParamStruct oldParameters;
     //! Old options (for restore)
     ecvOptions oldOptions;
+    
+    //! Default application style index (for reset)
+    int m_defaultAppStyleIndex;
 
 private:
     Ui::DisplayOptionsDlg* m_ui;
+    
+    //! Populate application style combo box
+    void populateAppStyleComboBox();
 };

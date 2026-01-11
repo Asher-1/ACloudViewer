@@ -9,11 +9,11 @@
 
 // local
 #include "CVCoreLib.h"
+#include "QtCompat.h"
 
 // system
 #include <QElapsedTimer>
 #include <QString>
-#include <QTextCodec>
 #include <string>
 #include <vector>
 

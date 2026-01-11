@@ -12,6 +12,8 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
+#include <cstdlib>
+
 // ECV_DB_LIB
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
@@ -33,9 +35,9 @@ TableModel::TableModel(int column, int row, QObject* parent)
         QVector<qreal>* dataVec = new QVector<qreal>(m_cols);
         for (int k = 0; k < dataVec->size(); k++) {
             if (k % 2 == 0)
-                dataVec->replace(k, i * 50 + qrand() % 20);
+                dataVec->replace(k, i * 50 + std::rand() % 20);
             else
-                dataVec->replace(k, qrand() % 100);
+                dataVec->replace(k, std::rand() % 100);
         }
         m_data.append(dataVec);
     }

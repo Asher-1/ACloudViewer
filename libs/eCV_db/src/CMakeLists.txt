@@ -8,6 +8,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvBBox.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvBox.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvCameraSensor.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvCircle.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvClipBox.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvColorScale.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvColorScalesManager.cpp
@@ -17,6 +18,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvCylinder.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDepthBuffer.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDish.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisc.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDisplayTools.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDrawableObject.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvExternalFactory.cpp
@@ -29,6 +31,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericCameraTool.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericDisplayTools.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericFiltersTool.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericMeasurementTools.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericMesh.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericPointCloud.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvGenericPrimitive.cpp
@@ -77,7 +80,6 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvTorus.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewportParameters.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvWaveform.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/ecvWidgetsInterface.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/RGBDImage.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/RGBDImageFactory.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/SurfaceReconstructionAlphaShape.cpp
@@ -104,4 +106,8 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraIntrinsic.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraParameters.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraTrajectory.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvKeySequences.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvModalShortcut.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/Shortcuts/ecvShortcutDecorator.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/widgets/ecvFontPropertyWidget.cpp
 )

@@ -7,14 +7,20 @@
 
 #include "PCLVis.h"
 
-#include "PCLConv.h"
-#include "Tools/PclTools.h"
-#include "Tools/ecvTools.h"
+#include <Utils/PCLConv.h>
+#include <Utils/cc2sm.h>
+#include <Utils/sm2cc.h>
+
+// ECV_DB
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
+#include <ecvScalarField.h>
+
+#include "Tools/Common/PclTools.h"
+#include "Tools/Common/ecvTools.h"
 #include "VtkUtils/vtkutils.h"
-#include "cc2sm.h"
 #include "renders/TextureRenderManager.h"
 #include "renders/utils/MeshTextureApplier.h"
-#include "sm2cc.h"
 
 // SYSTEM
 #include <cmath>
@@ -61,6 +67,7 @@
 #include <vtkCamera.h>
 #include <vtkCaptionActor2D.h>
 #include <vtkCaptionRepresentation.h>
+#include <vtkFieldData.h>
 #include <vtkJPEGReader.h>
 #include <vtkLookupTable.h>
 #include <vtkOpenGLRenderWindow.h>
@@ -77,6 +84,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
+#include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
@@ -798,7 +806,7 @@ void PCLVis::setCameraViewAngle(double viewAngle, int viewport) {
     }
 
     this->resetCameraClippingRange(viewport);
-    getRenderWindow()->Render();
+    UpdateScreen();
 }
 
 /********************************Draw Entities*********************************/
@@ -833,6 +841,12 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context,
             }
         }
     }
+
+    // Sync normals and RGB colors to VTK polydata for Find Data / selection
+    // extraction PCL's visualization handles colors/normals internally through
+    // handlers, but we need them accessible via GetScalars()/GetNormals() for
+    // extraction
+    updateShadingMode(context, *smCloud);
 }
 
 void PCLVis::draw(const CC_DRAW_CONTEXT& context, const PCLMesh::Ptr& pclMesh) {
@@ -1070,32 +1084,121 @@ void PCLVis::updateShadingMode(const CC_DRAW_CONTEXT& context,
     auto polydata = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
     if (!polydata) return;
 
-    if (context.drawParam.showNorms && !smCloud.fields.empty()) {
-        bool has_normal = (pcl::getFieldIndex(smCloud, "normal_x") != -1) &&
-                          (pcl::getFieldIndex(smCloud, "normal_y") != -1) &&
-                          (pcl::getFieldIndex(smCloud, "normal_z") != -1);
+    // ALWAYS sync normals to VTK polydata if available (for Find Data /
+    // selection) Normals data is set once and kept - shading mode controls
+    // visual effect This ensures Find Data can always detect normals regardless
+    // of display setting Use context.forceRedraw to force update when upstream
+    // data changes (e.g., normals recalculated)
+    bool has_normal = false;
+    if (!smCloud.fields.empty()) {
+        has_normal = (pcl::getFieldIndex(smCloud, "normal_x") != -1) &&
+                     (pcl::getFieldIndex(smCloud, "normal_y") != -1) &&
+                     (pcl::getFieldIndex(smCloud, "normal_z") != -1);
         if (has_normal) {
-            vtkSmartPointer<vtkFloatArray> normals =
-                    vtkSmartPointer<vtkFloatArray>::New();
-            CloudNormal cloud;
-            FROM_PCL_CLOUD(smCloud, cloud);
-            if (cloud.points.empty()) {
-                CVLog::Error("[PCLVis::addTextureMesh] Cloud is empty!");
-                return;
+            // Check if normals need to be updated:
+            // 1. No existing normals
+            // 2. Tuple count mismatch
+            // 3. Force redraw requested (upstream data changed)
+            vtkDataArray* existingNormals =
+                    polydata->GetPointData()->GetNormals();
+            bool needUpdate = context.forceRedraw || !existingNormals ||
+                              existingNormals->GetNumberOfTuples() !=
+                                      static_cast<vtkIdType>(
+                                              polydata->GetNumberOfPoints());
+            if (needUpdate) {
+                vtkSmartPointer<vtkFloatArray> normals =
+                        vtkSmartPointer<vtkFloatArray>::New();
+                CloudNormal cloud;
+                FROM_PCL_CLOUD(smCloud, cloud);
+                if (cloud.points.empty()) {
+                    CVLog::Error("[PCLVis::updateShadingMode] Cloud is empty!");
+                    return;
+                }
+                normals->SetNumberOfComponents(3);
+                normals->SetName("Normals");
+                for (std::size_t i = 0; i < cloud.points.size(); ++i) {
+                    const NormalT& N = cloud.points[i];
+                    const float normal[3] = {N.normal_x, N.normal_y,
+                                             N.normal_z};
+                    normals->InsertNextTupleValue(normal);
+                }
+                polydata->GetPointData()->SetNormals(normals);
             }
-            normals->SetNumberOfComponents(3);
-            for (std::size_t i = 0; i < cloud.points.size(); ++i) {
-                const NormalT& N = cloud.points[i];
-                const float normal[3] = {N.normal_x, N.normal_y, N.normal_z};
-                normals->InsertNextTupleValue(normal);
-            }
-
-            polydata->GetPointData()->SetNormals(normals);
-            setMeshShadingMode(SHADING_MODE::ECV_SHADING_PHONG, viewID,
-                               viewport);
         }
+    }
+
+    // ALWAYS sync RGB colors to VTK polydata if available (for Find Data /
+    // selection extraction) PCL's visualization uses color handlers internally
+    // but may not set them as active scalars This ensures the correct color
+    // array is available for extraction Use context.forceRedraw to force update
+    // when upstream colors change
+    //
+    // IMPORTANT: We add colors as a NAMED array "RGB" (not "Colors") and do NOT
+    // set as active scalars This prevents scalar field data (like curvature)
+    // from being confused with RGB during extraction The "HasSourceRGB" flag in
+    // FieldData indicates this cloud has actual RGB data from source
+    bool has_color = false;
+    if (!smCloud.fields.empty()) {
+        has_color = (pcl::getFieldIndex(smCloud, "rgba") != -1) ||
+                    (pcl::getFieldIndex(smCloud, "rgb") != -1);
+        if (has_color) {
+            // Check if colors need to be updated
+            vtkDataArray* existingColors =
+                    polydata->GetPointData()->GetArray("RGB");
+            bool needSync = context.forceRedraw || !existingColors ||
+                            existingColors->GetNumberOfTuples() !=
+                                    static_cast<vtkIdType>(
+                                            polydata->GetNumberOfPoints());
+            if (needSync) {
+                vtkSmartPointer<vtkUnsignedCharArray> colors =
+                        vtkSmartPointer<vtkUnsignedCharArray>::New();
+                colors->SetName(
+                        "RGB");  // Use "RGB" not "Colors" to be explicit
+                colors->SetNumberOfComponents(3);
+
+                PointCloudRGB cloud;
+                FROM_PCL_CLOUD(smCloud, cloud);
+                if (!cloud.points.empty()) {
+                    colors->SetNumberOfTuples(
+                            static_cast<vtkIdType>(cloud.points.size()));
+                    for (std::size_t i = 0; i < cloud.points.size(); ++i) {
+                        const pcl::PointXYZRGB& p = cloud.points[i];
+                        unsigned char color[3] = {p.r, p.g, p.b};
+                        colors->SetTypedTuple(static_cast<vtkIdType>(i), color);
+                    }
+                    // Add as named array, NOT as active scalars
+                    // This prevents confusion with scalar fields during
+                    // extraction
+                    polydata->GetPointData()->AddArray(colors);
+
+                    // Set flag indicating this polydata has source RGB data
+                    vtkFieldData* fieldData = polydata->GetFieldData();
+                    if (fieldData) {
+                        vtkSmartPointer<vtkIntArray> hasRGB =
+                                vtkSmartPointer<vtkIntArray>::New();
+                        hasRGB->SetName("HasSourceRGB");
+                        hasRGB->SetNumberOfTuples(1);
+                        hasRGB->SetValue(0, 1);
+                        fieldData->AddArray(hasRGB);
+                    }
+
+                    CVLog::PrintDebug(
+                            "[PCLVis::updateShadingMode] Synced %zu RGB colors "
+                            "to VTK polydata (as 'RGB' array)",
+                            cloud.points.size());
+                }
+            }
+        }
+    }
+
+    // Control shading mode based on showNorms preference
+    // PHONG shading uses normals for smooth lighting effects
+    // FLAT shading ignores normals - shows faceted appearance
+    // NOTE: Don't call SetNormals(nullptr) here! Keep normals data for Find
+    // Data The shading mode alone controls whether normals affect rendering
+    if (context.drawParam.showNorms && has_normal) {
+        setMeshShadingMode(SHADING_MODE::ECV_SHADING_PHONG, viewID, viewport);
     } else {
-        polydata->GetPointData()->SetNormals(nullptr);
         setMeshShadingMode(SHADING_MODE::ECV_SHADING_FLAT, viewID, viewport);
     }
     actor->GetMapper()->Update();
@@ -1327,9 +1430,9 @@ void PCLVis::displayText(const CC_DRAW_CONTEXT& context) {
 
 bool PCLVis::updateTexture(const CC_DRAW_CONTEXT& context,
                            const ccMaterialSet* materials) {
-    CVLog::Print("[PCLVis::updateTexture] ENTRY: viewID=%s, materials=%zu",
-                 CVTools::FromQString(context.viewID).c_str(),
-                 materials ? materials->size() : 0);
+    CVLog::PrintDebug("[PCLVis::updateTexture] ENTRY: viewID=%s, materials=%zu",
+                      CVTools::FromQString(context.viewID).c_str(),
+                      materials ? materials->size() : 0);
 
     std::string viewID = CVTools::FromQString(context.viewID);
     if (!contains(viewID)) return false;
@@ -1434,7 +1537,7 @@ bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
         convertToVtkMatrix(cloud.sensor_origin_, cloud.sensor_orientation_,
                            transformation);
         colors->SetNumberOfComponents(3);
-        colors->SetName("Colors");
+        colors->SetName("RGB");  // Use "RGB" not "Colors" for consistency
         poly_points->SetNumberOfPoints(cloud.size());
         for (std::size_t i = 0; i < cloud.points.size(); ++i) {
             const pcl::PointXYZRGB& p = cloud.points[i];
@@ -1452,6 +1555,7 @@ bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
         convertToVtkMatrix(cloud.sensor_origin_, cloud.sensor_orientation_,
                            transformation);
         normals->SetNumberOfComponents(3);
+        normals->SetName("Normals");
         poly_points->SetNumberOfPoints(cloud.size());
         for (std::size_t i = 0; i < cloud.points.size(); ++i) {
             const PointNT& p = cloud.points[i];
@@ -1469,8 +1573,9 @@ bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
         convertToVtkMatrix(cloud.sensor_origin_, cloud.sensor_orientation_,
                            transformation);
         normals->SetNumberOfComponents(3);
+        normals->SetName("Normals");
         colors->SetNumberOfComponents(3);
-        colors->SetName("Colors");
+        colors->SetName("RGB");  // Use "RGB" not "Colors" for consistency
         poly_points->SetNumberOfPoints(cloud.size());
         for (std::size_t i = 0; i < cloud.points.size(); ++i) {
             const PointRGBNormal& p = cloud.points[i];
@@ -1563,7 +1668,11 @@ bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
                     vtkSmartPointer<vtkFloatArray>::New();
             coordinates->SetNumberOfComponents(2);
             std::stringstream ss;
-            ss << "TCoords" << tex_id;
+            if (mesh.tex_coordinates.size() == 1) {
+                ss << "TCoords";
+            } else {
+                ss << "TCoords" << tex_id;
+            }
             std::string coords_name = ss.str();
             coordinates->SetName(coords_name.c_str());
 
@@ -1667,6 +1776,7 @@ bool PCLVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
     // vtkPolyData This reuses the proven logic from getPclTextureMesh and
     // addTextureMesh which ensures texture coordinates match point order
     // perfectly
+    // Note: getVtkPolyDataWithTextures already adds DatasetName to FieldData
     cc2smReader reader(cloud, true);
     vtkSmartPointer<vtkPolyData> polydata;
     vtkSmartPointer<vtkMatrix4x4> transformation;
@@ -2016,6 +2126,271 @@ void PCLVis::setPointSize(const unsigned char pointSize,
     }
 }
 
+void PCLVis::addScalarFieldToVTK(const std::string& viewID,
+                                 ccPointCloud* cloud,
+                                 int scalarFieldIndex,
+                                 int viewport) {
+    if (!contains(viewID) || !cloud) {
+        return;
+    }
+
+    // Get scalar field
+    cloudViewer::ScalarField* scalarField =
+            cloud->getScalarField(scalarFieldIndex);
+    if (!scalarField) {
+        CVLog::Warning(
+                "[PCLVis::addScalarFieldToVTK] Invalid scalar field index");
+        return;
+    }
+
+    QString sfName = cloud->getScalarFieldName(scalarFieldIndex);
+    std::string scalarFieldName = sfName.toStdString();
+
+    // Get actor from cloud actor map
+    pcl::visualization::CloudActorMap::iterator am_it =
+            getCloudActorMap()->find(viewID);
+    if (am_it == getCloudActorMap()->end()) {
+        return;
+    }
+
+    vtkActor* actor = am_it->second.actor;
+    if (!actor) {
+        return;
+    }
+
+    // Get mapper and polydata
+    vtkMapper* mapper = actor->GetMapper();
+    if (!mapper) {
+        return;
+    }
+
+    vtkPolyData* polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
+    if (!polyData) {
+        return;
+    }
+
+    vtkPointData* pointData = polyData->GetPointData();
+    vtkDataArray* activeScalars = pointData->GetScalars();
+
+    // Check if the correct array already exists
+    vtkDataArray* existingArray = pointData->GetArray(scalarFieldName.c_str());
+    if (existingArray && existingArray->GetNumberOfComponents() == 1) {
+        // Correct 1-component array already exists, no need to update
+        CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Scalar array "
+                                  "'%1' already exists, skipping")
+                                  .arg(sfName));
+        return;
+    }
+
+    // NOTE: We no longer remove old scalar field arrays here.
+    // This ensures all scalar fields remain available for:
+    // 1. Selection/extraction operations (Find Data feature)
+    // 2. Tooltip display when switching between different SFs
+    // 3. Export operations that need to preserve all field data
+    // The small memory overhead of keeping these arrays is acceptable.
+
+    // Extract scalar values directly from ccPointCloud
+    vtkIdType numPoints = polyData->GetNumberOfPoints();
+    vtkSmartPointer<vtkFloatArray> scalarArray =
+            vtkSmartPointer<vtkFloatArray>::New();
+    scalarArray->SetName(scalarFieldName.c_str());
+    scalarArray->SetNumberOfComponents(1);
+    scalarArray->SetNumberOfTuples(numPoints);
+
+    // Copy scalar values from ccPointCloud
+    unsigned cloudSize = cloud->size();
+    if (static_cast<vtkIdType>(cloudSize) != numPoints) {
+        CVLog::Warning(QString("[PCLVis::addScalarFieldToVTK] Size mismatch: "
+                               "ccCloud=%1, VTK=%2")
+                               .arg(cloudSize)
+                               .arg(numPoints));
+        return;
+    }
+
+    for (vtkIdType i = 0; i < numPoints; ++i) {
+        float scalarValue = static_cast<float>(
+                scalarField->getValue(static_cast<unsigned>(i)));
+        scalarArray->SetValue(i, scalarValue);
+    }
+
+    // Add array to polydata (but do NOT set as active scalars to avoid
+    // overriding rendering) The tooltip can access this array by name without
+    // it being active
+    pointData->AddArray(scalarArray);
+    // NOTE: Do NOT call SetActiveScalars here - it would override PCL's RGB
+    // rendering!
+
+    // Add DatasetName to field data for tooltip display (ParaView style)
+    vtkFieldData* fieldData = polyData->GetFieldData();
+    if (fieldData) {
+        vtkStringArray* datasetNameArray = vtkStringArray::SafeDownCast(
+                fieldData->GetAbstractArray("DatasetName"));
+
+        if (!datasetNameArray) {
+            // DatasetName not yet added, create it
+            datasetNameArray = vtkStringArray::New();
+            datasetNameArray->SetName("DatasetName");
+            datasetNameArray->SetNumberOfTuples(1);
+
+            // Use cloud name as dataset name
+            QString cloudName = cloud->getName();
+            if (cloudName.isEmpty()) {
+                cloudName = QString::fromStdString(viewID);
+            }
+            datasetNameArray->SetValue(0, cloudName.toStdString());
+            fieldData->AddArray(datasetNameArray);
+            datasetNameArray->Delete();
+
+            CVLog::PrintDebug(QString("[PCLVis::addScalarFieldToVTK] Added "
+                                      "DatasetName: %1")
+                                      .arg(cloudName));
+        }
+
+        CVLog::PrintDebug(
+                QString("[PCLVis::addScalarFieldToVTK] Added scalar array "
+                        "'%1' with %2 values to VTK polydata")
+                        .arg(sfName)
+                        .arg(numPoints));
+    }
+}
+
+void PCLVis::syncAllScalarFieldsToVTK(const std::string& viewID,
+                                      ccPointCloud* cloud,
+                                      int viewport) {
+    if (!contains(viewID) || !cloud) {
+        return;
+    }
+
+    unsigned sfCount = cloud->getNumberOfScalarFields();
+    if (sfCount == 0) {
+        return;
+    }
+
+    CVLog::PrintDebug(
+            QString("[PCLVis::syncAllScalarFieldsToVTK] Syncing %1 scalar "
+                    "fields from ccPointCloud to VTK")
+                    .arg(sfCount));
+
+    // Sync each scalar field
+    for (unsigned i = 0; i < sfCount; ++i) {
+        addScalarFieldToVTK(viewID, cloud, static_cast<int>(i), viewport);
+    }
+}
+
+void PCLVis::setCurrentSourceObject(ccHObject* obj, const std::string& viewID) {
+    if (obj) {
+        m_sourceObjectMap[viewID] = obj;
+
+        CVLog::PrintDebug(QString("[PCLVis::setCurrentSourceObject] Set source "
+                                  "object: '%1' (type=%2, viewID='%3')")
+                                  .arg(obj->getName())
+                                  .arg(obj->getClassID())
+                                  .arg(QString::fromStdString(viewID)));
+
+        // If it's a point cloud, automatically sync all scalar fields to VTK
+        ccPointCloud* cloud = getSourceCloud(viewID);
+        if (cloud) {
+            syncAllScalarFieldsToVTK(viewID, cloud);
+        }
+    } else {
+        // Remove from map if obj is null
+        m_sourceObjectMap.erase(viewID);
+    }
+}
+
+void PCLVis::removeSourceObject(const std::string& viewID) {
+    m_sourceObjectMap.erase(viewID);
+}
+
+ccHObject* PCLVis::getSourceObject(const std::string& viewID) const {
+    auto it = m_sourceObjectMap.find(viewID);
+    if (it != m_sourceObjectMap.end()) {
+        return it->second;
+    }
+    return nullptr;
+}
+
+ccPointCloud* PCLVis::getSourceCloud(const std::string& viewID) const {
+    ccHObject* obj = getSourceObject(viewID);
+    if (!obj) return nullptr;
+
+    if (obj->isA(CV_TYPES::POINT_CLOUD)) {
+        return static_cast<ccPointCloud*>(obj);
+    }
+    return nullptr;
+}
+
+ccMesh* PCLVis::getSourceMesh(const std::string& viewID) const {
+    ccHObject* obj = getSourceObject(viewID);
+    if (!obj) return nullptr;
+
+    if (obj->isKindOf(CV_TYPES::MESH)) {
+        return static_cast<ccMesh*>(obj);
+    }
+    return nullptr;
+}
+
+bool PCLVis::hasSourceObject(const std::string& viewID) const {
+    return m_sourceObjectMap.find(viewID) != m_sourceObjectMap.end();
+}
+
+void PCLVis::setScalarFieldName(const std::string& viewID,
+                                const std::string& scalarName,
+                                int viewport) {
+    if (!contains(viewID)) {
+        return;
+    }
+
+    // Get actor from cloud actor map
+    pcl::visualization::CloudActorMap::iterator am_it =
+            getCloudActorMap()->find(viewID);
+    if (am_it == getCloudActorMap()->end()) {
+        return;
+    }
+
+    vtkActor* actor = am_it->second.actor;
+    if (!actor) {
+        return;
+    }
+
+    // Get mapper and polydata
+    vtkMapper* mapper = actor->GetMapper();
+    if (!mapper) {
+        return;
+    }
+
+    vtkPolyData* polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
+    if (!polyData) {
+        return;
+    }
+
+    vtkPointData* pointData = polyData->GetPointData();
+
+    // Try to find an array with the scalar field name (actual scalar values)
+    // This should be separate from the RGB array used for rendering
+    vtkDataArray* scalarArray = pointData->GetArray(scalarName.c_str());
+
+    if (scalarArray) {
+        // Found the scalar array, make it the active scalars for tooltip
+        pointData->SetActiveScalars(scalarName.c_str());
+        CVLog::PrintDebug(QString("[PCLVis::setScalarFieldName] Set active "
+                                  "scalars to '%1' (%2 components, %3 tuples)")
+                                  .arg(QString::fromStdString(scalarName))
+                                  .arg(scalarArray->GetNumberOfComponents())
+                                  .arg(scalarArray->GetNumberOfTuples()));
+    } else {
+        // Scalar array not found, try to set name on default scalars as
+        // fallback
+        vtkDataArray* defaultScalars = pointData->GetScalars();
+        if (defaultScalars) {
+            CVLog::PrintDebug(
+                    QString("[PCLVis::setScalarFieldName] Scalar array '%1' "
+                            "not found, using default scalars")
+                            .arg(QString::fromStdString(scalarName)));
+        }
+    }
+}
+
 void PCLVis::setPointCloudOpacity(double opacity,
                                   const std::string& viewID,
                                   int viewport) {
@@ -2041,6 +2416,72 @@ void PCLVis::setShapeOpacity(double opacity,
                 pcl::visualization::RenderingProperties::PCL_VISUALIZER_OPACITY,
                 opacity, viewID, viewport);
     }
+}
+
+void PCLVis::setMeshOpacity(double opacity,
+                            const std::string& viewID,
+                            int viewport) {
+    // Get the actor for this mesh - try vtkLODActor first, then vtkActor
+    vtkLODActor* lodActor = vtkLODActor::SafeDownCast(getActorById(viewID));
+    vtkActor* actor = lodActor;
+    if (!actor) {
+        // Fallback to vtkActor if not a LODActor
+        actor = vtkActor::SafeDownCast(getActorById(viewID));
+    }
+    if (!actor) {
+        CVLog::Warning("[PCLVis::setMeshOpacity] Mesh with id <%s> not found",
+                       viewID.c_str());
+        return;
+    }
+
+    // Check current opacity to avoid unnecessary updates
+    double currentOpacity = actor->GetProperty()->GetOpacity();
+    if (std::abs(currentOpacity - opacity) < 0.001) {
+        return;  // No change needed
+    }
+
+    // Set the opacity on the actor's property
+    // VTK automatically detects opacity < 1.0 in
+    // HasTranslucentPolygonalGeometry()
+    actor->GetProperty()->SetOpacity(opacity);
+
+    // Configure transparency rendering based on opacity value
+    // Following ParaView's vtkPVLODActor pattern (line 107-108)
+    if (opacity < 1.0) {
+        // Force actor to be treated as translucent for proper depth sorting
+        // This ensures VTK renders this actor in the translucent pass
+        actor->ForceTranslucentOn();
+        actor->ForceOpaqueOff();
+
+        // Configure renderer for transparency support (only once)
+        vtkRenderer* renderer = getCurrentRenderer();
+        if (renderer && !renderer->GetUseDepthPeeling()) {
+            vtkRenderWindow* renderWindow = renderer->GetRenderWindow();
+            if (renderWindow) {
+                // Enable alpha bit planes for RGBA transparency
+                renderWindow->SetAlphaBitPlanes(1);
+            }
+
+            // Enable depth peeling for correct transparent object ordering
+            // This is the standard VTK technique for order-independent
+            // transparency
+            renderer->SetUseDepthPeeling(1);
+            // Quality/performance balance
+            renderer->SetMaximumNumberOfPeels(4);
+            // Full transparency support
+            renderer->SetOcclusionRatio(0.0);
+        }
+    } else {
+        // Opacity is 1.0 (fully opaque), render in opaque pass
+        actor->ForceTranslucentOff();
+        actor->ForceOpaqueOn();
+    }
+
+    // Mark the actor as modified to trigger re-render
+    actor->Modified();
+
+    CVLog::PrintDebug("[PCLVis::setMeshOpacity] Set opacity to %.3f for <%s>",
+                      opacity, viewID.c_str());
 }
 
 void PCLVis::setShapeShadingMode(SHADING_MODE mode,
@@ -2236,7 +2677,7 @@ void PCLVis::setOrthoProjection(int viewport) {
     if (!flag) {
         cam->SetParallelProjection(true);
         getCurrentRenderer()->SetActiveCamera(cam);
-        getRenderWindow()->Render();
+        UpdateScreen();
     }
 }
 
@@ -2246,7 +2687,7 @@ void PCLVis::setPerspectiveProjection(int viewport) {
     if (flag) {
         cam->SetParallelProjection(false);
         getCurrentRenderer()->SetActiveCamera(cam);
-        getRenderWindow()->Render();
+        UpdateScreen();
     }
 }
 
@@ -2589,6 +3030,14 @@ void PCLVis::addActorToRenderer(const vtkSmartPointer<vtkProp>& actor,
             renderer->AddActor(actor);
         }
         ++i;
+    }
+}
+
+void PCLVis::UpdateScreen() {
+    // Force render window to update after actor changes
+    // Similar to QVTKWidgetCustom::updateScene()
+    if (getRenderWindow()) {
+        getRenderWindow()->Render();
     }
 }
 

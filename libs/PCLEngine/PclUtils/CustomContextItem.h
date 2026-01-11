@@ -8,9 +8,9 @@
 #pragma once
 
 // Local
+#include <Utils/PCLCloud.h>
 #include <vtkSmartPointer.h>
 
-#include "PCLCloud.h"
 #include "qPCL.h"
 
 // PCL

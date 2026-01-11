@@ -13,7 +13,7 @@ namespace cloudViewer {
 
 MapperGeneralOptionsWidget::MapperGeneralOptionsWidget(QWidget* parent,
                                                        OptionManager* options)
-    : OptionsWidget(parent) {
+    : colmap::OptionsWidget(parent) {
     AddOptionBool(&options->mapper->multiple_models, "multiple_models");
     AddOptionInt(&options->mapper->max_num_models, "max_num_models");
     AddOptionInt(&options->mapper->max_model_overlap, "max_model_overlap");
@@ -29,7 +29,7 @@ MapperGeneralOptionsWidget::MapperGeneralOptionsWidget(QWidget* parent,
 
 MapperTriangulationOptionsWidget::MapperTriangulationOptionsWidget(
         QWidget* parent, OptionManager* options)
-    : OptionsWidget(parent) {
+    : colmap::OptionsWidget(parent) {
     AddOptionInt(&options->mapper->triangulation.max_transitivity,
                  "max_transitivity");
     AddOptionDouble(&options->mapper->triangulation.create_max_angle_error,
@@ -56,7 +56,7 @@ MapperTriangulationOptionsWidget::MapperTriangulationOptionsWidget(
 
 MapperRegistrationOptionsWidget::MapperRegistrationOptionsWidget(
         QWidget* parent, OptionManager* options)
-    : OptionsWidget(parent) {
+    : colmap::OptionsWidget(parent) {
     AddOptionDouble(&options->mapper->mapper.abs_pose_max_error,
                     "abs_pose_max_error [px]");
     AddOptionInt(&options->mapper->mapper.abs_pose_min_num_inliers,
@@ -68,7 +68,7 @@ MapperRegistrationOptionsWidget::MapperRegistrationOptionsWidget(
 
 MapperInitializationOptionsWidget::MapperInitializationOptionsWidget(
         QWidget* parent, OptionManager* options)
-    : OptionsWidget(parent) {
+    : colmap::OptionsWidget(parent) {
     AddOptionInt(&options->mapper->init_image_id1, "init_image_id1", -1);
     AddOptionInt(&options->mapper->init_image_id2, "init_image_id2", -1);
     AddOptionInt(&options->mapper->init_num_trials, "init_num_trials");
@@ -85,7 +85,7 @@ MapperInitializationOptionsWidget::MapperInitializationOptionsWidget(
 
 MapperBundleAdjustmentOptionsWidget::MapperBundleAdjustmentOptionsWidget(
         QWidget* parent, OptionManager* options)
-    : OptionsWidget(parent) {
+    : colmap::OptionsWidget(parent) {
     AddSection("Camera parameters");
     AddOptionBool(&options->mapper->ba_refine_focal_length,
                   "refine_focal_length");
@@ -128,7 +128,7 @@ MapperBundleAdjustmentOptionsWidget::MapperBundleAdjustmentOptionsWidget(
 
 MapperFilteringOptionsWidget::MapperFilteringOptionsWidget(
         QWidget* parent, OptionManager* options)
-    : OptionsWidget(parent) {
+    : colmap::OptionsWidget(parent) {
     AddOptionDouble(&options->mapper->min_focal_length_ratio,
                     "min_focal_length_ratio");
     AddOptionDouble(&options->mapper->max_focal_length_ratio,

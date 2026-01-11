@@ -105,8 +105,7 @@ bool ccPickingHub::addListener(
         ccPickingListener* listener,
         bool exclusive /*=false*/,
         bool autoStartPicking /*=true*/,
-        ecvDisplayTools::PICKING_MODE
-                mode /*=ccGLWindow::POINT_OR_TRIANGLE_PICKING*/) {
+        ecvDisplayTools::PICKING_MODE mode /*=POINT_OR_TRIANGLE_PICKING*/) {
     if (!listener) {
         assert(false);
         return false;

@@ -71,9 +71,16 @@ bool Delaunay2dMesh::buildMesh(const std::vector<CCVector2>& points2D,
     // keep track of the original point index.
     typedef CGAL::Triangulation_vertex_base_with_info_2<std::size_t, K> Vb;
     typedef CGAL::Constrained_triangulation_face_base_2<K> Fb;
-    typedef CGAL::No_intersection_tag Itag;
     typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
+    // CGAL 6.0+ deprecated No_intersection_tag, default behavior is no
+    // intersections CGAL_VERSION_NR format: MMmmbb (Major, minor, bugfix),
+    // e.g., 60000 for 6.0.0
+#if CGAL_VERSION_NR >= 60000
+    typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds> CDT;
+#else
+    typedef CGAL::No_intersection_tag Itag;
     typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds, Itag> CDT;
+#endif
     typedef CDT::Point cgalPoint;
 
     std::vector<std::pair<cgalPoint, std::size_t>> constraints;

@@ -158,6 +158,11 @@ option(USE_SYSTEM_PYBIND11 "Use system pre-installed pybind11"                  
 option(USE_SYSTEM_QHULLCPP "Use system pre-installed qhullcpp"                  OFF)
 option(USE_SYSTEM_STDGPU   "Use system pre-installed stdgpu"                    OFF)
 option(USE_SYSTEM_TBB "Use system pre-installed TBB"                            OFF)
+# Auto-enable USE_SYSTEM_TBB for conda with Qt6 to avoid conflicts
+if(BUILD_WITH_CONDA AND USE_QT6 AND NOT USE_SYSTEM_TBB)
+    message(STATUS "Auto-enabling USE_SYSTEM_TBB for conda environment on Linux")
+    set(USE_SYSTEM_TBB ON)
+endif()
 option(USE_SYSTEM_TINYGLTF "Use system pre-installed tinygltf"                  OFF)
 option(USE_SYSTEM_TINYOBJLOADER "Use system pre-installed tinyobjloader"        OFF)
 option(USE_SYSTEM_FFMPEG "Use system pre-installed ffmpeg"                      OFF)
@@ -261,6 +266,20 @@ if (BUILD_WITH_CONDA)
         message(FATAL_ERROR "FAILED TO ENSURE CONDA_PREFIX VARIABLES")
     endif()
     message(STATUS "Building with conda env at ${CONDA_PREFIX}")
+    
+    # Fix C++ ABI linking issues: ensure conda's libstdc++ is used
+    if(UNIX AND NOT APPLE)
+        # Add conda lib directory to rpath for runtime library resolution
+        set(CMAKE_BUILD_RPATH "${CONDA_PREFIX}/lib" ${CMAKE_BUILD_RPATH})
+        set(CMAKE_INSTALL_RPATH "${CONDA_PREFIX}/lib" ${CMAKE_INSTALL_RPATH})
+        set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
+        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+        
+        # Also add to linker flags to ensure libstdc++ from conda is found
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,${CONDA_PREFIX}/lib -L${CONDA_PREFIX}/lib")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,${CONDA_PREFIX}/lib -L${CONDA_PREFIX}/lib")
+        message(STATUS "Added conda lib directory to rpath and library search path: ${CONDA_PREFIX}/lib")
+    endif()
 endif()
 
 # Default build type on single-config generators.
@@ -386,7 +405,7 @@ project(ACloudViewer
     # Set PROJECT_DESCRIPTION
     DESCRIPTION "ACloudViewer: A Modern Library for 3D Data Processing."
     # Set PROJECT_HOMEPAGE_URL
-    HOMEPAGE_URL "https://asher-1.github.io"
+    HOMEPAGE_URL "https://asher-1.github.io/ACloudViewer/"
     LANGUAGES C CXX)
 message(STATUS "ACloudViewer ${CLOUDVIEWER_VERSION_FULL}")
 
@@ -475,8 +494,8 @@ endif()
 
 # set additional info
 set(PROJECT_EMAIL "ludahai19@gmail.com")
-set(PROJECT_HOME "https://asher-1.github.io")
-set(PROJECT_DOCS "https://asher-1.github.io/docs")
+set(PROJECT_HOME "https://asher-1.github.io/ACloudViewer/")
+set(PROJECT_DOCS "https://asher-1.github.io/ACloudViewer/docs")
 set(PROJECT_CODE "https://github.com/Asher-1/ACloudViewer")
 set(PROJECT_ISSUES "https://github.com/Asher-1/ACloudViewer/issues")
 
@@ -585,7 +604,7 @@ if (BUILD_CUDA_MODULE)
     endif()
 
     if(WIN32 AND NOT (CUDA_VERSION VERSION_LESS "11.2"))
-        set(CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS} -Xcudafe --display_error_number --diag-suppress 1394,1388)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcudafe --display_error_number --diag-suppress 1394,1388")
     endif()
 
     include(CloudViewerMakeCudaArchitectures)
@@ -825,7 +844,6 @@ cloudViewer_print_configuration_summary()
 set(SCRIPTS_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 file(GLOB main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/*.md" )
 list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.txt" )
-list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/doc/cloudviewer-detail-zh.md" )
 list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/license.txt" 
                                 "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/global_shift_list_template.txt")
 

@@ -58,8 +58,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 # Configure a header file to pass the version settings to the source code
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h.in"
                "${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../doc/images/version.svg.in"
-               "${CMAKE_CURRENT_SOURCE_DIR}/../doc/images/version.svg")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../docs/images/version.svg.in"
+               "${CMAKE_CURRENT_SOURCE_DIR}/../docs/images/version.svg")
 
 # ccache
 # https://crascit.com/2016/04/09/using-ccache-with-cmake/
@@ -209,6 +209,11 @@ if (CVCORELIB_USE_CGAL)
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_CGAL_LIB)
 endif ()
 
+# QT
+target_link_libraries(${PROJECT_NAME}
+        PUBLIC
+        Qt::Widgets
+        )
 # QT (optional)
 if (CVCORELIB_USE_QT_CONCURRENT)
     # Qt5/Qt6 compatibility

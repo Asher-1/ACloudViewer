@@ -14,7 +14,7 @@
 #include <ecvGLMatrix.h>
 
 class QWidget;
-class QStringList;
+#include <QStringList>  // QStringList is a type alias in Qt6, cannot forward declare
 class ccHObject;
 
 //! Registration tools wrapper

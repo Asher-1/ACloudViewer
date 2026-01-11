@@ -29,6 +29,12 @@ ccPlane::ccPlane(QString name /*=QString("Plane")*/)
     : ccGenericPrimitive(name), m_xWidth(0), m_yWidth(0) {}
 
 bool ccPlane::buildUp() {
+    // invalid dimensions?
+    if (cloudViewer::LessThanEpsilon(m_xWidth) ||
+        cloudViewer::LessThanEpsilon(m_yWidth)) {
+        return false;
+    }
+
     if (!init(4, false, 2, 1)) {
         CVLog::Error("[ccPlane::buildUp] Not enough memory");
         return false;
@@ -170,8 +176,14 @@ ccPlane* ccPlane::Fit(cloudViewer::GenericIndexedCloudPersist* cloud,
     return plane;
 }
 
-bool ccPlane::toFile_MeOnly(QFile& out) const {
-    if (!ccGenericPrimitive::toFile_MeOnly(out)) return false;
+bool ccPlane::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 21) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccGenericPrimitive::toFile_MeOnly(out, dataVersion)) return false;
 
     // parameters (dataVersion >= 21)
     QDataStream outStream(&out);
@@ -179,6 +191,11 @@ bool ccPlane::toFile_MeOnly(QFile& out) const {
     outStream << m_yWidth;
 
     return true;
+}
+
+short ccPlane::minimumFileVersion_MeOnly() const {
+    return std::max(static_cast<short>(21),
+                    ccGenericPrimitive::minimumFileVersion_MeOnly());
 }
 
 bool ccPlane::fromFile_MeOnly(QFile& in,

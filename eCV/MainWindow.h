@@ -21,18 +21,23 @@
 #include <QColorDialog>
 #include <QDebug>
 #include <QDesktopServices>
+#include <QDockWidget>
 #include <QFileDialog>
 #include <QHBoxLayout>
+#include <QHostInfo>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QProgressBar>
+#include <QSet>
 #include <QStatusBar>
 #include <QString>
 #include <QTextEdit>
 #include <QTime>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QUrl>
@@ -58,14 +63,23 @@ class ccHObject;
 class ccPickingHub;
 class ccPluginUIManager;
 class ccDBRoot;
-class ecvFilterTool;
+class ecvLayoutManager;
 class ecvRecentFiles;
-class ecvAnnotationsTool;
-class ecvFilterWindowTool;
 class ccTracePolylineTool;
 class ccGraphicalSegmentationTool;
 class ccGraphicalTransformationTool;
 class ecvDeepSemanticSegmentationTool;
+class ecvFilterTool;
+class ecvAnnotationsTool;
+class ecvMeasurementTool;
+
+#if defined(USE_PCL_BACKEND)
+class cvViewSelectionManager;
+class cvSelectionData;
+class cvSelectionHighlighter;
+class cvSelectionToolController;
+class cvFindDataDockWidget;
+#endif
 
 class ecvUpdateDlg;
 class ccOverlayDialog;
@@ -77,6 +91,7 @@ class ecvAnimationParamDlg;
 class ccPointListPickingDlg;
 class ecvPrimitiveFactoryDlg;
 class ccPointPairRegistrationDlg;
+class ecvShortcutDialog;
 
 class QMdiArea;
 class QMdiSubWindow;
@@ -105,6 +120,9 @@ class MainWindow : public QMainWindow,
 protected:
     MainWindow();
     ~MainWindow() override;
+
+    //! Override to add custom actions to right-click menu on toolbars
+    QMenu* createPopupMenu() override;
 
 public:  // static method
     //! Static shortcut to MainWindow::updateUI
@@ -251,6 +269,16 @@ public:  // inherited from ecvMainAppInterface
     void zoomOnEntities(ccHObject* obj) override;
     void setGlobalZoom() override;
 
+#ifdef USE_PCL_BACKEND
+    //! Get the selection manager instance
+    cvViewSelectionManager* getSelectionManager() const;
+
+    //! Get the selection tool controller instance
+    cvSelectionToolController* getSelectionController() const {
+        return m_selectionController;
+    }
+#endif
+
 private:
     /***** Utils Methods ***/
     void connectActions();
@@ -261,6 +289,25 @@ private:
     void initStatusBar();
     void initDBRoot();
     void initConsole();
+
+    // Helper function for formatting bytes
+    QString formatBytes(qint64 bytes);
+
+    // Update memory usage widget size based on window size
+    void updateMemoryUsageWidgetSize();
+
+    // Update all toolbar icon sizes based on current screen resolution
+    // This should be called after all toolbars are created/modified
+    void updateAllToolbarIconSizes();
+
+#ifdef USE_PCL_BACKEND
+    //! Initialize selection tool controller (ParaView-style architecture)
+    void initSelectionController();
+    //! Disable all active selection tools
+    //! \param except Pointer to the tool that should NOT be disabled (nullptr
+    //! to disable all)
+    void disableAllSelectionTools(void* except = nullptr);
+#endif
 
     //! Adds the "Edit Plane" action to the given menu.
     /**
@@ -284,6 +331,12 @@ private:
     //! Stops input and destroys any input device handling
     void destroyInputDevices();
 
+    //! Populates the action list for shortcut management
+    void populateActionList();
+
+    //! Shows the shortcut settings dialog
+    void showShortcutDialog();
+
     void doActionComputeMesh(cloudViewer::TRIANGULATION_TYPES type);
     //! Creates point clouds from multiple 'components'
     void createComponentsClouds(
@@ -301,6 +354,7 @@ public slots:
 private slots:
     // status slots
     void onMousePosChanged(const QPoint& pos);
+    void updateMemoryUsage();
     // File menu slots
     void doActionOpenFile();
     void doActionSaveFile();
@@ -310,6 +364,10 @@ private slots:
     void changeLanguage();
     void doActionGlobalShiftSeetings();
     void doActionResetGUIElementsPos();
+    void doActionRestoreWindowOnStartup(bool state);
+    void doActionSaveCustomLayout();
+    void doActionRestoreDefaultLayout();
+    void doActionRestoreCustomLayout();
     void doShowPrimitiveFactory();
 
     void doCheckForUpdate();
@@ -391,6 +449,7 @@ private slots:
     void doActionEditPlane();
     void doActionFlipPlane();
     void doActionComparePlanes();
+    void doActionPromoteCircleToCylinder();
 
     //! Clones currently selected entities
     void doActionClone();
@@ -429,6 +488,9 @@ private slots:
     bool eventFilter(QObject* obj, QEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
 
+    // ESC key handler - called from both keyPressEvent and eventFilter
+    void handleEscapeKey();
+
     void toggleVisualDebugTraces();
 
     void updateUIWithSelection();
@@ -464,6 +526,10 @@ private slots:
     void doActionChangeColorLevels();
     void doActionEnhanceRGBWithIntensities();
     void doActionColorFromScalars();
+    void doActionRGBGaussianFilter();
+    void doActionRGBBilateralFilter();
+    void doActionRGBMeanFilter();
+    void doActionRGBMedianFilter();
 
     // scalar field menu
     void showSelectedEntitiesHistogram();
@@ -531,8 +597,10 @@ private slots:
     // Tools -> Segmentation
     void activateSegmentationMode();
     void deactivateSegmentationMode(bool);
-    void activateFilterWindowMode();
-    void deactivateFilterWindowMode(bool);
+    void doActionMeasurementMode(int mode);
+    void activateDistanceMode();
+    void activateContourMode();
+    void activateProtractorMode();
 
     void doActionFilterMode(int mode);
     void activateClippingMode();
@@ -551,6 +619,24 @@ private slots:
     void doActionExportPlaneInfo();
     void doActionExportCloudInfo();
 
+#ifdef USE_PCL_BACKEND
+    void onSelectionFinished(const cvSelectionData& selectionData);
+    void onSelectionRestored(const cvSelectionData& selection);
+    void onSelectionToolActivated(QAction* action);
+    // onSelectionHistoryChanged/onBookmarksChanged removed - UI not implemented
+    // undoSelection/redoSelection removed - UI not implemented
+#endif
+
+public slots
+    :  // Make this public so it can be connected from delegate
+       // Note: onTooltipSettingsChanged has been removed as tooltip settings
+       // are now managed through cvSelectionLabelPropertiesDialog
+       // Note: Highlight color/opacity changes are now handled directly via
+       // the shared highlighter in cvViewSelectionManager. All tooltip tools
+       // share this highlighter, so settings from cvSelectionPropertiesWidget
+       // are automatically synchronized.
+
+private slots:
     void doActionCloudCloudDist();
     void doActionCloudMeshDist();
     void doActionCloudPrimitiveDist();
@@ -667,22 +753,38 @@ private:
     ccPointPairRegistrationDlg* m_pprDlg;
     //! Primitive factory dialog
     ecvPrimitiveFactoryDlg* m_pfDlg;
-
+    //! Deep Semantic Segmentation tool dialog
+    ecvDeepSemanticSegmentationTool* m_dssTool;
     //! filter tool dialog
     ecvFilterTool* m_filterTool;
     //! Annotation tool dialog
     ecvAnnotationsTool* m_annoTool;
     //! Filter Label Tool dialog
     ecvFilterByLabelDlg* m_filterLabelTool;
-    //! Filter Window tool
-    ecvFilterWindowTool* m_filterWindowTool;
-    //! Deep Semantic Segmentation tool dialog
-    ecvDeepSemanticSegmentationTool* m_dssTool;
+    //! Measurement Tool dialog (Distance, Contour, Protractor)
+    ecvMeasurementTool* m_measurementTool;
+
+#if defined(USE_PCL_BACKEND)
+    //! Selection tool controller (manages all selection tools, ParaView-style)
+    //! This is a singleton, but we keep a pointer for convenience
+    cvSelectionToolController* m_selectionController;
+
+    //! Find Data dock widget (ParaView-style selection properties panel)
+    //! This is a standalone dock that can be shown/hidden independently of
+    //! selection tools
+    cvFindDataDockWidget* m_findDataDock;
+#endif
 
     QVBoxLayout* m_layout;
     QUIWidget* m_uiManager;
     QLabel* m_mousePosLabel;
     QLabel* m_systemInfoLabel;
+
+    // Memory usage display widget (ParaView-style)
+    QWidget* m_memoryUsageWidget;
+    QProgressBar* m_memoryUsageProgressBar;
+    QLabel* m_memoryUsageLabel;
+    QTimer* m_memoryUsageTimer;
 
     // For full screen
     QWidget* m_currentFullWidget;
@@ -698,11 +800,23 @@ private:
     //! Manages plugins - menus, toolbars, and the about dialog
     ccPluginUIManager* m_pluginUIManager;
 
+    //! Layout manager for handling window/toolbar layout
+    ecvLayoutManager* m_layoutManager;
+
     //! 3D mouse
     cc3DMouseManager* m_3DMouseManager;
 
     //! Gamepad handler
     ccGamepadManager* m_gamepadManager;
+
+    //! Shortcut dialog
+    ecvShortcutDialog* m_shortcutDlg;
+
+    //! List of actions for shortcut management
+    QList<QAction*> m_actions;
+
+    //! Selection properties widget toggle action (Find Data panel)
+    QAction* m_selectionPropsAction = nullptr;
 
 private:
 #ifdef BUILD_RECONSTRUCTION

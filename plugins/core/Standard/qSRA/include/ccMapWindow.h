@@ -45,9 +45,8 @@ public:
         return m_sfForRampDisplay;
     }
 
-    // inherited fro ccGLWindow
+    // inherited fro ecvDisplayTools
     virtual void getContext(CC_DRAW_CONTEXT& context) {
-        // ccGLWindow::getContext(context);
         ecvDisplayTools::GetContext(context);
 
         if (m_showSF) {

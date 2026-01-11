@@ -23,14 +23,14 @@
 JsonRPCPlugin::JsonRPCPlugin(QObject* parent)
     : QObject(parent),
       ccStdPluginInterface(":/CC/plugin/JsonRPCPlugin/info.json") {
-    qDebug() << "JsonRPCPlugin::JsonRPCPlugin";
+    CVLog::PrintDebug("JsonRPCPlugin::JsonRPCPlugin");
 
     connect(&rpc_server, &JsonRPCServer::execute, this,
             &JsonRPCPlugin::execute);
 }
 
 QList<QAction*> JsonRPCPlugin::getActions() {
-    qDebug() << "JsonRPCPlugin::getActions";
+    CVLog::PrintDebug("JsonRPCPlugin::getActions");
 
     // default action (if it has not been already created, this is the moment to
     // do it)

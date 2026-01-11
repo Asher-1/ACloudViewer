@@ -29,8 +29,9 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMutex>
-#include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 // system
 #include <assert.h>
 
@@ -64,8 +65,8 @@ bool Tools::SaveClassifier(QString filename,
 
     QTextStream stream(&file);
 
-    stream << "# 3DMASC classifier file" << endl;
-    stream << "classifier: " << yamlFilename << endl;
+    stream << "# 3DMASC classifier file" << QtCompat::endl;
+    stream << "classifier: " << yamlFilename << QtCompat::endl;
 
     // look for all clouds (labels)
     QList<QString> cloudLabels;
@@ -79,19 +80,19 @@ bool Tools::SaveClassifier(QString filename,
         cloudLabels.push_back(corePointsRole);
     }
 
-    stream << "# Clouds (roles)" << endl;
+    stream << "# Clouds (roles)" << QtCompat::endl;
     for (const QString& label : cloudLabels) {
-        stream << "cloud: " << label << endl;
+        stream << "cloud: " << label << QtCompat::endl;
     }
 
     if (!corePointsRole.isEmpty()) {
-        stream << "# Core points (classified role)" << endl;
-        stream << "core_points: " << corePointsRole << endl;
+        stream << "# Core points (classified role)" << QtCompat::endl;
+        stream << "core_points: " << corePointsRole << QtCompat::endl;
     }
 
-    stream << "# Features" << endl;
+    stream << "# Features" << QtCompat::endl;
     for (Feature::Shared f : features) {
-        stream << "feature: " << f->toString() << endl;
+        stream << "feature: " << f->toString() << QtCompat::endl;
     }
 
     return true;

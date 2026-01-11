@@ -33,6 +33,10 @@ class ecvApplication : public ecvApplicationBase {
 public:
     ecvApplication(int &argc, char **argv, bool isCommandLine);
 
+    //! Returns the minimum version of CloudViewer required to load a given file
+    //! version
+    static QString GetMinVersionForFileVersion(short fileVersion);
+
 protected:
     bool event(QEvent *inEvent) override;
 };

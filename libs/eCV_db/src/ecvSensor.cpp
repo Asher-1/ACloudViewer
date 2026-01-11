@@ -120,11 +120,17 @@ bool ccSensor::getActiveAbsoluteRotation(ccGLMatrix& rotation) const {
     return true;
 }
 
-bool ccSensor::toFile_MeOnly(QFile& out) const {
-    if (!ccHObject::toFile_MeOnly(out)) return false;
+bool ccSensor::toFile_MeOnly(QFile& out, short dataVersion) const {
+    assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+    if (dataVersion < 35) {
+        assert(false);
+        return false;
+    }
+
+    if (!ccHObject::toFile_MeOnly(out, dataVersion)) return false;
 
     // rigid transformation (dataVersion>=34)
-    if (!m_rigidTransformation.toFile(out)) return WriteError();
+    if (!m_rigidTransformation.toFile(out, dataVersion)) return WriteError();
 
     // various parameters (dataVersion>=35)
     QDataStream outStream(&out);
@@ -144,6 +150,12 @@ bool ccSensor::toFile_MeOnly(QFile& out) const {
     if (out.write((const char*)&bufferUniqueID, 4) < 0) return WriteError();
 
     return true;
+}
+
+short ccSensor::minimumFileVersion_MeOnly() const {
+    short minVersion = std::max(static_cast<short>(35),
+                                m_rigidTransformation.minimumFileVersion());
+    return std::max(minVersion, ccHObject::minimumFileVersion_MeOnly());
 }
 
 bool ccSensor::fromFile_MeOnly(QFile& in,

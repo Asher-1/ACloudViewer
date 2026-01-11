@@ -34,7 +34,7 @@ const static std::string kPoissonMeshedFileName = "meshed-poisson.ply";
 const static std::string kDelaunayMeshedFileName = "meshed-delaunay.ply";
 const static std::string kTexturedMeshFileName = "textured-mesh.obj";
 
-class StereoOptionsTab : public OptionsWidget {
+class StereoOptionsTab : public colmap::OptionsWidget {
 public:
     StereoOptionsTab(QWidget* parent, OptionManager* options)
         : OptionsWidget(parent) {
@@ -92,7 +92,7 @@ public:
     }
 };
 
-class FusionOptionsTab : public OptionsWidget {
+class FusionOptionsTab : public colmap::OptionsWidget {
 public:
     FusionOptionsTab(QWidget* parent, OptionManager* options)
         : OptionsWidget(parent) {
@@ -118,7 +118,7 @@ public:
     }
 };
 
-class MeshingOptionsTab : public OptionsWidget {
+class MeshingOptionsTab : public colmap::OptionsWidget {
 public:
     MeshingOptionsTab(QWidget* parent, OptionManager* options)
         : OptionsWidget(parent) {
@@ -148,7 +148,7 @@ public:
     }
 };
 
-class TexturingOptionsTab : public OptionsWidget {
+class TexturingOptionsTab : public colmap::OptionsWidget {
 public:
     TexturingOptionsTab(QWidget* parent, OptionManager* options)
         : OptionsWidget(parent),

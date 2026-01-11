@@ -31,11 +31,6 @@
 
 #include "util/logging.h"
 
-#ifdef GUI_ENABLED
-#include <QCoreApplication>
-#include <QThread>
-#endif
-
 namespace colmap {
 
 void InitializeGlog(char** argv) {

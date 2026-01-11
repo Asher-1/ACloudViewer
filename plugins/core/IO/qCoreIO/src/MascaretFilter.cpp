@@ -17,8 +17,9 @@
 // Qt
 #include <QDialog>
 #include <QFile>
-#include <QTextStream>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 // System
 #include <cstring>
 
@@ -266,7 +267,7 @@ CC_FILE_ERROR MascaretFilter::saveToFile(ccHObject* entity,
             outFile << Cdg.u[xDir] << " " << Cdg.u[yDir];
         }
 #endif
-        outFile << endl;
+        outFile << QtCompat::endl;
 
         // check the abscissa values order (must be increasing!)
         bool inverted = false;
@@ -302,7 +303,7 @@ CC_FILE_ERROR MascaretFilter::saveToFile(ccHObject* entity,
                 outFile << Pg.u[xDir] << " " << Pg.u[yDir];
             }
 #endif
-            outFile << endl;
+            outFile << QtCompat::endl;
         }
 
         result = CC_FERR_NO_ERROR;

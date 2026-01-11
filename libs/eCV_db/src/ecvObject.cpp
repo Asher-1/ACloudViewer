@@ -18,7 +18,47 @@
 // System
 #include <stdint.h>
 
-const unsigned c_currentDBVersion = 48;  // 4.8
+/** Versions:
+    V1.0 = prior to 05/04/2012 = old version
+    V2.0 - 05/04/2012 - upgrade to serialized version with version tracking
+    V2.1 - 07/02/2012 - points & 2D labels upgraded
+    V2.2 - 11/26/2012 - object name is now a QString
+    V2.3 - 02/07/2013 - attribute 'm_selectionBehavior' added to ccHObject class
+    v2.4 - 02/22/2013 - per-cloud point size + whether name is displayed in 3D
+or not v2.5 - 03/16/2013 - ccViewportParameters structure modified v2.6 -
+04/03/2013 - strictly positive scalar field removed and 'hidden' values marker
+is now NaN v2.7 - 04/12/2013 - Customizable color scales v2.8 - 07/12/2013 -
+Polylines are now supported v2.9 - 08/14/2013 - ccMeshGroup removed, ccSubMesh
+added v3.0 - 08/30/2013 - QObject's meta data structure added v3.1 - 09/25/2013
+- ccPolyline width added v3.2 - 10/11/2013 - ccFacet (2D polygons) are now
+supported v3.3 - 12/19/2013 - global scale information is now saved for point
+clouds v3.4 - 01/09/2014 - ccIndexedTransformation and
+ccIndexedTransformationBuffer added + CC_CLASS_ENUM is now coded on 64 bits v3.5
+- 02/13/2014 - ccSensor class updated v3.6 - 05/30/2014 - ccGLWindow and
+associated structures (viewport, etc.) now use double precision v3.7 -
+08/24/2014 - Textures are stored and saved as a single DB with only references
+to them in each material (key = absolute filename) v3.8 - 09/14/2014 - GBL and
+camera sensors structures have evolved v3.9 - 01/30/2015 - Shift & scale
+information are now saved for polylines (+ separate interface) v4.0 - 08/06/2015
+- Custom labels added to color scales v4.1 - 09/01/2015 - Scan grids added to
+point clouds v4.2 - 10/07/2015 - Global shift added to the ccScalarField
+structure v4.3 - 01/07/2016 - Additional intrinsic parameters of a camera sensor
+(optical center) v4.4 - 07/07/2016 - Full WaveForm data added to point clouds
+    v4.5 - 10/06/2016 - Transformation history is now saved
+    v4.6 - 11/03/2016 - Null normal vector code added
+    v4.7 - 12/22/2016 - Return index added to ccWaveform
+    v4.8 - 10/19/2018 - The CC_CAMERA_BIT and CC_QUADRIC_BIT were wrongly
+defined v4.9 - 03/31/2019 - Point labels can now be picked on meshes v5.0 -
+10/06/2019 - Point labels can now target the entity center v5.1 - 03/29/2019 -
+New camera management (viewports have changed) v5.2 - 11/30/2020 - New
+ccCoordinateSystem added v5.3 - 10/02/2022 - ccViewportParameters new members
+(near and far clipping planes) v5.4 - 01/29/2023 - ccColorScale custom labels
+can be overridden by a string v5.5 - 11/10/2024 - Scalar fields with 'double'
+offset and names as std::string v5.6 - 02/18/2025 - Circle entity v5.7 -
+10/01/2025 - Disc entity
+**/
+
+const unsigned c_currentDBVersion = 57;  // 5.7
 
 //! Default unique ID generator (using the system persistent settings as we did
 //! previously proved to be not reliable)
@@ -84,8 +124,14 @@ void ccObject::setFlagState(CV_OBJECT_FLAG flag, bool state) {
         m_flags &= (~unsigned(flag));
 }
 
-bool ccObject::toFile(QFile& out) const {
+bool ccObject::toFile(QFile& out, short dataVersion) const {
     assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
+
+    // Version validation
+    if (dataVersion < 34) {
+        assert(false);
+        return false;
+    }
 
     // class ID (dataVersion>=20)
     // DGM: on 64 bits since version 34
@@ -137,6 +183,8 @@ bool ccObject::toFile(QFile& out) const {
 
     return true;
 }
+
+short ccObject::minimumFileVersion() const { return 34; }
 
 CV_CLASS_ENUM ccObject::ReadClassIDFromFile(QFile& in, short dataVersion) {
     assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
@@ -239,8 +287,32 @@ bool ccObject::fromFile(QFile& in,
             QString key;
             QVariant value;
             inStream >> key;
-            inStream >> value;
-            setMetaData(key, value);
+#if 1  // patch to overcome the issue with LAS vlrs not being readable anymore
+       // as QVariant object with Qt 6
+            if (key == "LAS.vlrs") {
+                inStream.skipRawData(
+                        16);  // size of a partial QVariant object on Windows
+                quint64 vlrSize = 0;
+                inStream >> vlrSize;
+                for (quint64 i = 0; i < vlrSize; ++i) {
+                    inStream.skipRawData(sizeof(uint16_t));
+                    inStream.skipRawData(16 * sizeof(char));
+                    inStream.skipRawData(sizeof(uint16_t));
+                    uint16_t record_length_after_header;
+                    inStream >> record_length_after_header;
+                    inStream.skipRawData(32 * sizeof(char));
+                    inStream.skipRawData(record_length_after_header);
+                }
+
+                quint64 extraScalarFieldCount = 0;
+                inStream >> extraScalarFieldCount;
+                inStream.skipRawData(272 * extraScalarFieldCount);
+            } else
+#endif
+            {
+                inStream >> value;
+                setMetaData(key, value);
+            }
         }
     }
 

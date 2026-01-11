@@ -267,7 +267,11 @@ bool JlCompress::compressFiles(QString fileCompressed, QStringList files) {
 bool JlCompress::compressDir(QString fileCompressed,
                              QString dir,
                              bool recursive) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return compressDir(fileCompressed, dir, recursive, QDir::NoFilter);
+#else
     return compressDir(fileCompressed, dir, recursive, 0);
+#endif
 }
 
 bool JlCompress::compressDir(QString fileCompressed,

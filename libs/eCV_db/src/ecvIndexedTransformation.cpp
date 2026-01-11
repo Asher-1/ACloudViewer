@@ -8,8 +8,9 @@
 #include "ecvIndexedTransformation.h"
 
 // Qt
+#include <QtCompat.h>
+
 #include <QFile>
-#include <QTextStream>
 
 // System
 #include <assert.h>
@@ -41,7 +42,7 @@ bool ccIndexedTransformation::toAsciiFile(QString filename,
     // save transformation first (so that it can be loaded as a ccGLMatrix!)
     for (unsigned i = 0; i < 4; ++i) {
         stream << m_mat[i] << " " << m_mat[i + 4] << " " << m_mat[i + 8] << " "
-               << m_mat[i + 12] << endl;
+               << m_mat[i + 12] << QtCompat::endl;
     }
     // save index next
     stream << m_index;
@@ -130,16 +131,22 @@ ccIndexedTransformation ccIndexedTransformation::Interpolate(
     return ccIndexedTransformation(mat, index);
 }
 
-bool ccIndexedTransformation::toFile(QFile& out) const {
-    if (!ccGLMatrix::toFile(out)) return false;
+bool ccIndexedTransformation::toFile(QFile& out, short dataVersion) const {
+    if (!ccGLMatrix::toFile(out, dataVersion)) return false;
 
     assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
 
     // index (dataVersion>=34)
-    if (out.write((const char*)&m_index, sizeof(double)) < 0)
-        return WriteError();
+    if (dataVersion >= 34) {
+        if (out.write((const char*)&m_index, sizeof(double)) < 0)
+            return WriteError();
+    }
 
     return true;
+}
+
+short ccIndexedTransformation::minimumFileVersion() const {
+    return std::max(static_cast<short>(34), ccGLMatrix::minimumFileVersion());
 }
 
 bool ccIndexedTransformation::fromFile(QFile& in,

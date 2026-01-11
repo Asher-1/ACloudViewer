@@ -24,17 +24,28 @@
 //! Serializable object interface
 class ECV_DB_LIB_API ccSerializableObject {
 public:
-    //! Desctructor
+    //! Destructor
     virtual ~ccSerializableObject() = default;
 
     //! Returns whether object is serializable of not
     virtual bool isSerializable() const { return false; }
 
     //! Saves data to binary stream
-    /** \param out output file (already opened)
-            \return success
+    /** \param out         output file (already opened)
+        \param dataVersion target file version (for forward/backward
+    compatibility) \return success
     **/
-    virtual bool toFile(QFile& out) const { return false; }
+    virtual bool toFile(QFile& out, short dataVersion) const { return false; }
+
+    //! Returns the minimum file version required to save this instance
+    /** To be overridden by subclasses to indicate their minimum required
+    version. This enables the system to determine:
+        - Forward compatibility: newer software can read older files
+    (dataVersion check in fromFile)
+        - Backward compatibility: determine minimum version needed to save
+    current data \return minimum file version required for this object
+    **/
+    virtual short minimumFileVersion() const = 0;
 
     //! Deserialization flags (bit-field)
     enum DeserializationFlags {
@@ -46,14 +57,20 @@ public:
                                       floats (otherwise 64 bits double) **/
     };
 
-    //! Map of loaded uniqie IDs (old ID --> new ID)
+    //! Map of loaded unique IDs (old ID --> new ID)
     typedef QMultiMap<unsigned, unsigned> LoadedIDMap;
 
     //! Loads data from binary stream
     /** \param in input file (already opened)
-            \param dataVersion file version
-            \param flags deserialization flags (see
-    ccSerializableObject::DeserializationFlags) \return success
+        \param dataVersion file version (for version-specific deserialization)
+        \param flags deserialization flags (see
+    ccSerializableObject::DeserializationFlags) \param oldToNewIDMap map to link
+    old IDs with new IDs \return success
+
+        Note: When implementing, use dataVersion checks to handle different
+    versions:
+        - if (dataVersion >= X) { read new field } else { use default value }
+        This ensures forward compatibility with older file formats.
     **/
     virtual bool fromFile(QFile& in,
                           short dataVersion,
@@ -100,8 +117,11 @@ public:
 };
 
 //! Serialization helpers
-class ccSerializationHelper {
+class ECV_DB_LIB_API ccSerializationHelper {
 public:
+    //! Returns the minimum file version to save/load a 'generic array'
+    static short GenericArrayToFileMinVersion() { return 20; }
+
     //! Reads one or several 'PointCoordinateType' values from a QDataStream
     //! either in float or double format depending on the 'flag' value
     static void CoordsFromDataStream(QDataStream& stream,

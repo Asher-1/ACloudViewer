@@ -6,6 +6,13 @@
 // ----------------------------------------------------------------------------
 
 // clang-format off
+// Include standard library headers before DirectX/UVAtlas headers to avoid
+// macro conflicts. DirectX headers define macros that interfere with libstdc++
+// internals (e.g., template syntax in <bits/parse_numbers.h>).
+#include <thread>
+#include <chrono>
+#include <type_traits>
+
 // Include TBB before any Qt headers to avoid macro clashes with `emit`.
 #ifdef emit
 #  pragma push_macro("emit")

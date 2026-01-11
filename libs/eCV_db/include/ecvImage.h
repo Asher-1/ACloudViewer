@@ -80,11 +80,12 @@ protected:
     // inherited from ccHObject
     virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
     virtual void onDeletionOf(const ccHObject* obj) override;
-    virtual bool toFile_MeOnly(QFile& out) const override;
-    virtual bool fromFile_MeOnly(QFile& in,
-                                 short dataVersion,
-                                 int flags,
-                                 LoadedIDMap& oldToNewIDMap) override;
+    bool toFile_MeOnly(QFile& out, short dataVersion) const override;
+    short minimumFileVersion_MeOnly() const override;
+    bool fromFile_MeOnly(QFile& in,
+                         short dataVersion,
+                         int flags,
+                         LoadedIDMap& oldToNewIDMap) override;
 
     //! Updates aspect ratio
     void updateAspectRatio();
