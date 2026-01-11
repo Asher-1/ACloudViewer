@@ -60,15 +60,10 @@ RUN cd docs \
         echo "Error: Sphinx not initialized. Run build_docs.sh first."; \
         exit 1; \
     fi \
-    # Generate Doxygen XML
-    && if [ -f "Doxyfile" ]; then \
-        doxygen Doxyfile; \
-    fi \
-    # Build Sphinx documentation
-    && make clean \
-    && make html \
+    # Build Sphinx and Doxygen documentation using make_docs.py (like Open3D)
+    && python3 make_docs.py --sphinx --doxygen \
     # Create tarball
-    && tar -C html -czf "/root/ACloudViewer/acloudviewer-$(git rev-parse --short HEAD)-docs.tar.gz" . \
+    && tar -C _out/html -czf "/root/ACloudViewer/acloudviewer-$(git rev-parse --short HEAD)-docs.tar.gz" . \
     && echo "✅ Documentation built successfully!"
 
 # Verify build

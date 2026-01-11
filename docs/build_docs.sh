@@ -293,27 +293,32 @@ else
 fi
 echo ""
 
-# Step 5: Build Sphinx documentation
-echo -e "${BLUE}📦 Step 5/5: Building Sphinx documentation${NC}"
+# Step 5: Build documentation
+echo -e "${BLUE}📦 Step 5/5: Building documentation${NC}"
 
 if [ "$CLEAN_BUILD" = "YES" ]; then
     echo "Cleaning previous build..."
-    rm -rf _build html
+    rm -rf _out html doxygen
 fi
 
-# Build HTML documentation
-if [ -f "Makefile" ]; then
-    make html
+# Build HTML documentation using make_docs.py (like Open3D)
+if [ -f "make_docs.py" ]; then
+    echo "Using make_docs.py to build documentation..."
+    python3 make_docs.py --sphinx --doxygen
+elif [ -f "Makefile" ]; then
+    echo "Using Makefile to build documentation..."
+    make docs
 elif [ -f "source/conf.py" ]; then
-    sphinx-build -b html source _build/html
+    echo "Using sphinx-build directly..."
+    sphinx-build -b html source _out/html
 else
     echo -e "${RED}❌ No build system found${NC}"
     exit 1
 fi
 
 # Create symlink for easier access
-if [ -d "_build/html" ] && [ ! -L "html" ]; then
-    ln -sf _build/html html
+if [ -d "_out/html" ] && [ ! -L "html" ]; then
+    ln -sf _out/html html
 fi
 
 echo ""
@@ -321,10 +326,10 @@ echo -e "${GREEN}═════════════════════
 echo -e "${GREEN}✅ Documentation built successfully!${NC}"
 echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "📂 Output directory: ${BLUE}$(pwd)/_build/html${NC}"
+echo -e "📂 Output directory: ${BLUE}$(pwd)/_out/html${NC}"
 echo ""
 echo "To view the documentation:"
-echo -e "  ${BLUE}python3 -m http.server 8080 --directory _build/html${NC}"
+echo -e "  ${BLUE}python3 -m http.server 8080 --directory _out/html${NC}"
 echo "  Then open: http://localhost:8080"
 echo ""
 

@@ -4120,7 +4120,8 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
                               tr("is >= mean")};
 
     // Validate all query rows and collect conditions
-    QVector<QPair<QString, QString>> queries;  // attribute, operator, value stored as pair
+    QVector<QPair<QString, QString>>
+            queries;  // attribute, operator, value stored as pair
     QStringList queryDescriptions;
 
     for (int i = 0; i < m_queryRows.size(); ++i) {
@@ -4130,21 +4131,26 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
         QString value = row.valueEdit->text();
 
         if (attribute.isEmpty()) {
-            QMessageBox::warning(this, tr("Find Data"),
-                                 tr("Please select an attribute in query row %1.").arg(i + 1));
+            QMessageBox::warning(
+                    this, tr("Find Data"),
+                    tr("Please select an attribute in query row %1.")
+                            .arg(i + 1));
             return;
         }
 
         if (value.isEmpty() && !noValueOps.contains(op)) {
-            QMessageBox::warning(this, tr("Find Data"),
-                                 tr("Please enter a value in query row %1.").arg(i + 1));
+            QMessageBox::warning(
+                    this, tr("Find Data"),
+                    tr("Please enter a value in query row %1.").arg(i + 1));
             return;
         }
 
-        queryDescriptions.append(QString("%1 %2 %3").arg(attribute).arg(op).arg(value));
+        queryDescriptions.append(
+                QString("%1 %2 %3").arg(attribute).arg(op).arg(value));
     }
 
-    CVLog::Print(QString("[cvSelectionPropertiesWidget] Find Data with %1 condition(s): %2 (Element: %3)")
+    CVLog::Print(QString("[cvSelectionPropertiesWidget] Find Data with %1 "
+                         "condition(s): %2 (Element: %3)")
                          .arg(m_queryRows.size())
                          .arg(queryDescriptions.join(" AND "))
                          .arg(elementType));
@@ -4152,7 +4158,7 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     // For backward compatibility, emit signal for the first condition
     if (!m_queryRows.isEmpty()) {
         const QueryRow& firstRow = m_queryRows[0];
-        emit findDataRequested(dataProducer, elementType, 
+        emit findDataRequested(dataProducer, elementType,
                                firstRow.attributeCombo->currentText(),
                                firstRow.operatorCombo->currentText(),
                                firstRow.valueEdit->text());
@@ -4164,18 +4170,20 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
         const QueryRow& firstRow = m_queryRows[0];
         performFindData(firstRow.attributeCombo->currentText(),
                         firstRow.operatorCombo->currentText(),
-                        firstRow.valueEdit->text(),
-                        isCell);
+                        firstRow.valueEdit->text(), isCell);
 
-        // For additional rows, we would need to perform intersection with current selection
-        // This requires more complex logic to combine multiple selection queries
-        // For now, we apply only the first condition as a starting implementation
+        // For additional rows, we would need to perform intersection with
+        // current selection This requires more complex logic to combine
+        // multiple selection queries For now, we apply only the first condition
+        // as a starting implementation
         // TODO: Implement AND logic for multiple query conditions
         if (m_queryRows.size() > 1) {
-            CVLog::Warning(QString("[cvSelectionPropertiesWidget] Multiple query conditions detected (%1 rows). "
-                                   "Currently only the first condition is applied. "
-                                   "Full AND logic implementation is pending.")
-                           .arg(m_queryRows.size()));
+            CVLog::Warning(
+                    QString("[cvSelectionPropertiesWidget] Multiple query "
+                            "conditions detected (%1 rows). "
+                            "Currently only the first condition is applied. "
+                            "Full AND logic implementation is pending.")
+                            .arg(m_queryRows.size()));
         }
     }
 }
@@ -4194,7 +4202,7 @@ void cvSelectionPropertiesWidget::onResetClicked() {
             row.valueEdit->clear();
         }
     }
-    
+
     if (m_processIdSpinBox) {
         m_processIdSpinBox->setValue(-1);
     }
@@ -4223,9 +4231,10 @@ void cvSelectionPropertiesWidget::onClearClicked() {
 }
 
 //-----------------------------------------------------------------------------
-void cvSelectionPropertiesWidget::addQueryRow(int index, const QString& attribute,
-                                               const QString& op,
-                                               const QString& value) {
+void cvSelectionPropertiesWidget::addQueryRow(int index,
+                                              const QString& attribute,
+                                              const QString& op,
+                                              const QString& value) {
     if (index == -1) {
         index = m_queryRows.size();
     }
@@ -4247,8 +4256,8 @@ void cvSelectionPropertiesWidget::addQueryRow(int index, const QString& attribut
     // Operator combo
     row.operatorCombo = new QComboBox(row.container);
     row.operatorCombo->addItems({tr("is"), tr(">="), tr("<="), tr(">"), tr("<"),
-                                  tr("!="), tr("is min"), tr("is max"),
-                                  tr("is <= mean"), tr("is >= mean")});
+                                 tr("!="), tr("is min"), tr("is max"),
+                                 tr("is <= mean"), tr("is >= mean")});
     row.operatorCombo->setToolTip(tr("Select comparison operator"));
     if (!op.isEmpty()) {
         int opIndex = row.operatorCombo->findText(op);
@@ -4323,7 +4332,9 @@ void cvSelectionPropertiesWidget::addQueryRow(int index, const QString& attribut
     // Update button states (disable minus if only one row)
     updateQueryRowButtons();
 
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Added query row at index %1").arg(index));
+    CVLog::PrintDebug(
+            QString("[cvSelectionPropertiesWidget] Added query row at index %1")
+                    .arg(index));
 }
 
 //-----------------------------------------------------------------------------
@@ -4334,7 +4345,9 @@ void cvSelectionPropertiesWidget::removeQueryRow(int index) {
 
     // Can't remove if only one row
     if (m_queryRows.size() <= 1) {
-        CVLog::Warning("[cvSelectionPropertiesWidget] Cannot remove the last query row");
+        CVLog::Warning(
+                "[cvSelectionPropertiesWidget] Cannot remove the last query "
+                "row");
         return;
     }
 
@@ -4354,7 +4367,9 @@ void cvSelectionPropertiesWidget::removeQueryRow(int index) {
     // Update button states
     updateQueryRowButtons();
 
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Removed query row at index %1").arg(index));
+    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Removed query row "
+                              "at index %1")
+                              .arg(index));
 }
 
 //-----------------------------------------------------------------------------
@@ -4471,7 +4486,7 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
     if (m_queryRows.isEmpty()) {
         return;
     }
-    
+
     // Store current selections to preserve them if possible
     QStringList currentAttributes;
     for (const auto& row : m_queryRows) {
@@ -4859,19 +4874,22 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
         for (int i = 0; i < firstCombo->count(); ++i) {
             attributes.append(firstCombo->itemText(i));
         }
-        
+
         // Apply to all other combos
         for (int rowIdx = 1; rowIdx < m_queryRows.size(); ++rowIdx) {
             if (m_queryRows[rowIdx].attributeCombo) {
-                QString current = m_queryRows[rowIdx].attributeCombo->currentText();
+                QString current =
+                        m_queryRows[rowIdx].attributeCombo->currentText();
                 m_queryRows[rowIdx].attributeCombo->clear();
                 m_queryRows[rowIdx].attributeCombo->addItems(attributes);
-                
+
                 // Try to restore previous selection
                 if (!current.isEmpty()) {
-                    int idx = m_queryRows[rowIdx].attributeCombo->findText(current);
+                    int idx = m_queryRows[rowIdx].attributeCombo->findText(
+                            current);
                     if (idx >= 0) {
-                        m_queryRows[rowIdx].attributeCombo->setCurrentIndex(idx);
+                        m_queryRows[rowIdx].attributeCombo->setCurrentIndex(
+                                idx);
                     }
                 }
             }
@@ -4880,7 +4898,7 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
 
     // Set first item as current for all combos if they're empty
     for (auto& row : m_queryRows) {
-        if (row.attributeCombo && row.attributeCombo->count() > 0 && 
+        if (row.attributeCombo && row.attributeCombo->count() > 0 &&
             row.attributeCombo->currentIndex() < 0) {
             row.attributeCombo->setCurrentIndex(0);
         }
