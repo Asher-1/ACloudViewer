@@ -1,0 +1,311 @@
+/**
+\mainpage A Modern Library for 3D Data Processing
+
+\htmlonly
+<div class="header-container">
+    <div class="logo-section">
+        <img src="ACloudViewer_logo_horizontal.png" alt="ACloudViewer Logo" style="max-width: 400px; margin: 20px 0;">
+    </div>
+    <div class="links-section">
+        <a href="https://asher-1.github.io/ACloudViewer/">Homepage</a> | 
+        <a href="https://asher-1.github.io/ACloudViewer/documentation/">Docs</a> | 
+        <a href="https://github.com/Asher-1/ACloudViewer#quick-start">Quick Start</a> | 
+        <a href="../cpp_api.html">Back to Overview</a> | 
+        <a href="../python_api/index.html">Python</a> | 
+        <a href="index.html">C++</a> | 
+        <a href="../tutorial/index.html">Tutorial</a> | 
+        <a href="https://github.com/Asher-1/ACloudViewer">GitHub</a>
+    </div>
+</div>
+\endhtmlonly
+
+\section intro_sec Introduction
+
+ACloudViewer is an open-source library that supports rapid development of software that deals with 3D data. The ACloudViewer frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization.
+
+\section features_sec Core Features
+
+ACloudViewer includes the following core features:
+
+- **3D data structures**: Point clouds, meshes, octrees, and more
+- **3D data processing algorithms**: Filtering, segmentation, registration, surface reconstruction
+- **Scene reconstruction**: Multi-view stereo, structure from motion
+- **3D visualization**: Interactive 3D viewer with Qt-based GUI
+- **Point cloud I/O**: Support for PCD, PLY, LAS, E57, and many other formats
+- **Mesh I/O**: Support for OBJ, STL, OFF, and more
+- **Plugin system**: Extensible architecture for custom algorithms
+- **Integration with PCL**: Seamless interoperability with Point Cloud Library
+- **Cross-platform**: Available on Linux, macOS, and Windows
+- **Available in C++ and Python**: Full API for both languages
+
+\section architecture_sec Architecture
+
+ACloudViewer is organized into several key modules that work together to provide a complete 3D data processing pipeline:
+
+\htmlonly
+<div style="text-align: center; margin: 30px 0;">
+    <img src="AbstractionLayers.png" alt="ACloudViewer Architecture Layers" style="max-width: 800px; width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <p style="font-style: italic; color: #666; margin-top: 10px; font-size: 14px;">
+        <b>Figure 1:</b> ACloudViewer architecture showing the different layers and how they fit together to enable full end-to-end pipelines.
+    </p>
+</div>
+
+<div style="margin: 20px 0; padding: 15px; background: #f0f8ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+    <p style="margin: 0; color: #333;">
+        <b>💡 Architecture Highlights:</b><br>
+        • <b>Layered Design:</b> Clear separation between application, plugins, core processing, and foundation layers<br>
+        • <b>Extensibility:</b> Plugin system allows adding new file formats and algorithms without modifying core<br>
+        • <b>Integration:</b> Seamless interoperability with PCL, VTK, Qt, and other industry-standard libraries<br>
+        • <b>Dual API:</b> Full functionality available in both C++ and Python
+    </p>
+</div>
+\endhtmlonly
+
+\subsection detailed_architecture Detailed Architecture
+
+\htmlonly
+<div class="architecture-diagram">
+<pre style="font-family: monospace; background: #f5f5f5; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          <b>ACloudViewer Application</b>                             │
+│                     (eCV GUI, CVViewer, Python Bindings)                    │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+                ┌──────────────────┴──────────────────┐
+                │                                     │
+┌───────────────▼────────────────┐    ┌──────────────▼─────────────────┐
+│     <b>Plugin System</b>            │    │   <b>Visualization Layer</b>         │
+│  (IO + Standard Plugins)       │    │  (Vtk-based 3D Viewer)         │
+│                                │    │                                │
+│  • qLASIO, qE57IO, qDracoIO    │    │  • Interactive 3D rendering    │
+│  • qCSF, qM3C2, qPoissonRecon  │    │  • Scene graph management      │
+│  • qPCL, qCanupo, qTreeIso     │    │  • User interactions           │
+└───────────────┬────────────────┘    └──────────────┬─────────────────┘
+                │                                     │
+                └──────────────────┬──────────────────┘
+                                   │
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│                      <b>Core Processing Layer</b>                                  │
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │ cloudViewer  │  │   eCV_db     │  │   eCV_io     │  │  PCLEngine   │     │
+│  │              │  │              │  │              │  │              │     │
+│  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • PCL        │     │
+│  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Integration│     │
+│  │ • ccMesh     │  │ • Entity     │  │    LAS,E57)  │  │ • Filtering  │     │
+│  │ • ccHObject  │  │   Hierarchy  │  │ • Format     │  │ • Registr.   │     │
+│  │ • ccOctree   │  │ • Scene Mgmt │  │   Converters │  │ • Segment.   │     │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘     │
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                    <b>Reconstruction Module</b>                            │  │
+│  │  • Surface Reconstruction  • Mesh Generation  • Poisson Recon        │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼───────────────────────────────────────────┐
+│                         <b>Foundation Layer</b>                                   │
+│                                                                              │
+│  • Eigen (Linear Algebra)    • Qt (GUI & Widgets)                            │
+│  • PCL (Point Cloud Library) • Boost (Utilities)                             │
+│  • VTK (Visualization)        • OpenMP (Parallelization)                     │
+│  • CGAL (Geometric Algorithms)                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+<b>Data Flow:</b>
+  Input Files → eCV_io → Core Structures → Processing (Plugins/PCL) → 
+  Visualization/Output → Export (eCV_io)
+
+<b>Extension Points:</b>
+  • Plugin System: Add custom I/O formats and processing algorithms
+  • Python API: Script automation and batch processing
+  • PCL Integration: Leverage PCL's extensive algorithm library
+</pre>
+</div>
+\endhtmlonly
+
+Here's a brief overview of the different components and how they fit together to enable full end-to-end pipelines:
+
+\subsection core_modules Core Modules
+
+- **cloudViewer**: Core point cloud and mesh data structures
+  - ccPointCloud - Main point cloud class
+  - ccMesh - Triangle mesh representation
+  - ccHObject - Hierarchical object model
+  - ccGenericPointCloud - Abstract point cloud interface
+
+- **eCV_db**: Database and entity management for complex 3D scenes
+- **eCV_io**: I/O operations for various file formats (PCD, PLY, LAS, E57, OBJ, STL, etc.)
+- **PCLEngine**: Integration with Point Cloud Library (PCL)
+  - Filtering algorithms
+  - Registration (ICP, NDT)
+  - Segmentation
+  - Surface reconstruction
+
+- **Reconstruction**: 3D reconstruction algorithms
+  - Surface reconstruction
+  - Mesh generation
+  - Poisson reconstruction
+
+\subsection plugin_system Plugin System
+
+- **CVPluginAPI**: Plugin interface definitions
+  - ccStdPluginInterface - Standard plugin interface
+  - ccIOPluginInterface - I/O plugin interface
+  - ccPclPluginInterface - PCL plugin interface
+
+- **Plugins**: Standard plugin implementations for various algorithms
+
+\subsection app_layer Application Layer
+
+- **CVViewer**: Standalone 3D viewer application
+- **eCV**: Main ACloudViewer application with full GUI
+
+\section quickstart_cpp_sec C++ Quick Start
+
+\subsection basic_usage Basic Usage
+
+\code{.cpp}
+#include <ccPointCloud.h>
+#include <FileIOFilter.h>
+
+int main() {
+    // Load a point cloud
+    ccPointCloud* cloud = FileIOFilter::LoadFromFile(
+        "cloud.pcd", 
+        CC_SHIFT_MODE::AUTO,
+        nullptr
+    );
+    
+    if (cloud) {
+        std::cout << "Loaded " << cloud->size() << " points" << std::endl;
+        
+        // Process the point cloud
+        // ... your code here ...
+        
+        delete cloud;
+    }
+    
+    return 0;
+}
+\endcode
+
+\subsection cmake_integration CMake Integration
+
+\code{.cmake}
+cmake_minimum_required(VERSION 3.15)
+project(MyCppApp)
+
+find_package(ACloudViewer REQUIRED)
+
+add_executable(my_app main.cpp)
+target_link_libraries(my_app PRIVATE 
+    ACloudViewer::Core 
+    ACloudViewer::IO
+)
+\endcode
+
+\section python_sec Python Quick Start
+
+Pre-built pip packages support Ubuntu 20.04+, macOS 10.15+ and Windows 10+ (64-bit) with Python 3.8-3.11.
+
+\code{.sh}
+# Install
+pip install cloudViewer
+
+# Verify installation
+python -c "import cloudViewer; print(cloudViewer.__version__)"
+
+# Python API example
+python -c "import cloudViewer as cv3d; \
+    cloud = cv3d.io.read_point_cloud('cloud.pcd'); \
+    print(f'Loaded {len(cloud.points)} points')"
+\endcode
+
+\section compile_sec Compiling from Source
+
+To compile ACloudViewer from source, please refer to the \ref compilation "compilation guide".
+
+For detailed build instructions:
+- \ref compilation "Building from Source"
+- <a href="../getting_started/build_from_source.html">Platform-Specific Build Guides</a>
+
+\section visualization_sec Visualization Examples
+
+ACloudViewer provides powerful 3D visualization capabilities for interactive data exploration:
+
+\htmlonly
+<div style="margin: 30px 0;">
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+        <div style="flex: 1; min-width: 300px; max-width: 400px;">
+            <img src="MainUI.png" alt="ACloudViewer Main Interface" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;">
+            <p style="text-align: center; font-size: 13px; color: #666; margin-top: 8px;"><b>Main Application Interface</b></p>
+        </div>
+        <div style="flex: 1; min-width: 300px; max-width: 400px;">
+            <img src="ICP-registration.png" alt="Point Cloud Registration" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;">
+            <p style="text-align: center; font-size: 13px; color: #666; margin-top: 8px;"><b>ICP Registration Example</b></p>
+        </div>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px;">
+        <div style="flex: 1; min-width: 300px; max-width: 400px;">
+            <img src="Reconstruction.png" alt="3D Reconstruction" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;">
+            <p style="text-align: center; font-size: 13px; color: #666; margin-top: 8px;"><b>3D Surface Reconstruction</b></p>
+        </div>
+        <div style="flex: 1; min-width: 300px; max-width: 400px;">
+            <img src="SemanticAnnotation.png" alt="Semantic Annotation" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;">
+            <p style="text-align: center; font-size: 13px; color: #666; margin-top: 8px;"><b>Semantic Annotation</b></p>
+        </div>
+    </div>
+</div>
+\endhtmlonly
+
+\section resources_sec Resources
+
+\subsection examples_sec Examples
+
+- **C++ examples**: Located in `examples/Cpp/` directory
+- **Python examples**: Located in `examples/Python/` directory
+- **Jupyter tutorials**: Available in the <a href="../tutorial/index.html">tutorial section</a>
+
+\subsection api_docs_sec API Documentation
+
+- **C++ API**: Browse the complete API reference using the navigation above
+  - \ref cloudViewer "Core Module"
+  - \ref eCV_db "Database Module"
+  - \ref eCV_io "I/O Module"
+  - Classes, Namespaces, Files tabs for detailed navigation
+
+- **Python API**: See the <a href="../python_api/index.html">Python API documentation</a>
+
+\section communication_sec Communication Channels
+
+- **GitHub Repository**: https://github.com/Asher-1/ACloudViewer
+- **Issues**: https://github.com/Asher-1/ACloudViewer/issues
+- **Releases**: https://github.com/Asher-1/ACloudViewer/releases
+
+\section citation_sec Citation
+
+Please cite our work if you use ACloudViewer:
+
+\code{.bib}
+@software{acloudviewer2024,
+  title = {ACloudViewer: A Modern Library for 3D Data Processing},
+  author = {ACloudViewer Development Team},
+  year = {2024},
+  url = {https://github.com/Asher-1/ACloudViewer}
+}
+\endcode
+
+\section license_sec License
+
+ACloudViewer is released under the MIT License. See LICENSE file for details.
+
+---
+
+\htmlonly
+<div class="footer-note">
+<p><em>Generated by Doxygen. For the most up-to-date documentation, visit <a href="https://asher-1.github.io/ACloudViewer/documentation/">https://asher-1.github.io/ACloudViewer/documentation/</a></em></p>
+</div>
+\endhtmlonly
+
+*/

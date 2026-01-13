@@ -467,6 +467,19 @@ MainWindow::MainWindow()
         m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
         m_ui->actionShowPivot->blockSignals(false);
         toggleRotationCenterVisibility(autoShowCenterAxis);
+
+        // Camera Orientation Widget (ParaView-style)
+        bool showCameraOrientationWidget =
+                settings.value("CameraOrientationWidget/Visible", false)
+                        .toBool();
+        m_ui->actionToggleCameraOrientationWidget->blockSignals(true);
+        m_ui->actionToggleCameraOrientationWidget->setChecked(
+                showCameraOrientationWidget);
+        m_ui->actionToggleCameraOrientationWidget->blockSignals(false);
+        if (ecvDisplayTools::GetCurrentScreen()) {
+            ecvDisplayTools::ToggleCameraOrientationWidget(
+                    showCameraOrientationWidget);
+        }
     }
 
     // Shortcut management
@@ -1161,6 +1174,8 @@ void MainWindow::connectActions() {
             &MainWindow::doActionScreenShot);
     connect(m_ui->actionToggleOrientationMarker, &QAction::triggered, this,
             &MainWindow::doActionToggleOrientationMarker);
+    connect(m_ui->actionToggleCameraOrientationWidget, &QAction::toggled, this,
+            &MainWindow::doActionToggleCameraOrientationWidget);
     connect(m_ui->actionGlobalShiftSettings, &QAction::triggered, this,
             &MainWindow::doActionGlobalShiftSeetings);
 
@@ -1714,6 +1729,22 @@ void MainWindow::toggleRotationCenterVisibility(bool state) {
             QSettings settings;
             settings.setValue(ecvPS::AutoShowCenter(), state);
         }
+    }
+}
+
+void MainWindow::doActionToggleCameraOrientationWidget(bool state) {
+    // ParaView-style Camera Orientation Widget control
+    if (ecvDisplayTools::GetCurrentScreen()) {
+        ecvDisplayTools::ToggleCameraOrientationWidget(state);
+
+        // Save the option
+        {
+            QSettings settings;
+            settings.setValue("CameraOrientationWidget/Visible", state);
+        }
+
+        CVLog::Print(QString("[MainWindow] Camera Orientation Widget: %1")
+                             .arg(state ? "ON" : "OFF"));
     }
 }
 

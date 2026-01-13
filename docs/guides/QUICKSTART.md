@@ -1,235 +1,301 @@
-Build from source
-=====================
+# Build from Source
 
-[**Linux building**](building/compiling-cloudviewer-linux.md)
+Complete guide for building ACloudViewer from source code on different platforms.
 
-[**MacOS building**](building/compiling-cloudviewer-macos.md)
+## 📋 Platform-Specific Guides
 
-[**Windows building**](building/compiling-cloudviewer-windows.md)
+- [**Linux Building Guide**](compiling_doc/compiling-cloudviewer-linux.md)
+- [**macOS Building Guide**](compiling_doc/compiling-cloudviewer-macos.md)
+- [**Windows Building Guide**](compiling_doc/compiling-cloudviewer-windows.md)
 
+## 💻 System Requirements
 
-System requirements
--------------------
+### Operating Systems
 
-* Ubuntu 18.04+: GCC 5+, Clang 7+
-* macOS 10.14+: XCode 8.0+
-* Windows 10 (64-bit): Visual Studio 2022+
-* CMake: 3.19+
+| Platform | Version | Compiler |
+|----------|---------|----------|
+| Ubuntu | 18.04+ | GCC 5+, Clang 7+ |
+| macOS | 10.14+ | XCode 8.0+ |
+| Windows | 10 (64-bit) | Visual Studio 2022+ |
 
-  * Ubuntu (18.04+):
+### Build Tools
 
-    * Install with ``apt-get``: see `official APT repository <https://apt.kitware.com/>`_
-    * Install with ``snap``: ``sudo snap install cmake --classic``
-    * Install with ``pip`` (run inside a Python virtualenv): ``pip install cmake``
+**CMake 3.19+**
 
-  * Ubuntu (20.04+): Use the default OS repository: ``sudo apt-get install cmake``
-  * macOS: Install with Homebrew: ``brew install cmake``
-  * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
+- Ubuntu 18.04+:
+  ```bash
+  # Option 1: Official APT repository
+  # See: https://apt.kitware.com/
+  
+  # Option 2: Snap
+  sudo snap install cmake --classic
+  
+  # Option 3: pip (in virtualenv)
+  pip install cmake
+  ```
 
-* CUDA 10.1 (optional): CloudViewer supports GPU acceleration of an increasing number
-  of operations through CUDA on Linux. Please see the `official documentation
-  <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
-  install the CUDA toolkit from Nvidia.
+- Ubuntu 20.04+:
+  ```bash
+  # Use default OS repository
+  sudo apt-get install cmake
+  ```
 
+- macOS:
+  ```bash
+  brew install cmake
+  ```
 
-Cloning CloudViewer
---------------
+- Windows:
+  - Download from [CMake download page](https://cmake.org/download/)
 
-    git clone https://github.com/Asher-1/ACloudViewer.git
-    
+### Optional: GPU Support
 
+**CUDA 11.0+** (for GPU acceleration)
 
-Note
---------------
+ACloudViewer supports GPU acceleration through CUDA on Linux. See the [official CUDA installation guide](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html).
 
-custom modification：
+## 📦 Getting the Source Code
 
-    3rdparty/rply
-    libs/Reconstruction/lib/PoissonRecon
+```bash
+# Clone the repository
+git clone https://github.com/Asher-1/ACloudViewer.git
+cd ACloudViewer
+```
 
-Ubuntu/macOS
-------------
+## 🔧 Quick Build Instructions
 
-Refer to the [compiling-cloudviewer-linux.md file](compiling-cloudviewer-linux.md) for compilation Ubuntu/macOS information.
+### Ubuntu/Linux
 
+```bash
+# Install dependencies
+./util/install_deps_ubuntu.sh
 
-Windows
--------
+# Build
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
 
-1. Setup Python binding environments
+# Install (optional)
+sudo make install
+```
 
-	Most steps are the steps for Ubuntu: :ref:`compilation_unix_python`.
-	Instead of ``which``, check the Python path with ``where python``
+### macOS
 
-2. Config
+```bash
+# Install dependencies
+brew install qt5 eigen boost glew
 
-	    mkdir build
-	    cd build
-	    
-	    cmake -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-	    -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
-	      ..
-	    
-	    :: Specify the generator based on your Visual Studio version
-	    :: If CMAKE_INSTALL_PREFIX is a system folder, admin access is needed for installation
-	    cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_INSTALL_PREFIX="<cloudViewer_install_directory>" ..
+# Build
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt@5/lib/cmake \
+      ..
+make -j$(sysctl -n hw.ncpu)
+```
 
-3. Build
+### Windows
 
-    	cmake --build . --config Release --target ALL_BUILD
+```bat
+REM Build
+mkdir build && cd build
 
-	Alternatively, you can open the ``CloudViewer.sln`` project with Visual Studio and
-	build the same target.
+cmake -G "Visual Studio 17 2022" -A x64 ^
+      -DCMAKE_INSTALL_PREFIX="<cloudViewer_install_directory>" ^
+      ..
 
-4. Install
+cmake --build . --config Release --target ALL_BUILD
 
-	To install CloudViewer C++ library, build the ``INSTALL`` target in terminal or
-	in Visual Studio.
+REM Install (optional)
+cmake --build . --config Release --target INSTALL
+```
 
-    	cmake --build . --config Release --target INSTALL
+## 🐍 Building Python Package
 
-To link a C++ project against the CloudViewer C++ library, please refer to
-:ref:`create_cplusplus_project`.
+### Setup Python Environment
 
-To install CloudViewer Python library, build the corresponding python installation
-targets in terminal or Visual Studio.
+```bash
+# Create virtual environment
+python3 -m venv cloudViewer_env
+source cloudViewer_env/bin/activate  # On Windows: cloudViewer_env\Scripts\activate
 
-    :: Activate the virtualenv first
-    :: Install pip package in the current python environment
-    cmake --build . --config Release --target install-pip-package
-    
-    :: Create Python package in build/lib
-    cmake --build . --config Release --target python-package
-    
-    :: Create pip package in build/lib
-    :: This creates a .whl file that you can install manually.
-    cmake --build . --config Release --target pip-package
-    
-    :: Create conda package in build/lib
-    :: This creates a .tar.bz2 file that you can install manually.
-    cmake --build . --config Release --target conda-package
+# Install build dependencies
+pip install -r python/requirements_build.txt
+```
 
-Finally, verify the Python installation with:
+### Build Python Wheel
 
-    python -c "import cloudViewer; print(cloudViewer)"
+```bash
+mkdir build && cd build
 
-Compilation options
--------------------
+# Configure with Python bindings
+cmake -DBUILD_PYTHON_MODULE=ON \
+      -DCMAKE_BUILD_TYPE=Release \
+      ..
 
-OpenMP
+# Build
+make pip-package -j$(nproc)
 
-We automatically detect if the C++ compiler supports OpenMP and compile CloudViewer
-with it if the compilation option ``WITH_OPENMP`` is ``ON``.
-OpenMP can greatly accelerate computation on a multi-core CPU.
+# Install
+pip install lib/python_package/pip_package/cloudviewer*.whl
+```
 
-The default LLVM compiler on OS X does not support OpenMP.
-A workaround is to install a C++ compiler with OpenMP support, such as ``gcc``,
-then use it to compile CloudViewer. For example, starting from a clean build
-directory, run
+### Verify Installation
 
-    brew install gcc --without-multilib
-    cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
-    make -j
+```bash
+python -c "import cloudViewer; print(cloudViewer.__version__)"
+```
 
-This workaround has some compatibility issues with the source code of GLFW included in ``3rdparty``.
-Make sure CloudViewer is linked against GLFW installed on the OS.
+## ⚙️ Common Build Options
 
-ML Module
+### Core Options
 
-arning: Due to incompatibilities in the cxx11_abi on Linux between PyTorch and TensorFlow, 
-official Python wheels on Linux only support PyTorch, not TensorFlow.
-The ML module consists of primitives like operators and layers as well as high
-level code for models and pipelines. To build the operators and layers, set
-``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
-enable ``BUILD_CUDA_MODULE=ON`` for GPU support. To include the models and
-pipelines from CloudViewer-ML in the python package, set ``BUNDLE_CLOUDVIEWER_ML=ON`` and
-``CLOUDVIEWER_ML_ROOT`` to the CloudViewer-ML repository. You can directly download
-CloudViewer-ML from GitHub during the build with
-``CLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git``.
+```bash
+cmake \
+  -DCMAKE_BUILD_TYPE=Release \          # Release, Debug, RelWithDebInfo
+  -DBUILD_SHARED_LIBS=OFF \            # Static libraries
+  -DDEVELOPER_BUILD=OFF \              # Developer mode
+  -DCMAKE_INSTALL_PREFIX=/usr/local \  # Installation directory
+  ..
+```
 
-The following example shows the command for building the ops with GPU support
-for all supported ML frameworks and bundling the high level CloudViewer-ML code.
+### Python Options
 
-    # In the build directory
-    cmake -DBUILD_CUDA_MODULE=ON \
-          -DBUILD_PYTORCH_OPS=ON \
-          -DBUILD_TENSORFLOW_OPS=OFF \
-          -DBUNDLE_CLOUDVIEWER_ML=ON \
-          -DCLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
-          ..
-    # Install the python wheel with pip
-    make -j install-pip-package
-    
-    Importing Python libraries compiled with different CXX ABI may cause segfaults
-    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
-    and TensorFlow Python releases use the older CXX ABI; while when they are
-    compiled from source, newer ABI is enabled by default.
-    
-    When releasing CloudViewer as a Python package, we set
-    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
-    in order to ensure compatibility with PyTorch and TensorFlow Python releases.
-    
-    If you build PyTorch or TensorFlow from source or if you run into ABI
-    compatibility issues with them, please:
-    
-    1. Check PyTorch and TensorFlow ABI with
-    
-       .. code-block:: bash
-    
-           python -c "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI)"
-           python -c "import tensorflow; print(tensorflow.__cxx11_abi_flag__)"
-    
-    2. Configure CloudViewer to compile all dependencies from source
-       with the corresponding ABI version obtained from step 1.
-    
-    After installation of the Python package, you can check CloudViewer ABI version
-    with:
-    
-    .. code-block:: bash
-    
-        python -c "import cloudViewer; print(cloudViewer.pybind._GLIBCXX_USE_CXX11_ABI)"
-    
-    To build CloudViewer with CUDA support, configure with:
-    
-    .. code-block:: bash
-    
-        cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
-    
-    Please note that CUDA support is work in progress and experimental. For building
-    CloudViewer with CUDA support, ensure that CUDA is properly installed by running following commands:
-    
-    .. code-block:: bash
-    
-        nvidia-smi      # Prints CUDA-enabled GPU information
-        nvcc -V         # Prints compiler version
-    
-    If you see an output similar to ``command not found``, you can install CUDA toolkit
-    by following the `official
-    documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
+```bash
+cmake \
+  -DBUILD_PYTHON_MODULE=ON \           # Enable Python bindings
+  -DBUNDLE_CLOUDVIEWER_ML=ON \         # Include ML module
+  -DCLOUDVIEWER_ML_ROOT=/path/to/ml \  # ML module path
+  ..
+```
 
+### GPU and ML Options
 
-Unit test
----------
+```bash
+cmake \
+  -DBUILD_CUDA_MODULE=ON \             # Enable CUDA
+  -DBUILD_PYTORCH_OPS=ON \             # Build PyTorch ops
+  -DBUILD_TENSORFLOW_OPS=OFF \         # Build TensorFlow ops
+  ..
+```
 
-To build and run C++ unit tests:
+### Feature Options
 
-    cmake -DBUILD_UNIT_TESTS=ON ..
-    make -j
-    ./bin/tests
+```bash
+cmake \
+  -DWITH_OPENMP=ON \                   # Enable OpenMP
+  -DWITH_IPP=ON \                      # Intel IPP support
+  -DBUILD_GUI=ON \                     # Build GUI application
+  -DBUILD_RECONSTRUCTION=ON \          # Reconstruction module
+  ..
+```
 
+## 📚 Advanced Topics
 
-To run Python unit tests:
+### OpenMP Support
 
-    # Activate virtualenv first
-    pip install pytest
-    make install-pip-package
-    pytest ../python/test
+OpenMP greatly accelerates computation on multi-core CPUs. ACloudViewer automatically detects OpenMP support when `WITH_OPENMP=ON`.
 
-Upload whl fies
-----------
+**macOS Note**: The default LLVM compiler doesn't support OpenMP. Use GCC instead:
 
-	pip install twine
-	twine upload dist/*
-	
-	Enter your username: Asher-1
-	Enter your password: ***
+```bash
+brew install gcc
+cmake -DCMAKE_C_COMPILER=gcc-12 \
+      -DCMAKE_CXX_COMPILER=g++-12 \
+      -DWITH_OPENMP=ON \
+      ..
+```
+
+### ML Module
+
+To build the complete ML module with models and pipelines:
+
+```bash
+cmake \
+  -DBUILD_CUDA_MODULE=ON \
+  -DBUILD_PYTORCH_OPS=ON \
+  -DBUILD_TENSORFLOW_OPS=OFF \
+  -DBUNDLE_CLOUDVIEWER_ML=ON \
+  -DCLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
+  ..
+
+make -j$(nproc) install-pip-package
+```
+
+**Important**: PyTorch and TensorFlow Python wheels on Linux have different CXX ABIs. Official Linux wheels only support PyTorch, not TensorFlow.
+
+### CUDA Support
+
+```bash
+# Check CUDA installation
+nvidia-smi  # Verify CUDA-enabled GPU
+nvcc -V     # Verify CUDA compiler
+
+# Build with CUDA
+cmake \
+  -DBUILD_CUDA_MODULE=ON \
+  -DBUILD_COMMON_CUDA_ARCHS=ON \
+  ..
+```
+
+## 🧪 Running Tests
+
+### C++ Unit Tests
+
+```bash
+cmake -DBUILD_UNIT_TESTS=ON ..
+make -j$(nproc)
+./bin/tests
+```
+
+### Python Unit Tests
+
+```bash
+# Activate virtualenv
+source cloudViewer_env/bin/activate
+
+# Install test dependencies
+pip install pytest
+
+# Install package
+make install-pip-package
+
+# Run tests
+pytest ../python/test
+```
+
+## 📤 Publishing Python Wheels
+
+```bash
+# Install twine
+pip install twine
+
+# Upload to PyPI
+twine upload dist/*
+```
+
+## 🔗 Additional Resources
+
+- [Linux Build Guide](compiling_doc/compiling-cloudviewer-linux.md)
+- [macOS Build Guide](compiling_doc/compiling-cloudviewer-macos.md)
+- [Windows Build Guide](compiling_doc/compiling-cloudviewer-windows.md)
+- [Documentation Build Guide](../automation/BUILD_DOCUMENTATION.md)
+- [CI/CD Guide](CI_DOCUMENTATION_GUIDE.md)
+
+## ⚠️ Notes
+
+### Custom Modifications
+
+The following third-party libraries have been customized:
+- `3rdparty/rply`
+- `libs/Reconstruction/lib/PoissonRecon`
+
+### Platform-Specific Issues
+
+- **Ubuntu 18.04**: Limited to TensorFlow 2.13.0 and PyTorch 2.0.1 due to GCC version
+- **macOS**: OpenMP requires custom compiler installation
+- **Windows**: Requires Visual Studio 2022+ for C++17 support
+
+---
+
+**Last Updated**: 2026-01-13  
+**Maintained by**: ACloudViewer Team

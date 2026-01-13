@@ -1,12 +1,11 @@
 # CI Documentation Build & Deployment Guide
 
-> **Based on Open3D's Documentation System**  
 > **Status**: Production-Ready  
 > **Last Updated**: 2026-01-11
 
 ## 📋 Overview
 
-This guide describes the automated documentation build and deployment system for ACloudViewer, based on Open3D's proven CI/CD approach.
+This guide describes the automated documentation build and deployment system for ACloudViewer.
 
 ## 🏗️ Architecture
 
@@ -87,7 +86,7 @@ on:
 - Documentation is built
 - Uploaded to GitHub Artifacts
 - Uploaded to `main-devel` release
-- **Deployed to GitHub Pages** at `https://asher-1.github.io/ACloudViewer/docs/html/`
+- **Deployed to GitHub Pages** at `https://asher-1.github.io/ACloudViewer/documentation/`
 
 ### 2. Pull Request
 
@@ -123,8 +122,6 @@ on:
 ## 🐳 Docker Build Process
 
 ### Dockerfile.docs
-
-Based on Open3D's approach:
 
 ```dockerfile
 FROM ubuntu:22.04
@@ -222,7 +219,7 @@ RUN cd docs && \
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./docs-output
-    destination_dir: docs/html
+    destination_dir: documentation
     keep_files: true
 ```
 
@@ -247,20 +244,20 @@ RUN cd docs && \
 
 3. **Access Points**:
    - Main Website: `https://asher-1.github.io/ACloudViewer/`
-   - Documentation: `https://asher-1.github.io/ACloudViewer/docs/html/`
+   - Documentation: `https://asher-1.github.io/ACloudViewer/documentation/`
    - Downloads: `https://asher-1.github.io/ACloudViewer/#download`
 
 ### Deployment Strategy
 
 ```yaml
-destination_dir: docs/html   # Deploy to subdirectory
-keep_files: true              # Don't delete existing files
+destination_dir: documentation   # Deploy to subdirectory
+keep_files: true                 # Don't delete existing files
 ```
 
 **Why `keep_files: true`?**
 - Preserves `downloads_data.json`
 - Preserves main website (`index.html`)
-- Only updates `docs/html/` directory
+- Only updates `documentation/` directory
 
 ## 🧪 Local Testing
 
@@ -283,7 +280,7 @@ brew install doxygen graphviz  # macOS
 
 ```bash
 cd docs
-./build_docs.sh
+./scripts/build_docs.sh
 ```
 
 ### Test with HTTP Server
@@ -388,10 +385,10 @@ gh run download <run-id>
 
 ```bash
 # Check deployment status
-curl -I https://asher-1.github.io/ACloudViewer/docs/html/
+curl -I https://asher-1.github.io/ACloudViewer/documentation/
 
 # Verify content
-curl -s https://asher-1.github.io/ACloudViewer/docs/html/ | grep '<title>'
+curl -s https://asher-1.github.io/ACloudViewer/documentation/ | grep '<title>'
 ```
 
 ### Verify Release Upload
@@ -517,6 +514,3 @@ gh workflow run documentation.yml
 - [ ] Update main website link
 
 ---
-
-**Summary**: Automated, reproducible, production-ready documentation system based on Open3D's proven approach! 🎉
-

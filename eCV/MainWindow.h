@@ -478,6 +478,7 @@ private slots:
     void doActionAnimation();
     void doActionScreenShot();
     void doActionToggleOrientationMarker(bool state);
+    void doActionToggleCameraOrientationWidget(bool state);
 
     // About menu slots
     void help();

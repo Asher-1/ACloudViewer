@@ -1,0 +1,233 @@
+# Doxyfile for ACloudViewer (CMake-configured version)
+# This file is processed by CMake to substitute variables
+
+#---------------------------------------------------------------------------
+# Project related configuration options
+#---------------------------------------------------------------------------
+
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = "ACloudViewer"
+PROJECT_NUMBER         = @PROJECT_VERSION@
+PROJECT_BRIEF          = "A Modern Library for 3D Data Processing"
+PROJECT_LOGO           = @DOCS_SOURCE_DIR@/images/ACloudViewer_logo_horizontal.png
+OUTPUT_DIRECTORY       = @DOXYGEN_OUTPUT_DIRECTORY@
+CREATE_SUBDIRS         = NO
+ALLOW_UNICODE_NAMES    = YES
+
+#---------------------------------------------------------------------------
+# Build related configuration options
+#---------------------------------------------------------------------------
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_PRIV_VIRTUAL   = NO
+EXTRACT_PACKAGE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_LOCAL_METHODS  = NO
+EXTRACT_ANON_NSPACES   = NO
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+HIDE_FRIEND_COMPOUNDS  = YES
+HIDE_IN_BODY_DOCS      = NO
+INTERNAL_DOCS          = NO
+CASE_SENSE_NAMES       = YES
+HIDE_SCOPE_NAMES       = NO
+HIDE_COMPOUND_REFERENCE= NO
+SHOW_INCLUDE_FILES     = YES
+SHOW_GROUPED_MEMB_INC  = NO
+FORCE_LOCAL_INCLUDES   = NO
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = NO
+SORT_MEMBERS_CTORS_1ST = NO
+SORT_GROUP_NAMES       = NO
+SORT_BY_SCOPE_NAME     = NO
+STRICT_PROTO_MATCHING  = NO
+GENERATE_TODOLIST      = YES
+GENERATE_TESTLIST      = YES
+GENERATE_BUGLIST       = YES
+GENERATE_DEPRECATEDLIST= YES
+ENABLED_SECTIONS       =
+MAX_INITIALIZER_LINES  = 30
+SHOW_USED_FILES        = YES
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = YES
+
+#---------------------------------------------------------------------------
+# Configuration options related to warning and progress messages
+#---------------------------------------------------------------------------
+
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+WARN_AS_ERROR          = NO
+WARN_FORMAT            = "$file:$line: $text"
+WARN_LOGFILE           =
+
+#---------------------------------------------------------------------------
+# Configuration options related to the input files
+#---------------------------------------------------------------------------
+
+INPUT                  = @DOCS_SOURCE_DIR@/mainpage.dox \
+                         @PROJECT_SOURCE_DIR@/core/include \
+                         @PROJECT_SOURCE_DIR@/core/src \
+                         @PROJECT_SOURCE_DIR@/libs/cloudViewer \
+                         @PROJECT_SOURCE_DIR@/libs/eCV_db/include \
+                         @PROJECT_SOURCE_DIR@/libs/eCV_io/include \
+                         @PROJECT_SOURCE_DIR@/libs/PCLEngine/include \
+                         @PROJECT_SOURCE_DIR@/libs/Reconstruction/lib \
+                         @PROJECT_SOURCE_DIR@/libs/CVAppCommon/include \
+                         @PROJECT_SOURCE_DIR@/libs/CVPluginAPI \
+                         @PROJECT_SOURCE_DIR@/libs/CVPluginStub \
+                         @PROJECT_SOURCE_DIR@/libs/CVViewer \
+                         @PROJECT_SOURCE_DIR@/libs/Python/pybind \
+                         @PROJECT_SOURCE_DIR@/eCV \
+                         @PROJECT_SOURCE_DIR@/plugins/core
+
+INPUT_ENCODING         = UTF-8
+FILE_PATTERNS          = *.c \
+                         *.cc \
+                         *.cxx \
+                         *.cpp \
+                         *.c++ \
+                         *.h \
+                         *.hh \
+                         *.hxx \
+                         *.hpp \
+                         *.h++ \
+                         *.cu \
+                         *.cuh \
+                         *.dox \
+                         *.md
+
+RECURSIVE              = YES
+
+EXCLUDE                = @PROJECT_SOURCE_DIR@/libs/cloudViewer/visualization/shader \
+                         @PROJECT_SOURCE_DIR@/libs/cloudViewer/ml/tensorflow \
+                         @PROJECT_SOURCE_DIR@/libs/cloudViewer/ml/pytorch \
+                         @PROJECT_SOURCE_DIR@/3rdparty \
+                         @PROJECT_SOURCE_DIR@/build_app \
+                         @PROJECT_SOURCE_DIR@/eCV/ui_templates \
+                         @PROJECT_SOURCE_DIR@/eCV/translations \
+                         @PROJECT_SOURCE_DIR@/eCV/extern
+
+EXCLUDE_SYMLINKS       = NO
+EXCLUDE_PATTERNS       = */test/* \
+                         */tests/* \
+                         */build/* \
+                         */build_*/* \
+                         */3rdparty/* \
+                         */external/* \
+                         */third_party/* \
+                         */VLFeat/* \
+                         */lib/VLFeat/* \
+                         */Reconstruction/lib/VLFeat/* \
+                         */.git/* \
+                         */CMakeFiles/* \
+                         *_autogen/* \
+                         moc_*.cpp \
+                         ui_*.h \
+                         qrc_*.cpp
+
+EXCLUDE_SYMBOLS        = *Private* \
+                         *Internal*
+
+EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples/Cpp
+EXAMPLE_PATTERNS       = *.cpp \
+                         *.h
+EXAMPLE_RECURSIVE      = YES
+
+IMAGE_PATH             = @DOCS_SOURCE_DIR@/images
+
+#---------------------------------------------------------------------------
+# Configuration options related to source browsing
+#---------------------------------------------------------------------------
+
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+REFERENCES_LINK_SOURCE = YES
+SOURCE_TOOLTIPS        = YES
+USE_HTAGS              = NO
+VERBATIM_HEADERS       = YES
+
+#---------------------------------------------------------------------------
+# Configuration options related to the HTML output
+#---------------------------------------------------------------------------
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+HTML_COLORSTYLE_HUE    = 220
+HTML_COLORSTYLE_SAT    = 100
+HTML_COLORSTYLE_GAMMA  = 80
+HTML_TIMESTAMP         = YES
+HTML_DYNAMIC_SECTIONS  = NO
+HTML_INDEX_NUM_ENTRIES = 100
+GENERATE_TREEVIEW      = YES
+ENUM_VALUES_PER_LINE   = 4
+TREEVIEW_WIDTH         = 250
+
+#---------------------------------------------------------------------------
+# Configuration options related to the XML output
+#---------------------------------------------------------------------------
+
+GENERATE_XML           = YES
+XML_OUTPUT             = xml
+XML_PROGRAMLISTING     = YES
+
+#---------------------------------------------------------------------------
+# Configuration options related to the LaTeX output
+#---------------------------------------------------------------------------
+
+GENERATE_LATEX         = NO
+
+#---------------------------------------------------------------------------
+# Configuration options related to the preprocessor
+#---------------------------------------------------------------------------
+
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+SEARCH_INCLUDES        = YES
+INCLUDE_PATH           = @PROJECT_SOURCE_DIR@/libs/cloudViewer \
+                         @PROJECT_SOURCE_DIR@/core/include \
+                         @PROJECT_SOURCE_DIR@/libs/eCV_db/include
+PREDEFINED             = DOXYGEN_RUNNING \
+                         ECV_DB_LIB_API= \
+                         CV_CORE_LIB_API= \
+                         ECV_IO_LIB_API= \
+                         CLOUDVIEWER_API= \
+                         __attribute__(x)=
+
+#---------------------------------------------------------------------------
+# Configuration options related to the dot tool
+#---------------------------------------------------------------------------
+
+CLASS_DIAGRAMS         = YES
+HAVE_DOT               = YES
+DOT_NUM_THREADS        = 0
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+GROUP_GRAPHS           = YES
+UML_LOOK               = NO
+TEMPLATE_RELATIONS     = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+GRAPHICAL_HIERARCHY    = YES
+DIRECTORY_GRAPH        = YES
+DOT_IMAGE_FORMAT       = png
+DOT_GRAPH_MAX_NODES    = 50
+MAX_DOT_GRAPH_DEPTH    = 0
+DOT_TRANSPARENT        = NO
+DOT_MULTI_TARGETS      = YES
+GENERATE_LEGEND        = YES
+DOT_CLEANUP            = YES
+

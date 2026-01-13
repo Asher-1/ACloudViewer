@@ -433,6 +433,14 @@ build_pip_package() {
         CONDA_LIB_DIR=""
         echo "BUILD_WITH_CONDA is off"
     fi
+
+    # Check USE_QT6 environment variable
+    if [[ -z "${USE_QT6:-}" ]]; then
+        USE_QT6=OFF
+        echo "USE_QT6 not set, defaulting to OFF (Qt5)"
+    else
+        echo "USE_QT6 is set to: $USE_QT6"
+    fi
     set -u
 
     echo
@@ -447,6 +455,7 @@ build_pip_package() {
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"
         "-DUSE_SIMD=ON"
+        "-DUSE_QT6=$USE_QT6"
         "-DWITH_SIMD=ON"
         "-DWITH_OPENMP=ON"
         "-DWITH_IPP=ON"
@@ -594,6 +603,192 @@ run_python_tests() {
     rm -rf cloudViewer_test.venv     # cleanup for testing the next wheel
 }
 
+# Install dependencies needed for building documentation
+# Usage: install_docs_dependencies "${CLOUDVIEWER_ML_ROOT}"
+install_docs_dependencies() {
+    echo
+    echo Install ubuntu dependencies from $(pwd)
+    util/install_deps_ubuntu.sh assume-yes
+    $SUDO apt-get install --yes \
+        libxml2-dev libxslt-dev \
+        python3-dev python-is-python3 python3-pip \
+        doxygen \
+        texlive \
+        texlive-latex-extra \
+        ghostscript \
+        pandoc \
+        ccache
+    echo
+    echo Install Python dependencies for building docs
+    command -v python
+    python -V
+    python -m pip install -U -q "pip==$PIP_VER"
+    which cmake || python -m pip install -U -q cmake
+    python -m pip install -U -q -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt"
+    if [[ -d "$1" ]]; then
+        CLOUDVIEWER_ML_ROOT="$1"
+        echo Installing CloudViewer-ML dependencies from "${CLOUDVIEWER_ML_ROOT}"
+        python -m pip install -r "${CLOUDVIEWER_ML_ROOT}/requirements.txt" \
+            -r "${CLOUDVIEWER_ML_ROOT}/requirements-torch.txt"
+    else
+        echo CLOUDVIEWER_ML_ROOT="${1:-not specified}" - Skipping ML dependencies.
+    fi
+    echo
+    # Use --ignore-installed to override system packages (e.g., blinker from software-properties-common)
+    python -m pip install --ignore-installed -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" \
+        -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" \
+        -r "${CLOUDVIEWER_SOURCE_ROOT}/docs/requirements.txt"
+}
+
+# Build documentation
+# Usage: build_docs $DEVELOPER_BUILD
+build_docs() {
+    # Simplified documentation build function
+    # Assumes Python module is already compiled in ../build or ../build_app
+    # Core command: cd docs && make docs
+    
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📚 ACloudViewer Documentation Build"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "Using cmake: $(command -v cmake)"
+    cmake --version
+    echo "NPROC=$NPROC"
+    echo ""
+    
+    set +u
+    DEVELOPER_BUILD="$1"
+    set -u
+    if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then
+        DEVELOPER_BUILD=ON
+        DOC_ARGS=""
+        echo "📝 Developer build mode"
+    else
+        DOC_ARGS="--is_release"
+        echo "🚀 Release build mode"
+    fi
+    echo ""
+    
+    # Check if Python module already exists
+    PYTHON_MODULE_FOUND=false
+    if [ -f "build_app/lib/Release/Python/cuda/pybind.cpython-*.so" ] || \
+       [ -f "build/lib/Release/Python/cuda/pybind.cpython-*.so" ] || \
+       [ -f "build/lib/python_package/cloudViewer.cpython-*.so" ]; then
+        PYTHON_MODULE_FOUND=true
+        echo "✅ Found existing Python module, skipping compilation"
+        echo ""
+    fi
+    
+    # If Python module not found, build it
+    if [ "$PYTHON_MODULE_FOUND" = false ]; then
+        echo "📦 Python module not found, building..."
+        echo ""
+        
+        mkdir -p build
+        cd build
+        # BUILD_GUI=ON for visualization.{gui,rendering} documentation
+        cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
+            "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_INSTALL_LIBDIR=lib"
+            "-DWITH_OPENMP=ON"
+            "-DBUILD_AZURE_KINECT=OFF"
+            "-DBUILD_LIBREALSENSE=OFF"
+            "-DBUILD_TENSORFLOW_OPS=OFF"
+            "-DBUILD_PYTORCH_OPS=ON"
+            "-DBUILD_EXAMPLES=OFF"
+            "-DBUILD_DOCUMENTATION=ON"
+            "-DBUILD_PYTHON_MODULE=ON"
+            "-DBUNDLE_CLOUDVIEWER_ML=ON"
+            "-DUSE_PCL_BACKEND=OFF" # no need pcl for documentation
+            "-DBUILD_GUI=ON"
+            "-DBUILD_WEBRTC=ON"
+            "-DENABLE_HEADLESS_RENDERING=OFF"
+            "-DBUILD_JUPYTER_EXTENSION=OFF"
+            "-DBUILD_UNIT_TESTS=OFF"
+            "-DBUILD_BENCHMARKS=OFF"
+            "-DCVCORELIB_SHARED=ON"
+            "-DBUILD_FILAMENT_FROM_SOURCE=OFF"
+            "-DBUILD_RECONSTRUCTION=OFF"
+        )
+        
+        # Add CMAKE_PREFIX_PATH if QT_DIR is set
+        if [ -n "${QT_DIR:-}" ]; then
+            cmakeOptions+=("-DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake")
+        fi
+        
+        set -x
+        cmake "${cmakeOptions[@]}" ..
+        # Build only what's needed for Python module documentation
+        make python-package -j$NPROC
+        set +x
+        
+        echo ""
+        echo "✅ Python module compiled"
+        echo ""
+        
+        # Test Python module
+        export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$PWD/lib/python_package"
+        python -c "import cloudViewer; print('✓ cloudViewer module:', cloudViewer)" || \
+            echo "⚠️  Warning: Could not import cloudViewer module"
+        
+        cd ..
+    fi
+    
+    # Generate documentation (Open3D style)
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📄 Generating Documentation (Open3D Strategy)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "Build Strategy:"
+    echo "  1. Doxygen   → Independent C++ API HTML"
+    echo "  2. Sphinx    → Python API + Tutorials"
+    echo "  3. Integration → Copy Doxygen HTML to Sphinx output"
+    echo ""
+    echo "Documentation structure:"
+    echo "  ├── Tutorial (30+ Jupyter notebooks)"
+    echo "  ├── Python API (47 modules, Sphinx autodoc)"
+    echo "  └── C++ API (Doxygen HTML, independent)"
+    echo ""
+    echo "Reference: https://github.com/isl-org/Open3D"
+    echo ""
+    
+    cd docs
+    
+    set -x
+    # Build both Doxygen and Sphinx documentation
+    # This follows Open3D's proven approach:
+    # - Doxygen runs first, generates independent HTML
+    # - Sphinx runs second, generates Python docs
+    # - HTML outputs are combined via file system
+    python make_docs.py $DOC_ARGS --sphinx --doxygen
+    set +x
+    
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "✅ Documentation Build Complete"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    if [ -d "_out/html" ]; then
+        echo "📊 Build Statistics:"
+        echo "  - Total files: $(find _out/html -type f | wc -l)"
+        echo "  - HTML pages: $(find _out/html -name '*.html' | wc -l)"
+        echo "  - Total size: $(du -sh _out/html | cut -f1)"
+        echo ""
+        echo "📦 Output: docs/_out/html/"
+        echo ""
+        echo "🌐 Preview:"
+        echo "  cd .. && python3 -m http.server --directory docs/_out/html 8080"
+        echo "  Then open: http://localhost:8080"
+    else
+        echo "❌ Error: Documentation output not found (docs/_out/html)"
+        return 1
+    fi
+    
+    cd ..
+}
+
 maximize_ubuntu_github_actions_build_space() {
     # Enhanced version with better Docker space management
     # https://github.com/easimon/maximize-build-space/blob/main/action.yml
@@ -662,7 +857,6 @@ EOF
     df -h .                                  
     df -h /var/lib/docker                       # => /var/lib/docker -> ~101GB
 }
-
 
 maximize_ubuntu_github_actions_build_space_simple() {
     # https://github.com/easimon/maximize-build-space/blob/main/action.yml

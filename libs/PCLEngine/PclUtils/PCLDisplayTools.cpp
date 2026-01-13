@@ -93,6 +93,7 @@ void PCLDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
 }
 
 PCLDisplayTools::~PCLDisplayTools() {
+    // Cleanup is now handled in PCLVis destructor
     if (this->m_vtkWidget) {
         delete this->m_vtkWidget;
         this->m_vtkWidget = nullptr;
@@ -1300,4 +1301,86 @@ void PCLDisplayTools::transformCameraView(const ccGLMatrixd& viewMat) {
 
 void PCLDisplayTools::transformCameraProjection(const ccGLMatrixd& projMat) {
     getQVtkWidget()->transformCameraProjection(projMat.data());
+}
+
+// ============================================================================
+// View Properties Implementation (ParaView-compatible)
+// ============================================================================
+
+void PCLDisplayTools::ToggleCameraOrientationWidget(bool show) {
+    if (!m_visualizer3D) {
+        CVLog::Warning("[PCLDisplayTools] No 3D visualizer available");
+        return;
+    }
+
+    // Delegate to PCLVis
+    m_visualizer3D->ToggleCameraOrientationWidget(show);
+}
+
+bool PCLDisplayTools::IsCameraOrientationWidgetShown() const {
+    if (!m_visualizer3D) {
+        return false;
+    }
+
+    // Delegate to PCLVis
+    return m_visualizer3D->IsCameraOrientationWidgetShown();
+}
+
+// Override base class virtual methods (ecvDisplayTools interface)
+void PCLDisplayTools::toggleCameraOrientationWidget(bool show) {
+    ToggleCameraOrientationWidget(show);
+}
+
+bool PCLDisplayTools::isCameraOrientationWidgetShown() const {
+    return IsCameraOrientationWidgetShown();
+}
+
+void PCLDisplayTools::setLightIntensity(double intensity) {
+    if (!m_visualizer3D) {
+        CVLog::Warning("[PCLDisplayTools] No 3D visualizer available");
+        return;
+    }
+
+    // Delegate to PCLVis
+    m_visualizer3D->setLightIntensity(intensity);
+}
+
+double PCLDisplayTools::getLightIntensity() const {
+    if (!m_visualizer3D) {
+        return 1.0;  // Default intensity
+    }
+
+    // Delegate to PCLVis
+    return m_visualizer3D->getLightIntensity();
+}
+
+// ============================================================================
+// Axes Grid Properties (ParaView-compatible)
+// ============================================================================
+
+// Unified struct-based interface (Simplified - direct pass-through)
+void PCLDisplayTools::setDataAxesGridProperties(const QString& viewID,
+                                                const AxesGridProperties& props,
+                                                int viewport) {
+    if (!m_visualizer3D) {
+        CVLog::Warning("[PCLDisplayTools] No 3D visualizer available");
+        return;
+    }
+
+    // Direct delegation to PCLVis (no type conversion needed, PCLVis now
+    // handles Qt types)
+    m_visualizer3D->SetDataAxesGridProperties(CVTools::FromQString(viewID),
+                                              props);
+}
+
+void PCLDisplayTools::getDataAxesGridProperties(const QString& viewID,
+                                                AxesGridProperties& props,
+                                                int viewport) const {
+    if (!m_visualizer3D) {
+        // Return default values
+        props = AxesGridProperties();
+        return;
+    }
+    m_visualizer3D->GetDataAxesGridProperties(CVTools::FromQString(viewID),
+                                              props);
 }
