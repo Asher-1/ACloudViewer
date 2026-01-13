@@ -1,0 +1,98 @@
+# Modular Doxygen Configuration for ACloudViewer
+# This file defines module-specific documentation generation
+# Based on the project's actual structure
+
+# This is included by the main Doxyfile
+
+#---------------------------------------------------------------------------
+# Module Definitions
+#---------------------------------------------------------------------------
+
+# Module 1: CVCoreLib (Core)
+# Basic point cloud processing algorithms and data structures
+INPUT += @PROJECT_SOURCE_DIR@/core/include \
+         @PROJECT_SOURCE_DIR@/core/src
+
+# Module 2: CloudViewer (Main Library)
+# Primary 3D data processing library
+INPUT += @PROJECT_SOURCE_DIR@/libs/cloudViewer/core \
+         @PROJECT_SOURCE_DIR@/libs/cloudViewer/geometry \
+         @PROJECT_SOURCE_DIR@/libs/cloudViewer/io \
+         @PROJECT_SOURCE_DIR@/libs/cloudViewer/utility \
+         @PROJECT_SOURCE_DIR@/libs/cloudViewer/visualization \
+         @PROJECT_SOURCE_DIR@/libs/cloudViewer/pipelines \
+         @PROJECT_SOURCE_DIR@/libs/cloudViewer/camera \
+         @PROJECT_SOURCE_DIR@/libs/cloudViewer/data \
+         @PROJECT_SOURCE_DIR@/libs/cloudViewer/t
+
+# Module 3: eCV_db (Database/Data Structures)
+# Core database and data structure module
+INPUT += @PROJECT_SOURCE_DIR@/libs/eCV_db/include
+
+# Module 4: eCV_io (Input/Output)
+# File I/O module
+INPUT += @PROJECT_SOURCE_DIR@/libs/eCV_io/include
+
+# Module 5: PCLEngine
+# PCL integration module
+INPUT += @PROJECT_SOURCE_DIR@/libs/PCLEngine/include
+
+# Module 6: Reconstruction
+# 3D reconstruction module (COLMAP-based)
+INPUT += @PROJECT_SOURCE_DIR@/libs/Reconstruction/lib
+
+# Module 7: CVAppCommon
+# Common application components
+INPUT += @PROJECT_SOURCE_DIR@/libs/CVAppCommon/include
+
+# Module 8: CVPluginAPI
+# Plugin system API
+INPUT += @PROJECT_SOURCE_DIR@/libs/CVPluginAPI
+
+# Module 9: CVPluginStub
+# Plugin stub implementation
+INPUT += @PROJECT_SOURCE_DIR@/libs/CVPluginStub
+
+# Module 10: CVViewer
+# CloudViewer application module
+INPUT += @PROJECT_SOURCE_DIR@/libs/CVViewer
+
+# Module 11: Python Bindings
+# Python interface module
+INPUT += @PROJECT_SOURCE_DIR@/libs/Python/pybind
+
+# Module 12: eCV Main Application
+# ACloudViewer main program
+INPUT += @PROJECT_SOURCE_DIR@/eCV
+
+# Module 13: Plugins
+# Plugin implementations
+INPUT += @PROJECT_SOURCE_DIR@/plugins/core
+
+#---------------------------------------------------------------------------
+# Module Groups (for organization in HTML output)
+#---------------------------------------------------------------------------
+
+# Define groups for better documentation organization
+# These will appear as modules in the HTML output
+
+# Core modules group
+ENABLED_SECTIONS += MODULE_CORE \
+                    MODULE_CLOUDVIEWER \
+                    MODULE_ECV_DB \
+                    MODULE_ECV_IO
+
+# Advanced modules group  
+ENABLED_SECTIONS += MODULE_PCL \
+                    MODULE_RECONSTRUCTION \
+                    MODULE_PYTHON
+
+# Application modules group
+ENABLED_SECTIONS += MODULE_APP_COMMON \
+                    MODULE_PLUGINS \
+                    MODULE_ECV
+
+# Visualization modules group
+ENABLED_SECTIONS += MODULE_VIEWER \
+                    MODULE_VISUALIZATION
+

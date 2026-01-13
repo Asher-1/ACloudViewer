@@ -10,6 +10,7 @@
 // Local
 #include "../MainWindow.h"
 #include "CommonSettings.h"
+#include "ecvAxesGridDialog.h"
 #include "ecvColorScaleEditorDlg.h"
 #include "ecvColorScaleSelector.h"
 #include "ecvFileUtils.h"
@@ -76,6 +77,10 @@
 #include <QStandardItemModel>
 #include <QToolButton>
 #include <QTreeView>
+
+// STL
+#include <algorithm>
+#include <exception>
 
 // System
 #include <assert.h>
@@ -193,7 +198,7 @@ ccHObject* ccPropertiesTreeDelegate::getCurrentObject() {
 
 void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
     if (!hObject) {
-        CVLog::PrintDebug(
+        CVLog::Print(
                 "[ccPropertiesTreeDelegate::fillModel] Called with nullptr, "
                 "clearing");
         unbind();
@@ -238,6 +243,11 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
                                                    // kind of info for viewport
                                                    // labels!
             fillWithHObject(m_currentObject);
+
+    // View properties (ParaView-style) - added right after ECV Object section
+    if (m_currentObject->getViewId().length() > 0) {
+        fillWithViewProperties();
+    }
 
     if (m_currentObject->isA(CV_TYPES::COORDINATESYSTEM)) {
         fillWithCoordinateSystem(
@@ -393,6 +403,48 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
     }
 }
 
+void ccPropertiesTreeDelegate::fillWithViewProperties() {
+    assert(m_model);
+
+    // ParaView-style view properties section
+    addSeparator(tr("View (Render View)"));
+
+    // 1. Light Intensity - ParaView-style direct control (no checkbox)
+    // ParaView uses LightIntensity property (0.0-2.0 range)
+    appendRow(ITEM(tr("Light Intensity")),
+              PERSISTENT_EDITOR(OBJECT_VIEW_LIGHT_KIT_INTENSITY), true);
+
+    // 2. Opacity - moved from ECV Object section (ParaView has this in View
+    // properties) Only show for renderable objects
+    if (m_currentObject && (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD) ||
+                            m_currentObject->isKindOf(CV_TYPES::MESH) ||
+                            m_currentObject->isKindOf(CV_TYPES::PRIMITIVE) ||
+                            m_currentObject->isKindOf(CV_TYPES::POLY_LINE) ||
+                            m_currentObject->isKindOf(CV_TYPES::FACET))) {
+        appendRow(ITEM(tr("Opacity")), PERSISTENT_EDITOR(OBJECT_OPACITY), true);
+    }
+
+    // 3. Data Axes Grid - ParaView-style: checkbox with integrated Edit button
+    // This shows the coordinate axes for the data bounds of the current object
+    {
+        // Get current visibility from backend
+        bool visible = false;
+        if (m_currentObject) {
+            QString viewID = m_currentObject->getViewId();
+            AxesGridProperties props;
+            ecvDisplayTools::TheInstance()->getDataAxesGridProperties(viewID,
+                                                                      props);
+            visible = props.visible;
+        }
+
+        // ParaView-style: Checkbox and Edit button in same row (like Opacity's
+        // slider+spinbox) We create a custom editor that combines checkbox +
+        // button using PERSISTENT_EDITOR
+        appendRow(ITEM(tr("Show Axes Grid")),
+                  PERSISTENT_EDITOR(OBJECT_VIEW_DATA_AXES_GRID_VISIBLE), true);
+    }
+}
+
 // Note: fillWithSelectionProperties, setSelectionToolsActive, and
 // showSelectionPropertiesOnly have been removed. Selection properties are now
 // displayed in the standalone cvFindDataDockWidget, which is decoupled from
@@ -489,15 +541,8 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
                                              .arg(_obj->getUniqueID())
                                              .arg(_obj->getChildrenNumber())));
 
-    // opacity (transparency) - ParaView-style slider + spinbox [0.0, 1.0]
-    // Placed before Current Display as per ParaView's property panel layout
-    // Applies to point clouds, meshes, primitives, and other renderable objects
-    if (_obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
-        _obj->isKindOf(CV_TYPES::MESH) || _obj->isKindOf(CV_TYPES::PRIMITIVE) ||
-        _obj->isKindOf(CV_TYPES::POLY_LINE) ||
-        _obj->isKindOf(CV_TYPES::FACET)) {
-        appendRow(ITEM(tr("Opacity")), PERSISTENT_EDITOR(OBJECT_OPACITY), true);
-    }
+    // Note: Opacity has been moved to View (Render View) section
+    // following ParaView's property panel layout
 
     // display window
     if (!_obj->isLocked())
@@ -1470,6 +1515,63 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = slider;
         } break;
+        case OBJECT_VIEW_LIGHT_KIT_INTENSITY: {
+            // ParaView-style light intensity control: Slider + SpinBox
+            // (0.0-1.0)
+            QWidget* container = new QWidget(parent);
+            QHBoxLayout* layout = new QHBoxLayout(container);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(4);
+
+            // Slider for quick adjustment (0-100 representing 0.0-1.0)
+            QSlider* slider = new QSlider(Qt::Horizontal, container);
+            slider->setRange(0, 100);  // 0% to 100% intensity
+            slider->setSingleStep(1);
+            slider->setPageStep(10);
+            slider->setTickPosition(QSlider::NoTicks);
+
+            // SpinBox for precise numeric input
+            QDoubleSpinBox* spinBox = new QDoubleSpinBox(container);
+            spinBox->setRange(0.0, 1.0);
+            spinBox->setSingleStep(0.01);
+            spinBox->setDecimals(2);
+            spinBox->setMinimumWidth(60);
+
+            // Synchronize slider and spinbox (visual sync only)
+            connect(slider, &QSlider::valueChanged, this, [spinBox](int value) {
+                spinBox->blockSignals(true);
+                spinBox->setValue(value / 100.0);
+                spinBox->blockSignals(false);
+            });
+            connect(spinBox,
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                    [slider](double value) {
+                        slider->blockSignals(true);
+                        slider->setValue(static_cast<int>(value * 100.0));
+                        slider->blockSignals(false);
+                    });
+
+            // Connect BOTH slider and spinbox to light intensity handler (like
+            // Opacity does) Slider: convert int [0, 100] to double [0.0, 1.0]
+            // for handler
+            ccPropertiesTreeDelegate* self =
+                    const_cast<ccPropertiesTreeDelegate*>(this);
+            connect(slider, &QAbstractSlider::valueChanged, self,
+                    [self](int value) {
+                        self->lightIntensityChanged(value / 100.0);
+                    });
+            // SpinBox: direct connection (already in [0.0, 1.0] range)
+            connect(spinBox,
+                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), self,
+                    [self](double value) {
+                        self->lightIntensityChanged(value);
+                    });
+
+            layout->addWidget(slider, 1);
+            layout->addWidget(spinBox, 0);
+
+            outputWidget = container;
+        } break;
         case OBJECT_OPACITY: {
             // ParaView-style opacity control: Slider + SpinBox combination
             // Creates a horizontal layout with slider and numeric input
@@ -1706,6 +1808,41 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                             coordinateSystemDisplayScaleChanged);
 
             outputWidget = spinBox;
+        } break;
+        // ParaView-style Data Axes Grid: Checkbox + Edit button in same row
+        case OBJECT_VIEW_DATA_AXES_GRID_VISIBLE: {
+            // Create container widget with horizontal layout (like Opacity)
+            QWidget* container = new QWidget(parent);
+            QHBoxLayout* layout = new QHBoxLayout(container);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(4);
+
+            // Checkbox for visibility
+            QCheckBox* checkbox = new QCheckBox(container);
+
+            // Edit button (compact style)
+            QPushButton* editButton = new QPushButton(tr("Edit..."), container);
+            editButton->setMinimumHeight(22);
+            editButton->setMaximumWidth(80);
+            connect(editButton, &QPushButton::clicked, this,
+                    &ccPropertiesTreeDelegate::dataAxesGridEditRequested);
+
+            // Add to layout: checkbox (stretch) + button (fixed)
+            layout->addWidget(checkbox, 1);
+            layout->addWidget(editButton, 0);
+
+            outputWidget = container;
+        } break;
+        // Note: OBJECT_VIEW_DATA_AXES_GRID_EDIT is now integrated into VISIBLE
+        // case above
+        case OBJECT_VIEW_DATA_AXES_GRID_EDIT: {
+            // This case is no longer used - keeping for compatibility
+            QPushButton* button = new QPushButton(tr("Edit..."), parent);
+            connect(button, &QAbstractButton::clicked, this,
+                    &ccPropertiesTreeDelegate::dataAxesGridEditRequested);
+            button->setMinimumHeight(22);
+            button->setMaximumWidth(80);
+            outputWidget = button;
         } break;
         // Note: OBJECT_SELECTION_PROPERTIES case removed - selection
         // properties are now in standalone cvFindDataDockWidget
@@ -2049,6 +2186,30 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             // slider->setTickPosition(QSlider::NoTicks);
             break;
         }
+        case OBJECT_VIEW_LIGHT_KIT_INTENSITY: {
+            // ParaView-style: editor is a container with slider + spinbox
+            QWidget* container = qobject_cast<QWidget*>(editor);
+            if (!container) return;
+
+            // Find the slider and spinbox in the container
+            QSlider* slider = container->findChild<QSlider*>();
+            QDoubleSpinBox* spinBox = container->findChild<QDoubleSpinBox*>();
+
+            // Get current light intensity from backend (default 1.0 for normal
+            // intensity)
+            double intensity = 1.0;  // Default
+            if (ecvDisplayTools::TheInstance()) {
+                intensity = ecvDisplayTools::TheInstance()->getLightIntensity();
+            }
+
+            // Set both controls (slider triggers spinbox sync via signal)
+            if (slider) {
+                slider->setValue(static_cast<int>(intensity * 100.0));
+            }
+            if (spinBox) {
+                spinBox->setValue(intensity);
+            }
+        } break;
         case OBJECT_OPACITY: {
             // ParaView-style: editor is a container with slider + spinbox
             QWidget* container = qobject_cast<QWidget*>(editor);
@@ -2068,6 +2229,45 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             if (spinBox) {
                 spinBox->setValue(static_cast<double>(opacity));
             }
+            break;
+        }
+        case OBJECT_VIEW_DATA_AXES_GRID_VISIBLE: {
+            // ParaView-style: editor is a container with checkbox + edit button
+            QWidget* container = qobject_cast<QWidget*>(editor);
+            if (!container || !m_currentObject) return;
+
+            // Find the checkbox in the container
+            QCheckBox* checkbox = container->findChild<QCheckBox*>();
+            if (!checkbox) return;
+
+            // Get current visibility from backend
+            QString viewID = m_currentObject->getViewId();
+            AxesGridProperties props;
+            ecvDisplayTools::TheInstance()->getDataAxesGridProperties(viewID,
+                                                                      props);
+
+            // Set checkbox state
+            checkbox->setChecked(props.visible);
+
+            // Connect checkbox signal to update handler (disconnect first to
+            // avoid duplicates)
+            disconnect(checkbox, nullptr, this, nullptr);
+            connect(checkbox, &QCheckBox::toggled, this,
+                    [this, viewID](bool checked) {
+                        if (!ecvDisplayTools::TheInstance()) return;
+
+                        // Get current properties using struct-based interface
+                        AxesGridProperties props;
+                        ecvDisplayTools::TheInstance()
+                                ->getDataAxesGridProperties(viewID, props);
+
+                        // Update visibility
+                        props.visible = checked;
+                        ecvDisplayTools::TheInstance()
+                                ->setDataAxesGridProperties(viewID, props);
+
+                        ecvDisplayTools::UpdateScreen();
+                    });
             break;
         }
         case OBJECT_SENSOR_INDEX: {
@@ -2424,6 +2624,29 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             ecvDisplayTools::SetRedrawRecursive(false);
             sensor->setRedrawFlagRecursive(true);
             ecvDisplayTools::RedrawDisplay();
+        }
+            redraw = false;
+            break;
+        // ParaView-style View Properties handlers
+        case OBJECT_VIEW_CAMERA_ORIENTATION_WIDGET: {
+            bool visible = (item->checkState() == Qt::Checked);
+            ecvDisplayTools::ToggleCameraOrientationWidget(visible);
+            CVLog::Print(
+                    QString("[View Properties] Camera Orientation Widget: %1")
+                            .arg(visible ? "ON" : "OFF"));
+        }
+            redraw = false;
+            break;
+        case OBJECT_VIEW_LIGHT_KIT_INTENSITY: {
+            // Light intensity is handled by editor's signal connection
+            // The slider/spinbox valueChanged signal triggers the update
+            // No action needed here in updateItem
+        }
+            redraw = false;
+            break;
+        case OBJECT_VIEW_DATA_AXES_GRID_VISIBLE: {
+            // ParaView-style: handled in setEditorData (persistent editor)
+            // No action needed here in updateItem
         }
             redraw = false;
             break;
@@ -2946,10 +3169,10 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
     // Apply the opacity change via display tools
     ecvDisplayTools::ChangeEntityProperties(param, true);
 
-    CVLog::PrintDebug(QString("[ccPropertiesTreeDelegate::opacityChanged] "
-                              "Set opacity to %1 for object '%2'")
-                              .arg(opacity)
-                              .arg(m_currentObject->getName()));
+    CVLog::Print(QString("[ccPropertiesTreeDelegate::opacityChanged] "
+                         "Set opacity to %1 for object '%2'")
+                         .arg(opacity)
+                         .arg(m_currentObject->getName()));
 }
 
 void ccPropertiesTreeDelegate::applyImageViewport() {
@@ -3177,4 +3400,154 @@ void ccPropertiesTreeDelegate::updateCurrentEntity(bool redraw /* = true*/) {
     ecvDisplayTools::SetRedrawRecursive(false);
     m_currentObject->setRedrawFlagRecursive(redraw);
     updateDisplay();
+}
+
+// ParaView-style View Properties implementation
+
+void ccPropertiesTreeDelegate::lightIntensityChanged(double intensity) {
+    if (!ecvDisplayTools::TheInstance()) {
+        return;
+    }
+
+    // Apply light intensity to backend
+    ecvDisplayTools::TheInstance()->setLightIntensity(intensity);
+
+    // Trigger screen update
+    ecvDisplayTools::UpdateScreen();
+}
+
+void ccPropertiesTreeDelegate::dataAxesGridEditRequested() {
+    // Get viewID from current object
+    if (!m_currentObject) {
+        return;
+    }
+
+    QString viewID = m_currentObject->getViewId();
+    if (viewID.isEmpty()) {
+        return;
+    }
+
+    // Check if we have a valid display tools instance
+    if (!ecvDisplayTools::TheInstance()) {
+        return;
+    }
+
+    // Create and show dialog with current properties
+    ecvAxesGridDialog dialog(tr("Data Axes Grid Properties"), m_view);
+
+    // Get current properties from backend (using struct-based interface)
+    AxesGridProperties props;
+
+    try {
+        ecvDisplayTools::TheInstance()->getDataAxesGridProperties(viewID,
+                                                                  props);
+    } catch (const std::exception& e) {
+        CVLog::Warning(
+                QString("[Data Axes Grid] Exception getting properties: %1")
+                        .arg(e.what()));
+        props = AxesGridProperties();
+    } catch (...) {
+        CVLog::Warning("[Data Axes Grid] Unknown exception getting properties");
+        props = AxesGridProperties();
+    }
+
+    // Set current values in dialog from backend
+    try {
+        // Clamp color values to valid range [0, 255]
+        int r = std::max(0, std::min(255, static_cast<int>(props.color.x)));
+        int g = std::max(0, std::min(255, static_cast<int>(props.color.y)));
+        int b = std::max(0, std::min(255, static_cast<int>(props.color.z)));
+        dialog.setColor(QColor::fromRgb(r, g, b));
+
+        // Set all properties from backend
+        dialog.setLineWidth(props.lineWidth);
+        dialog.setOpacity(props.opacity);
+        dialog.setShowLabels(props.showLabels);
+        dialog.setShowGrid(props.showGrid);
+        dialog.setXTitle(props.xTitle);
+        dialog.setYTitle(props.yTitle);
+        dialog.setZTitle(props.zTitle);
+        dialog.setXAxisUseCustomLabels(props.xUseCustomLabels);
+        dialog.setYAxisUseCustomLabels(props.yUseCustomLabels);
+        dialog.setZAxisUseCustomLabels(props.zUseCustomLabels);
+        dialog.setXAxisCustomLabels(props.xCustomLabels);
+        dialog.setYAxisCustomLabels(props.yCustomLabels);
+        dialog.setZAxisCustomLabels(props.zCustomLabels);
+        dialog.setUseCustomBounds(props.useCustomBounds);
+
+        // Set custom bounds values (FIX: These were missing!)
+        dialog.setXMin(props.xMin);
+        dialog.setXMax(props.xMax);
+        dialog.setYMin(props.yMin);
+        dialog.setYMax(props.yMax);
+        dialog.setZMin(props.zMin);
+        dialog.setZMax(props.zMax);
+    } catch (const std::exception& e) {
+        CVLog::Warning(QString("[Data Axes Grid] Exception setting dialog "
+                               "properties: %1")
+                               .arg(e.what()));
+    } catch (...) {
+        CVLog::Warning(
+                "[Data Axes Grid] Unknown exception setting dialog properties");
+    }
+
+    // Lambda for applying properties (used by both Apply and OK buttons)
+    auto applyProperties = [&]() {
+        // Use the new struct-based interface (cleaner API)
+        AxesGridProperties props;
+
+        // Get all values from dialog
+        QColor dialogColor = dialog.getGridColor();
+        props.visible = true;  // Auto-enable when editing (ParaView-style)
+        props.color = CCVector3(dialogColor.red(), dialogColor.green(),
+                                dialogColor.blue());
+        props.lineWidth = dialog.getLineWidth();
+        // Keep spacing and subdivisions from backend (not exposed in dialog
+        // yet) props.spacing and props.subdivisions already set from
+        // getDataAxesGridProperties
+        props.showLabels = dialog.getShowLabels();
+        props.opacity = dialog.getOpacity();
+
+        // Extended properties
+        props.showGrid = dialog.getShowGrid();
+        props.xTitle = dialog.getXTitle();
+        props.yTitle = dialog.getYTitle();
+        props.zTitle = dialog.getZTitle();
+        props.xUseCustomLabels = dialog.getXAxisUseCustomLabels();
+        props.yUseCustomLabels = dialog.getYAxisUseCustomLabels();
+        props.zUseCustomLabels = dialog.getZAxisUseCustomLabels();
+        props.useCustomBounds = dialog.getUseCustomBounds();
+
+        // Custom labels (ParaView-style)
+        props.xCustomLabels = dialog.getXAxisCustomLabels();
+        props.yCustomLabels = dialog.getYAxisCustomLabels();
+        props.zCustomLabels = dialog.getZAxisCustomLabels();
+
+        // Custom bounds values (FIX: These were missing!)
+        props.xMin = dialog.getXMin();
+        props.xMax = dialog.getXMax();
+        props.yMin = dialog.getYMin();
+        props.yMax = dialog.getYMax();
+        props.zMin = dialog.getZMin();
+        props.zMax = dialog.getZMax();
+
+        // Apply using clean struct-based interface
+        ecvDisplayTools::TheInstance()->setDataAxesGridProperties(viewID,
+                                                                  props);
+        ecvDisplayTools::UpdateScreen();
+    };
+
+    // Connect Apply button for real-time preview (ParaView-style)
+    connect(&dialog, &ecvAxesGridDialog::applyRequested, this, applyProperties);
+
+    // Show non-modal dialog (allows moving and interacting with scene)
+    dialog.show();
+
+    // Wait for dialog to close
+    int result = dialog.exec();
+
+    // Apply on OK (final confirmation)
+    if (result == QDialog::Accepted) {
+        applyProperties();
+    }
 }
