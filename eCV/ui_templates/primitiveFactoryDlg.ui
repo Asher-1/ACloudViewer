@@ -943,7 +943,7 @@
      <widget class="QWidget" name="coordinateSystemTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/others/pqAxes.png</normaloff>:/Resources/images/others/pqAxes.png</iconset>
+        <normaloff>:/Resources/images/svg/pqAxes.png</normaloff>:/Resources/images/svg/pqAxes.png</iconset>
       </attribute>
       <attribute name="title">
        <string>Coordinate System</string>

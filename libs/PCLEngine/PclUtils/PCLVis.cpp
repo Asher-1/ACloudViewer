@@ -48,8 +48,18 @@
 // VTK Extension
 #include <VTKExtensions/Core/vtkMemberFunctionCommand.h>
 #include <VTKExtensions/Views/vtkPVCenterAxesActor.h>
+
+// VTK Light
 #include <VTKExtensions/Widgets/CustomVtkCaptionWidget.h>
 #include <VTKExtensions/Widgets/vtkScalarBarWidgetCustom.h>
+#include <vtkLight.h>
+#include <vtkLightCollection.h>
+
+// VTK for View Properties
+#include <vtkCameraOrientationRepresentation.h>
+#include <vtkCameraOrientationWidget.h>
+#include <vtkCubeAxesActor.h>
+#include <vtkLightKit.h>
 
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 #include "VTKExtensions/InteractionStyle/vtkPVTrackballMultiRotate.h"
@@ -133,7 +143,8 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>
       m_actorPickingEnabled(false),
       m_autoUpdateCameraPos(false),
       texture_render_manager_(
-              std::make_unique<renders::TextureRenderManager>()) {
+              std::make_unique<renders::TextureRenderManager>()),
+      m_lightIntensity(1.0) {
     // disable warnings!
     getRenderWindow()->GlobalWarningDisplayOff();
 
@@ -167,7 +178,8 @@ PCLVis::PCLVis(vtkSmartPointer<vtkRenderer> ren,
       m_actorPickingEnabled(false),
       m_autoUpdateCameraPos(false),
       texture_render_manager_(
-              std::make_unique<renders::TextureRenderManager>()) {
+              std::make_unique<renders::TextureRenderManager>()),
+      m_lightIntensity(1.0) {
     // disable warnings!
     getRenderWindow()->GlobalWarningDisplayOff();
 
@@ -195,6 +207,25 @@ PCLVis::~PCLVis() {
         removeActorFromRenderer(this->m_centerAxes);
         // this->m_centerAxes->Delete();
     }
+
+    // Clean up View Properties actors
+    vtkRenderer* renderer = getCurrentRenderer();
+    if (renderer) {
+        // Remove all Data Axes Grids (one per object)
+        for (auto& pair : m_dataAxesGridMap) {
+            if (pair.second) {
+                renderer->RemoveActor(pair.second);
+            }
+        }
+        m_dataAxesGridMap.clear();
+    }
+
+    // Disable camera orientation widget
+    if (m_cameraOrientationWidget) {
+        m_cameraOrientationWidget->SetEnabled(0);
+    }
+
+    // vtkSmartPointer will automatically clean up the actors and widgets
 }
 
 void PCLVis::configCenterAxes() {
@@ -2047,18 +2078,27 @@ void PCLVis::removePointClouds(const std::string& viewId, int viewport) {
     if (contains(normalViewId)) {
         removePointCloud(normalViewId, viewport);
     }
+
+    // Remove associated Data Axes Grid
+    RemoveDataAxesGrid(viewId);
 }
 
 void PCLVis::removeShapes(const std::string& viewId, int viewport) {
     if (contains(viewId)) {
         removeShape(viewId, viewport);
     }
+
+    // Remove associated Data Axes Grid
+    RemoveDataAxesGrid(viewId);
 }
 
 void PCLVis::removeMesh(const std::string& viewId, int viewport) {
     if (contains(viewId)) {
         removePolygonMesh(viewId, viewport);
     }
+
+    // Remove associated Data Axes Grid
+    RemoveDataAxesGrid(viewId);
 }
 
 void PCLVis::removeText3D(const std::string& viewId, int viewport) {
@@ -3318,5 +3358,421 @@ QImage PCLVis::renderToImage(int zoomFactor,
 // ============================================================================
 // PBR Material Conversion Functions
 // ============================================================================
+
+// ============================================================================
+// View Properties Implementation (ParaView-compatible)
+// ============================================================================
+
+void PCLVis::setLightIntensity(double intensity) {
+    // Clamp intensity to valid range (0.0-1.0), matching ParaView
+    m_lightIntensity = std::max(0.0, std::min(1.0, intensity));
+
+    // Get the renderer
+    vtkRenderer* renderer = getCurrentRenderer();
+    if (!renderer) {
+        CVLog::Warning("[PCLVis] No renderer available for light control");
+        return;
+    }
+
+    // Remove all existing lights to start fresh
+    renderer->RemoveAllLights();
+
+    // Create a new headlight with the desired intensity
+    vtkSmartPointer<vtkLight> light = vtkSmartPointer<vtkLight>::New();
+    light->SetLightTypeToHeadlight();  // Headlight follows camera
+    light->SetIntensity(m_lightIntensity);
+    light->SetColor(1.0, 1.0, 1.0);  // White light
+    light->SwitchOn();               // Explicitly turn on the light
+    renderer->AddLight(light);
+
+    // Force lighting to be enabled on the renderer
+    renderer->LightFollowCameraOn();  // Ensure light follows camera
+
+    // Update all actors to use lighting (important for proper light response)
+    vtkActorCollection* actors = renderer->GetActors();
+    if (actors) {
+        actors->InitTraversal();
+        vtkActor* actor = actors->GetNextActor();
+        while (actor) {
+            vtkProperty* prop = actor->GetProperty();
+            if (prop) {
+                // Enable lighting for this actor
+                prop->SetLighting(true);
+                // Set material properties for better light response
+                prop->SetAmbient(0.3);   // Some ambient light
+                prop->SetDiffuse(0.7);   // Main diffuse reflection
+                prop->SetSpecular(0.2);  // Some specular highlights
+            }
+            actor = actors->GetNextActor();
+        }
+    }
+
+    // Trigger render update
+    vtkRenderWindow* win = getRenderWindow();
+    if (win) {
+        win->Render();
+    }
+}
+
+double PCLVis::getLightIntensity() const { return m_lightIntensity; }
+
+// ============================================================================
+// Axes Grid and Camera Orientation Widget (ParaView-compatible)
+// ============================================================================
+
+void PCLVis::SetDataAxesGridProperties(const std::string& viewID,
+                                       const AxesGridProperties& props) {
+    vtkRenderer* renderer = getCurrentRenderer();
+    if (!renderer) {
+        CVLog::Warning("[PCLVis] No renderer available for Data Axes Grid");
+        return;
+    }
+
+    // Get or create Data Axes Grid for this viewID
+    vtkSmartPointer<vtkCubeAxesActor>& dataAxesGrid = m_dataAxesGridMap[viewID];
+
+    if (!dataAxesGrid) {
+        dataAxesGrid = vtkSmartPointer<vtkCubeAxesActor>::New();
+
+        // Set camera reference
+        dataAxesGrid->SetCamera(renderer->GetActiveCamera());
+
+        // ============ ParaView Default Configuration ============
+
+        // Axes visibility
+        dataAxesGrid->SetXAxisVisibility(1);
+        dataAxesGrid->SetYAxisVisibility(1);
+        dataAxesGrid->SetZAxisVisibility(1);
+
+        // Tick marks visibility (ParaView default: true)
+        dataAxesGrid->SetXAxisTickVisibility(1);
+        dataAxesGrid->SetYAxisTickVisibility(1);
+        dataAxesGrid->SetZAxisTickVisibility(1);
+
+        // Minor tick marks visibility (ParaView default: true)
+        dataAxesGrid->SetXAxisMinorTickVisibility(1);
+        dataAxesGrid->SetYAxisMinorTickVisibility(1);
+        dataAxesGrid->SetZAxisMinorTickVisibility(1);
+
+        // Fly mode (ParaView uses outer edges for data axes)
+        dataAxesGrid->SetFlyModeToOuterEdges();
+
+        // Text properties (ParaView defaults: Arial, white color, Title: 18pt,
+        // Label: 14pt)
+        for (int i = 0; i < 3; i++) {
+            vtkTextProperty* titleProp = dataAxesGrid->GetTitleTextProperty(i);
+            if (titleProp) {
+                titleProp->SetColor(1.0, 1.0, 1.0);  // White
+                titleProp->SetFontFamilyToArial();
+                titleProp->SetFontSize(18);
+                titleProp->SetBold(0);
+                titleProp->SetItalic(0);
+            }
+
+            vtkTextProperty* labelProp = dataAxesGrid->GetLabelTextProperty(i);
+            if (labelProp) {
+                labelProp->SetColor(1.0, 1.0, 1.0);  // White
+                labelProp->SetFontFamilyToArial();
+                labelProp->SetFontSize(14);
+                titleProp->SetBold(0);
+                titleProp->SetItalic(0);
+            }
+        }
+
+        // Label format (ParaView default: "{:<#6.3g}")
+        dataAxesGrid->SetXLabelFormat("{:<#6.3g}");
+        dataAxesGrid->SetYLabelFormat("{:<#6.3g}");
+        dataAxesGrid->SetZLabelFormat("{:<#6.3g}");
+
+        // Add to renderer
+        renderer->AddActor(dataAxesGrid);
+    }
+
+    // ============ Apply All Properties from struct ============
+
+    // 1. Visibility
+    dataAxesGrid->SetVisibility(props.visible ? 1 : 0);
+
+    // 2. Axis Titles (Qt QString → std::string)
+    dataAxesGrid->SetXTitle(props.xTitle.toStdString().c_str());
+    dataAxesGrid->SetYTitle(props.yTitle.toStdString().c_str());
+    dataAxesGrid->SetZTitle(props.zTitle.toStdString().c_str());
+
+    // 3. Colors for all axes (CCVector3 [0-255] → double [0.0-1.0])
+    double colorR = props.color.x / 255.0;
+    double colorG = props.color.y / 255.0;
+    double colorB = props.color.z / 255.0;
+    dataAxesGrid->GetXAxesLinesProperty()->SetColor(colorR, colorG, colorB);
+    dataAxesGrid->GetYAxesLinesProperty()->SetColor(colorR, colorG, colorB);
+    dataAxesGrid->GetZAxesLinesProperty()->SetColor(colorR, colorG, colorB);
+
+    // 4. Line width
+    dataAxesGrid->GetXAxesLinesProperty()->SetLineWidth(props.lineWidth);
+    dataAxesGrid->GetYAxesLinesProperty()->SetLineWidth(props.lineWidth);
+    dataAxesGrid->GetZAxesLinesProperty()->SetLineWidth(props.lineWidth);
+
+    // 5. Opacity
+    dataAxesGrid->GetXAxesLinesProperty()->SetOpacity(props.opacity);
+    dataAxesGrid->GetYAxesLinesProperty()->SetOpacity(props.opacity);
+    dataAxesGrid->GetZAxesLinesProperty()->SetOpacity(props.opacity);
+
+    // 6. Labels visibility
+    if (props.showLabels) {
+        dataAxesGrid->XAxisLabelVisibilityOn();
+        dataAxesGrid->YAxisLabelVisibilityOn();
+        dataAxesGrid->ZAxisLabelVisibilityOn();
+    } else {
+        dataAxesGrid->XAxisLabelVisibilityOff();
+        dataAxesGrid->YAxisLabelVisibilityOff();
+        dataAxesGrid->ZAxisLabelVisibilityOff();
+    }
+
+    // 7. Grid lines visibility (ParaView-style)
+    if (props.showGrid) {
+        dataAxesGrid->DrawXGridlinesOn();
+        dataAxesGrid->DrawYGridlinesOn();
+        dataAxesGrid->DrawZGridlinesOn();
+    } else {
+        dataAxesGrid->DrawXGridlinesOff();
+        dataAxesGrid->DrawYGridlinesOff();
+        dataAxesGrid->DrawZGridlinesOff();
+        dataAxesGrid->DrawXInnerGridlinesOff();
+        dataAxesGrid->DrawYInnerGridlinesOff();
+        dataAxesGrid->DrawZInnerGridlinesOff();
+    }
+
+    // 8. Custom axis labels (ParaView-style, QList<QPair<double, QString>> →
+    // vtkStringArray)
+    if (props.xUseCustomLabels && !props.xCustomLabels.isEmpty()) {
+        vtkSmartPointer<vtkStringArray> xLabelsArray =
+                vtkSmartPointer<vtkStringArray>::New();
+        for (const auto& label : props.xCustomLabels) {
+            xLabelsArray->InsertNextValue(label.second.toStdString().c_str());
+        }
+        dataAxesGrid->SetAxisLabels(0, xLabelsArray);  // 0 = X axis
+    } else {
+        dataAxesGrid->SetAxisLabels(
+                0, nullptr);  // Use default auto-generated labels
+    }
+
+    if (props.yUseCustomLabels && !props.yCustomLabels.isEmpty()) {
+        vtkSmartPointer<vtkStringArray> yLabelsArray =
+                vtkSmartPointer<vtkStringArray>::New();
+        for (const auto& label : props.yCustomLabels) {
+            yLabelsArray->InsertNextValue(label.second.toStdString().c_str());
+        }
+        dataAxesGrid->SetAxisLabels(1, yLabelsArray);  // 1 = Y axis
+    } else {
+        dataAxesGrid->SetAxisLabels(1, nullptr);
+    }
+
+    if (props.zUseCustomLabels && !props.zCustomLabels.isEmpty()) {
+        vtkSmartPointer<vtkStringArray> zLabelsArray =
+                vtkSmartPointer<vtkStringArray>::New();
+        for (const auto& label : props.zCustomLabels) {
+            zLabelsArray->InsertNextValue(label.second.toStdString().c_str());
+        }
+        dataAxesGrid->SetAxisLabels(2, zLabelsArray);  // 2 = Z axis
+    } else {
+        dataAxesGrid->SetAxisLabels(2, nullptr);
+    }
+
+    // 9. Bounds (custom or from actor)
+    if (props.useCustomBounds) {
+        dataAxesGrid->SetBounds(props.xMin, props.xMax, props.yMin, props.yMax,
+                                props.zMin, props.zMax);
+    } else {
+        // Get bounds from the specific actor associated with this viewID
+        vtkActor* actor = getActorById(viewID);
+        if (actor) {
+            double bounds[6];
+            actor->GetBounds(bounds);
+            if (bounds[1] > bounds[0] && bounds[3] > bounds[2] &&
+                bounds[5] > bounds[4]) {
+                dataAxesGrid->SetBounds(bounds);
+            } else {
+                CVLog::Warning(
+                        "[PCLVis] Invalid bounds for Data Axes Grid, axes may "
+                        "not display correctly");
+            }
+        } else {
+            CVLog::Warning(QString("[PCLVis] No actor found for viewID: %1, "
+                                   "axes grid bounds not set")
+                                   .arg(QString::fromStdString(viewID)));
+        }
+    }
+
+    // Trigger update
+    vtkRenderWindow* win = getRenderWindow();
+    if (win) {
+        win->Render();
+    }
+}
+
+void PCLVis::GetDataAxesGridProperties(const std::string& viewID,
+                                       AxesGridProperties& props) const {
+    auto it = m_dataAxesGridMap.find(viewID);
+    if (it == m_dataAxesGridMap.end() || !it->second) {
+        // Return default values
+        props = AxesGridProperties();
+        return;
+    }
+
+    const vtkSmartPointer<vtkCubeAxesActor>& dataAxesGrid = it->second;
+
+    // Get all properties from VTK actor and convert to Qt types
+    props.visible = (dataAxesGrid->GetVisibility() != 0);
+
+    // Color: double [0.0-1.0] → CCVector3 [0-255]
+    double vtkColor[3];
+    dataAxesGrid->GetXAxesLinesProperty()->GetColor(vtkColor);
+    props.color = CCVector3(static_cast<float>(vtkColor[0] * 255.0),
+                            static_cast<float>(vtkColor[1] * 255.0),
+                            static_cast<float>(vtkColor[2] * 255.0));
+
+    props.lineWidth = dataAxesGrid->GetXAxesLinesProperty()->GetLineWidth();
+    props.spacing =
+            1.0;  // Conceptual - not directly supported by vtkCubeAxesActor
+    props.subdivisions = 10;  // Not directly supported by vtkCubeAxesActor
+    props.showLabels = (dataAxesGrid->GetXAxisLabelVisibility() != 0);
+    props.opacity = dataAxesGrid->GetXAxesLinesProperty()->GetOpacity();
+    props.showGrid = (dataAxesGrid->GetDrawXGridlines() != 0);
+
+    // Titles: const char* → QString
+    props.xTitle = QString::fromUtf8(dataAxesGrid->GetXTitle());
+    props.yTitle = QString::fromUtf8(dataAxesGrid->GetYTitle());
+    props.zTitle = QString::fromUtf8(dataAxesGrid->GetZTitle());
+
+    // Custom labels: We can't easily retrieve them from vtkCubeAxesActor,
+    // so we just check if custom labels are being used
+    props.xUseCustomLabels = (dataAxesGrid->GetAxisLabels(0) != nullptr);
+    props.yUseCustomLabels = (dataAxesGrid->GetAxisLabels(1) != nullptr);
+    props.zUseCustomLabels = (dataAxesGrid->GetAxisLabels(2) != nullptr);
+
+    // Custom bounds: We can get the bounds but can't determine if they were
+    // custom or from actor
+    double bounds[6];
+    dataAxesGrid->GetBounds(bounds);
+    props.xMin = bounds[0];
+    props.xMax = bounds[1];
+    props.yMin = bounds[2];
+    props.yMax = bounds[3];
+    props.zMin = bounds[4];
+    props.zMax = bounds[5];
+    props.useCustomBounds = false;  // Can't determine from VTK, assume false
+
+    // Note: Custom label values (xCustomLabels, yCustomLabels, zCustomLabels)
+    // cannot be retrieved from vtkCubeAxesActor API, they remain empty in the
+    // returned QList
+}
+
+// ============================================================================
+// Camera Orientation Widget (ParaView-compatible)
+// ============================================================================
+
+void PCLVis::ToggleCameraOrientationWidget(bool show) {
+    vtkRenderer* renderer = getCurrentRenderer();
+    vtkRenderWindowInteractor* interactor = getRenderWindowInteractor();
+
+    if (!renderer || !interactor) {
+        CVLog::Warning(
+                "[PCLVis] No renderer or interactor available for Camera "
+                "Orientation Widget");
+        return;
+    }
+
+    // Create Camera Orientation Widget if it doesn't exist (ParaView-style)
+    if (!m_cameraOrientationWidget) {
+        m_cameraOrientationWidget =
+                vtkSmartPointer<vtkCameraOrientationWidget>::New();
+
+        // Set parent renderer (the main 3D view renderer)
+        m_cameraOrientationWidget->SetParentRenderer(renderer);
+
+        // Set interactor for event handling
+        m_cameraOrientationWidget->SetInteractor(interactor);
+
+        // ParaView disables animation when using QVTKOpenGLWidget
+        m_cameraOrientationWidget->SetAnimate(false);
+
+        // Create default representation if not already created
+        m_cameraOrientationWidget->CreateDefaultRepresentation();
+
+        // Configure the default renderer (the widget's own renderer)
+        vtkRenderer* widgetRenderer =
+                m_cameraOrientationWidget->GetDefaultRenderer();
+        if (widgetRenderer) {
+            // ParaView settings: right upper corner, 20% size
+            widgetRenderer->SetViewport(0.8, 0.8, 1.0, 1.0);
+            widgetRenderer->SetLayer(1);  // Render on top
+            widgetRenderer->InteractiveOff();
+        }
+
+        // Configure representation
+        auto* rep = vtkCameraOrientationRepresentation::SafeDownCast(
+                m_cameraOrientationWidget->GetRepresentation());
+        if (rep) {
+            // ParaView default size
+            rep->SetSize(80, 80);
+
+            // ParaView default position: upper right
+            rep->AnchorToUpperRight();
+
+            // Set padding
+            int padding[2] = {10, 10};
+            rep->SetPadding(padding);
+
+            // Square resize to maintain aspect ratio
+            m_cameraOrientationWidget->SquareResize();
+        }
+
+        CVLog::Print(
+                "[PCLVis] Camera Orientation Widget created "
+                "(ParaView-compatible)");
+    }
+
+    // Update visibility and enabled state (ParaView behavior)
+    auto* rep = m_cameraOrientationWidget->GetRepresentation();
+    if (rep) {
+        rep->SetVisibility(show);
+
+        // ParaView: if we have interactor, also update enabled state
+        if (interactor) {
+            m_cameraOrientationWidget->SetEnabled(show ? 1 : 0);
+        }
+    }
+
+    // Trigger update
+    vtkRenderWindow* win = getRenderWindow();
+    if (win) {
+        win->Render();
+    }
+
+    CVLog::PrintDebug(QString("[PCLVis] Camera Orientation Widget: %1")
+                              .arg(show ? "ON" : "OFF"));
+}
+
+bool PCLVis::IsCameraOrientationWidgetShown() const {
+    if (!m_cameraOrientationWidget) {
+        return false;
+    }
+
+    auto* rep = m_cameraOrientationWidget->GetRepresentation();
+    return rep ? (rep->GetVisibility() != 0) : false;
+}
+
+void PCLVis::RemoveDataAxesGrid(const std::string& viewID) {
+    auto it = m_dataAxesGridMap.find(viewID);
+    if (it == m_dataAxesGridMap.end()) {
+        return;  // No Data Axes Grid for this viewID
+    }
+
+    vtkRenderer* renderer = getCurrentRenderer();
+    if (renderer && it->second) {
+        renderer->RemoveActor(it->second);
+    }
+
+    m_dataAxesGridMap.erase(it);
+}
 
 }  // namespace PclUtils

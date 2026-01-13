@@ -32,3 +32,6 @@ lxml_html_clean==0.4.0
 # Development tools (optional)
 sphinx-autobuild>=2021.3.14  # Auto-rebuild on file changes
 
+# Note: pandoc is installed as a system package (apt-get install pandoc)
+# Not as a Python package. The Python 'pandoc' package is deprecated.
+# nbsphinx requires the system pandoc binary, not a Python package.

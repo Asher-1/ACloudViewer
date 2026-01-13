@@ -1,533 +1,377 @@
 # ACloudViewer Website Deployment Guide
 
-## Quick Deployment Steps
+Complete guide for deploying the ACloudViewer website to GitHub Pages.
 
-### 1. Prerequisites
+## 📋 Overview
 
-> Ensure you have:
-- Cloned the ACloudViewer repository
-- Write permissions to the GitHub repository
-- Git properly configured
+ACloudViewer uses **GitHub Pages** to host:
+- Main website (homepage, downloads)
+- API documentation (Sphinx/Doxygen)
+- Download data (JSON)
 
-### 2. Deploy to GitHub Pages
+All content is deployed to the `gh-pages` branch and served from `https://asher-1.github.io/ACloudViewer/`.
 
-#### Step 1: Push Code to GitHub
+## 🏗️ Deployment Architecture
+
+```
+GitHub Repository (main branch)
+├── docs/
+│   ├── index.html          # Main website
+│   ├── styles.css
+│   ├── script.js
+│   └── images/
+│
+└── .github/workflows/
+    └── documentation.yml   # Automated deployment
+
+                ↓ GitHub Actions
+
+gh-pages Branch
+├── index.html              # Main website (root)
+├── downloads_data.json     # Download links
+├── images/
+├── scripts/
+├── styles/
+└── documentation/          # API docs (subdirectory)
+    ├── index.html
+    ├── python_api/
+    ├── cpp_api/
+    └── tutorial/
+```
+
+## 🚀 Quick Deployment
+
+### Prerequisites
+
+- Repository write access
+- Git configured
+- GitHub Pages enabled in repository settings
+
+### Deploy to GitHub Pages
 
 ```bash
-# Navigate to project root
+# 1. Navigate to project root
 cd /path/to/ACloudViewer
 
-# Add all changes
+# 2. Add changes
 git add docs/
 
-# Commit changes
-git commit -m "Add GitHub Pages website"
+# 3. Commit changes
+git commit -m "docs: update website"
 
-# Push to remote repository
+# 4. Push to GitHub
 git push origin main
 ```
 
-#### Step 2: Configure GitHub Pages
+GitHub Actions will automatically:
+1. Build documentation (if `documentation.yml` is triggered)
+2. Deploy main website to gh-pages root
+3. Deploy API docs to gh-pages/documentation/
+4. Publish to https://asher-1.github.io/ACloudViewer/
 
-> Follow these steps to enable GitHub Pages:
+## ⚙️ GitHub Pages Configuration
 
-1. Visit your GitHub repository: `https://github.com/Asher-1/ACloudViewer`
+### Step 1: Access Settings
 
-2. Click the **Settings** tab
+1. Go to: https://github.com/Asher-1/ACloudViewer/settings/pages
+2. Or click: **Settings** → **Pages** in repository
 
-3. Find **Pages** in the left sidebar
+### Step 2: Configure Source
 
-4. Under **Source** section:
-   - **Branch**: Select `main` (or `master`)
-   - **Folder**: Select `/docs`
-   - Click **Save**
+Under **Build and deployment**:
 
-5. Wait for deployment (usually 2-5 minutes)
-
-6. Once deployed, you'll see a green notification:
-   ```
-   Your site is published at https://asher-1.github.io/ACloudViewer/docs
-   ```
-
-### 3. Verify Deployment
-
-> Open your browser and visit:
-
-```
-https://asher-1.github.io/ACloudViewer/docs
-```
-
-> Check these features:
-
-- ✅ Homepage loads correctly
-- ✅ All images display properly
-- ✅ Navigation links work
-- ✅ Download buttons are functional
-- ✅ Mobile responsive design works
-- ✅ Search engines can access (robots.txt)
-
-## Detailed Deployment Guide
-
-### File Structure Overview
-
-```
-docs/
-├── index.html          # Main homepage
-├── styles.css          # Stylesheet
-├── script.js           # JavaScript
-├── .nojekyll          # GitHub Pages config
-├── 404.html           # Error page
-├── robots.txt         # SEO config
-├── sitemap.xml        # Site map
-└── images/            # Image assets
-```
-
-### Important Files
-
-#### `.nojekyll`
-
-> This file tells GitHub Pages not to process files with Jekyll
-
-**Purpose**:
-- Allows files starting with underscore
-- Preserves original directory structure
-- Faster deployment
-
-**Content**:
-```
-# Empty file - just needs to exist
-```
-
-#### `robots.txt`
-
-> Controls search engine crawler access
-
-**Content**:
-```txt
-User-agent: *
-Allow: /
-Sitemap: https://asher-1.github.io/ACloudViewer/docs/sitemap.xml
-```
-
-#### `sitemap.xml`
-
-> Helps search engines index your site
-
-**Content**:
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-        <loc>https://asher-1.github.io/ACloudViewer/docs</loc>
-        <lastmod>2026-01-10</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>1.0</priority>
-    </url>
-</urlset>
-```
-
-## Deployment Options
-
-### Option 1: GitHub Pages (Recommended)
-
-> **Advantages**:
-- ✅ Free hosting
-- ✅ Automatic HTTPS
-- ✅ CDN distribution
-- ✅ Easy setup
-- ✅ Custom domain support
-
-> **Limitations**:
-- ⚠️ Public repositories only (for free tier)
-- ⚠️ 1GB repository size limit
-- ⚠️ 100GB bandwidth per month
-- ⚠️ 10 builds per hour
-
-> **Best for**: Open source projects, documentation sites
-
-### Option 2: Netlify
-
-> **Setup steps**:
-
-1. Create a Netlify account
-2. Connect your GitHub repository
-3. Configure build settings:
-   - Build command: (none)
-   - Publish directory: `docs`
-4. Deploy
-
-> **Advantages**:
-- ✅ Instant deployments
-- ✅ Preview branches
-- ✅ Form handling
-- ✅ Serverless functions
-
-### Option 3: Vercel
-
-> **Setup steps**:
-
-1. Install Vercel CLI: `npm i -g vercel`
-2. Navigate to project: `cd ACloudViewer`
-3. Deploy: `vercel --prod`
-4. Follow prompts
-
-> **Advantages**:
-- ✅ Fast global CDN
-- ✅ Automatic HTTPS
-- ✅ Preview URLs
-- ✅ Analytics included
-
-### Option 4: Custom Server
-
-> **Requirements**:
-- Web server (Apache, Nginx)
-- SSL certificate
-- Domain name (optional)
-
-> **Nginx configuration example**:
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-    root /path/to/ACloudViewer/docs;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ =404;
-    }
-
-    # Cache static assets
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-}
-```
-
-## Continuous Deployment
-
-### GitHub Actions Workflow
-
-> Automate deployment with GitHub Actions:
-
-Create `.github/workflows/deploy.yml`:
-
-```yaml
-name: Deploy Website
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'docs/**'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-```
-
-### Automated Checks
-
-> Add pre-deployment validation:
-
-```yaml
-- name: Validate HTML
-  run: |
-    npm install -g html-validator-cli
-    html-validator docs/index.html
-
-- name: Check Links
-  run: |
-    npm install -g broken-link-checker
-    blc https://asher-1.github.io/ACloudViewer/docs -ro
-```
-
-## Custom Domain Setup
-
-### Step 1: Configure DNS
-
-> Add DNS records with your domain provider:
-
-```
-Type: CNAME
-Name: www (or your subdomain)
-Value: asher-1.github.io
-```
-
-### Step 2: Configure GitHub Pages
-
-> In GitHub repository settings:
-
-1. Go to **Settings** → **Pages**
-2. Under **Custom domain**, enter: `www.your-domain.com`
-3. Click **Save**
-4. Wait for DNS check to complete
-5. Enable **Enforce HTTPS** (after DNS propagates)
+1. **Source**: `Deploy from a branch`
+2. **Branch**: `gh-pages`
+3. **Folder**: `/ (root)`
+4. Click **Save**
 
 ### Step 3: Verify
 
-> Check domain configuration:
+Wait 1-2 minutes, then visit:
+- Main site: https://asher-1.github.io/ACloudViewer/
+- API docs: https://asher-1.github.io/ACloudViewer/documentation/
 
-```bash
-dig www.your-domain.com +short
-# Should return: asher-1.github.io
+## 📦 File Structure
+
+### Source Files (main branch)
+
+```
+docs/
+├── index.html              # Main website source
+├── styles.css              # Styles
+├── script.js               # JavaScript
+├── 404.html                # Error page
+├── robots.txt              # SEO config
+├── sitemap.xml             # Site map
+├── .nojekyll              # Disable Jekyll
+├── images/                 # Images
+└── source/                 # Sphinx source (for API docs)
 ```
 
-## Troubleshooting
+### Deployed Files (gh-pages branch)
 
-### Common Issues
+```
+gh-pages/
+├── index.html              # Main website
+├── downloads_data.json     # Download data (auto-generated)
+├── images/                 # Website images
+├── scripts/                # Website scripts
+├── styles/                 # Website styles
+└── documentation/          # API documentation (auto-generated)
+    ├── index.html
+    ├── _static/
+    ├── python_api/
+    ├── cpp_api/
+    └── tutorial/
+```
 
-#### Issue 1: 404 Error
+## 🤖 Automated Deployment
 
-> **Symptoms**: Page not found error
+### GitHub Actions Workflow
+
+**File**: `.github/workflows/documentation.yml`
+
+**Triggers**:
+- Push to `main` branch
+- Pull request (build only)
+- Manual workflow dispatch
+
+**Steps**:
+1. Build documentation in Docker
+2. Extract HTML files
+3. Deploy main website to gh-pages root
+4. Deploy API docs to gh-pages/documentation/
+5. Update downloads_data.json
+
+**Key Configuration**:
+```yaml
+- name: Deploy to GitHub Pages
+  uses: peaceiris/actions-gh-pages@v3
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    publish_dir: ./docs/_out/html
+    destination_dir: documentation
+    keep_files: true  # Preserve existing files
+```
+
+### Manual Trigger
+
+1. Go to: https://github.com/Asher-1/ACloudViewer/actions
+2. Select "Documentation" workflow
+3. Click "Run workflow"
+4. Choose branch (usually `main`)
+5. Click "Run workflow" button
+
+## 🔧 Manual Deployment
+
+### Deploy Main Website Only
+
+```bash
+# Build locally (if needed)
+cd docs
+# Make changes to index.html, styles.css, etc.
+
+# Deploy using gh-pages CLI tool
+npm install -g gh-pages
+
+# Deploy
+gh-pages -d docs -b gh-pages
+```
+
+### Deploy API Documentation Only
+
+```bash
+# Build documentation
+cd docs
+python make_docs.py --sphinx --doxygen
+
+# Deploy
+gh-pages -d _out/html -b gh-pages -e documentation
+```
+
+## 🔍 Verification
+
+### Check Deployment Status
+
+```bash
+# Check if site is accessible
+curl -I https://asher-1.github.io/ACloudViewer/
+
+# Check documentation
+curl -I https://asher-1.github.io/ACloudViewer/documentation/
+
+# View gh-pages branch
+git fetch origin gh-pages
+git log origin/gh-pages --oneline -10
+```
+
+### Verify Features
+
+- ✅ Homepage loads correctly
+- ✅ Images display properly
+- ✅ Navigation works
+- ✅ Download links functional
+- ✅ API documentation accessible
+- ✅ Mobile responsive
+- ✅ Search engines can crawl (robots.txt)
+
+## 🐛 Troubleshooting
+
+### Problem: 404 Error
+
+**Causes**:
+- GitHub Pages not enabled
+- Wrong branch/folder configured
+- Deployment in progress
 
 **Solutions**:
-1. Check GitHub Pages is enabled
-2. Verify source folder is `/docs`
-3. Ensure `index.html` exists in `docs/`
-4. Wait 2-5 minutes after enabling
-5. Clear browser cache
+```bash
+# 1. Check GitHub Pages settings
+# Visit: Settings → Pages → Verify configuration
 
-#### Issue 2: Styles Not Loading
+# 2. Check gh-pages branch exists
+git ls-remote origin gh-pages
 
-> **Symptoms**: Unstyled HTML page
+# 3. Wait 2-3 minutes for deployment
+# GitHub Pages needs time to build and deploy
+
+# 4. Clear browser cache
+# Hard refresh: Ctrl+F5 (Windows/Linux) or Cmd+Shift+R (macOS)
+```
+
+### Problem: Broken Links
+
+**Causes**:
+- Incorrect relative paths
+- Missing files
+- Case sensitivity issues
 
 **Solutions**:
-1. Check CSS file path: `<link href="styles.css">`
-2. Verify `styles.css` exists in same directory
-3. Check browser console for 404 errors
-4. Ensure no typos in file names
-5. Clear browser cache
+```bash
+# Check gh-pages branch structure
+git fetch origin gh-pages
+git ls-tree -r --name-only origin/gh-pages
 
-#### Issue 3: Images Not Displaying
+# Test links locally
+cd docs
+python3 -m http.server 8080
+# Visit http://localhost:8080
+```
 
-> **Symptoms**: Broken image icons
+### Problem: Documentation Not Updated
+
+**Causes**:
+- GitHub Actions failed
+- Wrong workflow triggered
+- Cache issues
 
 **Solutions**:
-1. Use relative paths: `images/photo.png`
-2. Check file names (case-sensitive)
-3. Verify images exist in `docs/images/`
-4. Check image format (PNG, JPG, GIF)
-5. Look for console errors
+```bash
+# 1. Check GitHub Actions status
+# Visit: https://github.com/Asher-1/ACloudViewer/actions
 
-#### Issue 4: Deployment Failed
+# 2. View workflow logs
+# Click on failed workflow → View details
 
-> **Symptoms**: GitHub Pages build failed
+# 3. Re-run workflow
+# Click "Re-run jobs" button
 
-**Solutions**:
-1. Check GitHub Actions logs
-2. Verify file structure is correct
-3. Look for special characters in file names
-4. Ensure `.nojekyll` file exists
-5. Check repository settings
-
-### Debugging Tools
-
-> **Browser Developer Tools**:
-
-```
-F12 (Windows/Linux) or Cmd+Option+I (Mac)
+# 4. Clear GitHub Pages cache
+# Settings → Pages → "Change branch" and back
 ```
 
-> **Useful tabs**:
-- **Console**: JavaScript errors
-- **Network**: Failed resource loads
-- **Elements**: Inspect HTML/CSS
+### Problem: Permission Errors
 
-> **Command Line Tools**:
+**Error**: `Resource not accessible by integration`
+
+**Solution**:
+```yaml
+# Ensure workflow has correct permissions
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+```
+
+## 📊 Monitoring
+
+### Deployment Statistics
 
 ```bash
-# Check HTML validity
-html-validator docs/index.html
+# View deployment history
+git log origin/gh-pages --oneline -20
 
-# Find broken links
-broken-link-checker https://asher-1.github.io/ACloudViewer/docs
+# Check last deployment date
+git log origin/gh-pages -1 --format="%ai"
 
-# Test mobile responsiveness
-lighthouse https://asher-1.github.io/ACloudViewer/docs --view
+# Count files in deployment
+git ls-tree -r --name-only origin/gh-pages | wc -l
 ```
 
-## Performance Optimization
+### Analytics
 
-### Image Optimization
+GitHub Pages doesn't provide built-in analytics. To add analytics:
 
-> **Tools**:
-- [TinyPNG](https://tinypng.com/) - Compress PNG/JPG
-- [ImageOptim](https://imageoptim.com/) - Mac image optimizer
-- [Squoosh](https://squoosh.app/) - Online image compressor
+1. **Google Analytics**: Add tracking code to `docs/index.html`
+2. **Plausible**: Lightweight, privacy-friendly alternative
+3. **GitHub Traffic**: Repository Insights → Traffic
 
-> **Best practices**:
-- Compress images before upload
-- Use appropriate formats (PNG for graphics, JPG for photos)
-- Consider WebP format for modern browsers
-- Use responsive images with `srcset`
+## 🔒 Security
 
-### Code Minification
+### Important Files
 
-> **CSS Minification**:
-
-```bash
-npx csso styles.css -o styles.min.css
+**`.nojekyll`**
+```
+# Empty file - tells GitHub Pages to skip Jekyll processing
+# Required for files starting with underscore
 ```
 
-> **JavaScript Minification**:
+**`robots.txt`**
+```
+User-agent: *
+Allow: /
 
-```bash
-npx terser script.js -o script.min.js
+Sitemap: https://asher-1.github.io/ACloudViewer/sitemap.xml
 ```
 
-> **HTML Minification**:
-
-```bash
-npx html-minifier docs/index.html -o docs/index.min.html
-```
-
-### Caching Strategy
-
-> **Set cache headers** (works on custom servers):
-
+**`404.html`**
 ```html
-<meta http-equiv="Cache-Control" content="public, max-age=31536000">
+<!-- Custom 404 error page -->
+<!-- Redirects users to homepage or shows helpful message -->
 ```
 
-### CDN Integration
+### Best Practices
 
-> **Use CDN for libraries**:
+- ✅ Never commit secrets to gh-pages branch
+- ✅ Use `keep_files: true` to prevent data loss
+- ✅ Review changes before deployment
+- ✅ Test locally before pushing
+- ✅ Monitor deployment logs
 
-```html
-<!-- Font Awesome from CDN -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+## 📚 Related Documentation
 
-<!-- jQuery from CDN (if needed) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-```
+- [GitHub Pages Setup Guide](../guides/GITHUB_PAGES_SETUP.md)
+- [Build Documentation Guide](../automation/BUILD_DOCUMENTATION.md)
+- [Download Automation Guide](../automation/README.md)
+- [GitHub Pages Official Docs](https://docs.github.com/en/pages)
+- [peaceiris/actions-gh-pages](https://github.com/peaceiris/actions-gh-pages)
 
-## Security Best Practices
+## ✅ Deployment Checklist
 
-### HTTPS Configuration
+Before deploying:
 
-> GitHub Pages automatically provides HTTPS
-
-- ✅ Automatic SSL certificate
-- ✅ Enforced HTTPS option
-- ✅ HTTP to HTTPS redirect
-
-### Content Security Policy
-
-> Add CSP headers:
-
-```html
-<meta http-equiv="Content-Security-Policy" 
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;">
-```
-
-### Security Headers
-
-> For custom servers, add headers:
-
-```nginx
-add_header X-Frame-Options "SAMEORIGIN" always;
-add_header X-Content-Type-Options "nosniff" always;
-add_header X-XSS-Protection "1; mode=block" always;
-add_header Referrer-Policy "no-referrer-when-downgrade" always;
-```
-
-## Monitoring & Analytics
-
-### Google Analytics Setup
-
-```html
-<!-- Add before </head> -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'GA_MEASUREMENT_ID');
-</script>
-```
-
-### Uptime Monitoring
-
-> **Recommended services**:
-- [UptimeRobot](https://uptimerobot.com/) - Free monitoring
-- [Pingdom](https://www.pingdom.com/) - Website monitoring
-- [StatusCake](https://www.statuscake.com/) - Uptime monitoring
-
-### Performance Monitoring
-
-> **Tools**:
-- [Google PageSpeed Insights](https://pagespeed.web.dev/)
-- [GTmetrix](https://gtmetrix.com/)
-- [WebPageTest](https://www.webpagetest.org/)
-
-## Backup & Recovery
-
-### Regular Backups
-
-> **Backup checklist**:
-- ✅ Git repository (automatic versioning)
-- ✅ Local copy of `docs/` folder
-- ✅ Image assets backup
-- ✅ Configuration files
-
-### Restore from Backup
-
-```bash
-# Clone repository
-git clone https://github.com/Asher-1/ACloudViewer.git
-
-# Checkout specific version
-git checkout <commit-hash>
-
-# Restore docs folder
-cp -r docs/ /path/to/restore/
-```
-
-## Maintenance Schedule
-
-### Weekly Tasks
-- ✅ Check for broken links
-- ✅ Review analytics data
-- ✅ Monitor uptime status
-
-### Monthly Tasks
-- ✅ Update dependencies
-- ✅ Review and update content
-- ✅ Check SEO performance
-- ✅ Test on different browsers
-
-### Quarterly Tasks
-- ✅ Major content updates
-- ✅ Design improvements
-- ✅ Performance optimization
-- ✅ Security audit
-
-## Support Resources
-
-> **Official Documentation**:
-- [GitHub Pages Docs](https://docs.github.com/en/pages)
-- [GitHub Actions Docs](https://docs.github.com/en/actions)
-
-> **Community**:
-- [GitHub Community Forum](https://github.community/)
-- [Stack Overflow](https://stackoverflow.com/questions/tagged/github-pages)
-
-> **Project Support**:
-- [Issues](https://github.com/Asher-1/ACloudViewer/issues)
-- [Discussions](https://github.com/Asher-1/ACloudViewer/discussions)
+- [ ] Test changes locally
+- [ ] Verify all links work
+- [ ] Check mobile responsiveness
+- [ ] Validate HTML/CSS
+- [ ] Test download links
+- [ ] Review GitHub Actions logs
+- [ ] Confirm gh-pages branch updated
+- [ ] Wait 2-3 minutes for GitHub Pages to rebuild
+- [ ] Verify live site
+- [ ] Check search engine accessibility
 
 ---
 
-> **Maintained by**: ACloudViewer Team  
-> **Last Updated**: 2026-01-10  
-> **Deployment Status**: ✅ Live at https://asher-1.github.io/ACloudViewer/docs
+**Last Updated**: 2026-01-13  
+**Maintained by**: ACloudViewer Team

@@ -1,77 +1,197 @@
 # Dockerfile for building ACloudViewer documentation
-# Based on Open3D's documentation build system
+# Simplified version - builds Python module once, then generates docs
+# 
+# Build: docker build -t acloudviewer-ci:docs -f docker/Dockerfile.docs .
+# Extract: docker run -v $(pwd):/opt/mount --rm acloudviewer-ci:docs \
+#          bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/"
 
 ARG BASE_IMAGE=ubuntu:22.04
 FROM ${BASE_IMAGE}
 
-# Use bash for script execution
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Build arguments
-ARG DEVELOPER_BUILD=ON
+ARG DEVELOPER_BUILD=OFF
 
-# Environment variables
+# Forward ARGs to ENV
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
+# Non-interactive notebook rendering
+ENV CI=true
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
+ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
+ENV ACloudViewer_DEV=/root
+ENV NPROC=4
 
-# Set working directory
-WORKDIR /root/ACloudViewer
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    # Basic tools
-    git \
-    curl \
-    wget \
+# ============================================================================
+# Install system dependencies (minimal for documentation)
+# ============================================================================
+
+# Install basic tools and Kitware repo for CMake
+RUN apt-get clean && apt-get update --fix-missing -y \
+    && apt-get install -y apt-utils software-properties-common tzdata gnupg ca-certificates curl \
+    && apt-get update --fix-missing -y
+
+# Install minimal build dependencies (documentation focused)
+RUN apt-get install --fix-missing -yq --no-install-recommends \
+    # Core build tools
     build-essential \
     cmake \
-    pkg-config \
-    # Python build dependencies
-    python3 \
-    python3-pip \
-    python3-dev \
-    # Doxygen and Graphviz for C++ API docs
-    doxygen \
-    graphviz \
-    # Additional tools
+    wget \
+    git  \
+    curl \
+    build-essential \
     ccache \
+    pkg-config \
+    zlib1g \
     zlib1g-dev \
     libssl-dev \
-    # Cleanup
- && rm -rf /var/lib/apt/lists/*
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
+    libglew-dev \
+    pkg-config \
+    ninja-build \
+    nasm \
+    flex \
+    fontconfig \
+    libopenni-dev \
+    libopenni2-dev \
+    libjsoncpp-dev \
+    libcgal-dev \
+    libusb-1.0-0-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN python3 -m pip install --upgrade pip setuptools wheel
+# Install Qt5 and set QT_BASE_DIR based on Ubuntu version
+RUN UBUNTU_CODENAME=$(lsb_release -c --short) && \
+    apt-get -y update && \
+    if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "noble" ]; then \
+        apt-get install -qy \
+          libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
+          libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
+          qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev && \
+        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"; \
+    else \
+        add-apt-repository ppa:beineri/opt-qt-5.15.2-$UBUNTU_CODENAME -y && \
+        apt-get -y update && \
+        apt-get -y install qt515base qt515imageformats qt515declarative qt515quickcontrols2 qt515svg qt515tools \
+            qt515translations qt515websockets qt515x11extras qt515xmlpatterns qt515networkauth-no-lgpl && \
+        QT_BASE_DIR="/opt/qt515"; \
+    fi && \
+    echo "QT_BASE_DIR=$QT_BASE_DIR" >> /root/.bashrc && \
+    echo "export QT_BASE_DIR=$QT_BASE_DIR" >> /root/.bashrc && \
+    ldconfig && rm -rf /var/lib/apt/lists/*
 
-# Copy documentation requirements first (for better caching)
-COPY docs/requirements.txt /root/ACloudViewer/docs/
+# Set Qt environment variables based on the detected QT_BASE_DIR
+ENV QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
+ENV QT_ROOT=${QT_BASE_DIR} \
+    QTDIR=${QT_BASE_DIR} \
+    QT_DIR=${QT_BASE_DIR} \
+    PATH=${QT_BASE_DIR}/bin:$PATH
 
-# Install Python documentation dependencies
-RUN pip3 install --no-cache-dir -r docs/requirements.txt
+# Checkout CloudViewer-ML torch271 branch
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b torch271 ${CLOUDVIEWER_ML_ROOT}
 
-# Copy the entire repository
-COPY . /root/ACloudViewer/
+# Always keep /root/ACloudViewer as the WORKDIR
+COPY util/ci_utils.sh util/install_deps_ubuntu.sh util/
+COPY python/requirements*.txt python/
+COPY docs/requirements.txt docs/
 
-# Build documentation
-RUN cd docs \
-    && if [ ! -f "source/conf.py" ]; then \
-        echo "Error: Sphinx not initialized. Run build_docs.sh first."; \
-        exit 1; \
-    fi \
-    # Build Sphinx and Doxygen documentation using make_docs.py (like Open3D)
-    && python3 make_docs.py --sphinx --doxygen \
-    # Create tarball
-    && tar -C _out/html -czf "/root/ACloudViewer/acloudviewer-$(git rev-parse --short HEAD)-docs.tar.gz" . \
-    && echo "✅ Documentation built successfully!"
+# Install documentation dependencies
+RUN echo "📦 Installing documentation dependencies..." \
+    && source util/ci_utils.sh \
+    && install_docs_dependencies "${CLOUDVIEWER_ML_ROOT}" \
+    && echo "✅ Documentation dependencies installed"
 
-# Verify build
+# Install minimal C++ dependencies (for Python module)
+RUN ./util/install_deps_ubuntu.sh assume-yes \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================================
+# Copy source and install dependencies
+# ============================================================================
+COPY . ${ACloudViewer_DEV}/ACloudViewer
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+
+# ============================================================================
+# Build documentation using ci_utils.sh (unified approach) ✅
+# ============================================================================
+# Benefits of reusing ci_utils.sh::build_docs:
+#   1. Single source of truth - same logic as CI/CD
+#   2. Automatic Python module detection (skip if already exists)
+#   3. Consistent error handling and output formatting
+#   4. Easier maintenance - update one place, affects all builds
+#   5. Includes all optimizations and improvements
+
+RUN echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" \
+    && echo "📚 Building Documentation (using ci_utils.sh::build_docs)" \
+    && echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" \
+    && echo "" \
+    && echo "✅ Using unified build function from util/ci_utils.sh" \
+    && echo "   This ensures 100% consistency with CI/CD builds" \
+    && echo "" \
+    && echo "⏱️  Build started at: $(date)" \
+    && echo "" \
+    # Source ci_utils.sh and run build_docs function
+    # This will:
+    #   1. Check if Python module exists (skip compilation if found)
+    #   2. Build Python module if needed (minimal config)
+    #   3. Generate documentation (Sphinx + Doxygen)
+    #   4. Verify output and display statistics
+    && cd ${ACloudViewer_DEV}/ACloudViewer \
+    && source util/ci_utils.sh \
+    && build_docs ${DEVELOPER_BUILD} \
+    && echo "" \
+    && echo "⏱️  Build finished at: $(date)" \
+    && echo ""
+
+# ============================================================================
+# Package documentation
+# ============================================================================
+
+RUN echo "📦 Packaging documentation for deployment..." \
+    && cd docs \
+    && tar -C _out/html -czf "/root/ACloudViewer/acloudviewer-$(git rev-parse --short HEAD 2>/dev/null || echo 'latest')-docs.tar.gz" . \
+    && ls -lh /root/ACloudViewer/acloudviewer-*-docs.tar.gz \
+    && echo "" \
+    && echo "✅ Documentation package created!" \
+    && echo "" \
+    && echo "📦 Package Details:" \
+    && echo "  - Name: acloudviewer-$(git rev-parse --short HEAD 2>/dev/null || echo 'latest')-docs.tar.gz" \
+    && echo "  - Size: $(du -sh /root/ACloudViewer/acloudviewer-*-docs.tar.gz | cut -f1)" \
+    && echo "  - Location: /root/ACloudViewer/" \
+    && echo "" \
+    && echo "🌐 Deployment Targets:" \
+    && echo "  - Main Website: https://asher-1.github.io/ACloudViewer/" \
+    && echo "  - API Documentation: https://asher-1.github.io/ACloudViewer/documentation/" \
+    && echo ""
+
+# Verify package
 RUN if [ ! -f /root/ACloudViewer/acloudviewer-*-docs.tar.gz ]; then \
-        echo "❌ Documentation build failed!"; \
+        echo "❌ Documentation packaging failed!"; \
         exit 1; \
     fi
 
-# Default command
-CMD ["echo", "ACloudViewer documentation Docker image ready"]
+# ============================================================================
+# Generate summary (documentation only, removed to fix Docker build)
+# ============================================================================
+# Summary file removed to avoid Dockerfile parsing issues with heredoc
+# The build information is already logged during the build process
 
+# ============================================================================
+# Final setup
+# ============================================================================
+
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+
+CMD ["bash", "-c", "echo '✅ ACloudViewer documentation Docker image ready!'; echo ''; echo '📦 Package:'; ls -lh /root/ACloudViewer/acloudviewer-*-docs.tar.gz; echo ''; echo '📚 Extract:'; echo '  docker run -v \\$(pwd):/opt/mount --rm acloudviewer-ci:docs \\'; echo '    cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/'; echo ''; echo '🌐 Serve:'; echo '  tar -xzf acloudviewer-*-docs.tar.gz -C ./docs-output/'; echo '  cd docs-output && python3 -m http.server 8080'"]

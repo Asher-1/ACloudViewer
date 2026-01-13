@@ -434,6 +434,99 @@ public:
         if (getQVtkWidget()) getQVtkWidget()->setScaleBarVisible(visible);
     }
 
+    //  ========== View Properties (ParaView-compatible) ==========
+    // Note: These are PCLDisplayTools-specific methods, not part of
+    // ecvDisplayTools interface They delegate to PCLVis for VTK-level
+    // implementation
+
+    /**
+     * @brief Set Data Axes Grid properties (ParaView-style)
+     * Each ccHObject has its own Data Axes Grid bound to its viewID
+     * @param viewID The view ID of the ccHObject
+     * @param visible Whether the grid is visible
+     * @param color RGB color of axes and grid lines
+     * @param lineWidth Width of grid lines
+     * @param spacing Spacing between grid lines
+     * @param subdivisions Number of subdivisions
+     * @param showLabels Whether to show axis labels
+     * @param opacity Opacity of axes and grid lines
+     */
+    void SetDataAxesGridProperties(const std::string& viewID,
+                                   bool visible,
+                                   const std::array<double, 3>& color,
+                                   double lineWidth,
+                                   double spacing,
+                                   int subdivisions,
+                                   bool showLabels,
+                                   double opacity);
+
+    /**
+     * @brief Get Data Axes Grid properties for a specific object
+     * @param viewID The view ID of the ccHObject
+     */
+    void GetDataAxesGridProperties(const std::string& viewID,
+                                   bool& visible,
+                                   std::array<double, 3>& color,
+                                   double& lineWidth,
+                                   double& spacing,
+                                   int& subdivisions,
+                                   bool& showLabels,
+                                   double& opacity) const;
+
+    /**
+     * @brief Toggle Camera Orientation Widget visibility (ParaView-style)
+     * @param show true to show, false to hide
+     */
+    void ToggleCameraOrientationWidget(bool show);
+
+    /**
+     * @brief Check if Camera Orientation Widget is shown
+     * @return true if visible, false otherwise
+     */
+    bool IsCameraOrientationWidgetShown() const;
+
+    // Override base class virtual methods
+    void toggleCameraOrientationWidget(bool show) override;
+    bool isCameraOrientationWidgetShown() const override;
+
+    /**
+     * @brief Set global light intensity (ParaView-style)
+     * Directly modifies the renderer's default light intensity.
+     * @param intensity Light intensity (0.0-1.0, default 1.0)
+     */
+    void setLightIntensity(double intensity) override;
+
+    /**
+     * @brief Get current Light Kit intensity
+     * @return Current key light intensity
+     */
+    double getLightIntensity() const override;
+
+    // ========================================================================
+    // Data Axes Grid (Unified Interface with AxesGridProperties)
+    // ========================================================================
+
+    /**
+     * @brief Set Data Axes Grid properties (Unified Interface)
+     * @param viewID The view ID of the ccHObject
+     * @param props All axes grid properties encapsulated in AxesGridProperties
+     * struct
+     * @param viewport Viewport ID (default: 0)
+     */
+    void setDataAxesGridProperties(const QString& viewID,
+                                   const AxesGridProperties& props,
+                                   int viewport = 0) override;
+
+    /**
+     * @brief Get Data Axes Grid properties (Unified Interface)
+     * @param viewID The view ID of the ccHObject
+     * @param props Output: current axes grid properties
+     * @param viewport Viewport ID (default: 0)
+     */
+    void getDataAxesGridProperties(const QString& viewID,
+                                   AxesGridProperties& props,
+                                   int viewport = 0) const override;
+
 private:
     void drawPointCloud(const CC_DRAW_CONTEXT& context, ccPointCloud* ecvCloud);
     void drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh);

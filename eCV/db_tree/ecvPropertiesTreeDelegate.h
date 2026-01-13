@@ -117,6 +117,17 @@ public:
         OBJECT_SELECTION_BOUNDARY_OPACITY,     // Opacity for boundary
         OBJECT_SELECTION_SHOW_TOOLTIPS,        // Checkbox for tooltip display
         OBJECT_SELECTION_MAX_ATTRIBUTES,  // Spinbox for max tooltip attributes
+        // View properties (ParaView-style)
+        OBJECT_VIEW_USE_LIGHT_KIT,           // Light Kit enable/disable
+        OBJECT_VIEW_LIGHT_KIT_INTENSITY,     // Light Kit intensity slider
+                                             // (0.0-2.0)
+        OBJECT_VIEW_DATA_AXES_GRID_VISIBLE,  // Show/hide data axes grid
+                                             // (ParaView-style)
+        OBJECT_VIEW_DATA_AXES_GRID_EDIT,     // Edit data axes grid properties
+        OBJECT_VIEW_CAMERA_ORIENTATION_WIDGET,  // Camera orientation widget
+                                                // visibility (toolbar only)
+        OBJECT_VIEW_CENTER_AXES_VISIBILITY,  // Center axes visibility (simple
+                                             // coordinate system)
         TREE_VIEW_HEADER,
     };
 
@@ -216,6 +227,11 @@ private:
     void coordinateSystemAxisWidthChanged(int);
     void trihedronsScaleChanged(double);
     void opacityChanged(int);  // Opacity slider value changed [0, 100]
+    void lightIntensityChanged(double);  // Light intensity changed [0.0, 1.0]
+    // View property slots (ParaView-style)
+    void dataAxesGridEditRequested();
+    void cameraOrientationWidgetChanged(bool);
+    void centerAxesVisibilityChanged(bool);
 
 protected:
     void addSeparator(QString title);
@@ -247,6 +263,7 @@ protected:
     void fillWithShifted(ccShiftedObject*);
     void fillWithCoordinateSystem(const ccCoordinateSystem*);
     void fillWithSelectionProperties();
+    void fillWithViewProperties();  // ParaView-style view properties
     template <class Type, int N, class ComponentType>
     void fillWithCCArray(ccArray<Type, N, ComponentType>*);
 
