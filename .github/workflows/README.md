@@ -1,38 +1,38 @@
 # GitHub Actions Workflows
 
-## 自动化工作流
+## Automation Workflows
 
 ### 📦 Update Website Download Links
 
-**文件**: `update-website-downloads.yml`
+**File**: `update-website-downloads.yml`
 
-**功能**: 自动从GitHub Releases获取最新版本信息并更新网站下载链接
+**Purpose**: Automatically fetch latest version information from GitHub Releases and update website download links
 
-**触发条件**:
-- 🚀 Release发布或编辑时
-- ⏰ 每天UTC 0点定时运行
-- 🖱️ 手动触发
+**Trigger Conditions**:
+- 🚀 On release published or edited
+- ⏰ Scheduled daily at 00:00 UTC
+- 🖱️ Manual workflow dispatch
 
-**工作流程**:
-1. Checkout代码
-2. 安装Python 3.11
-3. 运行 `scripts/update_download_links.py`
-4. 检测变更
-5. 自动提交并推送（如有变更）
+**Workflow Steps**:
+1. Checkout repository
+2. Setup Python 3.11
+3. Run `scripts/update_download_links.py`
+4. Check for changes
+5. Auto-commit and push (if changes detected)
 
-**查看运行状态**:
+**View Run Status**:
 https://github.com/Asher-1/ACloudViewer/actions/workflows/update-website-downloads.yml
 
-**手动运行**:
-1. 访问 [Actions](https://github.com/Asher-1/ACloudViewer/actions)
-2. 选择 "Update Website Download Links"
-3. 点击 "Run workflow"
+**Manual Run**:
+1. Visit [Actions](https://github.com/Asher-1/ACloudViewer/actions)
+2. Select "Update Website Download Links"
+3. Click "Run workflow"
 
-**相关文档**:
-- [完整自动化指南](../../docs/automation/README.md)
-- [脚本文档](../../docs/automation/scripts/README.md)
-- [文档目录](../../docs/README.md)
+**Related Documentation**:
+- [Complete Automation Guide](../../docs/automation/README.md)
+- [Script Documentation](../../docs/automation/scripts/README.md)
+- [Documentation Index](../../docs/README.md)
 
 ---
 
-**维护**: GitHub Actions (Automated)
+**Maintained by**: GitHub Actions (Automated)

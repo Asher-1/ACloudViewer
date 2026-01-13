@@ -30,6 +30,7 @@ class TextureRenderManager;
 
 // ECV_DB_LIB
 #include <ecvColorTypes.h>
+#include <ecvDisplayTools.h>  // For AxesGridProperties
 #include <ecvDrawContext.h>
 #include <ecvGenericVisualizer3D.h>
 #include <ecvHObject.h>
@@ -49,6 +50,9 @@ class vtkPropPicker;
 class vtkAbstractWidget;
 class vtkRenderWindow;
 class vtkMatrix4x4;
+class vtkLightKit;
+class vtkCubeAxesActor;
+class vtkCameraOrientationWidget;
 class ccGenericMesh;
 class ccPointCloud;
 class ccMesh;
@@ -72,6 +76,7 @@ class vtkCustomInteractorStyle;
 }  // namespace VTKExtensions
 
 namespace PclUtils {
+
 class QPCL_ENGINE_LIB_API PCLVis : public ecvGenericVisualizer3D,
                                    public pcl::visualization::PCLVisualizer {
     Q_OBJECT
@@ -697,6 +702,73 @@ protected:
 signals:
     void interactorPickedEvent(vtkActor* actor);
 
+public:
+    // ========== View Properties (ParaView-compatible) ==========
+
+    /**
+     * @brief Set global light intensity (ParaView-style)
+     *
+     * Directly modifies the renderer's default light intensity.
+     * This affects all objects in the scene uniformly.
+     *
+     * @param intensity Light intensity (0.0-1.0, default 1.0)
+     */
+    void setLightIntensity(double intensity);
+
+    /**
+     * @brief Get current global light intensity
+     * @return Current light intensity (0.0-1.0)
+     */
+    double getLightIntensity() const;
+
+    // ========================================================================
+    // Data Axes Grid (Unified Interface with DataAxesGridProperties struct)
+    // ========================================================================
+
+    /**
+     * @brief Set Data Axes Grid properties (Unified Interface)
+     *
+     * Data Axes Grid shows axes and grid lines around the data bounds.
+     * Uses vtkCubeAxesActor with FlyModeToOuterEdges.
+     * Each ccHObject has its own Data Axes Grid bound to its viewID.
+     *
+     * @param viewID The view ID of the ccHObject to bind the axes grid to
+     * @param props All axes grid properties encapsulated in AxesGridProperties
+     * struct
+     */
+    void SetDataAxesGridProperties(const std::string& viewID,
+                                   const AxesGridProperties& props);
+
+    /**
+     * @brief Get Data Axes Grid properties (Unified Interface)
+     * @param viewID The view ID of the ccHObject
+     * @param props Output: current axes grid properties
+     */
+    void GetDataAxesGridProperties(const std::string& viewID,
+                                   AxesGridProperties& props) const;
+
+    /**
+     * @brief Remove Data Axes Grid for a specific object
+     * @param viewID The view ID of the ccHObject
+     */
+    void RemoveDataAxesGrid(const std::string& viewID);
+
+    /**
+     * @brief Toggle Camera Orientation Widget visibility (ParaView-style)
+     *
+     * The Camera Orientation Widget provides an interactive 3D gizmo
+     * for controlling camera orientation. Uses vtkCameraOrientationWidget.
+     *
+     * @param show true to show, false to hide
+     */
+    void ToggleCameraOrientationWidget(bool show);
+
+    /**
+     * @brief Check if Camera Orientation Widget is shown
+     * @return true if visible, false otherwise
+     */
+    bool IsCameraOrientationWidgetShown() const;
+
 protected:
     vtkSmartPointer<vtkOrientationMarkerWidget> m_axes_widget;
     vtkSmartPointer<vtkPointPicker> m_point_picker;
@@ -709,6 +781,17 @@ protected:
     // Maps viewID -> ccHObject* to support multiple objects in the scene
     // Note: ccHObject is not a QObject, so we use raw pointers
     std::map<std::string, ccHObject*> m_sourceObjectMap;
+
+    // View Properties (ParaView-compatible)
+    double m_lightIntensity;  // Current light intensity (0.0-1.0)
+
+    // Axes Grid actors (ParaView-style)
+    // Data Axes Grid: one per object (viewID -> actor mapping)
+    // Data Axes Grid: per-object, bound to viewID
+    std::map<std::string, vtkSmartPointer<vtkCubeAxesActor>> m_dataAxesGridMap;
+
+    // Camera Orientation Widget (ParaView-style)
+    vtkSmartPointer<vtkCameraOrientationWidget> m_cameraOrientationWidget;
 };
 
 typedef std::shared_ptr<PCLVis> PCLVisPtr;

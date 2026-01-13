@@ -157,16 +157,17 @@ def parse_wheel_asset(asset_name: str) -> Optional[Dict]:
     data = match.groupdict()
     data['python_version'] = f"{data['python_major']}.{data['python_minor']}"
     
-    # Determine if it's CPU-only wheel
-    data['cuda'] = 'cpu' if 'cpu' in asset_name.lower() else 'cuda'
-    
-    # Parse platform and architecture
+    # Parse platform and architecture first
     platform_arch = data['platform_arch']
     if 'win_amd64' in platform_arch:
         data['platform'] = 'windows'
         data['arch'] = 'amd64'
+        # Determine if it's CPU-only wheel (Windows can have both)
+        data['cuda'] = 'cpu' if 'cpu' in asset_name.lower() else 'cuda'
     elif 'macosx' in platform_arch:
         data['platform'] = 'macos'
+        # macOS does NOT support CUDA - always CPU only
+        data['cuda'] = 'cpu'
         if 'universal2' in platform_arch:
             # Universal2 supports both arm64 and x86_64
             # We'll create entries for both architectures
@@ -178,6 +179,8 @@ def parse_wheel_asset(asset_name: str) -> Optional[Dict]:
     elif 'manylinux' in platform_arch:
         data['platform'] = 'linux'
         data['arch'] = 'amd64'
+        # Determine if it's CPU-only wheel (Linux can have both)
+        data['cuda'] = 'cpu' if 'cpu' in asset_name.lower() else 'cuda'
         
         # Map manylinux version to Ubuntu version
         # manylinux_2_27 = Ubuntu 18.04
