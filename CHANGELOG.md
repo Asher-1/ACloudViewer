@@ -35,6 +35,10 @@ v3.9.4-Beta (Asher) - 12/02/2025
     -   New entity: Disc
         -   the user can control the radius and the display resolution
         -   distances between a point cloud and a disc can be computed with 'Tools > Distances > Cloud/primitive dist'
+    -   Add View (Render view) property for ccObject
+    -   Add Light specular intensity adjustment support
+    -   Add AxesGrid support for ccObject
+    -   Add documentation support
 
 - Bug fixes:
     -   Fix code style

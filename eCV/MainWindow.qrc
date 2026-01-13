@@ -230,7 +230,8 @@
         <file>Resources/images/svg/pqRecentFile.png</file>
         <file>Resources/images/pqPickCenter@2x.png</file>
         <file>Resources/images/pqResetCenter@2x.png</file>
-        <file>Resources/images/pqShowOrientationAxes@2x.png</file>
+        <file>Resources/images/svg/pqShowOrientationAxes.svg</file>
+        <file>Resources/images/svg/pqAxes.png</file>
         <file>Resources/images/svg/pqZoomToData.svg</file>
         <file>Resources/images/pqZoomToBox@2x.png</file>
         <file>Resources/images/svg/pqSurfaceHoveringCell.svg</file>
@@ -290,7 +291,6 @@
         <file>Resources/images/icon/cloudviewer_128.png</file>
         <file>Resources/images/icon/logo_256.ico</file>
         <file>Resources/images/icon/logo_256.png</file>
-        <file>Resources/images/others/pqAxes.png</file>
         <file>Resources/images/pcl/show_axes.png</file>
         <file>Resources/images/pcl/rgb_depth.png</file>
         <file>Resources/images/pcl/normal_estimation.png</file>

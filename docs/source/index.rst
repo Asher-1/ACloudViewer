@@ -1,147 +1,105 @@
 .. ACloudViewer documentation master file
 
-ACloudViewer Documentation
-==========================
-
 .. image:: ../images/ACloudViewer_logo_horizontal.png
    :alt: ACloudViewer Logo
-   :align: center
    :width: 400px
+   :align: center
 
-|
+-----------
 
-**ACloudViewer** is a powerful open-source library for 3D point cloud and mesh processing, providing a comprehensive set of tools for visualization, registration, reconstruction, and machine learning applications.
+ACloudViewer: A Modern Library for 3D Point Cloud Processing
+=============================================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Getting Started
+**ACloudViewer** is a powerful open-source library for 3D point cloud and mesh processing, built on top of CloudCompare, Open3D, ParaView, and COLMAP.
 
-   introduction
-   installation
-   quickstart
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials
-
-   tutorials/basic
-   tutorials/visualization
-   tutorials/registration
-   tutorials/reconstruction
-   tutorials/machine_learning
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
-
-   api/cpp_api
-   api/python_api
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Developer Guide
-
-   building_from_source
-   contributing
-   docker
+.. note::
+   **Latest Release:** |version| | `Download <https://github.com/Asher-1/ACloudViewer/releases>`_ | `GitHub <https://github.com/Asher-1/ACloudViewer>`_
 
 .. toctree::
    :maxdepth: 1
-   :caption: Additional Resources
+   :caption: Getting Started
 
-   release_notes
-   faq
-   support
+   getting_started/introduction
+   getting_started/installation
+   getting_started/quickstart
+   getting_started/build_from_source
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorial
 
-Key Features
-------------
+   tutorial/index
+   tutorial/geometry/index
+   tutorial/visualization/index
+   tutorial/pipelines/index
+   tutorial/reconstruction/index
+   tutorial/ml/index
+   tutorial/advanced/index
 
-🎯 **Point Cloud Processing**
-   Advanced algorithms for point cloud filtering, sampling, and segmentation
+.. toctree::
+   :maxdepth: 1
+   :caption: Additional Tutorials
 
-📊 **3D Visualization**
-   Interactive visualization tools with support for multiple rendering backends
+   tutorials/basic_usage
+   tutorials/point_cloud_processing
+   tutorials/registration
+   tutorials/reconstruction
+   tutorials/visualization
 
-🔧 **Registration & Alignment**
-   ICP, GICP, and other state-of-the-art registration algorithms
+.. toctree::
+   :maxdepth: 1
+   :caption: Python API
 
-🏗️ **3D Reconstruction**
-   Surface reconstruction from point clouds using Poisson, Ball Pivoting, and more
+   python_api/cloudViewer.camera
+   python_api/cloudViewer.core
+   python_api/cloudViewer.data
+   python_api/cloudViewer.geometry
+   python_api/cloudViewer.io
+   python_api/cloudViewer.ml
+   python_api/cloudViewer.pipelines
+   python_api/cloudViewer.reconstruction
+   python_api/cloudViewer.t
+   python_api/cloudViewer.utility
+   python_api/cloudViewer.visualization
 
-🤖 **Machine Learning**
-   Integration with modern ML frameworks for 3D understanding
+.. toctree::
+   :maxdepth: 2
+   :caption: Python Examples
 
-🐳 **Docker Support**
-   Pre-configured Docker images for easy deployment
+   python_example/geometry/index
+   python_example/io/index
+   python_example/pipelines/index
+   python_example/visualization/index
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
 
-Quick Links
------------
+   examples/python_examples
+   examples/cpp_examples
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-* `GitHub Repository <https://github.com/Asher-1/ACloudViewer>`_
-* `Download Releases <https://asher-1.github.io/ACloudViewer/>`_
+.. toctree::
+   :maxdepth: 1
+   :caption: C++ API
 
+   cpp_api
 
-Installation
-------------
+.. toctree::
+   :maxdepth: 1
+   :caption: Developer Guide
 
-Quick install via pip::
+   developer/contributing
+   developer/docker
+   developer/ci_cd
 
-    # Download wheel from GitHub Releases
-    # https://github.com/Asher-1/ACloudViewer/releases
-    pip install cloudviewer-*.whl
+.. toctree::
+   :maxdepth: 1
+   :caption: Resources
 
-Or build from source::
+   resources/changelog
+   resources/faq
+   resources/support
 
-    git clone https://github.com/Asher-1/ACloudViewer.git
-    cd ACloudViewer
-    mkdir build && cd build
-    cmake ..
-    make -j$(nproc)
-    make install
-
-See :doc:`installation` for detailed instructions.
-
-
-Quick Example
--------------
-
-.. code-block:: python
-
-   import cloudViewer as cv3d
-   import numpy as np
-
-   # Create a point cloud
-   points = np.random.rand(1000, 3)
-   pcd = cv3d.geometry.PointCloud()
-   pcd.points = cv3d.utility.Vector3dVector(points)
-
-   # Visualize
-   cv3d.visualization.draw_geometries([pcd])
-
-
-Community & Support
--------------------
-
-* **Issues**: Report bugs on `GitHub Issues <https://github.com/Asher-1/ACloudViewer/issues>`_
-* **Discussions**: Join our `GitHub Discussions <https://github.com/Asher-1/ACloudViewer/discussions>`_
-* **Contributing**: See our :doc:`contributing` guide
-
-
-License
--------
-
-ACloudViewer is released under the MIT License. See the LICENSE file for details.
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+..
+   Note: Python API and Examples sections will be auto-generated from docstrings
+   when Python bindings include proper documentation.

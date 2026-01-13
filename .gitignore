@@ -224,7 +224,13 @@ docs/tutorial/**/*.json
 docs/_out/
 docs/python_api/
 docs/Doxyfile
+docs/html
 docs/getting_started.rst
+docs/doxygen/
+docs/doxygen/html/
+docs/doxygen/xml/
+docs/_out/
+docs/_build_cmake/
 /docker_files/
 /docker_cache/
 

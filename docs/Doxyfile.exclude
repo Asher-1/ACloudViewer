@@ -1,0 +1,35 @@
+# Doxygen Exclude Patterns
+# Files that cause XML parsing errors or should not be documented
+
+# VLFeat library (third-party, causes XML errors)
+*/VLFeat/*
+*/lib/VLFeat/*
+
+# Other problematic third-party code
+*/3rdparty/*
+*/external/*
+*/third_party/*
+
+# Build directories
+*/build/*
+*/build_*/*
+*/_build/*
+*/_out/*
+
+# Test files
+*/test/*
+*/tests/*
+*_test.cpp
+*_test.h
+
+# Generated files
+*_autogen/*
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+
+# Backup files
+*.bak
+*~
+*.swp
+

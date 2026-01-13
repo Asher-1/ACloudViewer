@@ -72,3 +72,28 @@ cd docker
 See `./docker_build.sh` for all available options.
 
 Note: only Ubuntu24.04+ support QT6
+```
+
+## Build Documentation Docker
+
+Build the documentation in Docker container:
+
+```bash
+# Build documentation Docker image
+docker build --network=host -t acloudviewer-ci:docs -f docker/Dockerfile.docs . > docker_docs_build.log 2>&1
+
+# Extract the generated documentation package
+docker run -v $(pwd):/opt/mount --rm acloudviewer-ci:docs \
+  bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/"
+
+# Extract and preview the documentation
+tar -xzf acloudviewer-*-docs.tar.gz -C ./docs-output/
+cd docs-output && python3 -m http.server 8080
+# Open http://localhost:8080 in your browser
+```
+
+The documentation Docker image:
+- Builds Python module (if not already built)
+- Generates C++ API documentation (Doxygen)
+- Generates Python API documentation (Sphinx)
+- Packages everything into a tarball for deployment
