@@ -1,224 +1,358 @@
-# ACloudViewer Website Documentation
+# ACloudViewer Documentation
 
-> This directory contains the official website and related documentation for ACloudViewer.
+> **Complete documentation system for ACloudViewer**, including website, tutorials, Python API, and C++ API.
 
-> 🌐 **Live Site**: https://asher-1.github.io/ACloudViewer/docs
+> 🌐 **Live Site**: https://asher-1.github.io/ACloudViewer/
 
 ## 📁 Directory Structure
 
 ```
 docs/
-├── index.html              # Main homepage
+├── index.html              # 🌐 Main website homepage
 ├── styles.css              # Website styles
 ├── script.js               # Website scripts
-├── .nojekyll              # GitHub Pages config
-├── 404.html               # 404 error page
-├── robots.txt             # Search engine config
-├── sitemap.xml            # Site map
+├── .nojekyll              # GitHub Pages configuration
+├── 404.html               # Custom 404 page
+├── robots.txt             # Search engine configuration
+├── sitemap.xml            # Site map for SEO
 │
-├── images/                # Image assets
+├── images/                # 🖼️  Website images
 │   ├── ACloudViewer_logo_horizontal.png
-│   ├── Annotaion.png
-│   ├── SemanticAnnotation.png
+│   ├── Annotation.png
 │   └── ...
 │
-├── gifs/                  # Animation assets
+├── gifs/                  # 🎬 Animated assets
 │   ├── visualizer_predictions.gif
 │   └── ...
 │
 ├── automation/            # 🤖 Automation system
-│   ├── README.md          # Complete automation guide
-│   ├── SUMMARY.md         # Automation system summary
-│   └── scripts/           # Automation scripts
-│       ├── update_download_links.py  # Download link updater
-│       ├── requirements.txt          # Python dependencies
-│       └── README.md                 # Script documentation
+│   ├── README.md          # Automation guide
+│   ├── SUMMARY.md         # System summary
+│   └── scripts/           # Update scripts
+│       ├── update_download_links.py
+│       └── requirements.txt
 │
 ├── guides/                # 📚 User guides
 │   ├── QUICKSTART.md      # Quick start guide
-│   ├── DOCUMENTATION_SETUP.md  # 📚 API documentation setup guide
-│   ├── cloudviewer-dependency.md  # Dependency documentation
-│   └── building/          # Build guides
+│   ├── cloudviewer-dependency.md
+│   └── building/          # Platform-specific build guides
 │       ├── compiling-cloudviewer-linux.md
 │       ├── compiling-cloudviewer-macos.md
 │       └── compiling-cloudviewer-windows.md
 │
-├── maintenance/           # 🔧 Maintenance docs
-│   ├── WEBSITE_GUIDE.md   # Website maintenance guide
-│   ├── DEPLOYMENT.md      # Deployment documentation
-│   ├── DOWNLOAD_LINKS.md  # Download link management
-│   ├── GALLERY_UPDATE.md  # Gallery update log
-│   └── GALLERY_ANNOTATION_UPDATE.md  # Gallery annotation update log
+├── maintenance/           # 🔧 Maintenance documentation
+│   ├── WEBSITE_GUIDE.md   # Website maintenance
+│   ├── DEPLOYMENT.md      # Deployment guide
+│   └── ...
 │
-├── build_docs.sh          # 🚀 Documentation build script
-├── Makefile              # Documentation build commands (generated)
-├── Doxyfile              # Doxygen configuration
-├── source/               # Sphinx documentation source (generated)
-└── html/                 # Generated API documentation (Sphinx output)
+├── scripts/               # 🧪 Testing scripts
+│   ├── test_doc_structure.sh       # Validate structure
+│   ├── test_github_pages_locally.sh # Test deployment
+│   └── README.md                    # Script documentation
+│
+├── Makefile              # 🔨 Main build orchestration
+├── make_docs.py          # 📝 Python build script
+├── requirements.txt      # 🐍 Python dependencies
+│
+├── Doxyfile.in           # ⚙️  Doxygen configuration (C++ API)
+├── Doxyfile.modules      # Module definitions
+│
+├── source/               # 📄 Sphinx documentation source
+│   ├── conf.py           # Sphinx configuration
+│   ├── index.rst         # Documentation entry point
+│   ├── tutorial/         # Tutorial notebooks
+│   ├── python_api/       # Python API docs
+│   └── cpp_api/          # C++ API docs
+│
+├── jupyter/              # 📓 Original Jupyter notebooks
+│   └── ...
+│
+└── _out/                 # 📦 Generated documentation
+    └── html/             # Final HTML output
 ```
 
 ## 🚀 Quick Start
 
-### Preview Website Locally
+### 📖 Build Documentation Locally
+
+```bash
+# Navigate to docs directory
+cd docs
+
+# Build all documentation (Python API, C++ API, tutorials)
+make docs
+
+# Preview locally
+python3 -m http.server 8000 --directory _out/html
+```
+
+Then visit http://localhost:8000
+
+### 🌐 Preview Main Website Only
 
 ```bash
 cd docs
 python3 -m http.server 8080
 ```
 
-> **Tip**: Then visit http://localhost:8080 to preview the website
+Then visit http://localhost:8080
 
-### 📚 Setup API Documentation System (NEW!)
+## 📚 Documentation System
 
-**Quick Start (Recommended - Use cloudViewer Environment)**:
+ACloudViewer uses a **comprehensive documentation system** combining:
+
+### 1. Main Website (`index.html`)
+- Project overview and introduction
+- Download links (automated)
+- Feature highlights
+- Gallery and examples
+
+### 2. Python API Documentation (Sphinx + autodoc)
+- 47+ modules documented
+- Auto-generated from Python bindings
+- Interactive examples
+- Search functionality
+
+### 3. C++ API Documentation (Doxygen)
+- Complete C++ API reference
+- Class hierarchies
+- Code examples
+- Module organization
+
+### 4. Tutorials (Jupyter Notebooks)
+- 30+ interactive tutorials
+- Visualization examples
+- Point cloud processing
+- 3D reconstruction
+
+## 🔨 Building Documentation
+
+### Prerequisites
 
 ```bash
-# Step 1: Activate cloudViewer environment
-conda activate cloudViewer
-# or if using venv:
-# source /path/to/cloudViewer/bin/activate
+# System dependencies (Ubuntu/Debian)
+sudo apt-get install doxygen graphviz pandoc
 
-# Step 2: Navigate to docs
-cd docs
+# System dependencies (macOS)
+brew install doxygen graphviz pandoc
 
-# Step 3: Install documentation dependencies
+# Python dependencies
 pip install -r requirements.txt
-
-# Step 4: Install Doxygen
-brew install doxygen graphviz  # macOS
-# or: sudo apt-get install doxygen graphviz  # Linux
-
-# Step 5: Build documentation
-./build_docs.sh
-
-# Step 6: Preview documentation
-python3 -m http.server 8000 --directory html
 ```
 
-> **📖 Documentation**:
-> - **Quick Start**: [DOCUMENTATION_QUICK_START.md](DOCUMENTATION_QUICK_START.md) - 5-minute guide
-> - **Complete Guide**: [guides/DOCUMENTATION_SETUP.md](guides/DOCUMENTATION_SETUP.md) - Full instructions
-
-### Run Automation Update
+### Build Commands
 
 ```bash
-cd /Users/asher/develop/code/github/ACloudViewer
-python3 docs/automation/scripts/update_download_links.py
+# 1. Full documentation build (recommended)
+cd docs
+make docs
+
+# 2. Build specific components
+make clean          # Clean generated files
+make doxygen        # C++ API only
+make sphinx         # Python API + tutorials only
+
+# 3. Using CI/CD build function
+source ../util/ci_utils.sh
+build_docs OFF      # Release mode
+# or
+build_docs ON       # Developer mode
 ```
 
-> **Note**: This script automatically fetches the latest version info from GitHub Releases and updates the website
+### Build Options
 
-## 📖 Documentation Navigation
+- **Developer mode** (`DEVELOPER_BUILD=ON`):
+  - Faster builds
+  - Skip some checks
+  - Use for local testing
+
+- **Release mode** (`DEVELOPER_BUILD=OFF`):
+  - Complete build
+  - All checks enabled
+  - Use for production
+
+## 🐳 Docker Build
+
+Build documentation in a clean Docker environment:
+
+```bash
+# Build Docker image with documentation
+docker build --network=host \
+    -t acloudviewer-ci:docs \
+    -f docker/Dockerfile.docs .
+
+# Extract documentation
+docker run -v $(pwd):/opt/mount --rm acloudviewer-ci:docs \
+    bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/"
+
+# Extract and preview
+tar -xzf acloudviewer-*-docs.tar.gz -C ./docs-output/
+cd docs-output && python3 -m http.server 8080
+```
+
+## 🧪 Testing
+
+### Test Documentation Structure
+
+```bash
+./scripts/test_doc_structure.sh
+```
+
+Validates:
+- Required files exist
+- Directory structure is correct
+- Configuration files are valid
+
+### Test GitHub Pages Deployment
+
+```bash
+# Full Docker test (recommended)
+./scripts/test_github_pages_locally.sh docker
+
+# Use existing build
+./scripts/test_github_pages_locally.sh local
+
+# Quick preview
+./scripts/test_github_pages_locally.sh simple
+```
+
+Tests:
+- Main website → `/`
+- API documentation → `/documentation/`
+- No file conflicts
+- Correct navigation
+
+## 🤖 Automation
+
+### Automated Download Links
+
+The website automatically updates download links when new releases are published:
+
+```bash
+# Manual trigger (if needed)
+python3 automation/scripts/update_download_links.py
+```
+
+### CI/CD Documentation Build
+
+Documentation is automatically built and deployed via GitHub Actions:
+
+- **Trigger**: Push to `main` branch
+- **Workflow**: `.github/workflows/documentation.yml`
+- **Deploy to**:
+  - Main website → `https://asher-1.github.io/ACloudViewer/`
+  - API docs → `https://asher-1.github.io/ACloudViewer/documentation/`
+
+## 📖 Documentation Sections
 
 ### For Users
 
-> If you're a user of ACloudViewer, start with these guides:
-
-- **[Quick Start](guides/QUICKSTART.md)** - Get started with ACloudViewer quickly
-- **[API Documentation Setup](guides/DOCUMENTATION_SETUP.md)** - 📚 Set up Sphinx documentation system
-- **[Build Guide](guides/building/)** - Compile from source code
-- **[Dependencies](guides/cloudviewer-dependency.md)** - Understand project dependencies
+- [Quick Start Guide](guides/QUICKSTART.md)
+- [Build from Source](guides/building/)
+- [Dependencies](guides/cloudviewer-dependency.md)
+- **Python API** → `/documentation/python_api/index.html`
+- **C++ API** → `/documentation/cpp_api/index.html`
+- **Tutorials** → `/documentation/tutorial/index.html`
 
 ### For Developers
 
-> If you want to understand or improve the automation system:
-
-- **[Automation System](automation/README.md)** - Learn about the automated website update system
-- **[Script Documentation](automation/scripts/README.md)** - Detailed script documentation
+- [CI Documentation Guide](guides/CI_DOCUMENTATION_GUIDE.md)
+- [Automation System](automation/README.md)
+- [Script Documentation](scripts/README.md)
+- **Build Functions** → `util/ci_utils.sh`
 
 ### For Maintainers
 
-> If you're responsible for website maintenance and deployment:
+- [Website Maintenance](maintenance/WEBSITE_GUIDE.md)
+- [Deployment Guide](maintenance/DEPLOYMENT.md)
+- [Download Link Management](maintenance/DOWNLOAD_LINKS.md)
 
-- **[Website Maintenance](maintenance/WEBSITE_GUIDE.md)** - Website management and maintenance
-- **[Deployment Guide](maintenance/DEPLOYMENT.md)** - Website deployment instructions
-- **[Download Link Management](maintenance/DOWNLOAD_LINKS.md)** - Manage download links
+## 🔧 Configuration Files
 
-## 📚 API Documentation System (NEW!)
+### Sphinx Configuration (`source/conf.py`)
 
-> ACloudViewer now supports **automatic API documentation generation**, similar to Open3D:
->
-> - ✅ **Sphinx-based**: Industry-standard documentation tool
-> - ✅ **Auto-generation**: From C++ (Doxygen) and Python code
-> - ✅ **Multi-version**: Separate docs for each release
-> - ✅ **Beautiful UI**: Read the Docs theme
-> - ✅ **Searchable**: Full-text search support
-> - ✅ **CI/CD Ready**: GitHub Actions integration
+Key settings:
+- `add_module_names = False` - Short names in navigation
+- `nbsphinx_codecell_lexer = 'python3'` - Jupyter syntax highlighting
+- Python path configuration for autodoc
+- Theme configuration (Furo)
 
-See [Documentation Setup Guide](guides/DOCUMENTATION_SETUP.md) for complete instructions
+### Doxygen Configuration (`Doxyfile.in`)
 
-### Quick Setup
+Key settings:
+- `HAVE_DOT = NO` - No Graphviz diagrams (following Open3D)
+- Modular input paths
+- XML output for Breathe integration
+- C++ standard: C++17
 
-```bash
-cd docs
-./build_docs.sh  # Build documentation (includes setup and build)
+### Makefile
+
+Orchestrates the entire build process:
+```makefile
+docs: doxygen sphinx  # Build everything
+doxygen:              # Build C++ API
+sphinx:               # Build Python API + tutorials
+clean:                # Clean generated files
 ```
 
-## 🤖 Automation System
+## 📊 Statistics
 
-> This website uses a **fully automated** update system:
-> 
-> - ✅ **Auto-triggered**: Updates automatically when releases are published
-> - ✅ **Scheduled checks**: Daily automatic version checks
-> - ✅ **Smart detection**: Automatically identifies Beta and stable versions
-> - ✅ **Zero maintenance**: No manual intervention required
+Current documentation includes:
+- **Python modules**: 47 (cloudViewer.core, geometry, io, pipelines, etc.)
+- **C++ modules**: 11 (core, 3rdparty, libs, plugins, eCV)
+- **Tutorials**: 30+ interactive Jupyter notebooks
+- **Pages**: 500+ HTML pages
+- **Build time**: ~30-40 minutes (full build)
 
-See [Automation System Documentation](automation/README.md) for details
+## 🔄 Workflow
 
-## 🔧 Maintenance
+```
+Development:
+  Edit source → cd docs && make docs → Preview locally
 
-### Update Website Content
+CI/CD:
+  Push to main → GitHub Actions → Deploy to GitHub Pages
 
-> Updating the website is a three-step process:
-
-1. Edit `index.html`, `styles.css`, or `script.js`
-2. Commit and push to GitHub
-3. GitHub Pages will deploy automatically
-
-### Add New Images
-
-> Steps to add image assets:
-
-1. Place images in `images/` or `gifs/` directory
-2. Reference with relative path in HTML: `images/your-image.png`
-3. Commit and push
-
-### Update Automation Scripts
-
-> When modifying automation scripts:
-
-1. Edit `automation/scripts/update_download_links.py`
-2. Test locally: `python3 docs/automation/scripts/update_download_links.py`
-3. Commit and push after verification
+Docker:
+  docker build → Extract tarball → Deploy
+```
 
 ## 📝 Contributing
 
-> Contributions are welcome! Follow these guidelines:
+### Updating Website Content
 
-- **Website improvements**: Edit HTML/CSS/JS files
-- **Documentation updates**: Edit Markdown files in `guides/` or `maintenance/`
-- **Automation enhancements**: Improve scripts in `automation/scripts/`
+1. Edit `index.html`, `styles.css`, or `script.js`
+2. Test locally: `python3 -m http.server 8080`
+3. Commit and push
 
-> **Before submitting a PR, please**:
-> 1. Test all changes locally
-> 2. Ensure all links are correct
-> 3. Verify automation scripts run properly
+### Adding Tutorials
+
+1. Create Jupyter notebook in `jupyter/`
+2. Add to `source/tutorial/` index
+3. Rebuild: `make docs`
+
+### Updating API Docs
+
+API documentation is **auto-generated** from code:
+- Python API: From Python bindings via Sphinx autodoc
+- C++ API: From C++ headers via Doxygen
+
+To update: modify the source code and rebuild.
 
 ## 🔗 Related Links
 
-> Important project links:
-
-- **GitHub Repository**: https://github.com/Asher-1/ACloudViewer
+- **Main Repository**: https://github.com/Asher-1/ACloudViewer
 - **Releases**: https://github.com/Asher-1/ACloudViewer/releases
 - **Issues**: https://github.com/Asher-1/ACloudViewer/issues
-- **Actions**: https://github.com/Asher-1/ACloudViewer/actions
+- **GitHub Actions**: https://github.com/Asher-1/ACloudViewer/actions
 
 ## 📄 License
 
-> This documentation follows the ACloudViewer project license.
+This documentation follows the ACloudViewer project license.
 
 ---
 
-> **Maintained by**: ACloudViewer Team  
-> **Last Updated**: 2026-01-10  
-> **Automation**: ✅ Fully Automated
+**Maintained by**: ACloudViewer Team  
+**Last Updated**: 2026-01-13  
+**Build System**: Sphinx + Doxygen + Makefile  
+**Automation**: ✅ Fully Automated

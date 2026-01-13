@@ -2,7 +2,6 @@
 # ----------------------------------------------------------------------------
 # -                       ACloudViewer Documentation Builder                 -
 # ----------------------------------------------------------------------------
-# Based on Open3D's documentation build system
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -27,8 +26,11 @@ Usage examples:
 """
 
 import argparse
+import importlib
+import inspect
 import multiprocessing
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -44,8 +46,30 @@ def _create_or_clear_dir(dir_path):
     print(f"Created directory {dir_path}")
 
 
+def _update_file(src, dst):
+    """Copy file if destination doesn't exist or is older."""
+    if Path(dst).exists():
+        src_stat = os.stat(src)
+        dst_stat = os.stat(dst)
+        if src_stat.st_mtime - dst_stat.st_mtime <= 0:
+            print(f"Copy skipped: {dst}")
+            return
+    print(f"Copy: {src}\n   -> {dst}")
+    shutil.copy2(src, dst)
+
+
 class DoxygenDocsBuilder:
-    """Build C++ API documentation using Doxygen."""
+    """
+    Build C++ API documentation using Doxygen.
+    
+    Following approach:
+    - Doxygen generates independent HTML documentation
+    - HTML is copied to Sphinx output directory for unified navigation
+    - XML is kept for optional Breathe integration (fallback)
+    - No forced dependency between C++ docs and Sphinx
+    
+    Reference: https://github.com/isl-org/Open3D/blob/main/docs/make_docs.py
+    """
 
     def __init__(self, html_output_dir):
         self.html_output_dir = html_output_dir
@@ -56,32 +80,342 @@ class DoxygenDocsBuilder:
             print("⚠️  Doxyfile not found, skipping C++ API documentation")
             return
 
-        print("🔨 Building C++ API documentation with Doxygen...")
+        print("=" * 70)
+        print("🔨 Building C++ API Documentation (Doxygen)")
+        print("=" * 70)
+        print()
+        
         doxygen_temp_dir = "doxygen"
         _create_or_clear_dir(doxygen_temp_dir)
 
         cmd = ["doxygen", "Doxyfile"]
-        print(f'Running: "{" ".join(cmd)}"')
+        print(f'Command: "{" ".join(cmd)}"')
+        print()
+        
         try:
             subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
+            print()
+            
+            # Copy mainpage images to Doxygen HTML output
+            # These images are referenced in mainpage.dox via \htmlonly blocks
+            # and won't be automatically copied by Doxygen
+            mainpage_images = [
+                'AbstractionLayers.png',
+                'MainUI.png',
+                'ICP-registration.png',
+                'Reconstruction.png',
+                'SemanticAnnotation.png'
+            ]
+            
+            doxygen_html = os.path.join("doxygen", "html")
+            if os.path.exists(doxygen_html):
+                print("📸 Copying mainpage images to Doxygen output:")
+                for img in mainpage_images:
+                    src = Path('images') / img
+                    dst = Path(doxygen_html) / img
+                    if src.exists():
+                        shutil.copy2(src, dst)
+                        print(f"  ✓ {img} ({src.stat().st_size // 1024} KB)")
+                    else:
+                        print(f"  ⚠️  {img} not found in images/")
+                print()
             
             # Copy Doxygen HTML output to final location
             output_path = os.path.join(self.html_output_dir, "html", "cpp_api")
-            if os.path.exists(os.path.join("doxygen", "html")):
-                shutil.copytree(
-                    os.path.join("doxygen", "html"),
-                    output_path,
-                )
-                print(f"✅ Doxygen docs generated at {output_path}/index.html")
+            
+            if os.path.exists(doxygen_html):
+                # Remove old cpp_api directory if it exists (from Sphinx)
+                if os.path.exists(output_path):
+                    print(f"🗑️  Removing old cpp_api directory: {output_path}")
+                    shutil.rmtree(output_path)
+                
+                print(f"📁 Copying Doxygen HTML: {doxygen_html} -> {output_path}")
+                shutil.copytree(doxygen_html, output_path)
+                
+                index_file = Path(output_path) / "index.html"
+                if index_file.exists():
+                    print(f"✅ C++ API docs: {index_file.as_uri()}")
+                    print()
+                    print("Documentation available at:")
+                    print(f"  - Relative: ../cpp_api/index.html")
+                    print(f"  - Absolute: {output_path}/index.html")
+                else:
+                    print("⚠️  index.html not found in Doxygen output")
             else:
-                print("⚠️  Doxygen HTML output not found")
+                print(f"⚠️  Doxygen HTML output not found: {doxygen_html}")
+            
+            # Note about XML output (optional, for Breathe fallback)
+            doxygen_xml = os.path.join("doxygen", "xml")
+            if os.path.exists(doxygen_xml):
+                print(f"ℹ️  Doxygen XML also generated at {doxygen_xml}/ (for optional Breathe use)")
+            
+            print()
+            print("=" * 70)
+                
         except subprocess.CalledProcessError as e:
-            print(f"❌ Doxygen build failed: {e}")
+            print()
+            print(f"❌ Doxygen build failed with exit code {e.returncode}")
+            print("=" * 70)
             raise
-        finally:
-            # Clean up temporary directory
-            if os.path.exists(doxygen_temp_dir):
-                shutil.rmtree(doxygen_temp_dir)
+        
+        # Note: We keep the doxygen/ directory for:
+        # 1. XML files (if Breathe integration is needed)
+        # 2. Debugging (inspect raw Doxygen output)
+        # It will be cleaned on next build by _create_or_clear_dir()
+
+
+class PyAPIDocsBuilder:
+    """
+    Generate Python API *.rst files, per (sub) module, per class, per function.
+    The file name is the full module name.
+
+    E.g. If output_dir == "source/python_api", the following files are generated:
+    source/python_api/cloudViewer.camera.rst
+    source/python_api/cloudViewer.camera.PinholeCameraIntrinsic.rst
+    ...
+    
+    """
+
+    def __init__(self, output_dir="source/python_api", input_dir="source/python_api_in"):
+        """
+        input_dir: The input dir for custom rst files that override the
+                   generated files.
+        """
+        self.output_dir = output_dir
+        self.input_dir = input_dir
+        self.module_names = PyAPIDocsBuilder._get_documented_module_names()
+
+    def generate_rst(self):
+        print(f"🔨 Generating *.rst Python API docs in directory: {self.output_dir}")
+        _create_or_clear_dir(self.output_dir)
+
+        for module_name in self.module_names:
+            try:
+                module = self._try_import_module(module_name)
+                self._generate_module_class_function_docs(module_name, module)
+            except Exception as e:
+                print(f"[Warning] Module {module_name} cannot be imported: {e}.")
+
+    @staticmethod
+    def _get_documented_module_names():
+        """Reads the modules of the python api from documented_modules.txt"""
+        module_names = []
+        with open("documented_modules.txt", "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                m = re.match(r"^(cloudViewer\..*)\s*$", line)
+                if m:
+                    module_names.append(m.group(1))
+        print("Documented modules:")
+        for module_name in module_names:
+            print("-", module_name)
+        return module_names
+
+    def _try_import_module(self, full_module_name):
+        """Returns the module object for the given module path"""
+        # Import cloudViewer root module
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "build_app", "lib", "Release", "Python", "cuda"))
+        try:
+            import pybind as cloudViewer
+            sys.modules['cloudViewer'] = cloudViewer
+        except ImportError:
+            import cloudViewer
+
+        try:
+            # Try to import directly
+            module = importlib.import_module(full_module_name)
+            return module
+        except ImportError:
+            # Traverse the module hierarchy
+            current_module = cloudViewer
+            for sub_module_name in full_module_name.split(".")[1:]:
+                current_module = getattr(current_module, sub_module_name)
+            return current_module
+
+    def _generate_function_doc(self, full_module_name, function_name, output_path):
+        out_string = ""
+        out_string += "%s.%s" % (full_module_name, function_name)
+        out_string += "\n" + "-" * len(out_string)
+        out_string += "\n\n" + ".. currentmodule:: %s" % full_module_name
+        out_string += "\n\n" + ".. autofunction:: %s" % function_name
+        out_string += "\n"
+
+        with open(output_path, "w") as f:
+            f.write(out_string)
+
+    def _generate_class_doc(self, full_module_name, class_name, output_path):
+        out_string = ""
+        out_string += "%s.%s" % (full_module_name, class_name)
+        out_string += "\n" + "-" * len(out_string)
+        out_string += "\n\n" + ".. currentmodule:: %s" % full_module_name
+        out_string += "\n\n" + ".. autoclass:: %s" % class_name
+        out_string += "\n    :members:"
+        out_string += "\n    :undoc-members:"
+        out_string += "\n    :inherited-members:"
+        out_string += "\n"
+
+        with open(output_path, "w") as f:
+            f.write(out_string)
+
+    def _generate_module_doc(self, full_module_name, class_names, function_names, sub_module_names, sub_module_doc_path):
+        class_names = sorted(class_names)
+        function_names = sorted(function_names)
+        out_string = ""
+        out_string += full_module_name
+        out_string += "\n" + "=" * len(full_module_name)
+        out_string += "\n\n" + ".. currentmodule:: %s" % full_module_name
+
+        if len(class_names) > 0:
+            out_string += "\n\n**Classes**"
+            out_string += "\n\n.. autosummary::"
+            out_string += "\n"
+            for class_name in class_names:
+                out_string += "\n    " + "%s" % (class_name,)
+            out_string += "\n"
+
+        if len(function_names) > 0:
+            out_string += "\n\n**Functions**"
+            out_string += "\n\n.. autosummary::"
+            out_string += "\n"
+            for function_name in function_names:
+                out_string += "\n    " + "%s" % (function_name,)
+            out_string += "\n"
+
+        if len(sub_module_names) > 0:
+            out_string += "\n\n**Modules**"
+            out_string += "\n\n.. autosummary::"
+            out_string += "\n"
+            for sub_module_name in sub_module_names:
+                out_string += "\n    " + "%s" % (sub_module_name,)
+            out_string += "\n"
+
+        obj_names = class_names + function_names + sub_module_names
+        if len(obj_names) > 0:
+            out_string += "\n\n.. toctree::"
+            out_string += "\n    :hidden:"
+            out_string += "\n"
+            for obj_name in obj_names:
+                out_string += "\n    %s <%s.%s>" % (
+                    obj_name,
+                    full_module_name,
+                    obj_name,
+                )
+            out_string += "\n"
+
+        with open(sub_module_doc_path, "w") as f:
+            f.write(out_string)
+
+    def _generate_module_class_function_docs(self, full_module_name, module):
+        print(f"  Generating docs for submodule: {full_module_name}")
+
+        # Class docs
+        class_names = [
+            obj[0]
+            for obj in inspect.getmembers(module)
+            if inspect.isclass(obj[1]) and not obj[0].startswith('_')
+        ]
+        for class_name in class_names:
+            file_name = "%s.%s.rst" % (full_module_name, class_name)
+            output_path = os.path.join(self.output_dir, file_name)
+            input_path = os.path.join(self.input_dir, file_name)
+            if os.path.isfile(input_path):
+                shutil.copyfile(input_path, output_path)
+                continue
+            self._generate_class_doc(full_module_name, class_name, output_path)
+
+        # Function docs
+        function_names = [
+            obj[0]
+            for obj in inspect.getmembers(module)
+            if inspect.isroutine(obj[1]) and not obj[0].startswith('_')
+        ]
+        for function_name in function_names:
+            file_name = "%s.%s.rst" % (full_module_name, function_name)
+            output_path = os.path.join(self.output_dir, file_name)
+            input_path = os.path.join(self.input_dir, file_name)
+            if os.path.isfile(input_path):
+                shutil.copyfile(input_path, output_path)
+                continue
+            self._generate_function_doc(full_module_name, function_name, output_path)
+
+        # Submodule docs
+        sub_module_names = [
+            obj[0]
+            for obj in inspect.getmembers(module)
+            if inspect.ismodule(obj[1]) and not obj[0].startswith('_')
+        ]
+        documented_sub_module_names = [
+            sub_module_name for sub_module_name in sub_module_names 
+            if "%s.%s" % (full_module_name, sub_module_name) in self.module_names
+        ]
+
+        # Path
+        sub_module_doc_path = os.path.join(self.output_dir, full_module_name + ".rst")
+        input_path = os.path.join(self.input_dir, full_module_name + ".rst")
+        if os.path.isfile(input_path):
+            shutil.copyfile(input_path, sub_module_doc_path)
+            return
+        self._generate_module_doc(
+            full_module_name,
+            class_names,
+            function_names,
+            documented_sub_module_names,
+            sub_module_doc_path,
+        )
+
+
+class JupyterDocsBuilder:
+    """Copy Jupyter notebooks from jupyter/ to source/tutorial/."""
+
+    def __init__(self, current_file_dir):
+        self.current_file_dir = current_file_dir
+
+    def run(self):
+        """Copy Jupyter notebooks to tutorial directories."""
+        print("📓 Copying Jupyter notebooks to tutorial directories...")
+        
+        nb_parent_src = Path(self.current_file_dir) / "jupyter"
+        nb_parent_dst = Path(self.current_file_dir) / "source" / "tutorial"
+        
+        if not nb_parent_src.exists():
+            print(f"⚠️  Jupyter directory not found: {nb_parent_src}")
+            return
+        
+        # Get all subdirectories in jupyter/
+        example_dirs = [
+            name for name in os.listdir(nb_parent_src)
+            if os.path.isdir(nb_parent_src / name)
+        ]
+        
+        copied_count = 0
+        for example_dir in example_dirs:
+            in_dir = nb_parent_src / example_dir
+            out_dir = nb_parent_dst / example_dir
+            out_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Copy all notebooks
+            for nb_in_path in in_dir.glob("*.ipynb"):
+                nb_out_path = out_dir / nb_in_path.name
+                _update_file(nb_in_path, nb_out_path)
+                copied_count += 1
+            
+            # Copy images directory if it exists
+            if (in_dir / "images").exists():
+                if (out_dir / "images").exists():
+                    shutil.rmtree(out_dir / "images")
+                print(f"Copy: {in_dir / 'images'}\n   -> {out_dir / 'images'}")
+                shutil.copytree(in_dir / "images", out_dir / "images")
+        
+        # Copy helper Python files
+        for py_file in ["cloudViewer_tutorial.py", "jupyter_run_all.py", "jupyter_strip_output.py"]:
+            src_file = nb_parent_src / py_file
+            if src_file.exists():
+                dst_file = nb_parent_dst / py_file
+                _update_file(src_file, dst_file)
+        
+        print(f"✅ Copied {copied_count} notebooks to tutorial directories")
 
 
 class SphinxDocsBuilder:
@@ -96,6 +430,16 @@ class SphinxDocsBuilder:
     def run(self):
         """Run Sphinx to build HTML documentation."""
         print("🔨 Building documentation with Sphinx...")
+        
+        # Ensure pandoc is in PATH (for nbsphinx)
+        try:
+            import pypandoc
+            pandoc_dir = os.path.dirname(pypandoc.get_pandoc_path())
+            if pandoc_dir not in os.environ.get('PATH', ''):
+                os.environ['PATH'] = f"{pandoc_dir}:{os.environ.get('PATH', '')}"
+                print(f"📓 Added pandoc to PATH: {pandoc_dir}")
+        except (ImportError, OSError):
+            print("⚠️  pypandoc not found, nbsphinx may fail without pandoc")
         
         build_dir = os.path.join(self.html_output_dir, "html")
         nproc = multiprocessing.cpu_count() if self.parallel else 1
@@ -199,19 +543,29 @@ def main():
     if args.clean or (args.sphinx or args.doxygen):
         _create_or_clear_dir(html_output_dir)
 
-    # Build Sphinx documentation
-    if args.sphinx:
-        sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release, args.parallel)
-        sdb.run()
-    else:
-        print("ℹ️  Sphinx build disabled, use --sphinx to enable")
-
-    # Build Doxygen documentation  
+    # Build Doxygen documentation FIRST (Sphinx depends on it)
     if args.doxygen:
         ddb = DoxygenDocsBuilder(html_output_dir)
         ddb.run()
     else:
         print("ℹ️  Doxygen build disabled, use --doxygen to enable")
+
+    # Generate Python API docs BEFORE Sphinx build
+    if args.sphinx:
+        pyapi = PyAPIDocsBuilder()
+        pyapi.generate_rst()
+
+    # Copy Jupyter notebooks BEFORE Sphinx build
+    if args.sphinx:
+        jdb = JupyterDocsBuilder(pwd)
+        jdb.run()
+
+    # Build Sphinx documentation AFTER Doxygen, PyAPI, and Jupyter copy
+    if args.sphinx:
+        sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release, args.parallel)
+        sdb.run()
+    else:
+        print("ℹ️  Sphinx build disabled, use --sphinx to enable")
 
     # If neither Sphinx nor Doxygen specified, show help
     if not args.sphinx and not args.doxygen:

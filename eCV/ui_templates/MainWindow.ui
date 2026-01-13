@@ -1026,6 +1026,7 @@ QTreeView::branch:open:has-children:has-siblings  {
    <addaction name="actionLockRotationAxis"/>
    <addaction name="action3DView"/>
    <addaction name="actionToggleOrientationMarker"/>
+   <addaction name="actionToggleCameraOrientationWidget"/>
    <addaction name="actionShowPivot"/>
    <addaction name="actionResetPivot"/>
    <addaction name="actionAutoPickPivot"/>
@@ -3580,13 +3581,34 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/pqShowOrientationAxes@2x.png</normaloff>:/Resources/images/pqShowOrientationAxes@2x.png</iconset>
+     <normaloff>:/Resources/images/svg/pqAxes.png</normaloff>:/Resources/images/svg/pqAxes.png</iconset>
    </property>
    <property name="text">
     <string>Toggle Orientation Marker</string>
    </property>
    <property name="statusTip">
     <string>Toggle Orientation Marker</string>
+   </property>
+  </action>
+  <action name="actionToggleCameraOrientationWidget">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqShowOrientationAxes.svg</normaloff>:/Resources/images/svg/pqShowOrientationAxes.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Camera Orientation Widget</string>
+   </property>
+   <property name="statusTip">
+    <string>Toggle Camera Orientation Widget (ParaView-style interactive)</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle Camera Orientation Widget</string>
    </property>
   </action>
   <action name="actionSemanticAnnotation">

@@ -1,0 +1,56 @@
+# List of cloudViewer modules to document
+# One module per line, format: cloudViewer.module_name
+# This file is used by PyAPIDocsBuilder in make_docs.py
+
+# Core modules
+cloudViewer.camera
+cloudViewer.core
+cloudViewer.core.cuda
+cloudViewer.core.kernel
+cloudViewer.core.nns
+cloudViewer.data
+cloudViewer.geometry
+cloudViewer.geometry.keypoint
+cloudViewer.io
+cloudViewer.io.rpc
+
+# Machine Learning modules
+cloudViewer.ml
+cloudViewer.ml.contrib
+
+# Pipeline modules
+cloudViewer.pipelines
+cloudViewer.pipelines.color_map
+cloudViewer.pipelines.integration
+cloudViewer.pipelines.odometry
+cloudViewer.pipelines.registration
+
+# Reconstruction modules (ACloudViewer specific)
+cloudViewer.reconstruction
+cloudViewer.reconstruction.database
+cloudViewer.reconstruction.feature
+cloudViewer.reconstruction.gui
+cloudViewer.reconstruction.image
+cloudViewer.reconstruction.model
+cloudViewer.reconstruction.mvs
+cloudViewer.reconstruction.options
+cloudViewer.reconstruction.sfm
+cloudViewer.reconstruction.vocab_tree
+
+# Tensor-based modules
+cloudViewer.t
+cloudViewer.t.geometry
+cloudViewer.t.io
+cloudViewer.t.pipelines
+cloudViewer.t.pipelines.odometry
+cloudViewer.t.pipelines.registration
+cloudViewer.t.pipelines.registration.robust_kernel
+cloudViewer.t.pipelines.slac
+cloudViewer.t.pipelines.slam
+
+# Utility and visualization
+cloudViewer.utility
+cloudViewer.visualization
+cloudViewer.visualization.app
+cloudViewer.visualization.gui
+cloudViewer.visualization.rendering

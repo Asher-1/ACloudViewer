@@ -213,6 +213,7 @@ option(PREFER_OSX_HOMEBREW "Prefer Homebrew libs over frameworks"               
 option(BUILD_LIBREALSENSE "Build support for Intel RealSense camera"            OFF)
 option(USE_SYSTEM_LIBREALSENSE "Use system pre-installed librealsense"          OFF)
 option(BUILD_AZURE_KINECT "Build support for Azure Kinect sensor"               OFF)
+option(BUILD_DOCUMENTATION "Build documentation (Doxygen + Sphinx)"                OFF)
 
 # ML library options
 option(BUILD_TENSORFLOW_OPS "Build ops for Tensorflow"                          OFF)
@@ -483,9 +484,8 @@ endif ()
 
 # Set apps name
 set(MAIN_APP_NAME "ACloudViewer")
-if (BUILD_GUI)
-    set(CLOUDVIEWER_APP_NAME "CloudViewer")
-endif()
+# CloudViewer library name (always set, used regardless of BUILD_GUI)
+set(CLOUDVIEWER_APP_NAME "CloudViewer")
 if (BUILD_RECONSTRUCTION)
     set(COLMAP_APP_NAME "Colmap")
     # fix MSVC building issues about the same name of the input and output
@@ -798,6 +798,11 @@ endif ()
 
 # ACloudViewer app
 add_subdirectory(eCV)
+
+# Documentation (optional)
+if(BUILD_DOCUMENTATION)
+    add_subdirectory(docs)
+endif()
 
 # Install CMake configuration files
 install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${CloudViewer_INSTALL_CMAKE_DIR})

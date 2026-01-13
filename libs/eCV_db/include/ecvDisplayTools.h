@@ -43,6 +43,48 @@ class ecvGenericVisualizer;
 class ecvGenericVisualizer2D;
 class ecvGenericVisualizer3D;
 
+// ============================================================================
+// Axes Grid Properties Structure (ParaView-compatible)
+// ============================================================================
+
+/**
+ * @brief Data Axes Grid properties structure
+ * Encapsulates all properties for vtkCubeAxesActor configuration
+ */
+struct ECV_DB_LIB_API AxesGridProperties {
+    // Basic properties
+    bool visible = false;
+    CCVector3 color = CCVector3(255, 255, 255);  // White (RGB 0-255)
+    double lineWidth = 1.0;
+    double spacing = 1.0;
+    int subdivisions = 10;
+    bool showLabels = true;
+    double opacity = 1.0;
+
+    // Extended properties (ParaView-style)
+    bool showGrid = false;  // Show grid lines (default OFF like ParaView)
+    QString xTitle = "X-Axis";
+    QString yTitle = "Y-Axis";
+    QString zTitle = "Z-Axis";
+    bool xUseCustomLabels = false;
+    bool yUseCustomLabels = false;
+    bool zUseCustomLabels = false;
+    bool useCustomBounds = false;
+
+    // Custom labels (ParaView-style: value -> label string)
+    QList<QPair<double, QString>> xCustomLabels;
+    QList<QPair<double, QString>> yCustomLabels;
+    QList<QPair<double, QString>> zCustomLabels;
+
+    // Custom bounds (ParaView-style: explicit min/max for each axis)
+    double xMin = 0.0, xMax = 1.0;
+    double yMin = 0.0, yMax = 1.0;
+    double zMin = 0.0, zMax = 1.0;
+
+    // Constructor with defaults
+    AxesGridProperties() = default;
+};
+
 class ECV_DB_LIB_API ecvDisplayTools : public QObject,
                                        public ecvGenericDisplayTools {
     Q_OBJECT
@@ -457,6 +499,152 @@ public:  //! Draws the main 3D layer
     inline virtual bool orientationMarkerShown() {
         return false; /* do nothing */
     }
+
+    // ========================================================================
+    // ParaView-style Axes Grid Support (Unified Interface with
+    // AxesGridProperties)
+    // ========================================================================
+
+    /**
+     * @brief Set Data Axes Grid properties (Unified Interface)
+     * Each ccHObject has its own Data Axes Grid bound to its viewID.
+     *
+     * @param viewID The view ID of the ccHObject (empty string for current
+     * selected object)
+     * @param props All axes grid properties encapsulated in AxesGridProperties
+     * struct
+     * @param viewport Viewport ID (default: 0)
+     */
+    inline static void SetDataAxesGridProperties(
+            const QString& viewID,
+            const AxesGridProperties& props,
+            int viewport = 0) {
+        TheInstance()->setDataAxesGridProperties(viewID, props, viewport);
+        UpdateScreen();
+    }
+
+    /**
+     * @brief Set Data Axes Grid properties (Virtual interface for derived
+     * classes)
+     */
+    inline virtual void setDataAxesGridProperties(
+            const QString& viewID,
+            const AxesGridProperties& props,
+            int viewport = 0) { /* do nothing */ }
+
+    /**
+     * @brief Get Data Axes Grid properties (Unified Interface)
+     *
+     * @param viewID The view ID of the ccHObject
+     * @param props Output: current axes grid properties
+     * @param viewport Viewport ID (default: 0)
+     */
+    inline static void GetDataAxesGridProperties(const QString& viewID,
+                                                 AxesGridProperties& props,
+                                                 int viewport = 0) {
+        TheInstance()->getDataAxesGridProperties(viewID, props, viewport);
+    }
+
+    /**
+     * @brief Get Data Axes Grid properties (Virtual interface for derived
+     * classes)
+     */
+    inline virtual void getDataAxesGridProperties(const QString& viewID,
+                                                  AxesGridProperties& props,
+                                                  int viewport = 0) const {
+        // Default implementation
+        props = AxesGridProperties();
+    }
+
+    /// Enable/disable view axes grid (aligned with camera/view)
+    inline static void SetViewAxesGridVisible(bool visible, int viewport = 0) {
+        TheInstance()->setViewAxesGridVisible(visible, viewport);
+        UpdateScreen();
+    }
+    inline virtual void setViewAxesGridVisible(
+            bool visible, int viewport = 0) { /* do nothing */ }
+
+    /// Configure view axes grid properties
+    inline static void SetViewAxesGridProperties(bool visible,
+                                                 const CCVector3& color,
+                                                 double lineWidth,
+                                                 double spacing,
+                                                 int subdivisions,
+                                                 bool showLabels,
+                                                 double opacity,
+                                                 int viewport = 0) {
+        TheInstance()->setViewAxesGridProperties(visible, color, lineWidth,
+                                                 spacing, subdivisions,
+                                                 showLabels, opacity, viewport);
+        UpdateScreen();
+    }
+    inline virtual void setViewAxesGridProperties(
+            bool visible,
+            const CCVector3& color,
+            double lineWidth,
+            double spacing,
+            int subdivisions,
+            bool showLabels,
+            double opacity,
+            int viewport = 0) { /* do nothing */ }
+
+    /// Get view axes grid properties
+    inline virtual void getViewAxesGridProperties(bool& visible,
+                                                  CCVector3& color,
+                                                  double& lineWidth,
+                                                  double& spacing,
+                                                  int& subdivisions,
+                                                  bool& showLabels,
+                                                  double& opacity,
+                                                  int viewport = 0) const {
+        // Default values
+        visible = false;
+        color = CCVector3(179, 179, 179);
+        lineWidth = 1.0;
+        spacing = 1.0;
+        subdivisions = 10;
+        showLabels = true;
+        opacity = 0.3;
+    }
+
+    /// Enable/disable center axes visualization
+    inline static void SetCenterAxesVisible(bool visible, int viewport = 0) {
+        TheInstance()->setCenterAxesVisible(visible, viewport);
+        UpdateScreen();
+    }
+    inline virtual void setCenterAxesVisible(
+            bool visible, int viewport = 0) { /* do nothing */ }
+
+    /// Toggle Camera Orientation Widget visibility (ParaView-style interactive
+    /// widget)
+    inline static void ToggleCameraOrientationWidget(bool show) {
+        TheInstance()->toggleCameraOrientationWidget(show);
+        UpdateScreen();
+    }
+    inline virtual void toggleCameraOrientationWidget(
+            bool show) { /* do nothing */ }
+
+    /// Check if Camera Orientation Widget is shown
+    inline static bool IsCameraOrientationWidgetShown() {
+        return TheInstance()->isCameraOrientationWidgetShown();
+    }
+    inline virtual bool isCameraOrientationWidgetShown() const { return false; }
+
+    /// Set global light intensity (ParaView-style, affects all scene objects)
+    /// Directly modifies the renderer's default light intensity
+    /// @param intensity Light intensity (0.0-1.0, default 1.0)
+    inline static void SetLightIntensity(double intensity) {
+        TheInstance()->setLightIntensity(intensity);
+        UpdateScreen();
+    }
+    inline virtual void setLightIntensity(double intensity) { /* do nothing */ }
+
+    /// Get current global light intensity
+    /// @return Current light intensity (0.0-1.0)
+    inline static double GetLightIntensity() {
+        return TheInstance()->getLightIntensity();
+    }
+    inline virtual double getLightIntensity() const { return 1.0; }
 
 private:
     static void Draw3D(CC_DRAW_CONTEXT& CONTEXT);

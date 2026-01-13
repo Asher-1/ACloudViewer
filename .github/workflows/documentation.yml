@@ -21,9 +21,11 @@ jobs:
   build-docs:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # For uploading artifacts and releases
-      pages: write     # For deploying to GitHub Pages
-      id-token: write  # For GitHub Pages deployment
+      contents: write        # For uploading artifacts and releases
+      pages: write           # For deploying to GitHub Pages
+      id-token: write        # For GitHub Pages deployment
+      pull-requests: write   # For commenting on pull requests
+      issues: write          # For creating issue comments
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     
@@ -32,6 +34,33 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for proper git operations
+      
+      - name: Setup Python for download data generation
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Generate downloads_data.json dynamically
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "📦 Generating downloads_data.json from latest releases..."
+          python3 docs/automation/scripts/scan_releases.py
+          
+          # Verify generation
+          if [ -f "docs/downloads_data.json" ]; then
+            echo "✅ downloads_data.json generated successfully"
+            echo "File size: $(du -h docs/downloads_data.json | cut -f1)"
+            echo "Versions found: $(jq '.version_metadata | length' docs/downloads_data.json)"
+            
+            # Show summary
+            echo ""
+            echo "📊 Download Data Summary:"
+            jq -r '.version_metadata | to_entries[] | "  - Version \(.key): \(.value.release_date)"' docs/downloads_data.json | head -5
+          else
+            echo "❌ Failed to generate downloads_data.json!"
+            exit 1
+          fi
       
       - name: Maximize build space
         run: |
@@ -49,31 +78,66 @@ jobs:
       - name: Build documentation Docker image
         run: |
           echo "🐳 Building documentation Docker image..."
+          echo "Build parameters:"
+          echo "  - BASE_IMAGE: ubuntu:22.04"
+          echo "  - DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
+          echo ""
+          
           docker build \
+            --progress=plain \
             --build-arg BASE_IMAGE=ubuntu:22.04 \
             --build-arg DEVELOPER_BUILD=${DEVELOPER_BUILD} \
             -t acloudviewer-ci:docs \
             -f docker/Dockerfile.docs \
             .
+          
+          echo ""
+          echo "✅ Docker image built successfully"
+          docker images | grep acloudviewer-ci
       
       - name: Extract documentation from Docker
         run: |
           echo "📦 Extracting documentation..."
+          
+          # Run Docker container to copy documentation archive
           docker run \
             -v "${GITHUB_WORKSPACE}:/opt/mount" \
             --rm acloudviewer-ci:docs \
             bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/ \
                   && chown $(id -u):$(id -g) /opt/mount/acloudviewer-*-docs.tar.gz"
           
+          # Verify extraction
+          if [ ! -f acloudviewer-*-docs.tar.gz ]; then
+            echo "❌ Documentation archive not found!"
+            exit 1
+          fi
+          
           # Rename to use GitHub SHA
           mv acloudviewer-*-docs.tar.gz acloudviewer-${GITHUB_SHA}-docs.tar.gz
           
+          echo "📋 Archive details:"
+          ls -lh acloudviewer-${GITHUB_SHA}-docs.tar.gz
+          
           # Extract for GitHub Pages deployment
+          echo ""
+          echo "📂 Extracting documentation for deployment..."
           mkdir -p docs-output
           tar -xzf acloudviewer-${GITHUB_SHA}-docs.tar.gz -C docs-output/
           
-          echo "✅ Documentation extracted"
-          ls -lh acloudviewer-${GITHUB_SHA}-docs.tar.gz
+          # Verify extraction
+          if [ ! -f "docs-output/index.html" ]; then
+            echo "⚠️  Warning: index.html not found in extracted documentation"
+          fi
+          
+          echo ""
+          echo "✅ Documentation extracted successfully"
+          echo ""
+          echo "📊 Extracted content:"
+          echo "  - Total files: $(find docs-output -type f | wc -l)"
+          echo "  - HTML files: $(find docs-output -name '*.html' | wc -l)"
+          echo "  - Total size: $(du -sh docs-output | cut -f1)"
+          echo ""
+          echo "📁 Top-level structure:"
           ls -la docs-output/
       
       - name: Upload documentation artifact
@@ -95,15 +159,115 @@ jobs:
             --clobber
           gh release view main-devel
       
-      - name: Deploy to GitHub Pages
+      - name: Prepare main website for deployment
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "📋 Preparing main website with generated downloads_data.json..."
+          echo ""
+          
+          # Create website deployment directory
+          mkdir -p website-deploy
+          
+          # Copy main website files (excluding build artifacts)
+          echo "Copying main website files..."
+          rsync -av --exclude='_out' --exclude='_build' --exclude='*.pyc' \
+                --exclude='__pycache__' --exclude='.pytest_cache' \
+                docs/ website-deploy/
+          
+          # Ensure downloads_data.json is included
+          if [ -f "docs/downloads_data.json" ]; then
+            echo "✅ downloads_data.json ready for deployment"
+            cp docs/downloads_data.json website-deploy/
+            echo "  Size: $(du -h docs/downloads_data.json | cut -f1)"
+            echo "  Versions: $(jq '.version_metadata | length' docs/downloads_data.json)"
+          else
+            echo "⚠️ downloads_data.json not found, using placeholder"
+            echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":{},"download_links":{}}' > website-deploy/downloads_data.json
+          fi
+          
+          # Create a README for the documentation subdirectory link
+          cat > website-deploy/DOCUMENTATION.md << 'DOCEOF'
+          # ACloudViewer Documentation
+          
+          Full API documentation is available at: [/documentation/](/documentation/)
+          
+          ## Documentation Structure
+          
+          - **Main Website**: Current page (project info, downloads, getting started)
+          - **API Documentation**: [/documentation/](/documentation/) (Python API, C++ API, Tutorials)
+          
+          ## Quick Links
+          
+          - [Python API Reference](/documentation/python_api/)
+          - [C++ API Reference](/documentation/cpp_api/)
+          - [Tutorials](/documentation/tutorial/)
+          DOCEOF
+          
+          echo ""
+          echo "✅ Main website prepared for deployment"
+          echo ""
+          echo "📊 Website deployment statistics:"
+          echo "  - Total files: $(find website-deploy -type f | wc -l)"
+          echo "  - Total size: $(du -sh website-deploy | cut -f1)"
+          echo ""
+          echo "📁 Top-level structure:"
+          ls -la website-deploy/ | head -20
+      
+      - name: Deploy main website to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./website-deploy
+          keep_files: true  # Keep existing documentation subdirectory
+          commit_message: "docs: deploy main website + downloads data from ${{ github.sha }}"
+          enable_jekyll: false  # Disable Jekyll processing
+      
+      - name: Deploy API documentation to GitHub Pages subdirectory
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs-output
-          destination_dir: docs/html
-          keep_files: true  # Keep existing files (downloads_data.json, etc.)
-          commit_message: "docs: deploy documentation from ${{ github.sha }}"
+          destination_dir: documentation
+          keep_files: true  # Keep main website files
+          commit_message: "docs: deploy API documentation from ${{ github.sha }}"
+          enable_jekyll: false  # Disable Jekyll processing
+      
+      - name: Verify deployment structure
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔍 Deployment Verification"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📋 Deployment Summary:"
+          echo "  ✅ Docker image built successfully"
+          echo "  ✅ Documentation extracted ($(du -sh docs-output | cut -f1))"
+          echo "  ✅ Main website prepared ($(du -sh website-deploy | cut -f1))"
+          echo "  ✅ Deployed to GitHub Pages"
+          echo ""
+          echo "🌐 Expected GitHub Pages structure:"
+          echo "  https://asher-1.github.io/ACloudViewer/"
+          echo "  ├── index.html (main website)"
+          echo "  ├── downloads_data.json"
+          echo "  ├── DOCUMENTATION.md"
+          echo "  └── documentation/ (API docs)"
+          echo "      ├── index.html"
+          echo "      ├── python_api/"
+          echo "      ├── cpp_api/"
+          echo "      └── tutorial/"
+          echo ""
+          echo "📚 Documentation URLs:"
+          echo "  - Main Website: https://asher-1.github.io/ACloudViewer/"
+          echo "  - API Documentation: https://asher-1.github.io/ACloudViewer/documentation/"
+          echo "  - Python API: https://asher-1.github.io/ACloudViewer/documentation/python_api/"
+          echo "  - C++ API: https://asher-1.github.io/ACloudViewer/documentation/cpp_api/"
+          echo "  - Tutorials: https://asher-1.github.io/ACloudViewer/documentation/tutorial/"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Deployment Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       
       - name: Comment on PR with documentation preview
         if: github.event_name == 'pull_request'
@@ -123,6 +287,6 @@ jobs:
                     `- **Download**: Available in workflow run artifacts\n` +
                     `- **Size**: ${fs.statSync('acloudviewer-${{ github.sha }}-docs.tar.gz').size / 1024 / 1024} MB\n\n` +
                     `After merge, documentation will be automatically deployed to:\n` +
-                    `https://asher-1.github.io/ACloudViewer/docs/html/`
+                    `https://asher-1.github.io/ACloudViewer/documentation/`
             });
 
