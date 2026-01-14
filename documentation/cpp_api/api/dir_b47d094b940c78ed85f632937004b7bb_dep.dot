@@ -1,0 +1,23 @@
+digraph "/root/ACloudViewer/plugins/core" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_38c8d24aef3972a7f87b834274e76e31 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="plugins" fontname="Helvetica", fontsize="10", URL="dir_38c8d24aef3972a7f87b834274e76e31.html"]
+  subgraph clusterdir_b47d094b940c78ed85f632937004b7bb {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_b47d094b940c78ed85f632937004b7bb.html"];
+    dir_b47d094b940c78ed85f632937004b7bb [shape=plaintext label="core"];
+  dir_9f1c91a719c6d2c352714b25e6ae45ee [shape=box label="IO" fillcolor="white" style="filled" color="red" URL="dir_9f1c91a719c6d2c352714b25e6ae45ee.html"];
+  dir_50f8496c947415eedd96ada30c013367 [shape=box label="Standard" fillcolor="white" style="filled" color="red" URL="dir_50f8496c947415eedd96ada30c013367.html"];
+  }
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_9f1c91a719c6d2c352714b25e6ae45ee [headlabel="1", labeldistance=1.5 headhref="dir_000002_000089.html"];
+  dir_50f8496c947415eedd96ada30c013367->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="271", labeldistance=1.5 headhref="dir_000047_000000.html"];
+  dir_50f8496c947415eedd96ada30c013367->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="466", labeldistance=1.5 headhref="dir_000047_000002.html"];
+  dir_50f8496c947415eedd96ada30c013367->dir_9f1c91a719c6d2c352714b25e6ae45ee [headlabel="3", labeldistance=1.5 headhref="dir_000047_000089.html"];
+  dir_9f1c91a719c6d2c352714b25e6ae45ee->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="50", labeldistance=1.5 headhref="dir_000089_000000.html"];
+  dir_9f1c91a719c6d2c352714b25e6ae45ee->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="159", labeldistance=1.5 headhref="dir_000089_000002.html"];
+}

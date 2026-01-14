@@ -1,0 +1,14 @@
+digraph "cloudViewer::geometry::KDTreeSearchParam"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="cloudViewer::geometry\l::KDTreeSearchParam",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Base class for KDTree search parameters."];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::geometry\l::KDTreeSearchParamHybrid",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1geometry_1_1KDTreeSearchParamHybrid.html",tooltip="KDTree search parameters for hybrid KNN and radius search."];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="cloudViewer::geometry\l::KDTreeSearchParamKNN",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1geometry_1_1KDTreeSearchParamKNN.html",tooltip="KDTree search parameters for pure KNN search."];
+  Node1 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="cloudViewer::geometry\l::KDTreeSearchParamRadius",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1geometry_1_1KDTreeSearchParamRadius.html",tooltip="KDTree search parameters for pure radius search."];
+}

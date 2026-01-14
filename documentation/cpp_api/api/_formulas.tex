@@ -1,0 +1,132 @@
+\documentclass{article}
+\usepackage{ifthen}
+\usepackage{epsfig}
+\usepackage[utf8]{inputenc}
+\usepackage{newunicodechar}
+  \newunicodechar{⁻}{${}^{-}$}% Superscript minus
+  \newunicodechar{²}{${}^{2}$}% Superscript two
+  \newunicodechar{³}{${}^{3}$}% Superscript three
+
+\pagestyle{empty}
+\begin{document}
+$(I_p - I_q)^2 + \lambda(D_p - (D_q)')^2$
+\pagebreak
+
+$ I_p $
+\pagebreak
+
+$ I_q $
+\pagebreak
+
+$ D_p $
+\pagebreak
+
+$ D_q $
+\pagebreak
+
+$mi$
+\pagebreak
+
+$ma$
+\pagebreak
+
+$s$
+\pagebreak
+
+$c$
+\pagebreak
+
+$mi = c + s (mi - c)$
+\pagebreak
+
+$ma = c + s (ma - c)$
+\pagebreak
+
+$image = scale * image + offset$
+\pagebreak
+
+$I = 0.299 * R + 0.587 * G + 0.114 * B$
+\pagebreak
+
+$V(r, c+1)-V(r, c)$
+\pagebreak
+
+$V(r+1, c)-V(r, c)$
+\pagebreak
+
+\begin{eqnarray*} \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X} || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) || \\{} \text{Hausdorff distance: } d_H(X,Y) &=& \max \left\{ \max_{i \in X} || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\} \\{} \text{Precision: } P(X,Y|d) &=& \frac{100}{|X|} \sum_{i \in X} || x_i - n(x_i, Y) || < d \\{} \text{Recall: } R(X,Y|d) &=& \frac{100}{|Y|} \sum_{i \in Y} || y_i - n(y_i, X) || < d \\{} \text{F-Score: } F(X,Y|d) &=& \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) + R(X,Y|d)} \end{eqnarray*}
+\pagebreak
+
+$J^T J$
+\pagebreak
+
+$J^T r$
+\pagebreak
+
+$[(V_p - V_q)^T N_p]^2$
+\pagebreak
+
+$ V_p $
+\pagebreak
+
+$ V_q $
+\pagebreak
+
+$ N_p $
+\pagebreak
+
+$(I_p - I_q)^2$
+\pagebreak
+
+$ |rmse_{i+1} - rmse_i|/rmse_i < relative rmse$
+\pagebreak
+
+$ |fitness_{i+1} - fitness_i|/fitness_i < relative fitness$
+\pagebreak
+
+$p$
+\pagebreak
+
+$s (p - c) + c$
+\pagebreak
+
+$R$
+\pagebreak
+
+$R (p - c) + c$
+\pagebreak
+
+\[ G(x,y) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}} \]
+\pagebreak
+
+\[ G(x,y) = G(x) * G(y) \]
+\pagebreak
+
+\[ G(x) = \frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{x^2}{2\sigma^2}}. \]
+\pagebreak
+
+\[ \Gamma(x) = \frac{ \sum_{n=0}^{N} q_n x^n }{ \Pi_{n=0}^{N} (x+n) } (x+5.5)^{x+0.5} e^{-(x+5.5)} \]
+\pagebreak
+
+\[ \log\Gamma(x) = \log\left( \sum_{n=0}^{N} q_n x^n \right) + (x+0.5) \log(x+5.5) - (x+5.5) - \sum_{n=0}^{N} \log(x+n) \]
+\pagebreak
+
+\[ \Gamma(x) = \sqrt{\frac{2\pi}{x}} \left( \frac{x}{e} \sqrt{ x\sinh(1/x) + \frac{1}{810x^6} } \right)^x \]
+\pagebreak
+
+\[ \log\Gamma(x) = 0.5\log(2\pi) + (x-0.5)\log(x) - x + 0.5x\log\left( x\sinh(1/x) + \frac{1}{810x^6} \right). \]
+\pagebreak
+
+\[ \mathrm{NFA} = NT \cdot B(n,k,p) \]
+\pagebreak
+
+\[ B(n,k,p) = \sum_{j=k}^n \left(\begin{array}{c}n\\j\end{array}\right) p^{j} (1-p)^{n-j} \]
+\pagebreak
+
+\[ \left(\begin{array}{c}n\\k\end{array}\right) = \frac{ \Gamma(n+1) }{ \Gamma(k+1) \cdot \Gamma(n-k+1) }. \]
+\pagebreak
+
+\[ A = \left(\begin{array}{cc} Ixx & Ixy \\ Ixy & Iyy \\ \end{array}\right) \]
+\pagebreak
+
+\end{document}

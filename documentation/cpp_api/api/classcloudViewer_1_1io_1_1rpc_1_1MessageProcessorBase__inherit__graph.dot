@@ -1,0 +1,12 @@
+digraph "cloudViewer::io::rpc::MessageProcessorBase"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="cloudViewer::io::rpc\l::MessageProcessorBase",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::io::rpc\l::DummyMessageProcessor",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1io_1_1rpc_1_1DummyMessageProcessor.html",tooltip=" "];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="cloudViewer::visualization\l::MessageProcessor",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1MessageProcessor.html",tooltip=" "];
+}

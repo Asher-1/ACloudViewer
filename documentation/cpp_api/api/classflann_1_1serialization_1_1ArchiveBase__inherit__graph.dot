@@ -1,0 +1,27 @@
+digraph "flann::serialization::ArchiveBase"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="flann::serialization\l::ArchiveBase",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="flann::serialization\l::InputArchive\< LoadArchive \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1serialization_1_1InputArchive.html",tooltip=" "];
+  Node2 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="flann::serialization\l::LoadArchive",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1serialization_1_1LoadArchive.html",tooltip=" "];
+  Node1 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="flann::serialization\l::OutputArchive\< SaveArchive \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1serialization_1_1OutputArchive.html",tooltip=" "];
+  Node4 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="flann::serialization\l::SaveArchive",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1serialization_1_1SaveArchive.html",tooltip=" "];
+  Node1 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="flann::serialization\l::OutputArchive\< SizeArchive \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1serialization_1_1OutputArchive.html",tooltip=" "];
+  Node6 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="flann::serialization\l::SizeArchive",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1serialization_1_1SizeArchive.html",tooltip=" "];
+  Node1 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="flann::serialization\l::InputArchive\< Archive \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1serialization_1_1InputArchive.html",tooltip=" "];
+  Node8 -> Node2 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< LoadArchive \>" ,fontname="Helvetica"];
+  Node1 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="flann::serialization\l::OutputArchive\< Archive \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1serialization_1_1OutputArchive.html",tooltip=" "];
+  Node9 -> Node4 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< SaveArchive \>" ,fontname="Helvetica"];
+  Node9 -> Node6 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< SizeArchive \>" ,fontname="Helvetica"];
+}

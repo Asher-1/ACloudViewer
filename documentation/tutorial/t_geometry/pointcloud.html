@@ -1,0 +1,1095 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="ICP registration" href="../t_pipelines/t_icp_registration.html" /><link rel="prev" title="Hash map" href="../core/hashmap.html" />
+
+    <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
+        <title>PointCloud - ACloudViewer 3.9.3 Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=47d5a741" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #2196F3;
+  --color-brand-content: #2196F3;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">ACloudViewer 3.9.3 Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../_static/ACloudViewer_logo_horizontal.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">ACloudViewer 3.9.3 Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_from_source.html">Building from Source</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Tutorial</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Tutorial</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/tensor.html">Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/hashmap.html">Hash map</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">PointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_pipelines/t_icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ml/index.html">Machine Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/basic_usage.html">Basic Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/point_cloud_processing.html">Point Cloud Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/visualization.html">Visualization</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python Examples</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../python_example/geometry/index.html">Geometry Examples</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of Geometry Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../python_example/io/index.html">I/O Examples</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of I/O Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../python_example/pipelines/index.html">Pipelines Examples</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle navigation of Pipelines Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../python_example/visualization/index.html">Visualization Examples</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle navigation of Visualization Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/visualization.html">Visualization</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/cpp_examples.html">C++ Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ API</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../cpp_api.html">C++ documentation</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle navigation of C++ documentation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../cpp_api/overview.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cpp_api/quickstart.html">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cpp_api/plugins.html">Plugin System</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../developer/contributing.html">Contributing to ACloudViewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../developer/docker.html">Docker Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../developer/ci_cd.html">CI/CD Pipeline</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/support.html">Getting Support</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This tutorial is generated from a Jupyter notebook that can be downloaded and run interactively.</p>
+<p>📓 <a class="reference external" href="https://github.com/Asher-1/ACloudViewer/tree/main/docs/jupyter">Download notebook</a></p>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cloudViewer</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cv3d</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">cloudViewer.core</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">o3c</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="c1"># Only needed for tutorial, monkey patches visualization</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">cloudViewer_tutorial</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cv3dtut</span>
+<span class="c1"># Change to True if you want to interact with the visualization windows</span>
+<span class="n">cv3dtut</span><span class="o">.</span><span class="n">interactive</span> <span class="o">=</span> <span class="ow">not</span> <span class="s2">&quot;CI&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+</pre></div>
+</div>
+</div>
+<section id="PointCloud">
+<h1>PointCloud<a class="headerlink" href="#PointCloud" title="Permalink to this heading">#</a></h1>
+<p>This tutorial demonstrates basic usage of a point cloud.</p>
+<section id="PointCloud-creation">
+<h2>PointCloud creation<a class="headerlink" href="#PointCloud-creation" title="Permalink to this heading">#</a></h2>
+<p>The first part of the tutorial shows how to construct a point cloud.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a empty point cloud on CPU.</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># To create a point cloud on CUDA, specify the device.</span>
+<span class="c1"># pcd = cv3d.t.geometry.PointCloud(o3c.Device(&quot;cuda:0&quot;))</span>
+
+<span class="c1"># Create a point cloud from open3d tensor with dtype of float32.</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="p">(</span><span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span>
+                                            <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a point cloud from open3d tensor with dtype of float64.</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="p">(</span><span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span>
+                                            <span class="n">o3c</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a point cloud from numpy array. The array will be copied.</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a point cloud from python list.</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Error creation. The point cloud must have shape of (N, 3).</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="p">(</span><span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error creation. The point cloud must have shape of (N, 3).&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">PointCloud</span></code> can be created on both CPU and GPU, and with different data types. The device of the point cloud will be the same as the device of the input tensor.</p>
+<p>Besides, <code class="docutils literal notranslate"><span class="pre">PointCloud</span></code> can be also created by python dict with multiple attributes.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">map_to_tensors</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="c1"># - The &quot;positions&quot; attribute must be specified.</span>
+<span class="c1"># - Common attributes include &quot;colors&quot; and &quot;normals&quot;.</span>
+<span class="c1"># - You may also use custom attributes, such as &quot;labels&quot;.</span>
+<span class="c1"># - The value of an attribute could be of any shape and dtype. Its correctness</span>
+<span class="c1">#   will only be checked when the attribute is used by some algorithms.</span>
+<span class="n">map_to_tensors</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">map_to_tensors</span><span class="p">[</span><span class="s2">&quot;normals&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">map_to_tensors</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="p">(</span><span class="n">map_to_tensors</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pcd</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Point-cloud-attributes-setter-and-getter">
+<h2>Point cloud attributes setter and getter<a class="headerlink" href="#Point-cloud-attributes-setter-and-getter" title="Permalink to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="p">(</span><span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span>
+                                            <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+<span class="c1"># Set attributes.</span>
+<span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">normals</span> <span class="o">=</span> <span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">colors</span> <span class="o">=</span> <span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Set by numpy array or python list.</span>
+<span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">normals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get attributes.</span>
+<span class="n">posisions</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">positions</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;posisions: &quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">posisions</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">labels</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;labels: &quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Conversion-between-tensor-and-legacy-point-cloud">
+<h2>Conversion between tensor and legacy point cloud<a class="headerlink" href="#Conversion-between-tensor-and-legacy-point-cloud" title="Permalink to this heading">#</a></h2>
+<p>PointCloud can be converted to/from legacy <code class="docutils literal notranslate"><span class="pre">cloudViewer.geometry.PointCloud</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">legacy_pcd</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">legacy_pcd</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">tensor_pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="o">.</span><span class="n">from_legacy</span><span class="p">(</span><span class="n">legacy_pcd</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tensor_pcd</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Convert from legacy point cloud with data type of float64.</span>
+<span class="n">tensor_pcd_f64</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="o">.</span><span class="n">from_legacy</span><span class="p">(</span><span class="n">legacy_pcd</span><span class="p">,</span> <span class="n">o3c</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tensor_pcd_f64</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Visualize-point-cloud">
+<h2>Visualize point cloud<a class="headerlink" href="#Visualize-point-cloud" title="Permalink to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Load a ply point cloud, print it, and render it&quot;</span><span class="p">)</span>
+<span class="n">ply_point_cloud</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">PLYPointCloud</span><span class="p">()</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="n">ply_point_cloud</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pcd</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.3412</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4257</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2125</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8795</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.6172</span><span class="p">,</span> <span class="mf">2.0475</span><span class="p">,</span> <span class="mf">1.532</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0694</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9768</span><span class="p">,</span> <span class="mf">0.2024</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">read_point_cloud</span></code> reads a point cloud from a file. It tries to decode the file based on the extension name. For a list of supported file types, refer to <a class="reference external" href="file_io.ipynb">File IO</a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">draw_geometries</span></code> visualizes the point cloud. Use a mouse/trackpad to see the geometry from different view points.</p>
+<p>It looks like a dense surface, but it is actually a point cloud rendered as surfels. The GUI supports various keyboard functions. For instance, the <code class="docutils literal notranslate"><span class="pre">-</span></code> key reduces the size of the points (surfels).</p>
+<div class="admonition note">
+<p class="admonition-title"><strong>Note:</strong></p>
+<p>Press the <code class="docutils literal notranslate"><span class="pre">H</span></code> key to print out a complete list of keyboard instructions for the GUI. For more information of the visualization GUI, refer to <a class="reference external" href="visualization.ipynb">Visualization</a> and <a class="reference external" href="../visualization/customized_visualization.rst">Customized visualization</a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title"><strong>Note:</strong></p>
+<p>On macOS, the GUI window may not receive keyboard events. In this case, try to launch Python with <code class="docutils literal notranslate"><span class="pre">pythonw</span></code> instead of <code class="docutils literal notranslate"><span class="pre">python</span></code>.</p>
+</div>
+</section>
+<section id="Downsampling">
+<h2>Downsampling<a class="headerlink" href="#Downsampling" title="Permalink to this heading">#</a></h2>
+<p>This section provides several downsamle methods of a point cloud. ### Voxel downsampling Voxel downsampling uses a regular voxel grid to create a uniformly downsampled point cloud from an input point cloud. It is often used as a pre-processing step for many point cloud processing tasks. The algorithm operates in two steps:</p>
+<ol class="arabic simple">
+<li><p>Points are bucketed into voxels.</p></li>
+<li><p>Each occupied voxel generates exactly one point by averaging all points inside.</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title"><strong>Note:</strong></p>
+<p>Currently, the method returns the voxel coordinates of the point cloud.</p>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downsample the point cloud with a voxel of 0.03&quot;</span><span class="p">)</span>
+<span class="n">downpcd</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">voxel_down_sample</span><span class="p">(</span><span class="n">voxel_size</span><span class="o">=</span><span class="mf">0.03</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">downpcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.3412</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4257</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2125</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8795</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.6172</span><span class="p">,</span> <span class="mf">2.0475</span><span class="p">,</span> <span class="mf">1.532</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0694</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9768</span><span class="p">,</span> <span class="mf">0.2024</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<section id="Farthest-point-downsampling">
+<h3>Farthest point downsampling<a class="headerlink" href="#Farthest-point-downsampling" title="Permalink to this heading">#</a></h3>
+<p>Farthest point sampling samples the point cloud by selecting the farthest point from the current selected point iteratively. It is used to sample the point cloud to a fixed number of points which holds the maximum geometrical information of the original point cloud.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downsample the point cloud by selecting 5000 farthest points.&quot;</span><span class="p">)</span>
+<span class="n">downpcd_farthest</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">farthest_point_down_sample</span><span class="p">(</span><span class="mi">5000</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">downpcd_farthest</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.3412</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4257</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2125</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8795</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.6172</span><span class="p">,</span> <span class="mf">2.0475</span><span class="p">,</span> <span class="mf">1.532</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0694</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9768</span><span class="p">,</span> <span class="mf">0.2024</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>Open3D also provides <code class="docutils literal notranslate"><span class="pre">uniform_down_sample</span></code> and <code class="docutils literal notranslate"><span class="pre">random_down_sample</span></code> for point cloud downsampling.</p>
+</section>
+</section>
+<section id="Vertex-normal-estimation">
+<h2>Vertex normal estimation<a class="headerlink" href="#Vertex-normal-estimation" title="Permalink to this heading">#</a></h2>
+<p>Another basic operation for point cloud is normal estimation. Press <code class="docutils literal notranslate"><span class="pre">N</span></code> to see point normals. The keys <code class="docutils literal notranslate"><span class="pre">-</span></code> and <code class="docutils literal notranslate"><span class="pre">+</span></code> can be used to control the length of the normal.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span>
+    <span class="s2">&quot;Recompute the normal of the downsampled point cloud using hybrid nearest neighbor search with 30 max_nn and radius of 0.1m.&quot;</span>
+<span class="p">)</span>
+<span class="n">downpcd</span><span class="o">.</span><span class="n">estimate_normals</span><span class="p">(</span><span class="n">max_nn</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">downpcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.3412</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4257</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2125</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8795</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.6172</span><span class="p">,</span> <span class="mf">2.0475</span><span class="p">,</span> <span class="mf">1.532</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0694</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9768</span><span class="p">,</span> <span class="mf">0.2024</span><span class="p">],</span>
+                                   <span class="n">point_show_normal</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">estimate_normals</span></code> computes the normal for every point. The function finds adjacent points and calculates the principal axis of the adjacent points using covariance analysis.</p>
+<p>The two key arguments <code class="docutils literal notranslate"><span class="pre">radius</span> <span class="pre">=</span> <span class="pre">0.1</span></code> and <code class="docutils literal notranslate"><span class="pre">max_nn</span> <span class="pre">=</span> <span class="pre">30</span></code> specifies search radius and maximum nearest neighbor. It has 10cm of search radius, and only considers up to 30 neighbors to save computation time. If only <code class="docutils literal notranslate"><span class="pre">max_nn</span></code> or <code class="docutils literal notranslate"><span class="pre">radius</span></code> is specified (<code class="docutils literal notranslate"><span class="pre">downpcd.estimate_normals(30,</span> <span class="pre">None)</span></code> or <code class="docutils literal notranslate"><span class="pre">downpcd.estimate_normals(None,</span> <span class="pre">0.01)</span></code>), the function will use knn or radius search respectively.</p>
+<div class="admonition note">
+<p><strong>Note:</strong> It is always recommended to specify both <code class="docutils literal notranslate"><span class="pre">radius</span></code> and <code class="docutils literal notranslate"><span class="pre">max_nn</span></code>, especially if the point cloud is on CUDA device.</p>
+</div>
+<div class="admonition note">
+<p><strong>Note:</strong> The covariance analysis algorithm produces two opposite directions as normal candidates. Without knowing the global structure of the geometry, both can be correct. This is known as the normal orientation problem. Open3D tries to orient the normal to align with the original normal if it exists. Otherwise, Open3D does a random guess. Further orientation functions such as <code class="docutils literal notranslate"><span class="pre">orient_normals_to_align_with_direction</span></code> and <code class="docutils literal notranslate"><span class="pre">orient_normals_towards_camera_location</span></code> need to be called if the
+orientation is a concern.</p>
+</div>
+<section id="Access-estimated-normals">
+<h3>Access estimated normals<a class="headerlink" href="#Access-estimated-normals" title="Permalink to this heading">#</a></h3>
+<p>The estimated normals can be access and converted to numpy array.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">normals</span> <span class="o">=</span> <span class="n">downpcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">normals</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Print first 5 normals of the downsampled point cloud.&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">normals</span><span class="p">[:</span><span class="mi">5</span><span class="p">],</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Convert normals tensor into numpy array.&quot;</span><span class="p">)</span>
+<span class="n">normals_np</span> <span class="o">=</span> <span class="n">normals</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">normals_np</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Crop-point-cloud">
+<h2>Crop point cloud<a class="headerlink" href="#Crop-point-cloud" title="Permalink to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Load a polygon volume and use it to crop the original point cloud&quot;</span><span class="p">)</span>
+<span class="n">demo_crop_data</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DemoCropPointCloud</span><span class="p">()</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="n">demo_crop_data</span><span class="o">.</span><span class="n">point_cloud_path</span><span class="p">)</span>
+<span class="n">vol</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">read_selection_polygon_volume</span><span class="p">(</span>
+    <span class="n">demo_crop_data</span><span class="o">.</span><span class="n">cropped_json_path</span><span class="p">)</span>
+<span class="n">chair</span> <span class="o">=</span> <span class="n">vol</span><span class="o">.</span><span class="n">crop_point_cloud</span><span class="p">(</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">())</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">chair</span><span class="p">],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5439</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2333</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8060</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4615</span><span class="p">,</span> <span class="mf">2.1331</span><span class="p">,</span> <span class="mf">1.338</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.1781</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9708</span><span class="p">,</span> <span class="mf">0.1608</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">read_selection_polygon_volume</span></code> reads a json file that specifies polygon selection area. <code class="docutils literal notranslate"><span class="pre">vol.crop_point_cloud(pcd)</span></code> filters out points. Only the chair remains.</p>
+<p>We can also get the cropped indices of the point cloud using <code class="docutils literal notranslate"><span class="pre">crop_in_polygon</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">indices</span> <span class="o">=</span> <span class="n">vol</span><span class="o">.</span><span class="n">crop_in_polygon</span><span class="p">(</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cropped indices length: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Paint-point-cloud">
+<h2>Paint point cloud<a class="headerlink" href="#Paint-point-cloud" title="Permalink to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Paint point cloud.&quot;</span><span class="p">)</span>
+<span class="n">pcd</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.706</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5439</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2333</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8060</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4615</span><span class="p">,</span> <span class="mf">2.1331</span><span class="p">,</span> <span class="mf">1.338</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.1781</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9708</span><span class="p">,</span> <span class="mf">0.1608</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">paint_uniform_color</span></code> paints all the points to a uniform color. The color is in RGB space, [0, 1] range.</p>
+</section>
+<section id="Bounding-volumes">
+<h2>Bounding volumes<a class="headerlink" href="#Bounding-volumes" title="Permalink to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">PointCloud</span></code> geometry type has bounding volumes as all other geometry types in Open3D. Currently, Open3D implements an <code class="docutils literal notranslate"><span class="pre">AxisAlignedBoundingBox</span></code> and an <code class="docutils literal notranslate"><span class="pre">OrientedBoundingBox</span></code> that can also be used to crop the geometry.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aabb</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">get_axis_aligned_bounding_box</span><span class="p">()</span>
+<span class="n">aabb</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+<span class="n">obb</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">get_oriented_bounding_box</span><span class="p">()</span>
+<span class="n">obb</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">(),</span> <span class="n">aabb</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">(),</span>
+     <span class="n">obb</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+    <span class="n">zoom</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+    <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5439</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2333</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8060</span><span class="p">],</span>
+    <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.4615</span><span class="p">,</span> <span class="mf">2.1331</span><span class="p">,</span> <span class="mf">1.338</span><span class="p">],</span>
+    <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.1781</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9708</span><span class="p">,</span> <span class="mf">0.1608</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Point-cloud-outlier-removal">
+<h2>Point cloud outlier removal<a class="headerlink" href="#Point-cloud-outlier-removal" title="Permalink to this heading">#</a></h2>
+<p>When collecting data from scanning devices, the resulting point cloud tends to contain noise and artifacts that one would like to remove. This demo below addresses the outlier removal features of Open3D.</p>
+<section id="Prepare-input-data">
+<h3>Prepare input data<a class="headerlink" href="#Prepare-input-data" title="Permalink to this heading">#</a></h3>
+<p>A point cloud is loaded and downsampled using <code class="docutils literal notranslate"><span class="pre">voxel_downsample</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Load a ply point cloud, print it, and render it&quot;</span><span class="p">)</span>
+<span class="n">sample_pcd_data</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">PCDPointCloud</span><span class="p">()</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="n">sample_pcd_data</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.3412</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4257</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2125</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8795</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.6172</span><span class="p">,</span> <span class="mf">2.0475</span><span class="p">,</span> <span class="mf">1.532</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0694</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9768</span><span class="p">,</span> <span class="mf">0.2024</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downsample the point cloud with a voxel of 0.02&quot;</span><span class="p">)</span>
+<span class="n">voxel_down_pcd</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">voxel_down_sample</span><span class="p">(</span><span class="n">voxel_size</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">voxel_down_pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.3412</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4257</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2125</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8795</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.6172</span><span class="p">,</span> <span class="mf">2.0475</span><span class="p">,</span> <span class="mf">1.532</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0694</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9768</span><span class="p">,</span> <span class="mf">0.2024</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>Alternatively, use <code class="docutils literal notranslate"><span class="pre">uniform_down_sample</span></code> to downsample the point cloud by collecting every n-th points.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Every 5th points are selected&quot;</span><span class="p">)</span>
+<span class="n">uni_down_pcd</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">uniform_down_sample</span><span class="p">(</span><span class="n">every_k_points</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">uni_down_pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.3412</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4257</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2125</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8795</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.6172</span><span class="p">,</span> <span class="mf">2.0475</span><span class="p">,</span> <span class="mf">1.532</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0694</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9768</span><span class="p">,</span> <span class="mf">0.2024</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Select-down-sample">
+<h3>Select down sample<a class="headerlink" href="#Select-down-sample" title="Permalink to this heading">#</a></h3>
+<p>The following helper function uses <code class="docutils literal notranslate"><span class="pre">select_by_mask</span></code>, which takes a binary mask to output only the selected points. The selected points and the non-selected points are visualized.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">display_inlier_outlier</span><span class="p">(</span><span class="n">cloud</span><span class="p">:</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+    <span class="n">inlier_cloud</span> <span class="o">=</span> <span class="n">cloud</span><span class="o">.</span><span class="n">select_by_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">outlier_cloud</span> <span class="o">=</span> <span class="n">cloud</span><span class="o">.</span><span class="n">select_by_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">invert</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Showing outliers (red) and inliers (gray): &quot;</span><span class="p">)</span>
+    <span class="n">outlier_cloud</span> <span class="o">=</span> <span class="n">outlier_cloud</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">inlier_cloud</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">([</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">])</span>
+    <span class="n">inlier_cloud</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">inlier_cloud</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">(),</span>
+         <span class="n">outlier_cloud</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+        <span class="n">zoom</span><span class="o">=</span><span class="mf">0.3412</span><span class="p">,</span>
+        <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4257</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2125</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8795</span><span class="p">],</span>
+        <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.6172</span><span class="p">,</span> <span class="mf">2.0475</span><span class="p">,</span> <span class="mf">1.532</span><span class="p">],</span>
+        <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0694</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9768</span><span class="p">,</span> <span class="mf">0.2024</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Statistical-outlier-removal">
+<h3>Statistical outlier removal<a class="headerlink" href="#Statistical-outlier-removal" title="Permalink to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">statistical_outlier_removal</span></code> removes points that are further away from their neighbors compared to the average for the point cloud. It takes two input parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">nb_neighbors</span></code>, which specifies how many neighbors are taken into account in order to calculate the average distance for a given point.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">std_ratio</span></code>, which allows setting the threshold level based on the standard deviation of the average distances across the point cloud. The lower this number the more aggressive the filter will be.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Statistical oulier removal&quot;</span><span class="p">)</span>
+<span class="n">cl</span><span class="p">,</span> <span class="n">ind</span> <span class="o">=</span> <span class="n">voxel_down_pcd</span><span class="o">.</span><span class="n">remove_statistical_outliers</span><span class="p">(</span><span class="n">nb_neighbors</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                                                     <span class="n">std_ratio</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="n">display_inlier_outlier</span><span class="p">(</span><span class="n">voxel_down_pcd</span><span class="p">,</span> <span class="n">ind</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Radius-outlier-removal">
+<h3>Radius outlier removal<a class="headerlink" href="#Radius-outlier-removal" title="Permalink to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">radius_outlier_removal</span></code> removes points that have few neighbors in a given sphere around them. Two parameters can be used to tune the filter to your data:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">nb_points</span></code>, which lets you pick the minimum amount of points that the sphere should contain.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">radius</span></code>, which defines the radius of the sphere that will be used for counting the neighbors.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Radius oulier removal&quot;</span><span class="p">)</span>
+<span class="n">cl</span><span class="p">,</span> <span class="n">ind</span> <span class="o">=</span> <span class="n">voxel_down_pcd</span><span class="o">.</span><span class="n">remove_radius_outliers</span><span class="p">(</span><span class="n">nb_points</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+                                                <span class="n">search_radius</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="n">display_inlier_outlier</span><span class="p">(</span><span class="n">voxel_down_pcd</span><span class="p">,</span> <span class="n">ind</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Convex-hull">
+<h2>Convex hull<a class="headerlink" href="#Convex-hull" title="Permalink to this heading">#</a></h2>
+<p>The convex hull of a point cloud is the smallest convex set that contains all points. Open3D contains the method <code class="docutils literal notranslate"><span class="pre">compute_convex_hull</span></code> that computes the convex hull of a point cloud. The implementation is based on <a class="reference external" href="http://www.qhull.org/">Qhull</a>.</p>
+<p>In the example code below we compute the convex hull that is returned as a triangle mesh. Then, we visualize the convex hull as a red <code class="docutils literal notranslate"><span class="pre">LineSet</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bunny</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">BunnyMesh</span><span class="p">()</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="n">bunny</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+<span class="n">hull</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">compute_convex_hull</span><span class="p">()</span>
+<span class="n">hull_ls</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">LineSet</span><span class="o">.</span><span class="n">create_from_triangle_mesh</span><span class="p">(</span><span class="n">hull</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">())</span>
+<span class="n">hull_ls</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">(),</span> <span class="n">hull_ls</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="DBSCAN-clustering">
+<h2>DBSCAN clustering<a class="headerlink" href="#DBSCAN-clustering" title="Permalink to this heading">#</a></h2>
+<p>Given a point cloud from e.g. a depth sensor we want to group local point cloud clusters together. For this purpose, we can use clustering algorithms. Open3D implements DBSCAN <a class="reference external" href="../reference.html#Ester1996">[Ester1996]</a> that is a density based clustering algorithm. The algorithm is implemented in <code class="docutils literal notranslate"><span class="pre">cluster_dbscan</span></code> and requires two parameters: <code class="docutils literal notranslate"><span class="pre">eps</span></code> defines the distance to neighbors in a cluster and <code class="docutils literal notranslate"><span class="pre">min_points</span></code> defines the minimum number of points required to form a cluster. The function
+returns <code class="docutils literal notranslate"><span class="pre">labels</span></code>, where the label <code class="docutils literal notranslate"><span class="pre">-1</span></code> indicates noise.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ply_point_cloud</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">PLYPointCloud</span><span class="p">()</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="n">ply_point_cloud</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">VerbosityContextManager</span><span class="p">(</span>
+        <span class="n">cv3d</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">VerbosityLevel</span><span class="o">.</span><span class="n">Debug</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">cluster_dbscan</span><span class="p">(</span><span class="n">eps</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">min_points</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">print_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">max_label</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;point cloud has </span><span class="si">{</span><span class="n">max_label</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> clusters&quot;</span><span class="p">)</span>
+<span class="n">colors</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s2">&quot;tab20&quot;</span><span class="p">)(</span><span class="n">labels</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">/</span>
+                               <span class="p">(</span><span class="n">max_label</span> <span class="k">if</span> <span class="n">max_label</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">colors</span> <span class="o">=</span> <span class="n">o3c</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">colors</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">3</span><span class="p">],</span> <span class="n">o3c</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">colors</span><span class="p">[</span><span class="n">labels</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">colors</span> <span class="o">=</span> <span class="n">colors</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.455</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.4999</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1659</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8499</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.1813</span><span class="p">,</span> <span class="mf">2.0619</span><span class="p">,</span> <span class="mf">2.0999</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1204</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9852</span><span class="p">,</span> <span class="mf">0.1215</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title"><strong>Note:</strong></p>
+<p>This algorithm precomputes all neighbors in the epsilon radius for all points. This can require a lot of memory if the chosen epsilon is too large.</p>
+</div>
+</section>
+<section id="Plane-segmentation">
+<h2>Plane segmentation<a class="headerlink" href="#Plane-segmentation" title="Permalink to this heading">#</a></h2>
+<p>Open3D also supports segmententation of geometric primitives from point clouds using RANSAC. To find the plane with the largest support in the point cloud, we can use <code class="docutils literal notranslate"><span class="pre">segment_plane</span></code>. The method has four arguments: <code class="docutils literal notranslate"><span class="pre">distance_threshold</span></code> defines the maximum distance a point can have to an estimated plane to be considered an inlier, <code class="docutils literal notranslate"><span class="pre">ransac_n</span></code> defines the number of points that are randomly sampled to estimate a plane, <code class="docutils literal notranslate"><span class="pre">num_iterations</span></code> defines how often a random plane is sampled and
+verified, and <code class="docutils literal notranslate"><span class="pre">probability</span></code> defined the expected probability of finding the optimal plane. The function then returns the plane as <span class="math notranslate nohighlight">\((a,b,c,d)\)</span> such that for each point <span class="math notranslate nohighlight">\((x,y,z)\)</span> on the plane we have <span class="math notranslate nohighlight">\(ax + by + cz + d = 0\)</span>. The function further returns a indices of the inlier points.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sample_pcd_data</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">PCDPointCloud</span><span class="p">()</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="n">sample_pcd_data</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<span class="n">plane_model</span><span class="p">,</span> <span class="n">inliers</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">segment_plane</span><span class="p">(</span><span class="n">distance_threshold</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+                                         <span class="n">ransac_n</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                         <span class="n">num_iterations</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                                         <span class="n">probability</span><span class="o">=</span><span class="mf">0.9999</span><span class="p">)</span>
+<span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">plane_model</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Plane equation: </span><span class="si">{</span><span class="n">a</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">x + </span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">y + </span><span class="si">{</span><span class="n">c</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">z + </span><span class="si">{</span><span class="n">d</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> = 0&quot;</span><span class="p">)</span>
+
+<span class="n">inlier_cloud</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">select_by_index</span><span class="p">(</span><span class="n">inliers</span><span class="p">)</span>
+<span class="n">inlier_cloud</span> <span class="o">=</span> <span class="n">inlier_cloud</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">outlier_cloud</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">select_by_index</span><span class="p">(</span><span class="n">inliers</span><span class="p">,</span> <span class="n">invert</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">inlier_cloud</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">(),</span>
+     <span class="n">outlier_cloud</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+    <span class="n">zoom</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+    <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.4999</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1659</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8499</span><span class="p">],</span>
+    <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.1813</span><span class="p">,</span> <span class="mf">2.0619</span><span class="p">,</span> <span class="mf">2.0999</span><span class="p">],</span>
+    <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1204</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9852</span><span class="p">,</span> <span class="mf">0.1215</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>To achieve the stable results with specific random seed, you can set <code class="docutils literal notranslate"><span class="pre">probability</span></code> to 1.0, which will force the executed iteration equal to <code class="docutils literal notranslate"><span class="pre">num_iterations</span></code>. (Since <code class="docutils literal notranslate"><span class="pre">0.16.0</span></code>, the <code class="docutils literal notranslate"><span class="pre">segment_plane</span></code> function is parallel, and the iteration will be updated by the equation: <code class="docutils literal notranslate"><span class="pre">iter</span> <span class="pre">=</span> <span class="pre">log(1</span> <span class="pre">-</span> <span class="pre">probability)</span> <span class="pre">/</span> <span class="pre">log(1</span> <span class="pre">-</span> <span class="pre">fitness</span> <span class="pre">^</span> <span class="pre">ransac_n)</span></code>, where <code class="docutils literal notranslate"><span class="pre">fitness</span></code> is the ratio of inliers number and total number of points)</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cv3d</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">plane_model</span><span class="p">,</span> <span class="n">inliers</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">segment_plane</span><span class="p">(</span><span class="n">distance_threshold</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+                                         <span class="n">ransac_n</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                         <span class="n">num_iterations</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                                         <span class="n">probability</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Hidden-point-removal">
+<h2>Hidden point removal<a class="headerlink" href="#Hidden-point-removal" title="Permalink to this heading">#</a></h2>
+<p>Imagine you want to render a point cloud from a given view point, but points from the background leak into the foreground because they are not occluded by other points. For this purpose we can apply a hidden point removal algorithm. In Open3D the method by <a class="reference external" href="../reference.html#Katz2007">[Katz2007]</a> is implemented that approximates the visibility of a point cloud from a given view without surface reconstruction or normal estimation.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Convert mesh to a point cloud and estimate dimensions&quot;</span><span class="p">)</span>
+<span class="n">armadillo</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ArmadilloMesh</span><span class="p">()</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_triangle_mesh</span><span class="p">(</span><span class="n">armadillo</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<span class="c1"># Tensor TriangleMesh not supported this function yet.</span>
+<span class="n">mesh</span><span class="o">.</span><span class="n">compute_vertex_normals</span><span class="p">()</span>
+
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">sample_points_poisson_disk</span><span class="p">(</span><span class="mi">5000</span><span class="p">)</span>
+<span class="n">diameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pcd</span><span class="o">.</span><span class="n">get_max_bound</span><span class="p">())</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pcd</span><span class="o">.</span><span class="n">get_min_bound</span><span class="p">()))</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">pcd</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Define parameters used for hidden_point_removal&quot;</span><span class="p">)</span>
+<span class="n">camera</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">diameter</span><span class="p">],</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">radius</span> <span class="o">=</span> <span class="n">diameter</span> <span class="o">*</span> <span class="mi">100</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Get all points that are visible from given view point&quot;</span><span class="p">)</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">PointCloud</span><span class="o">.</span><span class="n">from_legacy</span><span class="p">(</span><span class="n">pcd</span><span class="p">)</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">pt_map</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">hidden_point_removal</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="n">radius</span><span class="p">)</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">select_by_index</span><span class="p">(</span><span class="n">pt_map</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Visualize result&quot;</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()])</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Boundary-detection">
+<h2>Boundary detection<a class="headerlink" href="#Boundary-detection" title="Permalink to this heading">#</a></h2>
+<p>Open3D implements the boundary detection algorithm inspired by <a class="reference external" href="https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html">PCL</a>. The algorithm find the boundary points among a unordered point cloud by analyzing the angle among the normals of a point and its neighbors. The method has three arguments: <code class="docutils literal notranslate"><span class="pre">radius</span></code> and <code class="docutils literal notranslate"><span class="pre">max_nn</span></code> specify the hybrid nearest search parameters; The <code class="docutils literal notranslate"><span class="pre">angle_threshold</span></code> defines the maximum angle between the normals of a point and its neighbors to be
+considered as a boundary point. The functions returns the boundary points and a boolean tensor of the same size as the input point cloud.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ply_point_cloud</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DemoCropPointCloud</span><span class="p">()</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="n">ply_point_cloud</span><span class="o">.</span><span class="n">point_cloud_path</span><span class="p">)</span>
+
+<span class="n">boundarys</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">compute_boundary_points</span><span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<span class="c1"># TODO: not good to get size of points.</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Detect </span><span class="si">{</span><span class="n">boundarys</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">positions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> bnoundary points from </span><span class="si">{</span><span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">positions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> points.&quot;</span>
+<span class="p">)</span>
+
+<span class="n">boundarys</span> <span class="o">=</span> <span class="n">boundarys</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+<span class="n">pcd</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">([</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">])</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">pcd</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">(),</span> <span class="n">boundarys</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+    <span class="n">zoom</span><span class="o">=</span><span class="mf">0.3412</span><span class="p">,</span>
+    <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3257</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2125</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8795</span><span class="p">],</span>
+    <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.6172</span><span class="p">,</span> <span class="mf">2.0475</span><span class="p">,</span> <span class="mf">1.532</span><span class="p">],</span>
+    <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0694</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9768</span><span class="p">,</span> <span class="mf">0.2024</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../t_pipelines/t_icp_registration.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">ICP registration</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../core/hashmap.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Hash map</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, ACloudViewer Team
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">PointCloud</a><ul>
+<li><a class="reference internal" href="#PointCloud-creation">PointCloud creation</a></li>
+<li><a class="reference internal" href="#Point-cloud-attributes-setter-and-getter">Point cloud attributes setter and getter</a></li>
+<li><a class="reference internal" href="#Conversion-between-tensor-and-legacy-point-cloud">Conversion between tensor and legacy point cloud</a></li>
+<li><a class="reference internal" href="#Visualize-point-cloud">Visualize point cloud</a></li>
+<li><a class="reference internal" href="#Downsampling">Downsampling</a><ul>
+<li><a class="reference internal" href="#Farthest-point-downsampling">Farthest point downsampling</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Vertex-normal-estimation">Vertex normal estimation</a><ul>
+<li><a class="reference internal" href="#Access-estimated-normals">Access estimated normals</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Crop-point-cloud">Crop point cloud</a></li>
+<li><a class="reference internal" href="#Paint-point-cloud">Paint point cloud</a></li>
+<li><a class="reference internal" href="#Bounding-volumes">Bounding volumes</a></li>
+<li><a class="reference internal" href="#Point-cloud-outlier-removal">Point cloud outlier removal</a><ul>
+<li><a class="reference internal" href="#Prepare-input-data">Prepare input data</a></li>
+<li><a class="reference internal" href="#Select-down-sample">Select down sample</a></li>
+<li><a class="reference internal" href="#Statistical-outlier-removal">Statistical outlier removal</a></li>
+<li><a class="reference internal" href="#Radius-outlier-removal">Radius outlier removal</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Convex-hull">Convex hull</a></li>
+<li><a class="reference internal" href="#DBSCAN-clustering">DBSCAN clustering</a></li>
+<li><a class="reference internal" href="#Plane-segmentation">Plane segmentation</a></li>
+<li><a class="reference internal" href="#Hidden-point-removal">Hidden point removal</a></li>
+<li><a class="reference internal" href="#Boundary-detection">Boundary detection</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=c711cca9"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=30646c52"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/version_switch.js?v=9a357ee9"></script>
+    </body>
+</html>

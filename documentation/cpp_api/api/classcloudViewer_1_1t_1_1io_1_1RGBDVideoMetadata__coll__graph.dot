@@ -1,0 +1,22 @@
+digraph "cloudViewer::t::io::RGBDVideoMetadata"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="cloudViewer::t::io\l::RGBDVideoMetadata",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="RGBD video metadata."];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::utility\l::IJsonConvertible",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1utility_1_1IJsonConvertible.html",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" color_dt_\ndepth_dt_" ,fontname="Helvetica"];
+  Node3 [label="cloudViewer::core::\lDtype",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1core_1_1Dtype.html",tooltip=" "];
+  Node3 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" Bool\nFloat32\nFloat64\nInt16\nInt32\nInt64\nInt8\nUInt16\nUInt32\nUInt64\n..." ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" intrinsics_" ,fontname="Helvetica"];
+  Node4 [label="cloudViewer::camera\l::PinholeCameraIntrinsic",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html",tooltip="Contains the pinhole camera intrinsic parameters."];
+  Node2 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" stream_length_usec_" ,fontname="Helvetica"];
+  Node5 [label="uint64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" color_channels_" ,fontname="Helvetica"];
+  Node6 [label="uint8_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" color_format_\ndepth_format_\ndevice_name_\nserial_number_" ,fontname="Helvetica"];
+  Node7 [label="string",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+}

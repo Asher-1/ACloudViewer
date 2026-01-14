@@ -1,0 +1,21 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qMeshIO" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_9f1c91a719c6d2c352714b25e6ae45ee {
+    graph [ bgcolor="#ddddee", pencolor="black", label="IO" fontname="Helvetica", fontsize="10", URL="dir_9f1c91a719c6d2c352714b25e6ae45ee.html"]
+  subgraph clusterdir_93729575d6fedf5bf48258f8bebc2d7a {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_93729575d6fedf5bf48258f8bebc2d7a.html"];
+    dir_93729575d6fedf5bf48258f8bebc2d7a [shape=plaintext label="qMeshIO"];
+  dir_edb84306bbe446ef4e56836cc6552e7b [shape=box label="include" fillcolor="white" style="filled" URL="dir_edb84306bbe446ef4e56836cc6552e7b.html"];
+  dir_cbaf5887df0850fa9bfa13889c85bbfc [shape=box label="src" fillcolor="white" style="filled" URL="dir_cbaf5887df0850fa9bfa13889c85bbfc.html"];
+  }
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_cbaf5887df0850fa9bfa13889c85bbfc->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="1", labeldistance=1.5 headhref="dir_000127_000000.html"];
+  dir_cbaf5887df0850fa9bfa13889c85bbfc->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="6", labeldistance=1.5 headhref="dir_000127_000002.html"];
+  dir_cbaf5887df0850fa9bfa13889c85bbfc->dir_edb84306bbe446ef4e56836cc6552e7b [headlabel="16", labeldistance=1.5 headhref="dir_000127_000126.html"];
+  dir_edb84306bbe446ef4e56836cc6552e7b->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="5", labeldistance=1.5 headhref="dir_000126_000002.html"];
+}

@@ -1,0 +1,51 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/q3DMASC/ScalarFieldWrappers.h"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/ScalarFieldWrappers.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/FeaturesInterface.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$FeaturesInterface_8h.html",tooltip=" "];
+  Node2 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/ContextBasedFeature.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$ContextBasedFeature_8h.html",tooltip=" "];
+  Node3 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/ContextBasedFeature.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$ContextBasedFeature_8cpp.html",tooltip=" "];
+  Node3 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/q3DMASCTools.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$q3DMASCTools_8cpp.html",tooltip=" "];
+  Node2 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/DualCloudFeature.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$DualCloudFeature_8h.html",tooltip=" "];
+  Node6 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/DualCloudFeature.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$DualCloudFeature_8cpp.html",tooltip=" "];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/FeaturesInterface.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$FeaturesInterface_8cpp.html",tooltip=" "];
+  Node2 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/NeighborhoodFeature.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$NeighborhoodFeature_8h.html",tooltip=" "];
+  Node9 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/NeighborhoodFeature.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$NeighborhoodFeature_8cpp.html",tooltip=" "];
+  Node9 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/PointFeature.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$PointFeature_8h.html",tooltip=" "];
+  Node11 -> Node12 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node12 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/PointFeature.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$PointFeature_8cpp.html",tooltip=" "];
+  Node11 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 -> Node13 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/q3DMASCClassifier.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$q3DMASCClassifier_8h.html",tooltip=" "];
+  Node13 -> Node14 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node14 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/q3DMASC.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$q3DMASC_8cpp.html",tooltip=" "];
+  Node13 -> Node15 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node15 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/q3DMASCClassifier.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$q3DMASCClassifier_8cpp.html",tooltip=" "];
+  Node13 -> Node16 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node16 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/q3DMASCTools.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$q3DMASCTools_8h.html",tooltip=" "];
+  Node16 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node16 -> Node12 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node16 -> Node14 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node16 -> Node15 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node16 -> Node17 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node17 [label="/root/ACloudViewer\l/plugins/core/Standard\l/q3DMASC/q3DMASCCommands.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$q3DMASCCommands_8h.html",tooltip=" "];
+  Node17 -> Node14 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node16 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 -> Node16 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 -> Node15 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

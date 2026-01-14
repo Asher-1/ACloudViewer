@@ -1,0 +1,14 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qCanupo/include" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_039c29ee5c0bf40195ae620976ff5812 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="qCanupo" fontname="Helvetica", fontsize="10", URL="dir_039c29ee5c0bf40195ae620976ff5812.html"]
+  dir_7d54bddc563c3ca5f78c49b09d346ce1 [shape=box, label="include", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_7d54bddc563c3ca5f78c49b09d346ce1.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_7d54bddc563c3ca5f78c49b09d346ce1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="7", labeldistance=1.5 headhref="dir_000151_000000.html"];
+  dir_7d54bddc563c3ca5f78c49b09d346ce1->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="1", labeldistance=1.5 headhref="dir_000151_000002.html"];
+}

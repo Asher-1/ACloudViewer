@@ -1,0 +1,15 @@
+digraph "IndexPacket"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="IndexPacket",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" entryCount\npacketLogicalLengthMinus1" ,fontname="Helvetica"];
+  Node2 [label="uint16_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" indexLevel\npacketFlags\npacketType\nreserved1" ,fontname="Helvetica"];
+  Node3 [label="uint8_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" entries" ,fontname="Helvetica"];
+  Node4 [label="IndexPacket::IndexPacket\lEntry",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structIndexPacket_1_1IndexPacketEntry.html",tooltip=" "];
+  Node5 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" chunkPhysicalOffset\nchunkRecordNumber" ,fontname="Helvetica"];
+  Node5 [label="uint64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+}

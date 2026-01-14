@@ -1,0 +1,18 @@
+digraph "cloudViewer::visualization::gui::DrawContext"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="cloudViewer::visualization\l::gui::DrawContext",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" renderer" ,fontname="Helvetica"];
+  Node2 [label="cloudViewer::visualization\l::rendering::Renderer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1rendering_1_1Renderer.html",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" theme" ,fontname="Helvetica"];
+  Node3 [label="cloudViewer::visualization\l::gui::Theme",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structcloudViewer_1_1visualization_1_1gui_1_1Theme.html",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" background_color\nborder_color\nbutton_active_color\nbutton_color\nbutton_hover_color\nbutton_on_active_color\nbutton_on_color\nbutton_on_hover_color\nbutton_on_text_color\ncheckbox_background_hover\l_off_color\n..." ,fontname="Helvetica"];
+  Node4 [label="cloudViewer::visualization\l::gui::Color",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1gui_1_1Color.html",tooltip=" "];
+  Node5 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" font_bold_italic_path\nfont_bold_path\nfont_italic_path\nfont_mono_path\nfont_path" ,fontname="Helvetica"];
+  Node5 [label="string",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" fonts" ,fontname="Helvetica"];
+  Node6 [label="cloudViewer::visualization\l::gui::FontContext",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1gui_1_1FontContext.html",tooltip=" "];
+}

@@ -1,0 +1,50 @@
+digraph "cloudViewer::visualization::rendering::ModelInteractorLogic"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="cloudViewer::visualization\l::rendering::ModelInteractorLogic",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::visualization\l::rendering::RotationInteractorLogic",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1rendering_1_1RotationInteractorLogic.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="cloudViewer::visualization\l::rendering::MatrixInteractorLogic",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" model_bounds_" ,fontname="Helvetica"];
+  Node4 [label="ccBBox",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccBBox.html",tooltip="Bounding box structure."];
+  Node5 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="ccHObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccHObject.html",tooltip="Hierarchical CLOUDVIEWER Object."];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="ccObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccObject.html",tooltip="Generic \"CLOUDVIEWER  Object\" template."];
+  Node7 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="ccSerializableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccSerializableObject.html",tooltip="Serializable object interface."];
+  Node8 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="ccDrawableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccDrawableObject.html",tooltip="Generic interface for (3D) drawable entities."];
+  Node9 -> Node8 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_nameIn3DPos" ,fontname="Helvetica"];
+  Node9 [label="Vector3Tpl\< double \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip=" "];
+  Node10 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="Tuple3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classTuple3Tpl.html",tooltip="3-Tuple structure (templated version)"];
+  Node11 -> Node9 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< double \>" ,fontname="Helvetica"];
+  Node11 [label="Vector3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip="3D Vector (templated version)"];
+  Node10 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node12 -> Node8 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_glTrans" ,fontname="Helvetica"];
+  Node12 [label="ccGLMatrix",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrix.html",tooltip="Float version of ccGLMatrixTpl."];
+  Node13 -> Node12 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 [label="ccGLMatrixTpl\< float \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrixTpl.html",tooltip=" "];
+  Node7 -> Node13 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node14 -> Node13 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< float \>" ,fontname="Helvetica"];
+  Node14 [label="ccGLMatrixTpl\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrixTpl.html",tooltip="A 4x4 'transformation' matrix (column major order)"];
+  Node7 -> Node14 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_parent" ,fontname="Helvetica"];
+  Node12 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_glTransHistory" ,fontname="Helvetica"];
+  Node15 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node15 [label="cloudViewer::BoundingBox",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1BoundingBoxTpl.html",tooltip=" "];
+  Node16 -> Node15 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< PointCoordinateType \>" ,fontname="Helvetica"];
+  Node16 [label="cloudViewer::BoundingBox\lTpl\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1BoundingBoxTpl.html",tooltip="Bounding box structure."];
+  Node9 -> Node16 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" color_" ,fontname="Helvetica"];
+  Node17 -> Node16 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_bbMax\nm_bbMin" ,fontname="Helvetica"];
+  Node17 [label="Vector3Tpl\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip=" "];
+  Node10 -> Node17 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 -> Node17 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< T \>" ,fontname="Helvetica"];
+  Node18 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" camera_" ,fontname="Helvetica"];
+  Node18 [label="cloudViewer::visualization\l::rendering::Camera",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1rendering_1_1Camera.html",tooltip=" "];
+}

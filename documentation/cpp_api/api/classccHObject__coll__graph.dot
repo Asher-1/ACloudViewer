@@ -1,0 +1,30 @@
+digraph "ccHObject"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="ccHObject",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Hierarchical CLOUDVIEWER Object."];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="ccObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccObject.html",tooltip="Generic \"CLOUDVIEWER  Object\" template."];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="ccSerializableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccSerializableObject.html",tooltip="Serializable object interface."];
+  Node4 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="ccDrawableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccDrawableObject.html",tooltip="Generic interface for (3D) drawable entities."];
+  Node5 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_nameIn3DPos" ,fontname="Helvetica"];
+  Node5 [label="Vector3Tpl\< double \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip=" "];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="Tuple3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classTuple3Tpl.html",tooltip="3-Tuple structure (templated version)"];
+  Node7 -> Node5 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< double \>" ,fontname="Helvetica"];
+  Node7 [label="Vector3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip="3D Vector (templated version)"];
+  Node6 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_glTrans" ,fontname="Helvetica"];
+  Node8 [label="ccGLMatrix",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrix.html",tooltip="Float version of ccGLMatrixTpl."];
+  Node9 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="ccGLMatrixTpl\< float \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrixTpl.html",tooltip=" "];
+  Node3 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 -> Node9 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< float \>" ,fontname="Helvetica"];
+  Node10 [label="ccGLMatrixTpl\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrixTpl.html",tooltip="A 4x4 'transformation' matrix (column major order)"];
+  Node3 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_parent" ,fontname="Helvetica"];
+  Node8 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_glTransHistory" ,fontname="Helvetica"];
+}

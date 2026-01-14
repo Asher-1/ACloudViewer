@@ -1,0 +1,14 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node2205 [label="rtc::VideoSinkInterface",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node2205 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 [label="cloudViewer::visualization\l::webrtc_server::VideoScaler",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1webrtc__server_1_1VideoScaler.html",tooltip=" "];
+  Node2207 [label="rtc::VideoSourceInterface",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node2207 -> Node2208 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2208 [label="cloudViewer::visualization\l::webrtc_server::ImageCapturer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1webrtc__server_1_1ImageCapturer.html",tooltip=" "];
+  Node2207 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

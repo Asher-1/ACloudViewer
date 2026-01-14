@@ -1,0 +1,14 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qCoreIO/include/PDMS" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_242908519456019889561e83933d544e {
+    graph [ bgcolor="#ddddee", pencolor="black", label="include" fontname="Helvetica", fontsize="10", URL="dir_242908519456019889561e83933d544e.html"]
+  dir_ee6b5ea0186c69d43001444afd0874a6 [shape=box, label="PDMS", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_ee6b5ea0186c69d43001444afd0874a6.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_ee6b5ea0186c69d43001444afd0874a6->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="2", labeldistance=1.5 headhref="dir_000095_000000.html"];
+  dir_ee6b5ea0186c69d43001444afd0874a6->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="1", labeldistance=1.5 headhref="dir_000095_000002.html"];
+}

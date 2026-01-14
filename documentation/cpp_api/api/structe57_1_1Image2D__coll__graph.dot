@@ -1,0 +1,37 @@
+digraph "e57::Image2D"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="e57::Image2D",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Stores an image from a camera."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" acquisitionDateTime" ,fontname="Helvetica"];
+  Node2 [label="e57::DateTime",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1DateTime.html",tooltip="Encodes date and time."];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" isAtomicClockReferenced" ,fontname="Helvetica"];
+  Node3 [label="int32_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" visualReferenceRepresentation" ,fontname="Helvetica"];
+  Node4 [label="e57::VisualReferenceRepresentation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1VisualReferenceRepresentation.html",tooltip="Stores an image that is to be used only as a visual reference."];
+  Node3 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageHeight\nimageWidth" ,fontname="Helvetica"];
+  Node5 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageMaskSize\njpegImageSize\npngImageSize" ,fontname="Helvetica"];
+  Node5 [label="int64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" sphericalRepresentation" ,fontname="Helvetica"];
+  Node6 [label="e57::SphericalRepresentation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1SphericalRepresentation.html",tooltip="Stores an image that is mapped from 3D using a spherical projection model."];
+  Node3 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageHeight\nimageWidth" ,fontname="Helvetica"];
+  Node5 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageMaskSize\njpegImageSize\npngImageSize" ,fontname="Helvetica"];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" associatedData3DGuid\ndescription\nguid\nname\nsensorModel\nsensorSerialNumber\nsensorVendor" ,fontname="Helvetica"];
+  Node7 [label="string",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cylindricalRepresentation" ,fontname="Helvetica"];
+  Node8 [label="e57::CylindricalRepresentation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1CylindricalRepresentation.html",tooltip="Stores an image that is mapped from 3D using a cylindrical projection model."];
+  Node3 -> Node8 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageHeight\nimageWidth" ,fontname="Helvetica"];
+  Node5 -> Node8 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageMaskSize\njpegImageSize\npngImageSize" ,fontname="Helvetica"];
+  Node9 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pinholeRepresentation" ,fontname="Helvetica"];
+  Node9 [label="e57::PinholeRepresentation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1PinholeRepresentation.html",tooltip="Stores an image that is mapped from 3D using the pinhole camera projection model."];
+  Node3 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageHeight\nimageWidth" ,fontname="Helvetica"];
+  Node5 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageMaskSize\njpegImageSize\npngImageSize" ,fontname="Helvetica"];
+  Node10 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pose" ,fontname="Helvetica"];
+  Node10 [label="e57::RigidBodyTransform",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1RigidBodyTransform.html",tooltip="Defines a rigid body transform in cartesian coordinates."];
+  Node11 -> Node10 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" rotation" ,fontname="Helvetica"];
+  Node11 [label="e57::Quaternion",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1Quaternion.html",tooltip="Represents a rigid body rotation."];
+  Node12 -> Node10 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" translation" ,fontname="Helvetica"];
+  Node12 [label="e57::Translation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1Translation.html",tooltip="Defines a rigid body translation in Cartesian coordinates."];
+}

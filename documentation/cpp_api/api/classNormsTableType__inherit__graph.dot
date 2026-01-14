@@ -1,0 +1,27 @@
+digraph "NormsTableType"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="NormsTableType",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Array of (uncompressed) 3D normals (Nx,Ny,Nz)"];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="ccArray\< CCVector3,\l 3, PointCoordinateType \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccArray.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="std::vector\< CCVector3 \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="CCShareable",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classCCShareable.html",tooltip=" "];
+  Node5 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="ccHObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccHObject.html",tooltip="Hierarchical CLOUDVIEWER Object."];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="ccObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccObject.html",tooltip="Generic \"CLOUDVIEWER  Object\" template."];
+  Node7 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="ccSerializableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccSerializableObject.html",tooltip="Serializable object interface."];
+  Node8 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="ccDrawableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccDrawableObject.html",tooltip="Generic interface for (3D) drawable entities."];
+  Node9 -> Node2 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< CCVector3, 3, PointCoordinate\lType \>" ,fontname="Helvetica"];
+  Node9 [label="ccArray\< Type, N, Component\lType \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccArray.html",tooltip="Shareable array that can be properly inserted in the DB tree."];
+  Node10 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="std::vector\< Type \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

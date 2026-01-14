@@ -1,0 +1,28 @@
+var classccQuadric =
+[
+    [ "ccQuadric", "classccQuadric.html#a5a52152a44507192af7125ea3270494a", null ],
+    [ "ccQuadric", "classccQuadric.html#a90bdff090b1a22a9d20f394372477922", null ],
+    [ "buildUp", "classccQuadric.html#a86dc033e261056d3922055d874a1b6ee", null ],
+    [ "clone", "classccQuadric.html#a6886068b6f8739caa03f834237283086", null ],
+    [ "Fit", "classccQuadric.html#af86a4a50c0484cd91f0ac2179ac92728", null ],
+    [ "fromFile_MeOnly", "classccQuadric.html#a66f261c3d0fa3f5a4b517e334b108927", null ],
+    [ "getClassID", "classccQuadric.html#a164996f99f01c7a2bbc0bdf485da77da", null ],
+    [ "getEquationCoefs", "classccQuadric.html#a7e63412f831531eaef93c3b564137c12", null ],
+    [ "getEquationDims", "classccQuadric.html#a0fb53c4a1329184ebccd3d142016d304", null ],
+    [ "getEquationString", "classccQuadric.html#a6e8f9f944e48ab699144f3c847559b2b", null ],
+    [ "getMaxCorner", "classccQuadric.html#a0fed6961a4be6d69334ac7b16fb52fe8", null ],
+    [ "getMinCorner", "classccQuadric.html#ae0125b82e91b93ec3008acfce5a835f5", null ],
+    [ "getOwnFitBB", "classccQuadric.html#a475a16b488a07b93213c4fb60959335d", null ],
+    [ "getTypeName", "classccQuadric.html#ac5bf3d171eb0483a45e220cb4f7ea92f", null ],
+    [ "hasDrawingPrecision", "classccQuadric.html#aff3194e46ee9ed289c1eedbad648e976", null ],
+    [ "minimumFileVersion_MeOnly", "classccQuadric.html#a209c3b0bc2e144e2c6d1a52a72475185", null ],
+    [ "projectOnQuadric", "classccQuadric.html#aefc25f020f4cd875b47f2045adfb7d5e", null ],
+    [ "toFile_MeOnly", "classccQuadric.html#a98bce739a67e0d386b38927842d91dcb", null ],
+    [ "DEFAULT_DRAWING_PRECISION", "classccQuadric.html#a8c802912932837be034bb9ff6c125317", null ],
+    [ "m_dims", "classccQuadric.html#a6cc3e81cec976e2cb7e230fefea1e541", null ],
+    [ "m_eq", "classccQuadric.html#a82f61812e6489ce6f3ac6c7abf55b845", null ],
+    [ "m_maxCorner", "classccQuadric.html#a035d646c6f01dc91bce7ce6dfbd6bf37", null ],
+    [ "m_maxZ", "classccQuadric.html#ad28a5591c482789a248323d8aad526ad", null ],
+    [ "m_minCorner", "classccQuadric.html#a3a8965ee1bf079d41391582992d84df4", null ],
+    [ "m_minZ", "classccQuadric.html#a2c4d9f04c88625cb8b8c104ba9bdd782", null ]
+];

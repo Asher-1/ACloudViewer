@@ -1,0 +1,19 @@
+digraph "Octree&lt; Real &gt;::_Evaluator&lt; FEMDegree &gt;"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="Octree\< Real \>::_Evaluator\l\< FEMDegree \>",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" dCellStencil\ndCellStencils\ndCornerStencil\ndCornerStencils\ndEdgeStencil\ndEdgeStencils\ndFaceStencil\ndFaceStencils" ,fontname="Helvetica"];
+  Node2 [label="Stencil\< Point3D\< double\l \>, BSplineEvaluationData\l\< FEMDegree \>::SupportSize \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structStencil.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< Point3D\< double \>\l, BSplineEvaluationData\l\< FEMDegree \>::SupportSize \>" ,fontname="Helvetica"];
+  Node3 [label="Stencil\< C, N \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structStencil.html",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cellStencil\ncellStencils\ncornerStencil\ncornerStencils\nedgeStencil\nedgeStencils\nfaceStencil\nfaceStencils" ,fontname="Helvetica"];
+  Node4 [label="Stencil\< double, BSpline\lEvaluationData\< FEMDegree\l \>::SupportSize \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structStencil.html",tooltip=" "];
+  Node3 -> Node4 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< double, BSplineEvaluation\lData\< FEMDegree \>::SupportSize \>" ,fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" childEvaluator\nevaluator" ,fontname="Helvetica"];
+  Node5 [label="BSplineEvaluationData\l\< FEMDegree \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classBSplineEvaluationData.html",tooltip=" "];
+  Node6 -> Node5 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< FEMDegree \>" ,fontname="Helvetica"];
+  Node6 [label="BSplineEvaluationData\l\< Degree \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classBSplineEvaluationData.html",tooltip=" "];
+}

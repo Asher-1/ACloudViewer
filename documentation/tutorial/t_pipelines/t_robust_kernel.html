@@ -1,0 +1,740 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Basic Usage" href="../../tutorials/basic_usage.html" /><link rel="prev" title="ICP registration" href="t_icp_registration.html" />
+
+    <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
+        <title>Robust Kernel - ACloudViewer 3.9.3 Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=47d5a741" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #2196F3;
+  --color-brand-content: #2196F3;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">ACloudViewer 3.9.3 Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../_static/ACloudViewer_logo_horizontal.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">ACloudViewer 3.9.3 Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_from_source.html">Building from Source</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Tutorial</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Tutorial</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/tensor.html">Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/hashmap.html">Hash map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_geometry/pointcloud.html">PointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="t_icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Robust Kernel</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ml/index.html">Machine Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/basic_usage.html">Basic Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/point_cloud_processing.html">Point Cloud Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/visualization.html">Visualization</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python Examples</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../python_example/geometry/index.html">Geometry Examples</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of Geometry Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../python_example/io/index.html">I/O Examples</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of I/O Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../python_example/pipelines/index.html">Pipelines Examples</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle navigation of Pipelines Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../python_example/visualization/index.html">Visualization Examples</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle navigation of Visualization Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/visualization.html">Visualization</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/cpp_examples.html">C++ Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ API</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../cpp_api.html">C++ documentation</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle navigation of C++ documentation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../cpp_api/overview.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cpp_api/quickstart.html">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cpp_api/plugins.html">Plugin System</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../developer/contributing.html">Contributing to ACloudViewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../developer/docker.html">Docker Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../developer/ci_cd.html">CI/CD Pipeline</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/support.html">Getting Support</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This tutorial is generated from a Jupyter notebook that can be downloaded and run interactively.</p>
+<p>📓 <a class="reference external" href="https://github.com/Asher-1/ACloudViewer/tree/main/docs/jupyter">Download notebook</a></p>
+</div>
+<section id="Robust-Kernel">
+<h1>Robust Kernel<a class="headerlink" href="#Robust-Kernel" title="Permalink to this heading">#</a></h1>
+<p>This tutorial demonstrates the use of robust kernels in the context of outlier rejection. For this particular tutorial, we will be using the ICP (Iterative Closest Point) registration algorithm as the <em>target</em> problem where we want to deal with outliers. Even so, the theory applies to any given optimization problem and not just for ICP. For the moment the robust kernels have been only implemented for the <code class="docutils literal notranslate"><span class="pre">PointToPlane</span></code> ICP.</p>
+<p>The notation and some of the kernels implemented in <code class="docutils literal notranslate"><span class="pre">CloudViewer</span></code> has been inspired by the publication “Analysis of Robust Functions for Registration Algorithms” <a class="reference external" href="../reference.html#babin2019">[Babin2019]</a></p>
+<div class="admonition note">
+<p class="admonition-title"><strong>Note:</strong></p>
+<p>This tutorial and the original implementation of the robust kernels in <code class="docutils literal notranslate"><span class="pre">CloudViewer</span></code> was contributed by <strong>Ignacio Vizzo</strong> and <strong>Cyrill Stachniss</strong> from the University of Bonn.</p>
+</div>
+<section id="Point-to-plane-ICP-using-Robust-Kernels">
+<h2>Point-to-plane ICP using Robust Kernels<a class="headerlink" href="#Point-to-plane-ICP-using-Robust-Kernels" title="Permalink to this heading">#</a></h2>
+<p>The standard point-to-plane ICP algorithm <a class="reference external" href="../reference.html#chenandmedioni1992">[ChenAndMedioni1992]</a> minimizes this objective function:</p>
+<p><span class="math">\begin{equation}
+E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\big((\mathbf{p} - \mathbf{T}\mathbf{q})\cdot\mathbf{n}_{\mathbf{p}}\big)^{2},
+\end{equation}</span></p>
+<p>where <span class="math notranslate nohighlight">\(\mathbf{n}_{\mathbf{p}}\)</span> is the normal of point <span class="math notranslate nohighlight">\(\mathbf{p}\)</span> and <span class="math notranslate nohighlight">\(\mathcal{K}\)</span> is the correspondence set between the target point cloud <span class="math notranslate nohighlight">\(\mathbf{P}\)</span>, and source point cloud <span class="math notranslate nohighlight">\(\mathbf{Q}\)</span>.</p>
+<p>If we call <span class="math notranslate nohighlight">\(r_i(\mathbf{T})\)</span> is <span class="math notranslate nohighlight">\(i^\mathrm{th}\)</span> the residual, for a given pair of correspondences <span class="math notranslate nohighlight">\((\mathbf{p},\mathbf{q})\in\mathcal{K}\)</span> we can rewrite the objective function as.</p>
+<p><span class="math">\begin{equation}
+E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\big((\mathbf{p} - \mathbf{T}\mathbf{q})\cdot\mathbf{n}_{\mathbf{p}}\big)^{2} = \sum_{i=1}^{N} \big({r_i(\mathbf{T})}\big)^2
+\end{equation}</span></p>
+<p>The optimization problem above can also be solved by using the iteratively reweighted least-squares (IRLS) approach, which solves a sequence of weighted least squares problems:</p>
+<p><span class="math">\begin{equation}
+E(\mathbf{T}) =  \sum_{i=1}^{N} w_i \big({r_i(\mathbf{T})}\big)^2
+\end{equation}</span></p>
+<section id="Outlier-Rejection-with-Robust-Kernels">
+<h3>Outlier Rejection with Robust Kernels<a class="headerlink" href="#Outlier-Rejection-with-Robust-Kernels" title="Permalink to this heading">#</a></h3>
+<p>The main idea of a robust loss is to downweight large residuals that are assumed to be caused from outliers such that their influence on the solution is reduced. This is achieved by optimizing <span class="math notranslate nohighlight">\(E(\mathbf{T})\)</span> as:</p>
+<p><span class="math">\begin{equation}
+E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\rho\big((\mathbf{p} - \mathbf{T}\mathbf{q})\cdot\mathbf{n}_{\mathbf{p}}\big) = \sum_{i=1}^{N} \rho\big({r_i(\mathbf{T})}\big),
+\end{equation}</span></p>
+<p>where <span class="math notranslate nohighlight">\(\rho(r)\)</span> is also called the robust loss or kernel.</p>
+<p>We can see that exists a relation between the optimization formulation in IRLS and the one that uses the robust loss function. By setting the weight <span class="math notranslate nohighlight">\(w_i= \frac{1}{r_i(\mathbf{T})}\rho'(r_i(\mathbf{T}))\)</span>, we can solve the robust loss optimization problem using the existing techniques for weighted least-squares. Therefore, we can minimize the objective function using Gauss-Newton and determine increments by iteratively solving:</p>
+<p><span class="math">\begin{align}
+\left(\mathbf{J}^\top \mathbf{W} \mathbf{J}\right)^{-1}\mathbf{J}^\top\mathbf{W}\vec{r},
+\end{align}</span></p>
+<p>where <span class="math notranslate nohighlight">\(\mathbf{W} \in \mathbb{R}^{N\times N}\)</span> is a diagonal matrix containing weights <span class="math notranslate nohighlight">\(w_i\)</span> for each residual <span class="math notranslate nohighlight">\(r_i\)</span></p>
+</section>
+<section id="How-to-use-Robust-Kernels-in-CloudViewer">
+<h3>How to use Robust Kernels in CloudViewer<a class="headerlink" href="#How-to-use-Robust-Kernels-in-CloudViewer" title="Permalink to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">icp</span></code>, <code class="docutils literal notranslate"><span class="pre">multi_scale_icp</span></code> can be called with a parameter <code class="docutils literal notranslate"><span class="pre">TransformationEstimationPointToPlane(loss)</span></code> or <code class="docutils literal notranslate"><span class="pre">TransformationEstimationForColoredICP(loss)</span></code>. Where <code class="docutils literal notranslate"><span class="pre">loss</span></code> is a given loss function(also called robust kernel).</p>
+<p>Internally, <code class="docutils literal notranslate"><span class="pre">TransormationEstimationPointToPlane(loss)</span></code> implements a function to compute the weighted residuals and Jacobian matrices of the point-to-plane ICP objective according to the provided robust kernel.</p>
+</section>
+</section>
+<section id="Vanilla-ICP-vs-Robust-ICP">
+<h2>Vanilla ICP vs Robust ICP<a class="headerlink" href="#Vanilla-ICP-vs-Robust-ICP" title="Permalink to this heading">#</a></h2>
+<p>To better show the advantages of using robust kernels in the registration, we add some artificially generated gaussian noise to the source point cloud.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Overriding visualization function, according to best camera view for colored-icp sample data.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_registration_result</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">transformation</span><span class="p">):</span>
+    <span class="n">source_temp</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+    <span class="n">target_temp</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+    <span class="n">source_temp</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">transformation</span><span class="p">)</span>
+
+    <span class="c1"># This is patched version for tutorial rendering.</span>
+    <span class="c1"># Use `draw` function for you application.</span>
+    <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">source_temp</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">(),</span>
+         <span class="n">target_temp</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+        <span class="n">zoom</span><span class="o">=</span><span class="mf">0.4459</span><span class="p">,</span>
+        <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.9288</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2951</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2242</span><span class="p">],</span>
+        <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">1.6784</span><span class="p">,</span> <span class="mf">2.0612</span><span class="p">,</span> <span class="mf">1.4451</span><span class="p">],</span>
+        <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.3402</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9189</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1996</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">demo_icp_pcds</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DemoICPPointClouds</span><span class="p">()</span>
+<span class="n">source</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="n">demo_icp_pcds</span><span class="o">.</span><span class="n">paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="n">demo_icp_pcds</span><span class="o">.</span><span class="n">paths</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_noise</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">point</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
+    <span class="n">noisy_pcd</span> <span class="o">=</span> <span class="n">pcd</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+    <span class="n">noisy_pcd</span><span class="o">.</span><span class="n">point</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">noisy_pcd</span><span class="o">.</span><span class="n">point</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
+        <span class="n">noisy_pcd</span><span class="o">.</span><span class="n">point</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">noisy_pcd</span>
+
+
+<span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span>  <span class="c1"># mean and standard deviation</span>
+<span class="n">source_noisy</span> <span class="o">=</span> <span class="n">apply_noise</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Source PointCloud + noise:&quot;</span><span class="p">)</span>
+<span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">source_noisy</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()],</span>
+                                   <span class="n">zoom</span><span class="o">=</span><span class="mf">0.4459</span><span class="p">,</span>
+                                   <span class="n">front</span><span class="o">=</span><span class="p">[</span><span class="mf">0.353</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.469</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.809</span><span class="p">],</span>
+                                   <span class="n">lookat</span><span class="o">=</span><span class="p">[</span><span class="mf">2.343</span><span class="p">,</span> <span class="mf">2.217</span><span class="p">,</span> <span class="mf">1.809</span><span class="p">],</span>
+                                   <span class="n">up</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.097</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.879</span><span class="p">,</span> <span class="mf">0.467</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<section id="Vanilla-ICP">
+<h3>Vanilla ICP<a class="headerlink" href="#Vanilla-ICP" title="Permalink to this heading">#</a></h3>
+<p>We inspect how the results will look if we use the exact same parameters that were used in the above examples of ICP.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initial alignment or source to target transform.</span>
+<span class="n">init_source_to_target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mf">0.862</span><span class="p">,</span> <span class="mf">0.011</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.507</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+                                    <span class="p">[</span><span class="o">-</span><span class="mf">0.139</span><span class="p">,</span> <span class="mf">0.967</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.215</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">],</span>
+                                    <span class="p">[</span><span class="mf">0.487</span><span class="p">,</span> <span class="mf">0.255</span><span class="p">,</span> <span class="mf">0.835</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.4</span><span class="p">],</span>
+                                    <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+
+<span class="n">criteria</span> <span class="o">=</span> <span class="n">treg</span><span class="o">.</span><span class="n">ICPConvergenceCriteria</span><span class="p">(</span><span class="n">relative_fitness</span><span class="o">=</span><span class="mf">0.000001</span><span class="p">,</span>
+                                       <span class="n">relative_rmse</span><span class="o">=</span><span class="mf">0.000001</span><span class="p">,</span>
+                                       <span class="n">max_iteration</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimation</span> <span class="o">=</span> <span class="n">treg</span><span class="o">.</span><span class="n">TransformationEstimationPointToPlane</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">max_correspondence_distance</span> <span class="o">=</span> <span class="mf">0.02</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Vanilla point-to-plane ICP, max_correspondence_distance=</span><span class="si">{}</span><span class="s2">:&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+    <span class="n">max_correspondence_distance</span><span class="p">))</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="n">reg_point_to_plane</span> <span class="o">=</span> <span class="n">treg</span><span class="o">.</span><span class="n">icp</span><span class="p">(</span><span class="n">source_noisy</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">max_correspondence_distance</span><span class="p">,</span>
+                              <span class="n">init_source_to_target</span><span class="p">,</span> <span class="n">estimation</span><span class="p">)</span>
+
+<span class="n">icp_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">s</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Time taken by Point-To-Plane ICP: &quot;</span><span class="p">,</span> <span class="n">icp_time</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fitness: &quot;</span><span class="p">,</span> <span class="n">reg_point_to_plane</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Inlier RMSE: &quot;</span><span class="p">,</span> <span class="n">reg_point_to_plane</span><span class="o">.</span><span class="n">inlier_rmse</span><span class="p">)</span>
+
+<span class="n">draw_registration_result</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">reg_point_to_plane</span><span class="o">.</span><span class="n">transformation</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Tuning-Vanilla-ICP">
+<h3>Tuning Vanilla ICP<a class="headerlink" href="#Tuning-Vanilla-ICP" title="Permalink to this heading">#</a></h3>
+<p>Given the fact that we are now dealing with gaussian noise, we might try to increase the threshold to search for nearest neighbors with the aim of improving the registration result.</p>
+<p>We can see that under these conditions and without a robust kernel, the traditional ICP has no chance to deal with outliers.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimation</span> <span class="o">=</span> <span class="n">treg</span><span class="o">.</span><span class="n">TransformationEstimationPointToPlane</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">max_correspondence_distance</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+<span class="n">voxel_size</span> <span class="o">=</span> <span class="mf">0.02</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Vanilla point-to-plane ICP, max_correspondence_distance=</span><span class="si">{}</span><span class="s2">:&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+    <span class="n">max_correspondence_distance</span><span class="p">))</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="n">reg_point_to_plane</span> <span class="o">=</span> <span class="n">treg</span><span class="o">.</span><span class="n">icp</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">max_correspondence_distance</span><span class="p">,</span>
+                              <span class="n">init_source_to_target</span><span class="p">,</span> <span class="n">estimation</span><span class="p">,</span> <span class="n">criteria</span><span class="p">,</span>
+                              <span class="n">voxel_size</span><span class="p">)</span>
+
+<span class="n">icp_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">s</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Time taken by Point-To-Plane ICP: &quot;</span><span class="p">,</span> <span class="n">icp_time</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fitness: &quot;</span><span class="p">,</span> <span class="n">reg_point_to_plane</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Inlier RMSE: &quot;</span><span class="p">,</span> <span class="n">reg_point_to_plane</span><span class="o">.</span><span class="n">inlier_rmse</span><span class="p">)</span>
+
+<span class="n">draw_registration_result</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">reg_point_to_plane</span><span class="o">.</span><span class="n">transformation</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Robust-ICP">
+<h3>Robust ICP<a class="headerlink" href="#Robust-ICP" title="Permalink to this heading">#</a></h3>
+<p>Using the same <code class="docutils literal notranslate"><span class="pre">max_correspondence_distance=0.5</span></code> <strong>and</strong> a robust kernel, we can properly register the two point clouds:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span>  <span class="c1"># mean and standard deviation</span>
+<span class="n">estimation</span> <span class="o">=</span> <span class="n">treg</span><span class="o">.</span><span class="n">TransformationEstimationPointToPlane</span><span class="p">(</span>
+    <span class="n">treg</span><span class="o">.</span><span class="n">robust_kernel</span><span class="o">.</span><span class="n">RobustKernel</span><span class="p">(</span>
+        <span class="n">treg</span><span class="o">.</span><span class="n">robust_kernel</span><span class="o">.</span><span class="n">RobustKernelMethod</span><span class="o">.</span><span class="n">TukeyLoss</span><span class="p">,</span> <span class="n">sigma</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Vanilla point-to-plane ICP, max_correspondence_distance=</span><span class="si">{}</span><span class="s2">:&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+    <span class="n">max_correspondence_distance</span><span class="p">))</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="n">reg_point_to_plane</span> <span class="o">=</span> <span class="n">treg</span><span class="o">.</span><span class="n">icp</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">max_correspondence_distance</span><span class="p">,</span>
+                              <span class="n">init_source_to_target</span><span class="p">,</span> <span class="n">estimation</span><span class="p">,</span> <span class="n">criteria</span><span class="p">,</span>
+                              <span class="n">voxel_size</span><span class="p">)</span>
+
+<span class="n">icp_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">s</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Time taken by Point-To-Plane ICP: &quot;</span><span class="p">,</span> <span class="n">icp_time</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fitness: &quot;</span><span class="p">,</span> <span class="n">reg_point_to_plane</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Inlier RMSE: &quot;</span><span class="p">,</span> <span class="n">reg_point_to_plane</span><span class="o">.</span><span class="n">inlier_rmse</span><span class="p">)</span>
+
+<span class="n">draw_registration_result</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">reg_point_to_plane</span><span class="o">.</span><span class="n">transformation</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Registration estimation method supports <code class="docutils literal notranslate"><span class="pre">Robust</span> <span class="pre">Kernels</span></code>:</p>
+<p><code class="docutils literal notranslate"><span class="pre">robust_kernel</span> <span class="pre">=</span> <span class="pre">cv3d.t.pipelines.registration.robust_kernel.RobustKernel(method,</span> <span class="pre">scale,</span> <span class="pre">shape)</span></code></p>
+<p>Method options:</p>
+<ul class="simple">
+<li><p>robust_kernel.RobustKernelMethod.L2Loss</p></li>
+<li><p>robust_kernel.RobustKernelMethod.L1Loss</p></li>
+<li><p>robust_kernel.RobustKernelMethod.HuberLoss</p></li>
+<li><p>robust_kernel.RobustKernelMethod.CauchyLoss</p></li>
+<li><p>robust_kernel.RobustKernelMethod.GMLoss</p></li>
+<li><p>robust_kernel.RobustKernelMethod.TukeyLoss</p></li>
+<li><p>robust_kernel.RobustKernelMethod.GeneralizedLoss</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title"><strong>Note:</strong></p>
+<p>For this example we use the <strong>TukeyLoss</strong>. For the parameter <code class="docutils literal notranslate"><span class="pre">k</span></code> we set it to match the std deviation of the noise model <span class="math notranslate nohighlight">\(k = \sigma\)</span>. The parameter <code class="docutils literal notranslate"><span class="pre">k</span></code> used in the Robust Kernels it’s usually pick to match the standard deviation of the noise model of the input data. In this sense, <code class="docutils literal notranslate"><span class="pre">k</span></code>, is the discriminator between <strong>inlier</strong>/<strong>outlier</strong>. Although this is not always trivial to define in real world data, for synthetic one, it’s easy to fix in order to illustrate the benefits of the
+robust kernels.</p>
+</div>
+<hr class="docutils" />
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../../tutorials/basic_usage.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Basic Usage</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="t_icp_registration.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">ICP registration</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, ACloudViewer Team
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Robust Kernel</a><ul>
+<li><a class="reference internal" href="#Point-to-plane-ICP-using-Robust-Kernels">Point-to-plane ICP using Robust Kernels</a><ul>
+<li><a class="reference internal" href="#Outlier-Rejection-with-Robust-Kernels">Outlier Rejection with Robust Kernels</a></li>
+<li><a class="reference internal" href="#How-to-use-Robust-Kernels-in-CloudViewer">How to use Robust Kernels in CloudViewer</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Vanilla-ICP-vs-Robust-ICP">Vanilla ICP vs Robust ICP</a><ul>
+<li><a class="reference internal" href="#Vanilla-ICP">Vanilla ICP</a></li>
+<li><a class="reference internal" href="#Tuning-Vanilla-ICP">Tuning Vanilla ICP</a></li>
+<li><a class="reference internal" href="#Robust-ICP">Robust ICP</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=c711cca9"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=30646c52"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/version_switch.js?v=9a357ee9"></script>
+    </body>
+</html>

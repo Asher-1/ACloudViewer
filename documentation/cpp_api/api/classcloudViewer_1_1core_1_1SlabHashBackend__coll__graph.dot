@@ -1,0 +1,22 @@
+digraph "cloudViewer::core::SlabHashBackend&lt; Key, Hash, Eq &gt;"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="cloudViewer::core::\lSlabHashBackend\< Key,\l Hash, Eq \>",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::core::\lDeviceHashBackend",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1core_1_1DeviceHashBackend.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" device_" ,fontname="Helvetica"];
+  Node3 [label="cloudViewer::core::\lDevice",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1core_1_1Device.html",tooltip=" "];
+  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" capacity_\nkey_dsize_" ,fontname="Helvetica"];
+  Node4 [label="int64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" buffer_accessor_" ,fontname="Helvetica"];
+  Node5 [label="cloudViewer::core::\lCUDAHashBackendBufferAccessor",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1core_1_1CUDAHashBackendBufferAccessor.html",tooltip=" "];
+  Node6 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" heap_" ,fontname="Helvetica"];
+  Node6 [label="uint32_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" keys_\nvalues_" ,fontname="Helvetica"];
+  Node7 [label="uint8_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" capacity_\ncommon_block_size\l_\nkey_dsize_\nvalue_blocks_per\l_element_\nvalue_dsizes_" ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" bucket_count_" ,fontname="Helvetica"];
+}

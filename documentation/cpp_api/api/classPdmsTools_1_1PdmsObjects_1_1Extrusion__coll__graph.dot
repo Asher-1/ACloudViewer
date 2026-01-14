@@ -1,0 +1,22 @@
+digraph "PdmsTools::PdmsObjects::Extrusion"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="PdmsTools::PdmsObjects\l::Extrusion",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Extrusion."];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="PdmsTools::PdmsObjects\l::DesignElement",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPdmsTools_1_1PdmsObjects_1_1DesignElement.html",tooltip="Design element."];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="PdmsTools::PdmsObjects\l::GenericItem",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPdmsTools_1_1PdmsObjects_1_1GenericItem.html",tooltip="Generic item."];
+  Node3 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" creator\norientationReferences\nowner\npositionReference" ,fontname="Helvetica"];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" orientation\nposition" ,fontname="Helvetica"];
+  Node4 [label="Vector3Tpl\< PointCoordinate\lType \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip=" "];
+  Node5 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="Tuple3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classTuple3Tpl.html",tooltip="3-Tuple structure (templated version)"];
+  Node6 -> Node4 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< PointCoordinateType \>" ,fontname="Helvetica"];
+  Node6 [label="Vector3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip="3D Vector (templated version)"];
+  Node5 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" loop" ,fontname="Helvetica"];
+  Node7 [label="PdmsTools::PdmsObjects\l::Loop",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPdmsTools_1_1PdmsObjects_1_1Loop.html",tooltip="Loop."];
+  Node2 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

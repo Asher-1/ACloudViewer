@@ -1,0 +1,19 @@
+digraph "cloudViewer::PointCloud"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="cloudViewer::PointCloud",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::PointCloudTpl\l\< GenericIndexedCloudPersist \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1PointCloudTpl.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="cloudViewer::GenericIndexed\lCloudPersist",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1GenericIndexedCloudPersist.html",tooltip="A generic 3D point cloud with index-based and presistent access to points."];
+  Node4 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="cloudViewer::GenericIndexed\lCloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1GenericIndexedCloud.html",tooltip="A generic 3D point cloud with index-based point access."];
+  Node5 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="cloudViewer::GenericCloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1GenericCloud.html",tooltip=" "];
+  Node6 -> Node2 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< GenericIndexedCloudPersist \>" ,fontname="Helvetica"];
+  Node6 [label="cloudViewer::PointCloudTpl\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1PointCloudTpl.html",tooltip=" "];
+  Node7 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="T",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+}

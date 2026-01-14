@@ -1,0 +1,17 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qCork" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_50f8496c947415eedd96ada30c013367 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="Standard" fontname="Helvetica", fontsize="10", URL="dir_50f8496c947415eedd96ada30c013367.html"]
+  subgraph clusterdir_836044b15b031acf4c356af25a20212e {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_836044b15b031acf4c356af25a20212e.html"];
+    dir_836044b15b031acf4c356af25a20212e [shape=plaintext label="qCork"];
+  dir_e9628b7d3eb4ea1dbe8fae58807c5541 [shape=box label="include" fillcolor="white" style="filled" URL="dir_e9628b7d3eb4ea1dbe8fae58807c5541.html"];
+  dir_0a7d82898f90b8583792a1b871da012d [shape=box label="src" fillcolor="white" style="filled" URL="dir_0a7d82898f90b8583792a1b871da012d.html"];
+  }
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_0a7d82898f90b8583792a1b871da012d->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="2", labeldistance=1.5 headhref="dir_000162_000002.html"];
+  dir_0a7d82898f90b8583792a1b871da012d->dir_e9628b7d3eb4ea1dbe8fae58807c5541 [headlabel="3", labeldistance=1.5 headhref="dir_000162_000161.html"];
+}

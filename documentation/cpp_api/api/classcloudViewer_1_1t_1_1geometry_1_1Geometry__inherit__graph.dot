@@ -1,0 +1,24 @@
+digraph "cloudViewer::t::geometry::Geometry"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="cloudViewer::t::geometry\l::Geometry",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="The base geometry class."];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::core::\lIsDevice",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1core_1_1IsDevice.html",tooltip=" "];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="cloudViewer::t::geometry\l::AxisAlignedBoundingBox",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1t_1_1geometry_1_1AxisAlignedBoundingBox.html",tooltip="A bounding box that is aligned along the coordinate axes and defined by the min_bound and max_bound."];
+  Node1 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="cloudViewer::t::geometry\l::Image",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1t_1_1geometry_1_1Image.html",tooltip="The Image class stores image with customizable rows, cols, channels, dtype and device."];
+  Node1 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="cloudViewer::t::geometry\l::LineSet",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1t_1_1geometry_1_1LineSet.html",tooltip="A LineSet contains points and lines joining them and optionally attributes on the points and lines."];
+  Node1 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="cloudViewer::t::geometry\l::OrientedBoundingBox",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1t_1_1geometry_1_1OrientedBoundingBox.html",tooltip="A bounding box oriented along an arbitrary frame of reference."];
+  Node1 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="cloudViewer::t::geometry\l::PointCloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html",tooltip="A point cloud contains a list of 3D points."];
+  Node1 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="cloudViewer::t::geometry\l::RGBDImage",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1t_1_1geometry_1_1RGBDImage.html",tooltip="RGBDImage A pair of color and depth images."];
+  Node1 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="cloudViewer::t::geometry\l::TriangleMesh",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html",tooltip="A triangle mesh contains vertices and triangles."];
+}

@@ -1,0 +1,13 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qJSonRPCPlugin/src" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_2468591e7a20a8e343ef1344f6116ced {
+    graph [ bgcolor="#ddddee", pencolor="black", label="qJSonRPCPlugin" fontname="Helvetica", fontsize="10", URL="dir_2468591e7a20a8e343ef1344f6116ced.html"]
+  dir_fab7ad9c354e7d2e862297a2c645a841 [shape=box label="include" URL="dir_fab7ad9c354e7d2e862297a2c645a841.html"];
+  dir_38b5a25ee1fa83e4ee8240ad70094927 [shape=box, label="src", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_38b5a25ee1fa83e4ee8240ad70094927.html"];
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_38b5a25ee1fa83e4ee8240ad70094927->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="3", labeldistance=1.5 headhref="dir_000182_000002.html"];
+  dir_38b5a25ee1fa83e4ee8240ad70094927->dir_fab7ad9c354e7d2e862297a2c645a841 [headlabel="2", labeldistance=1.5 headhref="dir_000182_000181.html"];
+}

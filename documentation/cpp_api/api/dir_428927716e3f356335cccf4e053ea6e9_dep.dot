@@ -1,0 +1,11 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qPhotoscanIO/extern/quazip/quazip/quazip" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_94c0a9e8b582ab106ccb848acb54b094 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="quazip" fontname="Helvetica", fontsize="10", URL="dir_94c0a9e8b582ab106ccb848acb54b094.html"]
+  dir_428927716e3f356335cccf4e053ea6e9 [shape=box, label="quazip", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_428927716e3f356335cccf4e053ea6e9.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_428927716e3f356335cccf4e053ea6e9->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="2", labeldistance=1.5 headhref="dir_000135_000000.html"];
+}

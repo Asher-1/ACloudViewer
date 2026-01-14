@@ -1,0 +1,14 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qLASIO/include" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_842c62f1e2b8e17e8860531595b81d2e {
+    graph [ bgcolor="#ddddee", pencolor="black", label="qLASIO" fontname="Helvetica", fontsize="10", URL="dir_842c62f1e2b8e17e8860531595b81d2e.html"]
+  dir_b9ddb730e02511c7bbbb68a6f4192fdc [shape=box, label="include", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_b9ddb730e02511c7bbbb68a6f4192fdc.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_b9ddb730e02511c7bbbb68a6f4192fdc->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="6", labeldistance=1.5 headhref="dir_000123_000000.html"];
+  dir_b9ddb730e02511c7bbbb68a6f4192fdc->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="7", labeldistance=1.5 headhref="dir_000123_000002.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+}

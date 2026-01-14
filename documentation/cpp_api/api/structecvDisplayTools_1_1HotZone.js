@@ -1,0 +1,25 @@
+var structecvDisplayTools_1_1HotZone =
+[
+    [ "HotZone", "structecvDisplayTools_1_1HotZone.html#a399f70da7dd9d412d60e2a91640a0da7", null ],
+    [ "rect", "structecvDisplayTools_1_1HotZone.html#a9041a04f84cacc58650b80df633b75bb", null ],
+    [ "bbv_label", "structecvDisplayTools_1_1HotZone.html#aaf42e403400a89560f9a3fdf27f58c03", null ],
+    [ "bbv_labelRect", "structecvDisplayTools_1_1HotZone.html#a17c72e6a4d4fc1e213adad1bfc780e85", null ],
+    [ "bbv_totalWidth", "structecvDisplayTools_1_1HotZone.html#ab4d26c55476ca17e7b22b90ec43205fb", null ],
+    [ "color", "structecvDisplayTools_1_1HotZone.html#a68015d03165891a659b055f4a472c567", null ],
+    [ "font", "structecvDisplayTools_1_1HotZone.html#a6f92c7864a219d8766782385b92015b7", null ],
+    [ "fs_label", "structecvDisplayTools_1_1HotZone.html#a845988ff82f5825551c30b70dab96265", null ],
+    [ "fs_labelRect", "structecvDisplayTools_1_1HotZone.html#a4b37d9a74a3bdfcd78c2a0ae9a412d69", null ],
+    [ "fs_totalWidth", "structecvDisplayTools_1_1HotZone.html#a42e3a3670c7e088921b5b3286cf38761", null ],
+    [ "iconSize", "structecvDisplayTools_1_1HotZone.html#adf82e8f9b0e91a89b6988e389ebd4086", null ],
+    [ "lsi_label", "structecvDisplayTools_1_1HotZone.html#a0688a9ec6d310c121ba14794117ba930", null ],
+    [ "lsi_labelRect", "structecvDisplayTools_1_1HotZone.html#a9c7f8295c5465a84e6164cd3e2ba08bd", null ],
+    [ "lsi_totalWidth", "structecvDisplayTools_1_1HotZone.html#a3ff7511b309960a516558489185354f3", null ],
+    [ "margin", "structecvDisplayTools_1_1HotZone.html#a7f49d42f38cf18d75c933e81b5f3b5c2", null ],
+    [ "pixelDeviceRatio", "structecvDisplayTools_1_1HotZone.html#a3f66d41b327d075d466e3b4a2bf8ea99", null ],
+    [ "psi_label", "structecvDisplayTools_1_1HotZone.html#a6c50615dd4536176587aaf61d2f83dc4", null ],
+    [ "psi_labelRect", "structecvDisplayTools_1_1HotZone.html#a37537c4da07a06a3931d6a512e99b2f2", null ],
+    [ "psi_totalWidth", "structecvDisplayTools_1_1HotZone.html#ae74f86bd35b3aab65f067a1663c29aec", null ],
+    [ "textHeight", "structecvDisplayTools_1_1HotZone.html#ace207c36282b99d9186125aff14d96a6", null ],
+    [ "topCorner", "structecvDisplayTools_1_1HotZone.html#accc46980ae451a1140268297045a4b1e", null ],
+    [ "yTextBottomLineShift", "structecvDisplayTools_1_1HotZone.html#a7b4b2d974485d5f8a7d641a2b1c3278b", null ]
+];

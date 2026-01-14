@@ -1,0 +1,21 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qStepCADImport" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_9f1c91a719c6d2c352714b25e6ae45ee {
+    graph [ bgcolor="#ddddee", pencolor="black", label="IO" fontname="Helvetica", fontsize="10", URL="dir_9f1c91a719c6d2c352714b25e6ae45ee.html"]
+  subgraph clusterdir_2eecea42d9680bb682e2b63bdd726440 {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_2eecea42d9680bb682e2b63bdd726440.html"];
+    dir_2eecea42d9680bb682e2b63bdd726440 [shape=plaintext label="qStepCADImport"];
+  dir_47f2c60c6e152224713aee9c188a699e [shape=box label="include" fillcolor="white" style="filled" URL="dir_47f2c60c6e152224713aee9c188a699e.html"];
+  dir_0b522839ff1f467d4b3854dc029b3945 [shape=box label="src" fillcolor="white" style="filled" URL="dir_0b522839ff1f467d4b3854dc029b3945.html"];
+  }
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_0b522839ff1f467d4b3854dc029b3945->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="1", labeldistance=1.5 headhref="dir_000143_000000.html"];
+  dir_0b522839ff1f467d4b3854dc029b3945->dir_47f2c60c6e152224713aee9c188a699e [headlabel="3", labeldistance=1.5 headhref="dir_000143_000142.html"];
+  dir_0b522839ff1f467d4b3854dc029b3945->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="2", labeldistance=1.5 headhref="dir_000143_000002.html"];
+  dir_47f2c60c6e152224713aee9c188a699e->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="1", labeldistance=1.5 headhref="dir_000142_000002.html"];
+}

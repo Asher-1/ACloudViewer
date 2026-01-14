@@ -1,0 +1,8 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="flann::cuda::kd_tree\l_builder_detail::pointxyz\l_to_px_py_pz",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structflann_1_1cuda_1_1kd__tree__builder__detail_1_1pointxyz__to__px__py__pz.html",tooltip=" "];
+}

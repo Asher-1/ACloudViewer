@@ -1,0 +1,14 @@
+digraph "cloudViewer::visualization::GuiVisualizer::Impl::Settings"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="cloudViewer::visualization\l::GuiVisualizer::Impl::Settings",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" lit_material_\nnormal_depth_material\l_\nunlit_material_" ,fontname="Helvetica"];
+  Node2 [label="cloudViewer::visualization\l::rendering::MaterialRecord",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structcloudViewer_1_1visualization_1_1rendering_1_1MaterialRecord.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name\nshader" ,fontname="Helvetica"];
+  Node3 [label="string",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" model_" ,fontname="Helvetica"];
+  Node4 [label="cloudViewer::visualization\l::GuiSettingsModel",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1visualization_1_1GuiSettingsModel.html",tooltip=" "];
+}

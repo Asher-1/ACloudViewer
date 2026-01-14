@@ -1,0 +1,53 @@
+digraph "/root/ACloudViewer/libs/cloudViewer/io/sensor/RGBDSensorConfig.h"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/RGBDSensorConfig.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectSensorConfig.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AzureKinectSensorConfig_8h.html",tooltip=" "];
+  Node2 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectRecorder.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AzureKinectRecorder_8h.html",tooltip=" "];
+  Node3 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectRecorder.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AzureKinectRecorder_8cpp.html",tooltip=" "];
+  Node2 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectSensor.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AzureKinectSensor_8h.html",tooltip=" "];
+  Node5 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectSensor.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AzureKinectSensor_8cpp.html",tooltip=" "];
+  Node5 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/MKVReader.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$MKVReader_8cpp.html",tooltip=" "];
+  Node2 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectSensorConfig.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AzureKinectSensorConfig_8cpp.html",tooltip=" "];
+  Node1 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/RGBDRecorder.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$RGBDRecorder_8h.html",tooltip=" "];
+  Node9 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/RGBDSensor.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$io_2sensor_2RGBDSensor_8h.html",tooltip=" "];
+  Node10 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="/root/ACloudViewer\l/libs/cloudViewer/t\l/io/sensor/realsense\l/RealSenseSensorConfig.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$RealSenseSensorConfig_8h.html",tooltip=" "];
+  Node11 -> Node12 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node12 [label="/root/ACloudViewer\l/libs/cloudViewer/t\l/io/sensor/realsense\l/RealSenseSensor.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$RealSenseSensor_8h.html",tooltip=" "];
+  Node12 -> Node13 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 [label="/root/ACloudViewer\l/libs/cloudViewer/CloudViewer.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$CloudViewer_8h.html",tooltip=" "];
+  Node12 -> Node14 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node14 [label="/root/ACloudViewer\l/libs/cloudViewer/t\l/io/sensor/realsense\l/RealSenseSensor.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$RealSenseSensor_8cpp.html",tooltip=" "];
+  Node11 -> Node15 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node15 [label="/root/ACloudViewer\l/libs/cloudViewer/t\l/io/sensor/realsense\l/RealSenseSensorConfig.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$RealSenseSensorConfig_8cpp.html",tooltip=" "];
+  Node11 -> Node16 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node16 [label="/root/ACloudViewer\l/libs/cloudViewer/t\l/io/sensor/realsense\l/RSBagReader.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$RSBagReader_8cpp.html",tooltip=" "];
+  Node1 -> Node17 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node17 [label="/root/ACloudViewer\l/libs/cloudViewer/t\l/io/sensor/realsense\l/RSBagReader.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$RSBagReader_8h.html",tooltip=" "];
+  Node17 -> Node13 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node17 -> Node16 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node17 -> Node18 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node18 [label="/root/ACloudViewer\l/libs/cloudViewer/t\l/io/sensor/RGBDVideoReader.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$RGBDVideoReader_8cpp.html",tooltip=" "];
+  Node1 -> Node19 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node19 [label="/root/ACloudViewer\l/libs/cloudViewer/t\l/io/sensor/RGBDSensor.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$t_2io_2sensor_2RGBDSensor_8h.html",tooltip=" "];
+  Node19 -> Node12 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 -> Node20 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node20 [label="/root/ACloudViewer\l/libs/cloudViewer/t\l/io/sensor/RGBDVideoReader.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$RGBDVideoReader_8h.html",tooltip=" "];
+  Node20 -> Node17 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node20 -> Node18 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

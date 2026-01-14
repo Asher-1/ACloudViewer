@@ -1,0 +1,36 @@
+var structLasScalarField =
+[
+    [ "Range", "structLasScalarField_1_1Range.html", "structLasScalarField_1_1Range" ],
+    [ "Id", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52", [
+      [ "Intensity", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a7be152c227d5b9369f3a6000d00b63f5", null ],
+      [ "ReturnNumber", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52aa15a2e56dbbb34d8d28e9afb201433bb", null ],
+      [ "NumberOfReturns", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52aacbe0547201c00fbf8d9f2519a0a80c3", null ],
+      [ "ScanDirectionFlag", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a33cce7820e537ae3e03e95c7e7d39707", null ],
+      [ "EdgeOfFlightLine", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a96de64491e528678c8e75e85561a634e", null ],
+      [ "Classification", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a3f3b7c3c012a91ce8120a6d6c7c55164", null ],
+      [ "SyntheticFlag", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52aeaecfa5f1dc6c08db8db8744f1a726d1", null ],
+      [ "KeypointFlag", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52aa759e68a3290505fa39a4cf1dd3006dc", null ],
+      [ "WithheldFlag", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52aa0c228b1a90bfb03a0c66a9455f1f3e4", null ],
+      [ "ScanAngleRank", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a90221ab02800ecf5e969381a4a31509d", null ],
+      [ "UserData", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a0718d30c98e0a5e7dce2f686bf5a02c4", null ],
+      [ "PointSourceId", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52aec67e42aaf00c8fdcb7e0842f7637d7a", null ],
+      [ "GpsTime", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52aa2ea9b870dfe4a3f63c46f86d46e3e4b", null ],
+      [ "ExtendedScanAngle", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52aa162dfa786971061d0bce746adbc7415", null ],
+      [ "ExtendedScannerChannel", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a3d8eba4ff8c334ed3539542f5ac8e63f", null ],
+      [ "OverlapFlag", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a2d86c2aa4c1a66b17e8d71bd4f674f75", null ],
+      [ "ExtendedClassification", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52adbf69b554fc41bbc0e8236acbfc744d7", null ],
+      [ "ExtendedReturnNumber", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a8e28d43acb4898a7373ae5eb85142ae3", null ],
+      [ "ExtendedNumberOfReturns", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52affe92e93756a7cf675512ada157ecc50", null ],
+      [ "NearInfrared", "structLasScalarField.html#a99327fe3150f1e8156229dd83831bb52a5f02b7b9133071910092f697bf80489c", null ]
+    ] ],
+    [ "LasScalarField", "structLasScalarField.html#abf03cdba49f2a2d5704ee0985e0c1dda", null ],
+    [ "LasScalarField", "structLasScalarField.html#a12021589074aff842a35c83b8eac629d", null ],
+    [ "ForPointFormat", "structLasScalarField.html#a12b4a01738a1688f80ace0e753a63a55", null ],
+    [ "IdFromName", "structLasScalarField.html#aec694ed89cfd9ea731ba7a11560cffa8", null ],
+    [ "name", "structLasScalarField.html#a17cac9001636f6f6d744cdc2ff85d581", null ],
+    [ "NameFromId", "structLasScalarField.html#aa9b418364e48477b4087d8c5fe38f2b6", null ],
+    [ "ValueRange", "structLasScalarField.html#a66e1e691f1ca2843b4b2360fa3222ea4", null ],
+    [ "id", "structLasScalarField.html#ade01cf347d26e037040ceabd57e88ca8", null ],
+    [ "range", "structLasScalarField.html#abbe957e646bf223353228eff13d59731", null ],
+    [ "sf", "structLasScalarField.html#ac620a2806a10a3c26c842c9eaaa3e532", null ]
+];

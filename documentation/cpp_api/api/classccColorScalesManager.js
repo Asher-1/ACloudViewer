@@ -1,0 +1,38 @@
+var classccColorScalesManager =
+[
+    [ "ScalesMap", "classccColorScalesManager.html#a2aa04619a59a7c04004558fcf44b6546", null ],
+    [ "DEFAULT_SCALES", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148", [
+      [ "BGYR", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a80b175bda6923163ad9ff695e8b328f9", null ],
+      [ "GREY", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148af1eb8c43cec9804c5a0a063e011ab03b", null ],
+      [ "BWR", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a1361f16b1b7d4816e415b5caf16fc8ac", null ],
+      [ "RY", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a382ba8e2d35f413d1d5c82b0c7773fdd", null ],
+      [ "RW", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a8170c5a044eff9783fe15b53b2be3f3c", null ],
+      [ "ABS_NORM_GREY", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a190e52a13fa9856be4ab9e0b1d06bed3", null ],
+      [ "HSV_360_DEG", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a60b0b9fa9499fe8e5d8ad7e8254e2496", null ],
+      [ "VERTEX_QUALITY", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a6fabc8eb8402a8af9cd7efbd6750c398", null ],
+      [ "DIP_BRYW", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a628b2539297e279924eec34abc2bb310", null ],
+      [ "DIP_DIR_REPEAT", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a32e813e80d885cd080ccf241f3e8d49d", null ],
+      [ "VIRIDIS", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148adffbfde1e7a88ec038bc57dee54c43ca", null ],
+      [ "BROWN_YELLOW", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a6be65754e68017fd8b56d65e472db7e9", null ],
+      [ "YELLOW_BROWN", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a2019b26a400104ddd1b77121ba7b1efd", null ],
+      [ "TOPO_LANDSERF", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a12294a253b56cfb207ad3c1319b157bc", null ],
+      [ "HIGH_CONTRAST", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a62228a064f32e548e90bc919cfc0a2de", null ],
+      [ "CIVIDIS", "classccColorScalesManager.html#a4215b9a70e16692be23a381b37924148a3711e44b3b4dcef6e5cd83d57bd2a536", null ]
+    ] ],
+    [ "~ccColorScalesManager", "classccColorScalesManager.html#a7e74679b51f56ffd0e9f4a13fa2a1497", null ],
+    [ "ccColorScalesManager", "classccColorScalesManager.html#aac7d7ba7c4e4307c2affa929951de691", null ],
+    [ "addScale", "classccColorScalesManager.html#a1fa43e3ce827e3cd365ea944b33d1d9a", null ],
+    [ "Create", "classccColorScalesManager.html#a7a062c56b464d26ee99cf634c22f991e", null ],
+    [ "fromPersistentSettings", "classccColorScalesManager.html#ac0ea2aef112f6d1c4f9d8cf7b4c6d782", null ],
+    [ "getDefaultScale", "classccColorScalesManager.html#ad941e30f3f9fff3fb94b58015b95e36a", null ],
+    [ "GetDefaultScale", "classccColorScalesManager.html#a32b9700ae7a6c09c50f67f5a059ddd3d", null ],
+    [ "GetDefaultScaleUUID", "classccColorScalesManager.html#a892977c0230be1d3fb7af5184f511a28", null ],
+    [ "getScale", "classccColorScalesManager.html#a1ca3c30a3a3766c1f15bd18f0c172e1d", null ],
+    [ "GetUniqueInstance", "classccColorScalesManager.html#afc65e7966dee394829740ce025df93f3", null ],
+    [ "map", "classccColorScalesManager.html#a264925407896fe7aeff6afd2b8155915", null ],
+    [ "map", "classccColorScalesManager.html#a1fb1d0dfa3e96113363eec870bec8aaa", null ],
+    [ "ReleaseUniqueInstance", "classccColorScalesManager.html#ab44f8784ef51f2c6d6e934f7723e8958", null ],
+    [ "removeScale", "classccColorScalesManager.html#a772d7e97ab388e099538e9b1d0712523", null ],
+    [ "toPersistentSettings", "classccColorScalesManager.html#a9d67c5288ad91a3c72cbf2df53edb177", null ],
+    [ "m_scales", "classccColorScalesManager.html#afdaa323d1dfdba85efd8985651c58555", null ]
+];

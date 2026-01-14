@@ -1,0 +1,11 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qStepCADImport/include" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_2eecea42d9680bb682e2b63bdd726440 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="qStepCADImport" fontname="Helvetica", fontsize="10", URL="dir_2eecea42d9680bb682e2b63bdd726440.html"]
+  dir_47f2c60c6e152224713aee9c188a699e [shape=box, label="include", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_47f2c60c6e152224713aee9c188a699e.html"];
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_47f2c60c6e152224713aee9c188a699e->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="1", labeldistance=1.5 headhref="dir_000142_000002.html"];
+}

@@ -1,0 +1,11 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qPhotoscanIO/include" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_8a6369cb44f8824efc1f2d2ad37855b0 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="qPhotoscanIO" fontname="Helvetica", fontsize="10", URL="dir_8a6369cb44f8824efc1f2d2ad37855b0.html"]
+  dir_f63ae5920bf09855ffd1145140bbe6ef [shape=box, label="include", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_f63ae5920bf09855ffd1145140bbe6ef.html"];
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_f63ae5920bf09855ffd1145140bbe6ef->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="1", labeldistance=1.5 headhref="dir_000136_000002.html"];
+}

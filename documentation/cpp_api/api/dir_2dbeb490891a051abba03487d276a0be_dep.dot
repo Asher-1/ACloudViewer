@@ -1,0 +1,11 @@
+digraph "/root/ACloudViewer/libs/cloudViewer/data/dataset" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_7c0cbef8408e45f3c002527c979792ca {
+    graph [ bgcolor="#ddddee", pencolor="black", label="data" fontname="Helvetica", fontsize="10", URL="dir_7c0cbef8408e45f3c002527c979792ca.html"]
+  dir_2dbeb490891a051abba03487d276a0be [shape=box, label="dataset", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_2dbeb490891a051abba03487d276a0be.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_2dbeb490891a051abba03487d276a0be->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="48", labeldistance=1.5 headhref="dir_000017_000000.html"];
+}

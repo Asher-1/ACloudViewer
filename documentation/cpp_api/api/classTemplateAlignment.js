@@ -1,0 +1,25 @@
+var classTemplateAlignment =
+[
+    [ "TemplateAlignment", "classTemplateAlignment.html#afd1330da272b97cbdf828b941552f96a", null ],
+    [ "~TemplateAlignment", "classTemplateAlignment.html#a5de5d29dcd35e2122e685d7453a9bec5", null ],
+    [ "applyTransformation", "classTemplateAlignment.html#a10699d34fd3e04af96a7617b64990ddb", null ],
+    [ "checkParameters", "classTemplateAlignment.html#a715f61019a73e899a0df8be0039b06c3", null ],
+    [ "checkSelected", "classTemplateAlignment.html#a1ef96ae94f3bbf12144bc85493b6d643", null ],
+    [ "compute", "classTemplateAlignment.html#a90f29cb2c17cc15301c375d9bb4d8eae", null ],
+    [ "getErrorMessage", "classTemplateAlignment.html#a79c320d37357d1630963a26c14d2c483", null ],
+    [ "getParametersFromDialog", "classTemplateAlignment.html#a386682454ed57f333dc044c52237233c", null ],
+    [ "openInputDialog", "classTemplateAlignment.html#a29ca4d3a4f19c19955a29f909d10b7a0", null ],
+    [ "m_dialog", "classTemplateAlignment.html#a9daf2f8d1336dfee1a9c5d1dc8e6a0de", null ],
+    [ "m_featureRadius", "classTemplateAlignment.html#a39758962937f8b4967cf33db64772615", null ],
+    [ "m_leafSize", "classTemplateAlignment.html#a7586f5e6203a5485826194ddd2db68c9", null ],
+    [ "m_maxCorrespondenceDistance", "classTemplateAlignment.html#ac517e3361f8c64323dabdf93e2233f29", null ],
+    [ "m_maxIterations", "classTemplateAlignment.html#a45331556da3a1f04d96b6841653c5c4d", null ],
+    [ "m_maxThreadCount", "classTemplateAlignment.html#a610d4d4a82ea8600f027e3fb4485e1b7", null ],
+    [ "m_minSampleDistance", "classTemplateAlignment.html#a3192e5fccba1d6bd7a3b466f5160149c", null ],
+    [ "m_normalRadius", "classTemplateAlignment.html#a051ad8e323cc7dcb722ffdef69e43b31", null ],
+    [ "m_scales", "classTemplateAlignment.html#a6f748db01c0887bc803cac64328ebe3b", null ],
+    [ "m_targetCloud", "classTemplateAlignment.html#ac3a756f4d99d12cec8b12b33678cebcd", null ],
+    [ "m_templateClouds", "classTemplateAlignment.html#aa3a5d1334aa803a3908b3adcb693134e", null ],
+    [ "m_templateMatch", "classTemplateAlignment.html#aee01d533a9a84e07ac1cfb27b9a60a33", null ],
+    [ "m_useVoxelGrid", "classTemplateAlignment.html#aa7dd61401c53e21173abe17fcb38bab0", null ]
+];

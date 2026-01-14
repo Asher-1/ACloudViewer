@@ -1,0 +1,26 @@
+var classccIndexedTransformationBuffer =
+[
+    [ "ccIndexedTransformationBuffer", "classccIndexedTransformationBuffer.html#aae402935fc2e6276ddb4b015bf404a06", null ],
+    [ "ccIndexedTransformationBuffer", "classccIndexedTransformationBuffer.html#ab1f3e168d12bba5b30341a84ca3405aa", null ],
+    [ "findNearest", "classccIndexedTransformationBuffer.html#a60672fbe2bc7d5a1b15b7bbd0bc5f1f7", null ],
+    [ "fromFile_MeOnly", "classccIndexedTransformationBuffer.html#acae23275d27216fcb2eaf2f4ff56d6b0", null ],
+    [ "getClassID", "classccIndexedTransformationBuffer.html#a356975187bd16ee001b20241281d09a9", null ],
+    [ "getInterpolatedTransformation", "classccIndexedTransformationBuffer.html#a6e3a18b2a69cdadb7ae0666ffd0876f5", null ],
+    [ "getOwnBB", "classccIndexedTransformationBuffer.html#aa40349fea30f1fc928c0fd56affef25f", null ],
+    [ "invalidateBoundingBox", "classccIndexedTransformationBuffer.html#acea4d665f17667cbe1bd390fc46228f8", null ],
+    [ "isPathShonwAsPolyline", "classccIndexedTransformationBuffer.html#a6bf38962e5537b0a1318cd825a1d3596", null ],
+    [ "isSerializable", "classccIndexedTransformationBuffer.html#ac533fa2d5d72993624caa91c33065e02", null ],
+    [ "minimumFileVersion_MeOnly", "classccIndexedTransformationBuffer.html#ad711bac9d0fca088d6e130320ceea07a", null ],
+    [ "setTriherdonsDisplayScale", "classccIndexedTransformationBuffer.html#adc88869f64c40cb6fc92260d99a8c127", null ],
+    [ "showPathAsPolyline", "classccIndexedTransformationBuffer.html#acb7aef6708da6b9f35d6fd330becd327", null ],
+    [ "showTriherdons", "classccIndexedTransformationBuffer.html#ae1494c0212a433624fc04bad8fd0e6dd", null ],
+    [ "sort", "classccIndexedTransformationBuffer.html#ab2dea1ee5b203d2f47f0037bfb476264", null ],
+    [ "toFile_MeOnly", "classccIndexedTransformationBuffer.html#a4fd8d18595df9bbbd2b7024123c117a6", null ],
+    [ "triherdonsDisplayScale", "classccIndexedTransformationBuffer.html#af5dd4c1dc4bcbfca402dae7baa90898f", null ],
+    [ "triherdonsShown", "classccIndexedTransformationBuffer.html#ab169937f35584f2269ae559aa8f0e75c", null ],
+    [ "m_bBox", "classccIndexedTransformationBuffer.html#acad6cffbd7b615835db23faef522b9cd", null ],
+    [ "m_bBoxValidSize", "classccIndexedTransformationBuffer.html#a676a858a777ce9c588abd67101ddbe27", null ],
+    [ "m_showAsPolyline", "classccIndexedTransformationBuffer.html#ad9553b421cea6e998079ebe18913dcb6", null ],
+    [ "m_showTrihedrons", "classccIndexedTransformationBuffer.html#a929f04e429a039c4e3f5d67d377adcdc", null ],
+    [ "m_trihedronsScale", "classccIndexedTransformationBuffer.html#ac7d6a21d2c74c9663d2bcb5fb977d661", null ]
+];

@@ -1,0 +1,21 @@
+digraph "PdmsTools::PdmsObjects::RTorus"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="PdmsTools::PdmsObjects\l::RTorus",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="PdmsTools::PdmsObjects\l::CTorus",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPdmsTools_1_1PdmsObjects_1_1CTorus.html",tooltip="Torus (circular section)"];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="PdmsTools::PdmsObjects\l::DesignElement",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPdmsTools_1_1PdmsObjects_1_1DesignElement.html",tooltip="Design element."];
+  Node4 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="PdmsTools::PdmsObjects\l::GenericItem",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPdmsTools_1_1PdmsObjects_1_1GenericItem.html",tooltip="Generic item."];
+  Node4 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" creator\norientationReferences\nowner\npositionReference" ,fontname="Helvetica"];
+  Node5 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" orientation\nposition" ,fontname="Helvetica"];
+  Node5 [label="Vector3Tpl\< PointCoordinate\lType \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip=" "];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="Tuple3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classTuple3Tpl.html",tooltip="3-Tuple structure (templated version)"];
+  Node7 -> Node5 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< PointCoordinateType \>" ,fontname="Helvetica"];
+  Node7 [label="Vector3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip="3D Vector (templated version)"];
+  Node6 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

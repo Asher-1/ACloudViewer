@@ -1,0 +1,8 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="flann::cuda::SingleResult\lSet\< DistanceType \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structflann_1_1cuda_1_1SingleResultSet.html",tooltip="result set for the 1nn search. Doesn't do any global memory accesses on its own,"];
+}

@@ -1,0 +1,30 @@
+digraph "/root/ACloudViewer/libs/eCV_db/include/ecvSensor.h"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="/root/ACloudViewer\l/libs/eCV_db/include\l/ecvSensor.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="/root/ACloudViewer\l/libs/eCV_db/include\l/ecvCameraSensor.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$ecvCameraSensor_8h.html",tooltip=" "];
+  Node2 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="/root/ACloudViewer\l/plugins/core/IO/qAdditional\lIO/src/BundlerFilter.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$BundlerFilter_8cpp.html",tooltip=" "];
+  Node2 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="/root/ACloudViewer\l/plugins/core/IO/qAdditional\lIO/src/IcmFilter.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$IcmFilter_8cpp.html",tooltip=" "];
+  Node2 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="/root/ACloudViewer\l/plugins/core/IO/qE57IO\l/src/E57Filter.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$E57Filter_8cpp.html",tooltip=" "];
+  Node2 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="/root/ACloudViewer\l/plugins/core/IO/qPhotoscan\lIO/src/PhotoScanFilter.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$PhotoScanFilter_8cpp.html",tooltip=" "];
+  Node2 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/pycc/src/qcc_db/ccCameraSensor.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$ccCameraSensor_8cpp.html",tooltip=" "];
+  Node1 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="/root/ACloudViewer\l/libs/eCV_db/include\l/ecvGBLSensor.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$ecvGBLSensor_8h.html",tooltip=" "];
+  Node8 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="/root/ACloudViewer\l/plugins/core/IO/qAdditional\lIO/src/PovFilter.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$PovFilter_8cpp.html",tooltip=" "];
+  Node8 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPCL/PclIO/src/PcdFilter.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$PcdFilter_8cpp.html",tooltip=" "];
+  Node8 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/pycc/src/qcc_db/ccGBLSensor.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$ccGBLSensor_8cpp.html",tooltip=" "];
+  Node1 -> Node12 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node12 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/pycc/src/qcc_db/ccSensor.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$ccSensor_8cpp.html",tooltip=" "];
+}

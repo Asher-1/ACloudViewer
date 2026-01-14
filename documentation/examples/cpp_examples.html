@@ -1,0 +1,1317 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="C++ documentation" href="../cpp_api.html" /><link rel="prev" title="Visualization Examples" href="../python_example/visualization/index.html" />
+
+    <link rel="shortcut icon" href="../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
+        <title>C++ Examples - ACloudViewer 3.9.3 Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=47d5a741" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #2196F3;
+  --color-brand-content: #2196F3;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">ACloudViewer 3.9.3 Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/ACloudViewer_logo_horizontal.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">ACloudViewer 3.9.3 Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_from_source.html">Building from Source</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/index.html">Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Tutorial</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/ml/index.html">Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/core/tensor.html">Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/core/hashmap.html">Hash map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_geometry/pointcloud.html">PointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_pipelines/t_icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/ml/index.html">Machine Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/advanced/index.html">Advanced Topics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/basic_usage.html">Basic Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/point_cloud_processing.html">Point Cloud Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/visualization.html">Visualization</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python Examples</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/geometry/index.html">Geometry Examples</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of Geometry Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/io/index.html">I/O Examples</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of I/O Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/pipelines/index.html">Pipelines Examples</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle navigation of Pipelines Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/visualization/index.html">Visualization Examples</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle navigation of Visualization Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ Examples</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">C++ Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ API</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cpp_api.html">C++ documentation</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle navigation of C++ documentation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/overview.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/quickstart.html">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/plugins.html">Plugin System</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../developer/contributing.html">Contributing to ACloudViewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/docker.html">Docker Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/ci_cd.html">CI/CD Pipeline</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../resources/changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/support.html">Getting Support</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="c-examples">
+<h1>C++ Examples<a class="headerlink" href="#c-examples" title="Permalink to this heading">#</a></h1>
+<p>This page provides a comprehensive overview of C++ examples available in ACloudViewer. All examples are located in the <code class="docutils literal notranslate"><span class="pre">examples/Cpp/</span></code> directory.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To build and run these examples:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>ACloudViewer
+mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>..
+make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+
+<span class="c1"># Run an example</span>
+./bin/examples/PointCloud
+./bin/examples/Visualizer
+</pre></div>
+</div>
+</div>
+<section id="basic-examples">
+<h2>Basic Examples<a class="headerlink" href="#basic-examples" title="Permalink to this heading">#</a></h2>
+<section id="point-cloud-operations">
+<h3>Point Cloud Operations<a class="headerlink" href="#point-cloud-operations" title="Permalink to this heading">#</a></h3>
+<p><strong>PointCloud.cpp</strong> - Basic point cloud manipulation</p>
+<p>Demonstrates fundamental point cloud operations:</p>
+<ul class="simple">
+<li><p>Loading and saving point clouds</p></li>
+<li><p>Accessing point coordinates and normals</p></li>
+<li><p>Computing bounding boxes</p></li>
+<li><p>Point cloud statistics</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run</span>
+./bin/examples/PointCloud<span class="w"> </span><span class="o">[</span>pointcloud.pcd<span class="o">]</span>
+
+<span class="c1"># Features demonstrated:</span>
+<span class="c1"># - Read/write point clouds</span>
+<span class="c1"># - Print point cloud information</span>
+<span class="c1"># - Access point coordinates and normals</span>
+<span class="c1"># - Compute min/max bounds</span>
+</pre></div>
+</div>
+<p><strong>Key Code Snippet:</strong></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;CloudViewer.h&quot;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">pcd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">ccPointCloud</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="n">cloudViewer</span><span class="o">::</span><span class="n">io</span><span class="o">::</span><span class="n">ReadPointCloud</span><span class="p">(</span><span class="s">&quot;input.pcd&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">pcd</span><span class="p">);</span>
+
+<span class="c1">// Get bounding box</span>
+<span class="n">Eigen</span><span class="o">::</span><span class="n">Vector3d</span><span class="w"> </span><span class="n">min_bound</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pcd</span><span class="o">-&gt;</span><span class="n">GetMinBound</span><span class="p">();</span>
+<span class="n">Eigen</span><span class="o">::</span><span class="n">Vector3d</span><span class="w"> </span><span class="n">max_bound</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pcd</span><span class="o">-&gt;</span><span class="n">GetMaxBound</span><span class="p">();</span>
+
+<span class="c1">// Access points</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">pcd</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">CCVector3</span><span class="w"> </span><span class="o">&amp;</span><span class="n">point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">pcd</span><span class="o">-&gt;</span><span class="n">getPoint</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Process point...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="triangle-mesh-operations">
+<h3>Triangle Mesh Operations<a class="headerlink" href="#triangle-mesh-operations" title="Permalink to this heading">#</a></h3>
+<p><strong>TriangleMesh.cpp</strong> - Mesh creation and manipulation</p>
+<p>Examples include:</p>
+<ul class="simple">
+<li><p>Creating primitive meshes (sphere, box, cylinder)</p></li>
+<li><p>Merging multiple meshes</p></li>
+<li><p>Computing mesh normals</p></li>
+<li><p>Mesh subdivision and simplification</p></li>
+<li><p>Mesh filtering</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run</span>
+./bin/examples/TriangleMesh<span class="w"> </span>sphere
+./bin/examples/TriangleMesh<span class="w"> </span>merge<span class="w"> </span>mesh1.ply<span class="w"> </span>mesh2.ply
+./bin/examples/TriangleMesh<span class="w"> </span>normal<span class="w"> </span>input.ply<span class="w"> </span>output.ply
+</pre></div>
+</div>
+<p><strong>Key Operations:</strong></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create sphere</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">mesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ccMesh</span><span class="o">::</span><span class="n">createSphere</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">);</span>
+
+<span class="c1">// Compute normals</span>
+<span class="n">mesh</span><span class="o">-&gt;</span><span class="n">ComputeVertexNormals</span><span class="p">();</span>
+
+<span class="c1">// Merge meshes</span>
+<span class="o">*</span><span class="n">mesh1</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="o">*</span><span class="n">mesh2</span><span class="p">;</span>
+
+<span class="c1">// Paint mesh</span>
+<span class="n">PaintMesh</span><span class="p">(</span><span class="o">*</span><span class="n">mesh</span><span class="p">,</span><span class="w"> </span><span class="n">Eigen</span><span class="o">::</span><span class="n">Vector3d</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">));</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="visualization">
+<h2>Visualization<a class="headerlink" href="#visualization" title="Permalink to this heading">#</a></h2>
+<section id="basic-visualization">
+<h3>Basic Visualization<a class="headerlink" href="#basic-visualization" title="Permalink to this heading">#</a></h3>
+<p><strong>Visualizer.cpp</strong> - Comprehensive visualization examples</p>
+<p>Supports multiple visualization modes:</p>
+<ul class="simple">
+<li><p>Mesh visualization</p></li>
+<li><p>Point cloud visualization with colors</p></li>
+<li><p>Image and depth image display</p></li>
+<li><p>RGBD image pairs</p></li>
+<li><p>Interactive mesh editing</p></li>
+<li><p>Animation playback</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualize mesh</span>
+./bin/examples/Visualizer<span class="w"> </span>mesh<span class="w"> </span>model.ply
+
+<span class="c1"># Visualize point cloud with rainbow colors</span>
+./bin/examples/Visualizer<span class="w"> </span>rainbow<span class="w"> </span>cloud.pcd
+
+<span class="c1"># Visualize RGBD image pair</span>
+./bin/examples/Visualizer<span class="w"> </span>rgbd<span class="w"> </span>color.png<span class="w"> </span>depth.png
+</pre></div>
+</div>
+<p><strong>Supported Options:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mesh</span></code> - Display 3D mesh</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pointcloud</span></code> - Display point cloud</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rainbow</span></code> - Point cloud with rainbow colors</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">image</span></code> - Display 2D image</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">depth</span></code> - Display depth image</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rgbd</span></code> - Display RGBD pair</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">editing</span></code> - Interactive mesh editing</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">animation</span></code> - Play animation with trajectory</p></li>
+</ul>
+</section>
+<section id="multiple-windows">
+<h3>Multiple Windows<a class="headerlink" href="#multiple-windows" title="Permalink to this heading">#</a></h3>
+<p><strong>MultipleWindows.cpp</strong> - Multi-window visualization</p>
+<p>Demonstrates:</p>
+<ul class="simple">
+<li><p>Creating multiple visualization windows</p></li>
+<li><p>Synchronizing camera views</p></li>
+<li><p>Independent window controls</p></li>
+<li><p>Custom callback functions</p></li>
+</ul>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create multiple windows</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">vis1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">visualization</span><span class="o">::</span><span class="n">Visualizer</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">vis2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">visualization</span><span class="o">::</span><span class="n">Visualizer</span><span class="o">&gt;</span><span class="p">();</span>
+
+<span class="n">vis1</span><span class="o">-&gt;</span><span class="n">CreateVisualizerWindow</span><span class="p">(</span><span class="s">&quot;Window 1&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">640</span><span class="p">,</span><span class="w"> </span><span class="mi">480</span><span class="p">);</span>
+<span class="n">vis2</span><span class="o">-&gt;</span><span class="n">CreateVisualizerWindow</span><span class="p">(</span><span class="s">&quot;Window 2&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">640</span><span class="p">,</span><span class="w"> </span><span class="mi">480</span><span class="p">);</span>
+
+<span class="c1">// Add geometries</span>
+<span class="n">vis1</span><span class="o">-&gt;</span><span class="n">AddGeometry</span><span class="p">(</span><span class="n">pcd1</span><span class="p">);</span>
+<span class="n">vis2</span><span class="o">-&gt;</span><span class="n">AddGeometry</span><span class="p">(</span><span class="n">pcd2</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="offscreen-rendering">
+<h3>Offscreen Rendering<a class="headerlink" href="#offscreen-rendering" title="Permalink to this heading">#</a></h3>
+<p><strong>OffscreenRendering.cpp</strong> - Render without GUI</p>
+<p>Useful for:</p>
+<ul class="simple">
+<li><p>Batch rendering</p></li>
+<li><p>Server-side visualization</p></li>
+<li><p>Automated image generation</p></li>
+<li><p>CI/CD pipelines</p></li>
+</ul>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create offscreen renderer</span>
+<span class="n">visualization</span><span class="o">::</span><span class="n">rendering</span><span class="o">::</span><span class="n">OffscreenRenderer</span><span class="w"> </span><span class="nf">renderer</span><span class="p">(</span><span class="mi">640</span><span class="p">,</span><span class="w"> </span><span class="mi">480</span><span class="p">);</span>
+
+<span class="c1">// Add geometry and render</span>
+<span class="n">renderer</span><span class="p">.</span><span class="n">GetScene</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">AddGeometry</span><span class="p">(</span><span class="s">&quot;mesh&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mesh_ptr</span><span class="p">,</span><span class="w"> </span><span class="n">material</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">renderer</span><span class="p">.</span><span class="n">RenderToImage</span><span class="p">();</span>
+
+<span class="c1">// Save rendered image</span>
+<span class="n">io</span><span class="o">::</span><span class="n">WriteImage</span><span class="p">(</span><span class="s">&quot;rendered.png&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">image</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="geometry-processing">
+<h2>Geometry Processing<a class="headerlink" href="#geometry-processing" title="Permalink to this heading">#</a></h2>
+<section id="voxelization">
+<h3>Voxelization<a class="headerlink" href="#voxelization" title="Permalink to this heading">#</a></h3>
+<p><strong>Voxelization.cpp</strong> - Voxel-based operations</p>
+<p>Examples:</p>
+<ul class="simple">
+<li><p>Voxel downsampling</p></li>
+<li><p>Voxel grid creation</p></li>
+<li><p>Occupancy grid</p></li>
+<li><p>Distance field computation</p></li>
+</ul>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Downsample point cloud</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">downsampled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pcd</span><span class="o">-&gt;</span><span class="n">VoxelDownSample</span><span class="p">(</span><span class="n">voxel_size</span><span class="p">);</span>
+
+<span class="c1">// Create voxel grid</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">voxel_grid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geometry</span><span class="o">::</span><span class="n">VoxelGrid</span><span class="o">::</span><span class="n">CreateFromPointCloud</span><span class="p">(</span>
+<span class="w">    </span><span class="o">*</span><span class="n">pcd</span><span class="p">,</span><span class="w"> </span><span class="n">voxel_size</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="octree-operations">
+<h3>Octree Operations<a class="headerlink" href="#octree-operations" title="Permalink to this heading">#</a></h3>
+<p><strong>Octree.cpp</strong> - Spatial indexing with octrees</p>
+<p>Features:</p>
+<ul class="simple">
+<li><p>Octree construction</p></li>
+<li><p>Nearest neighbor search</p></li>
+<li><p>Radius search</p></li>
+<li><p>Octree traversal</p></li>
+<li><p>Voxel location queries</p></li>
+</ul>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create octree from point cloud</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">octree</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geometry</span><span class="o">::</span><span class="n">Octree</span><span class="o">::</span><span class="n">CreateFromPointCloud</span><span class="p">(</span><span class="o">*</span><span class="n">pcd</span><span class="p">,</span><span class="w"> </span><span class="n">max_depth</span><span class="p">);</span>
+
+<span class="c1">// Find nearest neighbors</span>
+<span class="k">auto</span><span class="w"> </span><span class="p">[</span><span class="n">indices</span><span class="p">,</span><span class="w"> </span><span class="n">distances</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">octree</span><span class="o">-&gt;</span><span class="n">SearchKnn</span><span class="p">(</span><span class="n">query_point</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">);</span>
+
+<span class="c1">// Radius search</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">octree</span><span class="o">-&gt;</span><span class="n">SearchRadius</span><span class="p">(</span><span class="n">query_point</span><span class="p">,</span><span class="w"> </span><span class="n">radius</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="half-edge-triangle-mesh">
+<h3>Half-Edge Triangle Mesh<a class="headerlink" href="#half-edge-triangle-mesh" title="Permalink to this heading">#</a></h3>
+<p><strong>HalfEdgeTriangleMesh.cpp</strong> - Advanced mesh representation</p>
+<p>Topology operations:</p>
+<ul class="simple">
+<li><p>Half-edge data structure</p></li>
+<li><p>Mesh connectivity queries</p></li>
+<li><p>Edge operations</p></li>
+<li><p>Manifold checks</p></li>
+</ul>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Convert to half-edge mesh</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">half_edge_mesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geometry</span><span class="o">::</span><span class="n">HalfEdgeTriangleMesh</span><span class="o">::</span><span class="n">CreateFromTriangleMesh</span><span class="p">(</span><span class="o">*</span><span class="n">mesh</span><span class="p">);</span>
+
+<span class="c1">// Query connectivity</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">adjacent_vertices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">half_edge_mesh</span><span class="o">-&gt;</span><span class="n">GetAdjacentVertices</span><span class="p">(</span><span class="n">vertex_id</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">boundary_edges</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">half_edge_mesh</span><span class="o">-&gt;</span><span class="n">GetBoundaryEdges</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="registration">
+<h2>Registration<a class="headerlink" href="#registration" title="Permalink to this heading">#</a></h2>
+<section id="icp-registration">
+<h3>ICP Registration<a class="headerlink" href="#icp-registration" title="Permalink to this heading">#</a></h3>
+<p><strong>GeneralizedICP.cpp</strong> - Iterative Closest Point</p>
+<p>Point-to-point and point-to-plane ICP:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Point-to-point ICP</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">registration</span><span class="o">::</span><span class="n">RegistrationICP</span><span class="p">(</span>
+<span class="w">    </span><span class="n">source</span><span class="p">,</span><span class="w"> </span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="n">max_distance</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Eigen</span><span class="o">::</span><span class="n">Matrix4d</span><span class="o">::</span><span class="n">Identity</span><span class="p">(),</span>
+<span class="w">    </span><span class="n">registration</span><span class="o">::</span><span class="n">TransformationEstimationPointToPoint</span><span class="p">());</span>
+
+<span class="c1">// Point-to-plane ICP</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">registration</span><span class="o">::</span><span class="n">RegistrationICP</span><span class="p">(</span>
+<span class="w">    </span><span class="n">source</span><span class="p">,</span><span class="w"> </span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="n">max_distance</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Eigen</span><span class="o">::</span><span class="n">Matrix4d</span><span class="o">::</span><span class="n">Identity</span><span class="p">(),</span>
+<span class="w">    </span><span class="n">registration</span><span class="o">::</span><span class="n">TransformationEstimationPointToPlane</span><span class="p">());</span>
+</pre></div>
+</div>
+</section>
+<section id="colored-icp">
+<h3>Colored ICP<a class="headerlink" href="#colored-icp" title="Permalink to this heading">#</a></h3>
+<p><strong>RegistrationColoredICP.cpp</strong> - Color-enhanced registration</p>
+<p>Uses both geometry and color information:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">registration</span><span class="o">::</span><span class="n">RegistrationColoredICP</span><span class="p">(</span>
+<span class="w">    </span><span class="n">source</span><span class="p">,</span><span class="w"> </span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="n">max_distance</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Eigen</span><span class="o">::</span><span class="n">Matrix4d</span><span class="o">::</span><span class="n">Identity</span><span class="p">(),</span>
+<span class="w">    </span><span class="n">registration</span><span class="o">::</span><span class="n">ICPConvergenceCriteria</span><span class="p">());</span>
+</pre></div>
+</div>
+</section>
+<section id="fast-global-registration">
+<h3>Fast Global Registration<a class="headerlink" href="#fast-global-registration" title="Permalink to this heading">#</a></h3>
+<p><strong>RegistrationFGR.cpp</strong> - Feature-based registration</p>
+<p>Fast global registration without initial alignment:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Compute FPFH features</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">source_fpfh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">registration</span><span class="o">::</span><span class="n">ComputeFPFHFeature</span><span class="p">(</span>
+<span class="w">    </span><span class="o">*</span><span class="n">source</span><span class="p">,</span><span class="w"> </span><span class="n">search_param</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">target_fpfh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">registration</span><span class="o">::</span><span class="n">ComputeFPFHFeature</span><span class="p">(</span>
+<span class="w">    </span><span class="o">*</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="n">search_param</span><span class="p">);</span>
+
+<span class="c1">// Fast global registration</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">registration</span><span class="o">::</span><span class="n">FastGlobalRegistration</span><span class="p">(</span>
+<span class="w">    </span><span class="o">*</span><span class="n">source</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">source_fpfh</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">target_fpfh</span><span class="p">,</span><span class="w"> </span><span class="n">option</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="ransac-registration">
+<h3>RANSAC Registration<a class="headerlink" href="#ransac-registration" title="Permalink to this heading">#</a></h3>
+<p><strong>RegistrationRANSAC.cpp</strong> - Robust correspondence-based registration</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Find correspondences</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">correspondences</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">registration</span><span class="o">::</span><span class="n">CorrespondencesFromFeatures</span><span class="p">(</span>
+<span class="w">    </span><span class="o">*</span><span class="n">source_fpfh</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">target_fpfh</span><span class="p">);</span>
+
+<span class="c1">// RANSAC registration</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">registration</span><span class="o">::</span><span class="n">RegistrationRANSACBasedOnCorrespondence</span><span class="p">(</span>
+<span class="w">    </span><span class="o">*</span><span class="n">source</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="n">correspondences</span><span class="p">,</span><span class="w"> </span><span class="n">max_distance</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="doppler-icp">
+<h3>Doppler ICP<a class="headerlink" href="#doppler-icp" title="Permalink to this heading">#</a></h3>
+<p><strong>RegistrationDopplerICP.cpp</strong> - Doppler velocity-enhanced ICP</p>
+<p>For dynamic scenes with velocity information:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/RegistrationDopplerICP<span class="w"> </span>source.pcd<span class="w"> </span>target.pcd
+</pre></div>
+</div>
+</section>
+<section id="tensor-based-icp">
+<h3>Tensor-based ICP<a class="headerlink" href="#tensor-based-icp" title="Permalink to this heading">#</a></h3>
+<p><strong>TICP.cpp</strong> - GPU-accelerated tensor ICP</p>
+<p>High-performance registration using tensors:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create tensor point clouds</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">source_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="o">::</span><span class="n">geometry</span><span class="o">::</span><span class="n">PointCloud</span><span class="o">::</span><span class="n">FromLegacy</span><span class="p">(</span><span class="o">*</span><span class="n">source</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">target_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="o">::</span><span class="n">geometry</span><span class="o">::</span><span class="n">PointCloud</span><span class="o">::</span><span class="n">FromLegacy</span><span class="p">(</span><span class="o">*</span><span class="n">target</span><span class="p">);</span>
+
+<span class="c1">// Tensor ICP</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="o">::</span><span class="n">pipelines</span><span class="o">::</span><span class="n">registration</span><span class="o">::</span><span class="n">ICP</span><span class="p">(</span>
+<span class="w">    </span><span class="n">source_t</span><span class="p">,</span><span class="w"> </span><span class="n">target_t</span><span class="p">,</span><span class="w"> </span><span class="n">max_distance</span><span class="p">,</span><span class="w"> </span><span class="n">init</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="d-reconstruction">
+<h2>3D Reconstruction<a class="headerlink" href="#d-reconstruction" title="Permalink to this heading">#</a></h2>
+<section id="rgbd-integration">
+<h3>RGBD Integration<a class="headerlink" href="#rgbd-integration" title="Permalink to this heading">#</a></h3>
+<p><strong>IntegrateRGBD.cpp</strong> - RGBD frame integration</p>
+<p>Integrate RGBD frames into TSDF volume:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create TSDF volume</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">volume</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">integration</span><span class="o">::</span><span class="n">ScalableTSDFVolume</span><span class="p">(</span>
+<span class="w">    </span><span class="n">voxel_length</span><span class="p">,</span><span class="w"> </span><span class="n">sdf_trunc</span><span class="p">,</span><span class="w"> </span><span class="n">color_type</span><span class="p">);</span>
+
+<span class="c1">// Integrate RGBD images</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="p">[</span><span class="n">color</span><span class="p">,</span><span class="w"> </span><span class="n">depth</span><span class="p">,</span><span class="w"> </span><span class="n">pose</span><span class="p">]</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">frames</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">rgbd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geometry</span><span class="o">::</span><span class="n">RGBDImage</span><span class="o">::</span><span class="n">CreateFromColorAndDepth</span><span class="p">(</span>
+<span class="w">        </span><span class="n">color</span><span class="p">,</span><span class="w"> </span><span class="n">depth</span><span class="p">,</span><span class="w"> </span><span class="n">depth_scale</span><span class="p">,</span><span class="w"> </span><span class="n">depth_trunc</span><span class="p">);</span>
+<span class="w">    </span><span class="n">volume</span><span class="p">.</span><span class="n">Integrate</span><span class="p">(</span><span class="o">*</span><span class="n">rgbd</span><span class="p">,</span><span class="w"> </span><span class="n">intrinsic</span><span class="p">,</span><span class="w"> </span><span class="n">pose</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Extract mesh</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">mesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">volume</span><span class="p">.</span><span class="n">ExtractTriangleMesh</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+<section id="tensor-rgbd-integration">
+<h3>Tensor RGBD Integration<a class="headerlink" href="#tensor-rgbd-integration" title="Permalink to this heading">#</a></h3>
+<p><strong>TIntegrateRGBD.cpp</strong> - GPU-accelerated TSDF integration</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create voxel block grid</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">voxel_grid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="o">::</span><span class="n">geometry</span><span class="o">::</span><span class="n">TSDFVoxelGrid</span><span class="p">({</span>
+<span class="w">    </span><span class="p">{</span><span class="s">&quot;tsdf&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">core</span><span class="o">::</span><span class="n">Dtype</span><span class="o">::</span><span class="n">Float32</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="s">&quot;weight&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">core</span><span class="o">::</span><span class="n">Dtype</span><span class="o">::</span><span class="n">UInt16</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="s">&quot;color&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">core</span><span class="o">::</span><span class="n">Dtype</span><span class="o">::</span><span class="n">UInt16</span><span class="p">}</span>
+<span class="p">});</span>
+
+<span class="c1">// Integrate frames</span>
+<span class="n">voxel_grid</span><span class="p">.</span><span class="n">Integrate</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span><span class="w"> </span><span class="n">color</span><span class="p">,</span><span class="w"> </span><span class="n">intrinsic</span><span class="p">,</span><span class="w"> </span><span class="n">extrinsic</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="slam-system">
+<h3>SLAM System<a class="headerlink" href="#slam-system" title="Permalink to this heading">#</a></h3>
+<p><strong>OfflineSLAM.cpp</strong> - Offline SLAM pipeline</p>
+<p>Complete SLAM system for recorded data:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/OfflineSLAM<span class="w"> </span>config.json
+</pre></div>
+</div>
+<p><strong>OnlineSLAMRGBD.cpp</strong> - Real-time RGBD SLAM</p>
+<p>Online SLAM with live camera feed:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Initialize SLAM</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">slam</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pipelines</span><span class="o">::</span><span class="n">slam</span><span class="o">::</span><span class="n">SLAMSystem</span><span class="p">(</span><span class="n">config</span><span class="p">);</span>
+
+<span class="c1">// Process frames</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">camera_stream</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">slam</span><span class="p">.</span><span class="n">ProcessFrame</span><span class="p">(</span><span class="n">frame</span><span class="p">.</span><span class="n">color</span><span class="p">,</span><span class="w"> </span><span class="n">frame</span><span class="p">.</span><span class="n">depth</span><span class="p">);</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">pose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">slam</span><span class="p">.</span><span class="n">GetCurrentPose</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="slac-optimization">
+<h3>SLAC Optimization<a class="headerlink" href="#slac-optimization" title="Permalink to this heading">#</a></h3>
+<p><strong>SLAC.cpp</strong> - Simultaneous Localization and Calibration</p>
+<p>Joint optimization of poses and sensor calibration:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/SLAC<span class="w"> </span>config.json<span class="w"> </span>fragments/
+</pre></div>
+</div>
+</section>
+<section id="reconstruction-system">
+<h3>Reconstruction System<a class="headerlink" href="#reconstruction-system" title="Permalink to this heading">#</a></h3>
+<p><strong>Reconstruction.cpp</strong> - Complete reconstruction pipeline</p>
+<p>End-to-end 3D reconstruction:</p>
+<ul class="simple">
+<li><p>RGBD odometry</p></li>
+<li><p>Fragment creation</p></li>
+<li><p>Fragment registration</p></li>
+<li><p>Integration</p></li>
+<li><p>Mesh refinement</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/Reconstruction<span class="w"> </span>config.json
+</pre></div>
+</div>
+</section>
+</section>
+<section id="odometry-and-tracking">
+<h2>Odometry and Tracking<a class="headerlink" href="#odometry-and-tracking" title="Permalink to this heading">#</a></h2>
+<section id="rgbd-odometry">
+<h3>RGBD Odometry<a class="headerlink" href="#rgbd-odometry" title="Permalink to this heading">#</a></h3>
+<p><strong>RGBDOdometry.cpp</strong> - Frame-to-frame odometry</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Compute odometry between two RGBD frames</span>
+<span class="k">auto</span><span class="w"> </span><span class="p">[</span><span class="n">success</span><span class="p">,</span><span class="w"> </span><span class="n">transform</span><span class="p">,</span><span class="w"> </span><span class="n">info</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">odometry</span><span class="o">::</span><span class="n">ComputeRGBDOdometry</span><span class="p">(</span>
+<span class="w">    </span><span class="n">rgbd_source</span><span class="p">,</span><span class="w"> </span><span class="n">rgbd_target</span><span class="p">,</span><span class="w"> </span><span class="n">intrinsic</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Eigen</span><span class="o">::</span><span class="n">Matrix4d</span><span class="o">::</span><span class="n">Identity</span><span class="p">(),</span><span class="w"> </span><span class="n">odometry_option</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="tensor-odometry">
+<h3>Tensor Odometry<a class="headerlink" href="#tensor-odometry" title="Permalink to this heading">#</a></h3>
+<p><strong>TOdometryRGBD.cpp</strong> - GPU-accelerated odometry</p>
+<p>High-performance odometry using tensors:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">odometry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="o">::</span><span class="n">pipelines</span><span class="o">::</span><span class="n">odometry</span><span class="o">::</span><span class="n">RGBDOdometry</span><span class="p">(</span>
+<span class="w">    </span><span class="n">intrinsic_t</span><span class="p">,</span><span class="w"> </span><span class="n">device</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">odometry</span><span class="p">.</span><span class="n">ComputeOdometry</span><span class="p">(</span>
+<span class="w">    </span><span class="n">source_rgbd_t</span><span class="p">,</span><span class="w"> </span><span class="n">target_rgbd_t</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="camera-pose-trajectory">
+<h3>Camera Pose Trajectory<a class="headerlink" href="#camera-pose-trajectory" title="Permalink to this heading">#</a></h3>
+<p><strong>CameraPoseTrajectory.cpp</strong> - Trajectory I/O and manipulation</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Load trajectory</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">trajectory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">camera</span><span class="o">::</span><span class="n">PinholeCameraTrajectory</span><span class="p">();</span>
+<span class="n">io</span><span class="o">::</span><span class="n">ReadPinholeCameraTrajectory</span><span class="p">(</span><span class="s">&quot;trajectory.log&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">trajectory</span><span class="p">);</span>
+
+<span class="c1">// Access poses</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">param</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">trajectory</span><span class="p">.</span><span class="n">parameters_</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">pose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">param</span><span class="p">.</span><span class="n">extrinsic_</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// Use pose...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="keypoint-detection">
+<h2>Keypoint Detection<a class="headerlink" href="#keypoint-detection" title="Permalink to this heading">#</a></h2>
+<section id="iss-keypoints">
+<h3>ISS Keypoints<a class="headerlink" href="#iss-keypoints" title="Permalink to this heading">#</a></h3>
+<p><strong>ISSKeypoints.cpp</strong> - Intrinsic Shape Signatures</p>
+<p>Detect salient keypoints in point clouds:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Detect ISS keypoints</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">keypoints</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">keypoint</span><span class="o">::</span><span class="n">ISS3DKeypoint</span><span class="p">(</span>
+<span class="w">    </span><span class="o">*</span><span class="n">pcd</span><span class="p">,</span><span class="w"> </span><span class="n">salient_radius</span><span class="p">,</span><span class="w"> </span><span class="n">non_max_radius</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gamma_21</span><span class="p">,</span><span class="w"> </span><span class="n">gamma_32</span><span class="p">);</span>
+
+<span class="c1">// Compute descriptors at keypoints</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">fpfh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">registration</span><span class="o">::</span><span class="n">ComputeFPFHFeature</span><span class="p">(</span>
+<span class="w">    </span><span class="o">*</span><span class="n">keypoints</span><span class="p">,</span><span class="w"> </span><span class="n">search_param</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="sift-surf-integration">
+<h3>SIFT/SURF Integration<a class="headerlink" href="#sift-surf-integration" title="Permalink to this heading">#</a></h3>
+<p><strong>Image.cpp</strong> - 2D image features</p>
+<p>Extract and match image features:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Load image</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">io</span><span class="o">::</span><span class="n">CreateImageFromFile</span><span class="p">(</span><span class="s">&quot;image.png&quot;</span><span class="p">);</span>
+
+<span class="c1">// Extract features (via OpenCV integration)</span>
+<span class="c1">// Match features</span>
+<span class="c1">// Compute homography/fundamental matrix</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="file-i-o-and-formats">
+<h2>File I/O and Formats<a class="headerlink" href="#file-i-o-and-formats" title="Permalink to this heading">#</a></h2>
+<section id="point-cloud-formats">
+<h3>Point Cloud Formats<a class="headerlink" href="#point-cloud-formats" title="Permalink to this heading">#</a></h3>
+<p><strong>PCDFileFormat.cpp</strong> - PCD file handling</p>
+<p>Read/write PCD files with various options:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Read PCD</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">pcd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">io</span><span class="o">::</span><span class="n">CreatePointCloudFromFile</span><span class="p">(</span><span class="s">&quot;input.pcd&quot;</span><span class="p">);</span>
+
+<span class="c1">// Write PCD (ASCII)</span>
+<span class="n">io</span><span class="o">::</span><span class="n">WritePointCloudOption</span><span class="w"> </span><span class="n">option</span><span class="p">;</span>
+<span class="n">option</span><span class="p">.</span><span class="n">write_ascii</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="n">io</span><span class="o">::</span><span class="n">WritePointCloud</span><span class="p">(</span><span class="s">&quot;output.pcd&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">pcd</span><span class="p">,</span><span class="w"> </span><span class="n">option</span><span class="p">);</span>
+
+<span class="c1">// Write PCD (binary compressed)</span>
+<span class="n">option</span><span class="p">.</span><span class="n">write_ascii</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="n">option</span><span class="p">.</span><span class="n">compressed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="n">io</span><span class="o">::</span><span class="n">WritePointCloud</span><span class="p">(</span><span class="s">&quot;output_compressed.pcd&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">pcd</span><span class="p">,</span><span class="w"> </span><span class="n">option</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Supported formats:</p>
+<ul class="simple">
+<li><p><strong>Point Clouds</strong>: PCD, PLY, XYZ, PTS, LAS, LAZ, E57</p></li>
+<li><p><strong>Meshes</strong>: PLY, STL, OBJ, OFF, GLTF, FBX</p></li>
+<li><p><strong>Images</strong>: PNG, JPG, BMP, TIF</p></li>
+<li><p><strong>Depth</strong>: PNG (16-bit), TIF</p></li>
+</ul>
+</section>
+<section id="file-system-operations">
+<h3>File System Operations<a class="headerlink" href="#file-system-operations" title="Permalink to this heading">#</a></h3>
+<p><strong>FileSystem.cpp</strong> - File and directory operations</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;CloudViewer.h&gt;</span>
+
+<span class="c1">// List files in directory</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">utility</span><span class="o">::</span><span class="n">filesystem</span><span class="o">::</span><span class="n">ListFilesInDirectory</span><span class="p">(</span>
+<span class="w">    </span><span class="s">&quot;data/&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;*.pcd&quot;</span><span class="p">);</span>
+
+<span class="c1">// Check file existence</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">utility</span><span class="o">::</span><span class="n">filesystem</span><span class="o">::</span><span class="n">FileExists</span><span class="p">(</span><span class="s">&quot;config.json&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Process file</span>
+<span class="p">}</span>
+
+<span class="c1">// Create directories</span>
+<span class="n">utility</span><span class="o">::</span><span class="n">filesystem</span><span class="o">::</span><span class="n">MakeDirectoryHierarchy</span><span class="p">(</span><span class="s">&quot;output/meshes/&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="file-dialogs">
+<h3>File Dialogs<a class="headerlink" href="#file-dialogs" title="Permalink to this heading">#</a></h3>
+<p><strong>FileDialog.cpp</strong> - GUI file selection</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Open file dialog</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">filename</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">utility</span><span class="o">::</span><span class="n">filesystem</span><span class="o">::</span><span class="n">GetOpenFileName</span><span class="p">(</span>
+<span class="w">    </span><span class="s">&quot;Select Point Cloud&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;data/&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;Point Cloud Files (*.pcd *.ply);;All Files (*.*)&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="advanced-topics">
+<h2>Advanced Topics<a class="headerlink" href="#advanced-topics" title="Permalink to this heading">#</a></h2>
+<section id="tensor-operations">
+<h3>Tensor Operations<a class="headerlink" href="#tensor-operations" title="Permalink to this heading">#</a></h3>
+<p><strong>TICPSequential.cpp</strong> - Sequential tensor ICP</p>
+<p>Process sequence of scans with GPU acceleration:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Device selection</span>
+<span class="n">core</span><span class="o">::</span><span class="n">Device</span><span class="w"> </span><span class="n">device</span><span class="p">(</span><span class="s">&quot;CUDA:0&quot;</span><span class="p">);</span>
+
+<span class="c1">// Create tensor geometry</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">pcd_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="o">::</span><span class="n">geometry</span><span class="o">::</span><span class="n">PointCloud</span><span class="p">(</span><span class="n">device</span><span class="p">);</span>
+
+<span class="c1">// Sequential registration</span>
+<span class="n">Eigen</span><span class="o">::</span><span class="n">Matrix4d</span><span class="w"> </span><span class="n">cumulative_transform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Eigen</span><span class="o">::</span><span class="n">Matrix4d</span><span class="o">::</span><span class="n">Identity</span><span class="p">();</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">pcds</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="o">::</span><span class="n">pipelines</span><span class="o">::</span><span class="n">registration</span><span class="o">::</span><span class="n">ICP</span><span class="p">(</span>
+<span class="w">        </span><span class="n">pcds</span><span class="p">[</span><span class="n">i</span><span class="mi">-1</span><span class="p">],</span><span class="w"> </span><span class="n">pcds</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">max_distance</span><span class="p">,</span><span class="w"> </span><span class="n">init</span><span class="p">);</span>
+<span class="w">    </span><span class="n">cumulative_transform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">transformation_</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cumulative_transform</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="gaussian-splatting">
+<h3>Gaussian Splatting<a class="headerlink" href="#gaussian-splatting" title="Permalink to this heading">#</a></h3>
+<p><strong>GaussianSplat.cpp</strong> - 3D Gaussian splatting</p>
+<p>Novel view synthesis using 3D Gaussians:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/GaussianSplat<span class="w"> </span>scene.ply
+</pre></div>
+</div>
+</section>
+<section id="webrtc-visualization">
+<h3>WebRTC Visualization<a class="headerlink" href="#webrtc-visualization" title="Permalink to this heading">#</a></h3>
+<p><strong>DrawWebRTC.cpp</strong> - Remote visualization</p>
+<p>Stream 3D data over WebRTC:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create WebRTC visualizer</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">vis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">visualization</span><span class="o">::</span><span class="n">webrtc_server</span><span class="o">::</span><span class="n">WebRTCWindowSystem</span><span class="o">::</span><span class="n">GetInstance</span><span class="p">();</span>
+
+<span class="c1">// Add geometry</span>
+<span class="n">vis</span><span class="o">-&gt;</span><span class="n">AddGeometry</span><span class="p">(</span><span class="s">&quot;pointcloud&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">pcd</span><span class="p">);</span>
+
+<span class="c1">// Start server</span>
+<span class="n">vis</span><span class="o">-&gt;</span><span class="n">Start</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+<section id="azure-kinect-examples">
+<h3>Azure Kinect Examples<a class="headerlink" href="#azure-kinect-examples" title="Permalink to this heading">#</a></h3>
+<p><strong>AzureKinectViewer.cpp</strong> - Azure Kinect camera support</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/AzureKinectViewer
+</pre></div>
+</div>
+<p><strong>AzureKinectRecord.cpp</strong> - Record Kinect streams</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/AzureKinectRecord<span class="w"> </span>output.mkv
+</pre></div>
+</div>
+<p><strong>AzureKinectMKVReader.cpp</strong> - Playback recordings</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/AzureKinectMKVReader<span class="w"> </span>recording.mkv
+</pre></div>
+</div>
+</section>
+<section id="realsense-examples">
+<h3>RealSense Examples<a class="headerlink" href="#realsense-examples" title="Permalink to this heading">#</a></h3>
+<p><strong>RealSenseRecorder.cpp</strong> - Intel RealSense recording</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/RealSenseRecorder<span class="w"> </span>output.bag
+</pre></div>
+</div>
+<p><strong>RealSenseBagReader.cpp</strong> - Playback RealSense recordings</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/RealSenseBagReader<span class="w"> </span>recording.bag
+</pre></div>
+</div>
+<p><strong>OnlineSLAMRealSense.cpp</strong> - Real-time SLAM with RealSense</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./bin/examples/OnlineSLAMRealSense
+</pre></div>
+</div>
+</section>
+</section>
+<section id="utility-examples">
+<h2>Utility Examples<a class="headerlink" href="#utility-examples" title="Permalink to this heading">#</a></h2>
+<section id="openmp-parallelization">
+<h3>OpenMP Parallelization<a class="headerlink" href="#openmp-parallelization" title="Permalink to this heading">#</a></h3>
+<p><strong>OpenMP.cpp</strong> - Multi-threaded processing</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;omp.h&gt;</span>
+
+<span class="c1">// Set number of threads</span>
+<span class="n">omp_set_num_threads</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span>
+
+<span class="cp">#pragma omp parallel for</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">point_cloud</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Process point in parallel</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="logging-system">
+<h3>Logging System<a class="headerlink" href="#logging-system" title="Permalink to this heading">#</a></h3>
+<p><strong>Log.cpp</strong> - Logging and debugging</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Set verbosity level</span>
+<span class="n">utility</span><span class="o">::</span><span class="n">SetVerbosityLevel</span><span class="p">(</span><span class="n">utility</span><span class="o">::</span><span class="n">VerbosityLevel</span><span class="o">::</span><span class="n">Debug</span><span class="p">);</span>
+
+<span class="c1">// Log messages</span>
+<span class="n">utility</span><span class="o">::</span><span class="n">LogInfo</span><span class="p">(</span><span class="s">&quot;Information message&quot;</span><span class="p">);</span>
+<span class="n">utility</span><span class="o">::</span><span class="n">LogWarning</span><span class="p">(</span><span class="s">&quot;Warning message&quot;</span><span class="p">);</span>
+<span class="n">utility</span><span class="o">::</span><span class="n">LogError</span><span class="p">(</span><span class="s">&quot;Error message&quot;</span><span class="p">);</span>
+<span class="n">utility</span><span class="o">::</span><span class="n">LogDebug</span><span class="p">(</span><span class="s">&quot;Debug message&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="program-options">
+<h3>Program Options<a class="headerlink" href="#program-options" title="Permalink to this heading">#</a></h3>
+<p><strong>ProgramOptions.cpp</strong> - Command-line argument parsing</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Check for option</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">utility</span><span class="o">::</span><span class="n">ProgramOptionExists</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--verbose&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">utility</span><span class="o">::</span><span class="n">SetVerbosityLevel</span><span class="p">(</span><span class="n">utility</span><span class="o">::</span><span class="n">VerbosityLevel</span><span class="o">::</span><span class="n">Debug</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Get option value</span>
+<span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">utility</span><span class="o">::</span><span class="n">GetProgramOptionAsString</span><span class="p">(</span>
+<span class="w">    </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--input&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;default.pcd&quot;</span><span class="p">);</span>
+
+<span class="kt">double</span><span class="w"> </span><span class="n">threshold</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">utility</span><span class="o">::</span><span class="n">GetProgramOptionAsDouble</span><span class="p">(</span>
+<span class="w">    </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--threshold&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">0.05</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="flann-integration">
+<h3>Flann Integration<a class="headerlink" href="#flann-integration" title="Permalink to this heading">#</a></h3>
+<p><strong>Flann.cpp</strong> - Fast nearest neighbor search</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;CloudViewer.h&gt;</span>
+
+<span class="c1">// Create Flann index</span>
+<span class="n">geometry</span><span class="o">::</span><span class="n">KDTreeFlann</span><span class="w"> </span><span class="n">kdtree</span><span class="p">;</span>
+<span class="n">kdtree</span><span class="p">.</span><span class="n">SetGeometry</span><span class="p">(</span><span class="o">*</span><span class="n">pcd</span><span class="p">);</span>
+
+<span class="c1">// KNN search</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">indices</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">distances</span><span class="p">;</span>
+<span class="n">kdtree</span><span class="p">.</span><span class="n">SearchKNN</span><span class="p">(</span><span class="n">query_point</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">indices</span><span class="p">,</span><span class="w"> </span><span class="n">distances</span><span class="p">);</span>
+
+<span class="c1">// Radius search</span>
+<span class="n">kdtree</span><span class="p">.</span><span class="n">SearchRadius</span><span class="p">(</span><span class="n">query_point</span><span class="p">,</span><span class="w"> </span><span class="n">radius</span><span class="p">,</span><span class="w"> </span><span class="n">indices</span><span class="p">,</span><span class="w"> </span><span class="n">distances</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="building-examples">
+<h2>Building Examples<a class="headerlink" href="#building-examples" title="Permalink to this heading">#</a></h2>
+<section id="build-all-examples">
+<h3>Build All Examples<a class="headerlink" href="#build-all-examples" title="Permalink to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>ACloudViewer
+mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>-DBUILD_EXAMPLES<span class="o">=</span>ON<span class="w"> </span>..
+make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+
+<span class="c1"># Examples are in build/bin/examples/</span>
+</pre></div>
+</div>
+</section>
+<section id="build-specific-example">
+<h3>Build Specific Example<a class="headerlink" href="#build-specific-example" title="Permalink to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>PointCloud<span class="w">        </span><span class="c1"># Build PointCloud example</span>
+make<span class="w"> </span>Visualizer<span class="w">        </span><span class="c1"># Build Visualizer example</span>
+make<span class="w"> </span>RegistrationICP<span class="w">   </span><span class="c1"># Build ICP example</span>
+</pre></div>
+</div>
+</section>
+<section id="run-example-with-test-data">
+<h3>Run Example with Test Data<a class="headerlink" href="#run-example-with-test-data" title="Permalink to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Download test data</span>
+<span class="nb">cd</span><span class="w"> </span>ACloudViewer
+python3<span class="w"> </span>examples/test_data/download_test_data.py
+
+<span class="c1"># Run with test data</span>
+./build/bin/examples/PointCloud<span class="w"> </span>examples/test_data/fragment.pcd
+./build/bin/examples/Visualizer<span class="w"> </span>mesh<span class="w"> </span>examples/test_data/monkey.ply
+</pre></div>
+</div>
+</section>
+</section>
+<section id="creating-custom-examples">
+<h2>Creating Custom Examples<a class="headerlink" href="#creating-custom-examples" title="Permalink to this heading">#</a></h2>
+<section id="template-structure">
+<h3>Template Structure<a class="headerlink" href="#template-structure" title="Permalink to this heading">#</a></h3>
+<p>Use this template for new examples:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// ----------------------------------------------------------------------------</span>
+<span class="c1">// -                        CloudViewer: www.cloudViewer.org                  -</span>
+<span class="c1">// ----------------------------------------------------------------------------</span>
+<span class="c1">// Copyright (c) 2018-2024 www.cloudViewer.org</span>
+<span class="c1">// SPDX-License-Identifier: MIT</span>
+<span class="c1">// ----------------------------------------------------------------------------</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;CloudViewer.h&quot;</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">PrintHelp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">cloudViewer</span><span class="p">;</span>
+<span class="w">    </span><span class="n">PrintCloudViewerVersion</span><span class="p">();</span>
+<span class="w">    </span><span class="n">utility</span><span class="o">::</span><span class="n">LogInfo</span><span class="p">(</span><span class="s">&quot;Usage:&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">utility</span><span class="o">::</span><span class="n">LogInfo</span><span class="p">(</span><span class="s">&quot;    &gt; MyExample [options]&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">argv</span><span class="p">[])</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">cloudViewer</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">utility</span><span class="o">::</span><span class="n">SetVerbosityLevel</span><span class="p">(</span><span class="n">utility</span><span class="o">::</span><span class="n">VerbosityLevel</span><span class="o">::</span><span class="n">Info</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">argc</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="n">utility</span><span class="o">::</span><span class="n">ProgramOptionExists</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--help&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">PrintHelp</span><span class="p">();</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Your code here</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="add-to-cmakelists-txt">
+<h3>Add to CMakeLists.txt<a class="headerlink" href="#add-to-cmakelists-txt" title="Permalink to this heading">#</a></h3>
+<p>Add your example to <code class="docutils literal notranslate"><span class="pre">examples/Cpp/CMakeLists.txt</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">cv3d_add_example</span><span class="p">(</span><span class="s">MyExample</span><span class="w"> </span><span class="s">SRCS</span><span class="w"> </span><span class="s">MyExample.cpp</span><span class="p">)</span>
+<span class="nb">cv3d_link_3rdparty_libraries</span><span class="p">(</span><span class="s">MyExample</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="resources">
+<h2>Resources<a class="headerlink" href="#resources" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Source Code</strong>: <a class="reference external" href="https://github.com/Asher-1/ACloudViewer/tree/main/examples/Cpp">examples/Cpp/</a></p></li>
+<li><p><strong>Python Examples</strong>: <span class="xref std std-doc">python_examples</span></p></li>
+<li><p><strong>C++ API Reference</strong>: <a class="reference internal" href="../cpp_api.html"><span class="doc">C++ documentation</span></a></p></li>
+<li><p><strong>Tutorials</strong>: <a class="reference internal" href="../tutorial/index.html"><span class="doc">Tutorial</span></a></p></li>
+<li><p><strong>Build Guide</strong>: <a class="reference internal" href="../getting_started/build_from_source.html"><span class="doc">Building from Source</span></a></p></li>
+</ul>
+</section>
+<section id="contributing-examples">
+<h2>Contributing Examples<a class="headerlink" href="#contributing-examples" title="Permalink to this heading">#</a></h2>
+<p>We welcome new examples! See <a class="reference internal" href="../developer/contributing.html"><span class="doc">Contributing to ACloudViewer</span></a> for guidelines.</p>
+<p><strong>Good examples should:</strong></p>
+<ul class="simple">
+<li><p>Demonstrate a specific feature or workflow</p></li>
+<li><p>Include clear comments</p></li>
+<li><p>Handle errors gracefully</p></li>
+<li><p>Provide usage instructions</p></li>
+<li><p>Use test data when possible</p></li>
+<li><p>Follow code style guidelines</p></li>
+</ul>
+<p>Submit your examples via pull request on <a class="reference external" href="https://github.com/Asher-1/ACloudViewer/pulls">GitHub</a>.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../cpp_api.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">C++ documentation</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../python_example/visualization/index.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Visualization Examples</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, ACloudViewer Team
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">C++ Examples</a><ul>
+<li><a class="reference internal" href="#basic-examples">Basic Examples</a><ul>
+<li><a class="reference internal" href="#point-cloud-operations">Point Cloud Operations</a></li>
+<li><a class="reference internal" href="#triangle-mesh-operations">Triangle Mesh Operations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#visualization">Visualization</a><ul>
+<li><a class="reference internal" href="#basic-visualization">Basic Visualization</a></li>
+<li><a class="reference internal" href="#multiple-windows">Multiple Windows</a></li>
+<li><a class="reference internal" href="#offscreen-rendering">Offscreen Rendering</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#geometry-processing">Geometry Processing</a><ul>
+<li><a class="reference internal" href="#voxelization">Voxelization</a></li>
+<li><a class="reference internal" href="#octree-operations">Octree Operations</a></li>
+<li><a class="reference internal" href="#half-edge-triangle-mesh">Half-Edge Triangle Mesh</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#registration">Registration</a><ul>
+<li><a class="reference internal" href="#icp-registration">ICP Registration</a></li>
+<li><a class="reference internal" href="#colored-icp">Colored ICP</a></li>
+<li><a class="reference internal" href="#fast-global-registration">Fast Global Registration</a></li>
+<li><a class="reference internal" href="#ransac-registration">RANSAC Registration</a></li>
+<li><a class="reference internal" href="#doppler-icp">Doppler ICP</a></li>
+<li><a class="reference internal" href="#tensor-based-icp">Tensor-based ICP</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#d-reconstruction">3D Reconstruction</a><ul>
+<li><a class="reference internal" href="#rgbd-integration">RGBD Integration</a></li>
+<li><a class="reference internal" href="#tensor-rgbd-integration">Tensor RGBD Integration</a></li>
+<li><a class="reference internal" href="#slam-system">SLAM System</a></li>
+<li><a class="reference internal" href="#slac-optimization">SLAC Optimization</a></li>
+<li><a class="reference internal" href="#reconstruction-system">Reconstruction System</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#odometry-and-tracking">Odometry and Tracking</a><ul>
+<li><a class="reference internal" href="#rgbd-odometry">RGBD Odometry</a></li>
+<li><a class="reference internal" href="#tensor-odometry">Tensor Odometry</a></li>
+<li><a class="reference internal" href="#camera-pose-trajectory">Camera Pose Trajectory</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#keypoint-detection">Keypoint Detection</a><ul>
+<li><a class="reference internal" href="#iss-keypoints">ISS Keypoints</a></li>
+<li><a class="reference internal" href="#sift-surf-integration">SIFT/SURF Integration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#file-i-o-and-formats">File I/O and Formats</a><ul>
+<li><a class="reference internal" href="#point-cloud-formats">Point Cloud Formats</a></li>
+<li><a class="reference internal" href="#file-system-operations">File System Operations</a></li>
+<li><a class="reference internal" href="#file-dialogs">File Dialogs</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#advanced-topics">Advanced Topics</a><ul>
+<li><a class="reference internal" href="#tensor-operations">Tensor Operations</a></li>
+<li><a class="reference internal" href="#gaussian-splatting">Gaussian Splatting</a></li>
+<li><a class="reference internal" href="#webrtc-visualization">WebRTC Visualization</a></li>
+<li><a class="reference internal" href="#azure-kinect-examples">Azure Kinect Examples</a></li>
+<li><a class="reference internal" href="#realsense-examples">RealSense Examples</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#utility-examples">Utility Examples</a><ul>
+<li><a class="reference internal" href="#openmp-parallelization">OpenMP Parallelization</a></li>
+<li><a class="reference internal" href="#logging-system">Logging System</a></li>
+<li><a class="reference internal" href="#program-options">Program Options</a></li>
+<li><a class="reference internal" href="#flann-integration">Flann Integration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#building-examples">Building Examples</a><ul>
+<li><a class="reference internal" href="#build-all-examples">Build All Examples</a></li>
+<li><a class="reference internal" href="#build-specific-example">Build Specific Example</a></li>
+<li><a class="reference internal" href="#run-example-with-test-data">Run Example with Test Data</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#creating-custom-examples">Creating Custom Examples</a><ul>
+<li><a class="reference internal" href="#template-structure">Template Structure</a></li>
+<li><a class="reference internal" href="#add-to-cmakelists-txt">Add to CMakeLists.txt</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#resources">Resources</a></li>
+<li><a class="reference internal" href="#contributing-examples">Contributing Examples</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=c711cca9"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/version_switch.js?v=9a357ee9"></script>
+    </body>
+</html>

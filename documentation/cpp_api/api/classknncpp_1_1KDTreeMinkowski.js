@@ -1,0 +1,26 @@
+var classknncpp_1_1KDTreeMinkowski =
+[
+    [ "DataMatrix", "classknncpp_1_1KDTreeMinkowski.html#ab9cb5d5603c0cb63066028f100f0eac8", null ],
+    [ "DataVector", "classknncpp_1_1KDTreeMinkowski.html#a96dcf466bc4c2d8e7d8e00e8ea302195", null ],
+    [ "Distance", "classknncpp_1_1KDTreeMinkowski.html#a6097fa2db102463fdef2d864cffbe65d", null ],
+    [ "Matrix", "classknncpp_1_1KDTreeMinkowski.html#a9f3603f98d11d5d35b6dfe54414d1627", null ],
+    [ "Matrixi", "classknncpp_1_1KDTreeMinkowski.html#a6bfafeebe1b2a5e1c2f80f81f8b33049", null ],
+    [ "Scalar", "classknncpp_1_1KDTreeMinkowski.html#af293a61fc6c7c657a8435e3d7add642c", null ],
+    [ "KDTreeMinkowski", "classknncpp_1_1KDTreeMinkowski.html#a84b82a42c601d55ed05cf9cd23f387d1", null ],
+    [ "KDTreeMinkowski", "classknncpp_1_1KDTreeMinkowski.html#a170ac898ecec9c05bad7ff274574a7e0", null ],
+    [ "build", "classknncpp_1_1KDTreeMinkowski.html#a014d5393c1ff769791c9df3756f1b1fc", null ],
+    [ "clear", "classknncpp_1_1KDTreeMinkowski.html#ada8ba41b314e2054955925cad250b747", null ],
+    [ "depth", "classknncpp_1_1KDTreeMinkowski.html#a7ebaa71e690286d9bcf79dab4456c45f", null ],
+    [ "dimension", "classknncpp_1_1KDTreeMinkowski.html#a52882205d113164e89c1538cfe29c860", null ],
+    [ "query", "classknncpp_1_1KDTreeMinkowski.html#a0b700573585e53d7edc10643dfcd7494", null ],
+    [ "setBalanced", "classknncpp_1_1KDTreeMinkowski.html#a8362510dfbef58e4ef9c9fa341f0e1bb", null ],
+    [ "setBucketSize", "classknncpp_1_1KDTreeMinkowski.html#a2a4536f4675fc8ef066588bd2e87a9d4", null ],
+    [ "setCompact", "classknncpp_1_1KDTreeMinkowski.html#ab3e74d2ca0fe566f6e30b15fbc8d0e20", null ],
+    [ "setData", "classknncpp_1_1KDTreeMinkowski.html#a1fb3082a48357976c5e75dd9592d43c6", null ],
+    [ "setDistance", "classknncpp_1_1KDTreeMinkowski.html#a08ec82e820cd0fd8f73f2ee1be7494dc", null ],
+    [ "setMaxDistance", "classknncpp_1_1KDTreeMinkowski.html#aa51ff1ff8e91414cd8d5599dbd37af00", null ],
+    [ "setSorted", "classknncpp_1_1KDTreeMinkowski.html#ab74545cd61b6c4c7920efa66381d20c2", null ],
+    [ "setTakeRoot", "classknncpp_1_1KDTreeMinkowski.html#a8209525f63887ebc9bcd3123244a2991", null ],
+    [ "setThreads", "classknncpp_1_1KDTreeMinkowski.html#a186217db87f147c3d738accb83029f81", null ],
+    [ "size", "classknncpp_1_1KDTreeMinkowski.html#ac9171b700d73442b955870d3caa031bd", null ]
+];

@@ -1,0 +1,9 @@
+digraph "cloudViewer::Universe"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="cloudViewer::Universe",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Allows to perform labelling by creating node and connecting them."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" elts" ,fontname="Helvetica"];
+  Node2 [label="cloudViewer::uni_elt",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structcloudViewer_1_1uni__elt.html",tooltip=" "];
+}

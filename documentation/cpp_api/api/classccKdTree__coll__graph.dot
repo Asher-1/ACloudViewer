@@ -1,0 +1,54 @@
+digraph "ccKdTree"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="ccKdTree",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="KD-tree structure."];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::TrueKdTree",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1TrueKdTree.html",tooltip="Proper KD-tree implementation."];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" LEAF_TYPE\nNODE_TYPE\nX_DIM\nY_DIM\nZ_DIM" ,fontname="Helvetica"];
+  Node3 [label="uint8_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_associatedCloud" ,fontname="Helvetica"];
+  Node4 [label="cloudViewer::GenericIndexed\lCloudPersist",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1GenericIndexedCloudPersist.html",tooltip="A generic 3D point cloud with index-based and presistent access to points."];
+  Node5 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="cloudViewer::GenericIndexed\lCloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1GenericIndexedCloud.html",tooltip="A generic 3D point cloud with index-based point access."];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="cloudViewer::GenericCloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1GenericCloud.html",tooltip=" "];
+  Node7 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_root" ,fontname="Helvetica"];
+  Node7 [label="cloudViewer::TrueKdTree\l::BaseNode",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1TrueKdTree_1_1BaseNode.html",tooltip="Tree base node."];
+  Node3 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" type" ,fontname="Helvetica"];
+  Node7 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" parent" ,fontname="Helvetica"];
+  Node8 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="ccHObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccHObject.html",tooltip="Hierarchical CLOUDVIEWER Object."];
+  Node9 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="ccObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccObject.html",tooltip="Generic \"CLOUDVIEWER  Object\" template."];
+  Node10 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="ccSerializableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccSerializableObject.html",tooltip="Serializable object interface."];
+  Node11 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="ccDrawableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccDrawableObject.html",tooltip="Generic interface for (3D) drawable entities."];
+  Node12 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_nameIn3DPos" ,fontname="Helvetica"];
+  Node12 [label="Vector3Tpl\< double \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip=" "];
+  Node13 -> Node12 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 [label="Tuple3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classTuple3Tpl.html",tooltip="3-Tuple structure (templated version)"];
+  Node14 -> Node12 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< double \>" ,fontname="Helvetica"];
+  Node14 [label="Vector3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip="3D Vector (templated version)"];
+  Node13 -> Node14 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node15 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_glTrans" ,fontname="Helvetica"];
+  Node15 [label="ccGLMatrix",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrix.html",tooltip="Float version of ccGLMatrixTpl."];
+  Node16 -> Node15 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node16 [label="ccGLMatrixTpl\< float \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrixTpl.html",tooltip=" "];
+  Node10 -> Node16 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node17 -> Node16 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< float \>" ,fontname="Helvetica"];
+  Node17 [label="ccGLMatrixTpl\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrixTpl.html",tooltip="A 4x4 'transformation' matrix (column major order)"];
+  Node10 -> Node17 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 -> Node8 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_parent" ,fontname="Helvetica"];
+  Node15 -> Node8 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_glTransHistory" ,fontname="Helvetica"];
+  Node18 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_associatedGenericCloud" ,fontname="Helvetica"];
+  Node18 [label="ccGenericPointCloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGenericPointCloud.html",tooltip="A 3D cloud interface with associated features (color, normals, octree, etc.)"];
+  Node19 -> Node18 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node19 [label="ccShiftedObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccShiftedObject.html",tooltip="Shifted entity interface."];
+  Node8 -> Node19 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node12 -> Node19 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_globalShift" ,fontname="Helvetica"];
+  Node4 -> Node18 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

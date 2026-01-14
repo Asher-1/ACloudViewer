@@ -1,0 +1,12 @@
+digraph "cloudViewer::pipelines::integration::TSDFVolume"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="cloudViewer::pipelines\l::integration::TSDFVolume",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Base class of the Truncated Signed Distance Function (TSDF) volume."];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::pipelines\l::integration::ScalableTSDFVolume",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1pipelines_1_1integration_1_1ScalableTSDFVolume.html",tooltip=" "];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="cloudViewer::pipelines\l::integration::UniformTSDFVolume",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1pipelines_1_1integration_1_1UniformTSDFVolume.html",tooltip="UniformTSDFVolume implements the classic TSDF volume with uniform voxel grid (Curless and Levoy 1996)..."];
+}

@@ -1,0 +1,43 @@
+digraph "ccPolyline"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="ccPolyline",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Colored polyline."];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::Polyline",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1Polyline.html",tooltip="A simple polyline class."];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="cloudViewer::ReferenceCloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1ReferenceCloud.html",tooltip="A very simple point cloud (no point duplication)"];
+  Node4 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="cloudViewer::GenericIndexed\lCloudPersist",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1GenericIndexedCloudPersist.html",tooltip="A generic 3D point cloud with index-based and presistent access to points."];
+  Node5 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="cloudViewer::GenericIndexed\lCloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1GenericIndexedCloud.html",tooltip="A generic 3D point cloud with index-based point access."];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="cloudViewer::GenericCloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1GenericCloud.html",tooltip=" "];
+  Node7 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="ccShiftedObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccShiftedObject.html",tooltip="Shifted entity interface."];
+  Node8 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="ccHObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccHObject.html",tooltip="Hierarchical CLOUDVIEWER Object."];
+  Node9 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="ccObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccObject.html",tooltip="Generic \"CLOUDVIEWER  Object\" template."];
+  Node10 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="ccSerializableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccSerializableObject.html",tooltip="Serializable object interface."];
+  Node11 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="ccDrawableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccDrawableObject.html",tooltip="Generic interface for (3D) drawable entities."];
+  Node1 -> Node12 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node12 [label="ccCircle",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccCircle.html",tooltip="Circle (as a polyline)"];
+  Node1 -> Node13 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 [label="ccPointPair",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccPointPair.html",tooltip=" "];
+  Node13 -> Node14 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node14 [label="ccLineation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccLineation.html",tooltip=" "];
+  Node13 -> Node15 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node15 [label="ccNote",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccNote.html",tooltip=" "];
+  Node13 -> Node16 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node16 [label="ccPinchNode",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccPinchNode.html",tooltip=" "];
+  Node13 -> Node17 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node17 [label="ccThickness",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccThickness.html",tooltip=" "];
+  Node13 -> Node18 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node18 [label="ccTopologyRelation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccTopologyRelation.html",tooltip=" "];
+  Node1 -> Node19 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node19 [label="ccTrace",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccTrace.html",tooltip=" "];
+}

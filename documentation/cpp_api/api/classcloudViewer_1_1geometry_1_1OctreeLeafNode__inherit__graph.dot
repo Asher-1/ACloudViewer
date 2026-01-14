@@ -1,0 +1,15 @@
+digraph "cloudViewer::geometry::OctreeLeafNode"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="cloudViewer::geometry\l::OctreeLeafNode",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="OctreeLeafNode base class."];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::geometry\l::OctreeNode",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1geometry_1_1OctreeNode.html",tooltip="The base class for octree node."];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="cloudViewer::utility\l::IJsonConvertible",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1utility_1_1IJsonConvertible.html",tooltip=" "];
+  Node1 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="cloudViewer::geometry\l::OctreeColorLeafNode",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html",tooltip="OctreeColorLeafNode class is an OctreeLeafNode containing color."];
+  Node4 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="cloudViewer::geometry\l::OctreePointColorLeafNode",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html",tooltip="OctreePointColorLeafNode class is an OctreeColorLeafNode containing a list of indices corresponding t..."];
+}

@@ -1,0 +1,9 @@
+digraph "flann::cuda::kd_tree_builder_detail::SplitNodes"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="flann::cuda::kd_tree\l_builder_detail::SplitNodes",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" splits" ,fontname="Helvetica"];
+  Node2 [label="flann::cuda::kd_tree\l_builder_detail::SplitInfo",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structflann_1_1cuda_1_1kd__tree__builder__detail_1_1SplitInfo.html",tooltip=" "];
+}

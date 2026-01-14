@@ -1,0 +1,14 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1486 [label="Eigen::ParametrizedLine",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node1486 -> Node0 [dir="back",color="darkgreen",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 [label="cloudViewer::geometry\l::Line3D",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1geometry_1_1Line3D.html",tooltip="Line3D is a class which derives from Eigen::ParametrizedLine<double, 3> in order to capture the seman..."];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="cloudViewer::geometry\l::Ray3D",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1geometry_1_1Ray3D.html",tooltip="A ray is a semantic interpretation of Eigen::ParametrizedLine which has an origin and a direction and..."];
+  Node0 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::geometry\l::Segment3D",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1geometry_1_1Segment3D.html",tooltip="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint..."];
+}

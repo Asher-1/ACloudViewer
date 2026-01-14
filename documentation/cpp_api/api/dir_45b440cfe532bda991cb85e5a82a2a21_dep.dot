@@ -1,0 +1,14 @@
+digraph "/root/ACloudViewer/libs/cloudViewer/core/kernel" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_60b85b9a041b2f23bcbd986f2bb18e66 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="core" fontname="Helvetica", fontsize="10", URL="dir_60b85b9a041b2f23bcbd986f2bb18e66.html"]
+  dir_34199ad14a26b2602fe4e831eacaf8df [shape=box label="linalg" fillcolor="white" style="filled" color="red" URL="dir_34199ad14a26b2602fe4e831eacaf8df.html"];
+  dir_45b440cfe532bda991cb85e5a82a2a21 [shape=box, label="kernel", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_45b440cfe532bda991cb85e5a82a2a21.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_34199ad14a26b2602fe4e831eacaf8df->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="8", labeldistance=1.5 headhref="dir_000009_000000.html"];
+  dir_45b440cfe532bda991cb85e5a82a2a21->dir_34199ad14a26b2602fe4e831eacaf8df [headlabel="1", labeldistance=1.5 headhref="dir_000008_000009.html"];
+  dir_45b440cfe532bda991cb85e5a82a2a21->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="27", labeldistance=1.5 headhref="dir_000008_000000.html"];
+}

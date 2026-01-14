@@ -1,0 +1,11 @@
+digraph "/root/ACloudViewer/libs/eCV_db/include/camera" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_f5ce86466c8b9c7eeb3c23bd8ac82242 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="include" fontname="Helvetica", fontsize="10", URL="dir_f5ce86466c8b9c7eeb3c23bd8ac82242.html"]
+  dir_f97657345e26e6ca729ca7a89cf09062 [shape=box, label="camera", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_f97657345e26e6ca729ca7a89cf09062.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_f97657345e26e6ca729ca7a89cf09062->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="1", labeldistance=1.5 headhref="dir_000071_000000.html"];
+}

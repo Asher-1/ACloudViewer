@@ -1,0 +1,24 @@
+digraph "cloudViewer::SaitoSquaredDistanceTransform"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="cloudViewer::SaitoSquared\lDistanceTransform",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::Grid3D\l\< unsigned \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1Grid3D.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_innerCellCount\nm_totalCellCount" ,fontname="Helvetica"];
+  Node3 [label="uint64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_innerSize" ,fontname="Helvetica"];
+  Node4 [label="Tuple3Tpl\< unsigned\l int \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classTuple3Tpl.html",tooltip=" "];
+  Node5 -> Node4 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< unsigned int \>" ,fontname="Helvetica"];
+  Node5 [label="Tuple3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classTuple3Tpl.html",tooltip="3-Tuple structure (templated version)"];
+  Node6 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_margin\nm_marginShift\nm_rowSize\nm_sliceSize" ,fontname="Helvetica"];
+  Node6 [label="int64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node2 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< unsigned \>" ,fontname="Helvetica"];
+  Node7 [label="cloudViewer::Grid3D\l\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1Grid3D.html",tooltip="Simple 3D grid structure."];
+  Node3 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_innerCellCount\nm_totalCellCount" ,fontname="Helvetica"];
+  Node4 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_innerSize" ,fontname="Helvetica"];
+  Node6 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_margin\nm_marginShift\nm_rowSize\nm_sliceSize" ,fontname="Helvetica"];
+  Node8 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="cloudViewer::MathTools",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1MathTools.html",tooltip="Empty class - for classification purpose only."];
+}

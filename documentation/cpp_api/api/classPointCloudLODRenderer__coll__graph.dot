@@ -1,0 +1,24 @@
+digraph "PointCloudLODRenderer"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="PointCloudLODRenderer",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_lod" ,fontname="Helvetica"];
+  Node2 [label="ccPointCloudLOD",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccPointCloudLOD.html",tooltip="L.O.D. (Level of Detail) structure."];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_currentState" ,fontname="Helvetica"];
+  Node3 [label="ccPointCloudLOD::RenderParams",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structccPointCloudLOD_1_1RenderParams.html",tooltip="Parameters of the current render state."];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" displayedPoints\nvisiblePoints" ,fontname="Helvetica"];
+  Node4 [label="uint32_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_frustum" ,fontname="Helvetica"];
+  Node5 [label="Frustum",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classFrustum.html",tooltip=" "];
+  Node6 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pl" ,fontname="Helvetica"];
+  Node6 [label="Plane",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPlane.html",tooltip=" "];
+  Node7 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" normal" ,fontname="Helvetica"];
+  Node7 [label="Vector3Tpl\< float \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip=" "];
+  Node8 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="Tuple3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classTuple3Tpl.html",tooltip="3-Tuple structure (templated version)"];
+  Node9 -> Node7 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< float \>" ,fontname="Helvetica"];
+  Node9 [label="Vector3Tpl\< Type \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVector3Tpl.html",tooltip="3D Vector (templated version)"];
+  Node8 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

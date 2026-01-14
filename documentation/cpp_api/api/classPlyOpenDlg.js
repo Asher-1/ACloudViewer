@@ -1,0 +1,24 @@
+var classPlyOpenDlg =
+[
+    [ "PlyOpenDlg", "classPlyOpenDlg.html#a5aa96e628d04bc5877cff6e0c4d85b2d", null ],
+    [ "addSFComboBox", "classPlyOpenDlg.html#a1cbc213c7d723d3e86afca37a4e5e2c6", null ],
+    [ "apply", "classPlyOpenDlg.html#a60dee1d72c7fb4e8791616c232ce45aa", null ],
+    [ "applyAll", "classPlyOpenDlg.html#a9218a52e648901e804e7ef1dfa56a4ed", null ],
+    [ "canBeSkipped", "classPlyOpenDlg.html#a5ace9311797444f91b0fbe1b4ff4dd39", null ],
+    [ "fullyAccepted", "classPlyOpenDlg.html#a8ea6956c953ce8c3293d543a8f52ff80", null ],
+    [ "isValid", "classPlyOpenDlg.html#a13ace74f9e57ce8bd9b836ec834adf72", null ],
+    [ "ResetApplyAll", "classPlyOpenDlg.html#a3093c17ca52d8e98529f3090f286e48a", null ],
+    [ "restoreContext", "classPlyOpenDlg.html#a816c143b06e161f30533d5a37b00f97b", null ],
+    [ "restorePreviousContext", "classPlyOpenDlg.html#a73de60b7645e58e131af1f4ca4237c94", null ],
+    [ "saveContext", "classPlyOpenDlg.html#a4b60ab2e6e356558b8551aba2a34ba92", null ],
+    [ "setDefaultComboItems", "classPlyOpenDlg.html#a7bf2c927921f7164f547449bbd90d03c", null ],
+    [ "setListComboItems", "classPlyOpenDlg.html#a41d74706e46638df28cc589111789569", null ],
+    [ "setSingleComboItems", "classPlyOpenDlg.html#a4b7b1102db8e9b1396c04570e8b8f19b", null ],
+    [ "m_listCombos", "classPlyOpenDlg.html#a3e5aeb875ffe37ddd96e8bf2bfb7adfb", null ],
+    [ "m_listPropsText", "classPlyOpenDlg.html#ae3d53716459c7ce769a1fd09e54ae2d3", null ],
+    [ "m_sfCombos", "classPlyOpenDlg.html#ad145d26ff5c0d89bcd51d333020bebe7", null ],
+    [ "m_singleCombos", "classPlyOpenDlg.html#aa2336a297bf5c87af461542d72fa8d11", null ],
+    [ "m_singlePropsText", "classPlyOpenDlg.html#a8c3fe559ed51ebed0a9076b05ecd6a61", null ],
+    [ "m_standardCombos", "classPlyOpenDlg.html#aa1e0f1ea0a103dfa732b9dd2c8806879", null ],
+    [ "m_stdPropsText", "classPlyOpenDlg.html#a389466af664dc8e1027091c298303214", null ]
+];

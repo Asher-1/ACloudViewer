@@ -1,0 +1,13 @@
+digraph "cloudViewer::core::SlabNodeManager"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="cloudViewer::core::\lSlabNodeManager",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" device_" ,fontname="Helvetica"];
+  Node2 [label="cloudViewer::core::\lDevice",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1core_1_1Device.html",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" impl_" ,fontname="Helvetica"];
+  Node3 [label="cloudViewer::core::\lSlabNodeManagerImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1core_1_1SlabNodeManagerImpl.html",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" hash_coef_\nsuper_blocks_" ,fontname="Helvetica"];
+  Node4 [label="uint32_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+}

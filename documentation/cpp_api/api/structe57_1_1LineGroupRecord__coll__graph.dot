@@ -1,0 +1,13 @@
+digraph "e57::LineGroupRecord"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="e57::LineGroupRecord",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Stores information about a single group of points in a row or column."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" sphericalBounds" ,fontname="Helvetica"];
+  Node2 [label="e57::SphericalBounds",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1SphericalBounds.html",tooltip="Stores the bounds of some data in spherical coordinates."];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cartesianBounds" ,fontname="Helvetica"];
+  Node3 [label="e57::CartesianBounds",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1CartesianBounds.html",tooltip="Specifies an axis-aligned box in local cartesian coordinates."];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" idElementValue\npointCount\nstartPointIndex" ,fontname="Helvetica"];
+  Node4 [label="int64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+}

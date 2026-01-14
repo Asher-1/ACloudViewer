@@ -1,0 +1,28 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="flann::IndexBase",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1IndexBase.html",tooltip=" "];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="flann::NNIndex\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1NNIndex.html",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="flann::AutotunedIndex\l\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1AutotunedIndex.html",tooltip=" "];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="flann::CompositeIndex\l\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1CompositeIndex.html",tooltip=" "];
+  Node1 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="flann::HierarchicalClustering\lIndex\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1HierarchicalClusteringIndex.html",tooltip=" "];
+  Node1 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="flann::KDTreeCuda3dIndex\l\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1KDTreeCuda3dIndex.html",tooltip=" "];
+  Node1 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="flann::KDTreeIndex\l\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1KDTreeIndex.html",tooltip=" "];
+  Node1 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="flann::KDTreeSingleIndex\l\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1KDTreeSingleIndex.html",tooltip=" "];
+  Node1 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="flann::KMeansIndex\l\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1KMeansIndex.html",tooltip=" "];
+  Node1 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="flann::LinearIndex\l\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1LinearIndex.html",tooltip=" "];
+  Node1 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="flann::LshIndex\< Distance \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classflann_1_1LshIndex.html",tooltip=" "];
+}

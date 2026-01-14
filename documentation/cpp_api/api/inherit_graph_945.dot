@@ -1,0 +1,30 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node755 [label="Ui::ExtraScalarFieldCard",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node755 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 [label="LasExtraScalarFieldCard",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLasExtraScalarFieldCard.html",tooltip=" "];
+  Node1727 [label="QWidget",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node1727 -> Node1728 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1728 [label="ConfusionMatrix",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classConfusionMatrix.html",tooltip=" "];
+  Node1727 -> Node1729 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1729 [label="G3PointPlots",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classG3PointPlots.html",tooltip=" "];
+  Node1727 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1727 -> Node1730 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1730 [label="LineNumberArea",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLineNumberArea.html",tooltip=" "];
+  Node1727 -> Node1731 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1731 [label="MappingLabel",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classMappingLabel.html",tooltip="Widget to map a predefined scalar field 'role' with a particular scalar field (combo box)"];
+  Node1727 -> Node1732 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1732 [label="PackageManager",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPackageManager.html",tooltip=" "];
+  Node1727 -> Node1733 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1733 [label="PythonActionLauncher",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPythonActionLauncher.html",tooltip=" "];
+  Node1727 -> Node1734 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1734 [label="WaitingSpinnerWidget",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classWaitingSpinnerWidget.html",tooltip=" "];
+  Node1727 -> Node1735 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1735 [label="ccMapWindow",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccMapWindow.html",tooltip="2D map display window"];
+  Node1727 -> Node1736 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1736 [label="ecvFontPropertyWidget",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classecvFontPropertyWidget.html",tooltip="A reusable font property widget matching ParaView's font editor style."];
+}

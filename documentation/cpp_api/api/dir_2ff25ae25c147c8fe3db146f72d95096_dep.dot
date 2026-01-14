@@ -1,0 +1,9 @@
+digraph "/root/ACloudViewer/libs/eCV_db/include/widgets" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_f5ce86466c8b9c7eeb3c23bd8ac82242 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="include" fontname="Helvetica", fontsize="10", URL="dir_f5ce86466c8b9c7eeb3c23bd8ac82242.html"]
+  dir_2ff25ae25c147c8fe3db146f72d95096 [shape=box, label="widgets", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_2ff25ae25c147c8fe3db146f72d95096.html"];
+  }
+}

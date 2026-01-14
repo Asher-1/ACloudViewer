@@ -1,0 +1,16 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="masc::Feature",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structmasc_1_1Feature.html",tooltip="Generic feature descriptor."];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="masc::ContextBasedFeature",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structmasc_1_1ContextBasedFeature.html",tooltip="Context-based feature."];
+  Node0 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="masc::DualCloudFeature",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structmasc_1_1DualCloudFeature.html",tooltip="Dual-cloud feature."];
+  Node0 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="masc::NeighborhoodFeature",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structmasc_1_1NeighborhoodFeature.html",tooltip="Neighborhood-based feature."];
+  Node0 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="masc::PointFeature",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structmasc_1_1PointFeature.html",tooltip="Point feature."];
+}

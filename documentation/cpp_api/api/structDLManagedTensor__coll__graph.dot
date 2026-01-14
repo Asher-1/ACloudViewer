@@ -1,0 +1,21 @@
+digraph "DLManagedTensor"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="DLManagedTensor",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi..."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" dl_tensor" ,fontname="Helvetica"];
+  Node2 [label="DLTensor",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structDLTensor.html",tooltip="Plain C Tensor object, does not manage memory."];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" byte_offset" ,fontname="Helvetica"];
+  Node3 [label="uint64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ctx" ,fontname="Helvetica"];
+  Node4 [label="DLContext",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structDLContext.html",tooltip="A Device context for Tensor and operator."];
+  Node5 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" dtype" ,fontname="Helvetica"];
+  Node5 [label="DLDataType",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structDLDataType.html",tooltip="The data type the tensor can hold."];
+  Node6 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" lanes" ,fontname="Helvetica"];
+  Node6 [label="uint16_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" bits\ncode" ,fontname="Helvetica"];
+  Node7 [label="uint8_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" shape\nstrides" ,fontname="Helvetica"];
+  Node8 [label="int64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+}

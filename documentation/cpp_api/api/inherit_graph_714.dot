@@ -1,0 +1,8 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="flann::Accumulator\l\< unsigned short \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structflann_1_1Accumulator_3_01unsigned_01short_01_4.html",tooltip=" "];
+}

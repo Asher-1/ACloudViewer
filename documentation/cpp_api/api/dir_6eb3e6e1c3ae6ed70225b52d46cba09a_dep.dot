@@ -1,0 +1,15 @@
+digraph "/root/ACloudViewer/libs/Reconstruction/lib/Graclus" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_a515367177c6490682dd4e4f103f6175 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="lib" fontname="Helvetica", fontsize="10", URL="dir_a515367177c6490682dd4e4f103f6175.html"]
+  subgraph clusterdir_6eb3e6e1c3ae6ed70225b52d46cba09a {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_6eb3e6e1c3ae6ed70225b52d46cba09a.html"];
+    dir_6eb3e6e1c3ae6ed70225b52d46cba09a [shape=plaintext label="Graclus"];
+  dir_b5b6a7a7c86e874f3835baa0d19c8a0c [shape=box label="metisLib" fillcolor="white" style="filled" URL="dir_b5b6a7a7c86e874f3835baa0d19c8a0c.html"];
+  dir_b69ab13f736a584fad5aa0d2f7410674 [shape=box label="multilevelLib" fillcolor="white" style="filled" URL="dir_b69ab13f736a584fad5aa0d2f7410674.html"];
+  }
+  }
+  dir_b69ab13f736a584fad5aa0d2f7410674->dir_b5b6a7a7c86e874f3835baa0d19c8a0c [headlabel="5", labeldistance=1.5 headhref="dir_000084_000083.html"];
+}

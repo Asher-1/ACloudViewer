@@ -1,0 +1,14 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qColorimetricSegmenter" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_50f8496c947415eedd96ada30c013367 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="Standard" fontname="Helvetica", fontsize="10", URL="dir_50f8496c947415eedd96ada30c013367.html"]
+  dir_861f8ab3a75efd6c1a4bc468dceb871c [shape=box, label="qColorimetricSegmenter", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_861f8ab3a75efd6c1a4bc468dceb871c.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_861f8ab3a75efd6c1a4bc468dceb871c->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="3", labeldistance=1.5 headhref="dir_000159_000000.html"];
+  dir_861f8ab3a75efd6c1a4bc468dceb871c->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="5", labeldistance=1.5 headhref="dir_000159_000002.html"];
+}

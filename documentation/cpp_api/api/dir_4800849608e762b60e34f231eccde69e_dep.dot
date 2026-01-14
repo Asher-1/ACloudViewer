@@ -1,0 +1,21 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qPythonRuntime/wrapper/pycc/plugins" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_f98061f674671de7c66ccab559b2360e {
+    graph [ bgcolor="#ddddee", pencolor="black", label="pycc" fontname="Helvetica", fontsize="10", URL="dir_f98061f674671de7c66ccab559b2360e.html"]
+  dir_2b6134671f718a3865164e4e2d4cc657 [shape=box label="src" fillcolor="white" style="filled" color="red" URL="dir_2b6134671f718a3865164e4e2d4cc657.html"];
+  subgraph clusterdir_4800849608e762b60e34f231eccde69e {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_4800849608e762b60e34f231eccde69e.html"];
+    dir_4800849608e762b60e34f231eccde69e [shape=plaintext label="plugins"];
+  dir_9908078d9650cbac63a4451c79321bce [shape=box label="m3c2" fillcolor="white" style="filled" URL="dir_9908078d9650cbac63a4451c79321bce.html"];
+  }
+  }
+  dir_496720c7e7870a9ab5c24efb39eb21c7 [shape=box label="qM3C2" fillcolor="white" style="filled" color="red" URL="dir_496720c7e7870a9ab5c24efb39eb21c7.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_9908078d9650cbac63a4451c79321bce->dir_2b6134671f718a3865164e4e2d4cc657 [headlabel="1", labeldistance=1.5 headhref="dir_000221_000222.html"];
+  dir_9908078d9650cbac63a4451c79321bce->dir_496720c7e7870a9ab5c24efb39eb21c7 [headlabel="2", labeldistance=1.5 headhref="dir_000221_000183.html"];
+  dir_9908078d9650cbac63a4451c79321bce->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="1", labeldistance=1.5 headhref="dir_000221_000002.html"];
+  dir_496720c7e7870a9ab5c24efb39eb21c7->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="20", labeldistance=1.5 headhref="dir_000183_000002.html"];
+  dir_2b6134671f718a3865164e4e2d4cc657->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="82", labeldistance=1.5 headhref="dir_000222_000002.html"];
+}

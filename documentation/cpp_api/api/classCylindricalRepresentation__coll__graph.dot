@@ -1,0 +1,17 @@
+digraph "CylindricalRepresentation"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="CylindricalRepresentation",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="SphericalRepresentation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classSphericalRepresentation.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="VisualReferenceRepresentation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classVisualReferenceRepresentation.html",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="CameraRepresentation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classCameraRepresentation.html",tooltip="Interface for E57 camera representation."];
+  Node5 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageHeight\nimageWidth" ,fontname="Helvetica"];
+  Node5 [label="int32_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" imageMaskSize\nimageSize" ,fontname="Helvetica"];
+  Node6 [label="int64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+}

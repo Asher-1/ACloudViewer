@@ -1,0 +1,18 @@
+digraph "zip64_internal"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="zip64_internal",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" central_dir" ,fontname="Helvetica"];
+  Node2 [label="linkedlist_data_s",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structlinkedlist__data__s.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" first_block\nlast_block" ,fontname="Helvetica"];
+  Node3 [label="linkedlist_datablock\l_internal_s",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structlinkedlist__datablock__internal__s.html",tooltip=" "];
+  Node3 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" next_datablock" ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" z_filefunc" ,fontname="Helvetica"];
+  Node4 [label="zlib_filefunc64_32\l_def_s",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structzlib__filefunc64__32__def__s.html",tooltip=" "];
+  Node5 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" zfile_func64" ,fontname="Helvetica"];
+  Node5 [label="zlib_filefunc64_def_s",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structzlib__filefunc64__def__s.html",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ci" ,fontname="Helvetica"];
+  Node6 [label="curfile64_info",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structcurfile64__info.html",tooltip=" "];
+}

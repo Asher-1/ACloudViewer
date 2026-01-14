@@ -1,0 +1,13 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qE57IO/extern/libE57Format/src" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc {
+    graph [ bgcolor="#ddddee", pencolor="black", label="libE57Format" fontname="Helvetica", fontsize="10", URL="dir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc.html"]
+  dir_d21333906be55f8c765d03a59e7fedc5 [shape=box label="include" URL="dir_d21333906be55f8c765d03a59e7fedc5.html"];
+  dir_e48c8206bb897c0990e4bf6976b6e443 [shape=box label="extern" fillcolor="white" style="filled" color="red" URL="dir_e48c8206bb897c0990e4bf6976b6e443.html"];
+  dir_d5815e19ad8e9536ffb8de8e09ded2ce [shape=box, label="src", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_d5815e19ad8e9536ffb8de8e09ded2ce.html"];
+  }
+  dir_d5815e19ad8e9536ffb8de8e09ded2ce->dir_d21333906be55f8c765d03a59e7fedc5 [headlabel="7", labeldistance=1.5 headhref="dir_000111_000110.html"];
+  dir_d5815e19ad8e9536ffb8de8e09ded2ce->dir_e48c8206bb897c0990e4bf6976b6e443 [headlabel="1", labeldistance=1.5 headhref="dir_000111_000107.html"];
+}

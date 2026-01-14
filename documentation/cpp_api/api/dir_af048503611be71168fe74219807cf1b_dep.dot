@@ -1,0 +1,21 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qMasonry" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_50f8496c947415eedd96ada30c013367 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="Standard" fontname="Helvetica", fontsize="10", URL="dir_50f8496c947415eedd96ada30c013367.html"]
+  subgraph clusterdir_af048503611be71168fe74219807cf1b {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_af048503611be71168fe74219807cf1b.html"];
+    dir_af048503611be71168fe74219807cf1b [shape=plaintext label="qMasonry"];
+  dir_32289a0d0e13fb0dab53cb4bbb6eedf2 [shape=box label="qAutoSeg" fillcolor="white" style="filled" URL="dir_32289a0d0e13fb0dab53cb4bbb6eedf2.html"];
+  dir_45129e3ee3944a2f815498de9248e3de [shape=box label="qManualSeg" fillcolor="white" style="filled" URL="dir_45129e3ee3944a2f815498de9248e3de.html"];
+  }
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_32289a0d0e13fb0dab53cb4bbb6eedf2->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="13", labeldistance=1.5 headhref="dir_000187_000000.html"];
+  dir_32289a0d0e13fb0dab53cb4bbb6eedf2->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="9", labeldistance=1.5 headhref="dir_000187_000002.html"];
+  dir_45129e3ee3944a2f815498de9248e3de->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="6", labeldistance=1.5 headhref="dir_000188_000000.html"];
+  dir_45129e3ee3944a2f815498de9248e3de->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="10", labeldistance=1.5 headhref="dir_000188_000002.html"];
+}

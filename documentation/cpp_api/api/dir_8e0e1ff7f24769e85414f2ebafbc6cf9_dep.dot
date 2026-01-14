@@ -1,0 +1,22 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qAnimation" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_50f8496c947415eedd96ada30c013367 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="Standard" fontname="Helvetica", fontsize="10", URL="dir_50f8496c947415eedd96ada30c013367.html"]
+  subgraph clusterdir_8e0e1ff7f24769e85414f2ebafbc6cf9 {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_8e0e1ff7f24769e85414f2ebafbc6cf9.html"];
+    dir_8e0e1ff7f24769e85414f2ebafbc6cf9 [shape=plaintext label="qAnimation"];
+  dir_ecb58127c1fbc3caae36a326d0c64ee4 [shape=box label="extern" fillcolor="white" style="filled" color="red" URL="dir_ecb58127c1fbc3caae36a326d0c64ee4.html"];
+  dir_2761bad389f0f80d0d31f1829b4fcb72 [shape=box label="include" fillcolor="white" style="filled" URL="dir_2761bad389f0f80d0d31f1829b4fcb72.html"];
+  dir_505c055bef624d0937ac01eb6698c77a [shape=box label="src" fillcolor="white" style="filled" URL="dir_505c055bef624d0937ac01eb6698c77a.html"];
+  }
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_2761bad389f0f80d0d31f1829b4fcb72->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="2", labeldistance=1.5 headhref="dir_000148_000002.html"];
+  dir_505c055bef624d0937ac01eb6698c77a->dir_2761bad389f0f80d0d31f1829b4fcb72 [headlabel="5", labeldistance=1.5 headhref="dir_000149_000148.html"];
+  dir_505c055bef624d0937ac01eb6698c77a->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="2", labeldistance=1.5 headhref="dir_000149_000000.html"];
+  dir_505c055bef624d0937ac01eb6698c77a->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="12", labeldistance=1.5 headhref="dir_000149_000002.html"];
+}

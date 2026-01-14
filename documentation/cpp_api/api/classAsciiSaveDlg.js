@@ -1,0 +1,28 @@
+var classAsciiSaveDlg =
+[
+    [ "AsciiSaveDlg", "classAsciiSaveDlg.html#ae518044bb345be98184080232d4136fa", null ],
+    [ "~AsciiSaveDlg", "classAsciiSaveDlg.html#a20fff17b5592e311d790daf280716c6f", null ],
+    [ "acceptAndSaveSettings", "classAsciiSaveDlg.html#a3223e36c02a98ed3226b4b54394f6e61", null ],
+    [ "autoShown", "classAsciiSaveDlg.html#a0dc996e0d056c155ef261d28687130f7", null ],
+    [ "coordsPrecision", "classAsciiSaveDlg.html#aa289cff27b8057e77bce9fc512fae481", null ],
+    [ "enableSaveColumnsNamesHeader", "classAsciiSaveDlg.html#a108c96676f013d1de8b644909135b14c", null ],
+    [ "enableSavePointCountHeader", "classAsciiSaveDlg.html#a9cbd52d18853e4167caba9cbb2db6ece", null ],
+    [ "enableSwapColorAndSF", "classAsciiSaveDlg.html#adc583a858aa6d21d5e0115736625983a", null ],
+    [ "getSeparator", "classAsciiSaveDlg.html#a5c06522e27287eb5da3e3ae581246252", null ],
+    [ "getSeparatorIndex", "classAsciiSaveDlg.html#a9d967d3c27d75c250b6d392f902ac7b7", null ],
+    [ "initFromPersistentSettings", "classAsciiSaveDlg.html#a75bb2d85f8a9ee2dee33e860493a6655", null ],
+    [ "saveAlphaChannel", "classAsciiSaveDlg.html#a5a50ebca124c29c86c3d47e01e690bb8", null ],
+    [ "saveColumnsNamesHeader", "classAsciiSaveDlg.html#a6bc9a497f830a30c419d38f05049d5d2", null ],
+    [ "saveFloatColors", "classAsciiSaveDlg.html#af033e4c43c92f3eba2cd74c18fa966c3", null ],
+    [ "savePointCountHeader", "classAsciiSaveDlg.html#a6407635a5002383dfb5a631745fd57de", null ],
+    [ "setAutoShow", "classAsciiSaveDlg.html#a9de0f047a33f7c3ed1a0fab315fbb7f0", null ],
+    [ "setCoordsPrecision", "classAsciiSaveDlg.html#a883f74834502c3f244ffea0c36197b62", null ],
+    [ "setSaveAlphaChannel", "classAsciiSaveDlg.html#a4aedc7488f71029f8515a34750797d79", null ],
+    [ "setSaveFloatColors", "classAsciiSaveDlg.html#ad7f987e81d8c46e3d6008a28af667820", null ],
+    [ "setSeparatorIndex", "classAsciiSaveDlg.html#a62f26e5228639b67e230f74ee7b9dedc", null ],
+    [ "setSfPrecision", "classAsciiSaveDlg.html#ac6491af199ba618ac4ad7426634216b9", null ],
+    [ "sfPrecision", "classAsciiSaveDlg.html#a52cb00fcbaf025bae8557292e9d31571", null ],
+    [ "swapColorAndSF", "classAsciiSaveDlg.html#ac99a24289fc28d06f2e0f106228baf66", null ],
+    [ "m_autoShow", "classAsciiSaveDlg.html#a20c79c5352cec3465f099565f35ffacb", null ],
+    [ "m_ui", "classAsciiSaveDlg.html#aafd09a0258e2a40e81e8f06cd63b5af8", null ]
+];

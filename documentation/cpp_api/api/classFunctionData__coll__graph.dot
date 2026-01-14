@@ -1,0 +1,14 @@
+digraph "FunctionData&lt; Degree, Real &gt;"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="FunctionData\< Degree,\l Real \>",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" baseFunctions" ,fontname="Helvetica"];
+  Node2 [label="PPolynomial\< Degree+1 \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPPolynomial.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< Degree+1 \>" ,fontname="Helvetica"];
+  Node3 [label="PPolynomial\< Degree \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPPolynomial.html",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" dBaseFunction\ndLeftBaseFunction\ndRightBaseFunction" ,fontname="Helvetica"];
+  Node4 [label="PPolynomial\< Degree-1 \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPPolynomial.html",tooltip=" "];
+  Node3 -> Node4 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< Degree-1 \>" ,fontname="Helvetica"];
+}

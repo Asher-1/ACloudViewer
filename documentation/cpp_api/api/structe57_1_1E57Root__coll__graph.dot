@@ -1,0 +1,17 @@
+digraph "e57::E57Root"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="e57::E57Root",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Stores the top-level information for the XML section of the file."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" creationDateTime" ,fontname="Helvetica"];
+  Node2 [label="e57::DateTime",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structe57_1_1DateTime.html",tooltip="Encodes date and time."];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" isAtomicClockReferenced" ,fontname="Helvetica"];
+  Node3 [label="int32_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" versionMajor\nversionMinor" ,fontname="Helvetica"];
+  Node4 [label="uint32_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" coordinateMetadata\ne57LibraryVersion\nformatName\nguid" ,fontname="Helvetica"];
+  Node5 [label="string",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" data3DSize\nimages2DSize" ,fontname="Helvetica"];
+  Node6 [label="int64_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+}

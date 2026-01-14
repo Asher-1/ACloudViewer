@@ -1,0 +1,14 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qG3Point/include" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_b07c9c898a41c3da2da9db5ccc16b042 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="qG3Point" fontname="Helvetica", fontsize="10", URL="dir_b07c9c898a41c3da2da9db5ccc16b042.html"]
+  dir_95c8605d12547871764de67fd76e557b [shape=box, label="include", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_95c8605d12547871764de67fd76e557b.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_95c8605d12547871764de67fd76e557b->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="3", labeldistance=1.5 headhref="dir_000170_000000.html"];
+  dir_95c8605d12547871764de67fd76e557b->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="11", labeldistance=1.5 headhref="dir_000170_000002.html"];
+}

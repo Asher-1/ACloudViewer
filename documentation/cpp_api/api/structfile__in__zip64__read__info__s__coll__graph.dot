@@ -1,0 +1,11 @@
+digraph "file_in_zip64_read_info_s"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="file_in_zip64_read\l_info_s",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" z_filefunc" ,fontname="Helvetica"];
+  Node2 [label="zlib_filefunc64_32\l_def_s",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structzlib__filefunc64__32__def__s.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" zfile_func64" ,fontname="Helvetica"];
+  Node3 [label="zlib_filefunc64_def_s",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structzlib__filefunc64__def__s.html",tooltip=" "];
+}

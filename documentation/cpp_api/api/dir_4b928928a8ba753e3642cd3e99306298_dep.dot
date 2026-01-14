@@ -1,0 +1,17 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qTreeIso" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_50f8496c947415eedd96ada30c013367 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="Standard" fontname="Helvetica", fontsize="10", URL="dir_50f8496c947415eedd96ada30c013367.html"]
+  subgraph clusterdir_4b928928a8ba753e3642cd3e99306298 {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_4b928928a8ba753e3642cd3e99306298.html"];
+    dir_4b928928a8ba753e3642cd3e99306298 [shape=plaintext label="qTreeIso"];
+  dir_efca379785dd656b4950eb7870b79a24 [shape=box label="include" fillcolor="white" style="filled" URL="dir_efca379785dd656b4950eb7870b79a24.html"];
+  dir_5812e1d64c3eab9730bae5fbd6e5d65b [shape=box label="src" fillcolor="white" style="filled" URL="dir_5812e1d64c3eab9730bae5fbd6e5d65b.html"];
+  }
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_5812e1d64c3eab9730bae5fbd6e5d65b->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="7", labeldistance=1.5 headhref="dir_000228_000002.html"];
+  dir_5812e1d64c3eab9730bae5fbd6e5d65b->dir_efca379785dd656b4950eb7870b79a24 [headlabel="8", labeldistance=1.5 headhref="dir_000228_000113.html"];
+}

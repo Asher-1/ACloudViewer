@@ -1,0 +1,25 @@
+digraph "ccMeasurement"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="ccMeasurement",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="ccFitPlane",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccFitPlane.html",tooltip=" "];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="ccPointPair",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccPointPair.html",tooltip=" "];
+  Node3 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="ccLineation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccLineation.html",tooltip=" "];
+  Node3 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="ccNote",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccNote.html",tooltip=" "];
+  Node3 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="ccPinchNode",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccPinchNode.html",tooltip=" "];
+  Node3 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="ccThickness",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccThickness.html",tooltip=" "];
+  Node3 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="ccTopologyRelation",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccTopologyRelation.html",tooltip=" "];
+  Node1 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="ccSNECloud",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccSNECloud.html",tooltip=" "];
+  Node1 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="ccTrace",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccTrace.html",tooltip=" "];
+}

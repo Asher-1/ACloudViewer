@@ -1,0 +1,40 @@
+digraph "PyramidPacked"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="PyramidPacked",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="PyramidGL",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPyramidGL.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="SiftPyramid",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classSiftPyramid.html",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="GlobalUtil",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classGlobalUtil.html",tooltip=" "];
+  Node5 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="GlobalParam",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classGlobalParam.html",tooltip=" "];
+  Node6 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" param" ,fontname="Helvetica"];
+  Node6 [label="SiftParam",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classSiftParam.html",tooltip=" "];
+  Node7 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" _descriptor_buffer\n_keypoint_buffer" ,fontname="Helvetica"];
+  Node7 [label="vector\< float \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node7 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< float \>" ,fontname="Helvetica"];
+  Node8 [label="vector",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node9 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" _keypoint_index" ,fontname="Helvetica"];
+  Node9 [label="vector\< int \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node9 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< int \>" ,fontname="Helvetica"];
+  Node10 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" _descriptorTex\n_featureTex\n_histoPyramidTex\n_orientationTex" ,fontname="Helvetica"];
+  Node10 [label="GLTexImage",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classGLTexImage.html",tooltip=" "];
+  Node4 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="ShaderMan",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classShaderMan.html",tooltip=" "];
+  Node12 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" s_bag" ,fontname="Helvetica"];
+  Node12 [label="ShaderBag",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classShaderBag.html",tooltip=" "];
+  Node13 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" s_copy_key\ns_debug\ns_descriptor_fp\ns_display_dog\ns_display_gaussian\ns_display_grad\ns_display_keys\ns_dog_pass\ns_genlist_end\ns_genlist_histo\n..." ,fontname="Helvetica"];
+  Node13 [label="ProgramGPU",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classProgramGPU.html",tooltip=" "];
+  Node14 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" f_gaussian_skip0_v" ,fontname="Helvetica"];
+  Node14 [label="vector\< FilterProgram * \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node14 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< FilterProgram * \>" ,fontname="Helvetica"];
+  Node15 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" f_gaussian_skip0\nf_gaussian_skip1\nf_gaussian_step" ,fontname="Helvetica"];
+  Node15 [label="FilterProgram",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classFilterProgram.html",tooltip=" "];
+  Node13 -> Node15 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" s_shader_h\ns_shader_v" ,fontname="Helvetica"];
+}

@@ -1,0 +1,1426 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="CI/CD Pipeline" href="ci_cd.html" /><link rel="prev" title="Contributing to ACloudViewer" href="contributing.html" />
+
+    <link rel="shortcut icon" href="../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
+        <title>Docker Development - ACloudViewer 3.9.3 Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=47d5a741" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #2196F3;
+  --color-brand-content: #2196F3;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">ACloudViewer 3.9.3 Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/ACloudViewer_logo_horizontal.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">ACloudViewer 3.9.3 Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_from_source.html">Building from Source</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/index.html">Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Tutorial</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/ml/index.html">Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/core/tensor.html">Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/core/hashmap.html">Hash map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_geometry/pointcloud.html">PointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_pipelines/t_icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/ml/index.html">Machine Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/advanced/index.html">Advanced Topics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/basic_usage.html">Basic Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/point_cloud_processing.html">Point Cloud Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/visualization.html">Visualization</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python Examples</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/geometry/index.html">Geometry Examples</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of Geometry Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/io/index.html">I/O Examples</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of I/O Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/pipelines/index.html">Pipelines Examples</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle navigation of Pipelines Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/visualization/index.html">Visualization Examples</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle navigation of Visualization Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/cpp_examples.html">C++ Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ API</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cpp_api.html">C++ documentation</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle navigation of C++ documentation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/overview.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/quickstart.html">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/plugins.html">Plugin System</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to ACloudViewer</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Docker Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ci_cd.html">CI/CD Pipeline</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../resources/changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/support.html">Getting Support</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="docker-development">
+<h1>Docker Development<a class="headerlink" href="#docker-development" title="Permalink to this heading">#</a></h1>
+<p>ACloudViewer provides comprehensive Docker support for development, testing, and deployment.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h2>
+<p>Docker images are available for:</p>
+<ul class="simple">
+<li><p><strong>Documentation Building</strong>: Generate docs in isolated environment</p></li>
+<li><p><strong>CI/CD Testing</strong>: Automated builds and tests</p></li>
+<li><p><strong>Wheel Building</strong>: Create Python wheels for distribution</p></li>
+<li><p><strong>Development</strong>: Consistent development environment</p></li>
+<li><p><strong>GPU Support</strong>: CUDA-enabled builds and testing</p></li>
+</ul>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading">#</a></h2>
+<section id="docker-installation">
+<h3>Docker Installation<a class="headerlink" href="#docker-installation" title="Permalink to this heading">#</a></h3>
+<p>Install Docker Engine:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ubuntu</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://get.docker.com<span class="w"> </span>-o<span class="w"> </span>get-docker.sh
+sudo<span class="w"> </span>sh<span class="w"> </span>get-docker.sh
+
+<span class="c1"># Verify installation</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>hello-world
+</pre></div>
+</div>
+<p><strong>Post-installation</strong> (Linux):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add user to docker group (run without sudo)</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>docker<span class="w"> </span><span class="nv">$USER</span>
+newgrp<span class="w"> </span>docker
+
+<span class="c1"># Verify</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>hello-world<span class="w">  </span><span class="c1"># Should work without sudo</span>
+</pre></div>
+</div>
+</section>
+<section id="nvidia-docker-gpu-support">
+<h3>NVIDIA Docker (GPU Support)<a class="headerlink" href="#nvidia-docker-gpu-support" title="Permalink to this heading">#</a></h3>
+<p>Required for CUDA builds and GPU testing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install NVIDIA Container Toolkit</span>
+<span class="nv">distribution</span><span class="o">=</span><span class="k">$(</span>.<span class="w"> </span>/etc/os-release<span class="p">;</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$ID$VERSION_ID</span><span class="k">)</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://nvidia.github.io/libnvidia-container/gpgkey<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>sudo<span class="w"> </span>gpg<span class="w"> </span>--dearmor<span class="w"> </span>-o<span class="w"> </span>/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+curl<span class="w"> </span>-s<span class="w"> </span>-L<span class="w"> </span>https://nvidia.github.io/libnvidia-container/<span class="nv">$distribution</span>/libnvidia-container.list<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>sed<span class="w"> </span><span class="s1">&#39;s#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>nvidia-container-toolkit
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>docker
+
+<span class="c1"># Verify GPU access</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span>nvidia/cuda:12.1.0-base-ubuntu22.04<span class="w"> </span>nvidia-smi
+</pre></div>
+</div>
+</section>
+<section id="arm64-support-optional">
+<h3>ARM64 Support (Optional)<a class="headerlink" href="#arm64-support-optional" title="Permalink to this heading">#</a></h3>
+<p>For building ARM64 images on x86-64 hosts:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install QEMU</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>qemu<span class="w"> </span>binfmt-support<span class="w"> </span>qemu-user-static
+
+<span class="c1"># Register ARM64 interpreter</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--privileged<span class="w"> </span>multiarch/qemu-user-static<span class="w"> </span>--reset<span class="w"> </span>-p<span class="w"> </span>yes
+
+<span class="c1"># Verify ARM64 support</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>arm64v8/ubuntu:22.04<span class="w"> </span>uname<span class="w"> </span>-m
+<span class="c1"># Should output: aarch64</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="available-docker-images">
+<h2>Available Docker Images<a class="headerlink" href="#available-docker-images" title="Permalink to this heading">#</a></h2>
+<section id="documentation-build-image">
+<h3>Documentation Build Image<a class="headerlink" href="#documentation-build-image" title="Permalink to this heading">#</a></h3>
+<p><strong>Dockerfile</strong>: <code class="docutils literal notranslate"><span class="pre">docker/Dockerfile.docs</span></code></p>
+<p><strong>Purpose</strong>: Build comprehensive documentation (Sphinx + Doxygen) in an isolated environment.</p>
+<p><strong>Features</strong>:</p>
+<ul class="simple">
+<li><p>Ubuntu 22.04 base</p></li>
+<li><p>Python 3.11 with all doc dependencies</p></li>
+<li><p>Qt5 support (for GUI documentation)</p></li>
+<li><p>CloudViewer-ML integration</p></li>
+<li><p>Doxygen, Pandoc, Sphinx</p></li>
+<li><p>Automatic Python module detection and build</p></li>
+</ul>
+<p><strong>Build</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Development build (with git hash)</span>
+docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">DEVELOPER_BUILD</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-ci:docs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.docs<span class="w"> </span>.
+
+<span class="c1"># Release build (with version number)</span>
+docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">DEVELOPER_BUILD</span><span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-ci:docs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.docs<span class="w"> </span>.
+</pre></div>
+</div>
+<p><strong>Extract Documentation</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Extract documentation tarball</span>
+docker<span class="w"> </span>run<span class="w"> </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/opt/mount<span class="w"> </span>--rm<span class="w"> </span>acloudviewer-ci:docs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/&quot;</span>
+
+<span class="c1"># Unpack and preview</span>
+tar<span class="w"> </span>-xzf<span class="w"> </span>acloudviewer-*-docs.tar.gz<span class="w"> </span>-C<span class="w"> </span>./docs-preview/
+<span class="nb">cd</span><span class="w"> </span>docs-preview<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>http.server<span class="w"> </span><span class="m">8080</span>
+<span class="c1"># Open http://localhost:8080</span>
+</pre></div>
+</div>
+<p><strong>What It Builds</strong>:</p>
+<ol class="arabic simple">
+<li><p>Python module (if not present)</p></li>
+<li><p>C++ API documentation (Doxygen)</p></li>
+<li><p>Python API documentation (Sphinx autodoc)</p></li>
+<li><p>Jupyter notebook tutorials (nbsphinx)</p></li>
+<li><p>Unified HTML documentation</p></li>
+</ol>
+</section>
+<section id="ci-cd-build-image">
+<h3>CI/CD Build Image<a class="headerlink" href="#ci-cd-build-image" title="Permalink to this heading">#</a></h3>
+<p><strong>Dockerfile</strong>: <code class="docutils literal notranslate"><span class="pre">docker/Dockerfile.ci</span></code></p>
+<p><strong>Purpose</strong>: Automated CI/CD builds and testing.</p>
+<p><strong>Variants</strong>:</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variant</p></th>
+<th class="head"><p>Base Image</p></th>
+<th class="head"><p>Use Case</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>CPU Static</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ubuntu:22.04</span></code></p></td>
+<td><p>Static libraries, minimal dependencies</p></td>
+</tr>
+<tr class="row-odd"><td><p>CPU Shared</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ubuntu:22.04</span></code></p></td>
+<td><p>Shared libraries with ML support</p></td>
+</tr>
+<tr class="row-even"><td><p>CUDA Shared</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">nvidia/cuda:12.1.0-devel-ubuntu22.04</span></code></p></td>
+<td><p>GPU-accelerated builds</p></td>
+</tr>
+<tr class="row-odd"><td><p>Qt6 CPU</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ubuntu:24.04</span></code></p></td>
+<td><p>Qt6-based GUI builds</p></td>
+</tr>
+<tr class="row-even"><td><p>Qt6 CUDA</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">nvidia/cuda:12.1.0-devel-ubuntu24.04</span></code></p></td>
+<td><p>Qt6 + GPU builds</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Build Examples</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># CPU static build</span>
+docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BASE_IMAGE</span><span class="o">=</span>ubuntu:22.04<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">DEVELOPER_BUILD</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_SHARED_LIBS</span><span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-ci:cpu-static<span class="w"> </span>.
+
+<span class="c1"># CUDA shared build with ML</span>
+docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BASE_IMAGE</span><span class="o">=</span>nvidia/cuda:12.1.0-devel-ubuntu22.04<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">DEVELOPER_BUILD</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_SHARED_LIBS</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_CUDA_MODULE</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_PYTORCH_OPS</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-ci:cuda-ml<span class="w"> </span>.
+</pre></div>
+</div>
+<p><strong>Using Build Scripts</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docker
+
+<span class="c1"># See all available configurations</span>
+./docker_build.sh<span class="w"> </span>--help
+
+<span class="c1"># Build CPU variant</span>
+./docker_build.sh<span class="w"> </span>cpu-static
+
+<span class="c1"># Build CUDA variant with ML</span>
+./docker_build.sh<span class="w"> </span>cuda-ml-shared-jammy
+
+<span class="c1"># Build Qt6 variant</span>
+./docker_build_qt6.sh<span class="w"> </span>qt6-cpu-static
+</pre></div>
+</div>
+</section>
+<section id="qt6-build-image">
+<h3>Qt6 Build Image<a class="headerlink" href="#qt6-build-image" title="Permalink to this heading">#</a></h3>
+<p><strong>Dockerfile</strong>: <code class="docutils literal notranslate"><span class="pre">docker/Dockerfile.ci.qt6</span></code></p>
+<p><strong>Purpose</strong>: Build with Qt6 support (Ubuntu 24.04+).</p>
+<p><strong>Features</strong>:</p>
+<ul class="simple">
+<li><p>Qt6 base libraries</p></li>
+<li><p>Qt6 WebSockets</p></li>
+<li><p>Qt6 networking</p></li>
+<li><p>Modern CMake (3.28+)</p></li>
+</ul>
+<p><strong>Build</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci.qt6<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BASE_IMAGE</span><span class="o">=</span>ubuntu:24.04<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">DEVELOPER_BUILD</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-ci:qt6<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+<section id="wheel-building-image">
+<h3>Wheel Building Image<a class="headerlink" href="#wheel-building-image" title="Permalink to this heading">#</a></h3>
+<p><strong>Dockerfiles</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">docker/Dockerfile.wheel</span></code> (Qt5, Ubuntu 20.04/22.04)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docker/Dockerfile.wheel.qt6</span></code> (Qt6, Ubuntu 24.04)</p></li>
+</ul>
+<p><strong>Purpose</strong>: Build manylinux-compatible Python wheels.</p>
+<p><strong>Python Versions</strong>: 3.10, 3.11, 3.12, 3.13</p>
+<p><strong>Build</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build wheel with CUDA support</span>
+docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.wheel<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BASE_IMAGE</span><span class="o">=</span>ubuntu:22.04<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">PYTHON_VERSION</span><span class="o">=</span><span class="m">3</span>.11<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_CUDA_MODULE</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_PYTORCH_OPS</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-wheel:cuda-py311<span class="w"> </span>.
+
+<span class="c1"># Extract wheel</span>
+docker<span class="w"> </span>run<span class="w"> </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/opt/mount<span class="w"> </span>--rm<span class="w"> </span>acloudviewer-wheel:cuda-py311<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cp /root/ACloudViewer/build/lib/python_package/pip_package/*.whl /opt/mount/&quot;</span>
+</pre></div>
+</div>
+<p><strong>Using Build Scripts</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docker
+
+<span class="c1"># Build wheel for Python 3.11</span>
+./build_cloudviewer_whl.sh<span class="w"> </span><span class="m">3</span>.11
+
+<span class="c1"># Build all Python versions</span>
+./build-all.sh
+
+<span class="c1"># Build release wheels</span>
+./build-release.sh
+</pre></div>
+</div>
+</section>
+</section>
+<section id="using-docker-images">
+<h2>Using Docker Images<a class="headerlink" href="#using-docker-images" title="Permalink to this heading">#</a></h2>
+<section id="interactive-development">
+<h3>Interactive Development<a class="headerlink" href="#interactive-development" title="Permalink to this heading">#</a></h3>
+<p>Launch an interactive shell for development:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># CPU environment</span>
+docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-w<span class="w"> </span>/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash
+
+<span class="c1"># Inside container</span>
+mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>..<span class="w"> </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release
+make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+ctest<span class="w"> </span>--output-on-failure
+</pre></div>
+</div>
+<p><strong>With GPU support</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-w<span class="w"> </span>/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-ci:cuda-ml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash
+
+<span class="c1"># Build with CUDA</span>
+mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>..<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DBUILD_CUDA_MODULE<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DBUILD_PYTORCH_OPS<span class="o">=</span>ON
+make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+</pre></div>
+</div>
+</section>
+<section id="running-tests">
+<h3>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this heading">#</a></h3>
+<p>Run the complete test suite in Docker:</p>
+<p><strong>C++ Unit Tests</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-w<span class="w"> </span>/workspace/build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;ctest --output-on-failure&quot;</span>
+</pre></div>
+</div>
+<p><strong>Python Tests</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-w<span class="w"> </span>/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;source util/ci_utils.sh &amp;&amp; run_python_tests&quot;</span>
+</pre></div>
+</div>
+<p><strong>GPU Tests</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-w<span class="w"> </span>/workspace/build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-ci:cuda-ml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;ctest --output-on-failure -R GPU&quot;</span>
+</pre></div>
+</div>
+<p><strong>Using Test Script</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docker
+
+<span class="c1"># Test CPU build</span>
+./docker_test.sh<span class="w"> </span>cpu-static
+
+<span class="c1"># Test CUDA build</span>
+./docker_test.sh<span class="w"> </span>cuda-ml-shared-jammy
+
+<span class="c1"># Test Qt6 build</span>
+./docker_test.sh<span class="w"> </span>qt6-cpu-static
+</pre></div>
+</div>
+</section>
+<section id="building-wheels">
+<h3>Building Wheels<a class="headerlink" href="#building-wheels" title="Permalink to this heading">#</a></h3>
+<p>Build Python wheels inside Docker:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using ci_utils.sh</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-w<span class="w"> </span>/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-wheel:cuda-py311<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;source util/ci_utils.sh &amp;&amp; build_pip_package&quot;</span>
+
+<span class="c1"># Extract wheel</span>
+docker<span class="w"> </span>cp<span class="w"> </span><span class="k">$(</span>docker<span class="w"> </span>ps<span class="w"> </span>-lq<span class="k">)</span>:/root/ACloudViewer/dist<span class="w"> </span>./
+</pre></div>
+</div>
+<p><strong>Test wheel installation</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-w<span class="w"> </span>/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python:3.11-slim<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;pip install dist/*.whl &amp;&amp; python -c &#39;import cloudViewer; print(cloudViewer.__version__)&#39;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="build-arguments">
+<h2>Build Arguments<a class="headerlink" href="#build-arguments" title="Permalink to this heading">#</a></h2>
+<section id="common-build-arguments">
+<h3>Common Build Arguments<a class="headerlink" href="#common-build-arguments" title="Permalink to this heading">#</a></h3>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BASE_IMAGE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ubuntu:22.04</span></code></p></td>
+<td><p>Base Docker image</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DEVELOPER_BUILD</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ON</span></code></p></td>
+<td><p>Enable dev features (git hash in version)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PYTHON_VERSION</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">3.11</span></code></p></td>
+<td><p>Python version (3.10-3.13)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CMAKE_VERSION</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">3.28.1</span></code></p></td>
+<td><p>CMake version</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BUILD_SHARED_LIBS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
+<td><p>Build shared libraries</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BUILD_CUDA_MODULE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
+<td><p>Enable CUDA support</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BUILD_PYTORCH_OPS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
+<td><p>Build PyTorch operators</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BUILD_TENSORFLOW_OPS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
+<td><p>Build TensorFlow operators</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BUILD_GUI</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ON</span></code></p></td>
+<td><p>Build GUI components</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CCACHE_TAR_NAME</span></code></p></td>
+<td><p>(none)</p></td>
+<td><p>ccache archive for faster rebuilds</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Example with all arguments</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BASE_IMAGE</span><span class="o">=</span>nvidia/cuda:12.1.0-devel-ubuntu22.04<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">DEVELOPER_BUILD</span><span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">PYTHON_VERSION</span><span class="o">=</span><span class="m">3</span>.11<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">CMAKE_VERSION</span><span class="o">=</span><span class="m">3</span>.28.1<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_SHARED_LIBS</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_CUDA_MODULE</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_PYTORCH_OPS</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_TENSORFLOW_OPS</span><span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BUILD_GUI</span><span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer:custom<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+</section>
+<section id="dockerfile-structure">
+<h2>Dockerfile Structure<a class="headerlink" href="#dockerfile-structure" title="Permalink to this heading">#</a></h2>
+<section id="typical-multi-stage-dockerfile">
+<h3>Typical Multi-Stage Dockerfile<a class="headerlink" href="#typical-multi-stage-dockerfile" title="Permalink to this heading">#</a></h3>
+<p>ACloudViewer Dockerfiles use multi-stage builds for efficiency:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="c"># Stage 1: Base dependencies</span>
+<span class="k">FROM</span><span class="w"> </span><span class="s">ubuntu:22.04</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">base</span>
+<span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>build-essential<span class="w"> </span>cmake<span class="w"> </span>git
+
+<span class="c"># Stage 2: Build stage</span>
+<span class="k">FROM</span><span class="w"> </span><span class="s">base</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">builder</span>
+<span class="k">COPY</span><span class="w"> </span>.<span class="w"> </span>/workspace
+<span class="k">WORKDIR</span><span class="w"> </span><span class="s">/workspace</span>
+<span class="k">RUN</span><span class="w"> </span>mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>cmake<span class="w"> </span>..<span class="w"> </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+
+<span class="c"># Stage 3: Runtime stage (smaller)</span>
+<span class="k">FROM</span><span class="w"> </span><span class="s">ubuntu:22.04</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">runtime</span>
+<span class="k">COPY</span><span class="w"> </span>--from<span class="o">=</span>builder<span class="w"> </span>/workspace/build/lib<span class="w"> </span>/usr/local/lib
+<span class="k">COPY</span><span class="w"> </span>--from<span class="o">=</span>builder<span class="w"> </span>/workspace/build/bin<span class="w"> </span>/usr/local/bin
+<span class="k">RUN</span><span class="w"> </span>ldconfig
+</pre></div>
+</div>
+<p><strong>Benefits</strong>:</p>
+<ul class="simple">
+<li><p>Smaller final image (no build tools)</p></li>
+<li><p>Faster subsequent builds (cached layers)</p></li>
+<li><p>Reproducible builds</p></li>
+</ul>
+</section>
+<section id="layer-optimization">
+<h3>Layer Optimization<a class="headerlink" href="#layer-optimization" title="Permalink to this heading">#</a></h3>
+<p>Order Dockerfile commands from least to most frequently changing:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="c"># 1. System packages (rarely change)</span>
+<span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>build-essential<span class="w"> </span>cmake<span class="w"> </span>git
+
+<span class="c"># 2. Python dependencies (occasional changes)</span>
+<span class="k">COPY</span><span class="w"> </span>requirements.txt<span class="w"> </span>.
+<span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+
+<span class="c"># 3. Third-party dependencies (infrequent changes)</span>
+<span class="k">COPY</span><span class="w"> </span>3rdparty/<span class="w"> </span>/workspace/3rdparty/
+<span class="k">RUN</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/workspace/3rdparty<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build_deps.sh
+
+<span class="c"># 4. Source code (frequent changes)</span>
+<span class="k">COPY</span><span class="w"> </span>.<span class="w"> </span>/workspace
+</pre></div>
+</div>
+</section>
+</section>
+<section id="caching-strategies">
+<h2>Caching Strategies<a class="headerlink" href="#caching-strategies" title="Permalink to this heading">#</a></h2>
+<section id="buildkit-cache">
+<h3>BuildKit Cache<a class="headerlink" href="#buildkit-cache" title="Permalink to this heading">#</a></h3>
+<p>Use Docker BuildKit for advanced caching:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Enable BuildKit</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">DOCKER_BUILDKIT</span><span class="o">=</span><span class="m">1</span>
+
+<span class="c1"># Build with cache</span>
+docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--cache-from<span class="w"> </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span>.
+
+<span class="c1"># Use GitHub Actions cache</span>
+docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--cache-from<span class="w"> </span><span class="nv">type</span><span class="o">=</span>gha<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--cache-to<span class="w"> </span><span class="nv">type</span><span class="o">=</span>gha,mode<span class="o">=</span>max<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+<section id="ccache-integration">
+<h3>ccache Integration<a class="headerlink" href="#ccache-integration" title="Permalink to this heading">#</a></h3>
+<p>Leverage ccache for C++ compilation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create ccache volume</span>
+docker<span class="w"> </span>volume<span class="w"> </span>create<span class="w"> </span>ccache-vol
+
+<span class="c1"># Run with ccache volume</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span>ccache-vol:/root/.cache/ccache<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;ccache -M 5G &amp;&amp; cd /workspace/build &amp;&amp; make -j</span><span class="k">$(</span>nproc<span class="k">)</span><span class="s2">&quot;</span>
+
+<span class="c1"># Check ccache statistics</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span>ccache-vol:/root/.cache/ccache<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>ccache<span class="w"> </span>-s
+</pre></div>
+</div>
+<p><strong>Benefits</strong>:</p>
+<ul class="simple">
+<li><p>First build: ~45 min</p></li>
+<li><p>Cached build: ~8 min (5.6x speedup)</p></li>
+</ul>
+</section>
+</section>
+<section id="docker-compose">
+<h2>Docker Compose<a class="headerlink" href="#docker-compose" title="Permalink to this heading">#</a></h2>
+<p>For multi-container development setups:</p>
+<p><strong>docker-compose.yml</strong>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.8&#39;</span>
+
+<span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">acloudviewer-dev</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">build</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">context</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+<span class="w">      </span><span class="nt">dockerfile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docker/Dockerfile.ci</span>
+<span class="w">      </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">BASE_IMAGE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu:22.04</span>
+<span class="w">        </span><span class="nt">DEVELOPER_BUILD</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;ON&#39;</span>
+<span class="w">        </span><span class="nt">BUILD_SHARED_LIBS</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;OFF&#39;</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.:/workspace</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ccache-vol:/root/.cache/ccache</span>
+<span class="w">    </span><span class="nt">working_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/workspace</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bash</span>
+<span class="w">    </span><span class="nt">stdin_open</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">tty</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="w">  </span><span class="nt">acloudviewer-cuda</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">build</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">context</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+<span class="w">      </span><span class="nt">dockerfile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docker/Dockerfile.ci</span>
+<span class="w">      </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">BASE_IMAGE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nvidia/cuda:12.1.0-devel-ubuntu22.04</span>
+<span class="w">        </span><span class="nt">DEVELOPER_BUILD</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;ON&#39;</span>
+<span class="w">        </span><span class="nt">BUILD_CUDA_MODULE</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;ON&#39;</span>
+<span class="w">    </span><span class="nt">deploy</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">resources</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">reservations</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">devices</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">driver</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nvidia</span>
+<span class="w">              </span><span class="nt">count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
+<span class="w">              </span><span class="nt">capabilities</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">gpu</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.:/workspace</span>
+<span class="w">    </span><span class="nt">working_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/workspace</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bash</span>
+<span class="w">    </span><span class="nt">stdin_open</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">tty</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">volumes</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">ccache-vol</span><span class="p">:</span>
+</pre></div>
+</div>
+<p><strong>Usage</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start services</span>
+docker-compose<span class="w"> </span>up<span class="w"> </span>-d
+
+<span class="c1"># Enter CPU container</span>
+docker-compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>acloudviewer-dev<span class="w"> </span>bash
+
+<span class="c1"># Enter CUDA container</span>
+docker-compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>acloudviewer-cuda<span class="w"> </span>bash
+
+<span class="c1"># Stop services</span>
+docker-compose<span class="w"> </span>down
+</pre></div>
+</div>
+</section>
+<section id="testing-with-docker">
+<h2>Testing with Docker<a class="headerlink" href="#testing-with-docker" title="Permalink to this heading">#</a></h2>
+<section id="complete-test-suite">
+<h3>Complete Test Suite<a class="headerlink" href="#complete-test-suite" title="Permalink to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">docker_test.sh</span></code> script runs comprehensive tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docker
+
+<span class="c1"># List available test configurations</span>
+./docker_test.sh
+
+<span class="c1"># Run CPU tests</span>
+./docker_test.sh<span class="w"> </span>cpu-static
+
+<span class="c1"># Run CUDA tests</span>
+./docker_test.sh<span class="w"> </span>cuda-ml-shared-jammy
+
+<span class="c1"># Run Qt6 tests</span>
+./docker_test.sh<span class="w"> </span>qt6-cpu-static
+</pre></div>
+</div>
+<p><strong>Test Workflow</strong>:</p>
+<ol class="arabic simple">
+<li><p>Build C++ unit tests</p></li>
+<li><p>Run C++ tests with gtest</p></li>
+<li><p>Build Python package</p></li>
+<li><p>Install Python package</p></li>
+<li><p>Run Python tests with pytest</p></li>
+<li><p>Test command-line tools</p></li>
+<li><p>Test CMake integration</p></li>
+<li><p>Test uninstall process</p></li>
+</ol>
+</section>
+<section id="custom-test-runs">
+<h3>Custom Test Runs<a class="headerlink" href="#custom-test-runs" title="Permalink to this heading">#</a></h3>
+<p>Run specific test suites:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># C++ tests only</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cd build &amp;&amp; ./bin/tests&quot;</span>
+
+<span class="c1"># Python tests only</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cd python/test &amp;&amp; pytest -v&quot;</span>
+
+<span class="c1"># Specific test file</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cd python/test &amp;&amp; pytest test_pointcloud.py -v&quot;</span>
+
+<span class="c1"># With GPU</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span>acloudviewer-ci:cuda-ml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cd build &amp;&amp; ./bin/tests --gtest_filter=*CUDA*&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading">#</a></h2>
+<section id="permission-issues">
+<h3>Permission Issues<a class="headerlink" href="#permission-issues" title="Permalink to this heading">#</a></h3>
+<p>Run Docker as current user to avoid permission issues:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--user<span class="w"> </span><span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>:<span class="k">$(</span>id<span class="w"> </span>-g<span class="k">)</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-ci:cpu-static
+</pre></div>
+</div>
+<p><strong>Fix existing permission issues</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fix ownership of build artifacts</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>ubuntu:22.04<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>chown<span class="w"> </span>-R<span class="w"> </span><span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>:<span class="k">$(</span>id<span class="w"> </span>-g<span class="k">)</span><span class="w"> </span>/workspace/build
+</pre></div>
+</div>
+</section>
+<section id="out-of-memory">
+<h3>Out of Memory<a class="headerlink" href="#out-of-memory" title="Permalink to this heading">#</a></h3>
+<p>Limit parallel builds and memory usage:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Limit to 4 parallel jobs</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-m<span class="w"> </span>8g<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--cpus<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/workspace<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;make -j4&quot;</span>
+
+<span class="c1"># Monitor memory usage</span>
+docker<span class="w"> </span>stats
+</pre></div>
+</div>
+</section>
+<section id="out-of-disk-space">
+<h3>Out of Disk Space<a class="headerlink" href="#out-of-disk-space" title="Permalink to this heading">#</a></h3>
+<p>Clean up Docker resources:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Remove unused containers</span>
+docker<span class="w"> </span>container<span class="w"> </span>prune<span class="w"> </span>-f
+
+<span class="c1"># Remove unused images</span>
+docker<span class="w"> </span>image<span class="w"> </span>prune<span class="w"> </span>-a<span class="w"> </span>-f
+
+<span class="c1"># Remove build cache</span>
+docker<span class="w"> </span>builder<span class="w"> </span>prune<span class="w"> </span>-a<span class="w"> </span>-f
+
+<span class="c1"># Remove volumes</span>
+docker<span class="w"> </span>volume<span class="w"> </span>prune<span class="w"> </span>-f
+
+<span class="c1"># Clean everything</span>
+docker<span class="w"> </span>system<span class="w"> </span>prune<span class="w"> </span>-a<span class="w"> </span>--volumes<span class="w"> </span>-f
+</pre></div>
+</div>
+<p><strong>Check disk usage</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Docker disk usage</span>
+docker<span class="w"> </span>system<span class="w"> </span>df
+
+<span class="c1"># Detailed breakdown</span>
+docker<span class="w"> </span>system<span class="w"> </span>df<span class="w"> </span>-v
+</pre></div>
+</div>
+</section>
+<section id="network-issues">
+<h3>Network Issues<a class="headerlink" href="#network-issues" title="Permalink to this heading">#</a></h3>
+<p>Use host network for better connectivity:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>--network<span class="o">=</span>host<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span>.
+</pre></div>
+</div>
+<p><strong>Proxy configuration</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">http_proxy</span><span class="o">=</span><span class="nv">$http_proxy</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">https_proxy</span><span class="o">=</span><span class="nv">$https_proxy</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">no_proxy</span><span class="o">=</span><span class="nv">$no_proxy</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-t<span class="w"> </span>acloudviewer-ci:cpu-static<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+<section id="gpu-not-available">
+<h3>GPU Not Available<a class="headerlink" href="#gpu-not-available" title="Permalink to this heading">#</a></h3>
+<p><strong>Verify NVIDIA Docker</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check NVIDIA driver</span>
+nvidia-smi
+
+<span class="c1"># Check NVIDIA Docker runtime</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span>nvidia/cuda:12.1.0-base-ubuntu22.04<span class="w"> </span>nvidia-smi
+
+<span class="c1"># Restart Docker daemon</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>docker
+</pre></div>
+</div>
+<p><strong>Common fixes</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Update NVIDIA Container Toolkit</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>--reinstall<span class="w"> </span>nvidia-container-toolkit
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>docker
+
+<span class="c1"># Configure runtime</span>
+sudo<span class="w"> </span>tee<span class="w"> </span>/etc/docker/daemon.json<span class="w"> </span><span class="s">&lt;&lt;EOF</span>
+<span class="s">{</span>
+<span class="s">    &quot;runtimes&quot;: {</span>
+<span class="s">        &quot;nvidia&quot;: {</span>
+<span class="s">            &quot;path&quot;: &quot;nvidia-container-runtime&quot;,</span>
+<span class="s">            &quot;runtimeArgs&quot;: []</span>
+<span class="s">        }</span>
+<span class="s">    }</span>
+<span class="s">}</span>
+<span class="s">EOF</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>docker
+</pre></div>
+</div>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Permalink to this heading">#</a></h2>
+<ol class="arabic">
+<li><p><strong>Use Specific Base Images</strong></p>
+<p>Pin versions for reproducibility:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">ubuntu:22.04</span><span class="w">  </span><span class="c"># Good</span>
+<span class="c"># FROM ubuntu:latest  # Bad (unpredictable)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Minimize Layers</strong></p>
+<p>Combine related RUN commands:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="c"># Good</span>
+<span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>pkg1<span class="w"> </span>pkg2<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>rm<span class="w"> </span>-rf<span class="w"> </span>/var/lib/apt/lists/*
+
+<span class="c"># Bad</span>
+<span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update
+<span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>pkg1
+<span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>pkg2
+</pre></div>
+</div>
+</li>
+<li><p><strong>Clean Up in Same Layer</strong></p>
+<p>Remove temporary files before layer commit:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>build-essential<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="c1"># ... build steps ... &amp;&amp; \</span>
+<span class="w">    </span>apt-get<span class="w"> </span>purge<span class="w"> </span>-y<span class="w"> </span>build-essential<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apt-get<span class="w"> </span>autoremove<span class="w"> </span>-y<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>rm<span class="w"> </span>-rf<span class="w"> </span>/var/lib/apt/lists/*
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use .dockerignore</strong></p>
+<p>Exclude unnecessary files from build context:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># .dockerignore
+**/.git
+**/build
+**/build_*
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/docs/_out
+**/node_modules
+**/.vscode
+**/.idea
+</pre></div>
+</div>
+</li>
+<li><p><strong>Multi-Stage Builds</strong></p>
+<p>Separate build and runtime stages:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">ubuntu:22.04</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">builder</span>
+<span class="c"># ... build steps ...</span>
+
+<span class="k">FROM</span><span class="w"> </span><span class="s">ubuntu:22.04</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">runtime</span>
+<span class="k">COPY</span><span class="w"> </span>--from<span class="o">=</span>builder<span class="w"> </span>/build/output<span class="w"> </span>/usr/local
+</pre></div>
+</div>
+</li>
+<li><p><strong>Health Checks</strong></p>
+<p>Add health checks for long-running containers:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">HEALTHCHECK</span><span class="w"> </span>--interval<span class="o">=</span>30s<span class="w"> </span>--timeout<span class="o">=</span>3s<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="k">CMD</span><span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import cloudViewer&quot;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Non-Root User</strong></p>
+<p>Run as non-root for security:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">RUN</span><span class="w"> </span>useradd<span class="w"> </span>-m<span class="w"> </span>-s<span class="w"> </span>/bin/bash<span class="w"> </span>acloudviewer
+<span class="k">USER</span><span class="w"> </span><span class="s">acloudviewer</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="resources">
+<h2>Resources<a class="headerlink" href="#resources" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Docker Documentation</strong>: <a class="reference external" href="https://docs.docker.com/">https://docs.docker.com/</a></p></li>
+<li><p><strong>Best Practices</strong>: <a class="reference external" href="https://docs.docker.com/develop/dev-best-practices/">https://docs.docker.com/develop/dev-best-practices/</a></p></li>
+<li><p><strong>BuildKit</strong>: <a class="reference external" href="https://github.com/moby/buildkit">https://github.com/moby/buildkit</a></p></li>
+<li><p><strong>NVIDIA Container Toolkit</strong>: <a class="reference external" href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/">https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/</a></p></li>
+<li><p><a class="reference internal" href="ci_cd.html"><span class="doc">CI/CD Pipeline</span></a> - CI/CD integration</p></li>
+<li><p><a class="reference internal" href="contributing.html"><span class="doc">Contributing to ACloudViewer</span></a> - Contributing guidelines</p></li>
+<li><p><a class="reference external" href="https://github.com/Asher-1/ACloudViewer/tree/main/docker">docker/ Directory</a> - Docker scripts and Dockerfiles</p></li>
+</ul>
+</section>
+<section id="quick-reference">
+<h2>Quick Reference<a class="headerlink" href="#quick-reference" title="Permalink to this heading">#</a></h2>
+<p><strong>Build Images</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Documentation</span>
+docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>acloudviewer-ci:docs<span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile.docs<span class="w"> </span>.
+
+<span class="c1"># CPU CI</span>
+docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>acloudviewer-ci:cpu<span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span>.
+
+<span class="c1"># CUDA CI</span>
+docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>acloudviewer-ci:cuda<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BASE_IMAGE</span><span class="o">=</span>nvidia/cuda:12.1.0-devel-ubuntu22.04<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span>.
+
+<span class="c1"># Qt6</span>
+docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>acloudviewer-ci:qt6<span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile.ci.qt6<span class="w"> </span>.
+
+<span class="c1"># Wheel</span>
+docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>acloudviewer-wheel:py311<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">PYTHON_VERSION</span><span class="o">=</span><span class="m">3</span>.11<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.wheel<span class="w"> </span>.
+</pre></div>
+</div>
+<p><strong>Run Tests</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using test script</span>
+<span class="nb">cd</span><span class="w"> </span>docker<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./docker_test.sh<span class="w"> </span>cpu-static
+
+<span class="c1"># Manual</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>acloudviewer-ci:cpu<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cd build &amp;&amp; ctest --output-on-failure&quot;</span>
+</pre></div>
+</div>
+<p><strong>Build Wheels</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using build script</span>
+<span class="nb">cd</span><span class="w"> </span>docker<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build_cloudviewer_whl.sh<span class="w"> </span><span class="m">3</span>.11
+
+<span class="c1"># Manual</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/opt/mount<span class="w"> </span>acloudviewer-wheel:py311<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cp /root/ACloudViewer/dist/*.whl /opt/mount/&quot;</span>
+</pre></div>
+</div>
+<p><strong>Clean Up</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Remove all</span>
+docker<span class="w"> </span>system<span class="w"> </span>prune<span class="w"> </span>-a<span class="w"> </span>--volumes<span class="w"> </span>-f
+
+<span class="c1"># Check space</span>
+docker<span class="w"> </span>system<span class="w"> </span>df
+</pre></div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="ci_cd.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">CI/CD Pipeline</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="contributing.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Contributing to ACloudViewer</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, ACloudViewer Team
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Docker Development</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a><ul>
+<li><a class="reference internal" href="#docker-installation">Docker Installation</a></li>
+<li><a class="reference internal" href="#nvidia-docker-gpu-support">NVIDIA Docker (GPU Support)</a></li>
+<li><a class="reference internal" href="#arm64-support-optional">ARM64 Support (Optional)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#available-docker-images">Available Docker Images</a><ul>
+<li><a class="reference internal" href="#documentation-build-image">Documentation Build Image</a></li>
+<li><a class="reference internal" href="#ci-cd-build-image">CI/CD Build Image</a></li>
+<li><a class="reference internal" href="#qt6-build-image">Qt6 Build Image</a></li>
+<li><a class="reference internal" href="#wheel-building-image">Wheel Building Image</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-docker-images">Using Docker Images</a><ul>
+<li><a class="reference internal" href="#interactive-development">Interactive Development</a></li>
+<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
+<li><a class="reference internal" href="#building-wheels">Building Wheels</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#build-arguments">Build Arguments</a><ul>
+<li><a class="reference internal" href="#common-build-arguments">Common Build Arguments</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dockerfile-structure">Dockerfile Structure</a><ul>
+<li><a class="reference internal" href="#typical-multi-stage-dockerfile">Typical Multi-Stage Dockerfile</a></li>
+<li><a class="reference internal" href="#layer-optimization">Layer Optimization</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#caching-strategies">Caching Strategies</a><ul>
+<li><a class="reference internal" href="#buildkit-cache">BuildKit Cache</a></li>
+<li><a class="reference internal" href="#ccache-integration">ccache Integration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#docker-compose">Docker Compose</a></li>
+<li><a class="reference internal" href="#testing-with-docker">Testing with Docker</a><ul>
+<li><a class="reference internal" href="#complete-test-suite">Complete Test Suite</a></li>
+<li><a class="reference internal" href="#custom-test-runs">Custom Test Runs</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#permission-issues">Permission Issues</a></li>
+<li><a class="reference internal" href="#out-of-memory">Out of Memory</a></li>
+<li><a class="reference internal" href="#out-of-disk-space">Out of Disk Space</a></li>
+<li><a class="reference internal" href="#network-issues">Network Issues</a></li>
+<li><a class="reference internal" href="#gpu-not-available">GPU Not Available</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#best-practices">Best Practices</a></li>
+<li><a class="reference internal" href="#resources">Resources</a></li>
+<li><a class="reference internal" href="#quick-reference">Quick Reference</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=c711cca9"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/version_switch.js?v=9a357ee9"></script>
+    </body>
+</html>

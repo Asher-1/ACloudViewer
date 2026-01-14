@@ -1,0 +1,18 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="SiftMatchGPU",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classSiftMatchGPU.html",tooltip="matcher export"];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="ComboSiftGPU",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classComboSiftGPU.html",tooltip=" "];
+  Node0 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="SiftMatchGL",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classSiftMatchGL.html",tooltip=" "];
+  Node1922 [label="SiftParam",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classSiftParam.html",tooltip=" "];
+  Node1922 -> Node1923 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1923 [label="SiftGPU",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classSiftGPU.html",tooltip=" "];
+  Node1923 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1923 -> Node1924 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1924 [label="SiftGPUEX",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classSiftGPUEX.html",tooltip=" "];
+}

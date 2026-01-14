@@ -1,0 +1,11 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qDracoIO/include" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_e14e680fa93f95c59f08c020ab40be4e {
+    graph [ bgcolor="#ddddee", pencolor="black", label="qDracoIO" fontname="Helvetica", fontsize="10", URL="dir_e14e680fa93f95c59f08c020ab40be4e.html"]
+  dir_87bddd2b812200aea7899799d21de08a [shape=box, label="include", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_87bddd2b812200aea7899799d21de08a.html"];
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_87bddd2b812200aea7899799d21de08a->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="2", labeldistance=1.5 headhref="dir_000102_000002.html"];
+}

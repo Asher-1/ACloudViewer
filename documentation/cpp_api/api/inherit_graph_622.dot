@@ -1,0 +1,30 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node714 [label="std::enable_shared\l_from_this",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node714 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 [label="e57::ImageFileImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1ImageFileImpl.html",tooltip=" "];
+  Node714 -> Node716 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node716 [label="e57::NodeImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1NodeImpl.html",tooltip=" "];
+  Node716 -> Node717 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node717 [label="e57::BlobNodeImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1BlobNodeImpl.html",tooltip=" "];
+  Node716 -> Node718 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node718 [label="e57::CompressedVectorNodeImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1CompressedVectorNodeImpl.html",tooltip=" "];
+  Node716 -> Node719 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node719 [label="e57::FloatNodeImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1FloatNodeImpl.html",tooltip=" "];
+  Node716 -> Node720 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node720 [label="e57::IntegerNodeImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1IntegerNodeImpl.html",tooltip=" "];
+  Node716 -> Node721 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node721 [label="e57::ScaledIntegerNodeImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1ScaledIntegerNodeImpl.html",tooltip=" "];
+  Node716 -> Node722 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node722 [label="e57::StringNodeImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1StringNodeImpl.html",tooltip=" "];
+  Node716 -> Node723 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node723 [label="e57::StructureNodeImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1StructureNodeImpl.html",tooltip=" "];
+  Node723 -> Node724 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node724 [label="e57::VectorNodeImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1VectorNodeImpl.html",tooltip=" "];
+  Node714 -> Node725 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node725 [label="e57::SourceDestBufferImpl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classe57_1_1SourceDestBufferImpl.html",tooltip=" "];
+}

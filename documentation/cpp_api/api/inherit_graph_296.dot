@@ -1,0 +1,8 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="cloudViewer::ml::op\l_util::DimXPlus",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structcloudViewer_1_1ml_1_1op__util_1_1DimXPlus.html",tooltip=" "];
+}

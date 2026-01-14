@@ -1,0 +1,26 @@
+digraph "LasField"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="LasField",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="LAS field descriptor."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" minPointFormat" ,fontname="Helvetica"];
+  Node2 [label="uint8_t",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" sf" ,fontname="Helvetica"];
+  Node3 [label="ccScalarField",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccScalarField.html",tooltip="A scalar field associated to display-related parameters."];
+  Node4 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="cloudViewer::ScalarField",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1ScalarField.html",tooltip="A simple scalar field (to be associated to a point cloud)"];
+  Node5 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="std::vector\< ScalarType \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="CCShareable",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classCCShareable.html",tooltip=" "];
+  Node7 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="ccSerializableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccSerializableObject.html",tooltip="Serializable object interface."];
+  Node8 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_histogram" ,fontname="Helvetica"];
+  Node8 [label="ccScalarField::Histogram",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structccScalarField_1_1Histogram.html",tooltip="Simple histogram structure."];
+  Node9 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="std::vector\< unsigned \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node10 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_displayRange\nm_logSaturationRange\nm_saturationRange" ,fontname="Helvetica"];
+  Node10 [label="ccScalarField::Range",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccScalarField_1_1Range.html",tooltip="Scalar field range structure."];
+}

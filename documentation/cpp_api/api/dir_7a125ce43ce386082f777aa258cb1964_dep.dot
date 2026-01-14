@@ -1,0 +1,16 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qPCL/PclAlgorithms/Segmentations" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_46e48b6c258079a5b839bd3cff5e4729 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="PclAlgorithms" fontname="Helvetica", fontsize="10", URL="dir_46e48b6c258079a5b839bd3cff5e4729.html"]
+  subgraph clusterdir_7a125ce43ce386082f777aa258cb1964 {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_7a125ce43ce386082f777aa258cb1964.html"];
+    dir_7a125ce43ce386082f777aa258cb1964 [shape=plaintext label="Segmentations"];
+  dir_36556b8237e8536a10c4ab1e3c0dd59d [shape=box label="dialogs" fillcolor="white" style="filled" URL="dir_36556b8237e8536a10c4ab1e3c0dd59d.html"];
+  }
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_7a125ce43ce386082f777aa258cb1964->dir_36556b8237e8536a10c4ab1e3c0dd59d [headlabel="5", labeldistance=1.5 headhref="dir_000200_000201.html"];
+  dir_36556b8237e8536a10c4ab1e3c0dd59d->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="4", labeldistance=1.5 headhref="dir_000201_000002.html"];
+}

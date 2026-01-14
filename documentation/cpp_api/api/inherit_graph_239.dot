@@ -1,0 +1,20 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="cloudViewer::Grid3D\l\< unsigned \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1Grid3D.html",tooltip=" "];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="cloudViewer::SaitoSquared\lDistanceTransform",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1SaitoSquaredDistanceTransform.html",tooltip=" "];
+  Node965 [label="cloudViewer::Grid3D\l\< unsigned short \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1Grid3D.html",tooltip=" "];
+  Node965 -> Node966 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node966 [label="cloudViewer::ChamferDistance\lTransform",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1ChamferDistanceTransform.html",tooltip="Class to compute a Chamfer distance field on a 3D grid."];
+  Node1300 [label="cloudViewer::MathTools",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1MathTools.html",tooltip="Empty class - for classification purpose only."];
+  Node1300 -> Node966 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1300 -> Node1301 [dir="back",color="firebrick4",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1301 [label="cloudViewer::ConjugateGradient\l\< N, Scalar \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1ConjugateGradient.html",tooltip="A class to perform a conjugate gradient optimization."];
+  Node1300 -> Node1302 [dir="back",color="firebrick4",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1302 [label="cloudViewer::ErrorFunction",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1ErrorFunction.html",tooltip="A class to compute the Error function (erf)"];
+  Node1300 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

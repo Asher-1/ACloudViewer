@@ -1,0 +1,27 @@
+var structExpr =
+[
+    [ "affExpr", "structExpr.html#ad8f1faf0b235ffa1aae90034e0d5c85d", null ],
+    [ "flags", "structExpr.html#aebac9ee7e6aa7adca63969d3ba8d0ded", null ],
+    [ "iAddr", "structExpr.html#a5d6de5cfa5b98166d0b0155e68b70ca0", null ],
+    [ "iAgg", "structExpr.html#a9fe0ed6360b0a4cf5b67ab8def922033", null ],
+    [ "iColumn", "structExpr.html#ad19251a8eb6db3cf0bdffe0dcb07eeba", null ],
+    [ "iRightJoinTable", "structExpr.html#aa49b76f3628a7bf2b0997c33461cc651", null ],
+    [ "iTable", "structExpr.html#af8e273f4d7d173bfb5996ed09054611c", null ],
+    [ "iValue", "structExpr.html#a9ea4dff760e0008488807701c6102605", null ],
+    [ "nHeight", "structExpr.html#a5a893ea309f801f23404e7e5ac02732b", null ],
+    [ "op", "structExpr.html#a101c55ddb6c149d95f0327831eb78225", null ],
+    [ "op2", "structExpr.html#a0eacba0a2a6977e434b096b1cb9d5b9e", null ],
+    [ "pAggInfo", "structExpr.html#a4fde82477256ee85f3a906263549082a", null ],
+    [ "pLeft", "structExpr.html#a0a78282ae0d696f4a25013a12e38b1ba", null ],
+    [ "pList", "structExpr.html#ac7107bf192a8080b919350925cc35dd8", null ],
+    [ "pRight", "structExpr.html#aa08c218d5b0b6f8882e8bf9ec8822a08", null ],
+    [ "pSelect", "structExpr.html#a54e5186fdf157f8b4ae178919d8ff6b3", null ],
+    [ "pTab", "structExpr.html#a27c8824b41d853eeeebe61cf3ac1ae5a", null ],
+    [ "pWin", "structExpr.html#ab20f317c03ee3a78fe0b10bd306f6a26", null ],
+    [ "regReturn", "structExpr.html#aec6c804f97e61be1e091862ee9bf4aad", null ],
+    [ "sub", "structExpr.html#a14a16418f83307658b44382a7eca4c9f", null ],
+    [ "u", "structExpr.html#ac3eaf52972253fde03d8849e2061baee", null ],
+    [ "x", "structExpr.html#a9d4026839f3a17dff606a1d82360208e", null ],
+    [ "y", "structExpr.html#ae1e04197800692cf86810a2ada3093b5", null ],
+    [ "zToken", "structExpr.html#af1f6b0c5fcfdd18a41f682b74e13c950", null ]
+];

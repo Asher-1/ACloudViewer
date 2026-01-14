@@ -1,0 +1,8 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="cloudViewer::ml::impl\l::InterpolationVec\< T,\l VECSIZE, InterpolationMode\l::LINEAR \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structcloudViewer_1_1ml_1_1impl_1_1InterpolationVec_3_01T_00_01VECSIZE_00_01InterpolationMode_1_1LINEAR_01_4.html",tooltip="Implementation for LINEAR (uses coordinate clamping)"];
+}

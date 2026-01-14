@@ -1,0 +1,14 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1591 [label="Ui::PythonEditor",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node1591 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 [label="PythonEditor",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPythonEditor.html",tooltip=" "];
+  Node1655 [label="QMainWindow",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node1655 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1655 -> Node1656 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1656 [label="PythonRepl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classPythonRepl.html",tooltip="Homemade REPL (Read Print Eval Loop)"];
+}

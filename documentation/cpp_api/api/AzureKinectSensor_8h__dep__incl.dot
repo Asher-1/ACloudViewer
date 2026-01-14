@@ -1,0 +1,15 @@
+digraph "/root/ACloudViewer/libs/cloudViewer/io/sensor/azure_kinect/AzureKinectSensor.h"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectSensor.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectRecorder.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AzureKinectRecorder_8h.html",tooltip=" "];
+  Node2 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectRecorder.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AzureKinectRecorder_8cpp.html",tooltip=" "];
+  Node1 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/AzureKinectSensor.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AzureKinectSensor_8cpp.html",tooltip=" "];
+  Node1 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="/root/ACloudViewer\l/libs/cloudViewer/io\l/sensor/azure_kinect\l/MKVReader.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$MKVReader_8cpp.html",tooltip=" "];
+}

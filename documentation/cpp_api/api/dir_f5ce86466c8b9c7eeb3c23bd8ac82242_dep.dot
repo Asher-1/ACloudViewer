@@ -1,0 +1,17 @@
+digraph "/root/ACloudViewer/libs/eCV_db/include" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_c4299987a504bc66471641292258c6d3 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="eCV_db" fontname="Helvetica", fontsize="10", URL="dir_c4299987a504bc66471641292258c6d3.html"]
+  subgraph clusterdir_f5ce86466c8b9c7eeb3c23bd8ac82242 {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_f5ce86466c8b9c7eeb3c23bd8ac82242.html"];
+    dir_f5ce86466c8b9c7eeb3c23bd8ac82242 [shape=plaintext label="include"];
+  dir_f97657345e26e6ca729ca7a89cf09062 [shape=box label="camera" fillcolor="white" style="filled" URL="dir_f97657345e26e6ca729ca7a89cf09062.html"];
+  dir_87816aee16e3096e44a00d0df194f376 [shape=box label="Shortcuts" fillcolor="white" style="filled" URL="dir_87816aee16e3096e44a00d0df194f376.html"];
+  dir_2ff25ae25c147c8fe3db146f72d95096 [shape=box label="widgets" fillcolor="white" style="filled" URL="dir_2ff25ae25c147c8fe3db146f72d95096.html"];
+  }
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_f97657345e26e6ca729ca7a89cf09062->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="1", labeldistance=1.5 headhref="dir_000071_000000.html"];
+}

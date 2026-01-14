@@ -1,0 +1,16 @@
+digraph "BundlerCamera"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="BundlerCamera",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Bundler camera."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" trans" ,fontname="Helvetica"];
+  Node2 [label="ccGLMatrixd",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrixd.html",tooltip="Double version of ccGLMatrixTpl."];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="ccGLMatrixTpl\< double \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrixTpl.html",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="ccSerializableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccSerializableObject.html",tooltip="Serializable object interface."];
+  Node5 -> Node3 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< double \>" ,fontname="Helvetica"];
+  Node5 [label="ccGLMatrixTpl\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccGLMatrixTpl.html",tooltip="A 4x4 'transformation' matrix (column major order)"];
+  Node4 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

@@ -1,0 +1,15 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qPhotoscanIO/extern" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_8a6369cb44f8824efc1f2d2ad37855b0 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="qPhotoscanIO" fontname="Helvetica", fontsize="10", URL="dir_8a6369cb44f8824efc1f2d2ad37855b0.html"]
+  subgraph clusterdir_240dbf590cf521d348ba3a8e60db7bf9 {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_240dbf590cf521d348ba3a8e60db7bf9.html"];
+    dir_240dbf590cf521d348ba3a8e60db7bf9 [shape=plaintext label="extern"];
+  dir_0ece5dca8cadedcd6518b7ce3f6be342 [shape=box label="quazip" fillcolor="white" style="filled" color="red" URL="dir_0ece5dca8cadedcd6518b7ce3f6be342.html"];
+  }
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_0ece5dca8cadedcd6518b7ce3f6be342->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="2", labeldistance=1.5 headhref="dir_000133_000000.html"];
+}

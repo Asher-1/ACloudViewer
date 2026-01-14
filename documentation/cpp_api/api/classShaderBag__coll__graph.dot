@@ -1,0 +1,16 @@
+digraph "ShaderBag"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="ShaderBag",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" s_copy_key\ns_debug\ns_descriptor_fp\ns_display_dog\ns_display_gaussian\ns_display_grad\ns_display_keys\ns_dog_pass\ns_genlist_end\ns_genlist_histo\n..." ,fontname="Helvetica"];
+  Node2 [label="ProgramGPU",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classProgramGPU.html",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" f_gaussian_skip0_v" ,fontname="Helvetica"];
+  Node3 [label="vector\< FilterProgram * \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< FilterProgram * \>" ,fontname="Helvetica"];
+  Node4 [label="vector",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" f_gaussian_skip0\nf_gaussian_skip1\nf_gaussian_step" ,fontname="Helvetica"];
+  Node5 [label="FilterProgram",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classFilterProgram.html",tooltip=" "];
+  Node2 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" s_shader_h\ns_shader_v" ,fontname="Helvetica"];
+}

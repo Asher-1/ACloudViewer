@@ -1,0 +1,27 @@
+var structWIDGETS__PARAMETER =
+[
+    [ "WIDGETS_PARAMETER", "structWIDGETS__PARAMETER.html#a983565931e091de46bedc5a36f8f7876", null ],
+    [ "WIDGETS_PARAMETER", "structWIDGETS__PARAMETER.html#a4b664ea800ca2f1cd571b1302cffb325", null ],
+    [ "setLineWidget", "structWIDGETS__PARAMETER.html#ae8ba4b069be0a127186ad58560df9154", null ],
+    [ "center", "structWIDGETS__PARAMETER.html#a40a53f909b64a648a00cfbcbf759f5cf", null ],
+    [ "color", "structWIDGETS__PARAMETER.html#a8aad94dead0ac85129104bd16280d31c", null ],
+    [ "context", "structWIDGETS__PARAMETER.html#ab16ef0b3432e8f8bb2c2538d197a044a", null ],
+    [ "entity", "structWIDGETS__PARAMETER.html#ae75a39b93964b4bded00bf80dbd3bea3", null ],
+    [ "filled", "structWIDGETS__PARAMETER.html#a1a17866896ff72fc496340df06894c6d", null ],
+    [ "fontSize", "structWIDGETS__PARAMETER.html#af2725be90e627e6d3251d3f1a4820fcd", null ],
+    [ "handleEnabled", "structWIDGETS__PARAMETER.html#a300679e974785ca3d8e21c706d9c9001", null ],
+    [ "image", "structWIDGETS__PARAMETER.html#a64e449866194e265d017e6b1657474bd", null ],
+    [ "lineWidget", "structWIDGETS__PARAMETER.html#a28ec836fdfc494e65dcf12ee3efb08c2", null ],
+    [ "opacity", "structWIDGETS__PARAMETER.html#a9d17fd0032bff243830bf2a06face2df", null ],
+    [ "p1", "structWIDGETS__PARAMETER.html#a5f3af658c9fea6e26b9295476ea2d752", null ],
+    [ "p2", "structWIDGETS__PARAMETER.html#a2be50728978b311543a064cac8240d06", null ],
+    [ "p3", "structWIDGETS__PARAMETER.html#a56a39600596e14687062a24279cb93f5", null ],
+    [ "p4", "structWIDGETS__PARAMETER.html#a2cb1f53cfb43cd8f70258a893d107b70", null ],
+    [ "pos", "structWIDGETS__PARAMETER.html#a8d415a07529400c5f32db16f21921231", null ],
+    [ "radius", "structWIDGETS__PARAMETER.html#a23b87063d128fb2a23cd0ed939e9112d", null ],
+    [ "rect", "structWIDGETS__PARAMETER.html#a48e78dbe561aefba52fc3843cf092ea1", null ],
+    [ "text", "structWIDGETS__PARAMETER.html#a2c6e247e79c86a0a480edca4f3c83515", null ],
+    [ "type", "structWIDGETS__PARAMETER.html#ade8d3ab65ac195621c8e97ebbcada8b5", null ],
+    [ "viewID", "structWIDGETS__PARAMETER.html#a2552430687e1011b9c52e250a61f4b66", null ],
+    [ "viewport", "structWIDGETS__PARAMETER.html#af947e169b72d895afede045420494e63", null ]
+];

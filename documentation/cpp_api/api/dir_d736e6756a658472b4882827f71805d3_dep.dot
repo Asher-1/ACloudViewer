@@ -1,0 +1,11 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qPythonRuntime/src/CodeEditor" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_e161ab9834a43a82c6098609a33dadcc {
+    graph [ bgcolor="#ddddee", pencolor="black", label="src" fontname="Helvetica", fontsize="10", URL="dir_e161ab9834a43a82c6098609a33dadcc.html"]
+  dir_d736e6756a658472b4882827f71805d3 [shape=box, label="CodeEditor", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_d736e6756a658472b4882827f71805d3.html"];
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_d736e6756a658472b4882827f71805d3->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="1", labeldistance=1.5 headhref="dir_000217_000000.html"];
+}

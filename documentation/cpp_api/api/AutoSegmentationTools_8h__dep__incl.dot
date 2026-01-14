@@ -1,0 +1,28 @@
+digraph "/root/ACloudViewer/core/include/AutoSegmentationTools.h"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="/root/ACloudViewer\l/core/include/AutoSegmentation\lTools.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qFacets/include/qFacets.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$qFacets_8h.html",tooltip=" "];
+  Node2 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qFacets/src/qFacets.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$qFacets_8cpp.html",tooltip=" "];
+  Node1 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/cccorelib/src/AutoSegmentation\lTools.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$AutoSegmentationTools_8cpp.html",tooltip=" "];
+  Node1 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/cccorelib/src/cccorelib.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cccorelib_8cpp.html",tooltip=" "];
+  Node1 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/cccorelib/src/cccorelib.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cccorelib_8h.html",tooltip=" "];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/cccorelib/src/DgmOctree.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$DgmOctree_8cpp.html",tooltip=" "];
+  Node6 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/cccorelib/src/GenericDistribution.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$GenericDistribution_8cpp.html",tooltip=" "];
+  Node6 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/cccorelib/src/KdTree.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$KdTree_8cpp.html",tooltip=" "];
+  Node6 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/cccorelib/src/ScalarFieldTools.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$ScalarFieldTools_8cpp.html",tooltip=" "];
+  Node6 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="/root/ACloudViewer\l/plugins/core/Standard\l/qPythonRuntime/wrapper\l/cccorelib/src/TrueKdTree.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$TrueKdTree_8cpp.html",tooltip=" "];
+}

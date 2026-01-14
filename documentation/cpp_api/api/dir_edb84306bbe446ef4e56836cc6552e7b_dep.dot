@@ -1,0 +1,11 @@
+digraph "/root/ACloudViewer/plugins/core/IO/qMeshIO/include" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_93729575d6fedf5bf48258f8bebc2d7a {
+    graph [ bgcolor="#ddddee", pencolor="black", label="qMeshIO" fontname="Helvetica", fontsize="10", URL="dir_93729575d6fedf5bf48258f8bebc2d7a.html"]
+  dir_edb84306bbe446ef4e56836cc6552e7b [shape=box, label="include", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_edb84306bbe446ef4e56836cc6552e7b.html"];
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_edb84306bbe446ef4e56836cc6552e7b->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="5", labeldistance=1.5 headhref="dir_000126_000002.html"];
+}

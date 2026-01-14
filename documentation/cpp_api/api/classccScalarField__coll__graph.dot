@@ -1,0 +1,22 @@
+digraph "ccScalarField"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="ccScalarField",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="A scalar field associated to display-related parameters."];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="cloudViewer::ScalarField",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcloudViewer_1_1ScalarField.html",tooltip="A simple scalar field (to be associated to a point cloud)"];
+  Node3 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="std::vector\< ScalarType \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="CCShareable",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classCCShareable.html",tooltip=" "];
+  Node5 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="ccSerializableObject",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccSerializableObject.html",tooltip="Serializable object interface."];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_histogram" ,fontname="Helvetica"];
+  Node6 [label="ccScalarField::Histogram",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structccScalarField_1_1Histogram.html",tooltip="Simple histogram structure."];
+  Node7 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="std::vector\< unsigned \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_displayRange\nm_logSaturationRange\nm_saturationRange" ,fontname="Helvetica"];
+  Node8 [label="ccScalarField::Range",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classccScalarField_1_1Range.html",tooltip="Scalar field range structure."];
+}

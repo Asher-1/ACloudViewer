@@ -1,0 +1,11 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qPCL/PclIO/include" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_dd8f96d969f88ea4d7b2fe4b95bcee82 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="PclIO" fontname="Helvetica", fontsize="10", URL="dir_dd8f96d969f88ea4d7b2fe4b95bcee82.html"]
+  dir_650af4478bc696f732294b9cfd65daf0 [shape=box, label="include", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_650af4478bc696f732294b9cfd65daf0.html"];
+  }
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_650af4478bc696f732294b9cfd65daf0->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="1", labeldistance=1.5 headhref="dir_000205_000002.html"];
+}

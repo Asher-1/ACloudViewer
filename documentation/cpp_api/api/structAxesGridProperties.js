@@ -1,0 +1,28 @@
+var structAxesGridProperties =
+[
+    [ "AxesGridProperties", "structAxesGridProperties.html#af7463037f7275eaf680fc0559cdb120c", null ],
+    [ "color", "structAxesGridProperties.html#a7efde9e327fc6f5aee158ce6f2574ec0", null ],
+    [ "lineWidth", "structAxesGridProperties.html#a0fa71c2b9f7ffa0237ef542f265135fc", null ],
+    [ "opacity", "structAxesGridProperties.html#a2e60128a8668267bb5fafb9a4a030f04", null ],
+    [ "showGrid", "structAxesGridProperties.html#a1ea8520a0b0ba21d2bc0ddb891adde75", null ],
+    [ "showLabels", "structAxesGridProperties.html#ad0741c4a7d6fa42654c43f7ae1dd37d9", null ],
+    [ "spacing", "structAxesGridProperties.html#abb36ff67fc9473c035c90f558235b650", null ],
+    [ "subdivisions", "structAxesGridProperties.html#abd61b3ca952cfe3b965b333b1ecb4336", null ],
+    [ "useCustomBounds", "structAxesGridProperties.html#aba929ee230665e6b342422672d823583", null ],
+    [ "visible", "structAxesGridProperties.html#acbf01321464ed22da290e9828b97c222", null ],
+    [ "xCustomLabels", "structAxesGridProperties.html#a25352106b6f574abdcf884af4a94df3c", null ],
+    [ "xMax", "structAxesGridProperties.html#a1e62fadd2c3e9405c8f58056a99719ff", null ],
+    [ "xMin", "structAxesGridProperties.html#a35e7a6b871be5fb97b1e712e994e1190", null ],
+    [ "xTitle", "structAxesGridProperties.html#a3abc93f55d1ffe5db11533f7a870fdbf", null ],
+    [ "xUseCustomLabels", "structAxesGridProperties.html#ac0c6009afedc5e1b4b919799b2be84b6", null ],
+    [ "yCustomLabels", "structAxesGridProperties.html#a8ab3dde47cced7f4bb32a8c1df5408d6", null ],
+    [ "yMax", "structAxesGridProperties.html#a66a1c75bd7be9bd8c819c425123e4d1d", null ],
+    [ "yMin", "structAxesGridProperties.html#a8ef220e92c65b366a0f020e3ed7d04dc", null ],
+    [ "yTitle", "structAxesGridProperties.html#aa4083efd78752b7e017282bd6b06da0a", null ],
+    [ "yUseCustomLabels", "structAxesGridProperties.html#a04d6b9fd09c5e93993a276e3dd3713d0", null ],
+    [ "zCustomLabels", "structAxesGridProperties.html#ada62cc28895245576dafd31ece5b8a20", null ],
+    [ "zMax", "structAxesGridProperties.html#a87d9d4d8b082ca79dc1a0e0fe408e49e", null ],
+    [ "zMin", "structAxesGridProperties.html#ae6733b6c48dc58e09374abe40e7620c3", null ],
+    [ "zTitle", "structAxesGridProperties.html#a3dce2d6d4779fc9aeeb153683a5e0339", null ],
+    [ "zUseCustomLabels", "structAxesGridProperties.html#a2fbead35435cbf80ae681bd4d66cc0b5", null ]
+];

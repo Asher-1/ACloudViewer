@@ -1,0 +1,23 @@
+digraph "/root/ACloudViewer/plugins/core/Standard/qPythonRuntime/wrapper/pycc/src" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_f98061f674671de7c66ccab559b2360e {
+    graph [ bgcolor="#ddddee", pencolor="black", label="pycc" fontname="Helvetica", fontsize="10", URL="dir_f98061f674671de7c66ccab559b2360e.html"]
+  subgraph clusterdir_2b6134671f718a3865164e4e2d4cc657 {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_2b6134671f718a3865164e4e2d4cc657.html"];
+    dir_2b6134671f718a3865164e4e2d4cc657 [shape=plaintext label="src"];
+  dir_dbcd8066c330fac67641cc3989022fe2 [shape=box label="qcc_db" fillcolor="white" style="filled" URL="dir_dbcd8066c330fac67641cc3989022fe2.html"];
+  dir_6035d288ec2755fce11681a3416a9416 [shape=box label="qcc_io" fillcolor="white" style="filled" URL="dir_6035d288ec2755fce11681a3416a9416.html"];
+  }
+  }
+  dir_4270bfced15e0e73154b13468c7c9ad9 [shape=box label="core" fillcolor="white" style="filled" color="red" URL="dir_4270bfced15e0e73154b13468c7c9ad9.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1 [shape=box label="libs" fillcolor="white" style="filled" color="red" URL="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html"];
+  dir_932acd6304591f5a356d6890e438ae73 [shape=box label="cccorelib" fillcolor="white" style="filled" color="red" URL="dir_932acd6304591f5a356d6890e438ae73.html"];
+  dir_6719ab1f1f7655efc2fa43f7eb574fd1->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="439", labeldistance=1.5 headhref="dir_000002_000000.html"];
+  dir_dbcd8066c330fac67641cc3989022fe2->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="4", labeldistance=1.5 headhref="dir_000223_000000.html"];
+  dir_dbcd8066c330fac67641cc3989022fe2->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="79", labeldistance=1.5 headhref="dir_000223_000002.html"];
+  dir_dbcd8066c330fac67641cc3989022fe2->dir_932acd6304591f5a356d6890e438ae73 [headlabel="2", labeldistance=1.5 headhref="dir_000223_000056.html"];
+  dir_932acd6304591f5a356d6890e438ae73->dir_4270bfced15e0e73154b13468c7c9ad9 [headlabel="109", labeldistance=1.5 headhref="dir_000056_000000.html"];
+  dir_6035d288ec2755fce11681a3416a9416->dir_6719ab1f1f7655efc2fa43f7eb574fd1 [headlabel="2", labeldistance=1.5 headhref="dir_000224_000002.html"];
+}

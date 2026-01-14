@@ -1,0 +1,1284 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Changelog" href="../resources/changelog.html" /><link rel="prev" title="Docker Development" href="docker.html" />
+
+    <link rel="shortcut icon" href="../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
+        <title>CI/CD Pipeline - ACloudViewer 3.9.3 Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=47d5a741" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #2196F3;
+  --color-brand-content: #2196F3;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">ACloudViewer 3.9.3 Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/ACloudViewer_logo_horizontal.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">ACloudViewer 3.9.3 Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_from_source.html">Building from Source</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/index.html">Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Tutorial</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/ml/index.html">Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/core/tensor.html">Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/core/hashmap.html">Hash map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_geometry/pointcloud.html">PointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_pipelines/t_icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/python_interface.html">Python Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/reconstruction/index.html">Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Reconstruction</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/reconstruction/sfm.html">Structure from Motion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/ml/index.html">Machine Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/advanced/index.html">Advanced Topics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/basic_usage.html">Basic Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/point_cloud_processing.html">Point Cloud Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/visualization.html">Visualization</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python Examples</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/geometry/index.html">Geometry Examples</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of Geometry Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/io/index.html">I/O Examples</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of I/O Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/pipelines/index.html">Pipelines Examples</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle navigation of Pipelines Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/visualization/index.html">Visualization Examples</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle navigation of Visualization Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/cpp_examples.html">C++ Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ API</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cpp_api.html">C++ documentation</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle navigation of C++ documentation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/overview.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/quickstart.html">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/plugins.html">Plugin System</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to ACloudViewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker Development</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">CI/CD Pipeline</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../resources/changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/support.html">Getting Support</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="ci-cd-pipeline">
+<h1>CI/CD Pipeline<a class="headerlink" href="#ci-cd-pipeline" title="Permalink to this heading">#</a></h1>
+<p>ACloudViewer uses automated CI/CD pipelines for continuous integration, testing, and deployment through GitHub Actions.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h2>
+<p>The CI/CD system automates:</p>
+<ul class="simple">
+<li><p><strong>Building</strong>: Compile across multiple platforms (Ubuntu, macOS, Windows)</p></li>
+<li><p><strong>Testing</strong>: Run comprehensive test suites (C++ unit tests, Python tests)</p></li>
+<li><p><strong>Documentation</strong>: Generate and deploy docs to GitHub Pages</p></li>
+<li><p><strong>Packaging</strong>: Create Python wheels for multiple Python versions</p></li>
+<li><p><strong>Deployment</strong>: Publish to GitHub Releases</p></li>
+</ul>
+</section>
+<section id="github-actions-workflows">
+<h2>GitHub Actions Workflows<a class="headerlink" href="#github-actions-workflows" title="Permalink to this heading">#</a></h2>
+<section id="main-workflows">
+<h3>Main Workflows<a class="headerlink" href="#main-workflows" title="Permalink to this heading">#</a></h3>
+<p>The project uses several GitHub Actions workflows located in <code class="docutils literal notranslate"><span class="pre">.github/workflows/</span></code>:</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Workflow</p></th>
+<th class="head"><p>Trigger</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ubuntu.yml</span></code></p></td>
+<td><p>Push, PR, Release</p></td>
+<td><p>Build and test on Ubuntu (CPU/CUDA variants)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ubuntu-wheel.yml</span></code></p></td>
+<td><p>Push, PR, Release</p></td>
+<td><p>Build Python wheels with CUDA support</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">macos.yml</span></code></p></td>
+<td><p>Push, PR</p></td>
+<td><p>Build and test on macOS</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">windows.yml</span></code></p></td>
+<td><p>Push, PR</p></td>
+<td><p>Build and test on Windows</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">documentation.yml</span></code></p></td>
+<td><p>Push to main, PR, Manual</p></td>
+<td><p>Build and deploy documentation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ubuntu-cuda.yml</span></code></p></td>
+<td><p>Push, PR</p></td>
+<td><p>Build and test with CUDA</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">style.yml</span></code></p></td>
+<td><p>PR</p></td>
+<td><p>Check code style (clang-format)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">webrtc.yml</span></code></p></td>
+<td><p>Push, PR</p></td>
+<td><p>Build WebRTC dependencies</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vtk_packages.yml</span></code></p></td>
+<td><p>Manual</p></td>
+<td><p>Build VTK packages</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="documentation-workflow">
+<h3>Documentation Workflow<a class="headerlink" href="#documentation-workflow" title="Permalink to this heading">#</a></h3>
+<p>The documentation workflow (<code class="docutils literal notranslate"><span class="pre">documentation.yml</span></code>) is automatically triggered when:</p>
+<ul class="simple">
+<li><p>Changes are pushed to the <code class="docutils literal notranslate"><span class="pre">main</span></code> branch</p></li>
+<li><p>Pull requests are opened, reopened, or synchronized</p></li>
+<li><p>Manually triggered via “workflow_dispatch”</p></li>
+</ul>
+<p><strong>Workflow Steps:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Setup Python 3.11</strong>: For running documentation scripts</p></li>
+<li><p><strong>Generate downloads_data.json</strong>: Dynamically scan GitHub Releases</p></li>
+<li><p><strong>Maximize build space</strong>: Clean up disk space (remove dotnet, ghc, boost)</p></li>
+<li><p><strong>Set up Docker Buildx</strong>: Prepare multi-platform builds</p></li>
+<li><p><strong>Build Docker image</strong>: Create documentation environment (<code class="docutils literal notranslate"><span class="pre">Dockerfile.docs</span></code>)</p></li>
+<li><p><strong>Extract documentation</strong>: Extract generated HTML tarball from Docker</p></li>
+<li><p><strong>Upload artifact</strong>: Store documentation as GitHub artifact (30 days retention)</p></li>
+<li><p><strong>Update main-devel release</strong>: Upload to main-devel release (main branch only)</p></li>
+<li><p><strong>Prepare website</strong>: Merge main website with documentation</p></li>
+<li><p><strong>Deploy to GitHub Pages</strong>: Publish unified deployment</p></li>
+</ol>
+<p><strong>Manual Trigger:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Via GitHub UI:</span>
+<span class="c1"># 1. Go to Actions → Documentation</span>
+<span class="c1"># 2. Click &quot;Run workflow&quot;</span>
+<span class="c1"># 3. Select branch</span>
+<span class="c1"># 4. Set DEVELOPER_BUILD option (ON/OFF)</span>
+</pre></div>
+</div>
+<p><strong>Build Arguments:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DEVELOPER_BUILD</span></code>: <code class="docutils literal notranslate"><span class="pre">ON</span></code> (dev build with git hash) or <code class="docutils literal notranslate"><span class="pre">OFF</span></code> (release with version)</p></li>
+</ul>
+<p><strong>Deployment Structure:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>https://asher-1.github.io/ACloudViewer/
+├── index.html               # Main website
+├── downloads_data.json      # Release information
+└── documentation/           # API documentation
+    ├── index.html
+    ├── python_api/          # Python API docs
+    ├── cpp_api/             # C++ API docs (Doxygen)
+    └── tutorial/            # Jupyter notebooks
+</pre></div>
+</div>
+</section>
+<section id="ubuntu-build-workflow">
+<h3>Ubuntu Build Workflow<a class="headerlink" href="#ubuntu-build-workflow" title="Permalink to this heading">#</a></h3>
+<p><strong>File</strong>: <code class="docutils literal notranslate"><span class="pre">ubuntu.yml</span></code></p>
+<p><strong>Matrix Strategy:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">matrix</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">include</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">CI_CONFIG</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cpu-focal</span><span class="w">      </span><span class="c1"># Ubuntu 20.04 CPU</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">CI_CONFIG</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cpu-jammy</span><span class="w">      </span><span class="c1"># Ubuntu 22.04 CPU</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">CI_CONFIG</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cpu-noble</span><span class="w">      </span><span class="c1"># Ubuntu 24.04 CPU</span>
+</pre></div>
+</div>
+<p><strong>Key Features:</strong></p>
+<ul class="simple">
+<li><p><strong>Concurrency control</strong>: Cancels previous runs on new pushes</p></li>
+<li><p><strong>Skip check</strong>: Runs only on official repository (not forks)</p></li>
+<li><p><strong>Commit message check</strong>: Skip with <code class="docutils literal notranslate"><span class="pre">[skip</span> <span class="pre">ci]</span></code> in commit message</p></li>
+<li><p><strong>Docker-based build</strong>: Uses <code class="docutils literal notranslate"><span class="pre">Dockerfile.ci</span></code></p></li>
+<li><p><strong>Artifact upload</strong>: Uploads build logs on failure</p></li>
+</ul>
+</section>
+<section id="ubuntu-wheel-workflow">
+<h3>Ubuntu Wheel Workflow<a class="headerlink" href="#ubuntu-wheel-workflow" title="Permalink to this heading">#</a></h3>
+<p><strong>File</strong>: <code class="docutils literal notranslate"><span class="pre">ubuntu-wheel.yml</span></code></p>
+<p><strong>Matrix Strategy:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">matrix</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">python_version</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;3.10&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;3.11&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;3.12&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;3.13&#39;</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="c1"># Full matrix only on main branch</span>
+<span class="w">  </span><span class="c1"># PR builds use Python 3.13 only</span>
+</pre></div>
+</div>
+<p><strong>Build Configuration:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">env</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">BUILD_CUDA_MODULE</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;ON&#39;</span>
+<span class="w">  </span><span class="nt">BUILD_PYTORCH_OPS</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;ON&#39;</span>
+<span class="w">  </span><span class="nt">BUILD_TENSORFLOW_OPS</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;OFF&#39;</span><span class="w">  </span><span class="c1"># cxx11_abi compatibility</span>
+</pre></div>
+</div>
+<p><strong>Key Steps:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Maximize build space</strong>: Remove unnecessary packages (~10GB)</p></li>
+<li><p><strong>Setup ccache</strong>: Restore compilation cache (~5GB)</p></li>
+<li><p><strong>Build Docker image</strong>: <code class="docutils literal notranslate"><span class="pre">Dockerfile.wheel</span></code></p></li>
+<li><p><strong>Build wheel</strong>: Inside Docker container</p></li>
+<li><p><strong>Test wheel</strong>: Run pytest with installed wheel</p></li>
+<li><p><strong>Upload to release</strong>: On main branch or release tags</p></li>
+</ol>
+</section>
+<section id="macos-build-workflow">
+<h3>macOS Build Workflow<a class="headerlink" href="#macos-build-workflow" title="Permalink to this heading">#</a></h3>
+<p><strong>File</strong>: <code class="docutils literal notranslate"><span class="pre">macos.yml</span></code></p>
+<p><strong>Matrix Strategy:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">matrix</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">os</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">macos-12</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">macos-13</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">macos-14</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">include</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">python_version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.11&#39;</span>
+</pre></div>
+</div>
+<p><strong>Build Process:</strong></p>
+<ol class="arabic simple">
+<li><p>Install dependencies via <code class="docutils literal notranslate"><span class="pre">brew</span></code></p></li>
+<li><p>Build with CMake (Release mode)</p></li>
+<li><p>Run tests with <code class="docutils literal notranslate"><span class="pre">ctest</span></code></p></li>
+<li><p>Upload build artifacts</p></li>
+</ol>
+</section>
+<section id="windows-build-workflow">
+<h3>Windows Build Workflow<a class="headerlink" href="#windows-build-workflow" title="Permalink to this heading">#</a></h3>
+<p><strong>File</strong>: <code class="docutils literal notranslate"><span class="pre">windows.yml</span></code></p>
+<p><strong>Build Configuration:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">strategy</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">matrix</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">python_version</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;3.10&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;3.11&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;3.12&#39;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">build_type</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">Release</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+<p><strong>Key Features:</strong></p>
+<ul class="simple">
+<li><p>Visual Studio 2022 compiler</p></li>
+<li><p>CUDA 12.1 support</p></li>
+<li><p>Python wheel building</p></li>
+<li><p>Automated testing</p></li>
+</ul>
+</section>
+</section>
+<section id="local-ci-testing">
+<h2>Local CI Testing<a class="headerlink" href="#local-ci-testing" title="Permalink to this heading">#</a></h2>
+<p>Test CI workflows locally using Docker:</p>
+<section id="docker-based-testing">
+<h3>Docker-based Testing<a class="headerlink" href="#docker-based-testing" title="Permalink to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build CPU test environment</span>
+docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>acloudviewer-ci:cpu<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BASE_IMAGE</span><span class="o">=</span>ubuntu:22.04<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">DEVELOPER_BUILD</span><span class="o">=</span>ON<span class="w"> </span>.
+
+<span class="c1"># Run tests</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>acloudviewer-ci:cpu<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cd build &amp;&amp; ctest --output-on-failure&quot;</span>
+
+<span class="c1"># Build CUDA test environment</span>
+docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>acloudviewer-ci:cuda<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span>docker/Dockerfile.ci<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">BASE_IMAGE</span><span class="o">=</span>nvidia/cuda:12.1.0-devel-ubuntu22.04<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--build-arg<span class="w"> </span><span class="nv">DEVELOPER_BUILD</span><span class="o">=</span>ON<span class="w"> </span>.
+
+<span class="c1"># Run GPU tests</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span>acloudviewer-ci:cuda<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;cd build &amp;&amp; ctest --output-on-failure&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="act-github-actions-local-simulator">
+<h3>Act (GitHub Actions Local Simulator)<a class="headerlink" href="#act-github-actions-local-simulator" title="Permalink to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install act (macOS)</span>
+brew<span class="w"> </span>install<span class="w"> </span>act
+
+<span class="c1"># Install act (Linux)</span>
+curl<span class="w"> </span>https://raw.githubusercontent.com/nektos/act/master/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>bash
+
+<span class="c1"># List available workflows</span>
+act<span class="w"> </span>-l
+
+<span class="c1"># Run specific job</span>
+act<span class="w"> </span>-j<span class="w"> </span>build<span class="w">  </span><span class="c1"># Run &#39;build&#39; job</span>
+
+<span class="c1"># Simulate pull request</span>
+act<span class="w"> </span>pull_request
+
+<span class="c1"># Use specific Docker image</span>
+act<span class="w"> </span>-P<span class="w"> </span>ubuntu-latest<span class="o">=</span>catthehacker/ubuntu:act-latest
+</pre></div>
+</div>
+</section>
+</section>
+<section id="ci-cd-utilities">
+<h2>CI/CD Utilities<a class="headerlink" href="#ci-cd-utilities" title="Permalink to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">util/ci_utils.sh</span></code> script provides reusable CI functions:</p>
+<section id="available-functions">
+<h3>Available Functions<a class="headerlink" href="#available-functions" title="Permalink to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install documentation dependencies</span>
+install_docs_dependencies<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">CLOUDVIEWER_ML_ROOT</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="c1"># Build documentation (ON=dev, OFF=release)</span>
+build_docs<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$DEVELOPER_BUILD</span><span class="s2">&quot;</span>
+
+<span class="c1"># Build Python wheel</span>
+build_pip_package
+
+<span class="c1"># Test wheel installation</span>
+test_wheel<span class="w"> </span>path/to/wheel.whl
+
+<span class="c1"># Run C++ unit tests</span>
+run_cpp_unit_tests
+
+<span class="c1"># Run Python unit tests</span>
+run_python_tests
+
+<span class="c1"># Maximize GitHub Actions build space (~10GB)</span>
+maximize_ubuntu_github_actions_build_space
+
+<span class="c1"># Purge cache</span>
+purge_cache
+</pre></div>
+</div>
+</section>
+<section id="usage-example">
+<h3>Usage Example<a class="headerlink" href="#usage-example" title="Permalink to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+<span class="nb">source</span><span class="w"> </span>util/ci_utils.sh
+
+<span class="c1"># Setup environment</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">DEVELOPER_BUILD</span><span class="o">=</span>ON
+<span class="nb">export</span><span class="w"> </span><span class="nv">NPROC</span><span class="o">=</span><span class="k">$(</span>nproc<span class="k">)</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">CLOUDVIEWER_SOURCE_ROOT</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>
+
+<span class="c1"># Build documentation</span>
+build_docs<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$DEVELOPER_BUILD</span><span class="s2">&quot;</span>
+
+<span class="c1"># Build and test wheel</span>
+build_pip_package
+test_wheel<span class="w"> </span>dist/*.whl
+</pre></div>
+</div>
+</section>
+</section>
+<section id="caching-strategies">
+<h2>Caching Strategies<a class="headerlink" href="#caching-strategies" title="Permalink to this heading">#</a></h2>
+<section id="ccache-c-compilation">
+<h3>ccache (C++ Compilation)<a class="headerlink" href="#ccache-c-compilation" title="Permalink to this heading">#</a></h3>
+<p>Speed up C++ compilation with ccache:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Restore ccache</span>
+<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/cache@v4</span>
+<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/home/runner/.cache/ccache</span>
+<span class="w">    </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ runner.os }}-ccache-${{ hashFiles(&#39;**/CMakeLists.txt&#39;) }}</span>
+<span class="w">    </span><span class="nt">restore-keys</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">      </span><span class="no">${{ runner.os }}-ccache-</span>
+
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Configure ccache</span>
+<span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">    </span><span class="no">ccache -M 5G</span>
+<span class="w">    </span><span class="no">ccache -s</span>
+
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Build with ccache</span>
+<span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">    </span><span class="no">mkdir build &amp;&amp; cd build</span>
+<span class="w">    </span><span class="no">cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache \</span>
+<span class="w">          </span><span class="no">-DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..</span>
+<span class="w">    </span><span class="no">make -j$(nproc)</span>
+<span class="w">    </span><span class="no">ccache -s</span>
+</pre></div>
+</div>
+<p><strong>Cache Benefits:</strong></p>
+<ul class="simple">
+<li><p>First build: ~45 min</p></li>
+<li><p>Cached build: ~10 min (4.5x speedup)</p></li>
+</ul>
+</section>
+<section id="pip-cache-python-dependencies">
+<h3>pip Cache (Python Dependencies)<a class="headerlink" href="#pip-cache-python-dependencies" title="Permalink to this heading">#</a></h3>
+<p>Cache Python packages:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Setup Python</span>
+<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v5</span>
+<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.11&#39;</span>
+<span class="w">    </span><span class="nt">cache</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;pip&#39;</span>
+<span class="w">    </span><span class="nt">cache-dependency-path</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">      </span><span class="no">python/requirements*.txt</span>
+<span class="w">      </span><span class="no">docs/requirements.txt</span>
+
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install dependencies</span>
+<span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">    </span><span class="no">pip install -U pip</span>
+<span class="w">    </span><span class="no">pip install -r python/requirements.txt</span>
+</pre></div>
+</div>
+</section>
+<section id="docker-layer-caching">
+<h3>Docker Layer Caching<a class="headerlink" href="#docker-layer-caching" title="Permalink to this heading">#</a></h3>
+<p>Cache Docker layers with BuildKit:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Set up Docker Buildx</span>
+<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docker/setup-buildx-action@v3</span>
+
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Build Docker image</span>
+<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docker/build-push-action@v5</span>
+<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">context</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+<span class="w">    </span><span class="nt">file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docker/Dockerfile.ci</span>
+<span class="w">    </span><span class="nt">cache-from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">type=gha</span>
+<span class="w">    </span><span class="nt">cache-to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">type=gha,mode=max</span>
+<span class="w">    </span><span class="nt">tags</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">acloudviewer-ci:cpu</span>
+</pre></div>
+</div>
+<p><strong>Cache Benefits:</strong></p>
+<ul class="simple">
+<li><p>First build: ~60 min</p></li>
+<li><p>Cached build: ~5 min (12x speedup)</p></li>
+</ul>
+</section>
+</section>
+<section id="artifact-management">
+<h2>Artifact Management<a class="headerlink" href="#artifact-management" title="Permalink to this heading">#</a></h2>
+<section id="upload-artifacts">
+<h3>Upload Artifacts<a class="headerlink" href="#upload-artifacts" title="Permalink to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Upload documentation</span>
+<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/upload-artifact@v4</span>
+<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">acloudviewer-${{ github.sha }}-docs</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">acloudviewer-*-docs.tar.gz</span>
+<span class="w">    </span><span class="nt">retention-days</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
+<span class="w">    </span><span class="nt">compression-level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">  </span><span class="c1"># Already compressed</span>
+
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Upload wheel</span>
+<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/upload-artifact@v4</span>
+<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wheel-py${{ matrix.python_version }}</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dist/*.whl</span>
+<span class="w">    </span><span class="nt">retention-days</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">90</span>
+</pre></div>
+</div>
+</section>
+<section id="download-artifacts">
+<h3>Download Artifacts<a class="headerlink" href="#download-artifacts" title="Permalink to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Download documentation artifact</span>
+<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/download-artifact@v4</span>
+<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">acloudviewer-${{ github.sha }}-docs</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./docs-download</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="release-management">
+<h2>Release Management<a class="headerlink" href="#release-management" title="Permalink to this heading">#</a></h2>
+<section id="automated-releases">
+<h3>Automated Releases<a class="headerlink" href="#automated-releases" title="Permalink to this heading">#</a></h3>
+<p>Releases are triggered by pushing a tag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create and push release tag</span>
+git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v3.9.3<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release version 3.9.3&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v3.9.3
+</pre></div>
+</div>
+<p><strong>Release Workflow Actions:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Detect release</strong>: Triggered on <code class="docutils literal notranslate"><span class="pre">release:</span> <span class="pre">types:</span> <span class="pre">[released]</span></code></p></li>
+<li><p><strong>Build wheels</strong>: All Python versions, all platforms</p></li>
+<li><p><strong>Build GUI apps</strong>: Platform-specific binaries</p></li>
+<li><p><strong>Generate changelog</strong>: From commit messages</p></li>
+<li><p><strong>Upload to GitHub Releases</strong>: Attach all artifacts</p></li>
+<li><p><strong>Set DEVELOPER_BUILD=OFF</strong>: Production builds</p></li>
+</ol>
+<p><strong>Release Assets:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>v3.9.3/
+├── cloudViewer-3.9.3-cp310-cp310-manylinux_2_27_x86_64.whl
+├── cloudViewer-3.9.3-cp311-cp311-manylinux_2_27_x86_64.whl
+├── cloudViewer-3.9.3-cp312-cp312-manylinux_2_27_x86_64.whl
+├── cloudViewer-3.9.3-cp313-cp313-manylinux_2_27_x86_64.whl
+├── ACloudViewer-3.9.3-Windows.exe
+├── ACloudViewer-3.9.3-macOS.dmg
+└── acloudviewer-3.9.3-docs.tar.gz
+</pre></div>
+</div>
+</section>
+<section id="pre-release-workflow">
+<h3>Pre-release Workflow<a class="headerlink" href="#pre-release-workflow" title="Permalink to this heading">#</a></h3>
+<p>For beta/rc releases:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create pre-release</span>
+git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v3.9.4-beta1<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Beta release 3.9.4-beta1&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v3.9.4-beta1
+</pre></div>
+</div>
+<p><strong>Pre-release Configuration:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">on</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">push</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">tags</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;v*-beta*&#39;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;v*-rc*&#39;</span>
+
+<span class="nt">jobs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">release</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create Pre-release</span>
+<span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">softprops/action-gh-release@v1</span>
+<span class="w">        </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">prerelease</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">          </span><span class="nt">generate_release_notes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="deployment-targets">
+<h2>Deployment Targets<a class="headerlink" href="#deployment-targets" title="Permalink to this heading">#</a></h2>
+<section id="github-pages">
+<h3>GitHub Pages<a class="headerlink" href="#github-pages" title="Permalink to this heading">#</a></h3>
+<p><strong>URL Structure:</strong></p>
+<ul class="simple">
+<li><p><strong>Main Website</strong>: <code class="docutils literal notranslate"><span class="pre">https://asher-1.github.io/ACloudViewer/</span></code></p></li>
+<li><p><strong>API Documentation</strong>: <code class="docutils literal notranslate"><span class="pre">https://asher-1.github.io/ACloudViewer/documentation/</span></code></p></li>
+<li><p><strong>Python API</strong>: <code class="docutils literal notranslate"><span class="pre">https://asher-1.github.io/ACloudViewer/documentation/python_api/</span></code></p></li>
+<li><p><strong>C++ API</strong>: <code class="docutils literal notranslate"><span class="pre">https://asher-1.github.io/ACloudViewer/documentation/cpp_api/</span></code></p></li>
+<li><p><strong>Tutorials</strong>: <code class="docutils literal notranslate"><span class="pre">https://asher-1.github.io/ACloudViewer/documentation/tutorial/</span></code></p></li>
+</ul>
+<p><strong>Deployment Process:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deploy to GitHub Pages</span>
+<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">peaceiris/actions-gh-pages@v3</span>
+<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">github_token</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.GITHUB_TOKEN }}</span>
+<span class="w">    </span><span class="nt">publish_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./unified-deploy</span>
+<span class="w">    </span><span class="nt">keep_files</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">enable_jekyll</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">force_orphan</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p><strong>Deployment Frequency:</strong></p>
+<ul class="simple">
+<li><p>Automatic on every push to <code class="docutils literal notranslate"><span class="pre">main</span></code></p></li>
+<li><p>Manual via workflow dispatch</p></li>
+<li><p>Average deployment time: ~5 minutes</p></li>
+</ul>
+</section>
+<section id="github-releases">
+<h3>GitHub Releases<a class="headerlink" href="#github-releases" title="Permalink to this heading">#</a></h3>
+<p>Release artifacts are published to:</p>
+<p><code class="docutils literal notranslate"><span class="pre">https://github.com/Asher-1/ACloudViewer/releases</span></code></p>
+<p><strong>Asset Types:</strong></p>
+<ul class="simple">
+<li><p>Python wheels (<code class="docutils literal notranslate"><span class="pre">.whl</span></code>)</p></li>
+<li><p>Documentation (<code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code>)</p></li>
+<li><p>GUI applications (<code class="docutils literal notranslate"><span class="pre">.exe</span></code>, <code class="docutils literal notranslate"><span class="pre">.dmg</span></code>, <code class="docutils literal notranslate"><span class="pre">.AppImage</span></code>)</p></li>
+<li><p>Source archives (<code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code>, <code class="docutils literal notranslate"><span class="pre">.zip</span></code>)</p></li>
+</ul>
+</section>
+</section>
+<section id="monitoring-notifications">
+<h2>Monitoring &amp; Notifications<a class="headerlink" href="#monitoring-notifications" title="Permalink to this heading">#</a></h2>
+<section id="build-status-badges">
+<h3>Build Status Badges<a class="headerlink" href="#build-status-badges" title="Permalink to this heading">#</a></h3>
+<p>Add status badges to README:</p>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span>![<span class="nt">Ubuntu</span>](<span class="na">https://github.com/Asher-1/ACloudViewer/actions/workflows/ubuntu.yml/badge.svg</span>)
+![<span class="nt">macOS</span>](<span class="na">https://github.com/Asher-1/ACloudViewer/actions/workflows/macos.yml/badge.svg</span>)
+![<span class="nt">Windows</span>](<span class="na">https://github.com/Asher-1/ACloudViewer/actions/workflows/windows.yml/badge.svg</span>)
+![<span class="nt">Documentation</span>](<span class="na">https://github.com/Asher-1/ACloudViewer/actions/workflows/documentation.yml/badge.svg</span>)
+</pre></div>
+</div>
+</section>
+<section id="notifications">
+<h3>Notifications<a class="headerlink" href="#notifications" title="Permalink to this heading">#</a></h3>
+<p>Configure GitHub notifications:</p>
+<ol class="arabic simple">
+<li><p><strong>Repository Settings</strong> → <strong>Notifications</strong></p></li>
+<li><p><strong>Watch</strong> → <strong>Custom</strong></p></li>
+<li><p>Select:</p>
+<ul class="simple">
+<li><p>✅ Releases</p></li>
+<li><p>✅ Actions (workflow failures)</p></li>
+<li><p>❌ All Activity (too noisy)</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Email Notifications:</strong></p>
+<ul class="simple">
+<li><p>Workflow failures</p></li>
+<li><p>Successful releases</p></li>
+<li><p>Deployment status</p></li>
+</ul>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading">#</a></h2>
+<section id="failed-builds">
+<h3>Failed Builds<a class="headerlink" href="#failed-builds" title="Permalink to this heading">#</a></h3>
+<p><strong>Common Issues:</strong></p>
+<ol class="arabic">
+<li><p><strong>Out of disk space</strong></p>
+<p><strong>Solution</strong>: Run <code class="docutils literal notranslate"><span class="pre">maximize_ubuntu_github_actions_build_space</span></code></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>util/ci_utils.sh
+maximize_ubuntu_github_actions_build_space
+</pre></div>
+</div>
+</li>
+<li><p><strong>ccache miss</strong></p>
+<p><strong>Solution</strong>: Check cache key, ensure CMakeLists.txt hash is correct</p>
+</li>
+<li><p><strong>Timeout (6 hours limit)</strong></p>
+<p><strong>Solution</strong>: Reduce parallel jobs or split workflow</p>
+</li>
+<li><p><strong>Docker build failures</strong></p>
+<p><strong>Solution</strong>: Check Docker logs, verify base image availability</p>
+</li>
+<li><p><strong>Test failures</strong></p>
+<p><strong>Solution</strong>: Review test logs, reproduce locally</p>
+</li>
+</ol>
+<p><strong>Debugging Steps:</strong></p>
+<ol class="arabic">
+<li><p>View workflow logs in GitHub Actions</p></li>
+<li><p>Reproduce locally with Docker</p></li>
+<li><p>Check artifact uploads for detailed logs</p></li>
+<li><p>Enable debug logging:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">env</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">ACTIONS_STEP_DEBUG</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">ACTIONS_RUNNER_DEBUG</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="re-running-workflows">
+<h3>Re-running Workflows<a class="headerlink" href="#re-running-workflows" title="Permalink to this heading">#</a></h3>
+<p><strong>Via GitHub UI:</strong></p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Actions</strong> tab</p></li>
+<li><p>Select failed workflow run</p></li>
+<li><p>Click <strong>Re-run jobs</strong> → <strong>Re-run failed jobs</strong></p></li>
+</ol>
+<p><strong>Via GitHub CLI:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install GitHub CLI</span>
+brew<span class="w"> </span>install<span class="w"> </span>gh<span class="w">  </span><span class="c1"># macOS</span>
+<span class="c1"># or</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>gh<span class="w">  </span><span class="c1"># Ubuntu</span>
+
+<span class="c1"># Authenticate</span>
+gh<span class="w"> </span>auth<span class="w"> </span>login
+
+<span class="c1"># Re-run workflow</span>
+gh<span class="w"> </span>workflow<span class="w"> </span>run<span class="w"> </span>documentation.yml<span class="w"> </span>--ref<span class="w"> </span>main
+
+<span class="c1"># Re-run specific run</span>
+gh<span class="w"> </span>run<span class="w"> </span>rerun<span class="w"> </span>&lt;run-id&gt;
+
+<span class="c1"># View workflow status</span>
+gh<span class="w"> </span>run<span class="w"> </span>list<span class="w"> </span>--workflow<span class="o">=</span>documentation.yml
+</pre></div>
+</div>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Permalink to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Fast Feedback Loop</strong></p>
+<ul class="simple">
+<li><p>Run style checks first (fastest)</p></li>
+<li><p>Build and test in parallel</p></li>
+<li><p>Cache aggressively</p></li>
+</ul>
+</li>
+<li><p><strong>Fail Fast</strong></p>
+<ul class="simple">
+<li><p>Stop on first failure</p></li>
+<li><p>Don’t waste resources on doomed builds</p></li>
+</ul>
+</li>
+<li><p><strong>Resource Optimization</strong></p>
+<ul class="simple">
+<li><p>Use matrix builds for parallel execution</p></li>
+<li><p>Limit concurrent jobs to avoid queue saturation</p></li>
+<li><p>Clean up artifacts after successful merges</p></li>
+</ul>
+</li>
+<li><p><strong>Security</strong></p>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">secrets</span></code> for sensitive data</p></li>
+<li><p>Restrict permissions (<code class="docutils literal notranslate"><span class="pre">permissions:</span> <span class="pre">{}</span></code> by default)</p></li>
+<li><p>Review third-party actions before use</p></li>
+</ul>
+</li>
+<li><p><strong>Maintainability</strong></p>
+<ul class="simple">
+<li><p>Keep workflows DRY (reuse ci_utils.sh)</p></li>
+<li><p>Document complex logic</p></li>
+<li><p>Version-pin action dependencies</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="example-complete-ci-workflow">
+<h2>Example: Complete CI Workflow<a class="headerlink" href="#example-complete-ci-workflow" title="Permalink to this heading">#</a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Complete CI Pipeline</span>
+
+<span class="nt">on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">push</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">pull_request</span><span class="p p-Indicator">]</span>
+
+<span class="nt">concurrency</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ github.workflow }}-${{ github.ref }}</span>
+<span class="w">  </span><span class="nt">cancel-in-progress</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">jobs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">style-check</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Check code style</span>
+<span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">find . -name &quot;*.cpp&quot; -o -name &quot;*.h&quot; | \</span>
+<span class="w">            </span><span class="no">xargs clang-format --dry-run --Werror</span>
+
+<span class="w">  </span><span class="nt">build-and-test</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">needs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">style-check</span>
+<span class="w">    </span><span class="nt">strategy</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">fail-fast</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">matrix</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">os</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">ubuntu-22.04</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">macos-latest</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">windows-latest</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">python</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;3.11&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;3.12&#39;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ matrix.os }}</span>
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v5</span>
+<span class="w">        </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ matrix.python }}</span>
+<span class="w">          </span><span class="nt">cache</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;pip&#39;</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Restore ccache</span>
+<span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/cache@v4</span>
+<span class="w">        </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">~/.cache/ccache</span>
+<span class="w">          </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ runner.os }}-ccache-${{ hashFiles(&#39;**/CMakeLists.txt&#39;) }}</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Build</span>
+<span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">mkdir build &amp;&amp; cd build</span>
+<span class="w">          </span><span class="no">cmake .. -DCMAKE_BUILD_TYPE=Release \</span>
+<span class="w">                   </span><span class="no">-DCMAKE_C_COMPILER_LAUNCHER=ccache \</span>
+<span class="w">                   </span><span class="no">-DCMAKE_CXX_COMPILER_LAUNCHER=ccache</span>
+<span class="w">          </span><span class="no">cmake --build . --parallel</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Test</span>
+<span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">cd build</span>
+<span class="w">          </span><span class="no">ctest --output-on-failure --parallel</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Upload test logs</span>
+<span class="w">        </span><span class="nt">if</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">failure()</span>
+<span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/upload-artifact@v4</span>
+<span class="w">        </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test-logs-${{ matrix.os }}-py${{ matrix.python }}</span>
+<span class="w">          </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">build/Testing/Temporary/</span>
+</pre></div>
+</div>
+</section>
+<section id="performance-metrics">
+<h2>Performance Metrics<a class="headerlink" href="#performance-metrics" title="Permalink to this heading">#</a></h2>
+<p><strong>Typical Build Times (without cache):</strong></p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Platform</p></th>
+<th class="head"><p>Build Time</p></th>
+<th class="head"><p>Test Time</p></th>
+<th class="head"><p>Total</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Ubuntu (CPU)</p></td>
+<td><p>45 min</p></td>
+<td><p>5 min</p></td>
+<td><p>50 min</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ubuntu (CUDA)</p></td>
+<td><p>60 min</p></td>
+<td><p>10 min</p></td>
+<td><p>70 min</p></td>
+</tr>
+<tr class="row-even"><td><p>macOS</p></td>
+<td><p>40 min</p></td>
+<td><p>8 min</p></td>
+<td><p>48 min</p></td>
+</tr>
+<tr class="row-odd"><td><p>Windows</p></td>
+<td><p>55 min</p></td>
+<td><p>12 min</p></td>
+<td><p>67 min</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>With ccache:</strong></p>
+<ul class="simple">
+<li><p>Build time reduced by <strong>75-80%</strong></p></li>
+<li><p>Typical incremental build: <strong>10-15 minutes</strong></p></li>
+</ul>
+</section>
+<section id="resources">
+<h2>Resources<a class="headerlink" href="#resources" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://docs.github.com/en/actions">GitHub Actions Documentation</a></p></li>
+<li><p><a class="reference external" href="https://docs.docker.com/ci-cd/">Docker CI/CD Guide</a></p></li>
+<li><p><a class="reference internal" href="docker.html"><span class="doc">Docker Development</span></a> - Docker development guide</p></li>
+<li><p><a class="reference internal" href="contributing.html"><span class="doc">Contributing to ACloudViewer</span></a> - Contributing guidelines</p></li>
+<li><p><a class="reference external" href="https://github.com/Asher-1/ACloudViewer/blob/main/util/ci_utils.sh">util/ci_utils.sh</a> - CI utility functions</p></li>
+<li><p><a class="reference external" href="https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions">GitHub Actions Workflow Syntax</a></p></li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../resources/changelog.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Changelog</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="docker.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Docker Development</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, ACloudViewer Team
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">CI/CD Pipeline</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#github-actions-workflows">GitHub Actions Workflows</a><ul>
+<li><a class="reference internal" href="#main-workflows">Main Workflows</a></li>
+<li><a class="reference internal" href="#documentation-workflow">Documentation Workflow</a></li>
+<li><a class="reference internal" href="#ubuntu-build-workflow">Ubuntu Build Workflow</a></li>
+<li><a class="reference internal" href="#ubuntu-wheel-workflow">Ubuntu Wheel Workflow</a></li>
+<li><a class="reference internal" href="#macos-build-workflow">macOS Build Workflow</a></li>
+<li><a class="reference internal" href="#windows-build-workflow">Windows Build Workflow</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#local-ci-testing">Local CI Testing</a><ul>
+<li><a class="reference internal" href="#docker-based-testing">Docker-based Testing</a></li>
+<li><a class="reference internal" href="#act-github-actions-local-simulator">Act (GitHub Actions Local Simulator)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ci-cd-utilities">CI/CD Utilities</a><ul>
+<li><a class="reference internal" href="#available-functions">Available Functions</a></li>
+<li><a class="reference internal" href="#usage-example">Usage Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#caching-strategies">Caching Strategies</a><ul>
+<li><a class="reference internal" href="#ccache-c-compilation">ccache (C++ Compilation)</a></li>
+<li><a class="reference internal" href="#pip-cache-python-dependencies">pip Cache (Python Dependencies)</a></li>
+<li><a class="reference internal" href="#docker-layer-caching">Docker Layer Caching</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#artifact-management">Artifact Management</a><ul>
+<li><a class="reference internal" href="#upload-artifacts">Upload Artifacts</a></li>
+<li><a class="reference internal" href="#download-artifacts">Download Artifacts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#release-management">Release Management</a><ul>
+<li><a class="reference internal" href="#automated-releases">Automated Releases</a></li>
+<li><a class="reference internal" href="#pre-release-workflow">Pre-release Workflow</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#deployment-targets">Deployment Targets</a><ul>
+<li><a class="reference internal" href="#github-pages">GitHub Pages</a></li>
+<li><a class="reference internal" href="#github-releases">GitHub Releases</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#monitoring-notifications">Monitoring &amp; Notifications</a><ul>
+<li><a class="reference internal" href="#build-status-badges">Build Status Badges</a></li>
+<li><a class="reference internal" href="#notifications">Notifications</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#failed-builds">Failed Builds</a></li>
+<li><a class="reference internal" href="#re-running-workflows">Re-running Workflows</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#best-practices">Best Practices</a></li>
+<li><a class="reference internal" href="#example-complete-ci-workflow">Example: Complete CI Workflow</a></li>
+<li><a class="reference internal" href="#performance-metrics">Performance Metrics</a></li>
+<li><a class="reference internal" href="#resources">Resources</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=c711cca9"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/version_switch.js?v=9a357ee9"></script>
+    </body>
+</html>
