@@ -3229,6 +3229,7 @@ make -j$(nproc)">
                 <button class="gallery-tab active" data-gallery="ui" data-i18n="gallery.ui">User Interface</button>
                 <button class="gallery-tab" data-gallery="reconstruction" data-i18n="gallery.reconstruction">3D Reconstruction</button>
                 <button class="gallery-tab" data-gallery="annotation" data-i18n="gallery.annotation">Semantic Annotation</button>
+                <button class="gallery-tab" data-gallery="tools" data-i18n="gallery.tools">Selection & Measurement</button>
                 <button class="gallery-tab" data-gallery="ml" data-i18n="gallery.ml">Machine Learning</button>
                 <button class="gallery-tab" data-gallery="visualization" data-i18n="gallery.visualization">Visualization</button>
             </div>
@@ -3309,6 +3310,33 @@ make -j$(nproc)">
                         <div class="gallery-overlay">
                             <h3>大规模场景标注</h3>
                             <p>处理海量点云数据的语义标注，支持上亿点渲染</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selection & Measurement Tools Gallery -->
+            <div class="gallery-content" id="gallery-tools">
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <img src="images/selection_tools.png" alt="选择工具">
+                        <div class="gallery-overlay">
+                            <h3 data-i18n="gallery.selection.title">智能选择工具</h3>
+                            <p data-i18n="gallery.selection.desc">强大的3D数据选择和过滤工具，支持多种选择模式</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/ruler_measurement_tools.png" alt="尺子测量">
+                        <div class="gallery-overlay">
+                            <h3 data-i18n="gallery.ruler.title">距离测量工具</h3>
+                            <p data-i18n="gallery.ruler.desc">精确的点云距离测量，支持实时标注和可视化</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/protractor_measurement_tools.png" alt="量角器测量">
+                        <div class="gallery-overlay">
+                            <h3 data-i18n="gallery.protractor.title">角度测量工具</h3>
+                            <p data-i18n="gallery.protractor.desc">高精度角度测量，支持多点角度计算和标注</p>
                         </div>
                     </div>
                 </div>

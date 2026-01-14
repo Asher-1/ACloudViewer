@@ -71,8 +71,9 @@ class DoxygenDocsBuilder:
     Reference: https://github.com/isl-org/Open3D/blob/main/docs/make_docs.py
     """
 
-    def __init__(self, html_output_dir):
+    def __init__(self, html_output_dir, doxygen_output_dir=None):
         self.html_output_dir = html_output_dir
+        self.doxygen_output_dir = doxygen_output_dir or "doxygen"
 
     def run(self):
         """Run Doxygen to generate C++ API documentation."""
@@ -85,10 +86,24 @@ class DoxygenDocsBuilder:
         print("=" * 70)
         print()
         
-        doxygen_temp_dir = "doxygen"
-        _create_or_clear_dir(doxygen_temp_dir)
-
-        cmd = ["doxygen", "Doxyfile"]
+        # Use absolute path for doxygen output directory
+        doxygen_abs_dir = os.path.abspath(self.doxygen_output_dir)
+        _create_or_clear_dir(doxygen_abs_dir)
+        print(f"📂 Doxygen output directory: {doxygen_abs_dir}")
+        print()
+        
+        # Create a temporary Doxyfile with custom OUTPUT_DIRECTORY
+        temp_doxyfile = os.path.join(doxygen_abs_dir, "Doxyfile.tmp")
+        with open("Doxyfile", "r") as f_in:
+            with open(temp_doxyfile, "w") as f_out:
+                for line in f_in:
+                    # Replace OUTPUT_DIRECTORY line
+                    if line.strip().startswith("OUTPUT_DIRECTORY"):
+                        f_out.write(f"OUTPUT_DIRECTORY       = {doxygen_abs_dir}\n")
+                    else:
+                        f_out.write(line)
+        
+        cmd = ["doxygen", temp_doxyfile]
         print(f'Command: "{" ".join(cmd)}"')
         print()
         
@@ -107,7 +122,7 @@ class DoxygenDocsBuilder:
                 'SemanticAnnotation.png'
             ]
             
-            doxygen_html = os.path.join("doxygen", "html")
+            doxygen_html = os.path.join(doxygen_abs_dir, "html")
             if os.path.exists(doxygen_html):
                 print("📸 Copying mainpage images to Doxygen output:")
                 for img in mainpage_images:
@@ -120,14 +135,19 @@ class DoxygenDocsBuilder:
                         print(f"  ⚠️  {img} not found in images/")
                 print()
             
-            # Copy Doxygen HTML output to final location
-            output_path = os.path.join(self.html_output_dir, "html", "cpp_api")
+            # Copy Doxygen HTML output to final location as cpp_api/api/ subdirectory
+            # This avoids overwriting Sphinx-generated pages (overview.html, quickstart.html, plugins.html)
+            cpp_api_dir = os.path.join(self.html_output_dir, "html", "cpp_api")
+            output_path = os.path.join(cpp_api_dir, "api")
             
             if os.path.exists(doxygen_html):
-                # Remove old cpp_api directory if it exists (from Sphinx)
+                # Remove old api/ subdirectory if it exists
                 if os.path.exists(output_path):
-                    print(f"🗑️  Removing old cpp_api directory: {output_path}")
+                    print(f"🗑️  Removing old cpp_api/api/ directory: {output_path}")
                     shutil.rmtree(output_path)
+                
+                # Ensure cpp_api/ directory exists (for Sphinx-generated pages)
+                os.makedirs(cpp_api_dir, exist_ok=True)
                 
                 print(f"📁 Copying Doxygen HTML: {doxygen_html} -> {output_path}")
                 shutil.copytree(doxygen_html, output_path)
@@ -137,7 +157,7 @@ class DoxygenDocsBuilder:
                     print(f"✅ C++ API docs: {index_file.as_uri()}")
                     print()
                     print("Documentation available at:")
-                    print(f"  - Relative: ../cpp_api/index.html")
+                    print(f"  - Relative: ../cpp_api/api/index.html")
                     print(f"  - Absolute: {output_path}/index.html")
                 else:
                     print("⚠️  index.html not found in Doxygen output")
@@ -145,7 +165,7 @@ class DoxygenDocsBuilder:
                 print(f"⚠️  Doxygen HTML output not found: {doxygen_html}")
             
             # Note about XML output (optional, for Breathe fallback)
-            doxygen_xml = os.path.join("doxygen", "xml")
+            doxygen_xml = os.path.join(doxygen_abs_dir, "xml")
             if os.path.exists(doxygen_xml):
                 print(f"ℹ️  Doxygen XML also generated at {doxygen_xml}/ (for optional Breathe use)")
             
@@ -215,8 +235,18 @@ class PyAPIDocsBuilder:
 
     def _try_import_module(self, full_module_name):
         """Returns the module object for the given module path"""
-        # Import cloudViewer root module
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "build_app", "lib", "Release", "Python", "cuda"))
+        # Add multiple potential Python module paths (matches CMakeLists.txt)
+        potential_paths = [
+            os.path.join(os.path.dirname(__file__), "..", "build_app", "lib", "Release", "Python", "cuda"),
+            os.path.join(os.path.dirname(__file__), "..", "build_app", "lib", "python_package"),
+            os.path.join(os.path.dirname(__file__), "..", "build", "lib", "Release", "Python", "cuda"),
+            os.path.join(os.path.dirname(__file__), "..", "build", "lib", "python_package"),
+        ]
+        for path in potential_paths:
+            if os.path.exists(path):
+                sys.path.insert(0, path)
+        
+        # Try to import cloudViewer (pybind variant first, then standard)
         try:
             import pybind as cloudViewer
             sys.modules['cloudViewer'] = cloudViewer
@@ -537,6 +567,18 @@ def main():
         default=False,
         help="Clean output directory before building",
     )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default=None,
+        help="Output directory for HTML documentation (default: docs/_out)",
+    )
+    parser.add_argument(
+        "--doxygen-dir",
+        type=str,
+        default=None,
+        help="Output directory for Doxygen temporary files (default: docs/doxygen or <output-dir>/../doxygen)",
+    )
 
     args = parser.parse_args()
 
@@ -549,8 +591,27 @@ def main():
     print("=" * 70)
     print()
 
-    # Output directory
-    html_output_dir = os.path.join(pwd, "_out")
+    # Output directory (use --output-dir if provided, otherwise default to docs/_out)
+    if args.output_dir:
+        html_output_dir = os.path.abspath(args.output_dir)
+        print(f"📂 HTML output directory: {html_output_dir} (custom)")
+    else:
+        html_output_dir = os.path.join(pwd, "_out")
+        print(f"📂 HTML output directory: {html_output_dir} (default)")
+    
+    # Doxygen directory (use --doxygen-dir if provided)
+    if args.doxygen_dir:
+        doxygen_output_dir = os.path.abspath(args.doxygen_dir)
+        print(f"📂 Doxygen directory: {doxygen_output_dir} (custom)")
+    elif args.output_dir:
+        # If --output-dir is specified, put doxygen alongside it (build directory)
+        doxygen_output_dir = os.path.join(os.path.dirname(html_output_dir), "doxygen")
+        print(f"📂 Doxygen directory: {doxygen_output_dir} (alongside output)")
+    else:
+        # Default: put in source directory (backward compatible)
+        doxygen_output_dir = os.path.join(pwd, "doxygen")
+        print(f"📂 Doxygen directory: {doxygen_output_dir} (default)")
+    print()
     
     # Clean or create output directory
     if args.clean or (args.sphinx or args.doxygen):
@@ -558,7 +619,7 @@ def main():
 
     # Build Doxygen documentation FIRST (Sphinx depends on it)
     if args.doxygen:
-        ddb = DoxygenDocsBuilder(html_output_dir)
+        ddb = DoxygenDocsBuilder(html_output_dir, doxygen_output_dir)
         ddb.run()
     else:
         print("ℹ️  Doxygen build disabled, use --doxygen to enable")

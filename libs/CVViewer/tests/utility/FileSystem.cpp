@@ -12,7 +12,7 @@
 #include <algorithm>
 
 #include "tests/Tests.h"
-#include "utility/Console.h"
+#include "cloudViewer/utility/Console.h"
 
 namespace cloudViewer {
 namespace tests {

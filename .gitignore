@@ -215,14 +215,15 @@ examples/python/geometry/copy_of_crate.obj
 
 # doc
 docs/test_data
-docs/tutorial/**/*.ipynb
-docs/tutorial/**/*.py
-docs/tutorial/**/*.jpg
-docs/tutorial/**/*.ply
-docs/tutorial/**/*.pcd
-docs/tutorial/**/*.json
+docs/source/test_data
+docs/source/tutorial/**/*.ipynb
+docs/source/tutorial/**/*.py
+docs/source/tutorial/**/*.jpg
+docs/source/tutorial/**/*.ply
+docs/source/tutorial/**/*.pcd
+docs/source/tutorial/**/*.json
+docs/source/python_api/
 docs/_out/
-docs/python_api/
 docs/Doxyfile
 docs/html
 docs/getting_started.rst

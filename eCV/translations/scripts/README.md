@@ -1,8 +1,36 @@
 # Translation Tool Scripts Directory
 
-This directory contains the final set of translation scripts used to achieve 100% coverage for ACloudViewer Chinese translations.
+This directory contains the translation scripts and tools for ACloudViewer Chinese translations.
 
 ## 📂 File Structure
+
+### Core Update Script
+
+#### `update_translations.sh`
+**Primary Translation Update Tool**
+
+Automatically extracts all translatable strings from source code and updates the translation file.
+
+**Features:**
+- Scans all `.cpp`, `.h`, `.ui` files in the eCV directory
+- Extracts translatable strings using Qt's `lupdate` tool
+- Updates `ACloudViewer_zh.ts` with new strings
+- Preserves existing translations
+- Creates timestamped backups automatically
+- Provides translation statistics
+
+**Usage:**
+```bash
+cd /home/ludahai/develop/code/github/ACloudViewer/eCV/translations/scripts
+bash update_translations.sh
+```
+
+**When to use:**
+- After adding new UI elements or strings to source code
+- When source files are modified with new translatable content
+- To refresh the translation file with latest source strings
+
+---
 
 ### Translation Scripts (7 files)
 
@@ -146,6 +174,9 @@ To reproduce the entire translation from 76% to 100%:
 # Navigate to scripts directory
 cd /home/ludahai/develop/code/github/ACloudViewer/eCV/translations/scripts
 
+# Step 0: Update translation file from source code (if needed)
+bash update_translations.sh
+
 # Round 1: Basic terms and common operations
 python3 translate_to_100.py
 
@@ -229,6 +260,22 @@ Each script targets a specific type of content:
 ---
 
 ## 🛠️ Customization Guide
+
+### Updating Translation File from Source
+
+When source code is updated with new translatable strings:
+
+```bash
+cd /home/ludahai/develop/code/github/ACloudViewer/eCV/translations/scripts
+bash update_translations.sh
+```
+
+This will:
+1. Scan all source files for translatable strings
+2. Extract new strings using `lupdate`
+3. Update `ACloudViewer_zh.ts` 
+4. Create automatic backup
+5. Show translation statistics
 
 ### Adding New Translations
 
@@ -371,12 +418,12 @@ To improve translations:
 - 7 intermediate analysis files (temporary results)
 - 2 reference files (no longer needed)
 
-**Retained Files (11 total)**:
+**Retained Files (12 total)**:
+- 1 update script (`update_translations.sh` - primary tool)
 - 7 final translation scripts (sequential, production-ready)
 - 1 quality review tool
-- 1 documentation file (this file)
+- 2 documentation files (this file + parent README)
 - 1 backup file (original state)
-- 1 quality audit report
 
 **Space Saved**: ~350KB
 

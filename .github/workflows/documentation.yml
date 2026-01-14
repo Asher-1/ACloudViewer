@@ -35,32 +35,56 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history for proper git operations
       
-      - name: Setup Python for download data generation
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
-      - name: Generate downloads_data.json dynamically
+      - name: Fetch or generate downloads_data.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "📦 Generating downloads_data.json from latest releases..."
-          python3 docs/automation/scripts/scan_releases.py
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Obtaining downloads_data.json"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Strategy: Fetch from gh-pages branch (auto-updated by update-downloads workflow)"
+          echo ""
           
-          # Verify generation
-          if [ -f "docs/downloads_data.json" ]; then
-            echo "✅ downloads_data.json generated successfully"
-            echo "File size: $(du -h docs/downloads_data.json | cut -f1)"
-            echo "Versions found: $(jq '.version_metadata | length' docs/downloads_data.json)"
-            
-            # Show summary
+          # Try to fetch from gh-pages branch (most up-to-date)
+          echo "🔍 Attempting to fetch from gh-pages branch..."
+          if git fetch origin gh-pages:gh-pages 2>/dev/null && \
+             git show gh-pages:downloads_data.json > docs/downloads_data.json 2>/dev/null; then
+            echo "✅ Successfully fetched from gh-pages branch"
+            echo "  - Size: $(du -h docs/downloads_data.json | cut -f1)"
+            echo "  - Versions: $(jq '.version_metadata | length' docs/downloads_data.json)"
+            echo "  - Last update: $(jq -r '.generated_at' docs/downloads_data.json)"
             echo ""
-            echo "📊 Download Data Summary:"
-            jq -r '.version_metadata | to_entries[] | "  - Version \(.key): \(.value.release_date)"' docs/downloads_data.json | head -5
+            echo "ℹ️  This data is automatically updated by the 'update-downloads' workflow"
+            echo "ℹ️  No need to regenerate during documentation build"
           else
-            echo "❌ Failed to generate downloads_data.json!"
-            exit 1
+            # Fallback: Generate from GitHub API (for first-time builds or if gh-pages doesn't exist)
+            echo "⚠️  Could not fetch from gh-pages, generating from GitHub API..."
+            echo ""
+            
+            python3 docs/automation/scripts/scan_releases.py
+            
+            if [ -f "docs/downloads_data.json" ]; then
+              echo "✅ Generated downloads_data.json from GitHub API"
+              echo "  - Size: $(du -h docs/downloads_data.json | cut -f1)"
+              echo "  - Versions: $(jq '.version_metadata | length' docs/downloads_data.json)"
+              echo ""
+              echo "📝 Note: This is a temporary snapshot"
+              echo "📝 The 'update-downloads' workflow will keep it updated automatically"
+            else
+              echo "❌ Failed to obtain downloads_data.json!"
+              echo "Creating minimal placeholder..."
+              echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":{},"download_links":{}}' > docs/downloads_data.json
+            fi
           fi
+          
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       
       - name: Maximize build space
         run: |

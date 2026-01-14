@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "utility/Console.h"
+#include "cloudViewer/utility/Console.h"
 
 #include "tests/Tests.h"
 
