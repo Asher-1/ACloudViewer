@@ -8,7 +8,7 @@
 #include <IJsonConvertible.h>
 #include <json/json.h>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

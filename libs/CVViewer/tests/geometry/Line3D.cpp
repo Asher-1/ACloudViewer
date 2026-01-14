@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "geometry/Line3D.h"
+#include "cloudViewer/geometry/Line3D.h"
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 using namespace cloudViewer::geometry;
 using namespace ::testing;

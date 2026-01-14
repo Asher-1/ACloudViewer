@@ -8,6 +8,7 @@ const translations = {
         'nav.quickstart': 'Quick Start',
         'nav.gallery': 'Gallery',
         'nav.documentation': 'Documentation',
+        'nav.donate': 'Support',
         
         // Hero Section
         'hero.subtitle': 'Modern 3D Data Processing System',
@@ -117,6 +118,7 @@ const translations = {
         'gallery.ui': 'User Interface',
         'gallery.reconstruction': '3D Reconstruction',
         'gallery.annotation': 'Semantic Annotation',
+        'gallery.tools': 'Selection & Measurement',
         'gallery.ml': 'Machine Learning',
         'gallery.visualization': 'Visualization',
         'gallery.cloudviewer_app.title': 'CloudViewer App',
@@ -143,6 +145,12 @@ const translations = {
         'gallery.jupyter.desc': 'Interactive 3D data visualization in Jupyter Notebook',
         'gallery.pbr.title': 'PBR Rendering',
         'gallery.pbr.desc': 'Physics-based rendering, supporting materials, lighting and shadows',
+        'gallery.selection.title': 'Smart Selection Tools',
+        'gallery.selection.desc': 'Powerful 3D data selection and filtering tools with multiple selection modes',
+        'gallery.ruler.title': 'Distance Measurement',
+        'gallery.ruler.desc': 'Precise point cloud distance measurement with real-time annotation and visualization',
+        'gallery.protractor.title': 'Angle Measurement',
+        'gallery.protractor.desc': 'High-precision angle measurement supporting multi-point angle calculation and annotation',
         
         // Resources Section
         'resources.title': 'Resources & Documentation',
@@ -178,6 +186,7 @@ const translations = {
         'nav.quickstart': '快速开始',
         'nav.gallery': '展示',
         'nav.documentation': '文档',
+        'nav.donate': '支持',
         
         // 首页
         'hero.subtitle': '现代化的3D数据处理系统',
@@ -287,6 +296,7 @@ const translations = {
         'gallery.ui': '用户界面',
         'gallery.reconstruction': '3D重建',
         'gallery.annotation': '语义标注',
+        'gallery.tools': '选择与测量',
         'gallery.ml': '机器学习',
         'gallery.visualization': '可视化',
         'gallery.cloudviewer_app.title': 'CloudViewer 应用',
@@ -313,6 +323,12 @@ const translations = {
         'gallery.jupyter.desc': '在Jupyter Notebook中交互式可视化3D数据',
         'gallery.pbr.title': 'PBR渲染',
         'gallery.pbr.desc': '基于物理的渲染，支持材质、光照和阴影',
+        'gallery.selection.title': '智能选择工具',
+        'gallery.selection.desc': '强大的3D数据选择和过滤工具，支持多种选择模式',
+        'gallery.ruler.title': '距离测量工具',
+        'gallery.ruler.desc': '精确的点云距离测量，支持实时标注和可视化',
+        'gallery.protractor.title': '角度测量工具',
+        'gallery.protractor.desc': '高精度角度测量，支持多点角度计算和标注',
         
         // 资源部分
         'resources.title': '资源与文档',
@@ -1047,6 +1063,14 @@ function initializeSelectors() {
 
 function updatePythonVersions(versionBtn) {
     const supportedVersions = versionBtn.dataset.pythonVersions.split(',');
+    
+    // Sort Python versions numerically (e.g., 3.8, 3.9, 3.10, 3.11, 3.12)
+    supportedVersions.sort((a, b) => {
+        const [aMajor, aMinor] = a.split('.').map(Number);
+        const [bMajor, bMinor] = b.split('.').map(Number);
+        if (aMajor !== bMajor) return aMajor - bMajor;
+        return aMinor - bMinor;
+    });
     
     // Clear and rebuild Python selector
     pythonSelector.innerHTML = '';

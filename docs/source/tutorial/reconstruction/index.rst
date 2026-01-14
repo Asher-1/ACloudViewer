@@ -8,8 +8,6 @@ This section covers 3D reconstruction techniques.
 
    sfm
 
-Coming Soon
------------
 
 Additional reconstruction tutorials are under development:
 

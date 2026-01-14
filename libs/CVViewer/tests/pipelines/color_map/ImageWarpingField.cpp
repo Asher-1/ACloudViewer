@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 // #include "pipelines/color_map/ImageWarpingField.h"
 

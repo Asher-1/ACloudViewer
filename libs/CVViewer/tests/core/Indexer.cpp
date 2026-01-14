@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/Indexer.h"
+#include "cloudViewer/core/Indexer.h"
 
 #include <unordered_map>
 
-#include "core/Device.h"
-#include "core/SizeVector.h"
-#include "tests/UnitTest.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace cloudViewer {
@@ -22,22 +22,25 @@ INSTANTIATE_TEST_SUITE_P(Indexer,
                          IndexerPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class IndexerPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        Indexer,
-        IndexerPermuteDevicePairs,
-        testing::ValuesIn(IndexerPermuteDevicePairs::TestCases()));
-
-class IndexerPermuteSizesDefaultStridesAndDevices
-    : public testing::TestWithParam<
-              std::tuple<std::pair<core::SizeVector, core::SizeVector>,
-                         core::Device>> {};
-INSTANTIATE_TEST_SUITE_P(
-        Indexer,
-        IndexerPermuteSizesDefaultStridesAndDevices,
-        testing::Combine(
-                testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
-                testing::ValuesIn(PermuteDevices::TestCases())));
+// Note: These test suites are defined but have no TEST_P cases yet.
+// Uncomment when adding test cases for these parameter combinations.
+//
+// class IndexerPermuteDevicePairs : public PermuteDevicePairs {};
+// INSTANTIATE_TEST_SUITE_P(
+//         Indexer,
+//         IndexerPermuteDevicePairs,
+//         testing::ValuesIn(IndexerPermuteDevicePairs::TestCases()));
+//
+// class IndexerPermuteSizesDefaultStridesAndDevices
+//     : public testing::TestWithParam<
+//               std::tuple<std::pair<core::SizeVector, core::SizeVector>,
+//                          core::Device>> {};
+// INSTANTIATE_TEST_SUITE_P(
+//         Indexer,
+//         IndexerPermuteSizesDefaultStridesAndDevices,
+//         testing::Combine(
+//                 testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
+//                 testing::ValuesIn(PermuteDevices::TestCases())));
 
 TEST_P(IndexerPermuteDevices, TensorRef) {
     core::Device device = GetParam();
@@ -81,8 +84,8 @@ TEST_P(IndexerPermuteDevices, IndexerCopyConstructor) {
     for (int64_t i = 0; i < indexer_a.NumDims(); i++) {
         EXPECT_EQ(indexer_a.GetPrimaryShape()[i],
                   indexer_b.GetPrimaryShape()[i]);
-        EXPECT_EQ(indexer_a.GetMasterStrides()[i],
-                  indexer_b.GetMasterStrides()[i]);
+        EXPECT_EQ(indexer_a.GetPrimaryStrides()[i],
+                  indexer_b.GetPrimaryStrides()[i]);
         EXPECT_EQ(indexer_a.IsReductionDim(i), indexer_b.IsReductionDim(i));
     }
 }
@@ -109,8 +112,8 @@ TEST_P(IndexerPermuteDevices, BroadcastRestride) {
     EXPECT_EQ(core::SizeVector(indexer.GetPrimaryShape(),
                                indexer.GetPrimaryShape() + indexer.NumDims()),
               core::SizeVector({2, 2, 2, 1, 3}));
-    EXPECT_EQ(core::SizeVector(indexer.GetMasterStrides(),
-                               indexer.GetMasterStrides() + indexer.NumDims()),
+    EXPECT_EQ(core::SizeVector(indexer.GetPrimaryStrides(),
+                               indexer.GetPrimaryStrides() + indexer.NumDims()),
               core::SizeVector({12, 6, 3, 3, 1}));
 
     // Check tensor shape

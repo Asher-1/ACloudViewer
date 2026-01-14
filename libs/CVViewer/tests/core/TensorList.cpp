@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/TensorList.h"
+#include "cloudViewer/core/TensorList.h"
 
 #include <vector>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace cloudViewer {

@@ -46,8 +46,8 @@ void pybind_camera_classes(py::module &m) {
                  "focal lengths.")
             .def("get_principal_point",
                  &camera::PinholeCameraIntrinsic::GetPrincipalPoint,
-                 "Returns the principle point in a tuple of X-axis and."
-                 "Y-axis principle points")
+                 "Returns the principal point in a tuple of X-axis and "
+                 "Y-axis principal points.")
             .def("get_skew", &camera::PinholeCameraIntrinsic::GetSkew,
                  "Returns the skew.")
             .def("is_valid", &camera::PinholeCameraIntrinsic::IsValid,

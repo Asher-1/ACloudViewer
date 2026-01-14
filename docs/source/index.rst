@@ -73,9 +73,8 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
 
 .. toctree::
    :maxdepth: 1
-   :caption: Examples
+   :caption: C++ Examples
 
-   examples/python_examples
    examples/cpp_examples
 
 .. toctree::

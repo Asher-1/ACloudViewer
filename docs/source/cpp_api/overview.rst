@@ -3,10 +3,6 @@ Overview
 
 ACloudViewer is a comprehensive C++ library for 3D point cloud and mesh processing. This page provides an overview of the library architecture and key modules.
 
-.. contents:: Contents
-   :local:
-   :depth: 2
-
 Core Features
 -------------
 
@@ -207,7 +203,7 @@ Getting Started
 To start using ACloudViewer C++:
 
 1. **Review the** :doc:`quickstart` **guide** for basic usage examples
-2. **Browse the** `Full API Reference <../cpp_api/index.html>`_ for detailed class documentation
+2. **Browse the** `Full API Reference <api/index.html>`_ for detailed class documentation
 3. **Check the examples** in ``examples/Cpp/`` directory
 4. **Compile from source**: :ref:`compilation`
 
@@ -216,7 +212,7 @@ Next Steps
 
 - :doc:`quickstart` - Quick start guide with code examples
 - :doc:`plugins` - Plugin system documentation
-- `API Reference <../cpp_api/index.html>`_ - Complete API documentation
+- `API Reference <api/index.html>`_ - Complete API documentation
 - :ref:`compilation` - Build from source
 - :doc:`../tutorial/index` - Python and C++ tutorials
 
@@ -224,5 +220,5 @@ See Also
 --------
 
 - `GitHub Repository <https://github.com/Asher-1/ACloudViewer>`_
-- `Python API <../python_api/index.html>`_
-- `Examples <../examples/cpp_examples.html>`_
+- :doc:`../tutorial/index` - Tutorials
+- :doc:`../examples/cpp_examples` - C++ Examples

@@ -7,10 +7,18 @@
 
 #pragma once
 
+#include <Eigen.h>
+
 #include <Eigen/Core>
 #include <vector>
 
-#include "Eigen.h"
+namespace cloudViewer {
+namespace utility {
+// Forward declare allocator types if not already defined
+using Vector2d_allocator = Eigen::aligned_allocator<Eigen::Vector2d>;
+using Vector4i_allocator = Eigen::aligned_allocator<Eigen::Vector4i>;
+}  // namespace utility
+}  // namespace cloudViewer
 
 namespace cloudViewer {
 namespace tests {

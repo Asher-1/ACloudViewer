@@ -1,249 +1,176 @@
 # CMake configuration for ACloudViewer documentation
 #
 # Build Strategy (following Open3D):
-#   1. Doxygen generates independent C++ API HTML
-#   2. Sphinx generates Python API + Tutorials
-#   3. Outputs are combined via file system
+#   CMake delegates to make_docs.py for all documentation generation.
+#   This ensures consistency between CMake builds and direct make_docs.py calls.
 #
-# Two build methods available:
+# Architecture:
+#   CMakeLists.txt → make_docs.py → {Doxygen, Sphinx, Python API generation}
 #
-#   Method 1: Direct CMake targets (faster, for development)
-#     cd build_app && make doxygen sphinx-html
+# Usage:
+#   cd build_app && make documentation
 #
-#   Method 2: Through make_docs.py (complete, for production)
-#     cd docs && python make_docs.py --sphinx --doxygen
-#     (includes Python API auto-generation, Jupyter notebooks copy, etc.)
+# The 'documentation' target calls make_docs.py which handles:
+#   1. Doxygen: Generate C++ API HTML → _out/html/cpp_api/api/
+#   2. Python API: Generate .rst files from cloudViewer module
+#   3. Jupyter: Copy notebook files to tutorial directories
+#   4. Sphinx: Build HTML docs → _out/html/
 #
-# IMPORTANT: Before running CMake, set up the Python environment:
-#   export PYENV_ROOT=~/.pyenv
-#   export PYTHON_VERSION=3.11
-#   export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-#
-# Or use the CI/CD script:
-#   source util/ci_utils.sh && build_docs ON
-#
-# Reference: https://github.com/isl-org/Open3D/tree/main/docs
+# Reference: util/ci_utils.sh::build_docs() for the canonical implementation
 #
 cmake_minimum_required(VERSION 3.18)
 
-# Documentation options
-option(BUILD_DOXYGEN "Build C++ API documentation with Doxygen" ON)
-option(BUILD_SPHINX "Build Sphinx documentation (HTML)" ON)
-option(BUILD_SPHINX_LATEX "Build Sphinx documentation (LaTeX/PDF)" OFF)
+# Documentation options (for compatibility, but make_docs.py decides what to build)
+option(BUILD_DOCUMENTATION "Build documentation" ON)
 
 if(NOT BUILD_DOCUMENTATION)
     message(STATUS "Documentation build is disabled. Enable with -DBUILD_DOCUMENTATION=ON")
     return()
 endif()
 
-# Find required tools
+# Find Python (required for make_docs.py)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
-find_package(Doxygen)
 
-# Check dependencies
-if(BUILD_DOXYGEN AND NOT DOXYGEN_FOUND)
-    message(WARNING "Doxygen not found. C++ API documentation will not be built.")
-    set(BUILD_DOXYGEN OFF)
-endif()
-
-# Check for Sphinx
-if(BUILD_SPHINX)
-    execute_process(
-        COMMAND ${Python3_EXECUTABLE} -c "import sphinx"
-        RESULT_VARIABLE SPHINX_CHECK
-        OUTPUT_QUIET ERROR_QUIET
-    )
-    if(SPHINX_CHECK)
-        message(WARNING "Sphinx not found. Install with: pip install sphinx")
-        set(BUILD_SPHINX OFF)
-    endif()
+# Check if make_docs.py exists
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/make_docs.py")
+    message(FATAL_ERROR "make_docs.py not found in ${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 
 # Documentation paths
 set(DOCS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(DOCS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(DOCS_OUTPUT_DIR ${DOCS_BUILD_DIR}/_out)
-set(DOXYGEN_OUTPUT_DIR ${DOCS_BUILD_DIR}/doxygen)
-set(DOXYGEN_XML_DIR ${DOXYGEN_OUTPUT_DIR}/xml)
-set(SPHINX_SOURCE_DIR ${DOCS_SOURCE_DIR}/source)
-set(SPHINX_OUTPUT_DIR ${DOCS_OUTPUT_DIR}/html)
+set(DOCS_HTML_DIR ${DOCS_OUTPUT_DIR}/html)
 
-# Configure Doxyfile
-if(BUILD_DOXYGEN)
-    set(DOXYGEN_INPUT_DIR ${PROJECT_SOURCE_DIR})
-    set(DOXYGEN_OUTPUT_DIRECTORY ${DOXYGEN_OUTPUT_DIR})
-    
-    configure_file(
-        ${DOCS_SOURCE_DIR}/Doxyfile.in
-        ${DOCS_BUILD_DIR}/Doxyfile
-        @ONLY
-    )
-    
-    # Doxygen target
-    add_custom_target(doxygen
-        COMMAND ${DOXYGEN_EXECUTABLE} ${DOCS_BUILD_DIR}/Doxyfile
-        WORKING_DIRECTORY ${DOCS_SOURCE_DIR}
-        COMMENT "Generating C++ API documentation with Doxygen"
-        VERBATIM
-    )
-    
-    # Copy mainpage images to Doxygen HTML output
-    # These images are referenced in mainpage.dox via \htmlonly blocks
-    # and won't be automatically copied by Doxygen
-    add_custom_command(TARGET doxygen POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "📸 Copying mainpage images to Doxygen output..."
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${DOCS_SOURCE_DIR}/images/AbstractionLayers.png
-            ${DOCS_SOURCE_DIR}/images/MainUI.png
-            ${DOCS_SOURCE_DIR}/images/ICP-registration.png
-            ${DOCS_SOURCE_DIR}/images/Reconstruction.png
-            ${DOCS_SOURCE_DIR}/images/SemanticAnnotation.png
-            ${DOXYGEN_OUTPUT_DIR}/html/
-        COMMENT "Copying mainpage images (AbstractionLayers.png, MainUI.png, etc.)"
-        VERBATIM
-    )
-    
-    message(STATUS "Doxygen documentation will be built to: ${DOXYGEN_OUTPUT_DIR}")
-endif()
+message(STATUS "Documentation paths:")
+message(STATUS "  - Source:   ${DOCS_SOURCE_DIR}")
+message(STATUS "  - Build:    ${DOCS_BUILD_DIR}")
+message(STATUS "  - Output:   ${DOCS_HTML_DIR}")
+message(STATUS "  - Doxygen:  ${DOCS_DOXYGEN_DIR}")
 
-# Sphinx documentation
-if(BUILD_SPHINX)
-    # Find sphinx-build
-    find_program(SPHINX_BUILD
-        NAMES sphinx-build sphinx-build-3
-        DOC "Path to sphinx-build executable"
-    )
-    
-    if(NOT SPHINX_BUILD)
-        message(WARNING "sphinx-build not found. Please install Sphinx.")
-        set(BUILD_SPHINX OFF)
-    else()
-        message(STATUS "Found sphinx-build: ${SPHINX_BUILD}")
-        
-        # Sphinx options
-        set(SPHINX_OPTS "" CACHE STRING "Extra options for sphinx-build")
-        set(SPHINX_VERBOSE "" CACHE STRING "Verbosity: -v, -vv, -vvv")
-        
-        # Ensure Pandoc is in PATH (for nbsphinx)
-        find_program(PANDOC_EXECUTABLE pandoc
-            PATHS $ENV{HOME}/bin /usr/local/bin /usr/bin
-            DOC "Path to pandoc executable"
-        )
-        if(PANDOC_EXECUTABLE)
-            get_filename_component(PANDOC_DIR ${PANDOC_EXECUTABLE} DIRECTORY)
-            message(STATUS "Found pandoc: ${PANDOC_EXECUTABLE}")
-        else()
-            message(WARNING "Pandoc not found. Jupyter notebooks may not render properly.")
-        endif()
-        
-        # HTML documentation
-        add_custom_target(sphinx-html
-            COMMAND ${CMAKE_COMMAND} -E env "PATH=${PANDOC_DIR}:$ENV{PATH}"
-                ${SPHINX_BUILD}
-                -b html
-                ${SPHINX_VERBOSE}
-                ${SPHINX_OPTS}
-                -d ${DOCS_BUILD_DIR}/.doctrees
-                ${SPHINX_SOURCE_DIR}
-                ${SPHINX_OUTPUT_DIR}
-            WORKING_DIRECTORY ${DOCS_SOURCE_DIR}
-            COMMENT "Building HTML documentation with Sphinx"
-            VERBATIM
-        )
-        
-        # Make sphinx-html depend on doxygen if enabled
-        if(BUILD_DOXYGEN)
-            add_dependencies(sphinx-html doxygen)
-            
-            # Copy Doxygen HTML to Sphinx output (for unified documentation)
-            add_custom_command(TARGET sphinx-html POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E echo "📁 Copying Doxygen HTML to unified output..."
-                COMMAND ${CMAKE_COMMAND} -E remove_directory ${SPHINX_OUTPUT_DIR}/cpp_api
-                COMMAND ${CMAKE_COMMAND} -E copy_directory 
-                    ${DOXYGEN_OUTPUT_DIR}/html
-                    ${SPHINX_OUTPUT_DIR}/cpp_api
-                COMMAND ${CMAKE_COMMAND} -E echo "✅ Doxygen HTML copied to ${SPHINX_OUTPUT_DIR}/cpp_api"
-                COMMENT "Copying Doxygen HTML to unified documentation output"
-                VERBATIM
-            )
-        endif()
-        
-        # LaTeX/PDF documentation (optional)
-        if(BUILD_SPHINX_LATEX)
-            add_custom_target(sphinx-latex
-                COMMAND ${SPHINX_BUILD}
-                    -b latex
-                    ${SPHINX_VERBOSE}
-                    ${SPHINX_OPTS}
-                    -d ${DOCS_BUILD_DIR}/.doctrees
-                    ${SPHINX_SOURCE_DIR}
-                    ${DOCS_BUILD_DIR}/latex
-                WORKING_DIRECTORY ${DOCS_SOURCE_DIR}
-                COMMENT "Building LaTeX documentation with Sphinx"
-                VERBATIM
-            )
-            
-            if(BUILD_DOXYGEN)
-                add_dependencies(sphinx-latex doxygen)
-            endif()
-        endif()
-        
-        message(STATUS "Sphinx HTML documentation will be built to: ${SPHINX_OUTPUT_DIR}")
-    endif()
-endif()
+# Set up PYTHONPATH for documentation build
+# Include potential locations where cloudViewer module might be
+set(DOC_PYTHONPATH 
+    "${CMAKE_BINARY_DIR}/lib/python_package"
+    "${CMAKE_BINARY_DIR}/lib/Release/Python/cuda"
+    "${CMAKE_SOURCE_DIR}/build/lib/python_package"
+    "${CMAKE_SOURCE_DIR}/build_app/lib/python_package"
+    "${CMAKE_SOURCE_DIR}/build_app/lib/Release/Python/cuda"
+)
+string(REPLACE ";" ":" DOC_PYTHONPATH_STR "${DOC_PYTHONPATH}")
 
-# Main documentation target (builds everything)
-if(BUILD_DOXYGEN OR BUILD_SPHINX)
-    add_custom_target(documentation ALL)
-    
-    if(BUILD_DOXYGEN)
-        add_dependencies(documentation doxygen)
-    endif()
-    
-    if(BUILD_SPHINX)
-        add_dependencies(documentation sphinx-html)
-        
-        if(BUILD_SPHINX_LATEX)
-            add_dependencies(documentation sphinx-latex)
-        endif()
-    endif()
-    
-    message(STATUS "Documentation will be built. Main target: documentation")
-    message(STATUS "  - Doxygen: ${BUILD_DOXYGEN}")
-    message(STATUS "  - Sphinx HTML: ${BUILD_SPHINX}")
-    message(STATUS "  - Sphinx LaTeX: ${BUILD_SPHINX_LATEX}")
+# Doxygen output directory (in build directory, not source!)
+set(DOCS_DOXYGEN_DIR ${DOCS_BUILD_DIR}/doxygen)
+
+# Main documentation target
+# Delegates all work to make_docs.py (matches ci_utils.sh::build_docs)
+add_custom_target(documentation
+    COMMAND ${CMAKE_COMMAND} -E echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    COMMAND ${CMAKE_COMMAND} -E echo "📚 Building ACloudViewer Documentation"
+    COMMAND ${CMAKE_COMMAND} -E echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "Strategy: Delegate to make_docs.py for consistency"
+    COMMAND ${CMAKE_COMMAND} -E echo "  1. Doxygen   → C++ API HTML"
+    COMMAND ${CMAKE_COMMAND} -E echo "  2. Python API → Generate .rst from cloudViewer module"
+    COMMAND ${CMAKE_COMMAND} -E echo "  3. Jupyter   → Copy notebooks"
+    COMMAND ${CMAKE_COMMAND} -E echo "  4. Sphinx    → Build HTML docs"
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E env 
+        "PYTHONPATH=${DOC_PYTHONPATH_STR}:$ENV{PYTHONPATH}"
+        ${Python3_EXECUTABLE} ${DOCS_SOURCE_DIR}/make_docs.py --sphinx --doxygen --output-dir ${DOCS_OUTPUT_DIR} --doxygen-dir ${DOCS_DOXYGEN_DIR}
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    COMMAND ${CMAKE_COMMAND} -E echo "✅ Documentation Build Complete"
+    COMMAND ${CMAKE_COMMAND} -E echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "📦 Output: ${DOCS_HTML_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E echo "🌐 Preview: python3 -m http.server --directory ${DOCS_HTML_DIR} 8080"
+    WORKING_DIRECTORY ${DOCS_SOURCE_DIR}
+    COMMENT "Building documentation via make_docs.py"
+    VERBATIM
+)
+
+# Make documentation depend on python-package if available
+if(TARGET python-package)
+    add_dependencies(documentation python-package)
+    message(STATUS "Documentation will use cloudViewer from python-package target")
 else()
-    message(STATUS "No documentation targets enabled")
+    message(WARNING "python-package target not found.")
+    message(WARNING "Documentation may not include Python API if cloudViewer is not installed.")
+    message(WARNING "To fix: Build with -DBUILD_PYTHON_MODULE=ON")
 endif()
+
+# Legacy convenience targets (for backward compatibility)
+# These all delegate to the main 'documentation' target
+
+# Doxygen-only build (actually builds everything via make_docs.py)
+add_custom_target(doxygen
+    COMMAND ${CMAKE_COMMAND} --build . --target documentation
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Building documentation (doxygen target is an alias)"
+)
+
+# Sphinx-only build (actually builds everything via make_docs.py)
+add_custom_target(sphinx-html
+    COMMAND ${CMAKE_COMMAND} --build . --target documentation
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Building documentation (sphinx-html target is an alias)"
+)
+
+# Clean target
+add_custom_target(doc-clean
+    COMMAND ${CMAKE_COMMAND} -E echo "🗑️  Cleaning documentation build artifacts..."
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${DOCS_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${DOCS_BUILD_DIR}/doxygen
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${DOCS_SOURCE_DIR}/doxygen
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${DOCS_SOURCE_DIR}/source/python_api
+    COMMAND ${CMAKE_COMMAND} -E echo "✅ Cleaned:"
+    COMMAND ${CMAKE_COMMAND} -E echo "   - ${DOCS_OUTPUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E echo "   - ${DOCS_BUILD_DIR}/doxygen"
+    COMMAND ${CMAKE_COMMAND} -E echo "   - ${DOCS_SOURCE_DIR}/doxygen (legacy)"
+    COMMAND ${CMAKE_COMMAND} -E echo "   - ${DOCS_SOURCE_DIR}/source/python_api"
+    WORKING_DIRECTORY ${DOCS_SOURCE_DIR}
+    COMMENT "Cleaning documentation build artifacts"
+)
 
 # Install documentation (optional)
-if(BUILD_SPHINX AND EXISTS ${SPHINX_OUTPUT_DIR})
-    install(DIRECTORY ${SPHINX_OUTPUT_DIR}/
+if(EXISTS ${DOCS_HTML_DIR})
+    install(DIRECTORY ${DOCS_HTML_DIR}/
         DESTINATION share/doc/acloudviewer
         COMPONENT documentation
         OPTIONAL
     )
 endif()
 
-# Clean target
-add_custom_target(doc-clean
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${DOCS_OUTPUT_DIR}
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${DOXYGEN_OUTPUT_DIR}
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${DOCS_BUILD_DIR}/.doctrees
-    COMMENT "Cleaning documentation build artifacts"
-)
-
 # Help message
 add_custom_target(doc-help
-    COMMAND ${CMAKE_COMMAND} -E echo "ACloudViewer Documentation Build Targets:"
-    COMMAND ${CMAKE_COMMAND} -E echo "  documentation  - Build all documentation (default)"
-    COMMAND ${CMAKE_COMMAND} -E echo "  doxygen        - Build C++ API documentation only"
-    COMMAND ${CMAKE_COMMAND} -E echo "  sphinx-html    - Build Sphinx HTML documentation only"
-    COMMAND ${CMAKE_COMMAND} -E echo "  sphinx-latex   - Build Sphinx LaTeX documentation (if enabled)"
-    COMMAND ${CMAKE_COMMAND} -E echo "  doc-clean      - Clean documentation build artifacts"
+    COMMAND ${CMAKE_COMMAND} -E echo "═══════════════════════════════════════════════════════════════"
+    COMMAND ${CMAKE_COMMAND} -E echo "ACloudViewer Documentation Build Targets"
+    COMMAND ${CMAKE_COMMAND} -E echo "═══════════════════════════════════════════════════════════════"
     COMMAND ${CMAKE_COMMAND} -E echo ""
-    COMMAND ${CMAKE_COMMAND} -E echo "Output directories:"
-    COMMAND ${CMAKE_COMMAND} -E echo "  HTML:    ${SPHINX_OUTPUT_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E echo "  Doxygen: ${DOXYGEN_OUTPUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E echo "Main target:"
+    COMMAND ${CMAKE_COMMAND} -E echo "  documentation  - Build all documentation (calls make_docs.py)"
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "Legacy aliases (all call 'documentation'):"
+    COMMAND ${CMAKE_COMMAND} -E echo "  doxygen        - Alias for documentation"
+    COMMAND ${CMAKE_COMMAND} -E echo "  sphinx-html    - Alias for documentation"
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "Utility targets:"
+    COMMAND ${CMAKE_COMMAND} -E echo "  doc-clean      - Clean documentation artifacts"
+    COMMAND ${CMAKE_COMMAND} -E echo "  doc-help       - Show this message"
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "Output directory:"
+    COMMAND ${CMAKE_COMMAND} -E echo "  ${DOCS_HTML_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "Implementation:"
+    COMMAND ${CMAKE_COMMAND} -E echo "  All targets delegate to make_docs.py for consistency"
+    COMMAND ${CMAKE_COMMAND} -E echo "  Reference: util/ci_utils.sh::build_docs()"
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "═══════════════════════════════════════════════════════════════"
 )
 
+message(STATUS "Documentation build configured:")
+message(STATUS "  - Main target: 'documentation' (calls make_docs.py)")
+message(STATUS "  - HTML output:  ${DOCS_HTML_DIR}")
+message(STATUS "  - Doxygen temp: ${DOCS_DOXYGEN_DIR}")
+message(STATUS "  - Python paths: ${DOC_PYTHONPATH}")
