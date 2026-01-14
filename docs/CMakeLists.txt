@@ -103,6 +103,17 @@ if(BUILD_DOXYGEN)
         VERBATIM
     )
     
+    # Copy static images to source/_static directory
+    # These images are referenced in RST files (like donation.png in support.rst)
+    add_custom_command(TARGET doxygen POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "📸 Copying static images to _static directory..."
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${DOCS_SOURCE_DIR}/images/donation.png
+            ${SPHINX_SOURCE_DIR}/_static/donation.png
+        COMMENT "Copying static images (donation.png) to _static"
+        VERBATIM
+    )
+    
     message(STATUS "Doxygen documentation will be built to: ${DOXYGEN_OUTPUT_DIR}")
 endif()
 

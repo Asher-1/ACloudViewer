@@ -162,7 +162,24 @@ this [guide](CONTRIBUTING.md)
 Supporting the project
 ----------------------
 
-If you want to help us in another way, you can make donations via [donorbox](https://asher-1.github.io/ACloudViewer/)
-Thanks!
+If you find ACloudViewer useful, please consider supporting its development:
 
-[![donorbox](docs/images/button-medium-blue.png)](https://asher-1.github.io/ACloudViewer/)
+**💰 Financial Support:**
+
+<div align="center">
+  <a href="https://asher-1.github.io/ACloudViewer/donation.html">
+    <img src="https://img.shields.io/badge/💝_Support_Development-Donate_Now-ff69b4?style=for-the-badge&logo=wechat" alt="Donate">
+  </a>
+  <p><em>Click to view donation options - Thank you for your support! 🙏</em></p>
+</div>
+
+**🌟 Other Ways to Support:**
+
+- ⭐ Star the project on [GitHub](https://github.com/Asher-1/ACloudViewer)
+- 🐛 Report bugs and suggest features
+- 📝 Contribute code or documentation
+- 📢 Share ACloudViewer with others
+
+For more information, see our [Support page](https://asher-1.github.io/ACloudViewer/documentation/resources/support.html).
+
+Thanks for your support!

@@ -11,7 +11,7 @@
 
 #include "core/Device.h"
 #include "core/SizeVector.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 #ifdef BUILD_CUDA_MODULE
 #include "core/CUDAState.cuh"

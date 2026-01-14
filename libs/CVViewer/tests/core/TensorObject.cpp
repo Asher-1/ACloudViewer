@@ -17,7 +17,7 @@
 #include "core/Tensor.h"
 #include "core/TensorList.h"
 #include "core/kernel/Kernel.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace cloudViewer {

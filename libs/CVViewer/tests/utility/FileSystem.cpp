@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "utility/Console.h"
 
 namespace cloudViewer {

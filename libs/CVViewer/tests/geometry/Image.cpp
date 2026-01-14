@@ -8,7 +8,7 @@
 #include <Image.h>
 
 #include "camera/PinholeCameraIntrinsic.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

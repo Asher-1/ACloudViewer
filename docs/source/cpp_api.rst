@@ -8,19 +8,19 @@ Please refer to the following pages for ACloudViewer C++ API.
 Core Documentation
 ------------------
 
-- **Full C++ API documentation**: `ACloudViewer C++ Doxygen Documentation <cpp_api/index.html>`_
+- **Full C++ API documentation**: `ACloudViewer C++ Doxygen Documentation <../cpp_api/index.html>`_
   
   Complete API reference with all classes, functions, and detailed documentation
 
-- **Architecture Overview**: `System Architecture and Modules <cpp_api/overview.html>`_
+- **Architecture Overview**: :doc:`System Architecture and Modules <cpp_api/overview>`
   
   Understanding ACloudViewer's architecture, core modules, and design principles
 
-- **Quick Start Guide**: `C++ Code Examples <cpp_api/quickstart.html>`_
+- **Quick Start Guide**: :doc:`C++ Code Examples <cpp_api/quickstart>`
   
   Get started quickly with practical code examples and CMake integration
 
-- **Plugin System**: `Extending ACloudViewer <cpp_api/plugins.html>`_
+- **Plugin System**: :doc:`Extending ACloudViewer <cpp_api/plugins>`
   
   Learn how to create custom plugins and extend ACloudViewer's functionality
 

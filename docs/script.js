@@ -8,6 +8,7 @@ const translations = {
         'nav.quickstart': 'Quick Start',
         'nav.gallery': 'Gallery',
         'nav.documentation': 'Documentation',
+        'nav.donate': 'Support',
         
         // Hero Section
         'hero.subtitle': 'Modern 3D Data Processing System',
@@ -178,6 +179,7 @@ const translations = {
         'nav.quickstart': '快速开始',
         'nav.gallery': '展示',
         'nav.documentation': '文档',
+        'nav.donate': '支持',
         
         // 首页
         'hero.subtitle': '现代化的3D数据处理系统',

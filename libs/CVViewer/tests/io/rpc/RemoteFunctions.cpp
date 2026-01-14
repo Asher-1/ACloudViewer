@@ -16,7 +16,7 @@
 #include "io/rpc/Connection.h"
 #include "io/rpc/DummyReceiver.h"
 #include "io/rpc/MessageUtils.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 using namespace cloudViewer::io::rpc;
 

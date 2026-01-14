@@ -116,7 +116,8 @@ templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
+# python_api_in contains custom RST files used to override auto-generated docs
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints', 'python_api_in']
 
 # The suffix(es) of source filenames.
 source_suffix = {

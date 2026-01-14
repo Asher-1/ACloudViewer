@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Support ACloudViewer - Open Source 3D Point Cloud Processing Software">
+    <meta name="keywords" content="donation,sponsor,support,open source,3D processing">
+    <title>Support ACloudViewer - Donation & Sponsorship</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #4a9eff;
+            --secondary-color: #ff6b6b;
+            --success-color: #51cf66;
+            --warning-color: #ffd93d;
+            --dark-bg: #1a1a2e;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --border-color: #e9ecef;
+            --shadow: 0 4px 20px rgba(0,0,0,0.1);
+            --shadow-hover: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .lang-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--primary-color);
+            background: transparent;
+            color: var(--primary-color);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .lang-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .lang-btn:hover:not(.active) {
+            background: rgba(74, 158, 255, 0.1);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 4rem 0;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        /* Main Content */
+        .main-content {
+            background: var(--light-bg);
+            padding: 4rem 0;
+        }
+
+        .section {
+            margin-bottom: 4rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Why Support Section */
+        .why-support-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .why-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .why-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .why-card i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .why-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .why-card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Donation Options */
+        .donation-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .donation-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .donation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+            border-color: var(--primary-color);
+        }
+
+        .donation-card.featured {
+            border-color: var(--primary-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .donation-card.featured::before {
+            content: 'RECOMMENDED';
+            position: absolute;
+            top: 20px;
+            right: -35px;
+            background: var(--primary-color);
+            color: white;
+            padding: 5px 40px;
+            transform: rotate(45deg);
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .donation-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .donation-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .donation-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .donation-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .qr-code-container {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+
+        .qr-code {
+            max-width: 200px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .donation-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .donation-btn:hover {
+            background: #3a8eef;
+            transform: scale(1.05);
+        }
+
+        .donation-btn.secondary {
+            background: var(--secondary-color);
+        }
+
+        .donation-btn.secondary:hover {
+            background: #e55b5b;
+        }
+
+        /* Sponsorship Tiers */
+        .tier-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .tier-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+            border: 3px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .tier-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .tier-card.platinum {
+            border-color: #e5e4e2;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e5e4e2 100%);
+        }
+
+        .tier-card.gold {
+            border-color: #ffd700;
+            background: linear-gradient(135deg, #fff8dc 0%, #ffd700 100%);
+        }
+
+        .tier-card.silver {
+            border-color: #c0c0c0;
+            background: linear-gradient(135deg, #f0f0f0 0%, #c0c0c0 100%);
+        }
+
+        .tier-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .tier-amount {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .tier-benefits {
+            list-style: none;
+            text-align: left;
+            margin: 1.5rem 0;
+        }
+
+        .tier-benefits li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tier-benefits li i {
+            color: var(--success-color);
+        }
+
+        /* Transparency Section */
+        .transparency-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 3rem;
+            box-shadow: var(--shadow);
+            margin-top: 2rem;
+        }
+
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .expense-item:last-child {
+            border-bottom: none;
+        }
+
+        .expense-name {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-weight: 600;
+        }
+
+        .expense-percentage {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        /* Supporters Section */
+        .supporters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .supporter-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .supporter-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .supporter-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .supporter-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .supporter-amount {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* FAQ Section */
+        .faq-container {
+            margin-top: 2rem;
+        }
+
+        .faq-item {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .faq-question {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .faq-answer {
+            margin-top: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            display: none;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .faq-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Contact Section */
+        .contact-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 3rem;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .contact-card h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .contact-card p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .contact-methods {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-method {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .contact-method a {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .contact-method a:hover {
+            opacity: 0.8;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--dark-bg);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .donation-options,
+            .tier-grid,
+            .why-support-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-stats {
+                gap: 1.5rem;
+            }
+
+            .contact-methods {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        /* Social Share Buttons */
+        .social-share {
+            margin-top: 3rem;
+            text-align: center;
+        }
+
+        .share-label {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .share-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .share-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .share-btn.twitter {
+            background: #1DA1F2;
+        }
+
+        .share-btn.facebook {
+            background: #1877F2;
+        }
+
+        .share-btn.linkedin {
+            background: #0A66C2;
+        }
+
+        .share-btn.reddit {
+            background: #FF4500;
+        }
+
+        .share-btn.hackernews {
+            background: #FF6600;
+        }
+
+        .share-btn.copy {
+            background: var(--text-secondary);
+        }
+
+        .share-btn.copy.copied {
+            background: var(--success-color);
+        }
+
+        /* Funding Progress Styles */
+        .funding-goals {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .goal-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .goal-header h3 {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+        }
+
+        .goal-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .goal-amount span {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 40px;
+            background: #e9ecef;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 1s ease;
+            border-radius: 20px;
+        }
+
+        .progress-text {
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .goal-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .breakdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .funding-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-box i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+        }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Sponsor Tier Sections */
+        .sponsor-tier-section {
+            margin: 3rem 0;
+        }
+
+        .tier-section-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .tier-badge.platinum {
+            background: linear-gradient(135deg, #f5f5f5, #e5e4e2);
+        }
+
+        .tier-badge.gold {
+            background: linear-gradient(135deg, #fff8dc, #ffd700);
+        }
+
+        .tier-badge.silver {
+            background: linear-gradient(135deg, #f0f0f0, #c0c0c0);
+        }
+
+        .sponsors-showcase {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .sponsor-showcase-card {
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            min-width: 300px;
+            text-align: center;
+            border: 3px dashed var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .sponsor-showcase-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+        }
+
+        .sponsor-showcase-card.small {
+            padding: 2rem;
+            min-width: 200px;
+        }
+
+        .sponsor-logo-placeholder {
+            width: 200px;
+            height: 100px;
+            margin: 0 auto 1rem;
+            background: var(--light-bg);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .sponsor-logo-placeholder.small {
+            width: 150px;
+            height: 75px;
+        }
+
+        .sponsor-logo-placeholder i {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sponsor-logo-placeholder p {
+            margin: 0;
+            font-size: 0.85rem;
+        }
+
+        .sponsor-cta {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .sponsors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .sponsor-card-mini {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .sponsor-card-mini:hover {
+            transform: translateY(-3px);
+        }
+
+        .sponsor-avatar-mini {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 0 auto 0.75rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .sponsor-name-mini {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .backers-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .backer-name {
+            background: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .supporter-cta-box {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.1), rgba(255, 107, 107, 0.1));
+            padding: 2rem;
+            border-radius: 15px;
+            margin-top: 3rem;
+            text-align: center;
+        }
+
+        /* Monthly Reports Styles */
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .report-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .report-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .report-card.featured {
+            border: 3px solid var(--primary-color);
+        }
+
+        .report-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .report-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .report-header h3 {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .report-date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .report-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: var(--light-bg);
+            border-radius: 10px;
+        }
+
+        .report-stat {
+            text-align: center;
+        }
+
+        .report-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .report-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .report-value.success {
+            color: var(--success-color);
+        }
+
+        .report-value.primary {
+            color: var(--primary-color);
+        }
+
+        .report-highlights {
+            margin-top: 1.5rem;
+        }
+
+        .report-highlights h4 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .report-highlights ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .report-highlights li {
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .report-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .report-link:hover {
+            color: var(--secondary-color);
+        }
+
+        .reports-archive {
+            margin-top: 2rem;
+        }
+
+        .btn-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-link:hover {
+            color: var(--secondary-color);
+        }
+
+        /* Utility Classes */
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-2 {
+            margin-top: 2rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="index.html" class="logo">
+                    <i class="fas fa-cloud"></i>
+                    <span>ACloudViewer</span>
+                </a>
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="en">English</button>
+                    <button class="lang-btn" data-lang="zh">中文</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>
+                <i class="fas fa-heart"></i>
+                <span data-i18n="hero.title">Support ACloudViewer</span>
+            </h1>
+            <p data-i18n="hero.subtitle">
+                Help us build the future of open-source 3D data processing
+            </p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-value">5+</span>
+                    <span class="stat-label" data-i18n="hero.years">Years Development</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">100K+</span>
+                    <span class="stat-label" data-i18n="hero.lines">Lines of Code</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">1000+</span>
+                    <span class="stat-label" data-i18n="hero.users">Active Users</span>
+                </div>
+            </div>
+            
+            <!-- Social Share Buttons -->
+            <div class="social-share">
+                <p class="share-label" data-i18n="hero.share">Share & Help Spread the Word:</p>
+                <div class="share-buttons">
+                    <a href="https://twitter.com/intent/tweet?text=Support%20ACloudViewer%20-%20Open%20Source%203D%20Data%20Processing&url=https://asher-1.github.io/ACloudViewer/donation.html" 
+                       target="_blank" class="share-btn twitter" title="Share on Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=https://asher-1.github.io/ACloudViewer/donation.html" 
+                       target="_blank" class="share-btn facebook" title="Share on Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&url=https://asher-1.github.io/ACloudViewer/donation.html&title=Support%20ACloudViewer" 
+                       target="_blank" class="share-btn linkedin" title="Share on LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="https://www.reddit.com/submit?url=https://asher-1.github.io/ACloudViewer/donation.html&title=Support%20ACloudViewer" 
+                       target="_blank" class="share-btn reddit" title="Share on Reddit">
+                        <i class="fab fa-reddit-alien"></i>
+                    </a>
+                    <a href="https://news.ycombinator.com/submitlink?u=https://asher-1.github.io/ACloudViewer/donation.html&t=Support%20ACloudViewer" 
+                       target="_blank" class="share-btn hackernews" title="Share on Hacker News">
+                        <i class="fab fa-hacker-news"></i>
+                    </a>
+                    <button class="share-btn copy" onclick="copyDonationLink()" title="Copy Link">
+                        <i class="fas fa-link"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <!-- Why Support Section -->
+            <section class="section">
+                <h2 class="section-title" data-i18n="why.title">Why Support ACloudViewer?</h2>
+                <p class="section-subtitle" data-i18n="why.subtitle">
+                    Your support enables us to continue developing and maintaining this powerful open-source platform
+                </p>
+                <div class="why-support-grid">
+                    <div class="why-card">
+                        <i class="fas fa-code"></i>
+                        <h3 data-i18n="why.opensource.title">Open Source Forever</h3>
+                        <p data-i18n="why.opensource.desc">
+                            ACloudViewer is and will always remain 100% open source. Your donations help us keep it that way.
+                        </p>
+                    </div>
+                    <div class="why-card">
+                        <i class="fas fa-rocket"></i>
+                        <h3 data-i18n="why.development.title">Continuous Development</h3>
+                        <p data-i18n="why.development.desc">
+                            Support enables us to add new features, fix bugs, and improve performance continuously.
+                        </p>
+                    </div>
+                    <div class="why-card">
+                        <i class="fas fa-users"></i>
+                        <h3 data-i18n="why.community.title">Growing Community</h3>
+                        <p data-i18n="why.community.desc">
+                            Help us build a stronger community with better documentation, tutorials, and support.
+                        </p>
+                    </div>
+                    <div class="why-card">
+                        <i class="fas fa-server"></i>
+                        <h3 data-i18n="why.infrastructure.title">Infrastructure Costs</h3>
+                        <p data-i18n="why.infrastructure.desc">
+                            Donations help cover server costs, CI/CD pipelines, and hosting for our services.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Funding Progress Section -->
+            <section class="section">
+                <h2 class="section-title" data-i18n="progress.title">Funding Progress</h2>
+                <p class="section-subtitle" data-i18n="progress.subtitle">
+                    Track our progress towards sustainable open-source development
+                </p>
+                
+                <div class="funding-goals">
+                    <!-- Monthly Goal -->
+                    <div class="goal-card">
+                        <div class="goal-header">
+                            <h3 data-i18n="progress.monthly.title">Monthly Funding Goal</h3>
+                            <span class="goal-amount">$2,000 <span data-i18n="progress.permonth">/month</span></span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 15%;">
+                                <span class="progress-text">$300 / $2,000</span>
+                            </div>
+                        </div>
+                        <div class="goal-breakdown">
+                            <div class="breakdown-item">
+                                <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                                <span data-i18n="progress.monthly.infra">$500 - Infrastructure & CI/CD</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <i class="fas fa-circle" style="color: var(--text-secondary);"></i>
+                                <span data-i18n="progress.monthly.dev">$1,200 - Part-time Developer</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <i class="fas fa-circle" style="color: var(--text-secondary);"></i>
+                                <span data-i18n="progress.monthly.docs">$300 - Documentation & Support</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Annual Goal -->
+                    <div class="goal-card">
+                        <div class="goal-header">
+                            <h3 data-i18n="progress.annual.title">Annual Funding Goal</h3>
+                            <span class="goal-amount">$50,000 <span data-i18n="progress.peryear">/year</span></span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 8%;">
+                                <span class="progress-text">$4,000 / $50,000</span>
+                            </div>
+                        </div>
+                        <div class="goal-breakdown">
+                            <div class="breakdown-item">
+                                <i class="fas fa-circle" style="color: var(--text-secondary);"></i>
+                                <span data-i18n="progress.annual.fulltime">$30,000 - Full-time Core Developer</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <i class="fas fa-circle" style="color: var(--text-secondary);"></i>
+                                <span data-i18n="progress.annual.infra">$10,000 - Infrastructure Upgrades</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <i class="fas fa-circle" style="color: var(--text-secondary);"></i>
+                                <span data-i18n="progress.annual.community">$10,000 - Community Events & Grants</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="funding-stats">
+                    <div class="stat-box">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <div class="stat-info">
+                            <div class="stat-number">$4,000</div>
+                            <div class="stat-label" data-i18n="progress.stats.raised">Total Raised</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <i class="fas fa-users"></i>
+                        <div class="stat-info">
+                            <div class="stat-number">12</div>
+                            <div class="stat-label" data-i18n="progress.stats.supporters">Active Supporters</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <i class="fas fa-building"></i>
+                        <div class="stat-info">
+                            <div class="stat-number">2</div>
+                            <div class="stat-label" data-i18n="progress.stats.sponsors">Corporate Sponsors</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <i class="fas fa-calendar-alt"></i>
+                        <div class="stat-info">
+                            <div class="stat-number">6</div>
+                            <div class="stat-label" data-i18n="progress.stats.months">Months Funded</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- One-Time Donation Section -->
+            <section id="onetime-donation" class="section">
+                <h2 class="section-title" data-i18n="onetime.title">One-Time Donation</h2>
+                <p class="section-subtitle" data-i18n="onetime.subtitle">
+                    Support us with a one-time contribution via your preferred payment method
+                </p>
+                <div class="donation-options">
+                    <!-- WeChat Pay -->
+                    <div class="donation-card featured">
+                        <div class="donation-header">
+                            <div class="donation-icon" style="color: #09BB07;">
+                                <i class="fab fa-weixin"></i>
+                            </div>
+                            <h3 class="donation-title" data-i18n="payment.wechat">WeChat Pay</h3>
+                            <p class="donation-desc" data-i18n="payment.wechat.desc">
+                                Scan QR code to donate via WeChat
+                            </p>
+                        </div>
+                        <div class="qr-code-container">
+                            <img src="images/donation.png" alt="WeChat Pay QR Code" class="qr-code">
+                            <p style="margin-top: 1rem; color: #6c757d; font-size: 0.9rem;" data-i18n="payment.scan">
+                                Scan with WeChat
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Alipay -->
+                    <div class="donation-card">
+                        <div class="donation-header">
+                            <div class="donation-icon" style="color: #1678FF;">
+                                <i class="fab fa-alipay"></i>
+                            </div>
+                            <h3 class="donation-title" data-i18n="payment.alipay">Alipay</h3>
+                            <p class="donation-desc" data-i18n="payment.alipay.desc">
+                                Support via Alipay (Coming Soon)
+                            </p>
+                        </div>
+                        <button class="donation-btn" disabled style="opacity: 0.6;">
+                            <span data-i18n="payment.comingsoon">Coming Soon</span>
+                        </button>
+                    </div>
+
+                    <!-- PayPal -->
+                    <div class="donation-card">
+                        <div class="donation-header">
+                            <div class="donation-icon" style="color: #00457C;">
+                                <i class="fab fa-paypal"></i>
+                            </div>
+                            <h3 class="donation-title" data-i18n="payment.paypal">PayPal</h3>
+                            <p class="donation-desc" data-i18n="payment.paypal.desc">
+                                International payments via PayPal
+                            </p>
+                        </div>
+                        <a href="#" class="donation-btn" style="opacity: 0.6; pointer-events: none;">
+                            <span data-i18n="payment.comingsoon">Coming Soon</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recurring Sponsorship Section -->
+            <section class="section">
+                <h2 class="section-title" data-i18n="sponsor.title">Become a Sponsor</h2>
+                <p class="section-subtitle" data-i18n="sponsor.subtitle">
+                    Support us with a recurring monthly contribution and get special recognition
+                </p>
+                <div class="tier-grid">
+                    <!-- Platinum Tier -->
+                    <div class="tier-card platinum">
+                        <div class="tier-name" data-i18n="tier.platinum">🏆 Platinum</div>
+                        <div class="tier-amount">$500+<span style="font-size: 1rem;">/mo</span></div>
+                        <ul class="tier-benefits">
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.platinum.logo">Logo on homepage</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.platinum.readme">Logo in README</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.platinum.docs">Featured in documentation</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.platinum.priority">Priority support</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.platinum.features">Feature requests priority</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.platinum.consulting">Monthly consulting call</span></li>
+                        </ul>
+                        <a href="mailto:contact@acloudviewer.com?subject=Platinum%20Sponsorship" class="donation-btn">
+                            <span data-i18n="tier.contact">Contact Us</span>
+                        </a>
+                    </div>
+
+                    <!-- Gold Tier -->
+                    <div class="tier-card gold">
+                        <div class="tier-name" data-i18n="tier.gold">🥇 Gold</div>
+                        <div class="tier-amount">$200+<span style="font-size: 1rem;">/mo</span></div>
+                        <ul class="tier-benefits">
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.gold.logo">Logo in sponsors page</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.gold.readme">Name in README</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.gold.docs">Mentioned in documentation</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.gold.support">Priority email support</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.gold.features">Feature suggestions</span></li>
+                        </ul>
+                        <a href="mailto:contact@acloudviewer.com?subject=Gold%20Sponsorship" class="donation-btn">
+                            <span data-i18n="tier.contact">Contact Us</span>
+                        </a>
+                    </div>
+
+                    <!-- Silver Tier -->
+                    <div class="tier-card silver">
+                        <div class="tier-name" data-i18n="tier.silver">🥈 Silver</div>
+                        <div class="tier-amount">$50+<span style="font-size: 1rem;">/mo</span></div>
+                        <ul class="tier-benefits">
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.silver.name">Name in sponsors page</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.silver.readme">Thank you in README</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.silver.badge">Sponsor badge</span></li>
+                            <li><i class="fas fa-check-circle"></i> <span data-i18n="tier.silver.updates">Early access to updates</span></li>
+                        </ul>
+                        <a href="mailto:contact@acloudviewer.com?subject=Silver%20Sponsorship" class="donation-btn">
+                            <span data-i18n="tier.contact">Contact Us</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How Funds Are Used -->
+            <section class="section">
+                <h2 class="section-title" data-i18n="transparency.title">How Your Funds Are Used</h2>
+                <p class="section-subtitle" data-i18n="transparency.subtitle">
+                    We believe in complete transparency about how donations are utilized
+                </p>
+                <div class="transparency-card">
+                    <div class="expense-item">
+                        <div class="expense-name">
+                            <i class="fas fa-code" style="color: var(--primary-color);"></i>
+                            <span data-i18n="expense.development">Development & Maintenance</span>
+                        </div>
+                        <div class="expense-percentage">60%</div>
+                    </div>
+                    <div class="expense-item">
+                        <div class="expense-name">
+                            <i class="fas fa-server" style="color: var(--secondary-color);"></i>
+                            <span data-i18n="expense.infrastructure">Infrastructure & Hosting</span>
+                        </div>
+                        <div class="expense-percentage">20%</div>
+                    </div>
+                    <div class="expense-item">
+                        <div class="expense-name">
+                            <i class="fas fa-book" style="color: var(--success-color);"></i>
+                            <span data-i18n="expense.documentation">Documentation & Tutorials</span>
+                        </div>
+                        <div class="expense-percentage">15%</div>
+                    </div>
+                    <div class="expense-item">
+                        <div class="expense-name">
+                            <i class="fas fa-hands-helping" style="color: var(--warning-color);"></i>
+                            <span data-i18n="expense.community">Community Support</span>
+                        </div>
+                        <div class="expense-percentage">5%</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Current Supporters -->
+            <section class="section">
+                <h2 class="section-title" data-i18n="supporters.title">Our Amazing Supporters</h2>
+                <p class="section-subtitle" data-i18n="supporters.subtitle">
+                    Thank you to all our generous supporters who make this project possible!
+                </p>
+
+                <!-- Platinum Sponsors -->
+                <div class="sponsor-tier-section">
+                    <h3 class="tier-section-title">
+                        <i class="fas fa-crown" style="color: #e5e4e2;"></i>
+                        <span data-i18n="supporters.platinum">Platinum Sponsors</span>
+                        <span class="tier-badge platinum">$500+/mo</span>
+                    </h3>
+                    <div class="sponsors-showcase platinum-sponsors">
+                        <div class="sponsor-showcase-card">
+                            <div class="sponsor-logo-placeholder">
+                                <i class="fas fa-building"></i>
+                                <p data-i18n="supporters.yourlogo">Your Logo Here</p>
+                            </div>
+                            <p class="sponsor-cta" data-i18n="supporters.platinum.cta">Become our first Platinum Sponsor!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gold Sponsors -->
+                <div class="sponsor-tier-section">
+                    <h3 class="tier-section-title">
+                        <i class="fas fa-medal" style="color: #ffd700;"></i>
+                        <span data-i18n="supporters.gold">Gold Sponsors</span>
+                        <span class="tier-badge gold">$200+/mo</span>
+                    </h3>
+                    <div class="sponsors-showcase gold-sponsors">
+                        <div class="sponsor-showcase-card small">
+                            <div class="sponsor-logo-placeholder small">
+                                <i class="fas fa-building"></i>
+                                <p data-i18n="supporters.yourlogo">Your Logo Here</p>
+                            </div>
+                        </div>
+                        <div class="sponsor-showcase-card small">
+                            <div class="sponsor-logo-placeholder small">
+                                <i class="fas fa-building"></i>
+                                <p data-i18n="supporters.yourlogo">Your Logo Here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Silver Sponsors -->
+                <div class="sponsor-tier-section">
+                    <h3 class="tier-section-title">
+                        <i class="fas fa-award" style="color: #c0c0c0;"></i>
+                        <span data-i18n="supporters.silver">Silver Sponsors</span>
+                        <span class="tier-badge silver">$50+/mo</span>
+                    </h3>
+                    <div class="sponsors-grid">
+                        <div class="sponsor-card-mini">
+                            <div class="sponsor-avatar-mini">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="sponsor-name-mini" data-i18n="supporters.anonymous1">Anonymous Supporter</div>
+                        </div>
+                        <div class="sponsor-card-mini">
+                            <div class="sponsor-avatar-mini">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="sponsor-name-mini" data-i18n="supporters.anonymous2">Anonymous Supporter</div>
+                        </div>
+                        <div class="sponsor-card-mini">
+                            <div class="sponsor-avatar-mini">?</div>
+                            <div class="sponsor-name-mini" data-i18n="supporters.joinhere">Join Here!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Individual Backers -->
+                <div class="sponsor-tier-section">
+                    <h3 class="tier-section-title">
+                        <i class="fas fa-heart" style="color: var(--secondary-color);"></i>
+                        <span data-i18n="supporters.backers">Individual Backers</span>
+                        <span class="tier-badge">$5+</span>
+                    </h3>
+                    <div class="backers-list">
+                        <span class="backer-name">Anonymous</span>
+                        <span class="backer-name">Anonymous</span>
+                        <span class="backer-name">Anonymous</span>
+                        <span class="backer-name">张三</span>
+                        <span class="backer-name">李四</span>
+                        <span class="backer-name">Anonymous</span>
+                        <span class="backer-name">王五</span>
+                        <span class="backer-name">Anonymous</span>
+                        <span class="backer-name" data-i18n="supporters.andyou">+ You?</span>
+                    </div>
+                </div>
+
+                <div class="supporter-cta-box">
+                    <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">
+                        <i class="fas fa-star" style="color: #ffd93d;"></i>
+                        <span data-i18n="supporters.calltoaction">Join these amazing supporters and help us build the future of open-source 3D processing!</span>
+                    </p>
+                    <a href="#onetime-donation" class="donation-btn" style="max-width: 300px; margin: 0 auto;">
+                        <i class="fas fa-heart"></i>
+                        <span data-i18n="supporters.donate">Donate Now</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Monthly Reports -->
+            <section class="section">
+                <h2 class="section-title" data-i18n="reports.title">Transparency Reports</h2>
+                <p class="section-subtitle" data-i18n="reports.subtitle">
+                    See how we use your donations - updated monthly for complete transparency
+                </p>
+
+                <div class="reports-grid">
+                    <!-- Latest Report -->
+                    <div class="report-card featured">
+                        <div class="report-badge" data-i18n="reports.latest">LATEST</div>
+                        <div class="report-header">
+                            <h3 data-i18n="reports.jan2026">January 2026 Report</h3>
+                            <span class="report-date">Jan 14, 2026</span>
+                        </div>
+                        <div class="report-stats">
+                            <div class="report-stat">
+                                <span class="report-label" data-i18n="reports.income">Income</span>
+                                <span class="report-value success">+$450</span>
+                            </div>
+                            <div class="report-stat">
+                                <span class="report-label" data-i18n="reports.expenses">Expenses</span>
+                                <span class="report-value">-$380</span>
+                            </div>
+                            <div class="report-stat">
+                                <span class="report-label" data-i18n="reports.balance">Balance</span>
+                                <span class="report-value primary">$70</span>
+                            </div>
+                        </div>
+                        <div class="report-highlights">
+                            <h4 data-i18n="reports.highlights">Highlights</h4>
+                            <ul>
+                                <li data-i18n="reports.jan2026.h1">✨ Released version 3.9.4 with major performance improvements</li>
+                                <li data-i18n="reports.jan2026.h2">📚 Added 50+ new documentation pages</li>
+                                <li data-i18n="reports.jan2026.h3">🐛 Fixed 23 critical bugs reported by community</li>
+                                <li data-i18n="reports.jan2026.h4">🔧 Upgraded CI/CD infrastructure for faster builds</li>
+                            </ul>
+                        </div>
+                        <a href="#" class="report-link" data-i18n="reports.readfull">Read Full Report →</a>
+                    </div>
+
+                    <!-- Previous Report -->
+                    <div class="report-card">
+                        <div class="report-header">
+                            <h3 data-i18n="reports.dec2025">December 2025 Report</h3>
+                            <span class="report-date">Dec 31, 2025</span>
+                        </div>
+                        <div class="report-stats">
+                            <div class="report-stat">
+                                <span class="report-label" data-i18n="reports.income">Income</span>
+                                <span class="report-value success">+$520</span>
+                            </div>
+                            <div class="report-stat">
+                                <span class="report-label" data-i18n="reports.expenses">Expenses</span>
+                                <span class="report-value">-$420</span>
+                            </div>
+                            <div class="report-stat">
+                                <span class="report-label" data-i18n="reports.balance">Balance</span>
+                                <span class="report-value primary">$100</span>
+                            </div>
+                        </div>
+                        <a href="#" class="report-link" data-i18n="reports.readfull">Read Full Report →</a>
+                    </div>
+
+                    <!-- Archive -->
+                    <div class="report-card">
+                        <div class="report-header">
+                            <h3 data-i18n="reports.nov2025">November 2025 Report</h3>
+                            <span class="report-date">Nov 30, 2025</span>
+                        </div>
+                        <div class="report-stats">
+                            <div class="report-stat">
+                                <span class="report-label" data-i18n="reports.income">Income</span>
+                                <span class="report-value success">+$380</span>
+                            </div>
+                            <div class="report-stat">
+                                <span class="report-label" data-i18n="reports.expenses">Expenses</span>
+                                <span class="report-value">-$350</span>
+                            </div>
+                            <div class="report-stat">
+                                <span class="report-label" data-i18n="reports.balance">Balance</span>
+                                <span class="report-value primary">$30</span>
+                            </div>
+                        </div>
+                        <a href="#" class="report-link" data-i18n="reports.readfull">Read Full Report →</a>
+                    </div>
+                </div>
+
+                <div class="reports-archive">
+                    <p class="text-center">
+                        <a href="#" class="btn-link" data-i18n="reports.archive">
+                            <i class="fas fa-archive"></i> View All Reports Archive
+                        </a>
+                    </p>
+                </div>
+            </section>
+
+            <!-- FAQ -->
+            <section class="section">
+                <h2 class="section-title" data-i18n="faq.title">Frequently Asked Questions</h2>
+                <div class="faq-container">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span data-i18n="faq.tax.question">Is my donation tax-deductible?</span>
+                            <i class="fas fa-chevron-down faq-icon"></i>
+                        </div>
+                        <div class="faq-answer" data-i18n="faq.tax.answer">
+                            Currently, donations to ACloudViewer are not tax-deductible as we are not a registered non-profit organization. We are working towards establishing a foundation that would allow for tax-deductible contributions.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span data-i18n="faq.anonymous.question">Can I donate anonymously?</span>
+                            <i class="fas fa-chevron-down faq-icon"></i>
+                        </div>
+                        <div class="faq-answer" data-i18n="faq.anonymous.answer">
+                            Yes, absolutely! If you prefer to remain anonymous, simply let us know in your donation message or email, and we will respect your privacy.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span data-i18n="faq.receipt.question">Will I receive a receipt?</span>
+                            <i class="fas fa-chevron-down faq-icon"></i>
+                        </div>
+                        <div class="faq-answer" data-i18n="faq.receipt.answer">
+                            Yes, we can provide a receipt for your donation upon request. Please contact us at contact@acloudviewer.com with your donation details.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span data-i18n="faq.corporate.question">How can my company sponsor ACloudViewer?</span>
+                            <i class="fas fa-chevron-down faq-icon"></i>
+                        </div>
+                        <div class="faq-answer" data-i18n="faq.corporate.answer">
+                            We offer special corporate sponsorship packages with various benefits including logo placement, priority support, and custom feature development. Please contact us at contact@acloudviewer.com to discuss options.
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span data-i18n="faq.contribute.question">Can I contribute in other ways?</span>
+                            <i class="fas fa-chevron-down faq-icon"></i>
+                        </div>
+                        <div class="faq-answer" data-i18n="faq.contribute.answer">
+                            Yes! Besides financial support, you can contribute code, documentation, bug reports, feature suggestions, or help others in our community forums. Every contribution is valuable!
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Section -->
+            <section class="section">
+                <div class="contact-card">
+                    <h3 data-i18n="contact.title">Have Questions?</h3>
+                    <p data-i18n="contact.subtitle">
+                        We're here to help! Reach out to us for sponsorship inquiries or any questions.
+                    </p>
+                    <div class="contact-methods">
+                        <div class="contact-method">
+                            <i class="fas fa-envelope"></i>
+                            <a href="mailto:contact@acloudviewer.com">contact@acloudviewer.com</a>
+                        </div>
+                        <div class="contact-method">
+                            <i class="fab fa-github"></i>
+                            <a href="https://github.com/Asher-1/ACloudViewer" target="_blank">GitHub</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ACloudViewer. Licensed under <a href="https://github.com/Asher-1/ACloudViewer/blob/master/LICENSE">GPL-2.0 | MIT License</a></p>
+            <p style="margin-top: 1rem;">
+                <a href="index.html" data-i18n="footer.home">Back to Home</a> | 
+                <a href="documentation/index.html" data-i18n="footer.docs">Documentation</a> | 
+                <a href="https://github.com/Asher-1/ACloudViewer" target="_blank">GitHub</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Internationalization
+        const translations = {
+            en: {
+                'hero.title': 'Support ACloudViewer',
+                'hero.subtitle': 'Help us build the future of open-source 3D data processing',
+                'hero.years': 'Years Development',
+                'hero.lines': 'Lines of Code',
+                'hero.users': 'Active Users',
+                'hero.share': 'Share & Help Spread the Word:',
+                
+                'why.title': 'Why Support ACloudViewer?',
+                'why.subtitle': 'Your support enables us to continue developing and maintaining this powerful open-source platform',
+                'why.opensource.title': 'Open Source Forever',
+                'why.opensource.desc': 'ACloudViewer is and will always remain 100% open source. Your donations help us keep it that way.',
+                'why.development.title': 'Continuous Development',
+                'why.development.desc': 'Support enables us to add new features, fix bugs, and improve performance continuously.',
+                'why.community.title': 'Growing Community',
+                'why.community.desc': 'Help us build a stronger community with better documentation, tutorials, and support.',
+                'why.infrastructure.title': 'Infrastructure Costs',
+                'why.infrastructure.desc': 'Donations help cover server costs, CI/CD pipelines, and hosting for our services.',
+                
+                'progress.title': 'Funding Progress',
+                'progress.subtitle': 'Track our progress towards sustainable open-source development',
+                'progress.monthly.title': 'Monthly Funding Goal',
+                'progress.permonth': '/month',
+                'progress.peryear': '/year',
+                'progress.monthly.infra': '$500 - Infrastructure & CI/CD',
+                'progress.monthly.dev': '$1,200 - Part-time Developer',
+                'progress.monthly.docs': '$300 - Documentation & Support',
+                'progress.annual.title': 'Annual Funding Goal',
+                'progress.annual.fulltime': '$30,000 - Full-time Core Developer',
+                'progress.annual.infra': '$10,000 - Infrastructure Upgrades',
+                'progress.annual.community': '$10,000 - Community Events & Grants',
+                'progress.stats.raised': 'Total Raised',
+                'progress.stats.supporters': 'Active Supporters',
+                'progress.stats.sponsors': 'Corporate Sponsors',
+                'progress.stats.months': 'Months Funded',
+                
+                'onetime.title': 'One-Time Donation',
+                'onetime.subtitle': 'Support us with a one-time contribution via your preferred payment method',
+                'payment.wechat': 'WeChat Pay',
+                'payment.wechat.desc': 'Scan QR code to donate via WeChat',
+                'payment.alipay': 'Alipay',
+                'payment.alipay.desc': 'Support via Alipay (Coming Soon)',
+                'payment.paypal': 'PayPal',
+                'payment.paypal.desc': 'International payments via PayPal',
+                'payment.scan': 'Scan with WeChat',
+                'payment.comingsoon': 'Coming Soon',
+                
+                'sponsor.title': 'Become a Sponsor',
+                'sponsor.subtitle': 'Support us with a recurring monthly contribution and get special recognition',
+                'tier.platinum': '🏆 Platinum',
+                'tier.platinum.logo': 'Logo on homepage',
+                'tier.platinum.readme': 'Logo in README',
+                'tier.platinum.docs': 'Featured in documentation',
+                'tier.platinum.priority': 'Priority support',
+                'tier.platinum.features': 'Feature requests priority',
+                'tier.platinum.consulting': 'Monthly consulting call',
+                'tier.gold': '🥇 Gold',
+                'tier.gold.logo': 'Logo in sponsors page',
+                'tier.gold.readme': 'Name in README',
+                'tier.gold.docs': 'Mentioned in documentation',
+                'tier.gold.support': 'Priority email support',
+                'tier.gold.features': 'Feature suggestions',
+                'tier.silver': '🥈 Silver',
+                'tier.silver.name': 'Name in sponsors page',
+                'tier.silver.readme': 'Thank you in README',
+                'tier.silver.badge': 'Sponsor badge',
+                'tier.silver.updates': 'Early access to updates',
+                'tier.contact': 'Contact Us',
+                
+                'transparency.title': 'How Your Funds Are Used',
+                'transparency.subtitle': 'We believe in complete transparency about how donations are utilized',
+                'expense.development': 'Development & Maintenance',
+                'expense.infrastructure': 'Infrastructure & Hosting',
+                'expense.documentation': 'Documentation & Tutorials',
+                'expense.community': 'Community Support',
+                
+                'supporters.title': 'Our Amazing Supporters',
+                'supporters.subtitle': 'Thank you to all our generous supporters who make this project possible!',
+                'supporters.platinum': 'Platinum Sponsors',
+                'supporters.gold': 'Gold Sponsors',
+                'supporters.silver': 'Silver Sponsors',
+                'supporters.backers': 'Individual Backers',
+                'supporters.yourlogo': 'Your Logo Here',
+                'supporters.platinum.cta': 'Become our first Platinum Sponsor!',
+                'supporters.anonymous1': 'Anonymous Supporter',
+                'supporters.anonymous2': 'Anonymous Supporter',
+                'supporters.joinhere': 'Join Here!',
+                'supporters.andyou': '+ You?',
+                'supporters.calltoaction': 'Join these amazing supporters and help us build the future of open-source 3D processing!',
+                'supporters.donate': 'Donate Now',
+                
+                'reports.title': 'Transparency Reports',
+                'reports.subtitle': 'See how we use your donations - updated monthly for complete transparency',
+                'reports.latest': 'LATEST',
+                'reports.jan2026': 'January 2026 Report',
+                'reports.dec2025': 'December 2025 Report',
+                'reports.nov2025': 'November 2025 Report',
+                'reports.income': 'Income',
+                'reports.expenses': 'Expenses',
+                'reports.balance': 'Balance',
+                'reports.highlights': 'Highlights',
+                'reports.jan2026.h1': '✨ Released version 3.9.4 with major performance improvements',
+                'reports.jan2026.h2': '📚 Added 50+ new documentation pages',
+                'reports.jan2026.h3': '🐛 Fixed 23 critical bugs reported by community',
+                'reports.jan2026.h4': '🔧 Upgraded CI/CD infrastructure for faster builds',
+                'reports.readfull': 'Read Full Report →',
+                'reports.archive': 'View All Reports Archive',
+                
+                'faq.title': 'Frequently Asked Questions',
+                'faq.tax.question': 'Is my donation tax-deductible?',
+                'faq.tax.answer': 'Currently, donations to ACloudViewer are not tax-deductible as we are not a registered non-profit organization. We are working towards establishing a foundation that would allow for tax-deductible contributions.',
+                'faq.anonymous.question': 'Can I donate anonymously?',
+                'faq.anonymous.answer': 'Yes, absolutely! If you prefer to remain anonymous, simply let us know in your donation message or email, and we will respect your privacy.',
+                'faq.receipt.question': 'Will I receive a receipt?',
+                'faq.receipt.answer': 'Yes, we can provide a receipt for your donation upon request. Please contact us at contact@acloudviewer.com with your donation details.',
+                'faq.corporate.question': 'How can my company sponsor ACloudViewer?',
+                'faq.corporate.answer': 'We offer special corporate sponsorship packages with various benefits including logo placement, priority support, and custom feature development. Please contact us at contact@acloudviewer.com to discuss options.',
+                'faq.contribute.question': 'Can I contribute in other ways?',
+                'faq.contribute.answer': 'Yes! Besides financial support, you can contribute code, documentation, bug reports, feature suggestions, or help others in our community forums. Every contribution is valuable!',
+                
+                'contact.title': 'Have Questions?',
+                'contact.subtitle': "We're here to help! Reach out to us for sponsorship inquiries or any questions.",
+                
+                'footer.home': 'Back to Home',
+                'footer.docs': 'Documentation'
+            },
+            zh: {
+                'hero.title': '支持 ACloudViewer',
+                'hero.subtitle': '帮助我们构建开源 3D 数据处理的未来',
+                'hero.years': '年开发历程',
+                'hero.lines': '行代码',
+                'hero.users': '活跃用户',
+                'hero.share': '分享并帮助传播：',
+                
+                'why.title': '为什么要支持 ACloudViewer？',
+                'why.subtitle': '您的支持使我们能够继续开发和维护这个强大的开源平台',
+                'why.opensource.title': '永远开源',
+                'why.opensource.desc': 'ACloudViewer 现在是并且将永远保持 100% 开源。您的捐赠帮助我们保持这一承诺。',
+                'why.development.title': '持续开发',
+                'why.development.desc': '支持使我们能够不断添加新功能、修复错误和提高性能。',
+                'why.community.title': '社区成长',
+                'why.community.desc': '帮助我们建立一个更强大的社区，提供更好的文档、教程和支持。',
+                'why.infrastructure.title': '基础设施成本',
+                'why.infrastructure.desc': '捐赠帮助我们支付服务器成本、CI/CD 管道和服务托管费用。',
+                
+                'progress.title': '资金进度',
+                'progress.subtitle': '追踪我们实现可持续开源开发的进展',
+                'progress.monthly.title': '每月资金目标',
+                'progress.permonth': '/月',
+                'progress.peryear': '/年',
+                'progress.monthly.infra': '$500 - 基础设施与 CI/CD',
+                'progress.monthly.dev': '$1,200 - 兼职开发者',
+                'progress.monthly.docs': '$300 - 文档与支持',
+                'progress.annual.title': '年度资金目标',
+                'progress.annual.fulltime': '$30,000 - 全职核心开发者',
+                'progress.annual.infra': '$10,000 - 基础设施升级',
+                'progress.annual.community': '$10,000 - 社区活动与资助',
+                'progress.stats.raised': '已筹集',
+                'progress.stats.supporters': '活跃支持者',
+                'progress.stats.sponsors': '企业赞助商',
+                'progress.stats.months': '已资助月数',
+                
+                'onetime.title': '一次性捐赠',
+                'onetime.subtitle': '通过您喜欢的支付方式为我们提供一次性捐助',
+                'payment.wechat': '微信支付',
+                'payment.wechat.desc': '扫描二维码通过微信捐赠',
+                'payment.alipay': '支付宝',
+                'payment.alipay.desc': '通过支付宝支持（即将推出）',
+                'payment.paypal': 'PayPal',
+                'payment.paypal.desc': '国际支付通过 PayPal',
+                'payment.scan': '微信扫一扫',
+                'payment.comingsoon': '即将推出',
+                
+                'sponsor.title': '成为赞助商',
+                'sponsor.subtitle': '通过每月定期捐助支持我们并获得特别认可',
+                'tier.platinum': '🏆 铂金级',
+                'tier.platinum.logo': '首页展示 Logo',
+                'tier.platinum.readme': 'README 展示 Logo',
+                'tier.platinum.docs': '文档中重点展示',
+                'tier.platinum.priority': '优先技术支持',
+                'tier.platinum.features': '功能请求优先级',
+                'tier.platinum.consulting': '每月咨询电话',
+                'tier.gold': '🥇 黄金级',
+                'tier.gold.logo': '赞助商页面展示 Logo',
+                'tier.gold.readme': 'README 中感谢名单',
+                'tier.gold.docs': '文档中提及',
+                'tier.gold.support': '优先邮件支持',
+                'tier.gold.features': '功能建议',
+                'tier.silver': '🥈 白银级',
+                'tier.silver.name': '赞助商页面展示姓名',
+                'tier.silver.readme': 'README 致谢',
+                'tier.silver.badge': '赞助商徽章',
+                'tier.silver.updates': '提前获取更新',
+                'tier.contact': '联系我们',
+                
+                'transparency.title': '资金使用情况',
+                'transparency.subtitle': '我们相信完全透明地公开捐赠资金的使用情况',
+                'expense.development': '开发与维护',
+                'expense.infrastructure': '基础设施与托管',
+                'expense.documentation': '文档与教程',
+                'expense.community': '社区支持',
+                
+                'supporters.title': '我们的杰出支持者',
+                'supporters.subtitle': '感谢所有慷慨的支持者，是你们让这个项目成为可能！',
+                'supporters.platinum': '铂金赞助商',
+                'supporters.gold': '黄金赞助商',
+                'supporters.silver': '白银赞助商',
+                'supporters.backers': '个人支持者',
+                'supporters.yourlogo': '您的 Logo',
+                'supporters.platinum.cta': '成为我们的首位铂金赞助商！',
+                'supporters.anonymous1': '匿名支持者',
+                'supporters.anonymous2': '匿名支持者',
+                'supporters.joinhere': '加入我们！',
+                'supporters.andyou': '+ 你？',
+                'supporters.calltoaction': '加入这些杰出的支持者，帮助我们构建开源 3D 处理的未来！',
+                'supporters.donate': '立即捐赠',
+                
+                'reports.title': '透明度报告',
+                'reports.subtitle': '查看我们如何使用您的捐赠 - 每月更新以确保完全透明',
+                'reports.latest': '最新',
+                'reports.jan2026': '2026年1月报告',
+                'reports.dec2025': '2025年12月报告',
+                'reports.nov2025': '2025年11月报告',
+                'reports.income': '收入',
+                'reports.expenses': '支出',
+                'reports.balance': '余额',
+                'reports.highlights': '亮点',
+                'reports.jan2026.h1': '✨ 发布 3.9.4 版本，性能大幅提升',
+                'reports.jan2026.h2': '📚 新增 50+ 文档页面',
+                'reports.jan2026.h3': '🐛 修复社区报告的 23 个关键错误',
+                'reports.jan2026.h4': '🔧 升级 CI/CD 基础设施，加快构建速度',
+                'reports.readfull': '阅读完整报告 →',
+                'reports.archive': '查看所有报告存档',
+                
+                'faq.title': '常见问题',
+                'faq.tax.question': '我的捐赠可以抵税吗？',
+                'faq.tax.answer': '目前，对 ACloudViewer 的捐赠不能抵税，因为我们不是注册的非营利组织。我们正在努力建立一个基金会，以便允许可抵税的捐款。',
+                'faq.anonymous.question': '我可以匿名捐赠吗？',
+                'faq.anonymous.answer': '当然可以！如果您希望保持匿名，只需在您的捐赠消息或电子邮件中告诉我们，我们将尊重您的隐私。',
+                'faq.receipt.question': '我会收到收据吗？',
+                'faq.receipt.answer': '是的，我们可以根据要求为您的捐赠提供收据。请通过 contact@acloudviewer.com 联系我们并提供您的捐赠详情。',
+                'faq.corporate.question': '我的公司如何赞助 ACloudViewer？',
+                'faq.corporate.answer': '我们提供特殊的企业赞助套餐，包括 Logo 展示、优先支持和定制功能开发等多种权益。请通过 contact@acloudviewer.com 联系我们讨论详情。',
+                'faq.contribute.question': '我还能以其他方式做出贡献吗？',
+                'faq.contribute.answer': '当然可以！除了资金支持，您还可以贡献代码、文档、错误报告、功能建议，或在我们的社区论坛中帮助他人。每一份贡献都很有价值！',
+                
+                'contact.title': '有问题？',
+                'contact.subtitle': '我们随时为您提供帮助！如有赞助咨询或任何问题，请联系我们。',
+                
+                'footer.home': '返回首页',
+                'footer.docs': '文档'
+            }
+        };
+
+        let currentLang = 'en';
+
+        // Language switcher
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const lang = btn.getAttribute('data-lang');
+                if (lang === currentLang) return;
+                
+                currentLang = lang;
+                document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                updateContent(lang);
+            });
+        });
+
+        function updateContent(lang) {
+            const trans = translations[lang];
+            document.querySelectorAll('[data-i18n]').forEach(elem => {
+                const key = elem.getAttribute('data-i18n');
+                if (trans[key]) {
+                    elem.textContent = trans[key];
+                }
+            });
+        }
+
+        // Copy donation link
+        function copyDonationLink() {
+            const url = 'https://asher-1.github.io/ACloudViewer/donation.html';
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = event.target.closest('.share-btn');
+                const icon = btn.querySelector('i');
+                icon.className = 'fas fa-check';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    icon.className = 'fas fa-link';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Link: https://asher-1.github.io/ACloudViewer/donation.html');
+            });
+        }
+
+        // FAQ accordion
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const isActive = item.classList.contains('active');
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -16,7 +16,7 @@
 #endif
 
 #include "CloudViewer.h"
-#include "tests/UnitTest.h"
+#include "Tests.h"
 
 #ifdef BUILD_CUDA_MODULE
 /// Returns true if --disable_p2p flag is used.

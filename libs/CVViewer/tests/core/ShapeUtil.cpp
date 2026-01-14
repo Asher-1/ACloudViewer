@@ -7,7 +7,7 @@
 
 #include "core/ShapeUtil.h"
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

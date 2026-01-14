@@ -13,7 +13,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

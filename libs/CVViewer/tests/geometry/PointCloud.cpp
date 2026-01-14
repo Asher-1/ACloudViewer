@@ -22,7 +22,7 @@
 #include "cloudViewer/io/PointCloudIO.h"
 #include "cloudViewer/utility/Random.h"
 #include "cloudViewer/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

@@ -16,7 +16,7 @@
 #include "cloudViewer/geometry/RGBDImage.h"
 #include "cloudViewer/io/ImageIO.h"
 #include "cloudViewer/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

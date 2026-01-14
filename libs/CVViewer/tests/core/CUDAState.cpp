@@ -9,7 +9,7 @@
 
 #include "core/CUDAState.cuh"
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {
