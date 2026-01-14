@@ -10,7 +10,7 @@ The first place to look for answers:
 
 📚 **Official Documentation**
 
-- **Getting Started**: :doc:`/getting_started/index`
+- **Getting Started**: :doc:`/getting_started/introduction`
 - **Tutorials**: :doc:`/tutorial/index`
 - **Python API**: :doc:`/python_api/index`
 - **C++ API**: :doc:`/cpp_api`
@@ -144,7 +144,7 @@ ACloudViewer is an open-source project maintained by volunteers. If you find it 
 
    <div style="text-align: center; margin: 30px 0;">
       <p style="font-size: 16px; margin-bottom: 20px;">Scan the QR code below to donate via WeChat Pay:</p>
-      <img src="../_images/donation.png" alt="Donation QR Code" style="max-width: 300px; border: 2px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <img src="../_static/donation.png" alt="Donation QR Code" style="max-width: 300px; border: 2px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
       <p style="font-size: 14px; color: #666; margin-top: 15px; font-style: italic;">
          Thank you for your support! 🙏
       </p>
