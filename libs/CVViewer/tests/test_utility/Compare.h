@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include <Macro.h>
+#include "cloudViewer/Macro.h"
 
 #define ExpectEQ(arg, ...)                                                    \
     ExpectEQInternal(::cloudViewer::tests::LineInfo(__FILE__, __LINE__), arg, \

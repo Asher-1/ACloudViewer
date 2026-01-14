@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/PointCloudIO.h"
+#include "cloudViewer/io/PointCloudIO.h"
 
 #include <ecvPointCloud.h>
 

@@ -15,14 +15,13 @@
 #include <string>
 #include <vector>
 
-#include "CloudViewer.h"
 #include "cloudViewer/Macro.h"
 #include "cloudViewer/data/Dataset.h"
-#include "test_utility/Compare.h"
-#include "test_utility/Print.h"
-#include "test_utility/Rand.h"
-#include "test_utility/Raw.h"
-#include "test_utility/Sort.h"
+#include "tests/test_utility/Compare.h"
+#include "tests/test_utility/Print.h"
+#include "tests/test_utility/Rand.h"
+#include "tests/test_utility/Raw.h"
+#include "tests/test_utility/Sort.h"
 
 namespace cloudViewer {
 namespace tests {

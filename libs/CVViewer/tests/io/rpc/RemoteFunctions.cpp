@@ -5,17 +5,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/rpc/RemoteFunctions.h"
+#include "cloudViewer/io/rpc/RemoteFunctions.h"
 
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
 #include <random>
 
-#include "io/rpc/BufferConnection.h"
-#include "io/rpc/Connection.h"
-#include "io/rpc/DummyReceiver.h"
-#include "io/rpc/MessageUtils.h"
+#include "cloudViewer/io/rpc/BufferConnection.h"
+#include "cloudViewer/io/rpc/Connection.h"
+#include "cloudViewer/io/rpc/DummyReceiver.h"
+#include "cloudViewer/io/rpc/MessageUtils.h"
 #include "tests/Tests.h"
 
 using namespace cloudViewer::io::rpc;

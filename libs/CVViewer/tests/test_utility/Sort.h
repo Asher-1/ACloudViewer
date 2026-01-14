@@ -12,7 +12,7 @@
 #include <numeric>
 #include <vector>
 
-#include <Logging.h>
+#include "cloudViewer/utility/Logging.h"
 #include "tests/test_utility/Compare.h"
 
 namespace cloudViewer {

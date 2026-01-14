@@ -10,12 +10,12 @@
 #include <cmath>
 #include <limits>
 
-#include "core/AdvancedIndexing.h"
-#include "core/Dtype.h"
-#include "core/MemoryManager.h"
-#include "core/SizeVector.h"
-#include "core/Tensor.h"
-#include "core/kernel/Kernel.h"
+#include "cloudViewer/core/AdvancedIndexing.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/MemoryManager.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "cloudViewer/core/Tensor.h"
+#include "cloudViewer/core/kernel/Kernel.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

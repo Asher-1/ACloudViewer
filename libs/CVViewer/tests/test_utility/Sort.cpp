@@ -9,7 +9,7 @@
 
 #include <algorithm>
 
-#include <Logging.h>
+#include "cloudViewer/utility/Logging.h"
 #include "tests/Tests.h"
 
 namespace cloudViewer {

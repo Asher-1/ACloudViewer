@@ -23,10 +23,7 @@ target_sources(tests PRIVATE
     Tests.cpp
 )
 
-target_include_directories(tests PRIVATE 
-    "."
-    "${PROJECT_SOURCE_DIR}/core/include"
-)
+target_include_directories(tests PRIVATE ".")
 
 # Fix Qt -fPIC requirement
 cloudViewer_set_targets_independent(tests)

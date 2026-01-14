@@ -11,12 +11,17 @@
 #include <cstring>
 #include <string>
 
+#include "cloudViewer/utility/CPUInfo.h"
+#include "cloudViewer/utility/CompilerInfo.h"
+#include "cloudViewer/utility/ISAInfo.h"
+#include "cloudViewer/utility/Logging.h"
+
 #ifdef BUILD_CUDA_MODULE
 #include "cloudViewer/core/CUDAUtils.h"
+#include "cloudViewer/core/CUDAState.h"
 #endif
 
-#include "CloudViewer.h"
-#include "Tests.h"
+#include "tests/Tests.h"
 
 #ifdef BUILD_CUDA_MODULE
 /// Returns true if --disable_p2p flag is used.
