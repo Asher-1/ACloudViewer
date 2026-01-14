@@ -238,7 +238,7 @@ Workflow 2: Mesh Generation
 Next Steps
 ----------
 
-* :doc:`../tutorials/basic_usage` - Detailed tutorials
+* :doc:`../tutorial/index` - Detailed tutorials
 * :doc:`../api/python_api` - Python API reference
 * :doc:`../examples/python_examples` - More examples
 

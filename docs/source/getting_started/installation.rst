@@ -153,5 +153,5 @@ Next Steps
 
 * :doc:`quickstart` - Quick start guide
 * :doc:`build_from_source` - Build from source
-* :doc:`../tutorials/basic_usage` - Basic usage tutorial
+* :doc:`../tutorial/index` - Tutorial index
 
