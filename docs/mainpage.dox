@@ -65,16 +65,30 @@ ACloudViewer is organized into several key modules that work together to provide
 
 \htmlonly
 <div class="architecture-diagram">
-<pre style="font-family: monospace; background: #f5f5f5; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+<pre style="font-family: 'Courier New', Consolas, Monaco, 'Lucida Console', monospace; 
+    background: #f5f5f5; 
+    padding: 20px; 
+    border-radius: 8px; 
+    border: 1px solid #ddd;
+    font-size: 14px;
+    line-height: 1.2;
+    letter-spacing: 0;
+    white-space: pre;
+    overflow-x: auto;
+    tab-size: 4;
+    -moz-tab-size: 4;
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: auto;
+    text-rendering: optimizeLegibility;">
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                          <b>ACloudViewer Application</b>                             │
-│                     (eCV GUI, CVViewer, Python Bindings)                    │
+│                          <b>ACloudViewer Application</b>                    │
+│                     (ACloudViewer, CloudViewer, Python Bindings)            │
 └──────────────────────────────────┬──────────────────────────────────────────┘
                                    │
                 ┌──────────────────┴──────────────────┐
                 │                                     │
 ┌───────────────▼────────────────┐    ┌──────────────▼─────────────────┐
-│     <b>Plugin System</b>            │    │   <b>Visualization Layer</b>         │
+│     <b>Plugin System</b>       │    │   <b>Visualization Layer</b>   │
 │  (IO + Standard Plugins)       │    │  (Vtk-based 3D Viewer)         │
 │                                │    │                                │
 │  • qLASIO, qE57IO, qDracoIO    │    │  • Interactive 3D rendering    │
@@ -85,7 +99,7 @@ ACloudViewer is organized into several key modules that work together to provide
                 └──────────────────┬──────────────────┘
                                    │
 ┌──────────────────────────────────▼──────────────────────────────────────────┐
-│                      <b>Core Processing Layer</b>                                  │
+│                      <b>Core Processing Layer</b>                           │
 │                                                                             │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
 │  │ cloudViewer  │  │   eCV_db     │  │   eCV_io     │  │  PCLEngine   │     │
@@ -98,13 +112,13 @@ ACloudViewer is organized into several key modules that work together to provide
 │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘     │
 │                                                                             │
 │  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                    <b>Reconstruction Module</b>                            │  │
+│  │                    <b>Reconstruction Module</b>                      │   │
 │  │  • Surface Reconstruction  • Mesh Generation  • Poisson Recon        │   │
 │  └──────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────▼───────────────────────────────────────────┐
-│                         <b>Foundation Layer</b>                                   │
+│                         <b>Foundation Layer</b>                              │
 │                                                                              │
 │  • Eigen (Linear Algebra)    • Qt (GUI & Widgets)                            │
 │  • PCL (Point Cloud Library) • Boost (Utilities)                             │
@@ -224,10 +238,10 @@ python -c "import cloudViewer as cv3d; \
 
 \section compile_sec Compiling from Source
 
-To compile ACloudViewer from source, please refer to the \ref compilation "compilation guide".
+To compile ACloudViewer from source, please refer to the <a href="../getting_started/build_from_source.html">compilation guide</a>.
 
 For detailed build instructions:
-- \ref compilation "Building from Source"
+- <a href="../getting_started/build_from_source.html">Building from Source</a>
 - <a href="../getting_started/build_from_source.html">Platform-Specific Build Guides</a>
 
 \section visualization_sec Visualization Examples
@@ -270,9 +284,9 @@ ACloudViewer provides powerful 3D visualization capabilities for interactive dat
 \subsection api_docs_sec API Documentation
 
 - **C++ API**: Browse the complete API reference using the navigation above
-  - \ref cloudViewer "Core Module"
-  - \ref eCV_db "Database Module"
-  - \ref eCV_io "I/O Module"
+  - cloudViewer - Core Module
+  - eCV_db - Database Module
+  - eCV_io - I/O Module
   - Classes, Namespaces, Files tabs for detailed navigation
 
 - **Python API**: See the <a href="../python_api/index.html">Python API documentation</a>

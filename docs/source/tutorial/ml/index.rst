@@ -3,8 +3,6 @@ Machine Learning
 
 Integration of ACloudViewer with machine learning frameworks.
 
-Coming Soon
------------
 
 Machine learning tutorials are under development:
 

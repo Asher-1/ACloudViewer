@@ -3,10 +3,6 @@ Overview
 
 ACloudViewer is a comprehensive C++ library for 3D point cloud and mesh processing. This page provides an overview of the library architecture and key modules.
 
-.. contents:: Contents
-   :local:
-   :depth: 2
-
 Core Features
 -------------
 

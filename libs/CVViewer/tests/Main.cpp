@@ -38,6 +38,11 @@ int main(int argc, char** argv) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     utility::CompilerInfo::GetInstance().Print();
     utility::CPUInfo::GetInstance().Print();
+    
+    // Print ISA info if available
+    if (utility::ISAInfo::GetInstance().IsSupported()) {
+        utility::ISAInfo::GetInstance().Print();
+    }
 
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {
@@ -45,6 +50,7 @@ int main(int argc, char** argv) {
         utility::LogInfo("P2P device transfer has been disabled.");
     }
 #endif
-    testing::InitGoogleTest(&argc, argv);
+
+    testing::InitGoogleMock(&argc, argv);
     return RUN_ALL_TESTS();
 }

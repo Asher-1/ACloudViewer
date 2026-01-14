@@ -103,8 +103,10 @@
         </div>
     </section>
 
-    <!-- Features Section -->
+    <!-- Features Section (also serves as About section for backward compatibility) -->
     <section id="features" class="features">
+        <!-- Add 'about' anchor for backward compatibility with old links -->
+        <a id="about" style="position: absolute; top: -80px;"></a>
         <div class="container">
             <h2 class="section-title" data-i18n="features.title">Core Features</h2>
             <div class="features-grid">
@@ -3435,6 +3437,25 @@ make -j$(nproc)">
                     </ul>
                 </div>
             </div>
+            
+            <!-- Donation Section -->
+            <div id="donation" class="footer-donation" style="text-align: center; margin: 40px 0 20px 0; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); scroll-margin-top: 80px;">
+                <h4 style="color: #fff; margin-bottom: 15px; font-size: 18px;">💝 支持项目开发 | Support Development</h4>
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px; font-size: 14px;">
+                    如果您觉得 ACloudViewer 有用，请考虑支持我们的开发工作<br>
+                    If you find ACloudViewer useful, please consider supporting our development
+                </p>
+                <div style="display: inline-block; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                    <img src="images/donation.png" alt="Donation QR Code" style="width: 200px; height: auto; display: block;">
+                    <p style="color: #333; margin-top: 10px; font-size: 12px; font-weight: 500;">
+                        扫码捐赠 | Scan to Donate
+                    </p>
+                </div>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 15px; font-size: 13px;">
+                    <a href="documentation/resources/support.html" style="color: #4a9eff; text-decoration: none;">查看更多支持方式 | More Support Options →</a>
+                </p>
+            </div>
+            
             <div class="footer-bottom">
                 <p>&copy; 2025 ACloudViewer. Licensed under GPL-2.0 | MIT License.</p>
                 <p>Based on CloudCompare, Open3D, ParaView and COLMAP</p>

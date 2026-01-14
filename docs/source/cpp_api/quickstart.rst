@@ -3,10 +3,6 @@ Quick Start
 
 This guide provides quick examples to get you started with ACloudViewer C++ API.
 
-.. contents:: Contents
-   :local:
-   :depth: 2
-
 Prerequisites
 -------------
 
