@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -10,7 +10,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "core/CoreTest.h"
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/EigenConverter.h"
 #include "cloudViewer/core/SizeVector.h"
@@ -21,6 +20,7 @@
 #include "cloudViewer/t/io/ImageIO.h"
 #include "cloudViewer/t/io/TriangleMeshIO.h"
 #include "cloudViewer/visualization/utility/Draw.h"
+#include "core/CoreTest.h"
 #include "tests/Tests.h"
 
 namespace cloudViewer {

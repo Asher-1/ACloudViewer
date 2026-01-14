@@ -41,7 +41,8 @@ TEST(Dataset, DownloadDataset) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     const std::vector<std::string> url_mirrors = {
-            "https://github.com/isl-org/cloudViewer_downloads/releases/download/"
+            "https://github.com/isl-org/cloudViewer_downloads/releases/"
+            "download/"
             "20220201-data/BunnyMesh.ply"};
     const std::string md5 = "568f871d1a221ba6627569f1e6f9a3f2";
 

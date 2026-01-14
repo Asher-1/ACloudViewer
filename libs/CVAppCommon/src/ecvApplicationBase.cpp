@@ -265,7 +265,7 @@ void ecvApplicationBase::setupPaths() {
     // check current application translations path whether exists or not
     // if exist and then overwrite above translation settings.
     // Priority: bin/translations > build_root/translations > standard paths
-    
+
     // First check bin/translations/ (for development builds)
     QString binTransPath = (appDir.absolutePath() + "/translations");
     if (QDir(binTransPath).exists()) {

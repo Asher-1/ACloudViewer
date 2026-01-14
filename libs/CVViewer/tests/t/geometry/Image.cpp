@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -9,13 +9,13 @@
 
 #include <gmock/gmock.h>
 
-#include "core/CoreTest.h"
 #include "cloudViewer/data/Dataset.h"
 #include "cloudViewer/io/ImageIO.h"
 #include "cloudViewer/io/PinholeCameraTrajectoryIO.h"
 #include "cloudViewer/t/io/ImageIO.h"
 #include "cloudViewer/utility/Preprocessor.h"
 #include "cloudViewer/visualization/utility/DrawGeometry.h"
+#include "core/CoreTest.h"
 #include "tests/Tests.h"
 
 namespace cloudViewer {
@@ -866,7 +866,8 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
     core::Tensor intrinsic_t = CreateIntrinsics();
     auto vertex_map = depth_clipped.CreateVertexMap(intrinsic_t, invalid_fill);
     visualization::DrawGeometries(
-            {std::make_shared<cloudViewer::geometry::Image>(vertex_map.ToLegacy())});
+            {std::make_shared<cloudViewer::geometry::Image>(
+                    vertex_map.ToLegacy())});
 }
 
 TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
@@ -909,13 +910,15 @@ TEST_P(ImagePermuteDevices, DISABLED_ColorizeDepth) {
                     ->To(device);
 
     auto color_depth = depth.ColorizeDepth(1000.0, 0.0, 3.0);
-    visualization::DrawGeometries({std::make_shared<cloudViewer::geometry::Image>(
-            color_depth.ToLegacy())});
+    visualization::DrawGeometries(
+            {std::make_shared<cloudViewer::geometry::Image>(
+                    color_depth.ToLegacy())});
 
     auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, 0.0);
     auto color_depth_clipped = depth_clipped.ColorizeDepth(1.0, 0.0, 3.0);
-    visualization::DrawGeometries({std::make_shared<cloudViewer::geometry::Image>(
-            color_depth_clipped.ToLegacy())});
+    visualization::DrawGeometries(
+            {std::make_shared<cloudViewer::geometry::Image>(
+                    color_depth_clipped.ToLegacy())});
 }
 }  // namespace tests
 }  // namespace cloudViewer

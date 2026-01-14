@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -7,15 +7,15 @@
 
 #include "cloudViewer/core/nns/FixedRadiusIndex.h"
 
+#include <Helper.h>
+
 #include <cmath>
 #include <limits>
 
-#include "tests/core/CoreTest.h"
 #include "cloudViewer/core/Device.h"
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/SizeVector.h"
 #include "cloudViewer/core/Tensor.h"
-#include <Helper.h>
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

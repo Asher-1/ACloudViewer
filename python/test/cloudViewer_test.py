@@ -28,7 +28,8 @@ def list_devices(enable_cuda=True, enable_sycl=False):
     if enable_cuda and cv3d.core.cuda.device_count() > 0:
         devices.append(cv3d.core.Device("CUDA:0"))
     # Ignore fallback SYCL CPU device
-    if enable_sycl and hasattr(cv3d.core, 'sycl') and len(cv3d.core.sycl.get_available_devices()) > 1:
+    if enable_sycl and hasattr(cv3d.core, 'sycl') and len(
+            cv3d.core.sycl.get_available_devices()) > 1:
         devices.append(cv3d.core.Device("SYCL:0"))
     return devices
 
@@ -45,10 +46,11 @@ def list_devices_with_torch():
         import cloudViewer as cv3d
         import torch
         devices = [cv3d.core.Device("CPU:0")]
-        if (cv3d.core.cuda.device_count() > 0 and torch.cuda.device_count() > 0):
+        if (cv3d.core.cuda.device_count() > 0 and
+                torch.cuda.device_count() > 0):
             devices += [cv3d.core.Device("CUDA:0")]
         # Last SYCL device is CPU, so there must be 2+ devices in CloudViewer here.
-        if (hasattr(cv3d.core, 'sycl') and cv3d.core.sycl.device_count() > 1 and 
+        if (hasattr(cv3d.core, 'sycl') and cv3d.core.sycl.device_count() > 1 and
                 hasattr(torch, 'xpu') and torch.xpu.device_count() > 0):
             devices += [cv3d.core.Device("SYCL:0")]
         return devices

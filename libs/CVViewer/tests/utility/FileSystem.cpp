@@ -11,8 +11,8 @@
 
 #include <algorithm>
 
-#include "tests/Tests.h"
 #include "cloudViewer/utility/Console.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

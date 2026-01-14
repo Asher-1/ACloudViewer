@@ -7,10 +7,10 @@
 
 #pragma once
 
+#include <Eigen.h>
+
 #include <Eigen/Core>
 #include <vector>
-
-#include <Eigen.h>
 
 namespace cloudViewer {
 namespace utility {

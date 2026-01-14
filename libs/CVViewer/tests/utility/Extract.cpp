@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -24,7 +24,8 @@ TEST(Extract, ExtractFromZIP) {
 
     // Download the `test_data_v2_00.zip` test data.
     std::string url =
-            "https://github.com/isl-org/cloudViewer_downloads/releases/download/"
+            "https://github.com/isl-org/cloudViewer_downloads/releases/"
+            "download/"
             "data-manager/test_data_v2_00.zip";
     std::string md5 = "bc47a5e33d33e717259e3a37fa5eebef";
     std::string file_path = extract_dir + "/test_data_v2_00.zip";

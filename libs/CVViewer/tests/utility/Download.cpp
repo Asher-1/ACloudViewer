@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -18,7 +18,8 @@ namespace tests {
 
 TEST(Downloader, DownloadAndVerify) {
     std::string url =
-            "https://github.com/isl-org/cloudViewer_downloads/releases/download/"
+            "https://github.com/isl-org/cloudViewer_downloads/releases/"
+            "download/"
             "data-manager/test_data_00.zip";
     std::string md5 = "996987b27c4497dbb951ec056c9684f4";
 

@@ -36,10 +36,14 @@ void pybind_logging(py::module& m) {
           "Get global verbosity level of CloudViewer");
     docstring::FunctionDocInject(m, "get_verbosity_level");
 
-    m.def("reset_print_function", []() {
-        utility::LogInfo("Resetting default logger to print to terminal.");
-        utility::Logger::GetInstance().ResetPrintFunction();
-    }, "Reset the print function to the default (print to terminal)");
+    m.def(
+            "reset_print_function",
+            []() {
+                utility::LogInfo(
+                        "Resetting default logger to print to terminal.");
+                utility::Logger::GetInstance().ResetPrintFunction();
+            },
+            "Reset the print function to the default (print to terminal)");
     docstring::FunctionDocInject(m, "reset_print_function");
 
     py::class_<VerbosityContextManager>(m, "VerbosityContextManager",

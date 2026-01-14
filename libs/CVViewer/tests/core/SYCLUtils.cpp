@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -7,11 +7,12 @@
 
 #include "cloudViewer/core/SYCLUtils.h"
 
+#include <Helper.h>
+#include <Timer.h>
+
 #include <vector>
 
 #include "cloudViewer/core/MemoryManager.h"
-#include <Helper.h>
-#include <Timer.h>
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

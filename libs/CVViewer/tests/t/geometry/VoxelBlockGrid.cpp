@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -7,7 +7,6 @@
 
 #include "cloudViewer/t/geometry/VoxelBlockGrid.h"
 
-#include "core/CoreTest.h"
 #include "cloudViewer/core/EigenConverter.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/data/Dataset.h"
@@ -17,6 +16,7 @@
 #include "cloudViewer/t/io/NumpyIO.h"
 #include "cloudViewer/utility/FileSystem.h"
 #include "cloudViewer/visualization/utility/DrawGeometry.h"
+#include "core/CoreTest.h"
 
 namespace cloudViewer {
 namespace tests {

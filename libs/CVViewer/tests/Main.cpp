@@ -41,11 +41,13 @@ int main(int argc, char** argv) {
     using namespace cloudViewer;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    // utility::CompilerInfo::GetInstance().Print();  // TODO: Fix missing headers
-    // utility::CPUInfo::GetInstance().Print();  // TODO: Fix missing headers
-    
+    // utility::CompilerInfo::GetInstance().Print();  // TODO: Fix missing
+    // headers utility::CPUInfo::GetInstance().Print();  // TODO: Fix missing
+    // headers
+
     // Print ISA info if available
-    // if (utility::ISAInfo::GetInstance().IsSupported()) {  // TODO: Fix missing headers
+    // if (utility::ISAInfo::GetInstance().IsSupported()) {  // TODO: Fix
+    // missing headers
     //     utility::ISAInfo::GetInstance().Print();
     // }
 
