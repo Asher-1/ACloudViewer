@@ -5,12 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "geometry/VoxelGrid.h"
+#include "cloudViewer/geometry/VoxelGrid.h"
 
 #include <LineSet.h>
 #include <ecvMesh.h>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "visualization/utility/DrawGeometry.h"
 
 namespace cloudViewer {

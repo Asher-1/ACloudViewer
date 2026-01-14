@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/nns/NanoFlannIndex.h"
+#include "cloudViewer/core/nns/NanoFlannIndex.h"
 
 #include <Helper.h>
 #include <ecvPointCloud.h>
@@ -13,9 +13,9 @@
 #include <cmath>
 #include <limits>
 
-#include "core/Dtype.h"
-#include "core/SizeVector.h"
-#include "tests/UnitTest.h"
+#include "cloudViewer/core/Dtype.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

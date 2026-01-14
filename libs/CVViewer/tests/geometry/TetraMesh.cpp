@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "geometry/TetraMesh.h"
+#include "cloudViewer/geometry/TetraMesh.h"
 
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
 #include <Eigen/Geometry>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

@@ -5,15 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/hashmap/HashMap.h"
+#include "cloudViewer/core/hashmap/HashMap.h"
 
 #include <unordered_map>
 
-#include "core/Device.h"
-#include "core/Indexer.h"
-#include "core/MemoryManager.h"
-#include "core/SizeVector.h"
-#include "tests/UnitTest.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/core/Indexer.h"
+#include "cloudViewer/core/MemoryManager.h"
+#include "cloudViewer/core/SizeVector.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace cloudViewer {

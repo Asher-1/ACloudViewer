@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "cloudViewer/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>
@@ -13,7 +13,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

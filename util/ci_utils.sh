@@ -588,19 +588,151 @@ test_wheel() {
 }
 
 # Run in virtual environment
+# Note: This function expects cloudViewer_test.venv to exist (created by test_wheel)
+# or creates a new one if it doesn't exist.
 run_python_tests() {
+    # Create venv if it doesn't exist
+    if [ ! -d "cloudViewer_test.venv" ]; then
+        echo "Creating virtual environment cloudViewer_test.venv..."
+        python -m venv cloudViewer_test.venv
+    fi
+    
     # shellcheck disable=SC1091
     source cloudViewer_test.venv/bin/activate
-    python -m pip install -U -r python/requirements_test.txt
-    echo Add --randomly-seed=SEED to the test command to reproduce test order.
-    pytest_args=("$CLOUDVIEWER_SOURCE_ROOT"/python/test/)
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-        echo Testing ML Ops disabled
-        pytest_args+=(--ignore "$CLOUDVIEWER_SOURCE_ROOT"/python/test/ml_ops/)
+    
+    # Install test requirements
+    python -m pip install -U pip
+    python -m pip install -U -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt"
+    
+    # Install cloudViewer if not already installed
+    if ! python -c "import cloudViewer" 2>/dev/null; then
+        echo "cloudViewer not installed in venv. Installing from source..."
+        python -m pip install -e "${CLOUDVIEWER_SOURCE_ROOT}/python"
     fi
-    python -m pytest "${pytest_args[@]}"
-    deactivate cloudViewer_test.venv # argument prevents unbound variable error
-    rm -rf cloudViewer_test.venv     # cleanup for testing the next wheel
+    
+    echo "Add --randomly-seed=SEED to the test command to reproduce test order."
+    pytest_args=("${CLOUDVIEWER_SOURCE_ROOT}/python/test/")
+    
+    # Check if ML ops should be tested
+    if [ "${BUILD_PYTORCH_OPS:-OFF}" == "OFF" ] && [ "${BUILD_TENSORFLOW_OPS:-OFF}" == "OFF" ]; then
+        echo "Testing ML Ops disabled"
+        pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
+    fi
+    
+    # Run pytest with verbose output
+    echo "======================================================================"
+    echo "Running Python Unit Tests"
+    echo "======================================================================"
+    python -m pytest -v "${pytest_args[@]}"
+    pytest_result=$?
+    
+    echo ""
+    if [ $pytest_result -eq 0 ]; then
+        echo "======================================================================"
+        echo "Python Unit Tests: PASSED"
+        echo "======================================================================"
+    else
+        echo "======================================================================"
+        echo "Python Unit Tests: FAILED (exit code: $pytest_result)"
+        echo "======================================================================"
+    fi
+    
+    # Deactivate venv (doesn't take arguments)
+    deactivate || true
+    
+    # Optionally cleanup venv (commented out to allow reuse)
+    rm -rf cloudViewer_test.venv
+    
+    return $pytest_result
+}
+
+# Run C++ unit tests
+# Usage: run_cpp_unit_tests
+# Should be run from the build directory
+run_cpp_unit_tests() {
+    echo "======================================================================"
+    echo "Running C++ Unit Tests"
+    echo "======================================================================"
+    
+    # Check if tests executable exists
+    if [ ! -f "./bin/tests" ]; then
+        echo "Error: tests executable not found at ./bin/tests"
+        echo "Please build with -DBUILD_UNIT_TESTS=ON"
+        return 1
+    fi
+    
+    # Set test flags
+    unitTestFlags="--gtest_shuffle"
+    if [ "${LOW_MEM_USAGE-}" = "ON" ]; then
+        unitTestFlags="$unitTestFlags --gtest_filter=-*Reduce*Sum*"
+    fi
+    
+    echo "Test flags: $unitTestFlags"
+    echo "Tip: Run './bin/tests $unitTestFlags --gtest_random_seed=SEED' to repeat this test sequence."
+    echo ""
+    
+    # Run the tests
+    ./bin/tests $unitTestFlags
+    test_result=$?
+    
+    echo ""
+    if [ $test_result -eq 0 ]; then
+        echo "======================================================================"
+        echo "C++ Unit Tests: PASSED"
+        echo "======================================================================"
+    else
+        echo "======================================================================"
+        echo "C++ Unit Tests: FAILED (exit code: $test_result)"
+        echo "======================================================================"
+        return $test_result
+    fi
+    echo ""
+}
+
+# Run all tests (C++ and Python)
+# Usage: run_all_tests
+# Should be run from the build directory
+run_all_tests() {
+    echo "======================================================================"
+    echo "Running All Tests (C++ and Python)"
+    echo "======================================================================"
+    echo ""
+    
+    local cpp_result=0
+    local python_result=0
+    
+    # Run C++ tests if BUILD_UNIT_TESTS is ON
+    if [ -f "./bin/tests" ]; then
+        run_cpp_unit_tests
+        cpp_result=$?
+    else
+        echo "Skipping C++ tests: BUILD_UNIT_TESTS is OFF or tests not built"
+        echo ""
+    fi
+    
+    # Run Python tests if venv exists or can be created
+    if [ -d "cloudViewer_test.venv" ] || command -v python3 &>/dev/null; then
+        run_python_tests
+        python_result=$?
+    else
+        echo "Skipping Python tests: Python environment not available"
+        echo ""
+    fi
+    
+    # Summary
+    echo ""
+    echo "======================================================================"
+    echo "Test Summary"
+    echo "======================================================================"
+    echo "C++ Tests:    $([ $cpp_result -eq 0 ] && echo 'PASSED' || echo 'FAILED')"
+    echo "Python Tests: $([ $python_result -eq 0 ] && echo 'PASSED' || echo 'FAILED')"
+    echo "======================================================================"
+    
+    # Return non-zero if any test failed
+    if [ $cpp_result -ne 0 ] || [ $python_result -ne 0 ]; then
+        return 1
+    fi
+    return 0
 }
 
 # Install dependencies needed for building documentation

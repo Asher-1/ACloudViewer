@@ -15,8 +15,6 @@ Workflow
 4. **Triangulation**: Reconstruct 3D points
 5. **Bundle Adjustment**: Refine reconstruction
 
-Coming Soon
------------
 
 Detailed SfM tutorial with code examples.
 

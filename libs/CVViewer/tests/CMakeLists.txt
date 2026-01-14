@@ -4,27 +4,29 @@ if(POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)
 endif()
 
-file(GLOB_RECURSE UNIT_TEST_SOURCE_FILES "*.cpp")
+add_executable(tests)
 
-# TODO: consider explicitly listing the files
-if (NOT BUILD_AZURE_KINECT)
-    set (EXCLUDE_DIR "io/sensor")
-    foreach (TMP_PATH ${UNIT_TEST_SOURCE_FILES})
-        string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
-        if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
-            list (REMOVE_ITEM UNIT_TEST_SOURCE_FILES ${TMP_PATH})
-        endif ()
-    endforeach(TMP_PATH)
-endif()
+add_subdirectory(camera)
+add_subdirectory(core)
+add_subdirectory(data)
+add_subdirectory(geometry)
+add_subdirectory(io)
+add_subdirectory(ml)
+add_subdirectory(t/geometry)
+add_subdirectory(t/io)
+add_subdirectory(t/pipelines)
+add_subdirectory(test_utility)
+add_subdirectory(utility)
 
-# TODO: handle conditional compilation more systematically
-if (NOT BUILD_GUI)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/rendering/.*cpp)
-endif()
-
-add_executable(tests ${UNIT_TEST_SOURCE_FILES})
+target_sources(tests PRIVATE
+    Main.cpp
+    Tests.cpp
+)
 
 target_include_directories(tests PRIVATE ".")
+
+# Fix Qt -fPIC requirement
+cloudViewer_set_targets_independent(tests)
 
 # If gpu not available, add "DISABLED_" to the gpu test names
 if(BUILD_CUDA_MODULE)

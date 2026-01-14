@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/PointCloudIO.h"
+#include "cloudViewer/io/PointCloudIO.h"
 
 #include <ecvPointCloud.h>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

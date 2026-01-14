@@ -3,10 +3,6 @@ Quick Start
 
 This guide provides quick examples to get you started with ACloudViewer C++ API.
 
-.. contents:: Contents
-   :local:
-   :depth: 2
-
 Prerequisites
 -------------
 
@@ -383,13 +379,13 @@ Here's a complete example that loads a point cloud, applies filtering, and saves
 Next Steps
 ----------
 
-- Explore the `Full API Reference <../cpp_api/index.html>`_ for detailed documentation
+- Explore the `Full API Reference <api/index.html>`_ for detailed documentation
 - Check out more examples in ``examples/Cpp/`` directory
 - Read the :doc:`overview` for understanding the architecture
-- Learn about specific modules:
-  - :doc:`../python_api/cloudViewer.io` for I/O operations
-  - :doc:`../python_api/cloudViewer.geometry` for geometric operations
-  - :doc:`../tutorial/index` for advanced tutorials
+- Learn about advanced topics:
+  - :doc:`../tutorial/index` for tutorials
+  - :doc:`../examples/cpp_examples` for more C++ examples
+  - :doc:`plugins` for plugin development
 
 Building from Source
 ---------------------

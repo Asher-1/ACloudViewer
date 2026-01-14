@@ -17,7 +17,7 @@
 #include "cloudViewer/data/Dataset.h"
 #include "cloudViewer/geometry/Octree.h"
 #include "cloudViewer/io/PointCloudIO.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

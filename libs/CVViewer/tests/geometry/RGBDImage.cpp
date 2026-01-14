@@ -13,7 +13,7 @@
 
 #include "cloudViewer/data/Dataset.h"
 #include "cloudViewer/io/ImageIO.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

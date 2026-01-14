@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "geometry/HalfEdgeTriangleMesh.h"
+#include "cloudViewer/geometry/HalfEdgeTriangleMesh.h"
 
 #include <Helper.h>
 
@@ -13,7 +13,7 @@
 #include <string>
 
 #include "cloudViewer/io/TriangleMeshIO.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

@@ -5,12 +5,12 @@
 # ACloudViewer: A Modern System for 3D Data Processing
 
 <h4>
-    <a href="https://asher-1.github.io/ACloudViewer/docs">Homepage</a> |
-    <a href="https://asher-1.github.io/ACloudViewer/docs#about">About</a> |
-    <a href="https://asher-1.github.io/ACloudViewer/docs#quickstart">Quick Start</a> |
-    <a href="https://asher-1.github.io/ACloudViewer/docs#download">Download</a> |
-    <a href="https://asher-1.github.io/ACloudViewer/docs/guides/building/">Build Guide</a> |
-    <a href="https://asher-1.github.io/ACloudViewer/docs#gallery">Gallery</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/">Homepage</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/#about">About</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/#quickstart">Quick Start</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/#download">Download</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/documentation/getting_started/build_from_source.html">Build Guide</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/#gallery">Gallery</a> |
     <a href="https://github.com/Asher-1/CloudViewer-ML">CloudViewer-ML</a> |
     <a href="https://github.com/Asher-1/ACloudViewer/releases">Releases</a> |
     <a href="https://github.com/Asher-1/ACloudViewer/blob/main/CONTRIBUTING.md">Contribute</a> |
@@ -38,7 +38,7 @@ comparison between two 3D points clouds
 structure that is highly optimized for this particular use-case. It was also meant to deal with huge point clouds (
 typically more than 10 millions points, and up to 120 millions with 2 Gb of memory).
 
-More on ACloudViewer [here](https://asher-1.github.io/ACloudViewer/docs)
+More on ACloudViewer [here](https://asher-1.github.io/ACloudViewer/)
 
 **Core features of ACloudViewer include:**
 
@@ -57,7 +57,7 @@ together to enable full end to end pipelines:
 
 ![CloudViewer_layers](docs/images/AbstractionLayers.png)
 
-For more, please visit the [ACloudViewer documentation](https://asher-1.github.io/ACloudViewer/docs).
+For more, please visit the [ACloudViewer documentation](https://asher-1.github.io/ACloudViewer/documentation/).
 
 
 ## Python quick start
@@ -89,13 +89,17 @@ cloudViewer example reconstruction/gui
 ## ACloudViewer System
 
 <p align="center">
-  <img width="640" src="docs/images/Annotaion.png">
+  <img width="640" src="docs/images/MainUI.png">
 </p>
 
 ACloudViewer is a standalone 3D viewer app based on QT5 available on Ubuntu and Windows.
 Please stay tuned for MacOS. Download ACloudViewer from the [release page](https://github.com/Asher-1/ACloudViewer/releases).
 
 Semantic Annotation Tool:
+
+<p align="center">
+  <img width="640" src="docs/images/Annotaion.png">
+</p>
 
 <p align="center">
   <img width="640" src="docs/images/SemanticAnnotation.png" >
@@ -108,6 +112,20 @@ Reconstruction Tool:
   <img width="640" src="docs/images/Reconstruction.png" >
 </p>
 
+
+Selection and Measurement Tools:
+
+<p align="center">
+  <img width="640" src="docs/images/selection_tools.png">
+</p>
+
+<p align="center">
+  <img width="640" src="docs/images/ruler_measurement_tools.png">
+</p>
+
+<p align="center">
+  <img width="640" src="docs/images/protractor_measurement_tools.png">
+</p>
 
 
 ## CloudViewer app
@@ -139,9 +157,7 @@ Supported OS: Windows, Linux, and Mac OS X
 Refer to the [BUILD.md file](BUILD.md) for detailed build instructions.
 
 Online compilation guides:
-- [Linux Build Guide](https://asher-1.github.io/ACloudViewer/docs/guides/building/compiling-cloudviewer-linux.html)
-- [macOS Build Guide](https://asher-1.github.io/ACloudViewer/docs/guides/building/compiling-cloudviewer-macos.html)
-- [Windows Build Guide](https://asher-1.github.io/ACloudViewer/docs/guides/building/compiling-cloudviewer-windows.html)
+- [Build from Source Guide](https://asher-1.github.io/ACloudViewer/documentation/getting_started/build_from_source.html)
 
 Basically, you have to:
 
@@ -160,7 +176,24 @@ this [guide](CONTRIBUTING.md)
 Supporting the project
 ----------------------
 
-If you want to help us in another way, you can make donations via [donorbox](https://asher-1.github.io/ACloudViewer/docs)
-Thanks!
+If you find ACloudViewer useful, please consider supporting its development:
 
-[![donorbox](docs/images/button-medium-blue.png)](https://asher-1.github.io/ACloudViewer/docs)
+**💰 Financial Support:**
+
+<div align="center">
+  <a href="https://asher-1.github.io/ACloudViewer/donation.html">
+    <img src="https://img.shields.io/badge/💝_Support_Development-Donate_Now-ff69b4?style=for-the-badge&logo=wechat" alt="Donate">
+  </a>
+  <p><em>Click to view donation options - Thank you for your support! 🙏</em></p>
+</div>
+
+**🌟 Other Ways to Support:**
+
+- ⭐ Star the project on [GitHub](https://github.com/Asher-1/ACloudViewer)
+- 🐛 Report bugs and suggest features
+- 📝 Contribute code or documentation
+- 📢 Share ACloudViewer with others
+
+For more information, see our [Support page](https://asher-1.github.io/ACloudViewer/documentation/resources/support.html).
+
+Thanks for your support!
