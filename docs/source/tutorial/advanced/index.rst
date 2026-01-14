@@ -3,9 +3,6 @@ Advanced Topics
 
 Advanced usage, optimization, and customization techniques.
 
-Coming Soon
------------
-
 Advanced tutorials are under development:
 
 **CUDA Programming**

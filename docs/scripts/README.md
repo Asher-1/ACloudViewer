@@ -1,145 +1,309 @@
-# Documentation Testing Scripts
+# ACloudViewer Documentation Quality Tools
 
-This directory contains testing and validation scripts for the ACloudViewer documentation system.
+This directory contains tools for auditing and improving docstring quality in ACloudViewer's C++ pybind11 bindings.
 
-## 📋 Available Scripts
+## Tools Overview
 
-### 🧪 test_doc_structure.sh
+### 1. `audit_docstrings.sh`
 
-**Purpose**: Validates the documentation structure and required files
+Comprehensive audit tool that analyzes docstring quality and generates reports.
 
-**Usage**:
+**Features:**
+- Counts functions with/without docstrings
+- Captures and categorizes Sphinx warnings
+- Generates module-by-module statistics
+- Identifies common formatting issues
+
+**Usage:**
+
+```bash
+# Audit all modules
+./audit_docstrings.sh
+
+# Audit specific module
+./audit_docstrings.sh geometry
+
+# View results
+cat /tmp/acloudviewer_docstring_audit/warning_summary.txt
+cat /tmp/acloudviewer_docstring_audit/module_stats.csv
+```
+
+**Output Files:**
+- `warning_summary.txt` - Top warnings by frequency
+- `error_summary.txt` - Top errors by frequency
+- `module_warnings.txt` - Warning counts per module
+- `module_stats.csv` - Documentation coverage statistics
+- `sphinx_build.log` - Full Sphinx build log
+
+### 2. `fix_docstrings.py`
+
+Automated fix tool for common docstring formatting issues.
+
+**Fixes Applied:**
+- Escapes unescaped asterisks (`*` → `\*`)
+- Adds proper indentation to Args/Returns sections
+- Fixes Example blocks (adds `::`)
+- Converts inline code quotes (`'True'` → `` `True` ``)
+- Escapes broken emphasis markers
+
+**Usage:**
+
+```bash
+# Preview fixes without applying (dry-run)
+python fix_docstrings.py libs/Python/pybind/geometry/ --dry-run
+
+# Apply fixes with backup
+python fix_docstrings.py libs/Python/pybind/geometry/ --backup
+
+# Fix single file
+python fix_docstrings.py libs/Python/pybind/geometry/pointcloud.cpp
+```
+
+**Options:**
+- `--dry-run` - Preview changes without modifying files
+- `--backup` - Create `.bak` backup files before modifying
+
+## Workflow: Fixing Documentation Warnings
+
+### Step 1: Audit Current State
+
 ```bash
 cd /path/to/ACloudViewer
-./docs/scripts/test_doc_structure.sh
+./docs/scripts/audit_docstrings.sh
 ```
 
-**What it checks**:
-- ✅ Required files exist (`Makefile`, `make_docs.py`, `conf.py`, etc.)
-- ✅ Directory structure is correct
-- ✅ Configuration files are valid
-- ✅ Dependencies are available
+This generates a complete report showing:
+- Which modules have the most warnings
+- What types of issues are most common
+- Current documentation coverage
 
-### 🌐 test_github_pages_locally.sh
+### Step 2: Prioritize Modules
 
-**Purpose**: Tests the GitHub Pages dual-layer deployment locally
+Based on the audit report, choose which module to fix first. We recommend:
 
-**Usage**:
-```bash
-cd /path/to/ACloudViewer
-./docs/scripts/test_github_pages_locally.sh [method]
-```
+1. **Start with** `utility` (smallest, good for testing)
+2. **Then** `io` (important, moderate size)
+3. **Then** `geometry` (core module, larger)
+4. **Then** `pipelines`, `visualization`, etc.
 
-**Methods**:
-1. `docker` - Full Docker build (default, most complete)
-2. `local` - Use existing docs/_out/html
-3. `simple` - Quick preview without building
-
-**What it tests**:
-- ✅ Main website deployment structure
-- ✅ `/documentation/` sub-page deployment
-- ✅ File conflicts and overwrites
-- ✅ Navigation and links
-- ✅ Local preview server
-
-**Example**:
-```bash
-# Full Docker test
-./docs/scripts/test_github_pages_locally.sh docker
-
-# Quick preview of existing docs
-./docs/scripts/test_github_pages_locally.sh simple
-```
-
-## 🚀 Building Documentation
-
-The scripts in this directory are for **testing only**. To build documentation, use:
-
-### Local Build (Recommended)
+### Step 3: Auto-Fix Common Issues
 
 ```bash
-cd docs
-make docs
+# Preview fixes for a module
+python docs/scripts/fix_docstrings.py libs/Python/pybind/geometry/ --dry-run
+
+# Apply fixes with backup
+python docs/scripts/fix_docstrings.py libs/Python/pybind/geometry/ --backup
 ```
 
-This will:
-1. Build Python module (if needed)
-2. Generate C++ API docs (Doxygen)
-3. Generate Python API docs (Sphinx autodoc)
-4. Build tutorials (Jupyter notebooks)
-5. Create final HTML output in `docs/_out/html/`
+### Step 4: Manual Review and Fix
 
-### CI/CD Build
+Some issues require manual fixes:
 
-The CI/CD system uses `util/ci_utils.sh::build_docs`:
+1. **Complex RST formatting** - Follow examples in `DOCSTRING_STYLE_GUIDE.md`
+2. **Missing docstrings** - Add proper documentation
+3. **Duplicate definitions** - Add `:noindex:` where needed
+
+### Step 5: Verify Fixes
 
 ```bash
-source util/ci_utils.sh
-build_docs OFF  # or ON for developer mode
+cd build_app
+make sphinx-html 2>&1 | grep -E "python_api/cloudViewer.geometry" | grep -E "^(WARNING|ERROR):"
 ```
 
-### Docker Build
+Compare warning count before and after fixes.
+
+### Step 6: Commit Changes
 
 ```bash
-docker build --network=host \
-    -t acloudviewer-ci:docs \
-    -f docker/Dockerfile.docs .
+git add libs/Python/pybind/geometry/
+git commit -m "docs: fix docstring format issues in geometry module
+
+- Fixed unescaped asterisks causing RST emphasis warnings
+- Added proper indentation to Args/Returns sections
+- Fixed Example blocks to use proper RST code block syntax
+- Reduced Sphinx warnings from 80 to 10
+
+Refs: docs/DOCSTRING_STYLE_GUIDE.md"
 ```
 
-## 📁 Related Files
+## Examples
 
-- **Build System**:
-  - `docs/Makefile` - Main build orchestration
-  - `docs/make_docs.py` - Python build script
-  - `util/ci_utils.sh` - CI/CD build functions
-  - `docker/Dockerfile.docs` - Docker build definition
+### Example 1: Quick Audit of Single Module
 
-- **Configuration**:
-  - `docs/source/conf.py` - Sphinx configuration
-  - `docs/Doxyfile.in` - Doxygen configuration
-  - `docs/requirements.txt` - Python dependencies
+```bash
+$ ./audit_docstrings.sh utility
 
-- **Testing**:
-  - `.github/workflows/documentation.yml` - CI/CD workflow
-  - `docs/scripts/` - This directory
-
-## 🔄 Workflow Overview
-
+Analyzing module: utility
+  Files: 5
+  Total functions: 45
+  With docstrings: 38 (84%)
+  Without docstrings: 7
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Documentation Build                      │
-└─────────────────────────────────────────────────────────────┘
 
-Local Development:
-  cd docs && make docs → docs/_out/html/
+### Example 2: Auto-Fix with Preview
 
-CI/CD (GitHub Actions):
-  util/ci_utils.sh::build_docs → docs/_out/html/
+```bash
+$ python fix_docstrings.py libs/Python/pybind/utility/ --dry-run
+
+Processing: libs/Python/pybind/utility/helper.cpp
+  [DRY RUN] Would modify file
   
-Docker:
-  docker build ... Dockerfile.docs → /root/ACloudViewer/docs/_out/html/
+Processing: libs/Python/pybind/utility/eigen.cpp
+  ○ No changes needed
 
-Deployment:
-  GitHub Pages:
-    - Main website → /
-    - API docs → /documentation/
+Summary
+================================
+Files modified: 1
+Total fixes applied: 15
+
+This was a dry run. No files were actually modified.
 ```
 
-## 📚 Documentation
+### Example 3: Complete Module Fix Workflow
 
-For more information, see:
-- [docs/README.md](../README.md) - Main documentation guide
-- [util/ci_utils.sh](../../util/ci_utils.sh) - Build functions
+```bash
+# 1. Audit before
+./audit_docstrings.sh geometry > /tmp/before.txt
 
-## 🧹 Maintenance
+# 2. Auto-fix common issues
+python fix_docstrings.py libs/Python/pybind/geometry/ --backup
 
-These scripts are kept minimal and focused:
-- ✅ Structure validation
-- ✅ GitHub Pages testing
-- ❌ No redundant build scripts (use `make docs` instead)
-- ❌ No deprecated test scripts
+# 3. Build docs and check warnings
+cd build_app
+make sphinx-html 2>&1 | grep geometry | grep WARNING | wc -l
+# Output: 25 (reduced from 80)
+
+# 4. Manual fixes for remaining issues
+# Edit files based on DOCSTRING_STYLE_GUIDE.md
+
+# 5. Rebuild and verify
+make sphinx-html 2>&1 | grep geometry | grep WARNING | wc -l
+# Output: 5 (much better!)
+
+# 6. Commit
+git commit -am "docs: fix geometry module docstrings"
+```
+
+## Integration with CI/CD
+
+### Pre-commit Hook
+
+Add to `.git/hooks/pre-commit`:
+
+```bash
+#!/bin/bash
+# Check for docstring issues in changed files
+
+changed_cpp=$(git diff --cached --name-only --diff-filter=ACM | grep '\.cpp$')
+
+if [ -n "$changed_cpp" ]; then
+    echo "Checking docstrings in modified C++ files..."
+    for file in $changed_cpp; do
+        python docs/scripts/fix_docstrings.py "$file" --dry-run > /dev/null
+        if [ $? -ne 0 ]; then
+            echo "Warning: $file may have docstring issues"
+            echo "Run: python docs/scripts/fix_docstrings.py $file"
+        fi
+    done
+fi
+```
+
+### GitHub Actions Check
+
+```yaml
+- name: Check Documentation Warnings
+  run: |
+    cd build
+    make sphinx-html 2>&1 | tee sphinx.log
+    
+    # Count warnings
+    warnings=$(grep -c "^WARNING:" sphinx.log || true)
+    echo "Found $warnings Sphinx warnings"
+    
+    # Fail if warnings increased
+    if [ $warnings -gt 200 ]; then
+        echo "::error::Too many documentation warnings ($warnings)"
+        exit 1
+    fi
+```
+
+## Best Practices
+
+### 1. Work Module-by-Module
+
+Don't try to fix everything at once. Focus on one module and do it well.
+
+### 2. Always Test After Fixing
+
+```bash
+cd build_app
+make sphinx-html
+# Check that docs still build and render correctly
+```
+
+### 3. Use Backup Option
+
+Always use `--backup` when running auto-fix on production code:
+
+```bash
+python fix_docstrings.py libs/Python/pybind/ --backup
+```
+
+### 4. Review Auto-Fixes
+
+Auto-fixes are not perfect. Always review changes before committing:
+
+```bash
+git diff libs/Python/pybind/geometry/
+```
+
+### 5. Follow the Style Guide
+
+For manual fixes, always refer to `docs/DOCSTRING_STYLE_GUIDE.md`.
+
+## Troubleshooting
+
+### Issue: Script Not Found
+
+```bash
+# Make sure you're in the repository root
+cd /path/to/ACloudViewer
+
+# Make scripts executable
+chmod +x docs/scripts/*.sh docs/scripts/*.py
+```
+
+### Issue: Python Import Errors
+
+```bash
+# Ensure you're using Python 3
+python3 --version
+
+# Script has no external dependencies, should work with standard library
+```
+
+### Issue: Build Directory Not Found
+
+```bash
+# audit_docstrings.sh needs build_app directory
+mkdir -p build_app && cd build_app
+cmake .. -DBUILD_PYTHON_MODULE=ON
+make -j$(nproc)
+```
+
+## Additional Resources
+
+- **Style Guide**: `docs/DOCSTRING_STYLE_GUIDE.md`
+- **Warning Explanations**: `docs/DOCUMENTATION_WARNINGS.md`
+- **Build Guide**: `docs/automation/BUILD_DOCUMENTATION.md`
+- **Open3D Examples**: `/home/ludahai/develop/code/github/Open3D/cpp/pybind/`
+
+## Contributing
+
+Found a bug or have a suggestion? Please open an issue on GitHub with the `documentation` label.
 
 ---
 
-**Last Updated**: 2026-01-13  
-**Maintained By**: ACloudViewer Team
+**Maintained by**: ACloudViewer Documentation Team  
+**Last Updated**: January 2026

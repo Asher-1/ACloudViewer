@@ -15,20 +15,22 @@ def torch_available():
     return True
 
 
-def list_devices():
+def list_devices(enable_cuda=True, enable_sycl=False):
     """
-    If CloudViewer is built with CUDA support:
-    - If cuda device is available, returns [Device("CPU:0"), Device("CUDA:0")].
-    - If cuda device is not available, returns [Device("CPU:0")].
-
-    If CloudViewer is built without CUDA support:
-    - returns [Device("CPU:0")].
+    Returns a list of devices that are available for CloudViewer to use:
+    - Device("CPU:0")
+    - Device("CUDA:0") if built with CUDA support and a CUDA device is available.
+    - Device("SYCL:0") if built with SYCL support and a SYCL GPU device is available.
     """
     import cloudViewer as cv3d
-    if cv3d.core.cuda.device_count() > 0:
-        return [cv3d.core.Device("CPU:0"), cv3d.core.Device("CUDA:0")]
-    else:
-        return [cv3d.core.Device("CPU:0")]
+
+    devices = [cv3d.core.Device("CPU:0")]
+    if enable_cuda and cv3d.core.cuda.device_count() > 0:
+        devices.append(cv3d.core.Device("CUDA:0"))
+    # Ignore fallback SYCL CPU device
+    if enable_sycl and hasattr(cv3d.core, 'sycl') and len(cv3d.core.sycl.get_available_devices()) > 1:
+        devices.append(cv3d.core.Device("SYCL:0"))
+    return devices
 
 
 def list_devices_with_torch():
@@ -42,10 +44,13 @@ def list_devices_with_torch():
     if torch_available():
         import cloudViewer as cv3d
         import torch
-        if (cv3d.core.cuda.device_count() > 0 and torch.cuda.is_available() and
-                torch.cuda.device_count() > 0):
-            return [cv3d.core.Device("CPU:0"), cv3d.core.Device("CUDA:0")]
-        else:
-            return [cv3d.core.Device("CPU:0")]
+        devices = [cv3d.core.Device("CPU:0")]
+        if (cv3d.core.cuda.device_count() > 0 and torch.cuda.device_count() > 0):
+            devices += [cv3d.core.Device("CUDA:0")]
+        # Last SYCL device is CPU, so there must be 2+ devices in CloudViewer here.
+        if (hasattr(cv3d.core, 'sycl') and cv3d.core.sycl.device_count() > 1 and 
+                hasattr(torch, 'xpu') and torch.xpu.device_count() > 0):
+            devices += [cv3d.core.Device("SYCL:0")]
+        return devices
     else:
         return []

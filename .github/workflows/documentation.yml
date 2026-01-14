@@ -213,26 +213,49 @@ jobs:
           echo "📁 Top-level structure:"
           ls -la website-deploy/ | head -20
       
-      - name: Deploy main website to GitHub Pages
+      - name: Merge website and documentation for unified deployment
         if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./website-deploy
-          keep_files: true  # Keep existing documentation subdirectory
-          commit_message: "docs: deploy main website + downloads data from ${{ github.sha }}"
-          enable_jekyll: false  # Disable Jekyll processing
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔄 Merging website and documentation for unified deployment"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          
+          # Create unified deployment directory
+          mkdir -p unified-deploy
+          
+          # Copy main website (root level)
+          echo "📄 Copying main website files..."
+          cp -r website-deploy/* unified-deploy/
+          
+          # Copy API documentation to subdirectory
+          echo "📚 Copying API documentation to documentation/ subdirectory..."
+          mkdir -p unified-deploy/documentation
+          cp -r docs-output/* unified-deploy/documentation/
+          
+          echo ""
+          echo "✅ Unified deployment prepared"
+          echo ""
+          echo "📊 Final deployment structure:"
+          echo "  - Total files: $(find unified-deploy -type f | wc -l)"
+          echo "  - Total size: $(du -sh unified-deploy | cut -f1)"
+          echo "  - Root files: $(ls unified-deploy/ | wc -l)"
+          echo "  - Documentation files: $(find unified-deploy/documentation -type f | wc -l)"
+          echo ""
+          echo "📁 Top-level structure:"
+          ls -la unified-deploy/ | head -20
+          echo ""
       
-      - name: Deploy API documentation to GitHub Pages subdirectory
+      - name: Deploy to GitHub Pages (unified deployment)
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs-output
-          destination_dir: documentation
-          keep_files: true  # Keep main website files
-          commit_message: "docs: deploy API documentation from ${{ github.sha }}"
+          publish_dir: ./unified-deploy
+          keep_files: false  # Complete replacement for clean deployment
+          commit_message: "docs: deploy website + documentation from ${{ github.sha }}"
           enable_jekyll: false  # Disable Jekyll processing
+          force_orphan: true  # Use orphan branch for clean history
       
       - name: Verify deployment structure
         if: github.ref == 'refs/heads/main'
@@ -245,7 +268,8 @@ jobs:
           echo "  ✅ Docker image built successfully"
           echo "  ✅ Documentation extracted ($(du -sh docs-output | cut -f1))"
           echo "  ✅ Main website prepared ($(du -sh website-deploy | cut -f1))"
-          echo "  ✅ Deployed to GitHub Pages"
+          echo "  ✅ Unified deployment merged ($(du -sh unified-deploy | cut -f1))"
+          echo "  ✅ Deployed to GitHub Pages (single deployment)"
           echo ""
           echo "🌐 Expected GitHub Pages structure:"
           echo "  https://asher-1.github.io/ACloudViewer/"

@@ -1048,6 +1048,14 @@ function initializeSelectors() {
 function updatePythonVersions(versionBtn) {
     const supportedVersions = versionBtn.dataset.pythonVersions.split(',');
     
+    // Sort Python versions numerically (e.g., 3.8, 3.9, 3.10, 3.11, 3.12)
+    supportedVersions.sort((a, b) => {
+        const [aMajor, aMinor] = a.split('.').map(Number);
+        const [bMajor, bMinor] = b.split('.').map(Number);
+        if (aMajor !== bMajor) return aMajor - bMajor;
+        return aMinor - bMinor;
+    });
+    
     // Clear and rebuild Python selector
     pythonSelector.innerHTML = '';
     
