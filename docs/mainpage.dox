@@ -10,10 +10,10 @@
         <a href="https://asher-1.github.io/ACloudViewer/">Homepage</a> | 
         <a href="https://asher-1.github.io/ACloudViewer/documentation/">Docs</a> | 
         <a href="https://github.com/Asher-1/ACloudViewer#quick-start">Quick Start</a> | 
-        <a href="../cpp_api.html">Back to Overview</a> | 
-        <a href="../python_api/index.html">Python</a> | 
+        <a href="../index.html">Back to Overview</a> | 
+        <a href="../index.html#python-api">Python</a> | 
         <a href="index.html">C++</a> | 
-        <a href="../tutorial/index.html">Tutorial</a> | 
+        <a href="../index.html#tutorial">Tutorial</a> | 
         <a href="https://github.com/Asher-1/ACloudViewer">GitHub</a>
     </div>
 </div>
@@ -81,14 +81,14 @@ ACloudViewer is organized into several key modules that work together to provide
     -moz-osx-font-smoothing: auto;
     text-rendering: optimizeLegibility;">
 ┌───────────────────────────────────────────────────────────────────────────────┐
-│                         <b>ACloudViewer Application</b>                         │
+│                         <b>ACloudViewer Application</b>                       │
 │                   (ACloudViewer, CloudViewer, Python Bindings)                │
 └─────────────────────────────────┬─────────────────────────────────────────────┘
                                   │
                ┌──────────────────┴──────────────────┐
                │                                     │
 ┌──────────────▼────────────────┐   ┌───────────────▼────────────────┐
-│       <b>Plugin System</b>        │   │    <b>Visualization Layer</b>      │
+│       <b>Plugin System</b>    │   │    <b>Visualization Layer</b>  │
 │   (IO + Standard Plugins)     │   │    (Vtk-based 3D Viewer)       │
 │                               │   │                                │
 │ • qLASIO, qE57IO, qDracoIO    │   │ • Interactive 3D rendering     │
@@ -99,32 +99,32 @@ ACloudViewer is organized into several key modules that work together to provide
                └──────────────────┬──────────────────┘
                                   │
 ┌─────────────────────────────────▼───────────────────────────────────────────┐
-│                        <b>Core Processing Layer</b>                            │
-│                                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │ cloudViewer  │  │   eCV_db     │  │   eCV_io     │  │  PCLEngine   │    │
-│  │              │  │              │  │              │  │              │    │
-│  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • PCL        │    │
-│  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Integration│    │
-│  │ • ccMesh     │  │ • Entity     │  │    LAS,E57)  │  │ • Filtering  │    │
-│  │ • ccHObject  │  │   Hierarchy  │  │ • Format     │  │ • Registr.   │    │
-│  │ • ccOctree   │  │ • Scene Mgmt │  │   Converters │  │ • Segment.   │    │
-│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘    │
-│                                                                              │
+│                        <b>Core Processing Layer</b>                         │
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │ cloudViewer  │  │   eCV_db     │  │   eCV_io     │  │  PCLEngine   │     │
+│  │              │  │              │  │              │  │              │     │
+│  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • PCL        │     │
+│  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Integration│     │
+│  │ • ccMesh     │  │ • Entity     │  │    LAS,E57)  │  │ • Filtering  │     │
+│  │ • ccHObject  │  │   Hierarchy  │  │ • Format     │  │ • Registr.   │     │
+│  │ • ccOctree   │  │ • Scene Mgmt │  │   Converters │  │ • Segment.   │     │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘     │
+│                                                                             │
 │  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │                      <b>Reconstruction Module</b>                        │ │
+│  │                      <b>Reconstruction Module</b>                      │ │
 │  │   • Surface Reconstruction  • Mesh Generation  • Poisson Recon         │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────────┘
                                   │
-┌─────────────────────────────────▼────────────────────────────────────────────┐
-│                          <b>Foundation Layer</b>                               │
-│                                                                               │
-│  • Eigen (Linear Algebra)     • Qt (GUI & Widgets)                           │
-│  • PCL (Point Cloud Library)  • Boost (Utilities)                            │
-│  • VTK (Visualization)         • OpenMP (Parallelization)                    │
-│  • CGAL (Geometric Algorithms)                                               │
-└───────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────▼───────────────────────────────────────────┐
+│                          <b>Foundation Layer</b>                            │
+│                                                                             │
+│  • Eigen (Linear Algebra)     • Qt (GUI & Widgets)                          │
+│  • PCL (Point Cloud Library)  • Boost (Utilities)                           │
+│  • VTK (Visualization)         • OpenMP (Parallelization)                   │
+│  • CGAL (Geometric Algorithms)                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 
 <b>Data Flow:</b>
   Input Files → eCV_io → Core Structures → Processing (Plugins/PCL) → 

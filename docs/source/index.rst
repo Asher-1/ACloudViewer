@@ -50,7 +50,17 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    :maxdepth: 1
    :caption: Python API
 
-   python_api/index
+   python_api/cloudViewer.camera
+   python_api/cloudViewer.core
+   python_api/cloudViewer.data
+   python_api/cloudViewer.geometry
+   python_api/cloudViewer.io
+   python_api/cloudViewer.ml
+   python_api/cloudViewer.pipelines
+   python_api/cloudViewer.reconstruction
+   python_api/cloudViewer.t
+   python_api/cloudViewer.utility
+   python_api/cloudViewer.visualization
 
 .. toctree::
    :maxdepth: 2

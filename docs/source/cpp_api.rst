@@ -8,7 +8,7 @@ Please refer to the following pages for ACloudViewer C++ API.
 Core Documentation
 ------------------
 
-- **Full C++ API documentation**: `ACloudViewer C++ Doxygen Documentation <../cpp_api/index.html>`_
+- **Full C++ API documentation**: `ACloudViewer C++ Doxygen Documentation <cpp_api/api/index.html>`_
   
   Complete API reference with all classes, functions, and detailed documentation
 
@@ -32,8 +32,8 @@ Getting Started
 - **GitHub repository**: https://github.com/Asher-1/ACloudViewer
 
 .. toctree::
-   :hidden:
-   :maxdepth: 1
+   :maxdepth: 2
+   :caption: C++ API Documentation
 
    cpp_api/overview
    cpp_api/quickstart

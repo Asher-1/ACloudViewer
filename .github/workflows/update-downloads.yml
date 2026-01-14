@@ -1,0 +1,341 @@
+name: Update Downloads Data
+
+# This workflow independently updates downloads_data.json on GitHub Pages
+# Decoupled from documentation build to avoid timing issues
+on:
+  # Scheduled update - runs every 6 hours
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  
+  # Trigger when a release is published or edited
+  release:
+    types: [published, edited, released]
+  
+  # Allow manual trigger with options
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Force update even if no changes detected'
+        required: false
+        type: boolean
+        default: false
+      
+      cleanup_old_versions:
+        description: 'Remove versions older than specified days (0 = keep all)'
+        required: false
+        type: number
+        default: 0
+      
+      include_prereleases:
+        description: 'Include pre-release versions'
+        required: false
+        type: boolean
+        default: true
+      
+      max_versions:
+        description: 'Maximum number of versions to keep (0 = unlimited)'
+        required: false
+        type: number
+        default: 0
+      
+      dry_run:
+        description: 'Dry run - show what would be updated without committing'
+        required: false
+        type: boolean
+        default: false
+  
+  # Trigger from other workflows (e.g., after wheel upload)
+  workflow_call:
+
+concurrency:
+  group: update-downloads-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update-downloads-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages  # Checkout GitHub Pages branch
+          fetch-depth: 1
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Checkout main branch for scripts
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-branch
+          sparse-checkout: |
+            docs/automation/scripts/
+      
+      - name: Generate latest downloads_data.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Scanning GitHub Releases for Download Data"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "⏰ Trigger: ${{ github.event_name }}"
+          echo "🕐 Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo ""
+          
+          # Show manual trigger options if applicable
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "🔧 Manual Trigger Options:"
+            echo "  - Force update: ${{ github.event.inputs.force_update }}"
+            echo "  - Cleanup old (days): ${{ github.event.inputs.cleanup_old_versions }}"
+            echo "  - Include prereleases: ${{ github.event.inputs.include_prereleases }}"
+            echo "  - Max versions: ${{ github.event.inputs.max_versions }}"
+            echo "  - Dry run: ${{ github.event.inputs.dry_run }}"
+            echo ""
+          fi
+          
+          # Run scan script from main branch
+          cd main-branch
+          python3 docs/automation/scripts/scan_releases.py
+          
+          # Move generated file to gh-pages root
+          if [ -f "docs/downloads_data.json" ]; then
+            mv docs/downloads_data.json ../downloads_data.json.new
+            cd ..
+            
+            echo ""
+            echo "✅ New downloads_data.json generated"
+            echo "  - Size: $(du -h downloads_data.json.new | cut -f1)"
+            echo "  - Versions: $(jq '.version_metadata | length' downloads_data.json.new)"
+            echo ""
+            echo "📊 Available versions:"
+            jq -r '.version_metadata | to_entries[] | "  - \(.key) (\(.value.release_date))"' downloads_data.json.new | sort -V
+          else
+            echo "❌ Failed to generate downloads_data.json"
+            exit 1
+          fi
+          
+          # Apply manual trigger filters if specified
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo ""
+            echo "🔧 Applying manual trigger filters..."
+            
+            # Cleanup old versions
+            CLEANUP_DAYS="${{ github.event.inputs.cleanup_old_versions }}"
+            if [ "$CLEANUP_DAYS" != "0" ] && [ -n "$CLEANUP_DAYS" ]; then
+              echo "  🗑️  Removing versions older than $CLEANUP_DAYS days..."
+              CUTOFF_DATE=$(date -u -d "$CLEANUP_DAYS days ago" +%Y-%m-%d)
+              
+              # Filter out old versions
+              jq --arg cutoff "$CUTOFF_DATE" '
+                .version_metadata = (.version_metadata | to_entries | 
+                  map(select(.value.release_date >= $cutoff)) | 
+                  from_entries) |
+                .download_links = (.download_links | to_entries | 
+                  map(select(.key as $k | $k | in(.version_metadata))) | 
+                  from_entries)
+              ' downloads_data.json.new > downloads_data.json.filtered
+              
+              REMOVED=$(( $(jq '.version_metadata | length' downloads_data.json.new) - $(jq '.version_metadata | length' downloads_data.json.filtered) ))
+              echo "    ✓ Removed $REMOVED old versions (cutoff: $CUTOFF_DATE)"
+              mv downloads_data.json.filtered downloads_data.json.new
+            fi
+            
+            # Limit max versions
+            MAX_VERSIONS="${{ github.event.inputs.max_versions }}"
+            if [ "$MAX_VERSIONS" != "0" ] && [ -n "$MAX_VERSIONS" ]; then
+              echo "  📊 Limiting to $MAX_VERSIONS most recent versions..."
+              
+              # Keep only the most recent versions
+              jq --argjson max "$MAX_VERSIONS" '
+                (.version_metadata | to_entries | 
+                  sort_by(.value.release_date) | reverse | 
+                  .[:$max] | 
+                  from_entries) as $kept_metadata |
+                {
+                  generated_at,
+                  version_metadata: $kept_metadata,
+                  download_links: (.download_links | to_entries | 
+                    map(select(.key | in($kept_metadata))) | 
+                    from_entries)
+                }
+              ' downloads_data.json.new > downloads_data.json.limited
+              
+              KEPT=$(jq '.version_metadata | length' downloads_data.json.limited)
+              echo "    ✓ Kept $KEPT most recent versions"
+              mv downloads_data.json.limited downloads_data.json.new
+            fi
+            
+            echo ""
+            echo "📊 Final version count: $(jq '.version_metadata | length' downloads_data.json.new)"
+          fi
+      
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ -f "downloads_data.json" ]; then
+            # Compare checksums
+            OLD_HASH=$(md5sum downloads_data.json | cut -d' ' -f1)
+            NEW_HASH=$(md5sum downloads_data.json.new | cut -d' ' -f1)
+            
+            if [ "$OLD_HASH" == "$NEW_HASH" ]; then
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+              echo ""
+              echo "ℹ️  No changes detected in downloads_data.json"
+              
+              # Show comparison
+              echo ""
+              echo "📊 Comparison:"
+              echo "  Old: $(jq '.version_metadata | length' downloads_data.json) versions, $(jq '.download_links | length' downloads_data.json) links"
+              echo "  New: $(jq '.version_metadata | length' downloads_data.json.new) versions, $(jq '.download_links | length' downloads_data.json.new) links"
+            else
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+              echo ""
+              echo "🔄 Changes detected!"
+              echo ""
+              echo "📊 Comparison:"
+              echo "  Old: $(jq '.version_metadata | length' downloads_data.json) versions (hash: ${OLD_HASH:0:8}...)"
+              echo "  New: $(jq '.version_metadata | length' downloads_data.json.new) versions (hash: ${NEW_HASH:0:8}...)"
+              echo ""
+              
+              # Show added/removed versions
+              OLD_VERSIONS=$(jq -r '.version_metadata | keys[]' downloads_data.json | sort)
+              NEW_VERSIONS=$(jq -r '.version_metadata | keys[]' downloads_data.json.new | sort)
+              
+              ADDED=$(comm -13 <(echo "$OLD_VERSIONS") <(echo "$NEW_VERSIONS"))
+              REMOVED=$(comm -23 <(echo "$OLD_VERSIONS") <(echo "$NEW_VERSIONS"))
+              
+              if [ -n "$ADDED" ]; then
+                echo "➕ Added versions:"
+                echo "$ADDED" | sed 's/^/  - /'
+              fi
+              
+              if [ -n "$REMOVED" ]; then
+                echo "➖ Removed versions:"
+                echo "$REMOVED" | sed 's/^/  - /'
+              fi
+            fi
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo ""
+            echo "🆕 First time generation - no existing file"
+          fi
+      
+      - name: Update downloads_data.json
+        if: steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true'
+        run: |
+          echo ""
+          echo "💾 Updating downloads_data.json on GitHub Pages..."
+          
+          # Backup old file if exists
+          if [ -f "downloads_data.json" ]; then
+            cp downloads_data.json downloads_data.json.backup
+            echo "  ✓ Backed up old version"
+          fi
+          
+          # Replace with new file
+          mv downloads_data.json.new downloads_data.json
+          echo "  ✓ Replaced with new version"
+          
+          # Create update log
+          cat > DOWNLOADS_UPDATE.txt << EOF
+          Last Updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          Trigger: ${{ github.event_name }}
+          Commit: ${{ github.sha }}
+          Versions: $(jq '.version_metadata | length' downloads_data.json)
+          Total Links: $(jq '.download_links | length' downloads_data.json)
+          EOF
+          
+          echo ""
+          echo "✅ Update complete"
+      
+      - name: Dry run summary
+        if: github.event.inputs.dry_run == 'true' && (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true')
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔍 DRY RUN - Preview Only (No Changes Committed)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📊 Changes that would be made:"
+          echo ""
+          echo "New downloads_data.json content:"
+          echo "  - Size: $(du -h downloads_data.json.new | cut -f1)"
+          echo "  - Versions: $(jq '.version_metadata | length' downloads_data.json.new)"
+          echo "  - Total links: $(jq '.download_links | length' downloads_data.json.new)"
+          echo ""
+          echo "📋 Versions that would be published:"
+          jq -r '.version_metadata | to_entries[] | "  - \(.key) (\(.value.release_date))"' downloads_data.json.new | sort -V
+          echo ""
+          echo "ℹ️  To actually apply these changes, run without dry_run option"
+          echo ""
+      
+      - name: Commit and push changes
+        if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add downloads_data.json DOWNLOADS_UPDATE.txt
+          
+          # Remove backup if exists
+          if [ -f "downloads_data.json.backup" ]; then
+            rm downloads_data.json.backup
+          fi
+          
+          COMMIT_MSG="chore: auto-update downloads_data.json"
+          
+          if [ "${{ github.event_name }}" == "release" ]; then
+            COMMIT_MSG="chore: update downloads for release ${{ github.event.release.tag_name }}"
+          elif [ "${{ github.event_name }}" == "schedule" ]; then
+            COMMIT_MSG="chore: scheduled update of downloads_data.json"
+          fi
+          
+          git commit -m "$COMMIT_MSG" -m "Versions: $(jq '.version_metadata | length' downloads_data.json)" \
+                     -m "Updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          git push origin gh-pages
+          
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Downloads data updated on GitHub Pages"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📊 Summary:"
+          echo "  - File: downloads_data.json"
+          echo "  - Size: $(du -h downloads_data.json | cut -f1)"
+          echo "  - Versions: $(jq '.version_metadata | length' downloads_data.json)"
+          echo "  - Links: $(jq '.download_links | length' downloads_data.json)"
+          echo ""
+          echo "🌐 Available at: https://asher-1.github.io/ACloudViewer/downloads_data.json"
+          echo ""
+      
+      - name: Summary
+        if: steps.check_changes.outputs.has_changes == 'false' && github.event.inputs.force_update != 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "ℹ️  No Update Required"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Downloads data is already up-to-date."
+          echo "  - Current versions: $(jq '.version_metadata | length' downloads_data.json)"
+          echo "  - Last update: $(cat DOWNLOADS_UPDATE.txt 2>/dev/null | head -1 || echo 'Unknown')"
+          echo ""
+          
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "💡 Manual Trigger Tips:"
+            echo "  - Use 'force_update: true' to commit even without changes"
+            echo "  - Use 'cleanup_old_versions' to remove old releases"
+            echo "  - Use 'max_versions' to limit version count"
+            echo "  - Use 'dry_run: true' to preview changes without committing"
+            echo ""
+          fi

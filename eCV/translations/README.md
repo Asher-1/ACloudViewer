@@ -13,21 +13,32 @@ This directory contains the Chinese translation files and related tools for AClo
 
 ```
 eCV/translations/
-├── ACloudViewer_zh.ts          # Main translation file (only one, edit this)
+├── ACloudViewer_zh.ts          # Main translation file (edit this)
 ├── CMakeLists.txt               # Build configuration
 ├── README.md                    # This file
 │
 └── scripts/                     # Tool scripts folder
-    ├── README.md                # Script documentation
-    ├── *.py                     # 7 automation scripts
-    ├── ACloudViewer_zh.ts.backup # Original backup
-    ├── ACloudViewer_zh_review.txt # Review list
-    └── ACloudViewer_zh.xlsx     # Excel reference
+    ├── update_translations.sh   # Primary update script
+    ├── quality_review.py        # Quality assurance tool
+    └── README.md                # Script documentation
 ```
 
 ## 🚀 Quick Start
 
-### Method 1: Using Qt Linguist (Recommended)
+### Step 1: Update Translation File from Source (When Needed)
+
+When source code has new translatable strings:
+
+```bash
+cd scripts
+bash update_translations.sh
+```
+
+This extracts all translatable strings from source code and updates `ACloudViewer_zh.ts`.
+
+### Step 2: Translate New Strings
+
+#### Method A: Using Qt Linguist (Recommended)
 
 ```bash
 /opt/qt515/bin/linguist ACloudViewer_zh.ts
@@ -40,16 +51,7 @@ Qt Linguist provides:
 - Batch operations
 - Spell checking
 
-### Method 2: Batch Auto-Translation
-
-```bash
-cd scripts
-python3 final_batch.py          # Most recommended: for remaining content
-python3 batch_translate.py      # Basic: common terms
-python3 enhance_coverage.py     # Enhanced: extended dictionary
-```
-
-### Method 3: Quality Review
+#### Method B: Quality Review
 
 ```bash
 cd scripts
@@ -151,22 +153,26 @@ For detailed instructions, see [`scripts/README.md`](scripts/README.md)
 
 ### Main Scripts
 
-1. **quality_review.py** - Translation quality review
+1. **update_translations.sh** - Primary update tool (in `scripts/`)
+   - Extract strings from source code
+   - Update translation file automatically
+   - Create timestamped backups
+   - Show translation statistics
+   
+   ```bash
+   cd scripts
+   bash update_translations.sh
+   ```
+
+2. **quality_review.py** - Translation quality review (in `scripts/`)
    - Check terminology consistency
    - Detect expression issues
    - Generate review report
-
-2. **batch_translate.py** - Batch translation tool
-   - Auto-translate based on dictionary
-   - Generate review list
-
-3. **final_batch.py** - Final batch translation
-   - Target remaining content
-   - Professional terminology translation
-
-4. **enhance_coverage.py** - Coverage enhancement
-   - Extended dictionary
-   - Improve coverage
+   
+   ```bash
+   cd scripts
+   python3 quality_review.py
+   ```
 
 ## 📈 Improvement History
 
@@ -197,19 +203,28 @@ For detailed instructions, see [`scripts/README.md`](scripts/README.md)
 
 ### Adding Translations
 
-1. **Recommended Method**: Use Qt Linguist
+1. **Update from source** (when code changes):
+   ```bash
+   cd scripts
+   bash update_translations.sh
+   ```
+
+2. **Translate strings** using Qt Linguist:
    ```bash
    /opt/qt515/bin/linguist ACloudViewer_zh.ts
    ```
 
-2. **Batch Method**: Extend script dictionary
-   - Edit `scripts/final_batch.py`
-   - Add new entries in `FINAL_TRANSLATIONS` dictionary
-   - Run script
-
-3. **Validation**: Run quality review
+3. **Validate quality**:
    ```bash
-   python3 scripts/quality_review.py
+   cd scripts
+   python3 quality_review.py
+   ```
+
+4. **Compile and test**:
+   ```bash
+   cd ../build_app
+   make translations
+   ./bin/ACloudViewer
    ```
 
 ### Pre-submission Checklist

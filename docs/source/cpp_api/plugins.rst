@@ -523,11 +523,11 @@ Further Reading
 * :doc:`../getting_started/build_from_source` - Build ACloudViewer with plugins
 * :doc:`overview` - C++ API overview
 * `Plugin Examples <https://github.com/Asher-1/ACloudViewer/tree/main/plugins/example>`_
-* `CVPluginAPI Documentation <../../cpp_api/>`_
+* `CVPluginAPI Documentation <api/>`_
 
 ---
 
 **See Also:**
 
-* Complete C++ API: `Doxygen Documentation <../../cpp_api/index.html>`_
+* Complete C++ API: `Doxygen Documentation <api/index.html>`_
 * Plugin source code: `plugins/core/ <https://github.com/Asher-1/ACloudViewer/tree/main/plugins/core>`_

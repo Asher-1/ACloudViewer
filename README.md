@@ -113,6 +113,20 @@ Reconstruction Tool:
 </p>
 
 
+Selection and Measurement Tools:
+
+<p align="center">
+  <img width="640" src="docs/images/selection_tools.png">
+</p>
+
+<p align="center">
+  <img width="640" src="docs/images/ruler_measurement_tools.png">
+</p>
+
+<p align="center">
+  <img width="640" src="docs/images/protractor_measurement_tools.png">
+</p>
+
 
 ## CloudViewer app
 
