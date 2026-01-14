@@ -3,29 +3,57 @@ Tutorial
 
 .. toctree::
    :maxdepth: 1
-   :caption: Basic Tutorials
+   :caption: Core
+
+   core/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Geometry
 
    geometry/index
-   visualization/index
-   pipelines/index
-   reconstruction/index
-   ml/index
-   advanced/index
 
 .. toctree::
    :maxdepth: 1
-   :caption: Core (Tensor) Tutorials
-
-   core/tensor
-   core/hashmap
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Tensor Geometry & Pipelines
+   :caption: Geometry (Tensor)
 
    t_geometry/pointcloud
-   t_pipelines/t_icp_registration
-   t_pipelines/t_robust_kernel
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Data
+
+   data/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Pipelines
+
+   pipelines/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Pipelines (Tensor)
+
+   t_pipelines/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Visualization
+
+   visualization/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Machine Learning
+
+   ml/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Advanced Topics
+
+   advanced/index
 
 Overview
 --------
@@ -47,8 +75,6 @@ Tutorial Structure
      - Interactive 3D visualization
    * - :doc:`pipelines/index`
      - Processing pipelines (registration, integration)
-   * - :doc:`reconstruction/index`
-     - 3D reconstruction from images
    * - :doc:`ml/index`
      - Machine learning with 3D data
    * - :doc:`advanced/index`
