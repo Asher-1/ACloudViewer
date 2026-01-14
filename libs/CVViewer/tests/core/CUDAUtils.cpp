@@ -48,7 +48,7 @@ void CheckScopedStreamManually() {
     ASSERT_EQ(core::cuda::GetDevice(), current_device);
 
     cudaStream_t stream;
-    OPEN3D_CUDA_CHECK(cudaStreamCreate(&stream));
+    CLOUDVIEWER_CUDA_CHECK(cudaStreamCreate(&stream));
 
     {
         core::CUDAScopedStream scoped_stream(stream);
@@ -58,7 +58,7 @@ void CheckScopedStreamManually() {
         ASSERT_EQ(core::cuda::GetDevice(), current_device);
     }
 
-    OPEN3D_CUDA_CHECK(cudaStreamDestroy(stream));
+    CLOUDVIEWER_CUDA_CHECK(cudaStreamDestroy(stream));
 
     ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
     ASSERT_EQ(core::cuda::GetDevice(), current_device);

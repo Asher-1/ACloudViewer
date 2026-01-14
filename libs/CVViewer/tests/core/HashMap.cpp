@@ -16,7 +16,7 @@
 #include "cloudViewer/core/MemoryManager.h"
 #include "cloudViewer/core/SizeVector.h"
 #include "cloudViewer/core/hashmap/HashSet.h"
-#include "cloudViewer/utility/FileSystem.h"
+#include <FileSystem.h>
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

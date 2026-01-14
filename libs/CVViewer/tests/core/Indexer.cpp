@@ -5,12 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/Indexer.h"
+#include "cloudViewer/core/Indexer.h"
 
 #include <unordered_map>
 
-#include "core/Device.h"
-#include "core/SizeVector.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/core/SizeVector.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
@@ -81,8 +81,8 @@ TEST_P(IndexerPermuteDevices, IndexerCopyConstructor) {
     for (int64_t i = 0; i < indexer_a.NumDims(); i++) {
         EXPECT_EQ(indexer_a.GetPrimaryShape()[i],
                   indexer_b.GetPrimaryShape()[i]);
-        EXPECT_EQ(indexer_a.GetMasterStrides()[i],
-                  indexer_b.GetMasterStrides()[i]);
+        EXPECT_EQ(indexer_a.GetPrimaryStrides()[i],
+                  indexer_b.GetPrimaryStrides()[i]);
         EXPECT_EQ(indexer_a.IsReductionDim(i), indexer_b.IsReductionDim(i));
     }
 }
@@ -109,8 +109,8 @@ TEST_P(IndexerPermuteDevices, BroadcastRestride) {
     EXPECT_EQ(core::SizeVector(indexer.GetPrimaryShape(),
                                indexer.GetPrimaryShape() + indexer.NumDims()),
               core::SizeVector({2, 2, 2, 1, 3}));
-    EXPECT_EQ(core::SizeVector(indexer.GetMasterStrides(),
-                               indexer.GetMasterStrides() + indexer.NumDims()),
+    EXPECT_EQ(core::SizeVector(indexer.GetPrimaryStrides(),
+                               indexer.GetPrimaryStrides() + indexer.NumDims()),
               core::SizeVector({12, 6, 3, 3, 1}));
 
     // Check tensor shape

@@ -7,8 +7,8 @@
 
 #include "cloudViewer/core/TensorFunction.h"
 
-#include "cloudViewer/utility/Helper.h"
-#include "cloudViewer/utility/Timer.h"
+#include <Helper.h>
+#include <Timer.h>
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

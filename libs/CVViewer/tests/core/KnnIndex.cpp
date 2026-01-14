@@ -9,12 +9,12 @@
 #include <cmath>
 #include <limits>
 
-#include "core/CoreTest.h"
+#include "tests/core/CoreTest.h"
 #include "cloudViewer/core/Device.h"
 #include "cloudViewer/core/Dtype.h"
 #include "cloudViewer/core/SizeVector.h"
 #include "cloudViewer/core/Tensor.h"
-#include "cloudViewer/utility/Helper.h"
+#include <Helper.h>
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

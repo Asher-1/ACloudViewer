@@ -1,3 +1,3 @@
 target_sources(tests PRIVATE
-    TransformationConverter.cpp
+    # TransformationConverter.cpp  # TODO: Fix visualization includes
 )

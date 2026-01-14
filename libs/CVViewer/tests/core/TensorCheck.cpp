@@ -7,7 +7,7 @@
 
 #include "cloudViewer/core/TensorCheck.h"
 
-#include "cloudViewer/utility/Helper.h"
+#include <Helper.h>
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

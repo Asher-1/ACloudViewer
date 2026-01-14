@@ -17,5 +17,9 @@ for the specified modules, allowing for:
 Based on Open3D's documentation system pattern.
 
 Current custom modules:
-  - cloudViewer.visualization.rst  (Visualization classes and functions)
-  - cloudViewer.io.rpc.rst         (Remote procedure call functionality)
+  - cloudViewer.visualization.rst            (Visualization classes and functions)
+  - cloudViewer.visualization.gui.rst        (GUI widgets and controls)
+  - cloudViewer.visualization.rendering.rst  (Rendering and scene management)
+  - cloudViewer.io.rpc.rst                   (Remote procedure call functionality)
+  - cloudViewer.ml.contrib.rst               (Machine learning contrib functions)
+  - cloudViewer.pipelines.registration.rst   (Point cloud registration pipeline)

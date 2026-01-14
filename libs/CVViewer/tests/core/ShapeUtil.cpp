@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/ShapeUtil.h"
+#include "cloudViewer/core/ShapeUtil.h"
 
 #include "tests/Tests.h"
 

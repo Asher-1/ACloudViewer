@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "geometry/HalfEdgeTriangleMesh.h"
+#include "cloudViewer/geometry/HalfEdgeTriangleMesh.h"
 
 #include <Helper.h>
 

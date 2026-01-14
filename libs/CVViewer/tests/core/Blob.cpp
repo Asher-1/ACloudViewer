@@ -5,10 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/Blob.h"
+#include "cloudViewer/core/Blob.h"
 
-#include "core/Device.h"
-#include "core/MemoryManager.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/core/MemoryManager.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

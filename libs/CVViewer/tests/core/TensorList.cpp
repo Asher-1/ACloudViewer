@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "core/TensorList.h"
+#include "cloudViewer/core/TensorList.h"
 
 #include <vector>
 

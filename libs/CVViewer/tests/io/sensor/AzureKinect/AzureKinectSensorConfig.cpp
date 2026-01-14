@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "cloudViewer/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>

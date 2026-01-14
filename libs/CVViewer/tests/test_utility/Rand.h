@@ -13,6 +13,14 @@
 #include <Eigen.h>
 
 namespace cloudViewer {
+namespace utility {
+// Forward declare allocator types if not already defined
+using Vector2d_allocator = Eigen::aligned_allocator<Eigen::Vector2d>;
+using Vector4i_allocator = Eigen::aligned_allocator<Eigen::Vector4i>;
+}  // namespace utility
+}  // namespace cloudViewer
+
+namespace cloudViewer {
 namespace tests {
 
 // Initialize an Eigen::Vector3d.
