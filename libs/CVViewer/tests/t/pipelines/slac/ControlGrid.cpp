@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -7,11 +7,11 @@
 
 #include "cloudViewer/t/pipelines/slac/ControlGrid.h"
 
-#include "core/CoreTest.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/data/Dataset.h"
 #include "cloudViewer/t/io/PointCloudIO.h"
 #include "cloudViewer/t/pipelines/slac/Visualization.h"
+#include "core/CoreTest.h"
 #include "tests/Tests.h"
 
 namespace cloudViewer {

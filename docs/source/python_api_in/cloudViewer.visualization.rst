@@ -7,6 +7,8 @@ cloudViewer.visualization
 
 .. autosummary::
 
+    ItemsView
+    KeysView
     Material
     MeshColorOption
     MeshShadeOption
@@ -18,6 +20,7 @@ cloudViewer.visualization
     SelectedIndex
     SelectionPolygonVolume
     TextureMaps
+    ValuesView
     VectorProperties
     ViewControl
     Visualizer
@@ -48,6 +51,8 @@ cloudViewer.visualization
 .. toctree::
     :hidden:
 
+    ItemsView <cloudViewer.visualization.ItemsView>
+    KeysView <cloudViewer.visualization.KeysView>
     Material <cloudViewer.visualization.Material>
     MeshColorOption <cloudViewer.visualization.MeshColorOption>
     MeshShadeOption <cloudViewer.visualization.MeshShadeOption>
@@ -59,6 +64,7 @@ cloudViewer.visualization
     SelectedIndex <cloudViewer.visualization.SelectedIndex>
     SelectionPolygonVolume <cloudViewer.visualization.SelectionPolygonVolume>
     TextureMaps <cloudViewer.visualization.TextureMaps>
+    ValuesView <cloudViewer.visualization.ValuesView>
     VectorProperties <cloudViewer.visualization.VectorProperties>
     ViewControl <cloudViewer.visualization.ViewControl>
     Visualizer <cloudViewer.visualization.Visualizer>

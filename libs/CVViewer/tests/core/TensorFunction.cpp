@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -9,6 +9,7 @@
 
 #include <Helper.h>
 #include <Timer.h>
+
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

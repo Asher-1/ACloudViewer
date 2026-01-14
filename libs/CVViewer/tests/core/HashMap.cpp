@@ -1,11 +1,13 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "cloudViewer/core/hashmap/HashMap.h"
+
+#include <FileSystem.h>
 
 #include <optional>
 #include <random>
@@ -16,7 +18,6 @@
 #include "cloudViewer/core/MemoryManager.h"
 #include "cloudViewer/core/SizeVector.h"
 #include "cloudViewer/core/hashmap/HashSet.h"
-#include <FileSystem.h>
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

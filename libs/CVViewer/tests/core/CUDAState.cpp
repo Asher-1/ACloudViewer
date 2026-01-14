@@ -8,7 +8,6 @@
 #ifdef BUILD_CUDA_MODULE
 
 #include "cloudViewer/core/CUDAUtils.h"
-
 #include "tests/Tests.h"
 
 namespace cloudViewer {

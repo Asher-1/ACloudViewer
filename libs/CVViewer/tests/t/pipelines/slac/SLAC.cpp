@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 
-#include "core/CoreTest.h"
 #include "cloudViewer/camera/PinholeCameraTrajectory.h"
 #include "cloudViewer/core/EigenConverter.h"
 #include "cloudViewer/core/MemoryManager.h"
@@ -22,6 +21,7 @@
 #include "cloudViewer/t/pipelines/slac/SLACOptimizer.h"
 #include "cloudViewer/utility/FileSystem.h"
 #include "cloudViewer/utility/Timer.h"
+#include "core/CoreTest.h"
 #include "tests/Tests.h"
 
 namespace cloudViewer {
@@ -73,7 +73,8 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     std::string pose_graph_fname =
             scene_folder + "/refined_registration_optimized.json";
 
-    auto pose_graph = cloudViewer::io::CreatePoseGraphFromFile(pose_graph_fname);
+    auto pose_graph =
+            cloudViewer::io::CreatePoseGraphFromFile(pose_graph_fname);
 
     // Optimizer Parameters. [Hard coded for unit-tests].
     auto params = t::pipelines::slac::SLACOptimizerParams();
@@ -150,10 +151,10 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
         }
     }
     // Skipping comparing CameraTrajectory. TODO.
-    cloudViewer::io::WritePinholeCameraTrajectory(params.GetSubfolderName() +
-                                                     "/optimized_trajectory_" +
-                                                     "slac" + ".log",
-                                             trajectory);
+    cloudViewer::io::WritePinholeCameraTrajectory(
+            params.GetSubfolderName() + "/optimized_trajectory_" + "slac" +
+                    ".log",
+            trajectory);
 }
 
 TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {

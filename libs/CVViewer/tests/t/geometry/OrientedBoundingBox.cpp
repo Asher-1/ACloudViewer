@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -7,13 +7,13 @@
 
 #include <gmock/gmock.h>
 
-#include "core/CoreTest.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/data/Dataset.h"
 #include "cloudViewer/geometry/BoundingVolume.h"
 #include "cloudViewer/t/geometry/BoundingVolume.h"
 #include "cloudViewer/t/geometry/PointCloud.h"
 #include "cloudViewer/utility/FileSystem.h"
+#include "core/CoreTest.h"
 #include "tests/Tests.h"
 
 namespace cloudViewer {

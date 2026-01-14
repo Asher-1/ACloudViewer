@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -7,7 +7,6 @@
 
 #include "cloudViewer/t/pipelines/registration/Registration.h"
 
-#include "core/CoreTest.h"
 #include "cloudViewer/core/Dispatch.h"
 #include "cloudViewer/core/EigenConverter.h"
 #include "cloudViewer/core/Tensor.h"
@@ -18,6 +17,7 @@
 #include "cloudViewer/t/io/PointCloudIO.h"
 #include "cloudViewer/t/pipelines/registration/RobustKernel.h"
 #include "cloudViewer/t/pipelines/registration/RobustKernelImpl.h"
+#include "core/CoreTest.h"
 #include "tests/Tests.h"
 
 namespace t_reg = cloudViewer::t::pipelines::registration;

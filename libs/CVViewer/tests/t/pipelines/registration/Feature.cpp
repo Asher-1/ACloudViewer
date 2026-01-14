@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
@@ -7,7 +7,6 @@
 
 #include "cloudViewer/t/pipelines/registration/Feature.h"
 
-#include "core/CoreTest.h"
 #include "cloudViewer/core/EigenConverter.h"
 #include "cloudViewer/core/Tensor.h"
 #include "cloudViewer/data/Dataset.h"
@@ -15,6 +14,7 @@
 #include "cloudViewer/pipelines/registration/Feature.h"
 #include "cloudViewer/t/geometry/PointCloud.h"
 #include "cloudViewer/t/io/PointCloudIO.h"
+#include "core/CoreTest.h"
 #include "tests/Tests.h"
 
 namespace cloudViewer {
