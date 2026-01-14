@@ -379,7 +379,7 @@ Here's a complete example that loads a point cloud, applies filtering, and saves
 Next Steps
 ----------
 
-- Explore the `Full API Reference <../cpp_api/index.html>`_ for detailed documentation
+- Explore the `Full API Reference <../../cpp_api/index.html>`_ for detailed documentation
 - Check out more examples in ``examples/Cpp/`` directory
 - Read the :doc:`overview` for understanding the architecture
 - Learn about specific modules:

@@ -415,6 +415,19 @@ class JupyterDocsBuilder:
                 dst_file = nb_parent_dst / py_file
                 _update_file(src_file, dst_file)
         
+        # Copy static images (like donation.png) to _static directory
+        print("📸 Copying static images to _static directory...")
+        static_src = Path(self.current_file_dir) / "images"
+        static_dst = Path(self.current_file_dir) / "source" / "_static"
+        
+        if static_src.exists():
+            static_dst.mkdir(parents=True, exist_ok=True)
+            # Copy donation.png if it exists
+            donation_img = static_src / "donation.png"
+            if donation_img.exists():
+                _update_file(donation_img, static_dst / "donation.png")
+                print(f"  ✓ donation.png ({donation_img.stat().st_size // 1024} KB)")
+        
         print(f"✅ Copied {copied_count} notebooks to tutorial directories")
 
 

@@ -9,7 +9,7 @@
 
 #include "core/Device.h"
 #include "core/MemoryManager.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace cloudViewer {

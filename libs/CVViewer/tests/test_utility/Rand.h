@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "Eigen.h"
+#include <Eigen.h>
 
 namespace cloudViewer {
 namespace tests {

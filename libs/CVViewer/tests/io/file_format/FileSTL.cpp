@@ -8,7 +8,7 @@
 #include <ecvMesh.h>
 
 #include "io/TriangleMeshIO.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

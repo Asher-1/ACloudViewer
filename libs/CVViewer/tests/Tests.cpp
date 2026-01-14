@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "tests/Tests.h"
+#include "Tests.h"
 
 namespace cloudViewer {
 namespace tests {

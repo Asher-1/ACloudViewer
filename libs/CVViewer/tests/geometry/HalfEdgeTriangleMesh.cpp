@@ -13,7 +13,7 @@
 #include <string>
 
 #include "cloudViewer/io/TriangleMeshIO.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

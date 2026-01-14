@@ -10,7 +10,7 @@
 #include <ecvMesh.h>
 
 #include "camera/PinholeCameraTrajectory.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace cloudViewer {
 namespace tests {

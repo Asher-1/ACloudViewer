@@ -7,7 +7,7 @@
 
 #include "ml/ShapeChecking.h"
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 using namespace cloudViewer::ml::op_util;
 

@@ -70,8 +70,8 @@ ACloudViewer is organized into several key modules that work together to provide
     padding: 20px; 
     border-radius: 8px; 
     border: 1px solid #ddd;
-    font-size: 14px;
-    line-height: 1.2;
+    font-size: 13px;
+    line-height: 1.4;
     letter-spacing: 0;
     white-space: pre;
     overflow-x: auto;
@@ -80,51 +80,51 @@ ACloudViewer is organized into several key modules that work together to provide
     -webkit-font-smoothing: subpixel-antialiased;
     -moz-osx-font-smoothing: auto;
     text-rendering: optimizeLegibility;">
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          <b>ACloudViewer Application</b>                    │
-│                     (ACloudViewer, CloudViewer, Python Bindings)            │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-                ┌──────────────────┴──────────────────┐
-                │                                     │
-┌───────────────▼────────────────┐    ┌──────────────▼─────────────────┐
-│     <b>Plugin System</b>       │    │   <b>Visualization Layer</b>   │
-│  (IO + Standard Plugins)       │    │  (Vtk-based 3D Viewer)         │
-│                                │    │                                │
-│  • qLASIO, qE57IO, qDracoIO    │    │  • Interactive 3D rendering    │
-│  • qCSF, qM3C2, qPoissonRecon  │    │  • Scene graph management      │
-│  • qPCL, qCanupo, qTreeIso     │    │  • User interactions           │
-└───────────────┬────────────────┘    └──────────────┬─────────────────┘
-                │                                     │
-                └──────────────────┬──────────────────┘
-                                   │
-┌──────────────────────────────────▼──────────────────────────────────────────┐
-│                      <b>Core Processing Layer</b>                           │
-│                                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ cloudViewer  │  │   eCV_db     │  │   eCV_io     │  │  PCLEngine   │     │
-│  │              │  │              │  │              │  │              │     │
-│  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • PCL        │     │
-│  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Integration│     │
-│  │ • ccMesh     │  │ • Entity     │  │    LAS,E57)  │  │ • Filtering  │     │
-│  │ • ccHObject  │  │   Hierarchy  │  │ • Format     │  │ • Registr.   │     │
-│  │ • ccOctree   │  │ • Scene Mgmt │  │   Converters │  │ • Segment.   │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                                             │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                    <b>Reconstruction Module</b>                      │   │
-│  │  • Surface Reconstruction  • Mesh Generation  • Poisson Recon        │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                   │
-┌──────────────────────────────────▼───────────────────────────────────────────┐
-│                         <b>Foundation Layer</b>                              │
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                         <b>ACloudViewer Application</b>                         │
+│                   (ACloudViewer, CloudViewer, Python Bindings)                │
+└─────────────────────────────────┬─────────────────────────────────────────────┘
+                                  │
+               ┌──────────────────┴──────────────────┐
+               │                                     │
+┌──────────────▼────────────────┐   ┌───────────────▼────────────────┐
+│       <b>Plugin System</b>        │   │    <b>Visualization Layer</b>      │
+│   (IO + Standard Plugins)     │   │    (Vtk-based 3D Viewer)       │
+│                               │   │                                │
+│ • qLASIO, qE57IO, qDracoIO    │   │ • Interactive 3D rendering     │
+│ • qCSF, qM3C2, qPoissonRecon  │   │ • Scene graph management       │
+│ • qPCL, qCanupo, qTreeIso     │   │ • User interactions            │
+└──────────────┬────────────────┘   └───────────────┬────────────────┘
+               │                                     │
+               └──────────────────┬──────────────────┘
+                                  │
+┌─────────────────────────────────▼───────────────────────────────────────────┐
+│                        <b>Core Processing Layer</b>                            │
 │                                                                              │
-│  • Eigen (Linear Algebra)    • Qt (GUI & Widgets)                            │
-│  • PCL (Point Cloud Library) • Boost (Utilities)                             │
-│  • VTK (Visualization)        • OpenMP (Parallelization)                     │
-│  • CGAL (Geometric Algorithms)                                               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │ cloudViewer  │  │   eCV_db     │  │   eCV_io     │  │  PCLEngine   │    │
+│  │              │  │              │  │              │  │              │    │
+│  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • PCL        │    │
+│  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Integration│    │
+│  │ • ccMesh     │  │ • Entity     │  │    LAS,E57)  │  │ • Filtering  │    │
+│  │ • ccHObject  │  │   Hierarchy  │  │ • Format     │  │ • Registr.   │    │
+│  │ • ccOctree   │  │ • Scene Mgmt │  │   Converters │  │ • Segment.   │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘    │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │                      <b>Reconstruction Module</b>                        │ │
+│  │   • Surface Reconstruction  • Mesh Generation  • Poisson Recon         │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
+                                  │
+┌─────────────────────────────────▼────────────────────────────────────────────┐
+│                          <b>Foundation Layer</b>                               │
+│                                                                               │
+│  • Eigen (Linear Algebra)     • Qt (GUI & Widgets)                           │
+│  • PCL (Point Cloud Library)  • Boost (Utilities)                            │
+│  • VTK (Visualization)         • OpenMP (Parallelization)                    │
+│  • CGAL (Geometric Algorithms)                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
 
 <b>Data Flow:</b>
   Input Files → eCV_io → Core Structures → Processing (Plugins/PCL) → 
