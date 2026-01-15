@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 import os
 from time import sleep
 import subprocess as sp
@@ -26,7 +25,7 @@ except AttributeError:
 import cloudViewer as cv3d
 from cloudViewer.visualization.tensorboard_plugin import summary
 from cloudViewer.visualization.tensorboard_plugin.util import to_dict_batch
-from cloudViewer.visualization.tensorboard_plugin.util import CloudViewerPluginDataReader
+from cloudViewer.visualization.tensorboard_plugin.util import Open3DPluginDataReader
 
 
 @pytest.fixture
@@ -146,7 +145,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
             cube[1].paint_uniform_color(colors[step][1])
             cube_summary = to_dict_batch(cube)
             cube_summary.update(material)
-            # Randomly convert to TF, CloudViewer, Numpy tensors, or use property
+            # Randomly convert to TF, Open3D, Numpy tensors, or use property
             # reference
             if step > 0:
                 cube_summary['vertex_positions'] = 0  # step ref.
@@ -206,7 +205,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     dirpath_ref = [
         logdir,
         os.path.join(logdir, 'plugins'),
-        os.path.join(logdir, 'plugins/CloudViewer')
+        os.path.join(logdir, 'plugins/Open3D')
     ]
     filenames_ref = geometry_data['filenames']
 
@@ -251,7 +250,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
         cube[1].paint_uniform_color(colors[step][1])
         cube_summary = to_dict_batch(cube)
         cube_summary.update(material)
-        # Randomly convert to PyTorch, CloudViewer, Numpy tensors, or use property
+        # Randomly convert to PyTorch, Open3D, Numpy tensors, or use property
         # reference
         if step > 0:
             cube_summary['vertex_positions'] = 0
@@ -304,7 +303,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
     dirpath_ref = [
         logdir,
         os.path.join(logdir, 'plugins'),
-        os.path.join(logdir, 'plugins/CloudViewer')
+        os.path.join(logdir, 'plugins/Open3D')
     ]
     filenames_ref = geometry_data['filenames']
     dirpath, filenames = [], []
@@ -355,7 +354,7 @@ def check_material_dict(o3d_geo, material, batch_idx):
 def logdir():
     """Extract logdir zip to provide logdir for tests, cleanup afterwards."""
     data_descriptor = cv3d.data.DataDescriptor(
-        url=cv3d.data.cloudViewer_downloads_prefix +
+        url=cv3d.data.open3d_downloads_prefix +
         "20220301-data/test_tensorboard_plugin.zip",
         md5="746612f1d3b413236091d263bff29dc9")
     test_data = cv3d.data.DownloadDataset(
@@ -380,7 +379,7 @@ def test_plugin_data_reader(geometry_data, logdir):
     bboxes_ref = geometry_data['bboxes']
     tags_ref = geometry_data['tags']
 
-    reader = CloudViewerPluginDataReader(logdir)
+    reader = Open3DPluginDataReader(logdir)
     assert reader.is_active()
     assert reader.run_to_tags == {'test_tensorboard_plugin': tags_ref}
     assert reader.get_label_to_names('test_tensorboard_plugin',
@@ -425,8 +424,7 @@ def test_plugin_data_reader(geometry_data, logdir):
             check_material_dict(cube_pcd_out, material, batch_idx)
 
             cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
-            cube_ls_ref = cv3d.t.geometry.LineSet.from_legacy(
-                cube_ls[batch_idx])
+            cube_ls_ref = cv3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
             cube_ls_ref.line.indices = cube_ls_ref.line.indices.to(
                 cv3d.core.int32)
             cube_ls_ref.line.colors = (cube_ls_ref.line.colors * 255).to(

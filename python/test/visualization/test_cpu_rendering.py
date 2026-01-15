@@ -13,7 +13,7 @@ import pytest
 
 def draw_box_offscreen():
     import cloudViewer as cv3d
-    import cloudViewer.visualization.rendering as rendering
+    import cloudViewer.visualization as rendering
     render = rendering.OffscreenRenderer(640, 480)
     cube_red = cv3d.geometry.ccMesh.create_box(1, 2, 4)
     cube_red.compute_vertex_normals()
@@ -26,7 +26,7 @@ def draw_box_offscreen():
 
 @pytest.mark.skipif(
     not (platform.system() == "Linux" and platform.machine() == "x86_64") or
-    os.getenv("cloudViewer_CPU_RENDERING", '') != 'true',
+    os.getenv("OPEN3D_CPU_RENDERING", '') != 'true',
     reason="Offscreen CPU rendering is only supported on x86_64 Linux")
 def test_draw_cpu():
     """Test CPU rendering in a separate process."""

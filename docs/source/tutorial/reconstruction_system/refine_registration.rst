@@ -31,4 +31,5 @@ The refined pose graph is saved and can be used in the final integration step.
    - :doc:`system_overview` - System overview
    - :doc:`register_fragments` - Registering fragments
    - :doc:`integrate_scene` - Integrating scene
+
 - :doc:`../pipelines/icp_registration` - ICP registration

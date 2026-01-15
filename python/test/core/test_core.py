@@ -161,13 +161,13 @@ def test_size_vector():
 def test_tensor_constructor(dtype, device):
     # Numpy array
     np_t = np.array([[0, 1, 2], [3, 4, 5]], dtype=to_numpy_dtype(dtype))
-    o3_t = cv3d.Tensor(np_t, device=device)
+    o3_t = cv3c.Tensor(np_t, device=device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # 2D list
     li_t = [[0, 1, 2], [3, 4, 5]]
     np_t = np.array(li_t, dtype=to_numpy_dtype(dtype))
-    o3_t = cv3d.Tensor(li_t, dtype, device)
+    o3_t = cv3c.Tensor(li_t, dtype, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # 2D list, inconsistent length
@@ -178,31 +178,31 @@ def test_tensor_constructor(dtype, device):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore",
                                     category=np.VisibleDeprecationWarning)
-            o3_t = cv3d.Tensor(li_t, dtype, device)
+            o3_t = cv3c.Tensor(li_t, dtype, device)
 
     # Automatic casting
     np_t_double = np.array([[0., 1.5, 2.], [3., 4., 5.]])
     np_t_int = np.array([[0, 1, 2], [3, 4, 5]])
-    o3_t = cv3d.Tensor(np_t_double, cv3d.int32, device)
+    o3_t = cv3c.Tensor(np_t_double, cv3c.int32, device)
     np.testing.assert_equal(np_t_int, o3_t.cpu().numpy())
 
     # Special strides
     np_t = np.random.randint(10, size=(10, 10))[1:10:2, 1:10:3].T
-    o3_t = cv3d.Tensor(np_t, cv3d.int32, device)
+    o3_t = cv3c.Tensor(np_t, cv3c.int32, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Boolean
     np_t = np.array([True, False, True], dtype=np.bool_)
-    o3_t = cv3d.Tensor([True, False, True], cv3d.bool, device)
+    o3_t = cv3c.Tensor([True, False, True], cv3c.bool, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
-    o3_t = cv3d.Tensor(np_t, cv3d.bool, device)
+    o3_t = cv3c.Tensor(np_t, cv3c.bool, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Scalar Boolean
     np_t = np.array(True)
-    o3_t = cv3d.Tensor(True, dtype=None, device=device)
+    o3_t = cv3c.Tensor(True, dtype=None, device=device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
-    o3_t = cv3d.Tensor(True, dtype=cv3d.bool, device=device)
+    o3_t = cv3c.Tensor(True, dtype=cv3c.bool, device=device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
@@ -342,7 +342,7 @@ def test_getitem(device):
     np.testing.assert_equal(o3_t[0, 1:-1, 2].cpu().numpy(), np_t[0, 1:-1, 2])
     np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(), np_t[0, 1:3,
                                                                     0:4:2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].fcpu().numpy(), np_t[0, 1:3,
+    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].cpu().numpy(), np_t[0, 1:3,
                                                                       0:-1:2])
     np.testing.assert_equal(o3_t[0, 1, :].cpu().numpy(), np_t[0, 1, :])
 

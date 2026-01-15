@@ -268,7 +268,7 @@ ACloudViewer provides seamless integration:
    
    # NumPy array to PointCloud
    points = np.random.rand(1000, 3)
-   pcd = cv3d.geometry.PointCloud()
+   pcd = cv3d.geometry.ccPointCloud()
    pcd.points = cv3d.utility.Vector3dVector(points)
    
    # PointCloud to NumPy array

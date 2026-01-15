@@ -343,6 +343,8 @@ jobs:
 
       # - name: Run Python unit tests
       #   run: |
+      #     python -V
       #     source util/ci_utils.sh
       #     echo "Running CloudViewer python tests..."
-      #     run_python_tests
+      #     pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+      #     run_python_tests cloudviewer*-"$pi_tag"-*_$(uname -m).whl

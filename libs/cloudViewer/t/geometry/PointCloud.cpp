@@ -1077,59 +1077,22 @@ PointCloud PointCloud::FromLegacy(
         const core::Device &device) {
     geometry::PointCloud pcd(device);
     // Positions
-    const auto &pts = pcd_legacy.getPoints();
-    if (!pts.empty()) {
-        const int64_t n = static_cast<int64_t>(pts.size());
-        core::Tensor host =
-                core::Tensor::Empty({n, 3}, dtype, core::Device("CPU:0"));
-        if (dtype == core::Float64) {
-            auto *p = host.GetDataPtr<double>();
-            for (int64_t i = 0; i < n; ++i) {
-                const auto &v = pts[static_cast<size_t>(i)];
-                p[3 * i + 0] = static_cast<double>(v.x);
-                p[3 * i + 1] = static_cast<double>(v.y);
-                p[3 * i + 2] = static_cast<double>(v.z);
-            }
-        } else {
-            auto *p = host.GetDataPtr<float>();
-            for (int64_t i = 0; i < n; ++i) {
-                const auto &v = pts[static_cast<size_t>(i)];
-                p[3 * i + 0] = static_cast<float>(v.x);
-                p[3 * i + 1] = static_cast<float>(v.y);
-                p[3 * i + 2] = static_cast<float>(v.z);
-            }
-        }
-        pcd.SetPointPositions(host.To(device));
+    if (pcd_legacy.hasPoints()) {
+        pcd.SetPointPositions(
+            core::eigen_converter::EigenVector3dVectorToTensor(
+                pcd_legacy.getEigenPoints(), dtype, device));
     } else {
         utility::LogWarning("Creating from an empty legacy PointCloud.");
     }
     // Normals (optional)
     if (pcd_legacy.hasNormals()) {
-        const int64_t n = static_cast<int64_t>(pcd_legacy.size());
-        core::Tensor host =
-                core::Tensor::Empty({n, 3}, dtype, core::Device("CPU:0"));
-        if (dtype == core::Float64) {
-            auto *p = host.GetDataPtr<double>();
-            for (int64_t i = 0; i < n; ++i) {
-                const CCVector3 *nv =
-                        pcd_legacy.getNormal(static_cast<unsigned>(i));
-                p[3 * i + 0] = static_cast<double>(nv->x);
-                p[3 * i + 1] = static_cast<double>(nv->y);
-                p[3 * i + 2] = static_cast<double>(nv->z);
-            }
-        } else {
-            auto *p = host.GetDataPtr<float>();
-            for (int64_t i = 0; i < n; ++i) {
-                const CCVector3 *nv =
-                        pcd_legacy.getNormal(static_cast<unsigned>(i));
-                p[3 * i + 0] = static_cast<float>(nv->x);
-                p[3 * i + 1] = static_cast<float>(nv->y);
-                p[3 * i + 2] = static_cast<float>(nv->z);
-            }
-        }
-        pcd.SetPointNormals(host.To(device));
+        pcd.SetPointNormals(core::eigen_converter::EigenVector3dVectorToTensor(
+            pcd_legacy.getEigenNormals(), dtype, device));
     }
-    // Colors are not supported in CVPointCloud directly; skipped intentionally.
+    if (pcd_legacy.hasColors()) {
+        pcd.SetPointColors(core::eigen_converter::EigenVector3dVectorToTensor(
+                pcd_legacy.getEigenColors(), dtype, device));
+    }
     return pcd;
 }
 
@@ -1137,48 +1100,59 @@ cloudViewer::geometry::PointCloud PointCloud::ToLegacy() const {
     cloudViewer::geometry::PointCloud pcd_legacy;
     // Positions
     if (HasPointPositions()) {
-        auto pts = GetPointPositions().To(core::Device("CPU:0"));
-        auto dtype = pts.GetDtype();
-        const int64_t n = pts.GetLength();
-        pcd_legacy.reserve(static_cast<unsigned>(n));
-        if (dtype == core::Float64) {
-            auto *p = pts.GetDataPtr<double>();
-            for (int64_t i = 0; i < n; ++i) {
-                pcd_legacy.addPoint(
-                        CCVector3(static_cast<float>(p[3 * i + 0]),
-                                  static_cast<float>(p[3 * i + 1]),
-                                  static_cast<float>(p[3 * i + 2])));
-            }
-        } else {
-            auto *p = pts.GetDataPtr<float>();
-            for (int64_t i = 0; i < n; ++i) {
-                pcd_legacy.addPoint(
-                        CCVector3(p[3 * i + 0], p[3 * i + 1], p[3 * i + 2]));
-            }
-        }
+        pcd_legacy.reserveThePointsTable(static_cast<unsigned>(GetPointPositions().GetLength()));
+        pcd_legacy.addPoints(core::eigen_converter::TensorToEigenVector3dVector(
+            GetPointPositions()));
     }
     // Normals (optional)
     if (HasPointNormals()) {
-        auto ns = GetPointNormals().To(core::Device("CPU:0"));
-        auto dtype = ns.GetDtype();
-        const int64_t n = ns.GetLength();
-        if (n > 0) pcd_legacy.reserveTheNormsTable();
-        if (dtype == core::Float64) {
-            auto *p = ns.GetDataPtr<double>();
-            for (int64_t i = 0; i < n; ++i) {
-                pcd_legacy.addNorm(CCVector3(static_cast<float>(p[3 * i + 0]),
-                                             static_cast<float>(p[3 * i + 1]),
-                                             static_cast<float>(p[3 * i + 2])));
-            }
-        } else {
-            auto *p = ns.GetDataPtr<float>();
-            for (int64_t i = 0; i < n; ++i) {
-                pcd_legacy.addNorm(
-                        CCVector3(p[3 * i + 0], p[3 * i + 1], p[3 * i + 2]));
+        pcd_legacy.reserveTheNormsTable();
+        pcd_legacy.addEigenNorms(core::eigen_converter::TensorToEigenVector3dVector(
+            GetPointNormals()));
+    }
+    
+    // Colors (optional)
+    if (HasPointColors()) {
+        bool dtype_is_supported_for_conversion = true;
+        double normalization_factor = 1.0;
+        core::Dtype point_color_dtype = GetPointColors().GetDtype();
+
+        if (point_color_dtype == core::UInt8) {
+            normalization_factor =
+                    1.0 /
+                    static_cast<double>(std::numeric_limits<uint8_t>::max());
+        } else if (point_color_dtype == core::UInt16) {
+            normalization_factor =
+                    1.0 /
+                    static_cast<double>(std::numeric_limits<uint16_t>::max());
+        } else if (point_color_dtype != core::Float32 &&
+                   point_color_dtype != core::Float64) {
+            utility::LogWarning(
+                    "Dtype {} of color attribute is not supported for "
+                    "conversion to LegacyPointCloud and will be skipped. "
+                    "Supported dtypes include UInt8, UIn16, Float32, and "
+                    "Float64",
+                    point_color_dtype.ToString());
+            dtype_is_supported_for_conversion = false;
+        }
+
+        if (dtype_is_supported_for_conversion) {
+            if (normalization_factor != 1.0) {
+                core::Tensor rescaled_colors =
+                        GetPointColors().To(core::Float64) *
+                        normalization_factor;
+                pcd_legacy.reserveTheRGBTable();
+                pcd_legacy.addEigenColors(
+                        core::eigen_converter::TensorToEigenVector3dVector(
+                                rescaled_colors));
+            } else {
+                pcd_legacy.reserveTheRGBTable();
+                pcd_legacy.addEigenColors(
+                        core::eigen_converter::TensorToEigenVector3dVector(
+                                GetPointColors()));
             }
         }
     }
-    // Colors are not handled here.
     return pcd_legacy;
 }
 

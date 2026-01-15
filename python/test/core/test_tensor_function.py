@@ -6,7 +6,7 @@
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
-import cloudViewer.core as o3c
+import cloudViewer.core as cv3c
 import numpy as np
 import pytest
 import tempfile
@@ -20,64 +20,64 @@ from cloudViewer_test import list_devices
 
 def list_dtypes():
     return [
-        o3c.float32,
-        o3c.float64,
-        o3c.int8,
-        o3c.int16,
-        o3c.int32,
-        o3c.int64,
-        o3c.uint8,
-        o3c.uint16,
-        o3c.uint32,
-        o3c.uint64,
-        o3c.bool,
+        cv3c.float32,
+        cv3c.float64,
+        cv3c.int8,
+        cv3c.int16,
+        cv3c.int32,
+        cv3c.int64,
+        cv3c.uint8,
+        cv3c.uint16,
+        cv3c.uint32,
+        cv3c.uint64,
+        cv3c.bool,
     ]
 
 
 def list_non_bool_dtypes():
     return [
-        o3c.float32,
-        o3c.float64,
-        o3c.int8,
-        o3c.int16,
-        o3c.int32,
-        o3c.int64,
-        o3c.uint8,
-        o3c.uint16,
-        o3c.uint32,
-        o3c.uint64,
+        cv3c.float32,
+        cv3c.float64,
+        cv3c.int8,
+        cv3c.int16,
+        cv3c.int32,
+        cv3c.int64,
+        cv3c.uint8,
+        cv3c.uint16,
+        cv3c.uint32,
+        cv3c.uint64,
     ]
 
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_concatenate(dtype, device):
 
     # 0-D cannot be concatenated.
-    a = o3c.Tensor(0, dtype=dtype, device=device)
-    b = o3c.Tensor(0, dtype=dtype, device=device)
-    c = o3c.Tensor(0, dtype=dtype, device=device)
+    a = cv3c.Tensor(0, dtype=dtype, device=device)
+    b = cv3c.Tensor(0, dtype=dtype, device=device)
+    c = cv3c.Tensor(0, dtype=dtype, device=device)
 
     with pytest.raises(
             RuntimeError,
             match=r"Zero-dimensional tensor can only be concatenated along "
             "axis = null, but got 0."):
-        o3c.concatenate((a, b, c))
+        cv3c.concatenate((a, b, c))
 
     # Concatenating 1-D tensors.
     # 1-D can be concatenated along axis = 0, -1.
-    a = o3c.Tensor([0, 1, 2], dtype=dtype, device=device)
-    b = o3c.Tensor([3, 4], dtype=dtype, device=device)
-    c = o3c.Tensor([5, 6, 7], dtype=dtype, device=device)
+    a = cv3c.Tensor([0, 1, 2], dtype=dtype, device=device)
+    b = cv3c.Tensor([3, 4], dtype=dtype, device=device)
+    c = cv3c.Tensor([5, 6, 7], dtype=dtype, device=device)
 
     # Default axis is 0.
-    output_t = o3c.concatenate((a, b, c))
+    output_t = cv3c.concatenate((a, b, c))
     output_np = np.concatenate(
         (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()))
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.concatenate((a, b, c), axis=-1)
+    output_t = cv3c.concatenate((a, b, c), axis=-1)
     output_np = np.concatenate(
         (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=-1)
 
@@ -89,29 +89,29 @@ def test_concatenate(dtype, device):
             match=
             r"Index out-of-range: dim == 1, but it must satisfy -1 <= dim <= 0"
     ):
-        o3c.concatenate((a, b, c), axis=1)
+        cv3c.concatenate((a, b, c), axis=1)
 
     with pytest.raises(
             RuntimeError,
             match=
             r"Index out-of-range: dim == -2, but it must satisfy -1 <= dim <= 0"
     ):
-        o3c.concatenate((a, b, c), axis=-2)
+        cv3c.concatenate((a, b, c), axis=-2)
 
     # Concatenating 2-D tensors.
-    a = o3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
-    b = o3c.Tensor([[4, 5]], dtype=dtype, device=device)
-    c = o3c.Tensor([[6, 7]], dtype=dtype, device=device)
+    a = cv3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
+    b = cv3c.Tensor([[4, 5]], dtype=dtype, device=device)
+    c = cv3c.Tensor([[6, 7]], dtype=dtype, device=device)
 
     # Above 2-D tensors can be concatenated along axis = 0, -2.
     # Default axis is 0.
-    output_t = o3c.concatenate((a, b, c))
+    output_t = cv3c.concatenate((a, b, c))
     output_np = np.concatenate(
         (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()))
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.concatenate((a, b, c), axis=-2)
+    output_t = cv3c.concatenate((a, b, c), axis=-2)
     output_np = np.concatenate(
         (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=-2)
 
@@ -125,7 +125,7 @@ def test_concatenate(dtype, device):
             "concatenation axis must be same, but along dimension 0, the "
             "tensor at index 0 has size 2 and the tensor at index 1 has size 1."
     ):
-        o3c.concatenate((a, b, c), axis=1)
+        cv3c.concatenate((a, b, c), axis=1)
 
     with pytest.raises(
             RuntimeError,
@@ -134,33 +134,33 @@ def test_concatenate(dtype, device):
             "concatenation axis must be same, but along dimension 0, the "
             "tensor at index 0 has size 2 and the tensor at index 1 has size 1."
     ):
-        o3c.concatenate((a, b, c), axis=-1)
+        cv3c.concatenate((a, b, c), axis=-1)
 
     # Concatenating 2-D tensors of shape {3, 1}.
-    a = o3c.Tensor([[0], [1], [2]], dtype=dtype, device=device)
-    b = o3c.Tensor([[3], [4], [5]], dtype=dtype, device=device)
-    c = o3c.Tensor([[6], [7], [8]], dtype=dtype, device=device)
+    a = cv3c.Tensor([[0], [1], [2]], dtype=dtype, device=device)
+    b = cv3c.Tensor([[3], [4], [5]], dtype=dtype, device=device)
+    c = cv3c.Tensor([[6], [7], [8]], dtype=dtype, device=device)
 
     # Above 2-D tensors can be concatenated along axis = 0, 1, -1, -2.
-    output_t = o3c.concatenate((a, b, c), axis=0)
+    output_t = cv3c.concatenate((a, b, c), axis=0)
     output_np = np.concatenate(
         (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=0)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.concatenate((a, b, c), axis=1)
+    output_t = cv3c.concatenate((a, b, c), axis=1)
     output_np = np.concatenate(
         (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=1)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.concatenate((a, b, c), axis=-1)
+    output_t = cv3c.concatenate((a, b, c), axis=-1)
     output_np = np.concatenate(
         (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=-1)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.concatenate((a, b, c), axis=-2)
+    output_t = cv3c.concatenate((a, b, c), axis=-2)
     output_np = np.concatenate(
         (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=-2)
 
@@ -172,42 +172,42 @@ def test_concatenate(dtype, device):
             match=
             r"Index out-of-range: dim == 2, but it must satisfy -2 <= dim <= 1"
     ):
-        o3c.concatenate((a, b, c), axis=2)
+        cv3c.concatenate((a, b, c), axis=2)
 
     with pytest.raises(
             RuntimeError,
             match=
             r"Index out-of-range: dim == -3, but it must satisfy -2 <= dim <= 1"
     ):
-        o3c.concatenate((a, b, c), axis=-3)
+        cv3c.concatenate((a, b, c), axis=-3)
 
     # Using concatenate for a single tensor. The tensor is split along its
     # first dimension, and concatenated along the axis.
-    a = o3c.Tensor([[[0, 1], [2, 3]], [[4, 5], [6, 7]], [[8, 9], [10, 11]]],
-                   dtype=o3c.Dtype.Float32,
+    a = cv3c.Tensor([[[0, 1], [2, 3]], [[4, 5], [6, 7]], [[8, 9], [10, 11]]],
+                   dtype=cv3c.Dtype.Float32,
                    device=device)
-    output_t = o3c.concatenate((a), axis=1)
+    output_t = cv3c.concatenate((a), axis=1)
     output_np = np.concatenate((a.cpu().numpy()), axis=1)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
     # dtype and device must be same for all the input tensors.
-    a = o3c.Tensor([[0, 1], [2, 3]], dtype=o3c.Dtype.Float32, device=device)
-    b = o3c.Tensor([[4, 5]], dtype=o3c.Dtype.Float64, device=device)
+    a = cv3c.Tensor([[0, 1], [2, 3]], dtype=cv3c.Dtype.Float32, device=device)
+    b = cv3c.Tensor([[4, 5]], dtype=cv3c.Dtype.Float64, device=device)
     with pytest.raises(
             RuntimeError,
             match=r"Tensor has dtype Float64, but is expected to have Float32"):
-        o3c.concatenate((a, b))
+        cv3c.concatenate((a, b))
 
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_append(dtype, device):
     # Appending 0-D.
     # 0-D can only be appended along axis = null.
-    self = o3c.Tensor(0, dtype=dtype, device=device)
-    values = o3c.Tensor(1, dtype=dtype, device=device)
-    output_t = o3c.append(self=self, values=values)
+    self = cv3c.Tensor(0, dtype=dtype, device=device)
+    values = cv3c.Tensor(1, dtype=dtype, device=device)
+    output_t = cv3c.append(self=self, values=values)
     output_np = np.append(arr=self.cpu().numpy(), values=values.cpu().numpy())
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
@@ -216,25 +216,25 @@ def test_append(dtype, device):
             RuntimeError,
             match=r"Zero-dimensional tensor can only be concatenated along "
             "axis = null, but got 0."):
-        o3c.append(self=self, values=values, axis=0)
+        cv3c.append(self=self, values=values, axis=0)
 
     # Appending 1-D.
     # 1-D can be appended along axis = 0, -1.
-    self = o3c.Tensor([0, 1], dtype=dtype, device=device)
-    values = o3c.Tensor([2, 3, 4], dtype=dtype, device=device)
-    output_t = o3c.append(self=self, values=values)
+    self = cv3c.Tensor([0, 1], dtype=dtype, device=device)
+    values = cv3c.Tensor([2, 3, 4], dtype=dtype, device=device)
+    output_t = cv3c.append(self=self, values=values)
     output_np = np.append(arr=self.cpu().numpy(), values=values.cpu().numpy())
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.append(self=self, values=values, axis=0)
+    output_t = cv3c.append(self=self, values=values, axis=0)
     output_np = np.append(arr=self.cpu().numpy(),
                           values=values.cpu().numpy(),
                           axis=0)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.append(self=self, values=values, axis=-1)
+    output_t = cv3c.append(self=self, values=values, axis=-1)
     output_np = np.append(arr=self.cpu().numpy(),
                           values=values.cpu().numpy(),
                           axis=-1)
@@ -248,47 +248,47 @@ def test_append(dtype, device):
             match=
             r"Index out-of-range: dim == 1, but it must satisfy -1 <= dim <= 0"
     ):
-        o3c.append(self=self, values=values, axis=1)
+        cv3c.append(self=self, values=values, axis=1)
 
     with pytest.raises(
             RuntimeError,
             match=
             r"Index out-of-range: dim == -2, but it must satisfy -1 <= dim <= 0"
     ):
-        o3c.append(self=self, values=values, axis=-2)
+        cv3c.append(self=self, values=values, axis=-2)
 
     # Appending 2-D. [2, 2] to [2, 2].
     # [2, 2] to [2, 2] can be appended along axis = 0, 1, -1, -2.
-    self = o3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
-    values = o3c.Tensor([[4, 5], [6, 7]], dtype=dtype, device=device)
+    self = cv3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
+    values = cv3c.Tensor([[4, 5], [6, 7]], dtype=dtype, device=device)
 
-    output_t = o3c.append(self=self, values=values)
+    output_t = cv3c.append(self=self, values=values)
     output_np = np.append(arr=self.cpu().numpy(), values=values.cpu().numpy())
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.append(self=self, values=values, axis=0)
+    output_t = cv3c.append(self=self, values=values, axis=0)
     output_np = np.append(arr=self.cpu().numpy(),
                           values=values.cpu().numpy(),
                           axis=0)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.append(self=self, values=values, axis=1)
+    output_t = cv3c.append(self=self, values=values, axis=1)
     output_np = np.append(arr=self.cpu().numpy(),
                           values=values.cpu().numpy(),
                           axis=1)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.append(self=self, values=values, axis=-1)
+    output_t = cv3c.append(self=self, values=values, axis=-1)
     output_np = np.append(arr=self.cpu().numpy(),
                           values=values.cpu().numpy(),
                           axis=-1)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.append(self=self, values=values, axis=-2)
+    output_t = cv3c.append(self=self, values=values, axis=-2)
     output_np = np.append(arr=self.cpu().numpy(),
                           values=values.cpu().numpy(),
                           axis=-2)
@@ -302,33 +302,33 @@ def test_append(dtype, device):
             match=
             r"Index out-of-range: dim == 2, but it must satisfy -2 <= dim <= 1"
     ):
-        o3c.append(self=self, values=values, axis=2)
+        cv3c.append(self=self, values=values, axis=2)
 
     with pytest.raises(
             RuntimeError,
             match=
             r"Index out-of-range: dim == -3, but it must satisfy -2 <= dim <= 1"
     ):
-        o3c.append(self=self, values=values, axis=-3)
+        cv3c.append(self=self, values=values, axis=-3)
 
     # Appending 2-D. [1, 2] to [2, 2].
     # [1, 2] to [2, 2] can be appended along axis = 0, -2.
-    self = o3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
-    values = o3c.Tensor([[4, 5]], dtype=dtype, device=device)
+    self = cv3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
+    values = cv3c.Tensor([[4, 5]], dtype=dtype, device=device)
 
-    output_t = o3c.append(self=self, values=values)
+    output_t = cv3c.append(self=self, values=values)
     output_np = np.append(arr=self.cpu().numpy(), values=values.cpu().numpy())
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.append(self=self, values=values, axis=0)
+    output_t = cv3c.append(self=self, values=values, axis=0)
     output_np = np.append(arr=self.cpu().numpy(),
                           values=values.cpu().numpy(),
                           axis=0)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
-    output_t = o3c.append(self=self, values=values, axis=-2)
+    output_t = cv3c.append(self=self, values=values, axis=-2)
     output_np = np.append(arr=self.cpu().numpy(),
                           values=values.cpu().numpy(),
                           axis=-2)
@@ -344,7 +344,7 @@ def test_append(dtype, device):
             "concatenation axis must be same, but along dimension 0, the "
             "tensor at index 0 has size 2 and the tensor at index 1 has size 1."
     ):
-        o3c.append(self=self, values=values, axis=1)
+        cv3c.append(self=self, values=values, axis=1)
 
     with pytest.raises(
             RuntimeError,
@@ -353,12 +353,12 @@ def test_append(dtype, device):
             "concatenation axis must be same, but along dimension 0, the "
             "tensor at index 0 has size 2 and the tensor at index 1 has size 1."
     ):
-        o3c.append(self=self, values=values, axis=-1)
+        cv3c.append(self=self, values=values, axis=-1)
 
     # dtype and device must be same for all the input tensors.
-    self = o3c.Tensor([[0, 1], [2, 3]], dtype=o3c.Dtype.Float32, device=device)
-    values = o3c.Tensor([[4, 5]], dtype=o3c.Dtype.Float64, device=device)
+    self = cv3c.Tensor([[0, 1], [2, 3]], dtype=cv3c.Dtype.Float32, device=device)
+    values = cv3c.Tensor([[4, 5]], dtype=cv3c.Dtype.Float64, device=device)
     with pytest.raises(
             RuntimeError,
             match=r"Tensor has dtype Float64, but is expected to have Float32"):
-        o3c.append(self=self, values=values)
+        cv3c.append(self=self, values=values)

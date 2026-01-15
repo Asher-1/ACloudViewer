@@ -88,7 +88,7 @@ Python
    print(cv3d.__version__)
    
    # Test basic functionality
-   pcd = cv3d.geometry.PointCloud()
+   pcd = cv3d.geometry.ccPointCloud()
    print("Installation successful!")
 
 C++

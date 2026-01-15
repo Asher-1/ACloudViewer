@@ -68,7 +68,7 @@ def test_size_vector():
         sv = cv3d.core.SizeVector(["foo", "bar"])
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_implicit_conversion(device):
     # Reshape
     t = cv3d.core.Tensor.ones((3, 4), device=device)

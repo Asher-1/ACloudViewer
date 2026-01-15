@@ -11,12 +11,44 @@ cloudViewer.core.nns
 cloudViewer.data
 cloudViewer.geometry
 cloudViewer.geometry.keypoint
+
+# IO modules
 cloudViewer.io
 cloudViewer.io.rpc
 
 # Machine Learning modules
 cloudViewer.ml
 cloudViewer.ml.contrib
+cloudViewer.ml.tf
+cloudViewer.ml.tf.layers
+cloudViewer.ml.tf.ops
+cloudViewer.ml.tf.datasets
+cloudViewer.ml.tf.datasets.utils
+cloudViewer.ml.tf.datasets.augment
+cloudViewer.ml.tf.utils
+cloudViewer.ml.tf.vis
+cloudViewer.ml.tf.dataloaders
+cloudViewer.ml.tf.models
+cloudViewer.ml.tf.modules
+cloudViewer.ml.tf.modules.losses
+cloudViewer.ml.tf.modules.metrics
+cloudViewer.ml.tf.pipelines
+cloudViewer.ml.torch
+cloudViewer.ml.torch.layers
+cloudViewer.ml.torch.ops
+cloudViewer.ml.torch.classes
+cloudViewer.ml.torch.datasets
+cloudViewer.ml.torch.datasets.utils
+cloudViewer.ml.torch.datasets.augment
+cloudViewer.ml.torch.datasets.samplers
+cloudViewer.ml.torch.utils
+cloudViewer.ml.torch.vis
+cloudViewer.ml.torch.dataloaders
+cloudViewer.ml.torch.models
+cloudViewer.ml.torch.modules
+cloudViewer.ml.torch.modules.losses
+cloudViewer.ml.torch.modules.metrics
+cloudViewer.ml.torch.pipelines
 
 # Pipeline modules
 cloudViewer.pipelines
@@ -25,7 +57,7 @@ cloudViewer.pipelines.integration
 cloudViewer.pipelines.odometry
 cloudViewer.pipelines.registration
 
-# Reconstruction modules (ACloudViewer specific)
+# Reconstruction modules (Colmap)
 cloudViewer.reconstruction
 cloudViewer.reconstruction.database
 cloudViewer.reconstruction.feature
@@ -54,3 +86,5 @@ cloudViewer.visualization
 cloudViewer.visualization.app
 cloudViewer.visualization.gui
 cloudViewer.visualization.rendering
+cloudViewer.visualization.webrtc_server
+cloudViewer.visualization.tensorboard_plugin.summary

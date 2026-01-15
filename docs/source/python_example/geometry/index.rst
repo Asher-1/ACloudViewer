@@ -93,7 +93,7 @@ Ray Casting Examples
 - `ray_casting_closest_geometry.py <../../../examples/Python/geometry/ray_casting_closest_geometry.py>`_
 
 Image Processing Examples
-------------------------
+-------------------------
 
 - `image_processing.py <../../../examples/Python/geometry/image_processing.py>`_
 
