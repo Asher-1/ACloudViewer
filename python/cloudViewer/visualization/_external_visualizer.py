@@ -156,8 +156,8 @@ class ExternalVisualizer:
 
                 import cloudViewer as cv3d
 
-                torus = cv3d.geometry.TriangleMesh.create_torus()
-                sphere = cv3d.geometry.TriangleMesh.create_sphere()
+                torus = cv3d.geometry.ccMesh.create_torus()
+                sphere = cv3d.geometry.ccMesh.create_sphere()
 
                 draw = cv3d.visualization.EV.draw
                 draw([ {'geometry': sphere, 'name': 'sphere'},

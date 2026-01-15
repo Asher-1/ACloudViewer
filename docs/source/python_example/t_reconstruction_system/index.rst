@@ -54,4 +54,4 @@ See Also
 
 - :doc:`../../tutorial/t_reconstruction_system/index` - Tensor Reconstruction System Tutorials
 - :doc:`../../tutorial/t_pipelines/index` - Tensor Pipelines Tutorials
-- :doc:`../../python_api/cloudViewer.t.reconstruction` - Tensor Reconstruction API Reference
+- :doc:`../../python_api/cloudViewer.t.pipelines` - Tensor Pipelines API Reference

@@ -6,7 +6,7 @@
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
-import cloudViewer.core as o3c
+import cloudViewer.core as cv3c
 import numpy as np
 import pytest
 import pickle
@@ -23,9 +23,9 @@ class WrongType():
     pass
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_tensormap(device):
-    dtype = o3c.float32
+    dtype = cv3c.float32
 
     # Constructor.
     tm = cv3d.t.geometry.TensorMap("positions")
@@ -35,8 +35,8 @@ def test_tensormap(device):
 
     # Map member access, assignment and "contains" check. This should be the
     # preferred way to construct a TensorMap with values in python.
-    points = o3c.Tensor.ones((0, 3), dtype, device)
-    colors = o3c.Tensor.ones((0, 3), dtype, device)
+    points = cv3c.Tensor.ones((0, 3), dtype, device)
+    colors = cv3c.Tensor.ones((0, 3), dtype, device)
     tm = cv3d.t.geometry.TensorMap("positions")
     assert "positions" not in tm
     tm.positions = points
@@ -62,8 +62,8 @@ def test_tensormap(device):
     tm = cv3d.t.geometry.TensorMap("positions")
 
     # Set attributes.
-    tm.positions = o3c.Tensor.ones((2, 3), dtype, device)
-    tm.colors = o3c.Tensor.ones((2, 3), dtype, device)
+    tm.positions = cv3c.Tensor.ones((2, 3), dtype, device)
+    tm.colors = cv3c.Tensor.ones((2, 3), dtype, device)
 
     # Set attributes with numpy array.
     tm.positions = np.ones((3, 3), np.float32)
@@ -81,15 +81,15 @@ def test_tensormap(device):
 
     # Set primary key.
     with pytest.raises(KeyError) as e:
-        tm.primary_key = o3c.Tensor.ones((2, 3), dtype, device)
+        tm.primary_key = cv3c.Tensor.ones((2, 3), dtype, device)
 
     # Test getter.
     tm = cv3d.t.geometry.TensorMap("positions")
     assert isinstance(tm, cv3d.t.geometry.TensorMap)
 
     # Set attributes.
-    tm.positions = o3c.Tensor.ones((2, 3), dtype, device)
-    tm.colors = o3c.Tensor.ones((2, 3), dtype, device)
+    tm.positions = cv3c.Tensor.ones((2, 3), dtype, device)
+    tm.colors = cv3c.Tensor.ones((2, 3), dtype, device)
 
     # Get existing attributes.
     colors = tm.colors
@@ -104,37 +104,37 @@ def test_tensormap(device):
     assert primary_key == "positions"
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_tensormap_modify(device):
     # Assigning to the *elements* of an alias will change the value in the map.
     # This tests that the alias shares the same memory as the tensor in the map.
     tm = cv3d.t.geometry.TensorMap("positions")
-    tm.a = o3c.Tensor([100], device=device)
+    tm.a = cv3c.Tensor([100], device=device)
     a_alias = tm.a
-    a_alias[:] = o3c.Tensor([200], device=device)
+    a_alias[:] = cv3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm.a.cpu().numpy(), [200])
 
     tm = cv3d.t.geometry.TensorMap("positions")
-    tm.a = o3c.Tensor([100], device=device)
+    tm.a = cv3c.Tensor([100], device=device)
     a_alias = tm.a
-    tm.a[:] = o3c.Tensor([200], device=device)
+    tm.a[:] = cv3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm.a.cpu().numpy(), [200])
 
     # Assigning a new tensor to an alias should not change the tensor in the
     # map. The alias name simply points to a new tensor.
     tm = cv3d.t.geometry.TensorMap("positions")
-    tm.a = o3c.Tensor([100], device=device)
+    tm.a = cv3c.Tensor([100], device=device)
     a_alias = tm.a
-    a_alias = o3c.Tensor([200], device=device)
+    a_alias = cv3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm.a.cpu().numpy(), [100])
 
     tm = cv3d.t.geometry.TensorMap("positions")
-    tm.a = o3c.Tensor([100], device=device)
+    tm.a = cv3c.Tensor([100], device=device)
     a_alias = tm.a
-    tm.a = o3c.Tensor([200], device=device)
+    tm.a = cv3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [100])
     np.testing.assert_equal(tm.a.cpu().numpy(), [200])
 
@@ -143,13 +143,13 @@ def test_tensormap_modify(device):
     # different. The copy is shallow because the new tensor shares the same
     # memory as the tensor in the map.
     tm = cv3d.t.geometry.TensorMap("positions")
-    tm.a = o3c.Tensor([100], device=device)
+    tm.a = cv3c.Tensor([100], device=device)
     a_alias = tm.a
     assert id(a_alias) != id(tm.a)
 
     # After deleting the key-value from the map, the alias shall still be alive.
     tm = cv3d.t.geometry.TensorMap("positions")
-    tm.a = o3c.Tensor([100], device=device)
+    tm.a = cv3c.Tensor([100], device=device)
     a_alias = tm.a
     assert len(tm) == 1
     del tm.a
@@ -160,8 +160,8 @@ def test_tensormap_modify(device):
 
     # With this, swapping elements are supported.
     tm = cv3d.t.geometry.TensorMap("positions")
-    tm.a = o3c.Tensor([100], device=device)
-    tm.b = o3c.Tensor([200], device=device)
+    tm.a = cv3c.Tensor([100], device=device)
+    tm.b = cv3c.Tensor([200], device=device)
     a_alias = tm.a
     b_alias = tm.b
     tm.a, tm.b = tm.b, tm.a
@@ -171,7 +171,7 @@ def test_tensormap_modify(device):
     np.testing.assert_equal(tm.b.cpu().numpy(), [100])
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_tensor_dict_modify(device):
     """
     Same as test_tensormap_modify(), but we put Tensors in a python dict.
@@ -179,43 +179,43 @@ def test_tensor_dict_modify(device):
     """
     # Assign to elements.
     tm = dict()
-    tm["a"] = o3c.Tensor([100], device=device)
+    tm["a"] = cv3c.Tensor([100], device=device)
     a_alias = tm["a"]
-    a_alias[:] = o3c.Tensor([200], device=device)
+    a_alias[:] = cv3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
 
     tm = dict()
-    tm["a"] = o3c.Tensor([100], device=device)
+    tm["a"] = cv3c.Tensor([100], device=device)
     a_alias = tm["a"]
-    tm["a"][:] = o3c.Tensor([200], device=device)
+    tm["a"][:] = cv3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
 
     # Assign a new tensor.
     tm = dict()
-    tm["a"] = o3c.Tensor([100], device=device)
+    tm["a"] = cv3c.Tensor([100], device=device)
     a_alias = tm["a"]
-    a_alias = o3c.Tensor([200], device=device)
+    a_alias = cv3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm["a"].cpu().numpy(), [100])
 
     tm = dict()
-    tm["a"] = o3c.Tensor([100], device=device)
+    tm["a"] = cv3c.Tensor([100], device=device)
     a_alias = tm["a"]
-    tm["a"] = o3c.Tensor([200], device=device)
+    tm["a"] = cv3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [100])
     np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
 
     # Object id.
     tm = dict()
-    tm["a"] = o3c.Tensor([100], device=device)
+    tm["a"] = cv3c.Tensor([100], device=device)
     a_alias = tm["a"]
     assert id(a_alias) == id(tm["a"])
 
     # Liveness of alias.
     tm = dict()
-    tm["a"] = o3c.Tensor([100], device=device)
+    tm["a"] = cv3c.Tensor([100], device=device)
     a_alias = tm["a"]
     assert len(tm) == 1
     del tm["a"]
@@ -226,8 +226,8 @@ def test_tensor_dict_modify(device):
 
     # Swap.
     tm = dict()
-    tm["a"] = o3c.Tensor([100], device=device)
-    tm["b"] = o3c.Tensor([200], device=device)
+    tm["a"] = cv3c.Tensor([100], device=device)
+    tm["b"] = cv3c.Tensor([200], device=device)
     a_alias = tm["a"]
     b_alias = tm["b"]
     tm["a"], tm["b"] = tm["b"], tm["a"]
@@ -302,14 +302,14 @@ def test_numpy_dict_modify():
     np.testing.assert_equal(tm["b"], [100])
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_pickle(device):
     tm = cv3d.t.geometry.TensorMap("positions")
     with tempfile.TemporaryDirectory() as temp_dir:
         file_name = f"{temp_dir}/tm.pkl"
-        tm.positions = o3c.Tensor.ones((10, 3), o3c.float32, device=device)
+        tm.positions = cv3c.Tensor.ones((10, 3), cv3c.float32, device=device)
         pickle.dump(tm, open(file_name, "wb"))
         tm_load = pickle.load(open(file_name, "rb"))
-        assert tm_load.positions.device == device and tm_load.positions.dtype == o3c.float32
+        assert tm_load.positions.device == device and tm_load.positions.dtype == cv3c.float32
         np.testing.assert_equal(tm.positions.cpu().numpy(),
                                 tm_load.positions.cpu().numpy())

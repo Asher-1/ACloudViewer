@@ -12,7 +12,7 @@ The first place to look for answers:
 
 - **Getting Started**: :doc:`/getting_started/introduction`
 - **Tutorials**: :doc:`/tutorial/index`
-- **Python API**: :doc:`/python_api/index`
+- **Python API**: :doc:`/python_api/cloudViewer.core`
 - **C++ API**: :doc:`/cpp_api`
 - **FAQ**: :doc:`faq`
 

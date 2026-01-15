@@ -607,7 +607,9 @@ test_wheel() {
 # Run in virtual environment
 # Note: This function expects cloudViewer_test.venv to exist (created by test_wheel)
 # or creates a new one if it doesn't exist.
+# Usage: run_python_tests [wheel_path]
 run_python_tests() {
+    wheel_path="${1:-}"
     # Create venv if it doesn't exist
     if [ ! -d "cloudViewer_test.venv" ]; then
         echo "Creating virtual environment cloudViewer_test.venv..."
@@ -623,8 +625,11 @@ run_python_tests() {
     
     # Install cloudViewer if not already installed
     if ! python -c "import cloudViewer" 2>/dev/null; then
-        echo "cloudViewer not installed in venv. Installing from source..."
-        python -m pip install -e "${CLOUDVIEWER_SOURCE_ROOT}/python"
+        if [ -n "$wheel_path" ]; then
+            python -m pip install "$wheel_path"
+        else
+            echo "Warning: cloudViewer not installed and no wheel_path provided. Tests may fail."
+        fi
     fi
     
     echo "Add --randomly-seed=SEED to the test command to reproduce test order."
@@ -784,7 +789,9 @@ install_docs_dependencies() {
     fi
     echo
     # Use --ignore-installed to override system packages (e.g., blinker from software-properties-common)
-    python -m pip install --ignore-installed -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" \
+    $SUDO apt remove blinker -y
+    $SUDO -H pip install --ignore-installed -U blinker
+    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" \
         -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" \
         -r "${CLOUDVIEWER_SOURCE_ROOT}/docs/requirements.txt"
 }
@@ -884,9 +891,9 @@ build_docs() {
         cd ..
     fi
     
-    # Generate documentation (Open3D style)
+    # Generate documentation
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "📄 Generating Documentation (Open3D Strategy)"
+    echo "📄 Generating Documentation"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "Build Strategy:"

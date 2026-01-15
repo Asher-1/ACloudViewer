@@ -53,7 +53,7 @@ Use the provided CI utility script:
 # From the project root, after building
 cd build_app
 source ../util/ci_utils.sh
-run_python_tests
+run_python_tests path/to/wheel.whl
 ```
 
 ## Test Structure

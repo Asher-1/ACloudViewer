@@ -16,7 +16,7 @@ The tensor-based reconstruction system provides:
 - **Scalable**: Handle large-scale indoor and outdoor scenes
 
 Key Components
--------------
+--------------
 
 - **Voxel Block Grid**: Efficient sparse volumetric representation
 - **Integration**: TSDF-based RGB-D integration
@@ -58,4 +58,4 @@ Here's a basic example of using the tensor-based reconstruction system:
    - :doc:`../reconstruction_system/index` - Legacy reconstruction system
    - :doc:`../t_pipelines/index` - Tensor-based pipelines
    - :doc:`../sensor/index` - Sensor integration
-   - :doc:`../../python_api/cloudViewer.t.reconstruction` - Tensor reconstruction API
+   - :doc:`../../python_api/cloudViewer.t.pipelines` - Tensor pipelines API

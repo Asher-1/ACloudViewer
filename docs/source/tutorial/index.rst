@@ -147,6 +147,6 @@ All tutorials include complete, runnable code examples.
 
 .. seealso::
 
-   - :doc:`../cpp_api/index` - C++ API Reference
+   - :doc:`../cpp_api` - C++ API Reference
    - :doc:`../getting_started/introduction` - Introduction
 

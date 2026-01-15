@@ -6,7 +6,7 @@
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
-import cloudViewer.core as o3c
+import cloudViewer.core as cv3c
 from cloudViewer.t.geometry import Image
 import numpy as np
 import pytest
@@ -31,20 +31,20 @@ def test_to_linear_transform(device):
     saturate_ref = np.array((180, 255, 0, 240, 80, 255),
                             dtype=np.uint8).reshape((2, 3, 1))
 
-    t_input = o3c.Tensor(input_data, dtype=o3c.uint8, device=device)
-    t_input3 = o3c.Tensor(np.broadcast_to(input_data, shape=(2, 3, 3)),
-                          dtype=o3c.uint8,
+    t_input = cv3c.Tensor(input_data, dtype=cv3c.uint8, device=device)
+    t_input3 = cv3c.Tensor(np.broadcast_to(input_data, shape=(2, 3, 3)),
+                          dtype=cv3c.uint8,
                           device=device)
 
     input1 = Image(t_input)
     # UInt8 -> Float32: auto scale = 1./255
-    output1 = input1.to(o3c.float32)
-    assert output1.dtype == o3c.float32
+    output1 = input1.to(cv3c.float32)
+    assert output1.dtype == cv3c.float32
     np.testing.assert_allclose(output1.as_tensor().cpu().numpy(), output_ref,
                                **TOL)
     # 3 channels
     input3 = Image(t_input3)
-    output3 = input3.to(o3c.float32)
+    output3 = input3.to(cv3c.float32)
     np.testing.assert_allclose(output3.as_tensor().cpu().numpy(),
                                np.broadcast_to(output_ref, (2, 3, 3)), **TOL)
 
@@ -59,12 +59,12 @@ def test_to_linear_transform(device):
                                **TOL)
 
     # UInt8 -> UInt16: auto scale = 1
-    output1 = input1.to(o3c.uint16)
-    assert output1.dtype == o3c.uint16
+    output1 = input1.to(cv3c.uint16)
+    assert output1.dtype == cv3c.uint16
     np.testing.assert_allclose(output1.as_tensor().cpu().numpy(), input_data,
                                **TOL)
     # 3 channels
-    output3 = input3.to(o3c.uint16)
+    output3 = input3.to(cv3c.uint16)
     np.testing.assert_allclose(output3.as_tensor().cpu().numpy(),
                                np.broadcast_to(input_data, (2, 3, 3)), **TOL)
 
@@ -80,7 +80,7 @@ def test_to_linear_transform(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_buffer_protocol_cpu(device):
-    if device.get_type() == o3c.Device.DeviceType.CPU:
+    if device.get_type() == cv3c.Device.DeviceType.CPU:
         # (rows, cols) -> (rows, cols, 1)
         src_t = np.array([[0, 1, 2], [3, 4, 5]], dtype=np.float32)
         im = Image(cv3d.core.Tensor.from_numpy(src_t))
@@ -122,10 +122,10 @@ def test_buffer_protocol_cpu(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_pickle(device):
-    img = Image(o3c.Tensor.ones((10, 10, 3), o3c.uint8, device))
+    img = Image(cv3c.Tensor.ones((10, 10, 3), cv3c.uint8, device))
     with tempfile.TemporaryDirectory() as temp_dir:
         file_name = f"{temp_dir}/img.pkl"
         pickle.dump(img, open(file_name, "wb"))
         img_load = pickle.load(open(file_name, "rb"))
         assert img_load.as_tensor().allclose(img.as_tensor())
-        assert img_load.device == img.device and img_load.dtype == o3c.uint8
+        assert img_load.device == img.device and img_load.dtype == cv3c.uint8

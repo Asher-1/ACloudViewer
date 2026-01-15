@@ -27,6 +27,7 @@ cloudViewer.visualization
     VisualizerWithEditing
     VisualizerWithKeyCallback
     VisualizerWithVertexSelection
+    ExternalVisualizer
 
 **Functions**
 
@@ -39,6 +40,11 @@ cloudViewer.visualization
     draw_geometries_with_key_callbacks
     draw_geometries_with_vertex_selection
     read_selection_polygon_volume
+    draw
+    draw_plotly
+    draw_plotly_server
+    get_plotly_fig
+    to_mitsuba
 
 **Modules**
 
@@ -47,6 +53,8 @@ cloudViewer.visualization
     app
     gui
     rendering
+    webrtc_server
+    tensorboard_plugin.summary
 
 .. toctree::
     :hidden:
@@ -78,6 +86,14 @@ cloudViewer.visualization
     draw_geometries_with_key_callbacks <cloudViewer.visualization.draw_geometries_with_key_callbacks>
     draw_geometries_with_vertex_selection <cloudViewer.visualization.draw_geometries_with_vertex_selection>
     read_selection_polygon_volume <cloudViewer.visualization.read_selection_polygon_volume>
+    ExternalVisualizer <cloudViewer.visualization.ExternalVisualizer>
+    draw <cloudViewer.visualization.draw>
+    draw_plotly <cloudViewer.visualization.draw_plotly>
+    draw_plotly_server <cloudViewer.visualization.draw_plotly_server>
+    get_plotly_fig <cloudViewer.visualization.get_plotly_fig>
+    to_mitsuba <cloudViewer.visualization.to_mitsuba>
     app <cloudViewer.visualization.app>
     gui <cloudViewer.visualization.gui>
     rendering <cloudViewer.visualization.rendering>
+    webrtc_server <cloudViewer.visualization.webrtc_server>
+    tensorboard_plugin.summary <cloudViewer.visualization.tensorboard_plugin.summary>

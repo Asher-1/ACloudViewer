@@ -41,5 +41,6 @@ The optimized pose graph is saved and can be used in the next step.
    - :doc:`system_overview` - System overview
    - :doc:`make_fragments` - Making fragments
    - :doc:`refine_registration` - Refining registration
+
 - :doc:`../pipelines/global_registration` - Global registration
 - :doc:`../pipelines/icp_registration` - ICP registration

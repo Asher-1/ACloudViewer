@@ -220,11 +220,15 @@ class PyAPIDocsBuilder:
     def _get_documented_module_names():
         """Reads the modules of the python api from documented_modules.txt"""
         module_names = []
-        with open("documented_modules.txt", "r") as f:
+        # Resolve path relative to script directory for robustness
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        documented_modules_path = os.path.join(script_dir, "documented_modules.txt")
+        with open(documented_modules_path, "r") as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith('#'):
                     continue
+                print(line, end="")
                 m = re.match(r"^(cloudViewer\..*)\s*$", line)
                 if m:
                     module_names.append(m.group(1))
@@ -235,34 +239,35 @@ class PyAPIDocsBuilder:
 
     def _try_import_module(self, full_module_name):
         """Returns the module object for the given module path"""
-        # Add multiple potential Python module paths (matches CMakeLists.txt)
-        potential_paths = [
-            os.path.join(os.path.dirname(__file__), "..", "build_app", "lib", "Release", "Python", "cuda"),
-            os.path.join(os.path.dirname(__file__), "..", "build_app", "lib", "python_package"),
-            os.path.join(os.path.dirname(__file__), "..", "build", "lib", "Release", "Python", "cuda"),
-            os.path.join(os.path.dirname(__file__), "..", "build", "lib", "python_package"),
-        ]
-        for path in potential_paths:
-            if os.path.exists(path):
-                sys.path.insert(0, path)
-        
-        # Try to import cloudViewer (pybind variant first, then standard)
         try:
-            import pybind as cloudViewer
-            sys.modules['cloudViewer'] = cloudViewer
-        except ImportError:
             import cloudViewer
-
+            if hasattr(cloudViewer, '_build_config'):
+                if cloudViewer._build_config.get('BUILD_TENSORFLOW_OPS', False):
+                    import cloudViewer.ml.tf
+                if cloudViewer._build_config.get('BUILD_PYTORCH_OPS', False):
+                    import cloudViewer.ml.torch
+        except (ImportError, AttributeError, KeyError) as e:
+            # Optional modules, ignore if not available
+            print(f"⚠️  {e}")
+            pass
+        
+        # Try to import the specific module
         try:
-            # Try to import directly
+            # Try to import directly. This will work for pure python submodules
             module = importlib.import_module(full_module_name)
             return module
         except ImportError:
-            # Traverse the module hierarchy
-            current_module = cloudViewer
-            for sub_module_name in full_module_name.split(".")[1:]:
-                current_module = getattr(current_module, sub_module_name)
-            return current_module
+            # Traverse the module hierarchy of the root module.
+            # This code path is necessary for modules for which we manually
+            # define a specific module path (e.g. the modules defined with
+            # pybind).
+            try:
+                current_module = cloudViewer
+                for sub_module_name in full_module_name.split(".")[1:]:
+                    current_module = getattr(current_module, sub_module_name)
+                return current_module
+            except AttributeError as e:
+                raise ImportError(f"Could not find module {full_module_name}: {e}")
 
     def _generate_function_doc(self, full_module_name, function_name, output_path):
         out_string = ""
@@ -283,7 +288,9 @@ class PyAPIDocsBuilder:
         out_string += "\n\n" + ".. autoclass:: %s" % class_name
         out_string += "\n    :members:"
         out_string += "\n    :undoc-members:"
-        out_string += "\n    :inherited-members:"
+        if not (full_module_name.startswith("cloudViewer.ml.tf") or
+                full_module_name.startswith("cloudViewer.ml.torch")):
+            out_string += "\n    :inherited-members:"
         out_string += "\n"
 
         with open(output_path, "w") as f:

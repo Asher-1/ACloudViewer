@@ -342,7 +342,7 @@ Run the complete test suite in Docker:
        -v $(pwd):/workspace \
        -w /workspace \
        acloudviewer-ci:cpu-static \
-       bash -c "source util/ci_utils.sh && run_python_tests"
+       bash -c "source util/ci_utils.sh && run_python_tests path/to/wheel.whl"
 
 **GPU Tests**:
 

@@ -869,7 +869,7 @@ Resources
 ---------
 
 - **Source Code**: `examples/Cpp/ <https://github.com/Asher-1/ACloudViewer/tree/main/examples/Cpp>`_
-- **Python Examples**: :doc:`python_examples`
+- **Python Examples**: :doc:`../python_example/geometry/index`
 - **C++ API Reference**: :doc:`/cpp_api`
 - **Tutorials**: :doc:`/tutorial/index`
 - **Build Guide**: :doc:`/getting_started/build_from_source`
