@@ -226,6 +226,7 @@ docs/source/tutorial/**/*.pcd
 docs/source/tutorial/**/*.json
 docs/source/tutorial/**/*.splat
 docs/source/python_api/
+docs/source/python_example
 docs/source/conf.py
 docs/Doxyfile
 docs/html

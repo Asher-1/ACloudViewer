@@ -6,6 +6,7 @@ Geometry
 
     pointcloud
     mesh
+    half_edge_mesh
     rgbd_image
     kdtree
 
