@@ -330,12 +330,12 @@ function Build-PipPackage {
         Write-Host "CloudViewer-ML available at $env:CLOUDVIEWER_ML_ROOT. Bundling CloudViewer-ML in wheel."
         Push-Location $env:CLOUDVIEWER_ML_ROOT
         $currentBranch = git rev-parse --abbrev-ref HEAD
-        if ($currentBranch -ne "torch271") {
-            git show-ref --verify --quiet refs/heads/torch271
+        if ($currentBranch -ne "main") {
+            git show-ref --verify --quiet refs/heads/main
             if ($LASTEXITCODE -eq 0) {
-                git checkout torch271 2>&1 | Out-Null
+                git checkout main 2>&1 | Out-Null
             } else {
-                git checkout -b torch271 2>&1 | Out-Null
+                git checkout -b main 2>&1 | Out-Null
             }
         }
         Pop-Location

@@ -138,7 +138,8 @@ def test_locate_leaf_node():
         point_array = np.array([point[0], point[1], point[2]])
         node, node_info = octree.locate_leaf_node(point_array)
         # The located node must be in bound
-        assert octree.is_point_in_bound(point_array, node_info.origin, node_info.size)
+        assert octree.is_point_in_bound(point_array, node_info.origin,
+                                        node_info.size)
         # Leaf node must be located
         assert node_info.depth == max_depth
         # Leaf node's size must match

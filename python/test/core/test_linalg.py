@@ -24,8 +24,8 @@ def test_matmul(device, dtype):
     # Shape takes tuple, list or cv3c.SizeVector
     a = cv3c.Tensor([[1, 2.5, 3], [4, 5, 6.2]], dtype=dtype, device=device)
     b = cv3c.Tensor([[7.5, 8, 9, 10], [11, 12, 13, 14], [15, 16, 17.8, 18]],
-                   dtype=dtype,
-                   device=device)
+                    dtype=dtype,
+                    device=device)
     c = cv3c.matmul(a, b)
     assert c.shape == cv3c.SizeVector([2, 4])
 
@@ -77,8 +77,8 @@ def test_addmm(device, dtype):
     # Shape takes tuple, list or cv3c.SizeVector
     a = cv3c.Tensor([[1, 2.5, 3], [4, 5, 6.2]], dtype=dtype, device=device)
     b = cv3c.Tensor([[7.5, 8, 9, 10], [11, 12, 13, 14], [15, 16, 17.8, 18]],
-                   dtype=dtype,
-                   device=device)
+                    dtype=dtype,
+                    device=device)
     input = cv3c.Tensor.ones((2, 4), dtype=dtype, device=device)
     alpha = 1.0
     beta = 1.0
@@ -146,8 +146,8 @@ def test_addmm(device, dtype):
                          [cv3c.int32, cv3c.int64, cv3c.float32, cv3c.float64])
 def test_det(device, dtype):
     a = cv3c.Tensor([[-5, 0, -1], [1, 2, -1], [-3, 4, 1]],
-                   dtype=dtype,
-                   device=device)
+                    dtype=dtype,
+                    device=device)
 
     if dtype in [cv3c.int32, cv3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
@@ -180,10 +180,10 @@ def test_lu(device, dtype):
     # TODO: Fix CUDA implementation in MemoryManagerCUDA::Memcpy
     if device.get_type() == cv3c.Device.DeviceType.CUDA:
         pytest.skip("LU decomposition not yet implemented for CUDA device")
-    
+
     a = cv3c.Tensor([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]],
-                   dtype=dtype,
-                   device=device)
+                    dtype=dtype,
+                    device=device)
 
     if dtype in [cv3c.int32, cv3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
@@ -216,10 +216,10 @@ def test_lu_ipiv(device, dtype):
     # TODO: Fix CUDA implementation in MemoryManagerCUDA::Memcpy
     if device.get_type() == cv3c.Device.DeviceType.CUDA:
         pytest.skip("LU decomposition not yet implemented for CUDA device")
-    
+
     a = cv3c.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
-                   dtype=dtype,
-                   device=device)
+                    dtype=dtype,
+                    device=device)
     if dtype in [cv3c.int32, cv3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
             cv3c.lu_ipiv(a)
@@ -252,8 +252,8 @@ def test_lu_ipiv(device, dtype):
                          [cv3c.int32, cv3c.int64, cv3c.float32, cv3c.float64])
 def test_inverse(device, dtype):
     a = cv3c.Tensor([[7, 2, 1], [0, 3, -1], [-3, 4, 2]],
-                   dtype=dtype,
-                   device=device)
+                    dtype=dtype,
+                    device=device)
 
     if dtype in [cv3c.int32, cv3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
@@ -303,7 +303,9 @@ def test_inverse(device, dtype):
 @pytest.mark.parametrize("dtype",
                          [cv3c.int32, cv3c.int64, cv3c.float32, cv3c.float64])
 def test_svd(device, dtype):
-    a = cv3c.Tensor([[2, 4], [1, 3], [0, 0], [0, 0]], dtype=dtype, device=device)
+    a = cv3c.Tensor([[2, 4], [1, 3], [0, 0], [0, 0]],
+                    dtype=dtype,
+                    device=device)
     if dtype in [cv3c.int32, cv3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
             cv3c.svd(a)
@@ -394,14 +396,14 @@ def test_lstsq(device, dtype):
 
     # Test non-square
     a = cv3c.Tensor([[1.44, -7.84, -4.39, 4.53], [-9.96, -0.28, -3.24, 3.83],
-                    [-7.55, 3.24, 6.27, -6.64], [8.34, 8.09, 5.28, 2.06],
-                    [7.08, 2.52, 0.74, -2.47], [-5.45, -5.70, -1.19, 4.70]],
-                   dtype=dtype,
-                   device=device)
+                     [-7.55, 3.24, 6.27, -6.64], [8.34, 8.09, 5.28, 2.06],
+                     [7.08, 2.52, 0.74, -2.47], [-5.45, -5.70, -1.19, 4.70]],
+                    dtype=dtype,
+                    device=device)
     b = cv3c.Tensor([[8.58, 9.35], [8.26, -4.43], [8.48, -0.70], [-5.28, -0.26],
-                    [5.72, -7.36], [8.93, -2.52]],
-                   dtype=dtype,
-                   device=device)
+                     [5.72, -7.36], [8.93, -2.52]],
+                    dtype=dtype,
+                    device=device)
     x = a.lstsq(b)
     x_numpy, _, _, _ = np.linalg.lstsq(a.cpu().numpy(),
                                        b.cpu().numpy(),
@@ -431,8 +433,8 @@ def test_lstsq(device, dtype):
                          [cv3c.int32, cv3c.int64, cv3c.float32, cv3c.float64])
 def test_thiu(device, dtype):
     a = cv3c.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
-                   dtype=dtype,
-                   device=device)
+                    dtype=dtype,
+                    device=device)
     # Test default diagonal value (= 0).
     np.testing.assert_allclose(cv3c.triu(a).cpu().numpy(),
                                np.triu(a.cpu().numpy()),
@@ -455,8 +457,8 @@ def test_thiu(device, dtype):
                          [cv3c.int32, cv3c.int64, cv3c.float32, cv3c.float64])
 def test_thil(device, dtype):
     a = cv3c.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
-                   dtype=dtype,
-                   device=device)
+                    dtype=dtype,
+                    device=device)
     # Test default diagonal value (= 0).
     np.testing.assert_allclose(cv3c.tril(a).cpu().numpy(),
                                np.tril(a.cpu().numpy()),
@@ -479,16 +481,16 @@ def test_thil(device, dtype):
                          [cv3c.int32, cv3c.int64, cv3c.float32, cv3c.float64])
 def test_thiul(device, dtype):
     a = cv3c.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
-                   dtype=dtype,
-                   device=device)
+                    dtype=dtype,
+                    device=device)
     # Test default diagounal value (= 0).
     u0, l0 = cv3c.triul(a)
     l0_ = cv3c.Tensor([[1, 0, 0], [3, 1, 0], [2, 4, 1]],
-                     dtype=dtype,
-                     device=device)
+                      dtype=dtype,
+                      device=device)
     u0_ = cv3c.Tensor([[2, 3, 1], [0, 3, 1], [0, 0, 1]],
-                     dtype=dtype,
-                     device=device)
+                      dtype=dtype,
+                      device=device)
     np.testing.assert_allclose(l0.cpu().numpy(),
                                l0_.cpu().numpy(),
                                rtol=1e-5,
@@ -501,11 +503,11 @@ def test_thiul(device, dtype):
     # Test positive diagounal value (= 0).
     u1, l1 = cv3c.triul(a, 1)
     l1_ = cv3c.Tensor([[2, 1, 0], [3, 3, 1], [2, 4, 1]],
-                     dtype=dtype,
-                     device=device)
+                      dtype=dtype,
+                      device=device)
     u1_ = cv3c.Tensor([[0, 3, 1], [0, 0, 1], [0, 0, 0]],
-                     dtype=dtype,
-                     device=device)
+                      dtype=dtype,
+                      device=device)
     np.testing.assert_allclose(l1.cpu().numpy(),
                                l1_.cpu().numpy(),
                                rtol=1e-5,

@@ -59,7 +59,7 @@ ENV ACloudViewer_DEV=/root \
     ACloudViewer_INSTALL=/root/install
 
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b torch271 ${CLOUDVIEWER_ML_ROOT}
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b main ${CLOUDVIEWER_ML_ROOT}
 
 # Install Rust (required for building some Python packages like y_py) only for Python 3.13+
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \

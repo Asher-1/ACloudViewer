@@ -1079,15 +1079,15 @@ PointCloud PointCloud::FromLegacy(
     // Positions
     if (pcd_legacy.hasPoints()) {
         pcd.SetPointPositions(
-            core::eigen_converter::EigenVector3dVectorToTensor(
-                pcd_legacy.getEigenPoints(), dtype, device));
+                core::eigen_converter::EigenVector3dVectorToTensor(
+                        pcd_legacy.getEigenPoints(), dtype, device));
     } else {
         utility::LogWarning("Creating from an empty legacy PointCloud.");
     }
     // Normals (optional)
     if (pcd_legacy.hasNormals()) {
         pcd.SetPointNormals(core::eigen_converter::EigenVector3dVectorToTensor(
-            pcd_legacy.getEigenNormals(), dtype, device));
+                pcd_legacy.getEigenNormals(), dtype, device));
     }
     if (pcd_legacy.hasColors()) {
         pcd.SetPointColors(core::eigen_converter::EigenVector3dVectorToTensor(
@@ -1100,17 +1100,19 @@ cloudViewer::geometry::PointCloud PointCloud::ToLegacy() const {
     cloudViewer::geometry::PointCloud pcd_legacy;
     // Positions
     if (HasPointPositions()) {
-        pcd_legacy.reserveThePointsTable(static_cast<unsigned>(GetPointPositions().GetLength()));
+        pcd_legacy.reserveThePointsTable(
+                static_cast<unsigned>(GetPointPositions().GetLength()));
         pcd_legacy.addPoints(core::eigen_converter::TensorToEigenVector3dVector(
-            GetPointPositions()));
+                GetPointPositions()));
     }
     // Normals (optional)
     if (HasPointNormals()) {
         pcd_legacy.reserveTheNormsTable();
-        pcd_legacy.addEigenNorms(core::eigen_converter::TensorToEigenVector3dVector(
-            GetPointNormals()));
+        pcd_legacy.addEigenNorms(
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        GetPointNormals()));
     }
-    
+
     // Colors (optional)
     if (HasPointColors()) {
         bool dtype_is_supported_for_conversion = true;

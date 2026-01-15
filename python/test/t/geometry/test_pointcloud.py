@@ -51,20 +51,22 @@ def test_from_legacy(device):
     dtype = cv3c.float32
 
     legacy_pcd = cv3d.geometry.ccPointCloud()
-    legacy_pcd.set_points(cv3d.utility.Vector3dVector(
-        np.array([[0, 1, 2], [3, 4, 5]])))
+    legacy_pcd.set_points(
+        cv3d.utility.Vector3dVector(np.array([[0, 1, 2], [3, 4, 5]])))
     # Use normalized color values in [0, 1] range for legacy point clouds
-    legacy_pcd.set_colors(cv3d.utility.Vector3dVector(
-        np.array([[0.2, 0.3, 0.4], [0.5, 0.6, 0.7]])))
+    legacy_pcd.set_colors(
+        cv3d.utility.Vector3dVector(np.array([[0.2, 0.3, 0.4], [0.5, 0.6,
+                                                                0.7]])))
 
     pcd = cv3d.t.geometry.PointCloud.from_legacy(legacy_pcd, dtype, device)
     assert pcd.point.positions.allclose(
         cv3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype, device))
     # Legacy point clouds store colors as uint8 internally, causing quantization.
     # Allow tolerance for 8-bit quantization error (max ~1/255 ≈ 0.004)
-    assert pcd.point.colors.allclose(
-        cv3c.Tensor([[0.2, 0.3, 0.4], [0.5, 0.6, 0.7]], dtype, device),
-        rtol=1e-2, atol=2.5e-3)
+    assert pcd.point.colors.allclose(cv3c.Tensor(
+        [[0.2, 0.3, 0.4], [0.5, 0.6, 0.7]], dtype, device),
+                                     rtol=1e-2,
+                                     atol=2.5e-3)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -74,7 +76,8 @@ def test_to_legacy(device):
     pcd = cv3d.t.geometry.PointCloud(device)
     pcd.point.positions = cv3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype, device)
     # Use normalized color values in [0, 1] range for legacy point cloud compatibility
-    pcd.point.colors = cv3c.Tensor([[0.2, 0.3, 0.4], [0.5, 0.6, 0.7]], dtype, device)
+    pcd.point.colors = cv3c.Tensor([[0.2, 0.3, 0.4], [0.5, 0.6, 0.7]], dtype,
+                                   device)
 
     legacy_pcd = pcd.to_legacy()
     np.testing.assert_allclose(np.asarray(legacy_pcd.points()),
@@ -83,7 +86,8 @@ def test_to_legacy(device):
     # Allow tolerance for 8-bit quantization error (max ~1/255 ≈ 0.004)
     np.testing.assert_allclose(np.asarray(legacy_pcd.colors()),
                                np.array([[0.2, 0.3, 0.4], [0.5, 0.6, 0.7]]),
-                               rtol=1e-2, atol=2.5e-3)
+                               rtol=1e-2,
+                               atol=2.5e-3)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -93,9 +97,10 @@ def test_member_functions(device):
     # get_min_bound, get_max_bound, get_center.
     pcd = cv3d.t.geometry.PointCloud(device)
     pcd.point.positions = cv3c.Tensor([[1, 10, 20], [30, 2, 40], [50, 60, 3]],
-                                     dtype, device)
+                                      dtype, device)
     assert pcd.get_min_bound().allclose(cv3c.Tensor([1, 2, 3], dtype, device))
-    assert pcd.get_max_bound().allclose(cv3c.Tensor([50, 60, 40], dtype, device))
+    assert pcd.get_max_bound().allclose(cv3c.Tensor([50, 60, 40], dtype,
+                                                    device))
     assert pcd.get_center().allclose(cv3c.Tensor([27, 24, 21], dtype, device))
 
     # append.
@@ -111,7 +116,8 @@ def test_member_functions(device):
     pcd3 = cv3d.t.geometry.PointCloud(device)
     pcd3 = pcd + pcd2
 
-    assert pcd3.point.positions.allclose(cv3c.Tensor.ones((4, 3), dtype, device))
+    assert pcd3.point.positions.allclose(cv3c.Tensor.ones((4, 3), dtype,
+                                                          device))
     assert pcd3.point.normals.allclose(cv3c.Tensor.ones((4, 3), dtype, device))
 
     with pytest.raises(RuntimeError) as excinfo:
@@ -145,7 +151,7 @@ def test_member_functions(device):
     # scale
     pcd = cv3d.t.geometry.PointCloud(device)
     pcd.point.positions = cv3c.Tensor([[0, 0, 0], [1, 1, 1], [2, 2, 2]], dtype,
-                                     device)
+                                      device)
     center = cv3c.Tensor([1, 1, 1], dtype, device)
     pcd.scale(4, center)
     assert pcd.point.positions.allclose(
@@ -194,8 +200,8 @@ def test_pickle(device):
     with tempfile.TemporaryDirectory() as temp_dir:
         file_name = f"{temp_dir}/pcd.pkl"
         pcd.point.positions = cv3c.Tensor.ones((10, 3),
-                                              cv3c.float32,
-                                              device=device)
+                                               cv3c.float32,
+                                               device=device)
         pickle.dump(pcd, open(file_name, "wb"))
         pcd_load = pickle.load(open(file_name, "rb"))
         assert pcd_load.point.positions.device == device and pcd_load.point.positions.dtype == cv3c.float32

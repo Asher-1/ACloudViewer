@@ -27,8 +27,8 @@ def test_insertion(device):
     capacity = 10
     hashmap = cv3c.HashMap(capacity, cv3c.int64, [1], cv3c.int64, [1], device)
     keys = cv3c.Tensor([100, 300, 500, 700, 900, 900],
-                      dtype=cv3c.int64,
-                      device=device)
+                       dtype=cv3c.int64,
+                       device=device)
     values = cv3c.Tensor([1, 3, 5, 7, 9, 9], dtype=cv3c.int64, device=device)
     buf_indices, masks = hashmap.insert(keys, values)
     assert masks.to(cv3c.int64).sum() == 5
@@ -45,8 +45,8 @@ def test_activate(device):
     capacity = 10
     hashmap = cv3c.HashMap(capacity, cv3c.int64, [1], cv3c.int64, [1], device)
     keys = cv3c.Tensor([100, 300, 500, 700, 900, 900],
-                      dtype=cv3c.int64,
-                      device=device)
+                       dtype=cv3c.int64,
+                       device=device)
     buf_indices, masks = hashmap.activate(keys)
     assert masks.to(cv3c.int64).sum() == 5
 
@@ -60,7 +60,9 @@ def test_activate(device):
 def test_find(device):
     capacity = 10
     hashmap = cv3c.HashMap(capacity, cv3c.int64, [1], cv3c.int64, [1], device)
-    keys = cv3c.Tensor([100, 300, 500, 700, 900], dtype=cv3c.int64, device=device)
+    keys = cv3c.Tensor([100, 300, 500, 700, 900],
+                       dtype=cv3c.int64,
+                       device=device)
     values = cv3c.Tensor([1, 3, 5, 7, 9], dtype=cv3c.int64, device=device)
     hashmap.insert(keys, values)
 
@@ -83,7 +85,9 @@ def test_find(device):
 def test_erase(device):
     capacity = 10
     hashmap = cv3c.HashMap(capacity, cv3c.int64, [1], cv3c.int64, [1], device)
-    keys = cv3c.Tensor([100, 300, 500, 700, 900], dtype=cv3c.int64, device=device)
+    keys = cv3c.Tensor([100, 300, 500, 700, 900],
+                       dtype=cv3c.int64,
+                       device=device)
     values = cv3c.Tensor([1, 3, 5, 7, 9], dtype=cv3c.int64, device=device)
     hashmap.insert(keys, values)
 
@@ -111,8 +115,8 @@ def test_complex_shape(device):
     capacity = 10
     hashmap = cv3c.HashMap(capacity, cv3c.int64, [3], cv3c.int64, [1], device)
     keys = cv3c.Tensor([[1, 2, 3], [2, 3, 4], [3, 4, 5]],
-                      dtype=cv3c.int64,
-                      device=device)
+                       dtype=cv3c.int64,
+                       device=device)
     values = cv3c.Tensor([1, 2, 3], dtype=cv3c.int64, device=device)
     buf_indices, masks = hashmap.insert(keys, values)
     assert masks.to(cv3c.int64).sum() == 3
@@ -138,15 +142,15 @@ def test_complex_shape(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_multivalue(device):
     capacity = 10
-    hashmap = cv3c.HashMap(capacity, cv3c.int64, (3), (cv3c.int64, cv3c.float64),
-                          ((1), (1)), device)
+    hashmap = cv3c.HashMap(capacity, cv3c.int64, (3),
+                           (cv3c.int64, cv3c.float64), ((1), (1)), device)
     keys = cv3c.Tensor([[1, 2, 3], [2, 3, 4], [3, 4, 5]],
-                      dtype=cv3c.int64,
-                      device=device)
+                       dtype=cv3c.int64,
+                       device=device)
     values_i64 = cv3c.Tensor([1, 2, 3], dtype=cv3c.int64, device=device)
     values_f64 = cv3c.Tensor([400.0, 500.0, 600.0],
-                            dtype=cv3c.float64,
-                            device=device)
+                             dtype=cv3c.float64,
+                             device=device)
     buf_indices, masks = hashmap.insert(keys, [values_i64, values_f64])
     assert masks.to(cv3c.int64).sum() == 3
 
@@ -176,14 +180,14 @@ def test_hashset(device):
     capacity = 10
     hashset = cv3c.HashSet(capacity, cv3c.int64, (3), device)
     keys = cv3c.Tensor([[1, 2, 3], [2, 3, 4], [3, 4, 5]],
-                      dtype=cv3c.int64,
-                      device=device)
+                       dtype=cv3c.int64,
+                       device=device)
     buf_indices, masks = hashset.insert(keys)
     assert masks.to(cv3c.int64).sum() == 3
 
     keys = cv3c.Tensor([[1, 2, 3], [3, 4, 5], [4, 5, 6]],
-                      dtype=cv3c.int64,
-                      device=device)
+                       dtype=cv3c.int64,
+                       device=device)
     buf_indices, masks = hashset.find(keys)
     np.testing.assert_equal(masks.cpu().numpy().flatten(),
                             np.array([True, True, False]))

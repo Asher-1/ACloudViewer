@@ -3,39 +3,53 @@
 Integrate scene
 -------------------------------------
 
-The final step of the scene reconstruction system is to integrate all RGB-D images
-to generate a mesh model for the scene.
+The final step of the system is to integrate all RGBD images into a single TSDF
+volume and extract a mesh as the result.
 
 Input arguments
 ````````````````````````````````````
 
-The script runs with ``python run_system.py [config] --integrate``. This step
-requires that fragments have been refined in the previous step (``--refine``).
+The script runs with ``python run_system.py [config] --integrate``. In
+``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth*
+in which frames are synchronized and aligned. In ``[config]``, the optional
+argument ``["path_intrinsic"]`` specifies path to a json file that has a camera
+intrinsic matrix (See :ref:`/tutorial/pipelines/rgbd_odometry.ipynb#read-camera-intrinsic` for
+details). If it is not given, the PrimeSense factory setting is used instead.
 
-TSDF volume integration
+Integrate RGBD frames
 ````````````````````````````````````
 
-All RGB-D images are integrated into a TSDF (Truncated Signed Distance Function)
-volume using the optimized camera poses from the previous steps. The TSDF volume
-represents the 3D scene as a signed distance field.
+.. literalinclude:: ../../../../examples/Python/reconstruction_system/integrate_scene.py
+   :language: python
+   :pyobject: scalable_integrate_rgb_frames
+   :end-at:        cv3d.visualization.draw([mesh])
+   :linenos:
+   :lineno-match:
 
-Mesh extraction
+This function first reads the alignment results from both
+:ref:`reconstruction_system_make_fragments` and
+:ref:`reconstruction_system_register_fragments`, then computes the pose of each
+RGBD image in the global space. After that, RGBD images are integrated using
+:ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
+
+Results
 ````````````````````````````````````
+This is a printed log from the volume integration script.
 
-After integration, a triangle mesh is extracted from the TSDF volume using
-marching cubes algorithm. The mesh represents the final reconstructed 3D model
-of the scene.
+.. code-block:: sh
 
-Color mapping
-````````````````````````````````````
+    Fragment 000 / 013 :: integrate rgbd frame 0 (1 of 100).
+    Fragment 000 / 013 :: integrate rgbd frame 1 (2 of 100).
+    Fragment 000 / 013 :: integrate rgbd frame 2 (3 of 100).
+    Fragment 000 / 013 :: integrate rgbd frame 3 (4 of 100).
+    :
+    Fragment 013 / 013 :: integrate rgbd frame 1360 (61 of 64).
+    Fragment 013 / 013 :: integrate rgbd frame 1361 (62 of 64).
+    Fragment 013 / 013 :: integrate rgbd frame 1362 (63 of 64).
+    Fragment 013 / 013 :: integrate rgbd frame 1363 (64 of 64).
+    Writing PLY: [========================================] 100%
 
-Colors from the RGB images are mapped to the mesh vertices to create a colored
-3D model.
+The following image shows the final scene reconstruction.
 
-The final mesh is saved and can be visualized or used for further processing.
-
-.. seealso::
-
-   - :doc:`system_overview` - System overview
-   - :doc:`refine_registration` - Refining registration
-   - :doc:`../pipelines/rgbd_integration` - RGB-D integration
+.. image:: ../../_static/reconstruction_system/integrate_scene/scene.png
+    :width: 500px

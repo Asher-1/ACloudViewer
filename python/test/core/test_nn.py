@@ -49,8 +49,8 @@ def test_knn_search(device):
 
     # Single query point.
     query_points = cv3c.Tensor([[0.064705, 0.043921, 0.087843]],
-                              dtype=dtype,
-                              device=device)
+                               dtype=dtype,
+                               device=device)
     indices, distances = nns.knn_search(query_points, 3)
     np.testing.assert_equal(indices.cpu().numpy(),
                             np.array([[1, 4, 9]], dtype=np.int64))
@@ -90,8 +90,8 @@ def test_fixed_radius_search(device, dtype):
 
     # Single query point.
     query_points = cv3c.Tensor([[0.064705, 0.043921, 0.087843]],
-                              dtype=dtype,
-                              device=device)
+                               dtype=dtype,
+                               device=device)
     indices, distances, neighbors_row_splits = nns.fixed_radius_search(
         query_points, 0.1)
     np.testing.assert_equal(indices.cpu().numpy(),

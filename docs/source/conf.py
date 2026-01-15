@@ -38,13 +38,6 @@ def get_git_short_hash():
     except (subprocess.CalledProcessError, FileNotFoundError):
         return "unknown"
 
-# Register 'ipython3' as an alias for 'python3' in Pygments
-# This fixes "WARNING: Pygments lexer name 'ipython3' is not known"
-# from pygments.lexers import get_lexer_by_name
-# from pygments.lexers import Python3Lexer
-# from sphinx.highlighting import lexers
-# lexers['ipython3'] = Python3Lexer()
-
 
 # Import cloudViewer raw python package with the highest priority
 # This is a trick to show cloudViewer.pybind as cloudViewer in the docs
@@ -118,6 +111,7 @@ author = u"ACloudViewer Team"
 # Usually, the `version` value is set to the current git commit hash.
 # At ACloudViewer releases, the `version` value is set to ACloudViewer version number.
 current_hash = get_git_short_hash()
+# Default values - can be overridden by -D version=... and -D release=... flags
 version = f"primary ({current_hash})"  # Default: use git hash
 release = version  # Default: same as version
 
@@ -174,7 +168,12 @@ html_theme_options = {
     "navigation_with_keys": True,
 }
 
-html_title = f"ACloudViewer {release} Documentation"
+# The name for this set of Sphinx documents.  If None, it defaults to
+# "<project> v<release> documentation".
+# html_title = None
+# html_title = f"ACloudViewer {release} Documentation"
+# A shorter title for the navigation bar.  Default is the same as html_title.
+#html_short_title = None
 html_logo = "../images/ACloudViewer_logo_horizontal.png"
 html_favicon = "../images/ACloudViewer.svg"
 
@@ -318,6 +317,7 @@ suppress_warnings = [
     'toc.not_readable',  # Suppress document not in toctree warnings
     'ref.python',  # Suppress Python reference warnings
     'ref.ref',  # Suppress general reference warnings
+    'autosummary',  # Suppress autosummary warnings (e.g., inline markup in external libs)
 ]
 
 # Configure Sphinx to be less verbose about warnings

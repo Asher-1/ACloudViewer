@@ -48,7 +48,7 @@ def get_pcds_and_correspondences(dtype, device):
     target_t.point.normals = target_normals
 
     correspondences = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 7, 5, 8, 7, 7, 5, 8],
-                                 cv3c.int64, device)
+                                  cv3c.int64, device)
 
     return source_t, target_t, correspondences
 
