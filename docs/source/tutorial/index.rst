@@ -17,7 +17,7 @@ Tutorial
    :maxdepth: 1
    :caption: Geometry (Tensor)
 
-   t_geometry/pointcloud
+   t_geometry/index
 
 .. toctree::
    :maxdepth: 1
@@ -36,6 +36,24 @@ Tutorial
    :caption: Pipelines (Tensor)
 
    t_pipelines/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reconstruction System
+
+   reconstruction_system/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reconstruction System (Tensor)
+
+   t_reconstruction_system/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Sensor
+
+   sensor/index
 
 .. toctree::
    :maxdepth: 1
@@ -75,6 +93,12 @@ Tutorial Structure
      - Interactive 3D visualization
    * - :doc:`pipelines/index`
      - Processing pipelines (registration, integration)
+   * - :doc:`reconstruction_system/index`
+     - Complete pipeline to reconstruct a 3D scene from RGBD sequence
+   * - :doc:`t_reconstruction_system/index`
+     - Volumetric RGB-D reconstruction and dense RGB-D SLAM with tensor interface
+   * - :doc:`sensor/index`
+     - Sensor integration and data capture (Azure Kinect, RealSense)
    * - :doc:`ml/index`
      - Machine learning with 3D data
    * - :doc:`advanced/index`
@@ -121,9 +145,8 @@ All tutorials include complete, runnable code examples.
        return 0;
    }
 
-See Also
---------
+.. seealso::
 
-* :doc:`../cpp_api/index` - C++ API Reference
-* :doc:`../getting_started/introduction` - Introduction
+   - :doc:`../cpp_api/index` - C++ API Reference
+   - :doc:`../getting_started/introduction` - Introduction
 

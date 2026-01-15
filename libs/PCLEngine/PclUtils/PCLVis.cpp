@@ -3389,6 +3389,7 @@ void PCLVis::setLightIntensity(double intensity) {
     renderer->LightFollowCameraOn();  // Ensure light follows camera
 
     // Update all actors to use lighting (important for proper light response)
+    // This includes both mesh actors and point cloud actors
     vtkActorCollection* actors = renderer->GetActors();
     if (actors) {
         actors->InitTraversal();
@@ -3398,10 +3399,46 @@ void PCLVis::setLightIntensity(double intensity) {
             if (prop) {
                 // Enable lighting for this actor
                 prop->SetLighting(true);
-                // Set material properties for better light response
-                prop->SetAmbient(0.3);   // Some ambient light
-                prop->SetDiffuse(0.7);   // Main diffuse reflection
-                prop->SetSpecular(0.2);  // Some specular highlights
+                
+                // Distinguish between point clouds and meshes
+                // Point clouds typically have only vertices (no cells or only vertex cells)
+                // Meshes have polygons/triangles (cells)
+                bool isPointCloud = false;
+                vtkMapper* mapper = actor->GetMapper();
+                if (mapper) {
+                    vtkPolyData* polydata = vtkPolyData::SafeDownCast(mapper->GetInput());
+                    if (polydata) {
+                        // Check if it's a point cloud: has points but no meaningful cells
+                        // (or only vertex cells, which are used for point rendering)
+                        vtkIdType numPoints = polydata->GetNumberOfPoints();
+                        vtkIdType numCells = polydata->GetNumberOfCells();
+                        // Point clouds typically have cells only for vertex rendering (one cell per point)
+                        // Meshes have far fewer cells (triangles/polygons) than points
+                        isPointCloud = (numCells == 0) || (numCells >= numPoints * 0.9);
+                    }
+                }
+                
+                if (isPointCloud) {
+                    // Point clouds with vertex colors: adjust ambient/diffuse to match light intensity
+                    // VTK rendering: final_color = vertex_color * (ambient + diffuse * light_intensity + specular)
+                    // To make point clouds darker when light is low and brighter when light is high:
+                    // - Low intensity: low ambient + low diffuse = darker
+                    // - High intensity: higher ambient + higher diffuse = brighter
+                    // We scale both ambient and diffuse proportionally to light intensity
+                    double baseAmbient = 0.1;  // Minimum ambient (for very low light)
+                    double baseDiffuse = 0.3;  // Minimum diffuse
+                    double ambient = baseAmbient + m_lightIntensity * 0.5;  // Range: 0.1-0.6
+                    double diffuse = baseDiffuse + m_lightIntensity * 0.5;  // Range: 0.3-0.8
+                    prop->SetAmbient(ambient);
+                    prop->SetDiffuse(diffuse);
+                    prop->SetSpecular(0.1);  // Low specular for point clouds
+                } else {
+                    // Meshes use standard lighting properties
+                    // These values work well for meshes with materials/textures
+                    prop->SetAmbient(0.3);   // Standard ambient for meshes
+                    prop->SetDiffuse(0.7);   // Standard diffuse for meshes
+                    prop->SetSpecular(0.2);  // Some specular for mesh highlights
+                }
             }
             actor = actors->GetNextActor();
         }

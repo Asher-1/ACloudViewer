@@ -87,6 +87,7 @@ docker run -v $(pwd):/opt/mount --rm acloudviewer-ci:docs \
   bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/"
 
 # Extract and preview the documentation
+mkdir -p docs-output
 tar -xzf acloudviewer-*-docs.tar.gz -C ./docs-output/
 cd docs-output && python3 -m http.server 8080
 # Open http://localhost:8080 in your browser

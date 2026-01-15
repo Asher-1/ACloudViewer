@@ -48,8 +48,7 @@ Other Geometry
    half_edge_mesh
    python_interface
 
-See Also
---------
+.. seealso::
 
-- :doc:`../pipelines/index` - Processing Pipelines
-- :doc:`../../python_api/cloudViewer.geometry` - Geometry API
+   - :doc:`../pipelines/index` - Processing Pipelines
+   - :doc:`../../python_api/cloudViewer.geometry` - Geometry API

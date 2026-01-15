@@ -70,6 +70,7 @@ RUN apt-get install --fix-missing -yq --no-install-recommends \
     libjsoncpp-dev \
     libcgal-dev \
     libusb-1.0-0-dev \
+    libzstd-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Qt5 and set QT_BASE_DIR based on Ubuntu version
