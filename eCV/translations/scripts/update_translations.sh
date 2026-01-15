@@ -32,6 +32,8 @@ if command -v lupdate-qt5 &> /dev/null; then
     LUPDATE="lupdate-qt5"
 elif command -v lupdate &> /dev/null; then
     LUPDATE="lupdate"
+elif [ -f "/usr/lib/x86_64-linux-gnu/qt5/bin/lupdate" ]; then
+    LUPDATE="/usr/lib/x86_64-linux-gnu/qt5/bin/lupdate"
 elif [ -f "/opt/qt515/bin/lupdate" ]; then
     LUPDATE="/opt/qt515/bin/lupdate"
 else
