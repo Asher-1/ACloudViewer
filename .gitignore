@@ -234,7 +234,8 @@ docs/_out/
 docs/_build_cmake/
 /docker_files/
 /docker_cache/
-
+docs-output/
+*docs.tar.gz
 # regard all text file as the LF
 * text=auto
 

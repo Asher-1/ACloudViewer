@@ -532,7 +532,7 @@ https://asher-1.github.io/ACloudViewer/donation.html?utm_source=reddit&utm_mediu
 ## 📞 Need Help?
 
 For social media kit questions or collaboration:
-- **Email**: contact@acloudviewer.com
+- **Email**: ludahai666@gmail.com
 - **GitHub**: [@Asher-1/ACloudViewer](https://github.com/Asher-1/ACloudViewer)
 
 ---

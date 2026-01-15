@@ -50,9 +50,16 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    :maxdepth: 2
    :caption: Python Examples
 
+   python_example/benchmark/index
+   python_example/camera/index
+   python_example/core/index
    python_example/geometry/index
    python_example/io/index
    python_example/pipelines/index
+   python_example/reconstruction/index
+   python_example/reconstruction_system/index
+   python_example/t_reconstruction_system/index
+   python_example/utility/index
    python_example/visualization/index
 
 .. toctree::

@@ -70,9 +70,8 @@ Use efficient data structures:
            # Split and process
            pass
 
-See Also
---------
+.. seealso::
 
-- :doc:`../../cpp_api/index` - C++ API for advanced customization
-- :doc:`../../python_api/cloudViewer.utility` - Utility functions
-- `GitHub Repository <https://github.com/Asher-1/ACloudViewer>`_ - Source code and examples
+   - :doc:`../../cpp_api/index` - C++ API for advanced customization
+   - :doc:`../../python_api/cloudViewer.utility` - Utility functions
+   - `GitHub Repository <https://github.com/Asher-1/ACloudViewer>`_ - Source code and examples

@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Detect if script is being sourced (for VS Code terminal compatibility)
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    # Script is being sourced - disable strict mode to prevent terminal crash
+    _CI_UTILS_SOURCED=1
+    set +e  # Don't exit on error when sourced
+    set +u  # Don't exit on unset variables when sourced
+    set +o pipefail  # Don't exit on pipe failures when sourced
+else
+    # Script is being executed - enable strict mode
+    _CI_UTILS_SOURCED=0
+    set -euo pipefail
+fi
 
 # The following environment variables are required:
 SUDO=${SUDO:=sudo}
@@ -76,7 +87,13 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     fi
 else # do not support windows
     echo "Do not support windows system with this script!"
-    exit -1
+    if [[ "${_CI_UTILS_SOURCED:-0}" -eq 1 ]]; then
+        # Script is sourced, use return instead of exit
+        return 1 2>/dev/null || exit 1
+    else
+        # Script is executed, exit normally
+        exit 1
+    fi
 fi
 
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"

@@ -149,7 +149,7 @@ curl https://pyenv.run | bash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 python --version && pip --version
 
-CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
@@ -160,9 +160,38 @@ install_python_dependencies with-cuda with-jupyter with-unit-test
 
 ```
 
+### deploy yarn for jupyter building
+```
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - \
+ && sudo apt-get install -y nodejs \
+ && node --version \
+ && sudo npm install -g yarn \
+ && yarn --version
+```
+
+### fix cmake failed to find python and qt
+```
+PYTHON_EXE=$(pyenv which python)
+PYTHON_ROOT=$(python -c "import sysconfig, os; print(os.path.dirname(os.path.dirname(sysconfig.get_path('include'))))")
+PYTHON_INCLUDE=$(python -c "import sysconfig; print(sysconfig.get_path('include'))")
+PYTHON_LIB_DIR=$(python -c "import sysconfig, os; libdir = sysconfig.get_config_var('LIBDIR'); print(os.path.realpath(libdir) if os.path.islink(libdir) else libdir)")
+PYTHON_LIB_NAME=$(python -c "import sysconfig; print(sysconfig.get_config_var('LDLIBRARY'))")
+PYTHON_LIB="${PYTHON_LIB_DIR}/${PYTHON_LIB_NAME}"
+-DPython3_EXECUTABLE="${PYTHON_EXE}" \
+-DPython3_ROOT_DIR="${PYTHON_ROOT}" \
+-DPython3_LIBRARY="${PYTHON_LIB}" \
+-DBUILD_WITH_CONDA=OFF \
+-DCMAKE_PREFIX_PATH=/opt/qt515 \
+```
+
+### fix find_package not found
 ```
 sudo apt install libxxf86vm-dev
+sudo apt install libudev-dev
+```
 
+### build now
+```
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
