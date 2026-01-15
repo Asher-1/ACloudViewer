@@ -74,22 +74,15 @@ RUN apt-get install --fix-missing -yq --no-install-recommends \
     graphviz \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Qt5 and set QT_BASE_DIR based on Ubuntu version
-RUN UBUNTU_CODENAME=$(lsb_release -c --short) && \
-    apt-get -y update && \
-    if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "noble" ]; then \
-        apt-get install -qy \
-          libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
-          libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
-          qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev && \
-        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"; \
-    else \
-        add-apt-repository ppa:beineri/opt-qt-5.15.2-$UBUNTU_CODENAME -y && \
-        apt-get -y update && \
-        apt-get -y install qt515base qt515imageformats qt515declarative qt515quickcontrols2 qt515svg qt515tools \
-            qt515translations qt515websockets qt515x11extras qt515xmlpatterns qt515networkauth-no-lgpl && \
-        QT_BASE_DIR="/opt/qt515"; \
-    fi && \
+# Install Qt5 and set QT_BASE_DIR
+# Uses system default Qt5 packages (Qt 5.9+ on Ubuntu 18.04, Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on Ubuntu 22.04+)
+# All versions meet the minimum requirement of Qt 5.5+
+RUN apt-get -y update && \
+    apt-get install -qy \
+      libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
+      libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
+      qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev && \
+    QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5" && \
     echo "QT_BASE_DIR=$QT_BASE_DIR" >> /root/.bashrc && \
     echo "export QT_BASE_DIR=$QT_BASE_DIR" >> /root/.bashrc && \
     ldconfig && rm -rf /var/lib/apt/lists/*

@@ -181,7 +181,7 @@ PYTHON_LIB="${PYTHON_LIB_DIR}/${PYTHON_LIB_NAME}"
 -DPython3_ROOT_DIR="${PYTHON_ROOT}" \
 -DPython3_LIBRARY="${PYTHON_LIB}" \
 -DBUILD_WITH_CONDA=OFF \
--DCMAKE_PREFIX_PATH=/opt/qt515 \
+-DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/qt5 \
 ```
 
 ### fix find_package not found

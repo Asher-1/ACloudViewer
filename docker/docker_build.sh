@@ -62,11 +62,7 @@ cuda_wheel_build() {
     BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
     export BUILD_SHARED_LIBS=OFF
 
-    if [ "${UBUNTU_VERSION}" = "${UBUNTU_FOCAL}" ]; then
-        QT_BASE_DIR="/opt/qt515"
-    else 
-        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
-    fi
+    QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
@@ -124,11 +120,7 @@ cuda_wheel_build() {
 }
 
 ci_build() {
-    if [ "${UBUNTU_VERSION}" = "${UBUNTU_FOCAL}" ]; then
-        QT_BASE_DIR="/opt/qt515"
-    else 
-        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
-    fi
+    QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
 
     echo "[ci_build()] DOCKER_TAG=${DOCKER_TAG}"
     echo "[ci_build()] BASE_IMAGE=${BASE_IMAGE}"

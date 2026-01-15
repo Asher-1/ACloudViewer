@@ -98,7 +98,7 @@ docker run -dit --name=test_cloudviewer \
 docker exec -it test_cloudviewer /bin/bash
 
 cd /root/ACloudViewer
-export QT_BASE_DIR=/opt/qt515
+export QT_BASE_DIR=/usr/lib/x86_64-linux-gnu/qt5
 export ACloudViewer_DEV=/root
 export ACloudViewer_BUILD=/root/ACloudViewer/build
 export ACloudViewer_INSTALL=/root/install
