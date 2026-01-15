@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-14T19:52:07.852528",
+  "generated_at": "2026-01-15T01:25:51.221868",
   "version_metadata": [
     {
       "value": "main-devel",
@@ -86,7 +86,7 @@
         "app": {
           "cpu": {
             "arm64": {
-              "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bee7178f-mac-cpu-ARM64.dmg",
+              "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2B24d7056-mac-cpu-ARM64.dmg",
               "size": "244.0 MB"
             }
           }
@@ -95,15 +95,15 @@
           "cpu": {
             "arm64": {
               "3.10": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp310-cp310-macosx_14_0_arm64.whl",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp310-cp310-macosx_14_0_arm64.whl",
                 "size": "119.7 MB"
               },
               "3.11": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp311-cp311-macosx_14_0_arm64.whl",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp311-cp311-macosx_14_0_arm64.whl",
                 "size": "119.7 MB"
               },
               "3.12": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp312-cp312-macosx_14_0_arm64.whl",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp312-cp312-macosx_14_0_arm64.whl",
                 "size": "119.7 MB"
               }
             }
@@ -115,14 +115,14 @@
           "app": {
             "cpu": {
               "amd64": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bee7178f-ubuntu20.04-cpu-amd64.run",
-                "size": "240.2 MB"
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2B24d7056-ubuntu20.04-cpu-amd64.run",
+                "size": "240.0 MB"
               }
             },
             "cuda": {
               "amd64": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bee7178f-ubuntu20.04-cuda-amd64.run",
-                "size": "415.5 MB"
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2B24d7056-ubuntu20.04-cuda-amd64.run",
+                "size": "415.6 MB"
               }
             }
           },
@@ -132,14 +132,14 @@
           "app": {
             "cpu": {
               "amd64": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bee7178f-ubuntu22.04-cpu-amd64.run",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2B24d7056-ubuntu22.04-cpu-amd64.run",
                 "size": "242.4 MB"
               }
             },
             "cuda": {
               "amd64": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bee7178f-ubuntu22.04-cuda-amd64.run",
-                "size": "418.0 MB"
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2B24d7056-ubuntu22.04-cuda-amd64.run",
+                "size": "417.8 MB"
               }
             }
           },
@@ -147,19 +147,19 @@
             "cuda": {
               "amd64": {
                 "3.10": {
-                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp310-cp310-manylinux_2_35_x86_64.whl",
+                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp310-cp310-manylinux_2_35_x86_64.whl",
                   "size": "499.6 MB"
                 },
                 "3.11": {
-                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp311-cp311-manylinux_2_35_x86_64.whl",
+                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp311-cp311-manylinux_2_35_x86_64.whl",
                   "size": "489.5 MB"
                 },
                 "3.12": {
-                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp312-cp312-manylinux_2_35_x86_64.whl",
+                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp312-cp312-manylinux_2_35_x86_64.whl",
                   "size": "499.6 MB"
                 },
                 "3.13": {
-                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp313-cp313-manylinux_2_35_x86_64.whl",
+                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp313-cp313-manylinux_2_35_x86_64.whl",
                   "size": "499.6 MB"
                 }
               }
@@ -167,19 +167,19 @@
             "cpu": {
               "amd64": {
                 "3.10": {
-                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2Bee7178f-cp310-cp310-manylinux_2_35_x86_64.whl",
+                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2B24d7056-cp310-cp310-manylinux_2_35_x86_64.whl",
                   "size": "138.9 MB"
                 },
                 "3.11": {
-                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2Bee7178f-cp311-cp311-manylinux_2_35_x86_64.whl",
+                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2B24d7056-cp311-cp311-manylinux_2_35_x86_64.whl",
                   "size": "136.7 MB"
                 },
                 "3.12": {
-                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2Bee7178f-cp312-cp312-manylinux_2_35_x86_64.whl",
+                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2B24d7056-cp312-cp312-manylinux_2_35_x86_64.whl",
                   "size": "138.9 MB"
                 },
                 "3.13": {
-                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2Bee7178f-cp313-cp313-manylinux_2_35_x86_64.whl",
+                  "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2B24d7056-cp313-cp313-manylinux_2_35_x86_64.whl",
                   "size": "138.9 MB"
                 }
               }
@@ -190,14 +190,14 @@
           "app": {
             "cpu": {
               "amd64": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bee7178f-ubuntu24.04-cpu-amd64.run",
-                "size": "251.2 MB"
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2B24d7056-ubuntu24.04-cpu-amd64.run",
+                "size": "251.3 MB"
               }
             },
             "cuda": {
               "amd64": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bee7178f-ubuntu24.04-cuda-amd64.run",
-                "size": "426.4 MB"
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2B24d7056-ubuntu24.04-cuda-amd64.run",
+                "size": "426.2 MB"
               }
             }
           },
@@ -208,13 +208,13 @@
         "app": {
           "cpu": {
             "amd64": {
-              "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bee7178f-win-cpu-amd64.exe",
+              "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2B24d7056-win-cpu-amd64.exe",
               "size": "224.0 MB"
             }
           },
           "cuda": {
             "amd64": {
-              "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2Bee7178f-win-cuda-amd64.exe",
+              "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.3%2B24d7056-win-cuda-amd64.exe",
               "size": "245.1 MB"
             }
           }
@@ -223,15 +223,15 @@
           "cuda": {
             "amd64": {
               "3.10": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp310-cp310-win_amd64.whl",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp310-cp310-win_amd64.whl",
                 "size": "332.5 MB"
               },
               "3.11": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp311-cp311-win_amd64.whl",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp311-cp311-win_amd64.whl",
                 "size": "332.8 MB"
               },
               "3.12": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2Bee7178f-cp312-cp312-win_amd64.whl",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer-3.9.3%2B24d7056-cp312-cp312-win_amd64.whl",
                 "size": "333.1 MB"
               }
             }
@@ -239,15 +239,15 @@
           "cpu": {
             "amd64": {
               "3.10": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2Bee7178f-cp310-cp310-win_amd64.whl",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2B24d7056-cp310-cp310-win_amd64.whl",
                 "size": "170.2 MB"
               },
               "3.11": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2Bee7178f-cp311-cp311-win_amd64.whl",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2B24d7056-cp311-cp311-win_amd64.whl",
                 "size": "170.6 MB"
               },
               "3.12": {
-                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2Bee7178f-cp312-cp312-win_amd64.whl",
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/cloudviewer_cpu-3.9.3%2B24d7056-cp312-cp312-win_amd64.whl",
                 "size": "170.8 MB"
               }
             }
