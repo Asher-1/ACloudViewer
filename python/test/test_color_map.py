@@ -36,7 +36,7 @@ def test_color_map():
     """
     # Set OMP_NUM_THREADS=1 for deterministic results
     os.environ['OMP_NUM_THREADS'] = '1'
-    
+
     cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
 
     # Load dataset
@@ -52,7 +52,8 @@ def test_color_map():
     # Allow slightly larger tolerance due to algorithm differences
     np.testing.assert_allclose(vertex_mean,
                                np.array([0.40322907, 0.37276872, 0.54375919]),
-                               rtol=1e-2, atol=1e-2)
+                               rtol=1e-2,
+                               atol=1e-2)
     np.testing.assert_allclose(
         extrinsic_mean,
         np.array([[0.77003829, -0.10813595, 0.06467495, -0.56212008],
@@ -72,7 +73,8 @@ def test_color_map():
     # Allow slightly larger tolerance for numerical differences
     np.testing.assert_allclose(vertex_mean,
                                np.array([0.40294861, 0.37250299, 0.54338467]),
-                               rtol=5e-3, atol=2e-3)
+                               rtol=5e-3,
+                               atol=2e-3)
     np.testing.assert_allclose(
         extrinsic_mean,
         np.array([[0.7699379, -0.10768808, 0.06543989, -0.56320637],
@@ -92,7 +94,8 @@ def test_color_map():
     # Allow slightly larger tolerance for numerical differences in non-rigid optimization
     np.testing.assert_allclose(vertex_mean,
                                np.array([0.4028204, 0.37237733, 0.54322786]),
-                               rtol=5e-3, atol=2e-3)
+                               rtol=5e-3,
+                               atol=2e-3)
     np.testing.assert_allclose(
         extrinsic_mean,
         np.array([[0.76967962, -0.10824218, 0.0674025, -0.56381652],

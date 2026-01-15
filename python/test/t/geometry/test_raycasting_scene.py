@@ -17,15 +17,14 @@ from cloudViewer_test import list_devices
 
 
 # test intersection with a single triangle
-@pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, ))
+@pytest.mark.parametrize("device", list_devices(enable_cuda=False,))
 def test_cast_rays(device):
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.float32,
-                               device=device)
-    triangles = cv3d.core.Tensor([[0, 1, 2]],
-                                dtype=cv3d.core.uint32,
+                                dtype=cv3d.core.float32,
                                 device=device)
+    triangles = cv3d.core.Tensor([[0, 1, 2]],
+                                 dtype=cv3d.core.uint32,
+                                 device=device)
 
     scene = cv3d.t.geometry.RaycastingScene(device=device)
     geom_id = scene.add_triangles(vertices, triangles)
@@ -49,15 +48,14 @@ def test_cast_rays(device):
 
 # cast lots of random rays to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, ))
+@pytest.mark.parametrize("device", list_devices(enable_cuda=False,))
 def test_cast_lots_of_rays(device):
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.float32,
-                               device=device)
-    triangles = cv3d.core.Tensor([[0, 1, 2]],
-                                dtype=cv3d.core.uint32,
+                                dtype=cv3d.core.float32,
                                 device=device)
+    triangles = cv3d.core.Tensor([[0, 1, 2]],
+                                 dtype=cv3d.core.uint32,
+                                 device=device)
 
     scene = cv3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
@@ -70,15 +68,14 @@ def test_cast_lots_of_rays(device):
 
 
 # test occlusion with a single triangle
-@pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, ))
+@pytest.mark.parametrize("device", list_devices(enable_cuda=False,))
 def test_test_occlusions(device):
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.float32,
-                               device=device)
-    triangles = cv3d.core.Tensor([[0, 1, 2]],
-                                dtype=cv3d.core.uint32,
+                                dtype=cv3d.core.float32,
                                 device=device)
+    triangles = cv3d.core.Tensor([[0, 1, 2]],
+                                 dtype=cv3d.core.uint32,
+                                 device=device)
 
     scene = cv3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
@@ -107,15 +104,14 @@ def test_test_occlusions(device):
 
 # test lots of random rays for occlusions to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, ))
+@pytest.mark.parametrize("device", list_devices(enable_cuda=False,))
 def test_test_lots_of_occlusions(device):
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.float32,
-                               device=device)
-    triangles = cv3d.core.Tensor([[0, 1, 2]],
-                                dtype=cv3d.core.uint32,
+                                dtype=cv3d.core.float32,
                                 device=device)
+    triangles = cv3d.core.Tensor([[0, 1, 2]],
+                                 dtype=cv3d.core.uint32,
+                                 device=device)
 
     scene = cv3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
@@ -127,8 +123,7 @@ def test_test_lots_of_occlusions(device):
     _ = scene.test_occlusions(rays)
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, ))
+@pytest.mark.parametrize("device", list_devices(enable_cuda=False,))
 def test_add_triangle_mesh(device):
     cube = cv3d.t.geometry.TriangleMesh.create_box()
     cube = cube.to(device)
@@ -147,8 +142,7 @@ def test_add_triangle_mesh(device):
     np.testing.assert_equal(ans.cpu().numpy(), [2, 1, 0])
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, ))
+@pytest.mark.parametrize("device", list_devices(enable_cuda=False,))
 def test_count_intersections(device):
     cube = cv3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -173,8 +167,7 @@ def test_count_intersections(device):
 
 # count lots of random ray intersections to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, ))
+@pytest.mark.parametrize("device", list_devices(enable_cuda=False,))
 def test_count_lots_of_intersections(device):
     cube = cv3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -193,8 +186,7 @@ def test_count_lots_of_intersections(device):
     _ = scene.count_intersections(rays)
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, ))
+@pytest.mark.parametrize("device", list_devices(enable_cuda=False,))
 def test_list_intersections(device):
     cube = cv3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -222,8 +214,7 @@ def test_list_intersections(device):
 
 # list lots of random ray intersections to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, ))
+@pytest.mark.parametrize("device", list_devices(enable_cuda=False,))
 def test_list_lots_of_intersections(device):
     cube = cv3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -244,14 +235,14 @@ def test_list_lots_of_intersections(device):
 
 def test_compute_closest_points():
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.float32)
+                                dtype=cv3d.core.float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.uint32)
 
     scene = cv3d.t.geometry.RaycastingScene()
     geom_id = scene.add_triangles(vertices, triangles)
 
     query_points = cv3d.core.Tensor([[0.2, 0.1, 1], [10, 10, 10]],
-                                   dtype=cv3d.core.float32)
+                                    dtype=cv3d.core.float32)
     ans = scene.compute_closest_points(query_points)
 
     assert (geom_id == ans["geometry_ids"]).all()
@@ -268,7 +259,7 @@ def test_compute_closest_points():
 # we expect no errors for this test
 def test_compute_lots_of_closest_points():
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.float32)
+                                dtype=cv3d.core.float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.uint32)
 
     scene = cv3d.t.geometry.RaycastingScene()
@@ -313,7 +304,7 @@ def test_compute_occupancy():
     scene.add_triangles(cube)
 
     query_points = cv3d.core.Tensor([[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5]],
-                                   dtype=cv3d.core.float32)
+                                    dtype=cv3d.core.float32)
     ans = scene.compute_occupancy(query_points)
     np.testing.assert_allclose(ans.numpy(), [1.0, 0.0])
 
@@ -321,7 +312,7 @@ def test_compute_occupancy():
 @pytest.mark.parametrize("shape", ([11], [1, 2, 3], [32, 14]))
 def test_output_shapes(shape):
     vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=cv3d.core.float32)
+                                dtype=cv3d.core.float32)
     triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.uint32)
 
     scene = cv3d.t.geometry.RaycastingScene()

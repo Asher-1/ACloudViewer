@@ -78,7 +78,8 @@ def get_pcds(dtype, device):
 def test_icp_convergence_criteria_constructor(device):
 
     # Constructor.
-    convergence_criteria = cv3d.t.pipelines.registration.ICPConvergenceCriteria()
+    convergence_criteria = cv3d.t.pipelines.registration.ICPConvergenceCriteria(
+    )
 
     # Checking default values.
     assert convergence_criteria.max_iteration == 30
@@ -147,12 +148,13 @@ def test_icp_point_to_point(device):
                                       [0.487, 0.255, 0.835, -1.4],
                                       [0.0, 0.0, 0.0, 1.0]])
         init_trans_t = cv3c.Tensor(init_trans_legacy,
-                                  dtype=cv3c.float64,
-                                  device=device)
+                                   dtype=cv3c.float64,
+                                   device=device)
 
         reg_p2p_t = cv3d.t.pipelines.registration.icp(
             source_t, target_t, max_correspondence_distance, init_trans_t,
-            cv3d.t.pipelines.registration.TransformationEstimationPointToPoint(),
+            cv3d.t.pipelines.registration.TransformationEstimationPointToPoint(
+            ),
             cv3d.t.pipelines.registration.ICPConvergenceCriteria(
                 max_iteration=2))
 
@@ -187,12 +189,13 @@ def test_icp_point_to_plane(device):
                                       [0.487, 0.255, 0.835, -1.4],
                                       [0.0, 0.0, 0.0, 1.0]])
         init_trans_t = cv3c.Tensor(init_trans_legacy,
-                                  dtype=cv3c.float64,
-                                  device=device)
+                                   dtype=cv3c.float64,
+                                   device=device)
 
         reg_p2plane_t = cv3d.t.pipelines.registration.icp(
             source_t, target_t, max_correspondence_distance, init_trans_t,
-            cv3d.t.pipelines.registration.TransformationEstimationPointToPlane(),
+            cv3d.t.pipelines.registration.TransformationEstimationPointToPlane(
+            ),
             cv3d.t.pipelines.registration.ICPConvergenceCriteria(
                 max_iteration=2))
 
@@ -206,7 +209,9 @@ def test_icp_point_to_plane(device):
         # RMSE values compared to legacy single-scale ICP. Use larger tolerance
         # to account for algorithmic differences.
         np.testing.assert_allclose(reg_p2plane_t.inlier_rmse,
-                                   reg_p2plane_legacy.inlier_rmse, rtol=0.7, atol=0.7)
+                                   reg_p2plane_legacy.inlier_rmse,
+                                   rtol=0.7,
+                                   atol=0.7)
         np.testing.assert_allclose(reg_p2plane_t.fitness,
                                    reg_p2plane_legacy.fitness, 0.001)
 
@@ -230,8 +235,8 @@ def test_get_information_matrix(device):
                                           [0.487, 0.255, 0.835, -1.4],
                                           [0.0, 0.0, 0.0, 1.0]])
         transformation_t = cv3c.Tensor(transformation_legacy,
-                                      dtype=cv3c.float64,
-                                      device=device)
+                                       dtype=cv3c.float64,
+                                       device=device)
 
         info_matrix_t = cv3d.t.pipelines.registration.get_information_matrix(
             source_t, target_t, max_correspondence_distance, transformation_t)

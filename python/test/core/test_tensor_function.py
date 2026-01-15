@@ -184,8 +184,8 @@ def test_concatenate(dtype, device):
     # Using concatenate for a single tensor. The tensor is split along its
     # first dimension, and concatenated along the axis.
     a = cv3c.Tensor([[[0, 1], [2, 3]], [[4, 5], [6, 7]], [[8, 9], [10, 11]]],
-                   dtype=cv3c.Dtype.Float32,
-                   device=device)
+                    dtype=cv3c.Dtype.Float32,
+                    device=device)
     output_t = cv3c.concatenate((a), axis=1)
     output_np = np.concatenate((a.cpu().numpy()), axis=1)
 
@@ -356,7 +356,9 @@ def test_append(dtype, device):
         cv3c.append(self=self, values=values, axis=-1)
 
     # dtype and device must be same for all the input tensors.
-    self = cv3c.Tensor([[0, 1], [2, 3]], dtype=cv3c.Dtype.Float32, device=device)
+    self = cv3c.Tensor([[0, 1], [2, 3]],
+                       dtype=cv3c.Dtype.Float32,
+                       device=device)
     values = cv3c.Tensor([[4, 5]], dtype=cv3c.Dtype.Float64, device=device)
     with pytest.raises(
             RuntimeError,

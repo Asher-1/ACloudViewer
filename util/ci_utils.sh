@@ -180,7 +180,7 @@ build_mac_wheel() {
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
-        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b torch271 || true
+        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b main || true
         BUNDLE_CLOUDVIEWER_ML=ON
     else
         echo "CloudViewer-ML not available."
@@ -412,7 +412,7 @@ build_pip_package() {
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
-        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b torch271 || true
+        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b main || true
         BUNDLE_CLOUDVIEWER_ML=ON
     else
         echo "CloudViewer-ML not available."
@@ -778,6 +778,9 @@ install_docs_dependencies() {
     python -V
     python -m pip install -U -q "pip==$PIP_VER"
     which cmake || python -m pip install -U -q cmake
+
+    $SUDO apt remove python3-blinker -y
+    pip install --ignore-installed -U blinker
     python -m pip install -U -q -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ -d "$1" ]]; then
         CLOUDVIEWER_ML_ROOT="$1"
@@ -788,9 +791,6 @@ install_docs_dependencies() {
         echo CLOUDVIEWER_ML_ROOT="${1:-not specified}" - Skipping ML dependencies.
     fi
     echo
-    # Use --ignore-installed to override system packages (e.g., blinker from software-properties-common)
-    $SUDO apt remove blinker -y
-    $SUDO -H pip install --ignore-installed -U blinker
     python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" \
         -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" \
         -r "${CLOUDVIEWER_SOURCE_ROOT}/docs/requirements.txt"
@@ -917,7 +917,7 @@ build_docs() {
     # - Doxygen runs first, generates independent HTML
     # - Sphinx runs second, generates Python docs
     # - HTML outputs are combined via file system
-    python make_docs.py $DOC_ARGS --sphinx --doxygen
+    python make_docs.py $DOC_ARGS --sphinx --doxygen --parallel
     set +x
     
     echo ""

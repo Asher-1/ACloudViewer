@@ -33,8 +33,8 @@ def test_to_linear_transform(device):
 
     t_input = cv3c.Tensor(input_data, dtype=cv3c.uint8, device=device)
     t_input3 = cv3c.Tensor(np.broadcast_to(input_data, shape=(2, 3, 3)),
-                          dtype=cv3c.uint8,
-                          device=device)
+                           dtype=cv3c.uint8,
+                           device=device)
 
     input1 = Image(t_input)
     # UInt8 -> Float32: auto scale = 1./255

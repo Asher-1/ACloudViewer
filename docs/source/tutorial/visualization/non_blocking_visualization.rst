@@ -3,60 +3,87 @@
 Non-blocking visualization
 -------------------------------------
 
-By default, ``draw_geometries`` blocks execution until the window is closed. For applications that need to update the visualization continuously, non-blocking visualization is required.
+``draw_geometries()`` is a useful function to get a quick overview of static geometries. However, this function holds a process until a visualization window is closed. This is not optimal when geometry is updated and needs to be visualized without closing the window. This tutorial introduces an example to customize the rendering loop.
 
-Using Visualizer class
-````````````````````````````````````
+Review draw_geometries
+````````````````````````````````````````````````
 
-The ``Visualizer`` class provides non-blocking visualization capabilities:
+``draw_geometries`` has the following rendering-loop (see ``Visualizer::Run()`` for the C++ implementation):
+
+.. code-block:: bash
+
+    while(true):
+        if (geometry has changed):
+            re-bind geometry to shaders
+        if (view parameters have changed):
+            re-render the scene
+        if (any user mouse/keyboard input):
+            respond to it and set flags for re-rendering
+
+Note that both binding geometry and rendering are costly operations, thus they are executed in a lazy way. There are two flags that control them individually. The functions ``update_geometry`` and ``update_renderer`` set these flags. After rebinding/rendering, these flags are cleared once again.
+
+This rendering loop can be readily customized. For example, a custom loop can be made in this way to visualize ICP registration:
 
 .. code-block:: python
 
-    import cloudViewer as cv3d
-    import time
-    
-    # Create visualizer
-    vis = cv3d.visualization.Visualizer()
+    vis = Visualizer()
     vis.create_window()
-    
-    # Add geometry
-    pcd = cv3d.io.read_point_cloud("cloud.pcd")
-    vis.add_geometry(pcd)
-    
-    # Non-blocking update loop
-    for i in range(100):
-        # Update geometry
-        vis.update_geometry(pcd)
+    vis.add_geometry(geometry)
+    for i in range(icp_iteration):
+        # do ICP single iteration
+        # transform geometry using ICP
+        vis.update_geometry(geometry)
         vis.poll_events()
         vis.update_renderer()
-        time.sleep(0.1)
-    
-    vis.destroy_window()
 
-Key callbacks
+The full script implementing this idea is displayed below.
+
+.. literalinclude:: ../../../../examples/Python/visualization/non_blocking_visualization.py
+   :language: python
+   :start-at: # examples/Python/visualization/non_blocking_visualization.py
+   :linenos:
+   :lineno-match:
+
+The following sections explain this script.
+
+Prepare example data
+````````````````````````````````````````````````
+
+.. literalinclude:: ../../../../examples/Python/visualization/non_blocking_visualization.py
+   :language: python
+   :pyobject: prepare_data
+   :linenos:
+   :lineno-match:
+
+This part reads two point clouds and downsamples them. The source point cloud is intentionally transformed for the misalignment. Both point clouds are flipped for better visualization.
+
+Initialize Visualizer class
+````````````````````````````````````````````````
+
+.. literalinclude:: ../../../../examples/Python/visualization/non_blocking_visualization.py
+   :language: python
+   :start-at: def demo_non_blocking_visualization():
+   :end-at: save_image = False
+   :linenos:
+   :lineno-match:
+
+These lines make an instance of the visualizer class, open a visualizer window, and add two geometries to the visualizer.
+
+Transform geometry and visualize it
 ````````````````````````````````````
 
-You can register key callbacks for interactive control:
+.. literalinclude:: ../../../../examples/Python/visualization/non_blocking_visualization.py
+   :language: python
+   :start-at: for i in range(icp_iteration):
+   :end-at: vis.destroy_window()
+   :linenos:
+   :lineno-match:
 
-.. code-block:: python
+This script calls ``registration_icp`` for every iteration. Note that it explicitly forces only one ICP iteration via ``ICPConvergenceCriteria(max_iteration = 1)``. This is a trick to retrieve a slight pose update from a single ICP iteration. After ICP, source geometry is transformed accordingly.
 
-    import cloudViewer as cv3d
-    
-    vis = cv3d.visualization.VisualizerWithKeyCallback()
-    vis.create_window()
-    vis.add_geometry(pcd)
-    
-    def key_callback(vis, key, action):
-        if key == ord('Q') and action == 0:  # Q key released
-            vis.destroy_window()
-            return False
-        return True
-    
-    vis.register_key_callback(ord('Q'), key_callback)
-    vis.run()
+The next part of the script is the core of this tutorial. ``update_geometry`` informs the ``vis`` that the related geometries are updated. Finally, the visualizer renders a new frame by calling ``poll_events`` and ``update_renderer``. After any for-loop iterations, ``destroy_window`` closes the window.
 
-.. seealso::
+The result looks like the image below.
 
-   - :doc:`visualization` - Basic visualization
-   - :doc:`customized_visualization` - Customized visualization
-   - :doc:`../../python_api/cloudViewer.visualization` - Visualization API
+.. image:: ../../_static/visualization/non_blocking_visualization/visualize_icp_iteration.gif
+    :width: 400px

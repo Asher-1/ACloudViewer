@@ -424,7 +424,8 @@ def test_plugin_data_reader(geometry_data, logdir):
             check_material_dict(cube_pcd_out, material, batch_idx)
 
             cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
-            cube_ls_ref = cv3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
+            cube_ls_ref = cv3d.t.geometry.LineSet.from_legacy(
+                cube_ls[batch_idx])
             cube_ls_ref.line.indices = cube_ls_ref.line.indices.to(
                 cv3d.core.int32)
             cube_ls_ref.line.colors = (cube_ls_ref.line.colors * 255).to(

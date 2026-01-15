@@ -15,67 +15,70 @@
 namespace cloudViewer {
 namespace core {
 template <typename scalar_t>
-inline CLOUDVIEWER_CPU_LINALG_INT getrf_cpu(int layout,
-                                       CLOUDVIEWER_CPU_LINALG_INT m,
-                                       CLOUDVIEWER_CPU_LINALG_INT n,
-                                       scalar_t* A_data,
-                                       CLOUDVIEWER_CPU_LINALG_INT lda,
-                                       CLOUDVIEWER_CPU_LINALG_INT* ipiv_data) {
+inline CLOUDVIEWER_CPU_LINALG_INT getrf_cpu(
+        int layout,
+        CLOUDVIEWER_CPU_LINALG_INT m,
+        CLOUDVIEWER_CPU_LINALG_INT n,
+        scalar_t* A_data,
+        CLOUDVIEWER_CPU_LINALG_INT lda,
+        CLOUDVIEWER_CPU_LINALG_INT* ipiv_data) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
 
 template <typename scalar_t>
-inline CLOUDVIEWER_CPU_LINALG_INT getri_cpu(int layout,
-                                       CLOUDVIEWER_CPU_LINALG_INT n,
-                                       scalar_t* A_data,
-                                       CLOUDVIEWER_CPU_LINALG_INT lda,
-                                       CLOUDVIEWER_CPU_LINALG_INT* ipiv_data) {
+inline CLOUDVIEWER_CPU_LINALG_INT getri_cpu(
+        int layout,
+        CLOUDVIEWER_CPU_LINALG_INT n,
+        scalar_t* A_data,
+        CLOUDVIEWER_CPU_LINALG_INT lda,
+        CLOUDVIEWER_CPU_LINALG_INT* ipiv_data) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
 
 template <typename scalar_t>
-inline CLOUDVIEWER_CPU_LINALG_INT gesv_cpu(int layout,
-                                      CLOUDVIEWER_CPU_LINALG_INT n,
-                                      CLOUDVIEWER_CPU_LINALG_INT m,
-                                      scalar_t* A_data,
-                                      CLOUDVIEWER_CPU_LINALG_INT lda,
-                                      CLOUDVIEWER_CPU_LINALG_INT* ipiv_data,
-                                      scalar_t* B_data,
-                                      CLOUDVIEWER_CPU_LINALG_INT ldb) {
+inline CLOUDVIEWER_CPU_LINALG_INT gesv_cpu(
+        int layout,
+        CLOUDVIEWER_CPU_LINALG_INT n,
+        CLOUDVIEWER_CPU_LINALG_INT m,
+        scalar_t* A_data,
+        CLOUDVIEWER_CPU_LINALG_INT lda,
+        CLOUDVIEWER_CPU_LINALG_INT* ipiv_data,
+        scalar_t* B_data,
+        CLOUDVIEWER_CPU_LINALG_INT ldb) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
 
 template <typename scalar_t>
 inline CLOUDVIEWER_CPU_LINALG_INT gels_cpu(int matrix_layout,
-                                      char trans,
-                                      CLOUDVIEWER_CPU_LINALG_INT m,
-                                      CLOUDVIEWER_CPU_LINALG_INT n,
-                                      CLOUDVIEWER_CPU_LINALG_INT nrhs,
-                                      scalar_t* A_data,
-                                      CLOUDVIEWER_CPU_LINALG_INT lda,
-                                      scalar_t* B_data,
-                                      CLOUDVIEWER_CPU_LINALG_INT ldb) {
+                                           char trans,
+                                           CLOUDVIEWER_CPU_LINALG_INT m,
+                                           CLOUDVIEWER_CPU_LINALG_INT n,
+                                           CLOUDVIEWER_CPU_LINALG_INT nrhs,
+                                           scalar_t* A_data,
+                                           CLOUDVIEWER_CPU_LINALG_INT lda,
+                                           scalar_t* B_data,
+                                           CLOUDVIEWER_CPU_LINALG_INT ldb) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
 
 template <typename scalar_t>
 inline CLOUDVIEWER_CPU_LINALG_INT gesvd_cpu(int matrix_layout,
-                                       char jobu,
-                                       char jobvt,
-                                       CLOUDVIEWER_CPU_LINALG_INT m,
-                                       CLOUDVIEWER_CPU_LINALG_INT n,
-                                       scalar_t* A_data,
-                                       CLOUDVIEWER_CPU_LINALG_INT lda,
-                                       scalar_t* S_data,
-                                       scalar_t* U_data,
-                                       CLOUDVIEWER_CPU_LINALG_INT ldu,
-                                       scalar_t* VT_data,
-                                       CLOUDVIEWER_CPU_LINALG_INT ldvt,
-                                       scalar_t* superb) {
+                                            char jobu,
+                                            char jobvt,
+                                            CLOUDVIEWER_CPU_LINALG_INT m,
+                                            CLOUDVIEWER_CPU_LINALG_INT n,
+                                            scalar_t* A_data,
+                                            CLOUDVIEWER_CPU_LINALG_INT lda,
+                                            scalar_t* S_data,
+                                            scalar_t* U_data,
+                                            CLOUDVIEWER_CPU_LINALG_INT ldu,
+                                            scalar_t* VT_data,
+                                            CLOUDVIEWER_CPU_LINALG_INT ldvt,
+                                            scalar_t* superb) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
@@ -123,87 +126,93 @@ inline CLOUDVIEWER_CPU_LINALG_INT getri_cpu<double>(
 }
 
 template <>
-inline CLOUDVIEWER_CPU_LINALG_INT gesv_cpu<float>(int layout,
-                                             CLOUDVIEWER_CPU_LINALG_INT n,
-                                             CLOUDVIEWER_CPU_LINALG_INT m,
-                                             float* A_data,
-                                             CLOUDVIEWER_CPU_LINALG_INT lda,
-                                             CLOUDVIEWER_CPU_LINALG_INT* ipiv_data,
-                                             float* B_data,
-                                             CLOUDVIEWER_CPU_LINALG_INT ldb) {
+inline CLOUDVIEWER_CPU_LINALG_INT gesv_cpu<float>(
+        int layout,
+        CLOUDVIEWER_CPU_LINALG_INT n,
+        CLOUDVIEWER_CPU_LINALG_INT m,
+        float* A_data,
+        CLOUDVIEWER_CPU_LINALG_INT lda,
+        CLOUDVIEWER_CPU_LINALG_INT* ipiv_data,
+        float* B_data,
+        CLOUDVIEWER_CPU_LINALG_INT ldb) {
     return LAPACKE_sgesv(layout, n, m, A_data, lda, ipiv_data, B_data, ldb);
 }
 
 template <>
-inline CLOUDVIEWER_CPU_LINALG_INT gesv_cpu<double>(int layout,
-                                              CLOUDVIEWER_CPU_LINALG_INT n,
-                                              CLOUDVIEWER_CPU_LINALG_INT m,
-                                              double* A_data,
-                                              CLOUDVIEWER_CPU_LINALG_INT lda,
-                                              CLOUDVIEWER_CPU_LINALG_INT* ipiv_data,
-                                              double* B_data,
-                                              CLOUDVIEWER_CPU_LINALG_INT ldb) {
+inline CLOUDVIEWER_CPU_LINALG_INT gesv_cpu<double>(
+        int layout,
+        CLOUDVIEWER_CPU_LINALG_INT n,
+        CLOUDVIEWER_CPU_LINALG_INT m,
+        double* A_data,
+        CLOUDVIEWER_CPU_LINALG_INT lda,
+        CLOUDVIEWER_CPU_LINALG_INT* ipiv_data,
+        double* B_data,
+        CLOUDVIEWER_CPU_LINALG_INT ldb) {
     return LAPACKE_dgesv(layout, n, m, A_data, lda, ipiv_data, B_data, ldb);
 }
 
 template <>
-inline CLOUDVIEWER_CPU_LINALG_INT gels_cpu<float>(int layout,
-                                             char trans,
-                                             CLOUDVIEWER_CPU_LINALG_INT m,
-                                             CLOUDVIEWER_CPU_LINALG_INT n,
-                                             CLOUDVIEWER_CPU_LINALG_INT nrhs,
-                                             float* A_data,
-                                             CLOUDVIEWER_CPU_LINALG_INT lda,
-                                             float* B_data,
-                                             CLOUDVIEWER_CPU_LINALG_INT ldb) {
+inline CLOUDVIEWER_CPU_LINALG_INT gels_cpu<float>(
+        int layout,
+        char trans,
+        CLOUDVIEWER_CPU_LINALG_INT m,
+        CLOUDVIEWER_CPU_LINALG_INT n,
+        CLOUDVIEWER_CPU_LINALG_INT nrhs,
+        float* A_data,
+        CLOUDVIEWER_CPU_LINALG_INT lda,
+        float* B_data,
+        CLOUDVIEWER_CPU_LINALG_INT ldb) {
     return LAPACKE_sgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
 }
 
 template <>
-inline CLOUDVIEWER_CPU_LINALG_INT gels_cpu<double>(int layout,
-                                              char trans,
-                                              CLOUDVIEWER_CPU_LINALG_INT m,
-                                              CLOUDVIEWER_CPU_LINALG_INT n,
-                                              CLOUDVIEWER_CPU_LINALG_INT nrhs,
-                                              double* A_data,
-                                              CLOUDVIEWER_CPU_LINALG_INT lda,
-                                              double* B_data,
-                                              CLOUDVIEWER_CPU_LINALG_INT ldb) {
+inline CLOUDVIEWER_CPU_LINALG_INT gels_cpu<double>(
+        int layout,
+        char trans,
+        CLOUDVIEWER_CPU_LINALG_INT m,
+        CLOUDVIEWER_CPU_LINALG_INT n,
+        CLOUDVIEWER_CPU_LINALG_INT nrhs,
+        double* A_data,
+        CLOUDVIEWER_CPU_LINALG_INT lda,
+        double* B_data,
+        CLOUDVIEWER_CPU_LINALG_INT ldb) {
     return LAPACKE_dgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
 }
 
 template <>
-inline CLOUDVIEWER_CPU_LINALG_INT gesvd_cpu<float>(int layout,
-                                              char jobu,
-                                              char jobvt,
-                                              CLOUDVIEWER_CPU_LINALG_INT m,
-                                              CLOUDVIEWER_CPU_LINALG_INT n,
-                                              float* A_data,
-                                              CLOUDVIEWER_CPU_LINALG_INT lda,
-                                              float* S_data,
-                                              float* U_data,
-                                              CLOUDVIEWER_CPU_LINALG_INT ldu,
-                                              float* VT_data,
-                                              CLOUDVIEWER_CPU_LINALG_INT ldvt,
-                                              float* superb) {
+inline CLOUDVIEWER_CPU_LINALG_INT gesvd_cpu<float>(
+        int layout,
+        char jobu,
+        char jobvt,
+        CLOUDVIEWER_CPU_LINALG_INT m,
+        CLOUDVIEWER_CPU_LINALG_INT n,
+        float* A_data,
+        CLOUDVIEWER_CPU_LINALG_INT lda,
+        float* S_data,
+        float* U_data,
+        CLOUDVIEWER_CPU_LINALG_INT ldu,
+        float* VT_data,
+        CLOUDVIEWER_CPU_LINALG_INT ldvt,
+        float* superb) {
     return LAPACKE_sgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data,
                           U_data, ldu, VT_data, ldvt, superb);
 }
 
 template <>
-inline CLOUDVIEWER_CPU_LINALG_INT gesvd_cpu<double>(int layout,
-                                               char jobu,
-                                               char jobvt,
-                                               CLOUDVIEWER_CPU_LINALG_INT m,
-                                               CLOUDVIEWER_CPU_LINALG_INT n,
-                                               double* A_data,
-                                               CLOUDVIEWER_CPU_LINALG_INT lda,
-                                               double* S_data,
-                                               double* U_data,
-                                               CLOUDVIEWER_CPU_LINALG_INT ldu,
-                                               double* VT_data,
-                                               CLOUDVIEWER_CPU_LINALG_INT ldvt,
-                                               double* superb) {
+inline CLOUDVIEWER_CPU_LINALG_INT gesvd_cpu<double>(
+        int layout,
+        char jobu,
+        char jobvt,
+        CLOUDVIEWER_CPU_LINALG_INT m,
+        CLOUDVIEWER_CPU_LINALG_INT n,
+        double* A_data,
+        CLOUDVIEWER_CPU_LINALG_INT lda,
+        double* S_data,
+        double* U_data,
+        CLOUDVIEWER_CPU_LINALG_INT ldu,
+        double* VT_data,
+        CLOUDVIEWER_CPU_LINALG_INT ldvt,
+        double* superb) {
     return LAPACKE_dgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data,
                           U_data, ldu, VT_data, ldvt, superb);
 }

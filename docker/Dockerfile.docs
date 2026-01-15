@@ -71,6 +71,7 @@ RUN apt-get install --fix-missing -yq --no-install-recommends \
     libcgal-dev \
     libusb-1.0-0-dev \
     libzstd-dev \
+    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Qt5 and set QT_BASE_DIR based on Ubuntu version
@@ -100,8 +101,8 @@ ENV QT_ROOT=${QT_BASE_DIR} \
     QT_DIR=${QT_BASE_DIR} \
     PATH=${QT_BASE_DIR}/bin:$PATH
 
-# Checkout CloudViewer-ML torch271 branch
-RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b torch271 ${CLOUDVIEWER_ML_ROOT}
+# Checkout CloudViewer-ML main branch
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b main ${CLOUDVIEWER_ML_ROOT}
 
 # Always keep /root/ACloudViewer as the WORKDIR
 COPY util/ci_utils.sh util/install_deps_ubuntu.sh util/

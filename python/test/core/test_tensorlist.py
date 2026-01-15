@@ -35,8 +35,8 @@ def test_tensorlist_create(device):
     assert tl.element_shape == cv3c.SizeVector([3, 4])
 
     tl = cv3c.TensorList(element_shape=cv3c.SizeVector([3, 4]),
-                        dtype=dtype,
-                        device=device)
+                         dtype=dtype,
+                         device=device)
     assert tl.size == 0
     assert tl.element_shape == cv3c.SizeVector([3, 4])
 

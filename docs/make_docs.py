@@ -32,9 +32,15 @@ import multiprocessing
 import os
 import re
 import shutil
+import ssl
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
+
+import certifi
+import nbconvert
+import nbformat
 
 
 def _create_or_clear_dir(dir_path):
@@ -409,48 +415,113 @@ class JupyterDocsBuilder:
     def __init__(self, current_file_dir):
         self.current_file_dir = current_file_dir
 
+    def overwrite_tutorial_file(self, url, output_file, output_file_path):
+        with urllib.request.urlopen(
+                url,
+                context=ssl.create_default_context(cafile=certifi.where()),
+        ) as response:
+            with open(output_file, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        shutil.move(output_file, output_file_path)
+        
     def run(self):
         """Copy Jupyter notebooks to tutorial directories."""
         print("📓 Copying Jupyter notebooks to tutorial directories...")
         
+        # Setting os.environ["CI"] will disable interactive (blocking) mode in
+        # Jupyter notebooks
+        os.environ["CI"] = "true"
+
+        # Copy from jupyter to the tutorial folder.
+        nb_paths = []
         nb_parent_src = Path(self.current_file_dir) / "jupyter"
         nb_parent_dst = Path(self.current_file_dir) / "source" / "tutorial"
-        
         if not nb_parent_src.exists():
             print(f"⚠️  Jupyter directory not found: {nb_parent_src}")
             return
         
-        # Get all subdirectories in jupyter/
         example_dirs = [
             name for name in os.listdir(nb_parent_src)
             if os.path.isdir(nb_parent_src / name)
         ]
-        
-        copied_count = 0
+
+        print(f"Copying {nb_parent_src / 'cloudViewer_tutorial.py'} "
+              f"to {nb_parent_dst / 'cloudViewer_tutorial.py'}")
+        shutil.copy(
+            nb_parent_src / "cloudViewer_tutorial.py",
+            nb_parent_dst / "cloudViewer_tutorial.py",
+        )
+
         for example_dir in example_dirs:
             in_dir = nb_parent_src / example_dir
             out_dir = nb_parent_dst / example_dir
             out_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Copy all notebooks
+
+            for nb_out_path in out_dir.glob("*.ipynb"):
+                print("Delete: {}".format(nb_out_path))
+                nb_out_path.unlink()
+
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
                 _update_file(nb_in_path, nb_out_path)
-                copied_count += 1
-            
-            # Copy images directory if it exists
-            if (in_dir / "images").exists():
+                nb_paths.append(nb_out_path)
+
+            # Copy the 'images' dir present in some example dirs.
+            if (in_dir / "images").is_dir():
                 if (out_dir / "images").exists():
                     shutil.rmtree(out_dir / "images")
-                print(f"Copy: {in_dir / 'images'}\n   -> {out_dir / 'images'}")
+                print("Copy: {}\n   -> {}".format(in_dir / "images",
+                                                  out_dir / "images"))
                 shutil.copytree(in_dir / "images", out_dir / "images")
-        
-        # Copy helper Python files
-        for py_file in ["cloudViewer_tutorial.py", "jupyter_run_all.py", "jupyter_strip_output.py"]:
-            src_file = nb_parent_src / py_file
-            if src_file.exists():
-                dst_file = nb_parent_dst / py_file
-                _update_file(src_file, dst_file)
+
+        # Execute Jupyter notebooks
+        # Files that should not be executed.
+        nb_direct_copy = [
+            'draw_plotly.ipynb',
+            'hashmap.ipynb',
+            'jupyter_visualization.ipynb',
+            't_icp_registration.ipynb',
+            'tensor.ipynb',
+        ]
+
+        for nb_path in nb_paths:
+            if nb_path.name in nb_direct_copy:
+                print("[Processing notebook {}, directly copied]".format(
+                    nb_path.name))
+                continue
+
+            print("[Processing notebook {}]".format(nb_path.name))
+            with open(nb_path, encoding="utf-8") as f:
+                nb = nbformat.read(f, as_version=4)
+
+            # https://github.com/spatialaudio/nbsphinx/blob/master/src/nbsphinx.py
+            has_code = any(c.source for c in nb.cells if c.cell_type == "code")
+            has_output = any(
+                c.get("outputs") or c.get("execution_count")
+                for c in nb.cells
+                if c.cell_type == "code")
+            execute = (has_code and not has_output)
+            print("has_code: {}, has_output: {}, execute: {}".format(
+                has_code, has_output, execute))
+
+            if execute:
+                ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=6000)
+                try:
+                    ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
+                except nbconvert.preprocessors.execute.CellExecutionError:
+                    print("Execution of {} failed, this will cause CI to fail.".
+                          format(nb_path.name))
+                    if "GITHUB_ACTIONS" in os.environ:
+                        raise
+
+                with open(nb_path, "w", encoding="utf-8") as f:
+                    nbformat.write(nb, f)
+
+        url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
+        output_file = "t_icp_registration.ipynb"
+        output_file_path = nb_parent_dst / "t_pipelines" / output_file
+        output_file_path.parent.mkdir(parents=True, exist_ok=True)
+        self.overwrite_tutorial_file(url, output_file, str(output_file_path))
         
         # Copy static images (like donation.png) to _static directory
         print("📸 Copying static images to _static directory...")
@@ -491,49 +562,60 @@ class SphinxDocsBuilder:
         except (ImportError, OSError):
             print("⚠️  pypandoc not found, nbsphinx may fail without pandoc")
         
+        # Copy docs files from Open3D-ML repo
+        cloudviewer_root = os.environ.get(
+            "CLOUDVIEWER_ML_ROOT",
+            os.path.join(self.current_file_dir, "../../CloudViewer-ML"))
+        cloudviewer_docs = [
+            os.path.join(cloudviewer_root, "docs", "tensorboard.md")
+        ]
+        for cloudviewer_doc in cloudviewer_docs:
+            if os.path.isfile(cloudviewer_doc):
+                shutil.copy(cloudviewer_doc, self.current_file_dir)
+        
         build_dir = os.path.join(self.html_output_dir, "html")
+        source_dir = os.path.join(self.current_file_dir, "source")
         nproc = multiprocessing.cpu_count() if self.parallel else 1
         print(f"Building docs with {nproc} processes")
 
-        # Get version from project if available
-        version = "3.9"
-        release = "3.9.3"
-        
+        today = os.environ.get("SPHINX_TODAY", None)
+        if today:
+            cmd_args_today = ["-D", "today=" + today]
+        else:
+            cmd_args_today = []
+
         if self.is_release:
-            print(f"Building docs for release: {release}")
+            version_list = [
+                line.rstrip("\n").split(" ")[1]
+                for line in open("../libs/cloudViewer/version.txt")
+            ]
+            release_version = ".".join(version_list[:3])
+            print("Building docs for release:", release_version)
+
             cmd = [
-                "sphinx-build",
-                "-j", str(nproc),
-                "-b", "html",
-                "-D", f"version={version}",
-                "-D", f"release={release}",
-                "source",  # Source directory
-                build_dir,  # Output directory
+                "sphinx-build", "-j",
+                str(nproc), "-b", "html", "-D", "version=" + release_version,
+                "-D", "release=" + release_version
+            ] + cmd_args_today + [
+                source_dir,
+                build_dir,
             ]
         else:
-            print("Building development documentation")
             cmd = [
                 "sphinx-build",
-                "-j", str(nproc),
-                "-b", "html",
-                "source",
+                "-j",
+                str(nproc),
+                "-b",
+                "html",
+            ] + cmd_args_today + [
+                source_dir,
                 build_dir,
             ]
 
-        print(f'Running: "{" ".join(cmd)}"')
+        print('Calling: "%s"' % " ".join(cmd))
+        
         try:
             subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
-            
-            # Create symlink for convenience
-            html_link = os.path.join(self.current_file_dir, "html")
-            if not os.path.exists(html_link):
-                os.symlink(build_dir, html_link)
-                
-            index_html = Path(build_dir) / "index.html"
-            if index_html.exists():
-                print(f"✅ Sphinx docs generated at {index_html.as_uri()}")
-            else:
-                print(f"✅ Sphinx docs generated at {build_dir}")
         except subprocess.CalledProcessError as e:
             print(f"❌ Sphinx build failed: {e}")
             raise
