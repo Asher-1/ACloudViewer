@@ -31,7 +31,7 @@ def _get_examples_dir():
         return examples_dir
     else:
         examples_path = os.path.join(
-            os.path.dirname(os.path.dirname(tools_path)), "examples", "python")
+            os.path.dirname(os.path.dirname(tools_path)), "examples", "Python")
         examples_dir = Path(examples_path)
         return examples_dir
 
