@@ -219,6 +219,7 @@ docs/source/test_data
 docs/source/tutorial/**/*.ipynb
 docs/source/tutorial/**/*.py
 docs/source/tutorial/**/*.jpg
+docs/source/tutorial/**/*.png
 docs/source/tutorial/**/*.ply
 docs/source/tutorial/**/*.gif
 docs/source/tutorial/**/*.pcd

@@ -431,6 +431,15 @@ class JupyterDocsBuilder:
         # Setting os.environ["CI"] will disable interactive (blocking) mode in
         # Jupyter notebooks
         os.environ["CI"] = "true"
+        
+        # Configure environment for headless Docker rendering
+        # GLFW will automatically fall back to NULL platform for headless rendering
+        # Note: GLFW error messages may appear but are harmless - the code continues
+        # to work with headless rendering fallback
+        if "DISPLAY" not in os.environ:
+            os.environ["DISPLAY"] = ":99"
+        # Set environment to indicate headless mode (may help some libraries)
+        os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
         # Copy from jupyter to the tutorial folder.
         nb_paths = []
@@ -536,7 +545,6 @@ class JupyterDocsBuilder:
                 _update_file(donation_img, static_dst / "donation.png")
                 print(f"  ✓ donation.png ({donation_img.stat().st_size // 1024} KB)")
         
-        print(f"✅ Copied {copied_count} notebooks to tutorial directories")
 
 
 class SphinxDocsBuilder:
