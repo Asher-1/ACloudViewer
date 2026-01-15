@@ -6,9 +6,9 @@ Geometry
 
     pointcloud
     mesh
-    half_edge_mesh
     rgbd_image
     kdtree
+    half_edge_mesh
 
 .. toctree::
     :caption: Processing
