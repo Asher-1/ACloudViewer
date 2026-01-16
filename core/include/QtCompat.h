@@ -1029,13 +1029,13 @@ inline void qtCompatSetTabStopWidth(QPlainTextEdit* edit, int width) {
 // ----------------------------------------------------------------------------
 // QSet / QVector Iterator Range Constructor Compatibility
 // ----------------------------------------------------------------------------
-// Qt5.0-5.14: QSet<T>(begin, end) and QVector<T>(begin, end) constructors not supported
-// Qt5.15+: Both support iterator range constructors
-// Qt6: Both support iterator range constructors
+// Qt5.0-5.14: QSet<T>(begin, end) and QVector<T>(begin, end) constructors not
+// supported Qt5.15+: Both support iterator range constructors Qt6: Both support
+// iterator range constructors
 // ----------------------------------------------------------------------------
 
 // Helper to create QSet from QVector (Qt5/Qt6 compatible)
-template<typename T>
+template <typename T>
 QSet<T> qtCompatQSetFromVector(const QVector<T>& vec) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     // Qt5.15+ and Qt6: Use iterator range constructor
@@ -1052,7 +1052,7 @@ QSet<T> qtCompatQSetFromVector(const QVector<T>& vec) {
 }
 
 // Helper to create QVector from QSet (Qt5/Qt6 compatible)
-template<typename T>
+template <typename T>
 QVector<T> qtCompatQVectorFromSet(const QSet<T>& set) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     // Qt5.15+ and Qt6: Use iterator range constructor
@@ -1069,12 +1069,12 @@ QVector<T> qtCompatQVectorFromSet(const QSet<T>& set) {
 }
 
 // Backward compatibility aliases (for code already using these names)
-template<typename T>
+template <typename T>
 inline QSet<T> qSetFromVector(const QVector<T>& vec) {
     return qtCompatQSetFromVector(vec);
 }
 
-template<typename T>
+template <typename T>
 inline QVector<T> qVectorFromSet(const QSet<T>& set) {
     return qtCompatQVectorFromSet(set);
 }

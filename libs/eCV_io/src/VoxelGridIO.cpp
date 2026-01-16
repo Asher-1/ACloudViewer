@@ -232,25 +232,25 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     ply_set_read_cb(ply_file, "origin", "y", ReadOriginCallback, &state, 1);
     ply_set_read_cb(ply_file, "origin", "z", ReadOriginCallback, &state, 2);
     ply_set_read_cb(ply_file, "rotation", "r00", ReadOriginRotationCallback,
-        &state, 0);
+                    &state, 0);
     ply_set_read_cb(ply_file, "rotation", "r01", ReadOriginRotationCallback,
-            &state, 1);
+                    &state, 1);
     ply_set_read_cb(ply_file, "rotation", "r02", ReadOriginRotationCallback,
-            &state, 2);
+                    &state, 2);
     ply_set_read_cb(ply_file, "rotation", "r10", ReadOriginRotationCallback,
-            &state, 3);
+                    &state, 3);
     ply_set_read_cb(ply_file, "rotation", "r11", ReadOriginRotationCallback,
-            &state, 4);
+                    &state, 4);
     ply_set_read_cb(ply_file, "rotation", "r12", ReadOriginRotationCallback,
-            &state, 5);
+                    &state, 5);
     ply_set_read_cb(ply_file, "rotation", "r20", ReadOriginRotationCallback,
-            &state, 6);
+                    &state, 6);
     ply_set_read_cb(ply_file, "rotation", "r21", ReadOriginRotationCallback,
-            &state, 7);
+                    &state, 7);
     ply_set_read_cb(ply_file, "rotation", "r22", ReadOriginRotationCallback,
-            &state, 8);
+                    &state, 8);
     ply_set_read_cb(ply_file, "voxel_size", "val", ReadScaleCallback, &state,
-            0);
+                    0);
 
     state.voxel_index = 0;
     state.color_index = 0;
@@ -357,7 +357,7 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     ply_write(ply_file, rotation(2, 0));
     ply_write(ply_file, rotation(2, 1));
     ply_write(ply_file, rotation(2, 2));
-    
+
     ply_write(ply_file, voxelgrid.voxel_size_);
 
     for (auto &it : voxelgrid.voxels_) {
