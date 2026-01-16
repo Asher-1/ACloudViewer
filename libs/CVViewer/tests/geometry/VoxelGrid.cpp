@@ -10,6 +10,7 @@
 #include <LineSet.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
 #include "cloudViewer/io/PointCloudIO.h"
 #include "tests/Tests.h"
 #include "visualization/utility/DrawGeometry.h"

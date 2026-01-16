@@ -1,8 +1,8 @@
 ACloudViewer Version History
 ============================
 
-v3.9.4-Beta (Asher) - 12/02/2025
-----------------------
+v3.9.4-Beta (Asher) - 01/16/2026
+--------------------------------
 
 - New features:
     -   Add code style check support
@@ -67,6 +67,7 @@ v3.9.4-Beta (Asher) - 12/02/2025
     -   Refactor module: libs/PCLEngine/Tools
     -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×
     -   Add VoxelGrid transform, rotate, translate and scale support
+    -   Update DLPack to v1.2
 
 - New plugins:
     - G3 Point - Granulometry made simple in ACloudViewer
