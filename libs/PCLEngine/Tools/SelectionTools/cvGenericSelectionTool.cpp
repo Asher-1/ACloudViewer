@@ -14,6 +14,9 @@
 // SelectionModifier enums
 #include "cvViewSelectionManager.h"
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // VTK
 #include <vtkActor.h>
 #include <vtkCellPicker.h>
@@ -477,7 +480,7 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
     // Get ID sets
     QVector<qint64> newIds = newSelection.ids();
     QVector<qint64> currentIds = currentSelection.ids();
-    QSet<qint64> resultSet(currentIds.begin(), currentIds.end());
+    QSet<qint64> resultSet = qSetFromVector(currentIds);
 
     switch (modifier) {
         case SelectionModifier::SELECTION_ADDITION: {
@@ -513,7 +516,7 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
     }
 
     // Convert back to vector
-    QVector<qint64> resultIds(resultSet.begin(), resultSet.end());
+    QVector<qint64> resultIds = qVectorFromSet(resultSet);
 
     // Create result selection
     cvSelectionData result(resultIds, newSelection.fieldAssociation());

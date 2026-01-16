@@ -13,6 +13,8 @@
 #include <CVGeom.h>
 #include <vtkSmartPointer.h>
 
+#include <QVector>
+
 #include "point3f.h"
 #include "signalledrunable.h"
 

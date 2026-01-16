@@ -234,9 +234,12 @@ bool Train3DMASCDialog::openTraceFile() {
     QDir parameterDir = QDir(info.path());
 
     QFileDialog dialog(this);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    // Qt5.15+ and Qt6: Use new API (DirectoryOnly is deprecated)
     dialog.setFileMode(QFileDialog::Directory);
+    dialog.setOption(QFileDialog::ShowDirsOnly, true);
 #else
+    // Qt5.12-5.14: Use old API
     dialog.setFileMode(QFileDialog::DirectoryOnly);
 #endif
     dialog.setWindowTitle("Choose a valid directory for the traces");

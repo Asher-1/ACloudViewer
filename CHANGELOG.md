@@ -52,6 +52,7 @@ v3.9.4-Beta (Asher) - 12/02/2025
     -   Fix numpy version > 2.x issues and now support numpy > 2.x version
     -   Fix ReconstructionOptionsWidget crash issues due to no PBA_ENABLED compile_definitions for ACloudViewer
     -   Fix CHANGLOG.xxx format
+    -   macOS x86_64 not longer supported, only macOS arm64 is supported.
 
 - Enhancements:
     -   Replace `#ifndef` with `#pragma once`
@@ -64,6 +65,8 @@ v3.9.4-Beta (Asher) - 12/02/2025
     -   Rename docker scripts
     -   Remove deprecated module: libs/PCLEngine/VtkWidgets
     -   Refactor module: libs/PCLEngine/Tools
+    -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×
+    -   Add VoxelGrid transform, rotate, translate and scale support
 
 - New plugins:
     - G3 Point - Granulometry made simple in ACloudViewer

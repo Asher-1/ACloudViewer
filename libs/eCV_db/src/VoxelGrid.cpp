@@ -29,6 +29,7 @@ VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid,
     : ccHObject(name),
       voxel_size_(src_voxel_grid.voxel_size_),
       origin_(src_voxel_grid.origin_),
+      rotation_(src_voxel_grid.rotation_),
       voxels_(src_voxel_grid.voxels_) {}
 
 ccBBox VoxelGrid::getOwnBB(bool withGLFeatures) {
@@ -45,28 +46,54 @@ VoxelGrid &VoxelGrid::Clear() {
 Eigen::Vector3d VoxelGrid::GetMinBound() const {
     if (!HasVoxels()) {
         return origin_;
-    } else {
-        Eigen::Array3i min_grid_index = voxels_.begin()->first;
-        for (const auto &it : voxels_) {
-            const geometry::Voxel &voxel = it.second;
-            min_grid_index = min_grid_index.min(voxel.grid_index_.array());
-        }
-        return min_grid_index.cast<double>() * voxel_size_ + origin_.array();
     }
+
+    const auto corners = GetAllVoxelCorners();
+
+    Eigen::Vector3d min_bound = corners.front();
+    for (const auto &p : corners) {
+        min_bound = min_bound.cwiseMin(p);
+    }
+
+    return min_bound;
 }
 
 Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     if (!HasVoxels()) {
         return origin_;
-    } else {
-        Eigen::Array3i max_grid_index = voxels_.begin()->first;
-        for (const auto &it : voxels_) {
-            const geometry::Voxel &voxel = it.second;
-            max_grid_index = max_grid_index.max(voxel.grid_index_.array());
-        }
-        return (max_grid_index.cast<double>() + 1) * voxel_size_ +
-               origin_.array();
     }
+
+    const auto corners = GetAllVoxelCorners();
+
+    Eigen::Vector3d max_bound = corners.front();
+    for (const auto &p : corners) {
+        max_bound = max_bound.cwiseMax(p);
+    }
+
+    return max_bound;
+}
+
+std::vector<Eigen::Vector3d> VoxelGrid::GetAllVoxelCorners() const {
+    std::vector<Eigen::Vector3d> voxel_corners;
+    voxel_corners.reserve(voxels_.size() * 8);
+
+    // Precompute voxel corner offsets in local grid space
+    static const Eigen::Vector3d offsets[8] = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0},
+                                               {1, 1, 0}, {0, 0, 1}, {1, 0, 1},
+                                               {0, 1, 1}, {1, 1, 1}};
+
+    for (const auto &it : voxels_) {
+        const Eigen::Vector3i &grid_index = it.second.grid_index_;
+        Eigen::Vector3d base =
+                origin_ + rotation_ * (grid_index.cast<double>() * voxel_size_);
+
+        // Add all 8 corners directly without constructing temporary vectors
+        for (const auto &off : offsets) {
+            voxel_corners.push_back(base + rotation_ * (off * voxel_size_));
+        }
+    }
+
+    return voxel_corners;
 }
 
 Eigen::Vector3d VoxelGrid::GetCenter() const {
@@ -78,11 +105,11 @@ Eigen::Vector3d VoxelGrid::GetCenter() const {
                                           0.5 * voxel_size_);
     for (const auto &it : voxels_) {
         const geometry::Voxel &voxel = it.second;
-        center += voxel.grid_index_.cast<double>() * voxel_size_ + origin_ +
+        center += voxel.grid_index_.cast<double>() * voxel_size_ +
                   half_voxel_size;
     }
     center /= double(voxels_.size());
-    return center;
+    return origin_ + rotation_ * center;
 }
 
 ccBBox VoxelGrid::GetAxisAlignedBoundingBox() const {
@@ -94,29 +121,34 @@ ccBBox VoxelGrid::GetAxisAlignedBoundingBox() const {
 }
 
 ecvOrientedBBox VoxelGrid::GetOrientedBoundingBox() const {
-    return ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(
-            GetAxisAlignedBoundingBox());
+    return ecvOrientedBBox::CreateFromPoints(GetAllVoxelCorners());
 }
 
 VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
-    utility::LogError("VoxelGrid::Transform is not supported");
+    // Only update origin_ and rotation_ (lazy transform)
+    origin_ = (transformation.block<3, 3>(0, 0) * origin_) +
+              transformation.block<3, 1>(0, 3);
+    rotation_ = transformation.block<3, 3>(0, 0) * rotation_;
     return *this;
 }
 
 VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation,
                                 bool relative) {
-    utility::LogError("Not implemented");
+    origin_ += (relative ? translation : translation - GetCenter());
     return *this;
 }
 
-VoxelGrid &VoxelGrid::Scale(const double s, const Eigen::Vector3d &center) {
-    utility::LogError("Not implemented");
+VoxelGrid &VoxelGrid::Scale(const double scale, const Eigen::Vector3d &center) {
+    voxel_size_ *= scale;
+    origin_ = (origin_ - center) * scale + center;
     return *this;
 }
 
 VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3d &R,
                              const Eigen::Vector3d &center) {
-    utility::LogError("Not implemented");
+    // Rotate the origin and the orientation
+    origin_ = R * (origin_ - center) + center;
+    rotation_ = R * rotation_;
     return *this;
 }
 
@@ -176,7 +208,9 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
 }
 
 Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
-    Eigen::Vector3d voxel_f = (point - origin_) / voxel_size_;
+    // Convert world point to local grid frame
+    Eigen::Vector3d local = rotation_.transpose() * (point - origin_);
+    Eigen::Vector3d voxel_f = local / voxel_size_;
     return (Eigen::floor(voxel_f.array())).cast<int>();
 }
 
@@ -184,15 +218,15 @@ std::vector<Eigen::Vector3d> VoxelGrid::GetVoxelBoundingPoints(
         const Eigen::Vector3i &index) const {
     double r = voxel_size_ / 2.0;
     auto x = GetVoxelCenterCoordinate(index);
-    std::vector<Eigen::Vector3d> points;
-    points.push_back(x + Eigen::Vector3d(-r, -r, -r));
-    points.push_back(x + Eigen::Vector3d(-r, -r, r));
-    points.push_back(x + Eigen::Vector3d(r, -r, -r));
-    points.push_back(x + Eigen::Vector3d(r, -r, r));
-    points.push_back(x + Eigen::Vector3d(-r, r, -r));
-    points.push_back(x + Eigen::Vector3d(-r, r, r));
-    points.push_back(x + Eigen::Vector3d(r, r, -r));
-    points.push_back(x + Eigen::Vector3d(r, r, r));
+    std::vector<Eigen::Vector3d> points(8);
+    points[0] = x + rotation_ * Eigen::Vector3d(-r, -r, -r);
+    points[1] = x + rotation_ * Eigen::Vector3d(-r, -r, r);
+    points[2] = x + rotation_ * Eigen::Vector3d(r, -r, -r);
+    points[3] = x + rotation_ * Eigen::Vector3d(r, -r, r);
+    points[4] = x + rotation_ * Eigen::Vector3d(-r, r, -r);
+    points[5] = x + rotation_ * Eigen::Vector3d(-r, r, r);
+    points[6] = x + rotation_ * Eigen::Vector3d(r, r, -r);
+    points[7] = x + rotation_ * Eigen::Vector3d(r, r, r);
     return points;
 }
 

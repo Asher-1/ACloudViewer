@@ -151,7 +151,6 @@ public:  // construction
 
     /// Returns an axis-aligned bounding box of the geometry.
     virtual ccBBox GetAxisAlignedBoundingBox() const;
-    /// Returns an oriented bounding box of the geometry.
     virtual ecvOrientedBBox GetOrientedBoundingBox() const;
 
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.

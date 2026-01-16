@@ -193,9 +193,11 @@ class CloudViewerPluginDataReader:
 
     def __init__(self, logdir, cache_max_items=128):
         self.logdir = logdir
-        self.event_mux = EventMultiplexer(tensor_size_guidance={
-            metadata.PLUGIN_NAME: 0  # Store all metadata in RAM
-        })
+        self.event_mux = EventMultiplexer(
+            tensor_size_guidance={
+                metadata.PLUGIN_NAME: 0,  # Store all metadata in RAM
+                "Open3D": 0  # Also store Open3D metadata for compatibility
+            })
         self._run_to_tags = {}
         self._event_lock = threading.Lock()  # Protect TB event file data
         # Geometry data reading
@@ -204,18 +206,28 @@ class CloudViewerPluginDataReader:
         self.runtag_prop_shape = dict()
         self._file_handles = {}  # {filename, (open_handle, read_lock)}
         self._file_handles_lock = threading.Lock()
+        self._plugin_name = None  # Will be set during reload_events
         self.reload_events()
 
     def _have_data(self):
-        """Do we have any CloudViewer data?"""
-        try:
-            next(
-                iglob(os.path.join(self.logdir, "**", "plugins", "CloudViewer",
-                                   "*.msgpack"),
-                      recursive=True))
-            return True
-        except StopIteration:
-            return False
+        """Do we have any CloudViewer data?
+        
+        Checks for both CloudViewer and Open3D plugin directories.
+        CloudViewer format is the primary format and will be used if available.
+        Open3D format is supported for backward compatibility with test data.
+        """
+        # Check for both CloudViewer and Open3D plugin directories
+        # CloudViewer is the primary format, Open3D is for test data compatibility
+        for plugin_name in ["CloudViewer", "Open3D"]:
+            try:
+                next(
+                    iglob(os.path.join(self.logdir, "**", "plugins",
+                                       plugin_name, "*.msgpack"),
+                          recursive=True))
+                return True
+            except StopIteration:
+                continue
+        return False
 
     def reload_events(self):
         """Reload event file"""
@@ -224,12 +236,22 @@ class CloudViewerPluginDataReader:
         if not self._have_data():
             with self._event_lock:
                 self._run_to_tags = {}
+                self._plugin_name = None
             _log.debug(f"No event data found in {self.logdir}")
         else:
             self.event_mux.AddRunsFromDirectory(self.logdir)
             self.event_mux.Reload()
+            # Try CloudViewer plugin name first (primary format)
             run_tags = self.event_mux.PluginRunToTagToContent(
                 metadata.PLUGIN_NAME)
+            # If no CloudViewer data found, try Open3D (for test data compatibility)
+            if not run_tags:
+                run_tags = self.event_mux.PluginRunToTagToContent("Open3D")
+                if run_tags:
+                    self._plugin_name = "Open3D"
+            else:
+                # CloudViewer format found - use it as primary
+                self._plugin_name = metadata.PLUGIN_NAME
             with self._event_lock:
                 self._run_to_tags = {
                     run: sorted(tagdict.keys())
@@ -324,8 +346,10 @@ class CloudViewerPluginDataReader:
         run_tensor_events = self.tensor_events(run)
         metadata_proto.ParseFromString(
             run_tensor_events[tag][idx].tensor_proto.string_val[0])
-        data_dir = PluginDirectory(os.path.join(self.logdir, run),
-                                   metadata.PLUGIN_NAME)
+        # Use the detected plugin name (CloudViewer is primary, Open3D for compatibility)
+        # Defaults to CloudViewer if not explicitly set
+        plugin_name = self._plugin_name if self._plugin_name else metadata.PLUGIN_NAME
+        data_dir = PluginDirectory(os.path.join(self.logdir, run), plugin_name)
         filename = os.path.join(data_dir, metadata_proto.batch_index.filename)
         read_location = metadata_proto.batch_index.start_size[batch_idx].start
         read_size = metadata_proto.batch_index.start_size[batch_idx].size

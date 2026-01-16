@@ -321,7 +321,7 @@ bool ccMaterialSet::ParseMTL(QString path,
                 // -boost, -mm, -o, -s, -t, -texres, -clamp, -imfchan) These
                 // options start with '-' and may have numeric parameters
                 QStringList parts =
-                        textureFilename.split(' ', Qt::SkipEmptyParts);
+                        textureFilename.split(' ', QtCompat::SkipEmptyParts);
                 QString actualFilename;
                 for (const QString& part : parts) {
                     // Skip options that start with '-' and their numeric

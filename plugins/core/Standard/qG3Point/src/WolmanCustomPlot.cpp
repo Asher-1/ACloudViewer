@@ -71,7 +71,7 @@ WolmanCustomPlot::WolmanCustomPlot(const Eigen::ArrayXf& d_sample,
     // pen.setWidth(1);
     errorBars->setPen(pen);
     errorBars->setData(QVector<double>({edq[0], edq[1], edq[2]}));
-    errorBars->setPen(QPen(QColorConstants::Red));
+    errorBars->setPen(QPen(QColor(Qt::red)));
     errorBars->rescaleAxes(true);
 
     setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);

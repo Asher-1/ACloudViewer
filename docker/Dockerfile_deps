@@ -31,7 +31,7 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
 
 # Dependencies: basic
 # Update apt and install libs needed by Qt, pcl and vtk
-RUN apt-get install -y apt-utils software-properties-common tzdata gnupg ca-certificates curl \
+RUN apt-get update --fix-missing -y &&apt-get install -y apt-utils software-properties-common tzdata gnupg ca-certificates curl \
     && mkdir -p /usr/share/keyrings \
     && curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc \
        | gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg \
