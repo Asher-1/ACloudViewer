@@ -25,6 +25,9 @@
 // Qt
 #include <QSet>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 //-----------------------------------------------------------------------------
 cvSelectionAlgebra::cvSelectionAlgebra(QObject* parent) : QObject(parent) {
     CVLog::PrintDebug("[cvSelectionAlgebra] Initialized");
@@ -42,11 +45,11 @@ cvSelectionData cvSelectionAlgebra::unionOf(const cvSelectionData& a,
     }
 
     // Union of IDs (remove duplicates)
-    QSet<qint64> setA = QSet<qint64>(a.ids().begin(), a.ids().end());
-    QSet<qint64> setB = QSet<qint64>(b.ids().begin(), b.ids().end());
+    QSet<qint64> setA = qSetFromVector(a.ids());
+    QSet<qint64> setB = qSetFromVector(b.ids());
     QSet<qint64> result = setA.unite(setB);
 
-    QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
+    QVector<qint64> resultIds = qVectorFromSet(result);
 
     CVLog::Print(QString("[cvSelectionAlgebra] Union: %1 U %2 = %3")
                          .arg(a.count())
@@ -71,11 +74,11 @@ cvSelectionData cvSelectionAlgebra::intersectionOf(const cvSelectionData& a,
     }
 
     // Intersection of IDs
-    QSet<qint64> setA = QSet<qint64>(a.ids().begin(), a.ids().end());
-    QSet<qint64> setB = QSet<qint64>(b.ids().begin(), b.ids().end());
+    QSet<qint64> setA = qSetFromVector(a.ids());
+    QSet<qint64> setB = qSetFromVector(b.ids());
     QSet<qint64> result = setA.intersect(setB);
 
-    QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
+    QVector<qint64> resultIds = qVectorFromSet(result);
 
     CVLog::Print(QString("[cvSelectionAlgebra] Intersection: %1 & %2 = %3")
                          .arg(a.count())
@@ -103,11 +106,11 @@ cvSelectionData cvSelectionAlgebra::differenceOf(const cvSelectionData& a,
     }
 
     // Difference: elements in A but not in B
-    QSet<qint64> setA = QSet<qint64>(a.ids().begin(), a.ids().end());
-    QSet<qint64> setB = QSet<qint64>(b.ids().begin(), b.ids().end());
+    QSet<qint64> setA = qSetFromVector(a.ids());
+    QSet<qint64> setB = qSetFromVector(b.ids());
     QSet<qint64> result = setA.subtract(setB);
 
-    QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
+    QVector<qint64> resultIds = qVectorFromSet(result);
 
     CVLog::Print(QString("[cvSelectionAlgebra] Difference: %1 - %2 = %3")
                          .arg(a.count())
@@ -133,8 +136,8 @@ cvSelectionData cvSelectionAlgebra::symmetricDifferenceOf(
 
     // Symmetric difference: (A - B) U (B - A)
     // Or equivalently: (A U B) - (A & B)
-    QSet<qint64> setA = QSet<qint64>(a.ids().begin(), a.ids().end());
-    QSet<qint64> setB = QSet<qint64>(b.ids().begin(), b.ids().end());
+    QSet<qint64> setA = qSetFromVector(a.ids());
+    QSet<qint64> setB = qSetFromVector(b.ids());
 
     // Elements in A but not B
     QSet<qint64> aMinusB = setA;
@@ -147,7 +150,7 @@ cvSelectionData cvSelectionAlgebra::symmetricDifferenceOf(
     // Union of both
     QSet<qint64> result = aMinusB.unite(bMinusA);
 
-    QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
+    QVector<qint64> resultIds = qVectorFromSet(result);
 
     CVLog::Print(
             QString("[cvSelectionAlgebra] Symmetric Difference: %1 ^ %2 = %3")
@@ -184,8 +187,7 @@ cvSelectionData cvSelectionAlgebra::complementOf(vtkPolyData* polyData,
         return cvSelectionData(allIds, input.fieldAssociation());
     }
 
-    QSet<qint64> selectedSet =
-            QSet<qint64>(input.ids().begin(), input.ids().end());
+    QSet<qint64> selectedSet = qSetFromVector(input.ids());
     QVector<qint64> complementIds;
 
     vtkIdType totalCount = (input.fieldAssociation() == cvSelectionData::POINTS)
@@ -252,8 +254,11 @@ cvSelectionData cvSelectionAlgebra::growSelection(
     }
 
     // Store the original seed for removeSeed option
-    QSet<vtkIdType> seedSet =
-            QSet<vtkIdType>(input.ids().begin(), input.ids().end());
+    QSet<qint64> idsSet = qSetFromVector(input.ids());
+    QSet<vtkIdType> seedSet;
+    for (qint64 id : idsSet) {
+        seedSet.insert(static_cast<vtkIdType>(id));
+    }
     QSet<vtkIdType> currentSet = seedSet;
     QSet<vtkIdType> previousLayerSet = seedSet;
 
@@ -324,8 +329,11 @@ cvSelectionData cvSelectionAlgebra::shrinkSelection(
         return input;
     }
 
-    QSet<vtkIdType> currentSet =
-            QSet<vtkIdType>(input.ids().begin(), input.ids().end());
+    QSet<qint64> idsSet = qSetFromVector(input.ids());
+    QSet<vtkIdType> currentSet;
+    for (qint64 id : idsSet) {
+        currentSet.insert(static_cast<vtkIdType>(id));
+    }
 
     for (int iter = 0; iter < iterations; ++iter) {
         QSet<vtkIdType> newSet;
@@ -372,8 +380,11 @@ cvSelectionData cvSelectionAlgebra::extractBoundary(
         return input;
     }
 
-    QSet<vtkIdType> selectedSet =
-            QSet<vtkIdType>(input.ids().begin(), input.ids().end());
+    QSet<qint64> idsSet = qSetFromVector(input.ids());
+    QSet<vtkIdType> selectedSet;
+    for (qint64 id : idsSet) {
+        selectedSet.insert(static_cast<vtkIdType>(id));
+    }
     QVector<qint64> boundaryIds;
 
     for (vtkIdType cellId : selectedSet) {
@@ -743,8 +754,11 @@ cvSelectionData cvSelectionAlgebra::growPointSelection(
     }
 
     // Store the original seed for removeSeed option
-    QSet<vtkIdType> seedSet =
-            QSet<vtkIdType>(input.ids().begin(), input.ids().end());
+    QSet<qint64> idsSet = qSetFromVector(input.ids());
+    QSet<vtkIdType> seedSet;
+    for (qint64 id : idsSet) {
+        seedSet.insert(static_cast<vtkIdType>(id));
+    }
     QSet<vtkIdType> currentSet = seedSet;
     QSet<vtkIdType> previousLayerSet = seedSet;
 
@@ -827,8 +841,11 @@ cvSelectionData cvSelectionAlgebra::shrinkPointSelection(
         return input;
     }
 
-    QSet<vtkIdType> currentSet =
-            QSet<vtkIdType>(input.ids().begin(), input.ids().end());
+    QSet<qint64> idsSet = qSetFromVector(input.ids());
+    QSet<vtkIdType> currentSet;
+    for (qint64 id : idsSet) {
+        currentSet.insert(static_cast<vtkIdType>(id));
+    }
 
     // Quick check: if no points have topological neighbors, this is a pure
     // point cloud In a pure point cloud, all points are boundary points, so
@@ -1426,11 +1443,11 @@ cvSelectionData cvSelectionFilter::combineAND(const cvSelectionData& a,
         return cvSelectionData();
     }
 
-    QSet<qint64> setA = QSet<qint64>(a.ids().begin(), a.ids().end());
-    QSet<qint64> setB = QSet<qint64>(b.ids().begin(), b.ids().end());
+    QSet<qint64> setA = qSetFromVector(a.ids());
+    QSet<qint64> setB = qSetFromVector(b.ids());
     QSet<qint64> result = setA.intersect(setB);
 
-    QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
+    QVector<qint64> resultIds = qVectorFromSet(result);
 
     CVLog::PrintDebug(QString("[cvSelectionFilter] AND: %1 & %2 = %3")
                               .arg(a.count())
@@ -1450,11 +1467,11 @@ cvSelectionData cvSelectionFilter::combineOR(const cvSelectionData& a,
         return cvSelectionData();
     }
 
-    QSet<qint64> setA = QSet<qint64>(a.ids().begin(), a.ids().end());
-    QSet<qint64> setB = QSet<qint64>(b.ids().begin(), b.ids().end());
+    QSet<qint64> setA = qSetFromVector(a.ids());
+    QSet<qint64> setB = qSetFromVector(b.ids());
     QSet<qint64> result = setA.unite(setB);
 
-    QVector<qint64> resultIds = QVector<qint64>(result.begin(), result.end());
+    QVector<qint64> resultIds = qVectorFromSet(result);
 
     CVLog::PrintDebug(QString("[cvSelectionFilter] OR: %1 U %2 = %3")
                               .arg(a.count())
@@ -1471,8 +1488,7 @@ cvSelectionData cvSelectionFilter::invert(vtkPolyData* polyData,
         return cvSelectionData();
     }
 
-    QSet<qint64> selectedSet =
-            QSet<qint64>(input.ids().begin(), input.ids().end());
+    QSet<qint64> selectedSet = qSetFromVector(input.ids());
     QVector<qint64> invertedIds;
 
     vtkIdType totalCount = (input.fieldAssociation() == cvSelectionData::POINTS)

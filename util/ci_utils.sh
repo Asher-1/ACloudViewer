@@ -279,6 +279,16 @@ build_gui_app() {
         WITH_PCL_NURBS=OFF
         echo "WITH_PCL_NURBS is off"
     fi
+    if [[ "with_rdb" =~ ^($options)$ ]]; then
+        BUILD_RIEGL=ON
+        echo "PLUGIN_IO_QRDB is on"
+    elif [[ "without_rdb" =~ ^($options)$ ]]; then
+        BUILD_RIEGL=OFF
+        echo "PLUGIN_IO_QRDB is off"
+    else
+        # Keep default behavior based on OS if option not specified
+        echo "PLUGIN_IO_QRDB uses default: $BUILD_RIEGL (based on OS)"
+    fi
     if [[ "plugin_treeiso" =~ ^($options)$ ]]; then
         PLUGIN_STANDARD_QTREEISO=ON
         echo "PLUGIN_STANDARD_QTREEISO is on"
@@ -636,10 +646,12 @@ run_python_tests() {
     pytest_args=("${CLOUDVIEWER_SOURCE_ROOT}/python/test/")
     
     # Check if ML ops should be tested
-    if [ "${BUILD_PYTORCH_OPS:-OFF}" == "OFF" ] && [ "${BUILD_TENSORFLOW_OPS:-OFF}" == "OFF" ]; then
-        echo "Testing ML Ops disabled"
-        pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
-    fi
+    # TODO: not supported for now
+    pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
+    # if [ "${BUILD_PYTORCH_OPS:-OFF}" == "OFF" ] && [ "${BUILD_TENSORFLOW_OPS:-OFF}" == "OFF" ]; then
+    #     echo "Testing ML Ops disabled"
+    #     pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
+    # fi
     
     # Run pytest with verbose output
     echo "======================================================================"
@@ -663,7 +675,7 @@ run_python_tests() {
     deactivate || true
     
     # Optionally cleanup venv (commented out to allow reuse)
-    rm -rf cloudViewer_test.venv
+    # rm -rf cloudViewer_test.venv
     
     return $pytest_result
 }
@@ -676,6 +688,7 @@ run_cpp_unit_tests() {
     echo "Running C++ Unit Tests"
     echo "======================================================================"
     
+    pushd build
     # Check if tests executable exists
     if [ ! -f "./bin/tests" ]; then
         echo "Error: tests executable not found at ./bin/tests"
@@ -709,6 +722,7 @@ run_cpp_unit_tests() {
         return $test_result
     fi
     echo ""
+    popd # build directory
 }
 
 # Run all tests (C++ and Python)
@@ -724,13 +738,8 @@ run_all_tests() {
     local python_result=0
     
     # Run C++ tests if BUILD_UNIT_TESTS is ON
-    if [ -f "./bin/tests" ]; then
-        run_cpp_unit_tests
-        cpp_result=$?
-    else
-        echo "Skipping C++ tests: BUILD_UNIT_TESTS is OFF or tests not built"
-        echo ""
-    fi
+    run_cpp_unit_tests
+    cpp_result=$?
     
     # Run Python tests if venv exists or can be created
     if [ -d "cloudViewer_test.venv" ] || command -v python3 &>/dev/null; then

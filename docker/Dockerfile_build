@@ -78,7 +78,7 @@ RUN ./docker/scripts/configure_pip_timeout.sh
 RUN if [ "${BUILD_GUI}" = "ON" ]; then                                      \
         echo "Start Build ACloudViewer apps installer..." &&                \
         rm -rf ${ACloudViewer_BUILD}/* &&                                   \
-        ./docker/build_gui_app.sh ${PYTHON_VERSION} "OFF";                  \
+        WITH_RDB=OFF ./docker/build_gui_app.sh ${PYTHON_VERSION} "OFF";     \
     fi
 
 RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                                    \

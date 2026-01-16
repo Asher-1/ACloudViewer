@@ -77,6 +77,13 @@
 //    - QPlainTextEdit::setTabStopWidth() (Qt5) / setTabStopDistance() (Qt6)
 //    - Function: qtCompatSetTabStopWidth()
 //
+// 13. Container Iterators:
+//    - QSet<T>(begin, end) and QVector<T>(begin, end) constructors
+//    - Qt5.0-5.14: Not supported, use manual loops
+//    - Qt5.15+: Supported via iterator range constructors
+//    - Qt6: Supported via iterator range constructors
+//    - Functions: qtCompatQSetFromVector(), qtCompatQVectorFromSet()
+//
 // USAGE EXAMPLES:
 //
 //   Regular Expression:
@@ -131,9 +138,11 @@
 #include <QMultiMap>
 #include <QPoint>
 #include <QPointF>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 #include <QTextStream>
+#include <QVector>
 #include <QtGlobal>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -143,8 +152,10 @@
 #include <Qt>
 #else
 // Qt5 includes
+#include <QChar>
 #include <QRegExp>
 #include <QStringRef>
+#include <QVector>
 #endif
 
 // ----------------------------------------------------------------------------
@@ -1014,3 +1025,56 @@ inline void qtCompatSetTabStopWidth(QPlainTextEdit* edit, int width) {
 }
 #endif
 #endif
+
+// ----------------------------------------------------------------------------
+// QSet / QVector Iterator Range Constructor Compatibility
+// ----------------------------------------------------------------------------
+// Qt5.0-5.14: QSet<T>(begin, end) and QVector<T>(begin, end) constructors not supported
+// Qt5.15+: Both support iterator range constructors
+// Qt6: Both support iterator range constructors
+// ----------------------------------------------------------------------------
+
+// Helper to create QSet from QVector (Qt5/Qt6 compatible)
+template<typename T>
+QSet<T> qtCompatQSetFromVector(const QVector<T>& vec) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    // Qt5.15+ and Qt6: Use iterator range constructor
+    return QSet<T>(vec.begin(), vec.end());
+#else
+    // Qt5.0-5.14: Manual insertion (iterator range constructor not available)
+    QSet<T> result;
+    result.reserve(vec.size());
+    for (const T& item : vec) {
+        result.insert(item);
+    }
+    return result;
+#endif
+}
+
+// Helper to create QVector from QSet (Qt5/Qt6 compatible)
+template<typename T>
+QVector<T> qtCompatQVectorFromSet(const QSet<T>& set) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    // Qt5.15+ and Qt6: Use iterator range constructor
+    return QVector<T>(set.begin(), set.end());
+#else
+    // Qt5.0-5.14: Manual conversion (iterator range constructor not available)
+    QVector<T> result;
+    result.reserve(set.size());
+    for (const T& item : set) {
+        result.append(item);
+    }
+    return result;
+#endif
+}
+
+// Backward compatibility aliases (for code already using these names)
+template<typename T>
+inline QSet<T> qSetFromVector(const QVector<T>& vec) {
+    return qtCompatQSetFromVector(vec);
+}
+
+template<typename T>
+inline QVector<T> qVectorFromSet(const QSet<T>& set) {
+    return qtCompatQVectorFromSet(set);
+}

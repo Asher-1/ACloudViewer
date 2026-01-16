@@ -42,6 +42,9 @@
 #include <QTabWidget>
 #include <QTimer>
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // STL
 #include <cmath>
 #include <limits>
@@ -3618,8 +3621,7 @@ void cvSelectionPropertiesWidget::onInvertSelectionToggled(bool checked) {
 
     if (checked) {
         // Invert: show all IDs NOT in original selection
-        QSet<qint64> originalIdSet(m_originalSelectionIds.begin(),
-                                   m_originalSelectionIds.end());
+        QSet<qint64> originalIdSet = qSetFromVector(m_originalSelectionIds);
 
         displayIds.reserve(static_cast<int>(totalCount) -
                            m_originalSelectionIds.size());

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QVector>
 
 #include "../qPCL.h"
 #include "point3f.h"

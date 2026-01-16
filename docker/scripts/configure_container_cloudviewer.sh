@@ -15,9 +15,6 @@ docker run -dit --name=test_cloudviewer_dep_ubuntu2004 \
   --ipc=host \
   --gpus=all \
   --env NVIDIA_DISABLE_REQUIRE=1 \
-  --env ALL_PROXY=socks5://127.0.0.1:7890 \
-	--env HTTP_PROXY=http://127.0.0.1:7890 \
-	--env HTTPS_PROXY=http://127.0.0.1:7890 \
   --env PIP_DEFAULT_TIMEOUT=1000 \
   --env PIP_RETRIES=5 \
   --env PIP_TIMEOUT=1000 \
@@ -28,10 +25,10 @@ docker run -dit --name=test_cloudviewer_dep_ubuntu2004 \
   -e "QT_X11_NO_MITSHM=1" \
   -v /etc/localtime:/etc/localtime:ro \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/root/ACloudViewer \
-  -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
+  -v /home/ludahai/develop/code/github/ACloudViewer:/root/ACloudViewer \
+  -v /home/ludahai/develop/code/github/CloudViewer-ML:/root/CloudViewer-ML \
+  -v /home/ludahai/develop/code/github/ACloudViewer/docker_cache/install:/root/install \
+  -v /home/ludahai/develop/code/github/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
   cloudviewer-deps:develop-ubuntu20.04-cuda12.6.3-cudnn
 
 docker exec -it test_cloudviewer_dep_ubuntu2004 /bin/bash

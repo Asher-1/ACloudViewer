@@ -7,16 +7,17 @@
 //
 // This file is retrieved from:
 // https://github.com/dmlc/dlpack/blob/master/include/dlpack/dlpack.h
-// Commit: 3ec0443, Feb 16 2020
+// Version: v1.2
 //
 // License:
 // https://github.com/dmlc/dlpack/blob/master/LICENSE
 //
 // CloudViewer changes:
-// No changes except for automatic style changed by clang-format.
+// - Automatic style changed by clang-format.
+// - Formatting helper
 
 /*!
- *  Copyright (c) 2017 by Contributors
+ *  Copyright (c) 2017 -  by Contributors
  * \file dlpack.h
  * \brief The common header of DLPack.
  */
