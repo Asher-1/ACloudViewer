@@ -30,7 +30,7 @@
 
 //-----------------------------------------------------------------------------
 cvSelectionAlgebra::cvSelectionAlgebra(QObject* parent) : QObject(parent) {
-    CVLog::PrintDebug("[cvSelectionAlgebra] Initialized");
+    CVLog::PrintVerbose("[cvSelectionAlgebra] Initialized");
 }
 
 //-----------------------------------------------------------------------------
@@ -285,7 +285,7 @@ cvSelectionData cvSelectionAlgebra::growSelection(
         // Outermost = currentSet - previousLayerSet
         resultSet = currentSet;
         resultSet.subtract(previousLayerSet);
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionAlgebra] Removed intermediate layers, "
                         "keeping outermost: %1 cells")
                         .arg(resultSet.size()));
@@ -294,7 +294,7 @@ cvSelectionData cvSelectionAlgebra::growSelection(
     if (removeSeed) {
         // Remove the original seed elements
         resultSet.subtract(seedSet);
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionAlgebra] Removed seed, result: %1 cells")
                         .arg(resultSet.size()));
     }
@@ -304,7 +304,7 @@ cvSelectionData cvSelectionAlgebra::growSelection(
         resultIds.append(id);
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionAlgebra] Grow %1 layers (removeSeed=%2, "
                     "removeIntermediate=%3): %4 -> %5 cells")
                     .arg(layers)
@@ -357,7 +357,7 @@ cvSelectionData cvSelectionAlgebra::shrinkSelection(
         resultIds.append(id);
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionAlgebra] Shrink %1 iterations: %2 -> %3 cells")
                     .arg(iterations)
                     .arg(input.count())
@@ -393,7 +393,7 @@ cvSelectionData cvSelectionAlgebra::extractBoundary(
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionAlgebra] Boundary extraction: %1 -> %2 cells")
                     .arg(input.count())
                     .arg(boundaryIds.size()));
@@ -517,9 +517,9 @@ cvSelectionData cvSelectionAlgebra::expandSelection(
 
             // Add new elements to current set
             if (newElements.isEmpty()) {
-                CVLog::PrintDebug(QString("[cvSelectionAlgebra] Grow stopped "
-                                          "at iteration %1: no new neighbors")
-                                          .arg(iter + 1));
+                CVLog::PrintVerbose(QString("[cvSelectionAlgebra] Grow stopped "
+                                            "at iteration %1: no new neighbors")
+                                            .arg(iter + 1));
                 break;
             }
 
@@ -582,7 +582,7 @@ cvSelectionData cvSelectionAlgebra::expandSelection(
             expandedIds.append(id);
         }
 
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionAlgebra] Grow: %1 layers, %2 -> %3 "
                         "%4 (removeSeed=%5, removeIntermediate=%6)")
                         .arg(layers)
@@ -623,7 +623,7 @@ cvSelectionData cvSelectionAlgebra::expandSelection(
             return input;
         }
 
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionAlgebra] Starting shrink: %1 %2, %3 "
                         "layers")
                         .arg(input.ids().size())
@@ -677,7 +677,7 @@ cvSelectionData cvSelectionAlgebra::expandSelection(
                 }
             }
 
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionAlgebra] Shrink iteration %1: "
                             "found %2 boundary, %3 interior elements")
                             .arg(iter + 1)
@@ -702,7 +702,7 @@ cvSelectionData cvSelectionAlgebra::expandSelection(
 
             // If selection becomes empty, stop
             if (currentSet.isEmpty()) {
-                CVLog::PrintDebug(
+                CVLog::PrintVerbose(
                         QString("[cvSelectionAlgebra] Shrink iteration "
                                 "%1: selection shrunk to empty")
                                 .arg(iter + 1));
@@ -715,7 +715,7 @@ cvSelectionData cvSelectionAlgebra::expandSelection(
             shrunkIds.append(id);
         }
 
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionAlgebra] Shrink: %1 layers, %2 -> %3 %4")
                         .arg(shrinkLayers)
                         .arg(input.ids().size())
@@ -789,7 +789,7 @@ cvSelectionData cvSelectionAlgebra::growPointSelection(
 
         // If no new points were added, we can't grow further
         if (newSet.size() == currentSet.size()) {
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionAlgebra] Grow stopped at layer %1: "
                             "no new neighbors found")
                             .arg(iter + 1));
@@ -817,7 +817,7 @@ cvSelectionData cvSelectionAlgebra::growPointSelection(
         resultIds.append(id);
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionAlgebra] Grow points %1 layers: %2 -> %3 "
                     "points")
                     .arg(layers)
@@ -887,10 +887,11 @@ cvSelectionData cvSelectionAlgebra::shrinkPointSelection(
 
         // If no points were removed, we can't shrink further
         if (newSet.size() == currentSet.size()) {
-            CVLog::PrintDebug(QString("[cvSelectionAlgebra] Shrink stopped at "
-                                      "iteration %1: "
-                                      "no boundary points found")
-                                      .arg(iter + 1));
+            CVLog::PrintVerbose(
+                    QString("[cvSelectionAlgebra] Shrink stopped at "
+                            "iteration %1: "
+                            "no boundary points found")
+                            .arg(iter + 1));
             break;
         }
 
@@ -906,7 +907,7 @@ cvSelectionData cvSelectionAlgebra::shrinkPointSelection(
         resultIds.append(id);
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionAlgebra] Shrink points %1 iterations: %2 "
                     "-> %3 points")
                     .arg(iterations)
@@ -970,7 +971,7 @@ QSet<vtkIdType> cvSelectionAlgebra::getPointNeighbors(vtkPolyData* polyData,
     if (neighbors.isEmpty()) {
         // Log that we can't find neighbors for this point cloud
         // Don't use KD-tree as it can be expensive and cause crashes
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionAlgebra] Point %1: no topological "
                         "neighbors "
                         "(pure point cloud - grow/shrink not applicable)")
@@ -1040,7 +1041,7 @@ bool cvSelectionAlgebra::isBoundaryPoint(vtkPolyData* polyData,
 
 //-----------------------------------------------------------------------------
 cvSelectionFilter::cvSelectionFilter(QObject* parent) : QObject(parent) {
-    CVLog::PrintDebug("[cvSelectionFilter] Initialized");
+    CVLog::PrintVerbose("[cvSelectionFilter] Initialized");
 }
 
 //-----------------------------------------------------------------------------
@@ -1087,7 +1088,7 @@ cvSelectionData cvSelectionFilter::filterByAttributeRange(
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionFilter] Attribute range filter: %1 -> %2 "
                     "items")
                     .arg(inputIds.size())
@@ -1161,7 +1162,7 @@ cvSelectionData cvSelectionFilter::filterByAttributeComparison(
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionFilter] Attribute comparison filter: %1 "
                     "-> %2 items")
                     .arg(inputIds.size())
@@ -1200,9 +1201,10 @@ cvSelectionData cvSelectionFilter::filterByArea(vtkPolyData* polyData,
         }
     }
 
-    CVLog::PrintDebug(QString("[cvSelectionFilter] Area filter: %1 -> %2 cells")
-                              .arg(inputIds.size())
-                              .arg(filteredIds.size()));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionFilter] Area filter: %1 -> %2 cells")
+                    .arg(inputIds.size())
+                    .arg(filteredIds.size()));
 
     return cvSelectionData(filteredIds, cvSelectionData::CELLS);
 }
@@ -1252,7 +1254,7 @@ cvSelectionData cvSelectionFilter::filterByNormalAngle(
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionFilter] Normal angle filter: %1 -> %2 cells")
                     .arg(inputIds.size())
                     .arg(filteredIds.size()));
@@ -1315,7 +1317,7 @@ cvSelectionData cvSelectionFilter::filterByBoundingBox(
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionFilter] Bounding box filter: %1 -> %2 items")
                     .arg(inputIds.size())
                     .arg(filteredIds.size()));
@@ -1385,7 +1387,7 @@ cvSelectionData cvSelectionFilter::filterByDistanceFromPoint(
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionFilter] Distance filter: %1 -> %2 items")
                     .arg(inputIds.size())
                     .arg(filteredIds.size()));
@@ -1424,7 +1426,7 @@ cvSelectionData cvSelectionFilter::filterByNeighborCount(
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionFilter] Neighbor count filter: %1 -> %2 cells")
                     .arg(inputIds.size())
                     .arg(filteredIds.size()));
@@ -1449,10 +1451,10 @@ cvSelectionData cvSelectionFilter::combineAND(const cvSelectionData& a,
 
     QVector<qint64> resultIds = qVectorFromSet(result);
 
-    CVLog::PrintDebug(QString("[cvSelectionFilter] AND: %1 & %2 = %3")
-                              .arg(a.count())
-                              .arg(b.count())
-                              .arg(resultIds.size()));
+    CVLog::PrintVerbose(QString("[cvSelectionFilter] AND: %1 & %2 = %3")
+                                .arg(a.count())
+                                .arg(b.count())
+                                .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, a.fieldAssociation());
 }
@@ -1473,10 +1475,10 @@ cvSelectionData cvSelectionFilter::combineOR(const cvSelectionData& a,
 
     QVector<qint64> resultIds = qVectorFromSet(result);
 
-    CVLog::PrintDebug(QString("[cvSelectionFilter] OR: %1 U %2 = %3")
-                              .arg(a.count())
-                              .arg(b.count())
-                              .arg(resultIds.size()));
+    CVLog::PrintVerbose(QString("[cvSelectionFilter] OR: %1 U %2 = %3")
+                                .arg(a.count())
+                                .arg(b.count())
+                                .arg(resultIds.size()));
 
     return cvSelectionData(resultIds, a.fieldAssociation());
 }
@@ -1501,9 +1503,9 @@ cvSelectionData cvSelectionFilter::invert(vtkPolyData* polyData,
         }
     }
 
-    CVLog::PrintDebug(QString("[cvSelectionFilter] Invert: %1 -> %2")
-                              .arg(input.count())
-                              .arg(invertedIds.size()));
+    CVLog::PrintVerbose(QString("[cvSelectionFilter] Invert: %1 -> %2")
+                                .arg(input.count())
+                                .arg(invertedIds.size()));
 
     return cvSelectionData(invertedIds, input.fieldAssociation());
 }

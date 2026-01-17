@@ -454,7 +454,7 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
     }
 #endif
 
-    CVLog::Print("[ecvLayoutManager] Toolbar layout configured");
+    CVLog::PrintVerbose("[ecvLayoutManager] Toolbar layout configured");
 }
 
 void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
@@ -479,7 +479,7 @@ void ecvLayoutManager::setupDockWidgetLayout(int screenWidth,
         // Other dock widgets are handled by MainWindow
     }
 
-    CVLog::Print("[ecvLayoutManager] Dock widget layout configured");
+    CVLog::PrintVerbose("[ecvLayoutManager] Dock widget layout configured");
 }
 
 void ecvLayoutManager::setupMainWindowGeometry(int screenWidth,
@@ -508,7 +508,7 @@ void ecvLayoutManager::setupDefaultLayout() {
     setupDockWidgetLayout(screenWidth, screenHeight);
     setupMainWindowGeometry(screenWidth, screenHeight);
 
-    CVLog::Print("[ecvLayoutManager] GUI Default layout setup complete");
+    CVLog::PrintVerbose("[ecvLayoutManager] GUI Default layout setup complete");
 }
 
 void ecvLayoutManager::saveGUILayout() {
@@ -524,7 +524,7 @@ void ecvLayoutManager::saveGUILayout() {
     settings.setValue(ecvPS::MainWinGeom(), m_mainWindow->saveGeometry());
     settings.setValue(ecvPS::MainWinState(), m_mainWindow->saveState());
 
-    CVLog::Print("[ecvLayoutManager] GUI layout saved");
+    CVLog::PrintVerbose("[ecvLayoutManager] GUI layout saved");
 }
 
 bool ecvLayoutManager::isAutoRestoreEnabled() const {
@@ -543,7 +543,7 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
     // Check if auto-restore is enabled (do this check first, matching
     // CloudCompare)
     if (isAutoRestoreEnabled()) {
-        CVLog::Print(
+        CVLog::PrintVerbose(
                 "[ecvLayoutManager] Auto-restore enabled, using default "
                 "layout");
         setupDefaultLayout();
@@ -578,11 +578,11 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
             }
         }
 
-        CVLog::Print("[ecvLayoutManager] GUI layout restored from settings");
+        CVLog::PrintVerbose("[ecvLayoutManager] GUI layout restored from settings");
     } else {
         // Use default layout
         setupDefaultLayout();
-        CVLog::Print("[ecvLayoutManager] GUI Using default layout");
+        CVLog::PrintVerbose("[ecvLayoutManager] GUI Using default layout");
     }
 }
 
@@ -620,7 +620,7 @@ void ecvLayoutManager::saveCustomLayout() {
     settings.setValue(ecvPS::CustomLayoutGeom(), m_mainWindow->saveGeometry());
     settings.setValue(ecvPS::CustomLayoutState(), m_mainWindow->saveState());
 
-    CVLog::Print("[ecvLayoutManager] Custom layout saved successfully");
+    CVLog::PrintVerbose("[ecvLayoutManager] Custom layout saved successfully");
 }
 
 void ecvLayoutManager::restoreDefaultLayout() {
@@ -638,7 +638,7 @@ void ecvLayoutManager::restoreDefaultLayout() {
     setupDefaultLayout();
     saveGUILayout();
 
-    CVLog::Print("[ecvLayoutManager] Default layout restored successfully");
+    CVLog::PrintVerbose("[ecvLayoutManager] Default layout restored successfully");
 }
 
 bool ecvLayoutManager::restoreCustomLayout() {
@@ -660,6 +660,6 @@ bool ecvLayoutManager::restoreCustomLayout() {
     m_mainWindow->restoreGeometry(geometry.toByteArray());
     m_mainWindow->restoreState(state.toByteArray());
 
-    CVLog::Print("[ecvLayoutManager] Custom layout restored successfully");
+    CVLog::PrintVerbose("[ecvLayoutManager] Custom layout restored successfully");
     return true;
 }

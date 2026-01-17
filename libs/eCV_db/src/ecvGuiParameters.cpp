@@ -62,6 +62,9 @@ void ecvGui::ParamStruct::reset() {
     labelBackgroundCol = ecvColor::defaultLabelBkgColor;
     labelMarkerCol = ecvColor::defaultLabelMarkerColor;
     bbDefaultCol = ecvColor::yellow;
+    showBBOnSelected = true;
+    bbOpacity = 0.5;
+    bbLineWidth = 1;
 
     lightDoubleSided = true;
     drawBackgroundGradient = true;
@@ -197,6 +200,10 @@ void ecvGui::ParamStruct::fromPersistentSettings() {
                                    c_ubColorArraySize))
                     .toByteArray()
                     .data()));
+    showBBOnSelected = settings.value("showBBOnSelected", true).toBool();
+    bbOpacity = settings.value("bbOpacity", 0.5).toDouble();
+    bbLineWidth = static_cast<unsigned>(
+            std::max(1u, settings.value("bbLineWidth", 1).toUInt()));
 
     lightDoubleSided = settings.value("lightDoubleSided", true).toBool();
     drawBackgroundGradient =
@@ -269,6 +276,9 @@ void ecvGui::ParamStruct::toPersistentSettings() const {
     settings.setValue(
             "bbDefaultColor",
             QByteArray((const char*)bbDefaultCol.rgb, c_ubColorArraySize));
+    settings.setValue("showBBOnSelected", showBBOnSelected);
+    settings.setValue("bbOpacity", bbOpacity);
+    settings.setValue("bbLineWidth", bbLineWidth);
     settings.setValue("backgroundGradient", drawBackgroundGradient);
     settings.setValue("drawRoundedPoints", drawRoundedPoints);
     settings.setValue("meshDecimation", decimateMeshOnMove);

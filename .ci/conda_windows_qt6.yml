@@ -13,6 +13,8 @@ dependencies:
   - qt6-main>=6.4.*
   - cgal=6.*
   - ffmpeg=7.1.*
+  - openssl # For curl build on Windows
+  - libcurl=8.14.* # For curl support
   - nodejs  # jupyter
   - rust   # fix missing cargo when pip install pywinpty
   - pip: # maturin>1.7.8 breaks dependency y-py (Python 3.12) and pywinpty (Python 3.8) wheel building

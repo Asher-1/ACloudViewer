@@ -848,7 +848,21 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         // for bbox
                         context.viewID = sensor->getViewId();
                         if (sensor->isSelected() && context.visible) {
-                            sensor->showBB(context);
+                            // Check if Axes Grid is visible - if so, hide BoundingBox
+                            bool shouldShowBB = true;
+                            if (ecvDisplayTools::TheInstance()) {
+                                AxesGridProperties axesGridProps;
+                                ecvDisplayTools::TheInstance()->getDataAxesGridProperties(
+                                        context.viewID, axesGridProps);
+                                if (axesGridProps.visible) {
+                                    shouldShowBB = false;
+                                }
+                            }
+                            if (shouldShowBB) {
+                                sensor->showBB(context);
+                            } else {
+                                sensor->hideBB(context);
+                            }
                         } else {
                             sensor->hideBB(context);
                         }
@@ -864,7 +878,21 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         // for bbox
                         context.viewID = prim->getViewId();
                         if (prim->isSelected() && context.visible) {
-                            prim->showBB(context);
+                            // Check if Axes Grid is visible - if so, hide BoundingBox
+                            bool shouldShowBB = true;
+                            if (ecvDisplayTools::TheInstance()) {
+                                AxesGridProperties axesGridProps;
+                                ecvDisplayTools::TheInstance()->getDataAxesGridProperties(
+                                        context.viewID, axesGridProps);
+                                if (axesGridProps.visible) {
+                                    shouldShowBB = false;
+                                }
+                            }
+                            if (shouldShowBB) {
+                                prim->showBB(context);
+                            } else {
+                                prim->hideBB(context);
+                            }
                         } else {
                             prim->hideBB(context);
                         }

@@ -16,7 +16,9 @@
 #include "ecvSettingManager.h"
 
 // ECV_DB_LIB
+#include "ecvHObject.h"
 #include <ecvColorTypes.h>
+#include <ecvDisplayTools.h>
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -24,11 +26,17 @@
 // Qt
 #include <QColor>
 #include <QColorDialog>
+#include <QMetaObject>
+#include <QObject>
 #include <QSettings>
 #include <QStyleFactory>
 
+// Standard
+#include <algorithm>
+
 // Default 'min cloud size' for LoD  when VBOs are activated
 static const double s_defaultMaxVBOCloudSizeM = 50.0;
+
 
 ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
     : QDialog(parent, Qt::Tool),
@@ -50,6 +58,15 @@ ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
             &ccDisplayOptionsDlg::changeMeshFrontDiffuseColor);
     connect(m_ui->bbColorButton, &QAbstractButton::clicked, this,
             &ccDisplayOptionsDlg::changeBBColor);
+    connect(m_ui->showBBOnSelectedCheckBox, &QCheckBox::toggled, this,
+            [&](bool state) { parameters.showBBOnSelected = state; });
+    connect(m_ui->bbOpacityDoubleSpinBox,
+            static_cast<void (QDoubleSpinBox::*)(double)>(
+                    &QDoubleSpinBox::valueChanged),
+            this, &ccDisplayOptionsDlg::changeBBOpacity);
+    connect(m_ui->bbLineWidthSpinBox,
+            static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,
+            &ccDisplayOptionsDlg::changeBBLineWidth);
     connect(m_ui->bkgColorButton, &QAbstractButton::clicked, this,
             &ccDisplayOptionsDlg::changeBackgroundColor);
     connect(m_ui->labelBkgColorButton, &QAbstractButton::clicked, this,
@@ -81,6 +98,14 @@ ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
             [&](bool state) { options.normalsDisplayedByDefault = state; });
     connect(m_ui->useNativeDialogsCheckBox, &QCheckBox::toggled, this,
             [&](bool state) { options.useNativeDialogs = state; });
+    connect(m_ui->askForConfirmationBeforeQuittingCheckBox, &QCheckBox::toggled,
+            this, [&](bool state) {
+                options.askForConfirmationBeforeQuitting = state;
+            });
+    connect(m_ui->logVerbosityComboBox,
+            static_cast<void (QComboBox::*)(int)>(
+                    &QComboBox::currentIndexChanged),
+            this, &ccDisplayOptionsDlg::changeLogVerbosityLevel);
 
     connect(m_ui->useVBOCheckBox, &QAbstractButton::clicked, this,
             &ccDisplayOptionsDlg::changeVBOUsage);
@@ -182,6 +207,9 @@ void ccDisplayOptionsDlg::refresh() {
     const ecvColor::Rgbub& bbc = parameters.bbDefaultCol;
     bbDefaultCol.setRgb(bbc.r, bbc.g, bbc.b);
     ccQtHelpers::SetButtonColor(m_ui->bbColorButton, bbDefaultCol);
+    m_ui->showBBOnSelectedCheckBox->setChecked(parameters.showBBOnSelected);
+    m_ui->bbOpacityDoubleSpinBox->setValue(parameters.bbOpacity);
+    m_ui->bbLineWidthSpinBox->setValue(parameters.bbLineWidth);
 
     const ecvColor::Rgbub& bgc = parameters.backgroundCol;
     backgroundCol.setRgb(bgc.r, bgc.g, bgc.b);
@@ -237,6 +265,10 @@ void ccDisplayOptionsDlg::refresh() {
     m_ui->autoDisplayNormalsCheckBox->setChecked(
             options.normalsDisplayedByDefault);
     m_ui->useNativeDialogsCheckBox->setChecked(options.useNativeDialogs);
+    m_ui->askForConfirmationBeforeQuittingCheckBox->setChecked(
+            options.askForConfirmationBeforeQuitting);
+    m_ui->logVerbosityComboBox->setCurrentIndex(
+            std::min(static_cast<int>(options.logVerbosityLevel), static_cast<int>(CVLog::LOG_WARNING)));
 
     update();
 }
@@ -431,9 +463,41 @@ void ccDisplayOptionsDlg::changeLabelMarkerSize(int val) {
     parameters.labelMarkerSize = static_cast<unsigned>(val);
 }
 
+void ccDisplayOptionsDlg::changeBBOpacity(double val) {
+    if (val < 0.0 || val > 1.0) return;
+    parameters.bbOpacity = val;
+}
+
+void ccDisplayOptionsDlg::changeBBLineWidth(int val) {
+    if (val < 1) return;
+    parameters.bbLineWidth = static_cast<unsigned>(val);
+}
+
 void ccDisplayOptionsDlg::doReject() {
+    // Restore old parameters and options
     ecvGui::Set(oldParameters);
     ecvOptions::Set(oldOptions);
+
+    // Restore old application style
+    if (m_defaultAppStyleIndex >= 0) {
+        QString oldStyle = m_ui->appStyleComboBox->itemText(m_defaultAppStyleIndex);
+        if (ecvApp) {
+            ecvApp->setAppStyle(oldStyle);
+        }
+    }
+
+    // Force redraw of selected objects to restore BoundingBox properties
+    ccHObject* sceneDB = ecvDisplayTools::GetSceneDB();
+    if (sceneDB) {
+        // Find all selected entities and force them to redraw
+        ccHObject::Container allEntities;
+        sceneDB->filterChildren(allEntities, true, CV_TYPES::OBJECT);
+        for (ccHObject* entity : allEntities) {
+            if (entity && entity->isSelected()) {
+                entity->setForceRedrawRecursive(true);
+            }
+        }
+    }
 
     emit aspectHasChanged();
 
@@ -462,12 +526,42 @@ void ccDisplayOptionsDlg::apply() {
         ecvApp->setAppStyle(style);
     }
 
+    // Apply log verbosity level (now directly uses CVLog::MessageLevelFlags)
+    {
+        if (CVLog::VerbosityLevel() != options.logVerbosityLevel) {
+            CVLog::SetVerbosityLevel(options.logVerbosityLevel);
+            CVLog::Print(QString("New log verbosity level: %1").arg(options.logVerbosityLevel));
+        }
+    }
+
+    // Force redraw of selected objects to update BoundingBox properties
+    ccHObject* sceneDB = ecvDisplayTools::GetSceneDB();
+    if (sceneDB) {
+        // Find all selected entities and force them to redraw
+        ccHObject::Container allEntities;
+        sceneDB->filterChildren(allEntities, true, CV_TYPES::OBJECT);
+        for (ccHObject* entity : allEntities) {
+            if (entity && entity->isSelected()) {
+                entity->setForceRedrawRecursive(true);
+            }
+        }
+    }
+
     emit aspectHasChanged();
 }
 
 void ccDisplayOptionsDlg::changeAppStyle(int index) {
     // Optional: could add live preview here
     Q_UNUSED(index);
+}
+
+void ccDisplayOptionsDlg::changeLogVerbosityLevel(int index) {
+    if (index >= 0 && index < CVLog::LOG_ERROR) {
+        options.logVerbosityLevel = static_cast<CVLog::MessageLevelFlags>(index);
+    } else {
+        // unexpected value
+        assert(false);
+    }
 }
 
 void ccDisplayOptionsDlg::populateAppStyleComboBox() {

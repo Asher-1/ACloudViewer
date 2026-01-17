@@ -537,7 +537,7 @@ void cvRenderViewSelectionReaction::endSelection() {
         m_parentAction->blockSignals(false);
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvRenderViewSelectionReaction] Selection mode %1 ended")
                     .arg(static_cast<int>(m_mode)));
 }
@@ -1284,7 +1284,7 @@ int cvRenderViewSelectionReaction::getSelectionModifier() {
         for (QAction* maction : m_modifierGroup->actions()) {
             if (maction && maction->isChecked() && maction->data().isValid()) {
                 selectionModifier = maction->data().toInt();
-                CVLog::PrintDebug(
+                CVLog::PrintVerbose(
                         QString("[getSelectionModifier] From modifierGroup: "
                                 "action='%1', modifier=%2")
                                 .arg(maction->text())
@@ -1687,7 +1687,7 @@ void cvRenderViewSelectionReaction::storeCurrentStyle() {
 
             if (!isSelectionStyle) {
                 m_previousStyle = style;
-                CVLog::PrintDebug(QString("[storeCurrentStyle] Stored "
+                CVLog::PrintVerbose(QString("[storeCurrentStyle] Stored "
                                           "non-selection style: %1")
                                           .arg(style->GetClassName()));
             }

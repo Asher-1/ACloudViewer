@@ -13,6 +13,7 @@
 #include "ReconstructionOptionsWidget.h"
 #include "RenderOptionsWidget.h"
 #include "ui/render_options.h"
+#include "util/misc.h"
 #include "util/version.h"
 
 namespace cloudViewer {
@@ -57,11 +58,29 @@ void ReconstructionWidget::iniEnvironment() {
     }
 
     if (project_path != "") {
-        if (options_.ReRead(project_path)) {
-            *options_.project_path = project_path;
-            project_widget_->SetDatabasePath(*options_.database_path);
-            project_widget_->SetImagePath(*options_.image_path);
+        // Only try to read the configuration file if it exists
+        if (ExistsFile(project_path)) {
+            if (options_.ReRead(project_path)) {
+                *options_.project_path = project_path;
+                project_widget_->SetDatabasePath(*options_.database_path);
+                project_widget_->SetImagePath(*options_.image_path);
+            } else {
+                std::string database_path = CVTools::FromQString(
+                        settings.value("database_path", "").toString());
+                std::string image_path = CVTools::FromQString(
+                        settings.value("image_path", "").toString());
+                if (!database_path.empty() && !image_path.empty()) {
+                    *options_.project_path = project_path;
+                    *options_.database_path = database_path;
+                    *options_.image_path = image_path;
+                    project_widget_->SetDatabasePath(database_path);
+                    project_widget_->SetImagePath(image_path);
+                } else {
+                    ShowInvalidProjectError();
+                }
+            }
         } else {
+            // Configuration file doesn't exist, try to use saved database and image paths
             std::string database_path = CVTools::FromQString(
                     settings.value("database_path", "").toString());
             std::string image_path = CVTools::FromQString(

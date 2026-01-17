@@ -32,6 +32,8 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QProgressBar>
+#include <QPushButton>
+#include <QAbstractButton>
 #include <QSet>
 #include <QStatusBar>
 #include <QString>
@@ -461,6 +463,7 @@ private slots:
     void popMenuInConsole(const QPoint&);
     void clearConsoleItems();
     void clearConsole();
+    void copyConsoleItems();
 
     // Display method
     //! toggles full screen

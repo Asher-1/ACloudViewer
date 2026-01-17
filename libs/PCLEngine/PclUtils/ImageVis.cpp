@@ -308,7 +308,7 @@ void ImageVis::changeOpacity(double opacity, const std::string& viewID) {
         imageSlice->SetVisibility(opacity > 0.0 ? 1 : 0);
         imageSlice->GetProperty()->SetOpacity(opacity);
 
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 "[ImageVis::changeOpacity] Set opacity to %f using "
                 "vtkImageSlice::GetProperty()->SetOpacity()",
                 opacity);

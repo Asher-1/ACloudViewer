@@ -17,6 +17,7 @@
 
 // CV_APP_COMMON
 #include <CommonSettings.h>
+#include <ecvOptions.h>
 
 // Qt
 #include <QtCompat.h>
@@ -224,14 +225,12 @@ void ecvConsole::refresh() {
     m_mutex.lock();
 
     if (m_textDisplay && !m_queue.isEmpty()) {
+        // Note: Message filtering based on verbosity level is now done in
+        // CVLog::LogMessage(), so we just display all messages in the queue
         for (QVector<ConsoleItemType>::const_iterator it = m_queue.constBegin();
              it != m_queue.constEnd(); ++it) {
             // it->second = message severity
-            bool debugMessage = (it->second & LOG_VERBOSE);
-#ifndef QT_DEBUG
-            // skip debug message in release mode
-            if (debugMessage) continue;
-#endif
+            int level = it->second;
 
             // destination: console widget (log file is already written in
             // logMessage()) it->first = message text
@@ -239,18 +238,20 @@ void ecvConsole::refresh() {
 
             // set color based on the message severity
             // Error
-            if (it->second & LOG_ERROR) {
+            if ((it->second & LOG_ERROR) == LOG_ERROR) {
                 item->setForeground(Qt::red);
             }
             // Warning
-            else if (it->second & LOG_WARNING) {
+            else if ((it->second & LOG_WARNING) == LOG_WARNING) {
                 item->setForeground(Qt::darkRed);
                 // we also force the console visibility if a warning message
                 // arrives!
-                if (m_parentWindow) m_parentWindow->forceConsoleDisplay();
+                if (m_parentWindow) {
+                    m_parentWindow->forceConsoleDisplay();
+                }
             }
 #ifdef QT_DEBUG
-            else if (debugMessage) {
+            else if (it->second & DEBUG_FLAG) {
                 item->setForeground(Qt::blue);
             }
 #endif
@@ -273,12 +274,8 @@ void ecvConsole::refresh() {
 }
 
 void ecvConsole::logMessage(const QString& message, int level) {
-#ifndef QT_DEBUG
-    // skip debug messages in release mode
-    if (level & LOG_VERBOSE) {
-        return;
-    }
-#endif
+    // Note: Message filtering based on verbosity level is now done in
+    // CVLog::LogMessage(), so we just process all messages that reach here
 
     // QString line = __LINE__;
     // QString filename = __FILE__;
@@ -314,14 +311,14 @@ void ecvConsole::logMessage(const QString& message, int level) {
 #ifdef QT_DEBUG
     else {
         // Error
-        if (level & LOG_ERROR) {
+        if ((level & LOG_ERROR) == LOG_ERROR) {
             if (level & LOG_VERBOSE)
                 printf("ERR-DBG: ");
             else
                 printf("ERR: ");
         }
         // Warning
-        else if (level & LOG_WARNING) {
+        else if ((level & LOG_WARNING) == LOG_WARNING) {
             if (level & LOG_VERBOSE)
                 printf("WARN-DBG: ");
             else
@@ -339,7 +336,7 @@ void ecvConsole::logMessage(const QString& message, int level) {
 #endif
 
     // we display the error messages in a popup dialog
-    if ((level & LOG_ERROR) && qApp && m_parentWidget &&
+    if ((level & LOG_ERROR) == LOG_ERROR && qApp && m_parentWidget &&
         QThread::currentThread() == qApp->thread()) {
         QMessageBox::warning(m_parentWidget, "Error", message);
     }

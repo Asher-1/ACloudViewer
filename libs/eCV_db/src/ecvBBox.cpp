@@ -65,7 +65,12 @@ const ccBBox& ccBBox::operator+=(const ccBBox& other) {
     return *this;
 }
 
-void ccBBox::draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) const {
+void ccBBox::draw(CC_DRAW_CONTEXT& context) {
+    // Use default color from context
+    draw(context, context.bbDefaultCol);
+}
+
+void ccBBox::draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) {
     if (!ecvDisplayTools::GetMainWindow()) {
         return;
     }

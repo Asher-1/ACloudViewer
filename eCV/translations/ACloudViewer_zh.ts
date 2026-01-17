@@ -6987,9 +6987,14 @@ Note: the diagonal is not tested at loading time.</source>
         <translation>克隆圆盘 %1 时发生错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="7796" />
+        <location filename="../MainWindow.cpp" line="7871" />
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="7872" />
         <source>Clear selected items</source>
-        <translation>清除 selected items</translation>
+        <translation>清除选中项</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="8364" />

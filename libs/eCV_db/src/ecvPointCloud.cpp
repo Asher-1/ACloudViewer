@@ -4656,18 +4656,18 @@ bool ccPointCloud::fromFile_MeOnly(QFile& in,
         {
             result = ccSerializationHelper::GenericArrayFromTypedFile<
                     CCVector3, 3, PointCoordinateType, float>(m_points, in,
-                                                              dataVersion);
+                                                              dataVersion, "3D points");
         } else if (fileCoordIsDouble &&
                    sizeof(PointCoordinateType) ==
                            4)  // file is 'double' and current type is 'float'
         {
             result = ccSerializationHelper::GenericArrayFromTypedFile<
                     CCVector3, 3, PointCoordinateType, double>(m_points, in,
-                                                               dataVersion);
+                                                               dataVersion, "3D points");
         } else {
             result = ccSerializationHelper::GenericArrayFromFile<
                     CCVector3, 3, PointCoordinateType>(m_points, in,
-                                                       dataVersion);
+                                                       dataVersion, "3D points");
         }
         if (!result) {
             return false;

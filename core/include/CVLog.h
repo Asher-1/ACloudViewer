@@ -22,7 +22,6 @@
 /** This interface is meant to be used as a unique (static) instance.
         It should be thread safe!
 **/
-
 class CV_CORE_LIB_API CVLog {
 public:
     //! Destructor
@@ -41,13 +40,22 @@ public:
 
     //! Message level
     enum MessageLevelFlags {
-        LOG_STANDARD = 0,  /**< Standard message (Print) **/
-        LOG_VERBOSE = 1,   /**< Verbose message (Debug) **/
-        LOG_WARNING = 2,   /**< Warning message (Warning) **/
-        LOG_IMPORTANT = 3, /**< Important messages (PrintHigh) **/
+        LOG_VERBOSE = 0,   /**< Verbose message (Debug) **/
+        LOG_STANDARD = 1,  /**< Standard message (Print) **/
+        LOG_IMPORTANT = 2, /**< Important messages (PrintHigh) **/
+        LOG_WARNING = 3,   /**< Warning message (Warning) **/
         LOG_ERROR = 4,     /**< Error message (Error) **/
-        DEBUG_FLAG = 8     /**< Debug flag (reserved) **/
+
+        DEBUG_FLAG = 8 /**< Debug flag (reserved) **/
     };
+
+    //! Returns the current verbosity level
+    static int VerbosityLevel();
+
+    //! Sets the verbosity level
+    /** Messages below this level will be filtered out.
+     **/
+    static void SetVerbosityLevel(int level);
 
     //! Static shortcut to CVLog::logMessage
     static void LogMessage(const QString& message, int level);
@@ -71,15 +79,12 @@ public:
 
     //! Prints out a formatted message in console
     /** Works just like the 'printf' command.
-            \return always return 'true'
+        \return always 'true'
     **/
     static bool Print(const char* format, ...);
 
-    //! QString version of CVLog::Print
-    inline static bool Print(const QString& message) {
-        LogMessage(message, LOG_STANDARD);
-        return true;
-    }
+    //! QString version of ccLog::Print
+    static bool Print(const QString& message);
 
     //! Prints out an important formatted message in console
     /** Works just like the 'printf' command.
@@ -90,63 +95,48 @@ public:
     //! QString version of ccLog::PrintHigh
     static bool PrintHigh(const QString& message);
 
-    //! Same as Print, but works only in debug mode
+    //! Same as Print, but works only in Debug mode
     /** Works just like the 'printf' command.
-            \return always return 'true'
+        \return always 'true'
     **/
     static bool PrintDebug(const char* format, ...);
 
-    //! QString version of CVLog::PrintDebug
-    inline static bool PrintDebug(const QString& message) {
-        LogMessage(message, LOG_STANDARD | DEBUG_FLAG);
-        return true;
-    }
+    //! QString version of ccLog::PrintDebug
+    static bool PrintDebug(const QString& message);
 
     //! Prints out a formatted warning message in console
     /** Works just like the 'printf' command.
-            \return always return 'false'
+        \return always 'false'
     **/
     static bool Warning(const char* format, ...);
 
-    //! QString version of CVLog::Warning
-    inline static bool Warning(const QString& message) {
-        LogMessage(message, LOG_WARNING);
-        return false;
-    }
+    //! QString version of ccLog::Warning
+    static bool Warning(const QString& message);
 
-    //! Same as Warning, but works only in debug mode
+    //! Same as Warning, but works only in Debug mode
     /** Works just like the 'printf' command.
-            \return always return 'false'
+        \return always 'false'
     **/
     static bool WarningDebug(const char* format, ...);
 
-    //! QString version of CVLog::WarningDebug
-    inline static bool WarningDebug(const QString& message) {
-        LogMessage(message, LOG_WARNING | DEBUG_FLAG);
-        return false;
-    }
+    //! QString version of ccLog::WarningDebug
+    static bool WarningDebug(const QString& message);
 
     //! Display an error dialog with formatted message
     /** Works just like the 'printf' command.
-            \return always return 'false'
+        \return always 'false'
     **/
     static bool Error(const char* format, ...);
 
     //! QString version of 'Error'
-    inline static bool Error(const QString& message) {
-        LogMessage(message, LOG_ERROR);
-        return false;
-    }
+    static bool Error(const QString& message);
 
-    //! Same as Error, but works only in debug mode
+    //! Same as Error, but works only in Debug mode
     /** Works just like the 'printf' command.
-            \return always return 'false'
+        \return always 'false'
     **/
     static bool ErrorDebug(const char* format, ...);
 
-    //! QString version of CVLog::ErrorDebug
-    static bool ErrorDebug(const QString& message) {
-        LogMessage(message, LOG_ERROR | DEBUG_FLAG);
-        return false;
-    }
+    //! QString version of ccLog::ErrorDebug
+    static bool ErrorDebug(const QString& message);
 };

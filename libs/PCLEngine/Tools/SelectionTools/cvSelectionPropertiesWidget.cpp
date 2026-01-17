@@ -194,7 +194,7 @@ cvSelectionPropertiesWidget::cvSelectionPropertiesWidget(QWidget* parent)
     // object selected)
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionPropertiesWidget] Initialized with ParaView-style UI");
 }
 
@@ -373,9 +373,9 @@ void cvSelectionPropertiesWidget::onHighlighterColorChanged(int mode) {
             break;
     }
 
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] UI updated for "
-                              "external color change (mode=%1)")
-                              .arg(mode));
+    CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] UI updated for "
+                                "external color change (mode=%1)")
+                                .arg(mode));
 }
 
 //-----------------------------------------------------------------------------
@@ -416,9 +416,10 @@ void cvSelectionPropertiesWidget::onHighlighterLabelPropertiesChanged(
         bool interactive) {
     // Called when highlighter label properties change externally
     // This could trigger a full UI sync if needed
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Label properties "
-                              "changed externally (interactive=%1)")
-                              .arg(interactive));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionPropertiesWidget] Label properties "
+                    "changed externally (interactive=%1)")
+                    .arg(interactive));
     // For now, just log - UI will be updated on next syncUIWithHighlighter()
     // call
 }
@@ -529,7 +530,7 @@ void cvSelectionPropertiesWidget::syncUIWithHighlighter() {
         m_interactiveSelectionColorButton->setStyleSheet(pvButtonStyle);
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionPropertiesWidget] UI synchronized with highlighter "
             "settings");
 }
@@ -1400,7 +1401,7 @@ bool cvSelectionPropertiesWidget::updateSelection(
             m_elementTypeCombo->blockSignals(true);
             m_elementTypeCombo->setCurrentIndex(expectedIndex);
             m_elementTypeCombo->blockSignals(false);
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionPropertiesWidget] Auto-switched "
                             "element type to %1")
                             .arg(expectedIndex == 0 ? "Point" : "Cell"));
@@ -1438,9 +1439,9 @@ bool cvSelectionPropertiesWidget::updateSelection(
                 }
             }
 
-            CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Updated "
-                                      "Data Producer to '%1'")
-                                      .arg(sourceName));
+            CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Updated "
+                                        "Data Producer to '%1'")
+                                        .arg(sourceName));
         }
     }
 
@@ -2183,7 +2184,7 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
 
     // First, try to use direct extraction from source ccPointCloud if available
     // This bypasses VTK→ccPointCloud conversion and preserves all attributes
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Extract point cloud check: "
                     "manager=%1, sourceValid=%2")
                     .arg(m_selectionManager != nullptr ? "yes" : "no")
@@ -2195,11 +2196,11 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
 
     if (m_selectionManager && m_selectionManager->isSourceObjectValid()) {
         ccPointCloud* sourceCloud = m_selectionManager->getSourcePointCloud();
-        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] "
-                                  "getSourcePointCloud returned: %1")
-                                  .arg(sourceCloud != nullptr
-                                               ? sourceCloud->getName()
-                                               : "nullptr"));
+        CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] "
+                                    "getSourcePointCloud returned: %1")
+                                    .arg(sourceCloud != nullptr
+                                                 ? sourceCloud->getName()
+                                                 : "nullptr"));
         if (sourceCloud) {
             // For cell selection on point cloud, convert to point selection
             cvSelectionData exportSelection = m_selectionData;
@@ -2537,7 +2538,7 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
     if (isPointData) {
         double pt[3];
         polyData->GetPoint(id, pt);
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionPropertiesWidget] RED highlight: %1 "
                         "ID=%2 at (%3, %4, %5)")
                         .arg(dataType)
@@ -2554,7 +2555,7 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
             int subId = 0;
             cell->EvaluateLocation(subId, pcoords, center, weights);
             delete[] weights;
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionPropertiesWidget] RED highlight: "
                             "%1 ID=%2 "
                             "(Type:%3, Points:%4) center=(%5, %6, %7)")
@@ -2889,9 +2890,9 @@ void cvSelectionPropertiesWidget::onSelectionColorClicked() {
             pclVis->UpdateScreen();
         }
 
-        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Selection "
-                                  "color changed to %1")
-                                  .arg(color.name()));
+        CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Selection "
+                                    "color changed to %1")
+                                    .arg(color.name()));
     }
 }
 
@@ -2911,9 +2912,9 @@ void cvSelectionPropertiesWidget::onInteractiveSelectionColorClicked() {
             pclVis->UpdateScreen();
         }
 
-        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Interactive "
-                                  "selection color changed to %1")
-                                  .arg(color.name()));
+        CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Interactive "
+                                    "selection color changed to %1")
+                                    .arg(color.name()));
     }
 }
 
@@ -3009,7 +3010,7 @@ void cvSelectionPropertiesWidget::onLabelPropertiesApplied(
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Label properties applied: "
                     "opacity=%1, pointSize=%2, lineWidth=%3")
                     .arg(props.opacity)
@@ -3145,7 +3146,7 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
 
     emit selectionAdded(saved.data);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Added selection: %1 "
                     "(+ button disabled until new selection)")
                     .arg(saved.name));
@@ -3174,9 +3175,9 @@ void cvSelectionPropertiesWidget::onRemoveSelectedSelectionClicked() {
             QString name = m_savedSelections[row].name;
             m_savedSelections.removeAt(row);
             emit selectionRemoved(row);
-            CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Removed "
-                                      "selection: %1")
-                                      .arg(name));
+            CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Removed "
+                                        "selection: %1")
+                                        .arg(name));
         }
     }
 
@@ -3587,7 +3588,7 @@ void cvSelectionPropertiesWidget::onInvertSelectionToggled(bool checked) {
     // Only modify display (highlight + spreadsheet), not the underlying
     // selection state
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Invert selection: %1")
                     .arg(checked ? "ON" : "OFF"));
 
@@ -3734,7 +3735,7 @@ void cvSelectionPropertiesWidget::onExtractClicked() {
         // A mesh has polygons (triangles/quads), a point cloud only has
         // vertices
         isSourceMesh = (polyData->GetNumberOfPolys() > 0);
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionPropertiesWidget::onExtractClicked] "
                         "Source: %1 points, %2 cells, %3 polys -> %4")
                         .arg(polyData->GetNumberOfPoints())
@@ -4334,7 +4335,7 @@ void cvSelectionPropertiesWidget::addQueryRow(int index,
     // Update button states (disable minus if only one row)
     updateQueryRowButtons();
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Added query row at index %1")
                     .arg(index));
 }
@@ -4369,9 +4370,10 @@ void cvSelectionPropertiesWidget::removeQueryRow(int index) {
     // Update button states
     updateQueryRowButtons();
 
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Removed query row "
-                              "at index %1")
-                              .arg(index));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionPropertiesWidget] Removed query row "
+                    "at index %1")
+                    .arg(index));
 }
 
 //-----------------------------------------------------------------------------
@@ -4466,9 +4468,10 @@ void cvSelectionPropertiesWidget::updateDataProducerCombo() {
                 }
             }
 
-            CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Found %1 "
-                                      "data producers")
-                                      .arg(addedNames.size()));
+            CVLog::PrintVerbose(
+                    QString("[cvSelectionPropertiesWidget] Found %1 "
+                            "data producers")
+                            .arg(addedNames.size()));
         }
     }
 
@@ -4553,9 +4556,9 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
         // If explicit producer selected but not found, don't fallback to other
         // objects
         if (!polyData) {
-            CVLog::PrintDebug(QString("[updateAttributeCombo] Data Producer "
-                                      "'%1' not found")
-                                      .arg(producerName));
+            CVLog::PrintVerbose(QString("[updateAttributeCombo] Data Producer "
+                                        "'%1' not found")
+                                        .arg(producerName));
             // Just add ID field, no other attributes
             m_attributeCombo->addItem(tr("ID"));
             return;
@@ -4685,7 +4688,7 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
                 addedArrays.insert("normal_x");
                 addedArrays.insert("normal_y");
                 addedArrays.insert("normal_z");
-                CVLog::PrintDebug(
+                CVLog::PrintVerbose(
                         "[updateAttributeCombo] Found PCL-style separate "
                         "normals");
             }
@@ -5540,9 +5543,9 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(
 
     m_spreadsheetTable->resizeColumnsToContents();
 
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Updated "
-                              "spreadsheet with %1 rows")
-                              .arg(rowCount));
+    CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Updated "
+                                "spreadsheet with %1 rows")
+                                .arg(rowCount));
 }
 
 //-----------------------------------------------------------------------------

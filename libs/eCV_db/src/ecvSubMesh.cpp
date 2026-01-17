@@ -651,7 +651,7 @@ bool ccSubMesh::fromFile_MeOnly(QFile& in,
 
     // references (dataVersion>=29)
     if (!ccSerializationHelper::GenericArrayFromFile<unsigned, 1, unsigned>(
-                m_triIndexes, in, dataVersion))
+                m_triIndexes, in, dataVersion, "triangle indexes"))
         return ReadError();
 
     return true;
