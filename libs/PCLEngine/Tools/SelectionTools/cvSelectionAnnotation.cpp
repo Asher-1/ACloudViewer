@@ -36,7 +36,7 @@
 //-----------------------------------------------------------------------------
 cvSelectionAnnotationManager::cvSelectionAnnotationManager(QObject* parent)
     : QObject(parent), m_viewer(nullptr) {
-    CVLog::PrintDebug("[cvSelectionAnnotationManager] Initialized");
+    CVLog::PrintVerbose("[cvSelectionAnnotationManager] Initialized");
 }
 
 //-----------------------------------------------------------------------------
@@ -92,7 +92,7 @@ QString cvSelectionAnnotationManager::addAnnotation(
             annotation.position[1] = center[1];
             annotation.position[2] = center[2];
 
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionAnnotationManager] Annotation "
                             "position: [%1, %2, %3]")
                             .arg(center[0])
@@ -104,7 +104,7 @@ QString cvSelectionAnnotationManager::addAnnotation(
             annotation.position[0] = 0.0;
             annotation.position[1] = 0.0;
             annotation.position[2] = 0.0;
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     "[cvSelectionAnnotationManager] Using origin for "
                     "annotation (no polyData available)");
         }
@@ -311,7 +311,7 @@ void cvSelectionAnnotationManager::setDefaultLabelProperties(
         m_defaultPointLabelProps = props;
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionAnnotationManager] Set default %1 "
                     "label properties: family=%2, size=%3, color=(%4,%5,%6)")
                     .arg(isCellLabel ? "cell" : "point")
@@ -575,14 +575,14 @@ void cvSelectionAnnotationManager::createTextActor(
     double displayPos[2] = {100, 100};  // Default fallback
     if (worldToDisplay(annotation.position, displayPos)) {
         textActor->SetPosition(displayPos[0], displayPos[1]);
-        CVLog::PrintDebug(QString("[cvSelectionAnnotationManager] Annotation "
+        CVLog::PrintVerbose(QString("[cvSelectionAnnotationManager] Annotation "
                                   "positioned at display [%1, %2]")
                                   .arg(displayPos[0])
                                   .arg(displayPos[1]));
     } else {
         // Fallback: use default position
         textActor->SetPosition(100, 100);
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 "[cvSelectionAnnotationManager] Using default "
                 "position for annotation");
     }

@@ -39,6 +39,12 @@ v3.9.4-Beta (Asher) - 01/16/2026
     -   Add Light specular intensity adjustment support
     -   Add AxesGrid support for ccObject
     -   Add documentation support
+    -   New 'Display > Display settings' BoundingBox options:
+        -   Show BoundingBox on selected (checkbox)
+        -   BoundingBox opacity (0.0-1.0 slider)
+        -   BoundingBox line width (spinbox)
+        -   Automatically hide BoundingBox when Axes Grid is visible
+        -   All settings are persistent across sessions
 
 - Bug fixes:
     -   Fix code style
@@ -53,6 +59,19 @@ v3.9.4-Beta (Asher) - 01/16/2026
     -   Fix ReconstructionOptionsWidget crash issues due to no PBA_ENABLED compile_definitions for ACloudViewer
     -   Fix CHANGLOG.xxx format
     -   macOS x86_64 not longer supported, only macOS arm64 is supported.
+    -   Fix log verbosity level handling to align with CloudCompare
+        -   Fix CVLog::Print messages not printing when log level is "Standard"
+        -   Fix all log messages appearing in red color
+        -   Fix PrintDebug messages not appearing when verbosity level is "Verbose"
+        -   Fix log filtering logic to match CloudCompare behavior
+    -   Fix axes grid bounds not being set when selecting folders/parent nodes
+        -   When selecting a folder or parent node, axes grid now correctly displays the overall bounding box of all contained objects
+        -   Added recursive search in scene DB to find objects by viewID when not in source object map
+        -   Uses getDisplayBB_recursive(false) to calculate aggregate bbox for all children
+    -   Fix opacity property UI disappearing when selecting folders
+        -   Opacity control now appears for folders in addition to renderable objects
+        -   When adjusting opacity on a folder, all renderable children are recursively updated with the new opacity value
+        -   Initial opacity value for folders is calculated as the average opacity of all renderable children
 
 - Enhancements:
     -   Replace `#ifndef` with `#pragma once`
@@ -68,6 +87,19 @@ v3.9.4-Beta (Asher) - 01/16/2026
     -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×
     -   Add VoxelGrid transform, rotate, translate and scale support
     -   Update DLPack to v1.2
+    -   Align logging system with CloudCompare
+        -   Reorder CVLog::MessageLevelFlags to match CloudCompare (LOG_VERBOSE=0, LOG_STANDARD=1, LOG_IMPORTANT=2, LOG_WARNING=3, LOG_ERROR=4)
+        -   Centralize log filtering in CVLog::LogMessage() based on global verbosity level
+        -   Update ecvOptions to use CVLog::MessageLevelFlags directly
+        -   Print current log verbosity level during initialization
+    -   Improve serialization interface
+        -   Add verboseDescription parameter to GenericArrayFromFile and GenericArrayFromTypedFile interfaces
+        -   Align with CloudCompare serialization implementation
+        -   Update all serialization call sites to include descriptive verbose messages
+    -   Improve draw method interface consistency
+        -   Unified draw method interface for ccBBox and ecvOrientedBBox
+        -   Both classes now support draw(context) with default color and draw(context, color) with custom color
+        -   Simplified calling code by using context.bbDefaultCol instead of explicit color parameters
 
 - New plugins:
     - G3 Point - Granulometry made simple in ACloudViewer

@@ -62,12 +62,16 @@ protected slots:
     void changeNumberPrecision(int);
     void changeLabelOpacity(int);
     void changeLabelMarkerSize(int);
+    void changeBBOpacity(double);
+    void changeBBLineWidth(int);
 
     void changeZoomSpeed(double);
 
     void changeAutoComputeOctreeOption(int);
 
     void changeAppStyle(int);
+
+    void changeLogVerbosityLevel(int);
 
     void doAccept();
     void doReject();

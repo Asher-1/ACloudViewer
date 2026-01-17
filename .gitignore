@@ -212,7 +212,7 @@ examples/python/geometry/copy_of_crate.mtl
 examples/python/geometry/copy_of_crate.png
 examples/python/geometry/copy_of_crate.obj
 
-# doc
+# docs
 docs/images/version.svg
 docs/test_data
 docs/source/test_data
@@ -244,7 +244,6 @@ docs-output/
 *docs.tar.gz
 # regard all text file as the LF
 * text=auto
-
 # specific file type setting
 *.json text eol=lf
 *.txt text eol=lf

@@ -3878,6 +3878,7 @@ bool ccMesh::fromFile_MeOnly(QFile& in,
                              short dataVersion,
                              int flags,
                              LoadedIDMap& oldToNewIDMap) {
+    CVLog::PrintVerbose(QString("Loading mesh %1...").arg(m_name));
     if (!ccGenericMesh::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
         return false;
 
@@ -3938,7 +3939,7 @@ bool ccMesh::fromFile_MeOnly(QFile& in,
     if (!m_triVertIndexes) return false;
     if (!ccSerializationHelper::GenericArrayFromFile<
                 cloudViewer::VerticesIndexes, 3, unsigned>(*m_triVertIndexes,
-                                                           in, dataVersion))
+                                                           in, dataVersion, "vertex indexes"))
         return false;
 
     // per-triangle materials (dataVersion>=20))
@@ -3950,7 +3951,7 @@ bool ccMesh::fromFile_MeOnly(QFile& in,
             m_triMtlIndexes->link();
         }
         if (!ccSerializationHelper::GenericArrayFromFile<int, 1, int>(
-                    *m_triMtlIndexes, in, dataVersion)) {
+                    *m_triMtlIndexes, in, dataVersion, "material indexes")) {
             m_triMtlIndexes->release();
             m_triMtlIndexes = nullptr;
             return false;
@@ -3967,7 +3968,7 @@ bool ccMesh::fromFile_MeOnly(QFile& in,
             m_texCoordIndexes->link();
         }
         if (!ccSerializationHelper::GenericArrayFromFile<Tuple3i, 3, int>(
-                    *m_texCoordIndexes, in, dataVersion)) {
+                    *m_texCoordIndexes, in, dataVersion, "texture coordinates")) {
             m_texCoordIndexes->release();
             m_texCoordIndexes = nullptr;
             return false;
@@ -3993,7 +3994,7 @@ bool ccMesh::fromFile_MeOnly(QFile& in,
         }
         assert(m_triNormalIndexes);
         if (!ccSerializationHelper::GenericArrayFromFile<Tuple3i, 3, int>(
-                    *m_triNormalIndexes, in, dataVersion)) {
+                    *m_triNormalIndexes, in, dataVersion, "normal indexes")) {
             removePerTriangleNormalIndexes();
             return false;
         }

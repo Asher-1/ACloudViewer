@@ -62,7 +62,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 
     # use lower target(11.0) version for compacibility
     PROCESSOR_ARCH=$(uname -m)
-    if [ "$PROCESSOR_ARCH" == "arm64" ]; then
+    if [[ "$PROCESSOR_ARCH" == "arm64" ]]; then
         export MACOSX_DEPLOYMENT_TARGET=11.0
     else
         export MACOSX_DEPLOYMENT_TARGET=10.15

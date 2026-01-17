@@ -22,6 +22,11 @@
 // SYSTEM
 #include <numeric>
 
+void ecvOrientedBBox::draw(CC_DRAW_CONTEXT& context) {
+    // Use default color from context
+    draw(context, context.bbDefaultCol);
+}
+
 void ecvOrientedBBox::draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) {
     if (!ecvDisplayTools::GetMainWindow()) {
         return;

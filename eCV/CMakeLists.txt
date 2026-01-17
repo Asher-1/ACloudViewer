@@ -29,7 +29,14 @@ file(GLOB ui_list ui_templates/*.ui)
 
 file(GLOB qrc_list *.qrc Resources/themes/*.qrc)
 
-file(GLOB txt_list TODO.txt ${COLOUDVIEWER_PROJECT_PATH}/CHANGELOG.txt)
+# Use generated CHANGELOG.txt from build directory
+# CHANGELOG_TXT is set in parent CMakeLists.txt
+if(DEFINED CHANGELOG_TXT)
+    set(CHANGELOG_FILE "${CHANGELOG_TXT}")
+else()
+    set(CHANGELOG_FILE "${COLOUDVIEWER_PROJECT_PATH}/CHANGELOG.md")
+endif()
+file(GLOB txt_list TODO.txt ${CHANGELOG_FILE})
 
 add_subdirectory(db_tree)
 add_subdirectory(pluginManager)
@@ -274,7 +281,13 @@ if (WIN32)
 endif ()
 
 # Auxiliary files
-set(auxFiles ${COLOUDVIEWER_PROJECT_PATH}/CHANGELOG.txt ${CMAKE_CURRENT_SOURCE_DIR}/bin_other/license.txt ${CMAKE_CURRENT_SOURCE_DIR}/bin_other/global_shift_list_template.txt)
+# Use generated CHANGELOG.txt from build directory
+if(DEFINED CHANGELOG_TXT)
+    set(CHANGELOG_FILE "${CHANGELOG_TXT}")
+else()
+    set(CHANGELOG_FILE "${COLOUDVIEWER_PROJECT_PATH}/CHANGELOG.md")
+endif()
+set(auxFiles ${CHANGELOG_FILE} ${CMAKE_CURRENT_SOURCE_DIR}/bin_other/license.txt ${CMAKE_CURRENT_SOURCE_DIR}/bin_other/global_shift_list_template.txt)
 
 if (WIN32)
     # Additional auxiliary file(s)

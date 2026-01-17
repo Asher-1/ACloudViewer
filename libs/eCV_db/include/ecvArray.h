@@ -147,6 +147,6 @@ protected:
                                 LoadedIDMap& oldToNewIDMap) override {
         return ccSerializationHelper::GenericArrayFromFile<Type, N,
                                                            ComponentType>(
-                *this, in, dataVersion);
+                *this, in, dataVersion, "array");
     }
 };

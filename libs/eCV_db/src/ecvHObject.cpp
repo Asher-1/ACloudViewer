@@ -21,6 +21,7 @@
 #include "ecvDisc.h"
 #include "ecvDish.h"
 #include "ecvDisplayTools.h"
+#include "ecvGuiParameters.h"
 #include "ecvExternalFactory.h"
 #include "ecvExtru.h"
 #include "ecvFacet.h"
@@ -1547,12 +1548,39 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     // if the entity is currently selected, we draw its bounding-box
     if (m_selected && draw3D && drawInThisContext &&
         !MACRO_EntityPicking(context) && context.currentLODLevel == 0) {
-        CC_DRAW_CONTEXT tempContext = context;
-        tempContext.meshRenderingMode = MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
-        tempContext.viewID = getViewId();
-        drawBB(tempContext, tempContext.bbDefaultCol);
-        tempContext.viewID = getViewId();
-        showBB(tempContext);
+        // Check if BoundingBox should be shown
+        const ecvGui::ParamStruct& params = ecvGui::Parameters();
+        bool shouldShowBB = params.showBBOnSelected;
+        
+        // Check if Axes Grid is visible - if so, ALWAYS hide BoundingBox
+        // (unconditionally, regardless of showBBOnSelected setting)
+        if (ecvDisplayTools::TheInstance()) {
+            AxesGridProperties axesGridProps;
+            ecvDisplayTools::TheInstance()->getDataAxesGridProperties(
+                    context.viewID, axesGridProps);
+            if (axesGridProps.visible) {
+                shouldShowBB = false;  // Force hide BBox when axes grid is visible
+            }
+        }
+        
+        if (shouldShowBB) {
+            CC_DRAW_CONTEXT tempContext = context;
+            tempContext.meshRenderingMode = MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
+            tempContext.viewID = getViewId();
+            // Apply BoundingBox color, opacity and line width from parameters
+            tempContext.bbDefaultCol = params.bbDefaultCol;
+            tempContext.opacity = params.bbOpacity;
+            tempContext.defaultLineWidth = static_cast<unsigned char>(params.bbLineWidth);
+            tempContext.currentLineWidth = tempContext.defaultLineWidth;
+            drawBB(tempContext, params.bbDefaultCol);
+            tempContext.viewID = getViewId();
+            showBB(tempContext);
+        } else {
+            // Hide BoundingBox if not should show
+            CC_DRAW_CONTEXT tempContext = context;
+            tempContext.viewID = getViewId();
+            hideBB(tempContext);
+        }
     }
 
     if (!m_selected && draw3D) {

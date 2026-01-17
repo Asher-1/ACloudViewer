@@ -24,7 +24,7 @@ bool NormsIndexesTableType::fromFile_MeOnly(QFile& in,
                 new ccArray<unsigned short, 1, unsigned short>();
         if (!ccSerializationHelper::GenericArrayFromFile<unsigned short, 1,
                                                          unsigned short>(
-                    *oldNormals, in, dataVersion)) {
+                    *oldNormals, in, dataVersion, "old normals")) {
             oldNormals->release();
             return false;
         }
@@ -56,6 +56,6 @@ bool NormsIndexesTableType::fromFile_MeOnly(QFile& in,
     } else {
         return ccSerializationHelper::GenericArrayFromFile<
                 CompressedNormType, 1, CompressedNormType>(*this, in,
-                                                           dataVersion);
+                                                           dataVersion, "compressed normals");
     }
 }

@@ -118,11 +118,14 @@ public:  // inherited methods (ccHObject)
     const ccBBox& operator*=(const Eigen::Matrix3d& mat);
 
 public:
+    // Inherited from ccHObject - override to avoid hiding base class method
+    void draw(CC_DRAW_CONTEXT& context) override;
+
     //! Draws bounding box (OpenGL)
     /** \param context OpenGL context
      *  \param col (R,G,B) color
      **/
-    void draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) const;
+    void draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col);
 
     /// Returns the 3D dimensions of the bounding box in string format.
     std::string GetPrintInfo() const;

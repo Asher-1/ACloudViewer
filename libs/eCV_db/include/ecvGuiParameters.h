@@ -54,6 +54,12 @@ public:
         ecvColor::Rgbub labelMarkerCol;
         //! Bounding-boxes color
         ecvColor::Rgbub bbDefaultCol;
+        //! Show bounding-box on selected objects
+        bool showBBOnSelected;
+        //! Bounding-box opacity (0.0 to 1.0)
+        double bbOpacity;
+        //! Bounding-box line width
+        unsigned bbLineWidth;
 
         //! Use background gradient
         bool drawBackgroundGradient;

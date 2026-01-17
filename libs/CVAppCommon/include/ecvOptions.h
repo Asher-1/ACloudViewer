@@ -9,6 +9,9 @@
 
 #include "CVAppCommon.h"
 
+// CV_CORE_LIB
+#include <CVLog.h>
+
 // Qt
 #include <QString>
 
@@ -20,6 +23,12 @@ public:  // parameters
 
     //! Use native load/save dialogs
     bool useNativeDialogs;
+
+    //! Log/console verbosity level (reuses CVLog::MessageLevelFlags)
+    CVLog::MessageLevelFlags logVerbosityLevel;
+
+    //! Ask for confirmation before quitting
+    bool askForConfirmationBeforeQuitting;
 
 public:  // methods
     //! Default constructor

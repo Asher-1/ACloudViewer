@@ -57,6 +57,9 @@ public:
     // Returns the entity's own bounding-box
     virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
+    // Inherited from ccHObject - override to avoid hiding base class method
+    void draw(CC_DRAW_CONTEXT& context) override;
+
     //! Draws oriented bounding box (OpenGL)
     /** \param context OpenGL context
      *  \param col (R,G,B) color

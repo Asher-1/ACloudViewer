@@ -156,7 +156,7 @@ ccPointCloud* cvSelectionExporter::exportToPointCloud(
         return nullptr;
     }
 
-    CVLog::PrintDebug(QString("[cvSelectionExporter] Created point cloud '%1' "
+    CVLog::PrintVerbose(QString("[cvSelectionExporter] Created point cloud '%1' "
                               "with %2 points")
                               .arg(cloudName)
                               .arg(cloud->size()));
@@ -274,7 +274,7 @@ ccPointCloud* cvSelectionExporter::exportFromSourceCloud(
                                 : options.name;
     result->setName(cloudName);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionExporter] SUCCESS: Created point cloud "
                     "'%1' with %2 points, %3 scalar fields, "
                     "hasColors=%4, hasNormals=%5")
@@ -376,7 +376,7 @@ ccMesh* cvSelectionExporter::exportFromSourceMesh(
     result->showSF(sourceMesh->sfShown());
     result->showMaterials(sourceMesh->materialsShown());
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionExporter] SUCCESS: Created mesh '%1' "
                     "with %2 triangles, %3 vertices")
                     .arg(meshName)
@@ -523,7 +523,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
 
         // Log source point data info
         if (srcPointData) {
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionExporter] Source has %1 arrays, "
                             "normals=%2, scalars=%3, tcoords=%4")
                             .arg(srcPointData->GetNumberOfArrays())
@@ -535,7 +535,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
             for (int a = 0; a < srcPointData->GetNumberOfArrays(); ++a) {
                 vtkDataArray* arr = srcPointData->GetArray(a);
                 if (arr) {
-                    CVLog::PrintDebug(
+                    CVLog::PrintVerbose(
                             QString("[cvSelectionExporter]   Array[%1]: "
                                     "name='%2', components=%3, tuples=%4, "
                                     "type=%5")
@@ -576,7 +576,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 // Skip arrays without names (coordinate arrays)
                 const char* arrName = srcArray->GetName();
                 if (!arrName || strlen(arrName) == 0) {
-                    CVLog::PrintDebug(QString("[cvSelectionExporter] Skipping "
+                    CVLog::PrintVerbose(QString("[cvSelectionExporter] Skipping "
                                               "unnamed array[%1]")
                                               .arg(a));
                     continue;
@@ -595,7 +595,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 if (numSelectedPoints > 0 && numComp == 1) {
                     vtkIdType firstSrcId = validArray->GetValue(0);
                     double firstVal = srcArray->GetTuple1(firstSrcId);
-                    CVLog::PrintDebug(QString("[cvSelectionExporter] Array "
+                    CVLog::PrintVerbose(QString("[cvSelectionExporter] Array "
                                               "'%1': srcId[0]=%2 -> value=%3")
                                               .arg(arrName)
                                               .arg(firstSrcId)
@@ -625,7 +625,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 // Debug: Verify copied values
                 if (numSelectedPoints > 0 && numComp == 1) {
                     double copiedVal = dstArray->GetTuple1(0);
-                    CVLog::PrintDebug(QString("[cvSelectionExporter] Array "
+                    CVLog::PrintVerbose(QString("[cvSelectionExporter] Array "
                                               "'%1': copied[0] = %2")
                                               .arg(arrName)
                                               .arg(copiedVal));
@@ -694,7 +694,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
             return nullptr;
         }
 
-        CVLog::PrintDebug(QString("[cvSelectionExporter] Extracted %1 points, "
+        CVLog::PrintVerbose(QString("[cvSelectionExporter] Extracted %1 points, "
                                   "%2 cells (cell selection)")
                                   .arg(extracted->GetNumberOfPoints())
                                   .arg(extracted->GetNumberOfCells()));
@@ -730,7 +730,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 dstFieldData->AddArray(arr);
             }
         }
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionExporter] Copied %1 field data arrays")
                         .arg(srcFieldData->GetNumberOfArrays()));
     }

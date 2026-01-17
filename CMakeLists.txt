@@ -845,10 +845,33 @@ add_custom_target(apply-cpp-style
 include(CloudViewerPrintConfigurationSummary)
 cloudViewer_print_configuration_summary()
 
+### Generate CHANGELOG.txt from CHANGELOG.md
+# Generate at CMake configure time (not at build/install time)
+get_filename_component(CHANGELOG_MD "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md" ABSOLUTE)
+get_filename_component(CHANGELOG_TXT "${CMAKE_BINARY_DIR}/CHANGELOG.txt" ABSOLUTE)
+
+# Check if input file exists before attempting to generate
+if(NOT EXISTS "${CHANGELOG_MD}")
+    message(WARNING "CHANGELOG.md not found at ${CHANGELOG_MD}, will use as fallback")
+    set(CHANGELOG_TXT "${CHANGELOG_MD}")
+else()
+    # Generate CHANGELOG.txt during CMake configuration
+    # Ensure build directory exists first
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}")
+    
+    # Simply copy CHANGELOG.md content to CHANGELOG.txt without any conversion
+    file(READ "${CHANGELOG_MD}" CHANGELOG_CONTENT)
+    file(WRITE "${CHANGELOG_TXT}" "${CHANGELOG_CONTENT}")
+    message(STATUS "CHANGELOG.txt generated from CHANGELOG.md at configure time")
+endif()
+
+# Make CHANGELOG_TXT available to subdirectories
+set(CHANGELOG_TXT "${CHANGELOG_TXT}" CACHE INTERNAL "Path to generated CHANGELOG.txt")
+
 ### Install files and library
 set(SCRIPTS_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 file(GLOB main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/*.md" )
-list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.txt" )
+list(APPEND main_documents_list "${CHANGELOG_TXT}" )
 list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/license.txt" 
                                 "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/global_shift_list_template.txt")
 

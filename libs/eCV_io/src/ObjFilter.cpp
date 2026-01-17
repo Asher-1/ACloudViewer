@@ -1181,7 +1181,7 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename,
                 // cloudViewer/io module and tinyobj library
                 if (!hasMaterial && materials->size() > 0 &&
                     baseMesh->size() > 0) {
-                    CVLog::Print(
+                    CVLog::PrintVerbose(
                             "[OBJ] No usemtl commands found, auto-assigning "
                             "first material to all %d faces (tinyobj "
                             "compatible behavior)",

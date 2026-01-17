@@ -408,24 +408,17 @@ bool ccScalarField::fromFile(QFile& in,
     // data (dataVersion >= 20)
     bool result = false;
     {
+        QString sfDescription = "SF " + QString(m_name);
+        double baseOffset = 0.0;
         bool fileScalarIsFloat =
                 (flags & ccSerializableObject::DF_SCALAR_VAL_32_BITS);
-        if (fileScalarIsFloat &&
-            sizeof(ScalarType) ==
-                    8)  // file is 'float' and current type is 'double'
+        if (fileScalarIsFloat)  // file is 'float'
         {
-            result = ccSerializationHelper::GenericArrayFromTypedFile<
-                    ScalarType, 1, ScalarType, float>(*this, in, dataVersion);
-        } else if (!fileScalarIsFloat &&
-                   sizeof(ScalarType) ==
-                           4)  // file is 'double' and current type is 'float'
+            result = ccSerializationHelper::GenericArrayFromFile<ScalarType, 1, ScalarType>(*this, in, dataVersion, sfDescription);
+        } else  // file is 'double'
         {
-            result = ccSerializationHelper::GenericArrayFromTypedFile<
-                    ScalarType, 1, ScalarType, double>(*this, in, dataVersion);
-        } else {
-            result = ccSerializationHelper::GenericArrayFromFile<ScalarType, 1,
-                                                                 ScalarType>(
-                    *this, in, dataVersion);
+            // we load it as float, but apply an automatic offset (based on the first element) to not lose information/accuracy
+            result = ccSerializationHelper::GenericArrayFromTypedFile<ScalarType, 1, ScalarType, double>(*this, in, dataVersion, sfDescription, &baseOffset);
         }
     }
     if (!result) {

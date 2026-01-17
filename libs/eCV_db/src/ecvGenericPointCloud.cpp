@@ -208,7 +208,7 @@ bool ccGenericPointCloud::fromFile_MeOnly(QFile& in,
     if (hasVisibilityArray) {
         if (!ccSerializationHelper::GenericArrayFromFile<unsigned char, 1,
                                                          unsigned char>(
-                    m_pointsVisibility, in, dataVersion)) {
+                    m_pointsVisibility, in, dataVersion, "visibility array")) {
             unallocateVisibilityArray();
             return false;
         }
