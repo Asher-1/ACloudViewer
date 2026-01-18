@@ -576,9 +576,9 @@ void cvSelectionAnnotationManager::createTextActor(
     if (worldToDisplay(annotation.position, displayPos)) {
         textActor->SetPosition(displayPos[0], displayPos[1]);
         CVLog::PrintVerbose(QString("[cvSelectionAnnotationManager] Annotation "
-                                  "positioned at display [%1, %2]")
-                                  .arg(displayPos[0])
-                                  .arg(displayPos[1]));
+                                    "positioned at display [%1, %2]")
+                                    .arg(displayPos[0])
+                                    .arg(displayPos[1]));
     } else {
         // Fallback: use default position
         textActor->SetPosition(100, 100);

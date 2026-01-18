@@ -306,8 +306,8 @@ void cvViewSelectionManager::setGrowSelectionRemoveIntermediateLayers(
         bool remove) {
     m_growRemoveIntermediateLayers = remove;
     CVLog::PrintVerbose(QString("[cvViewSelectionManager] "
-                              "GrowSelectionRemoveIntermediateLayers = %1")
-                              .arg(remove));
+                                "GrowSelectionRemoveIntermediateLayers = %1")
+                                .arg(remove));
 }
 
 //-----------------------------------------------------------------------------
@@ -381,9 +381,9 @@ void cvViewSelectionManager::setCurrentSelection(
         m_originalSelection = selectionData;
         m_numberOfLayers = 0;
         CVLog::PrintVerbose(QString("[cvViewSelectionManager] Stored original "
-                                  "selection: %1 %2")
-                                  .arg(selectionData.count())
-                                  .arg(selectionData.fieldTypeString()));
+                                    "selection: %1 %2")
+                                    .arg(selectionData.count())
+                                    .arg(selectionData.fieldTypeString()));
     }
 }
 
@@ -689,9 +689,9 @@ ccMesh* cvViewSelectionManager::getSourceMesh() const {
     if (obj->isKindOf(CV_TYPES::MESH)) {
         ccMesh* mesh = static_cast<ccMesh*>(obj);
         CVLog::PrintVerbose(QString("[cvViewSelectionManager::getSourceMesh] "
-                                  "Returning mesh '%1' with %2 triangles")
-                                  .arg(mesh->getName())
-                                  .arg(mesh->size()));
+                                    "Returning mesh '%1' with %2 triangles")
+                                    .arg(mesh->getName())
+                                    .arg(mesh->size()));
         return mesh;
     }
 

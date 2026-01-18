@@ -28,8 +28,13 @@ void define_ccBBox(py::module &m)
         .def(
             "__mul__", [](ccBBox &self, ccGLMatrixd &mat) { return self * mat; }, py::is_operator())
         // Expose both draw overloads: one with default color, one with custom color
-        .def("draw", static_cast<void (ccBBox::*)(CC_DRAW_CONTEXT&)>(&ccBBox::draw),
-             "Draw bounding box using default color from context", "context"_a)
-        .def("draw", static_cast<void (ccBBox::*)(CC_DRAW_CONTEXT&, const ecvColor::Rgb&)>(&ccBBox::draw),
-             "Draw bounding box with custom color", "context"_a, "col"_a);
+        .def("draw",
+             static_cast<void (ccBBox::*)(CC_DRAW_CONTEXT &)>(&ccBBox::draw),
+             "Draw bounding box using default color from context",
+             "context"_a)
+        .def("draw",
+             static_cast<void (ccBBox::*)(CC_DRAW_CONTEXT &, const ecvColor::Rgb &)>(&ccBBox::draw),
+             "Draw bounding box with custom color",
+             "context"_a,
+             "col"_a);
 }

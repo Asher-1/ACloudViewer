@@ -111,7 +111,8 @@ cvSelectionData cvGenericSelectionTool::hardwareSelectInRegion(
     // Try to use pipeline if available (Phase 1: Pipeline Integration)
     cvSelectionPipeline* pipeline = getSelectionPipeline();
     if (pipeline) {
-        CVLog::PrintVerbose("[hardwareSelectInRegion] Using cvSelectionPipeline");
+        CVLog::PrintVerbose(
+                "[hardwareSelectInRegion] Using cvSelectionPipeline");
 
         // Map SelectionMode to Pipeline SelectionType
         cvSelectionPipeline::SelectionType pipelineType;
@@ -303,14 +304,14 @@ vtkHardwareSelector* cvGenericSelectionTool::configureHardwareSelector(
     selector->SetCaptureZValues(m_captureZValues);
 
     CVLog::PrintVerbose(QString("[configureHardwareSelector] Configured: "
-                              "region=[%1,%2,%3,%4], "
-                              "fieldAssoc=%5, captureZ=%6")
-                              .arg(region[0])
-                              .arg(region[1])
-                              .arg(region[2])
-                              .arg(region[3])
-                              .arg(fieldAssociation)
-                              .arg(m_captureZValues));
+                                "region=[%1,%2,%3,%4], "
+                                "fieldAssoc=%5, captureZ=%6")
+                                .arg(region[0])
+                                .arg(region[1])
+                                .arg(region[2])
+                                .arg(region[3])
+                                .arg(fieldAssociation)
+                                .arg(m_captureZValues));
 
     return selector;
 }
@@ -416,7 +417,7 @@ QVector<cvActorSelectionInfo> cvGenericSelectionTool::extractActorInfo(
               });
 
     CVLog::PrintVerbose(QString("[extractActorInfo] Found %1 actor(s)")
-                              .arg(actorInfos.size()));
+                                .arg(actorInfos.size()));
 
     return actorInfos;
 }
@@ -605,9 +606,9 @@ vtkIdType cvGenericSelectionTool::pickAtPosition(int x,
             vtkActor* pickedActor = m_pointPicker->GetActor();
 
             CVLog::PrintVerbose(QString("[pickAtPosition] Picked point ID: %1 "
-                                      "from actor %2")
-                                      .arg(pickedId)
-                                      .arg((quintptr)pickedActor, 0, 16));
+                                        "from actor %2")
+                                        .arg(pickedId)
+                                        .arg((quintptr)pickedActor, 0, 16));
         }
     }
 
@@ -640,8 +641,8 @@ void cvGenericSelectionTool::setPickerTolerance(double cellTolerance,
     }
 
     CVLog::PrintVerbose(QString("[setPickerTolerance] Cell: %1, Point: %2")
-                              .arg(cellTolerance)
-                              .arg(pointTolerance));
+                                .arg(cellTolerance)
+                                .arg(pointTolerance));
 }
 
 //-----------------------------------------------------------------------------
@@ -733,9 +734,9 @@ cvSelectionData cvGenericSelectionTool::createSelectionFromPick(
         selection.addActorInfo(info);
 
         CVLog::PrintVerbose(QString("[createSelectionFromPick] Created "
-                                  "selection: ID=%1, actor=%2")
-                                  .arg(pickedId)
-                                  .arg((quintptr)actor, 0, 16));
+                                    "selection: ID=%1, actor=%2")
+                                    .arg(pickedId)
+                                    .arg((quintptr)actor, 0, 16));
     }
 
     return selection;
@@ -751,8 +752,8 @@ cvSelectionData cvGenericSelectionTool::applySelectionModifierUnified(
     // This eliminates code duplication between tools
 
     CVLog::PrintVerbose(QString("[cvGenericSelectionTool] "
-                              "applySelectionModifierUnified: modifier=%1")
-                              .arg(modifier));
+                                "applySelectionModifierUnified: modifier=%1")
+                                .arg(modifier));
 
     // Map view manager modifier to pipeline operation
     cvSelectionPipeline::CombineOperation operation;

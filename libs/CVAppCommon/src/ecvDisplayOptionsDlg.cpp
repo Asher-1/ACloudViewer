@@ -16,9 +16,10 @@
 #include "ecvSettingManager.h"
 
 // ECV_DB_LIB
-#include "ecvHObject.h"
 #include <ecvColorTypes.h>
 #include <ecvDisplayTools.h>
+
+#include "ecvHObject.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -36,7 +37,6 @@
 
 // Default 'min cloud size' for LoD  when VBOs are activated
 static const double s_defaultMaxVBOCloudSizeM = 50.0;
-
 
 ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
     : QDialog(parent, Qt::Tool),
@@ -268,7 +268,8 @@ void ccDisplayOptionsDlg::refresh() {
     m_ui->askForConfirmationBeforeQuittingCheckBox->setChecked(
             options.askForConfirmationBeforeQuitting);
     m_ui->logVerbosityComboBox->setCurrentIndex(
-            std::min(static_cast<int>(options.logVerbosityLevel), static_cast<int>(CVLog::LOG_WARNING)));
+            std::min(static_cast<int>(options.logVerbosityLevel),
+                     static_cast<int>(CVLog::LOG_WARNING)));
 
     update();
 }
@@ -480,7 +481,8 @@ void ccDisplayOptionsDlg::doReject() {
 
     // Restore old application style
     if (m_defaultAppStyleIndex >= 0) {
-        QString oldStyle = m_ui->appStyleComboBox->itemText(m_defaultAppStyleIndex);
+        QString oldStyle =
+                m_ui->appStyleComboBox->itemText(m_defaultAppStyleIndex);
         if (ecvApp) {
             ecvApp->setAppStyle(oldStyle);
         }
@@ -530,7 +532,8 @@ void ccDisplayOptionsDlg::apply() {
     {
         if (CVLog::VerbosityLevel() != options.logVerbosityLevel) {
             CVLog::SetVerbosityLevel(options.logVerbosityLevel);
-            CVLog::Print(QString("New log verbosity level: %1").arg(options.logVerbosityLevel));
+            CVLog::Print(QString("New log verbosity level: %1")
+                                 .arg(options.logVerbosityLevel));
         }
     }
 
@@ -557,7 +560,8 @@ void ccDisplayOptionsDlg::changeAppStyle(int index) {
 
 void ccDisplayOptionsDlg::changeLogVerbosityLevel(int index) {
     if (index >= 0 && index < CVLog::LOG_ERROR) {
-        options.logVerbosityLevel = static_cast<CVLog::MessageLevelFlags>(index);
+        options.logVerbosityLevel =
+                static_cast<CVLog::MessageLevelFlags>(index);
     } else {
         // unexpected value
         assert(false);
@@ -592,7 +596,7 @@ void ccDisplayOptionsDlg::populateAppStyleComboBox() {
             break;
         }
     }
-    
+
     // On macOS, handle style name aliases (macOS <-> macintosh)
 #ifdef Q_OS_MAC
     if (m_defaultAppStyleIndex < 0 && !defaultStyleName.isEmpty()) {

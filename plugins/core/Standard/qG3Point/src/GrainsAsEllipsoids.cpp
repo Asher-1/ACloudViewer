@@ -1269,7 +1269,8 @@ bool GrainsAsEllipsoids::fromFile_MeOnly(QFile& in,
 
     if (!ccSerializationHelper::GenericArrayFromFile<Eigen::Matrix3f, 1,
                                                      Eigen::Matrix3f>(
-                m_rotationMatrix, in, dataVersion, "G3Point m_rotationMatrix")) {
+                m_rotationMatrix, in, dataVersion,
+                "G3Point m_rotationMatrix")) {
         CVLog::Warning("[G3Point] error reading m_rorationMatrix");
         return ReadError();
     }

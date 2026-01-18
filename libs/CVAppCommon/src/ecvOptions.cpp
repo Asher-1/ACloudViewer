@@ -53,8 +53,8 @@ void ecvOptions::fromPersistentSettings() {
                                         static_cast<int>(CVLog::LOG_STANDARD))
                     .toInt());
     askForConfirmationBeforeQuitting =
-            ecvSettingManager::getValue("Options",
-                                        "askForConfirmationBeforeQuitting", true)
+            ecvSettingManager::getValue(
+                    "Options", "askForConfirmationBeforeQuitting", true)
                     .toBool();
 }
 

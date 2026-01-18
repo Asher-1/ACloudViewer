@@ -2522,7 +2522,7 @@ void PCLVis::setMeshOpacity(double opacity,
     actor->Modified();
 
     CVLog::PrintVerbose("[PCLVis::setMeshOpacity] Set opacity to %.3f for <%s>",
-                      opacity, viewID.c_str());
+                        opacity, viewID.c_str());
 }
 
 void PCLVis::setShapeShadingMode(SHADING_MODE mode,
@@ -3096,14 +3096,16 @@ void PCLVis::setupInteractor(vtkRenderWindowInteractor* iren,
 void PCLVis::registerKeyboard() {
     m_cloud_mutex.lock();  // for not overwriting the point m_baseCloud
     registerKeyboardCallback(&PCLVis::keyboardEventProcess, *this);
-    CVLog::Print("[annotation keyboard Event] press Delete to remove annotations");
+    CVLog::Print(
+            "[annotation keyboard Event] press Delete to remove annotations");
     m_cloud_mutex.unlock();
 }
 
 void PCLVis::registerMouse() {
     m_cloud_mutex.lock();  // for not overwriting the point m_baseCloud
     registerMouseCallback(&PCLVis::mouseEventProcess, *this);
-    CVLog::Print("[annotation mouse Event] click left button to pick annotation");
+    CVLog::Print(
+            "[annotation mouse Event] click left button to pick annotation");
     m_cloud_mutex.unlock();
 }
 
@@ -3649,30 +3651,33 @@ void PCLVis::SetDataAxesGridProperties(const std::string& viewID,
             // This is especially useful for parent nodes/folders that contain
             // multiple children
             ccHObject* obj = getSourceObject(viewID);
-            
+
             // If not in source object map, try to find it in the scene DB
-            // This handles parent nodes/folders that aren't registered in m_sourceObjectMap
+            // This handles parent nodes/folders that aren't registered in
+            // m_sourceObjectMap
             if (!obj) {
                 ccHObject* sceneRoot = ecvDisplayTools::GetSceneDB();
                 if (sceneRoot) {
                     QString viewIDStr = QString::fromStdString(viewID);
                     // Recursively search for object with matching viewID
                     std::function<ccHObject*(ccHObject*)> findByViewID =
-                            [&findByViewID, &viewIDStr](ccHObject* node) -> ccHObject* {
-                                if (!node) return nullptr;
-                                if (node->getViewId() == viewIDStr) {
-                                    return node;
-                                }
-                                for (unsigned i = 0; i < node->getChildrenNumber(); ++i) {
-                                    ccHObject* found = findByViewID(node->getChild(i));
-                                    if (found) return found;
-                                }
-                                return nullptr;
-                            };
+                            [&findByViewID,
+                             &viewIDStr](ccHObject* node) -> ccHObject* {
+                        if (!node) return nullptr;
+                        if (node->getViewId() == viewIDStr) {
+                            return node;
+                        }
+                        for (unsigned i = 0; i < node->getChildrenNumber();
+                             ++i) {
+                            ccHObject* found = findByViewID(node->getChild(i));
+                            if (found) return found;
+                        }
+                        return nullptr;
+                    };
                     obj = findByViewID(sceneRoot);
                 }
             }
-            
+
             if (obj) {
                 // Calculate overall bbox including all children recursively
                 ccBBox overallBBox = obj->getDisplayBB_recursive(false);
@@ -3680,14 +3685,15 @@ void PCLVis::SetDataAxesGridProperties(const std::string& viewID,
                     CCVector3 minCorner = overallBBox.minCorner();
                     CCVector3 maxCorner = overallBBox.maxCorner();
                     double bounds[6] = {minCorner.x, maxCorner.x, minCorner.y,
-                                       maxCorner.y, minCorner.z, maxCorner.z};
+                                        maxCorner.y, minCorner.z, maxCorner.z};
                     if (bounds[1] > bounds[0] && bounds[3] > bounds[2] &&
                         bounds[5] > bounds[4]) {
                         dataAxesGrid->SetBounds(bounds);
                         CVLog::PrintVerbose(
                                 QString("[PCLVis] Set axes grid bounds from "
-                                       "ccHObject '%1' (viewID: %2): "
-                                       "[%.2f, %.2f] x [%.2f, %.2f] x [%.2f, %.2f]")
+                                        "ccHObject '%1' (viewID: %2): "
+                                        "[%.2f, %.2f] x [%.2f, %.2f] x [%.2f, "
+                                        "%.2f]")
                                         .arg(obj->getName())
                                         .arg(QString::fromStdString(viewID))
                                         .arg(bounds[0])
@@ -3704,7 +3710,7 @@ void PCLVis::SetDataAxesGridProperties(const std::string& viewID,
                 } else {
                     CVLog::Warning(
                             QString("[PCLVis] Invalid bbox for viewID: %1, "
-                                   "axes grid bounds not set")
+                                    "axes grid bounds not set")
                                     .arg(QString::fromStdString(viewID)));
                 }
             } else {
@@ -3840,8 +3846,7 @@ void PCLVis::ToggleCameraOrientationWidget(bool show) {
             m_cameraOrientationWidget->SquareResize();
         }
 
-        CVLog::PrintVerbose(
-                "[PCLVis] Camera Orientation Widget created");
+        CVLog::PrintVerbose("[PCLVis] Camera Orientation Widget created");
     }
 
     // Update visibility and enabled state (ParaView behavior)

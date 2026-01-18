@@ -722,7 +722,8 @@ void MainWindow::initConsole() {
 
     // Initialize log verbosity level from options (similar to CloudCompare)
     {
-        CVLog::SetVerbosityLevel(static_cast<int>(ecvOptions::Instance().logVerbosityLevel));
+        CVLog::SetVerbosityLevel(
+                static_cast<int>(ecvOptions::Instance().logVerbosityLevel));
         // Print current log verbosity level
         QString levelName;
         switch (ecvOptions::Instance().logVerbosityLevel) {
@@ -739,7 +740,8 @@ void MainWindow::initConsole() {
                 levelName = "Warning";
                 break;
             default:
-                levelName = QString::number(ecvOptions::Instance().logVerbosityLevel);
+                levelName = QString::number(
+                        ecvOptions::Instance().logVerbosityLevel);
                 break;
         }
         CVLog::Print(QString("Log verbosity level: %1").arg(levelName));
@@ -1281,8 +1283,10 @@ void MainWindow::initThemes() {
     m_ui->BFThemeAction->setData(QVariant(Themes::THEME_BF));
     m_ui->TestThemeAction->setData(QVariant(Themes::THEME_TEST));
     m_ui->ParaviewThemeAction->setData(QVariant(Themes::THEME_PARAVIEW));
-    m_ui->MaterialDarkThemeAction->setData(QVariant(Themes::THEME_MATERIALDARK));
-    m_ui->MaterialLightThemeAction->setData(QVariant(Themes::THEME_MATERIALLIGHT));
+    m_ui->MaterialDarkThemeAction->setData(
+            QVariant(Themes::THEME_MATERIALDARK));
+    m_ui->MaterialLightThemeAction->setData(
+            QVariant(Themes::THEME_MATERIALLIGHT));
     m_ui->NordThemeAction->setData(QVariant(Themes::THEME_NORD));
     m_ui->DraculaThemeAction->setData(QVariant(Themes::THEME_DRACULA));
     m_ui->FluentThemeAction->setData(QVariant(Themes::THEME_FLUENT));
@@ -5248,9 +5252,10 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 
     // Add three buttons: No, Yes (don't ask again), Yes
     QPushButton* noButton = msgBox.addButton(tr("No"), QMessageBox::RejectRole);
-    QPushButton* yesDontAskButton =
-            msgBox.addButton(tr("Yes, don't ask again"), QMessageBox::ActionRole);
-    QPushButton* yesButton = msgBox.addButton(tr("Yes"), QMessageBox::AcceptRole);
+    QPushButton* yesDontAskButton = msgBox.addButton(tr("Yes, don't ask again"),
+                                                     QMessageBox::ActionRole);
+    QPushButton* yesButton =
+            msgBox.addButton(tr("Yes"), QMessageBox::AcceptRole);
 
     // Set default button
     msgBox.setDefaultButton(noButton);
@@ -7903,22 +7908,23 @@ void MainWindow::popMenuInConsole(const QPoint& pos) {
     QAction copyAction(tr("Copy"), this);
     QAction clearItemsAction(tr("Clear selected items"), this);
     QAction clearConsoleAction(tr("Clear console"), this);
-    
+
     // Check if there are selected items
-    QList<QListWidgetItem*> selectedItems = m_ui->consoleWidget->selectedItems();
+    QList<QListWidgetItem*> selectedItems =
+            m_ui->consoleWidget->selectedItems();
     bool hasSelection = selectedItems.count() > 0;
-    
+
     // Enable/disable copy and clear selected items based on selection
     copyAction.setEnabled(hasSelection);
     clearItemsAction.setEnabled(hasSelection);
-    
+
     connect(&copyAction, &QAction::triggered, this,
             &MainWindow::copyConsoleItems);
     connect(&clearItemsAction, &QAction::triggered, this,
             &MainWindow::clearConsoleItems);
     connect(&clearConsoleAction, &QAction::triggered, this,
             &MainWindow::clearConsole);
-    
+
     QMenu menu(m_ui->consoleWidget);
     menu.addAction(&copyAction);
     menu.addSeparator();
@@ -7933,7 +7939,7 @@ void MainWindow::clearConsole() { m_ui->consoleWidget->clear(); }
 // Copy selected items in consoleTable
 void MainWindow::copyConsoleItems() {
     QList<QListWidgetItem*> items = m_ui->consoleWidget->selectedItems();
-    
+
     if (items.count() > 0) {
         QStringList strings;
         // Sort items by their row index to maintain order
@@ -7942,11 +7948,11 @@ void MainWindow::copyConsoleItems() {
                   [](QListWidgetItem* a, QListWidgetItem* b) {
                       return a->listWidget()->row(a) < b->listWidget()->row(b);
                   });
-        
+
         foreach (QListWidgetItem* item, sortedItems) {
             strings << item->text();
         }
-        
+
         QApplication::clipboard()->setText(strings.join("\n"));
     }
 }

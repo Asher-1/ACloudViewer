@@ -55,7 +55,7 @@ bool NormsIndexesTableType::fromFile_MeOnly(QFile& in,
         return true;
     } else {
         return ccSerializationHelper::GenericArrayFromFile<
-                CompressedNormType, 1, CompressedNormType>(*this, in,
-                                                           dataVersion, "compressed normals");
+                CompressedNormType, 1, CompressedNormType>(
+                *this, in, dataVersion, "compressed normals");
     }
 }

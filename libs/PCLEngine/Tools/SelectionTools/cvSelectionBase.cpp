@@ -60,9 +60,9 @@ vtkDataSet* cvSelectionBase::getDataFromActor(vtkActor* actor) {
 
     if (data) {
         CVLog::PrintVerbose(QString("[cvSelectionBase::getDataFromActor] Got "
-                                  "data: %1 points, %2 cells")
-                                  .arg(data->GetNumberOfPoints())
-                                  .arg(data->GetNumberOfCells()));
+                                    "data: %1 points, %2 cells")
+                                    .arg(data->GetNumberOfPoints())
+                                    .arg(data->GetNumberOfCells()));
     }
 
     return data;
@@ -208,22 +208,24 @@ std::vector<vtkPolyData*> cvSelectionBase::getAllPolyDataFromVisualizer() {
             if (polyData && polyData->GetNumberOfCells() > 0) {
                 polyDataList.push_back(polyData);
                 polyDataCount++;
-                CVLog::PrintVerbose(QString("[cvSelectionBase::"
-                                          "getAllPolyDataFromVisualizer] Found "
-                                          "PolyData #%1: "
-                                          "%2 cells, %3 points")
-                                          .arg(polyDataCount)
-                                          .arg(polyData->GetNumberOfCells())
-                                          .arg(polyData->GetNumberOfPoints()));
+                CVLog::PrintVerbose(
+                        QString("[cvSelectionBase::"
+                                "getAllPolyDataFromVisualizer] Found "
+                                "PolyData #%1: "
+                                "%2 cells, %3 points")
+                                .arg(polyDataCount)
+                                .arg(polyData->GetNumberOfCells())
+                                .arg(polyData->GetNumberOfPoints()));
             }
         }
     }
 
-    CVLog::PrintVerbose(QString("[cvSelectionBase::getAllPolyDataFromVisualizer] "
-                              "Found %1 polyData(s) "
-                              "from %2 actor(s)")
-                              .arg(polyDataCount)
-                              .arg(actorCount));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionBase::getAllPolyDataFromVisualizer] "
+                    "Found %1 polyData(s) "
+                    "from %2 actor(s)")
+                    .arg(polyDataCount)
+                    .arg(actorCount));
 
     return polyDataList;
 }
