@@ -208,6 +208,7 @@ build_mac_wheel() {
     pushd build # PWD=ACloudViewer/build
     cmakeOptions=(
         "-DBUILD_SHARED_LIBS=OFF"
+        "-DBUILD_UNIT_TESTS=ON"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_BENCHMARKS=OFF"
@@ -320,6 +321,7 @@ build_gui_app() {
     mkdir -p build
     pushd build # PWD=ACloudViewer/build
     cmakeGuiOptions=("-DBUILD_SHARED_LIBS=OFF"
+                "-DBUILD_UNIT_TESTS=ON"
                 "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
                 "-DCMAKE_BUILD_TYPE=Release"
                 "-DUSE_QT6=$USE_QT6"
