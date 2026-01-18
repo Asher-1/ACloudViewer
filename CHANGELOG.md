@@ -45,6 +45,17 @@ v3.9.4-Beta (Asher) - 01/16/2026
         -   BoundingBox line width (spinbox)
         -   Automatically hide BoundingBox when Axes Grid is visible
         -   All settings are persistent across sessions
+    -   Add multiple theme support with new themes:
+        -   Catppuccin theme
+        -   Dracula theme
+        -   Fluent theme
+        -   Gruvbox theme
+        -   macOS theme
+        -   Material Dark theme
+        -   Material Light theme
+        -   Nord theme
+        -   OneDark theme
+        -   Tokyo Night theme
 
 - Bug fixes:
     -   Fix code style
@@ -72,6 +83,10 @@ v3.9.4-Beta (Asher) - 01/16/2026
         -   Opacity control now appears for folders in addition to renderable objects
         -   When adjusting opacity on a folder, all renderable children are recursively updated with the new opacity value
         -   Initial opacity value for folders is calculated as the average opacity of all renderable children
+    -   Fix 2DLabel caption text font size issues on macOS
+    -   Fix Find data UI issues
+    -   Fix GitHub CI issues for macOS, Windows, and Ubuntu workflows
+        -   Fix curl and MKL/TBB CMake configuration issues
 
 - Enhancements:
     -   Replace `#ifndef` with `#pragma once`
@@ -100,6 +115,10 @@ v3.9.4-Beta (Asher) - 01/16/2026
         -   Unified draw method interface for ccBBox and ecvOrientedBBox
         -   Both classes now support draw(context) with default color and draw(context, color) with custom color
         -   Simplified calling code by using context.bbDefaultCol instead of explicit color parameters
+    -   Optimize theme system and add multiple popular themes
+        -   Enhanced theme selection UI in Display settings
+        -   Improved theme loading and application performance
+        -   Updated compilation documentation with theme information
 
 - New plugins:
     - G3 Point - Granulometry made simple in ACloudViewer
