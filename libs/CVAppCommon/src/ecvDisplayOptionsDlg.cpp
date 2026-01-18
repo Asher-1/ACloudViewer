@@ -570,7 +570,7 @@ void ccDisplayOptionsDlg::populateAppStyleComboBox() {
     // (matching CloudCompare's approach using QSettings)
     QSettings settings;
     settings.beginGroup(ecvPS::AppStyle());
-    const QString defaultStyleName = settings.value("style").toString();
+    QString defaultStyleName = settings.value("style").toString();
     settings.endGroup();
 
     // Fill with all available Qt styles
@@ -584,13 +584,37 @@ void ccDisplayOptionsDlg::populateAppStyleComboBox() {
     m_ui->appStyleComboBox->addItem(QStringLiteral("QDarkStyleSheet::Dark"));
 
     // Find and set the current style (matching CloudCompare's logic)
+    // Handle case-insensitive comparison and macOS style name aliases
     for (int i = 0; i < m_ui->appStyleComboBox->count(); ++i) {
-        if (m_ui->appStyleComboBox->itemText(i).compare(
-                    defaultStyleName, Qt::CaseInsensitive) == 0) {
+        QString itemText = m_ui->appStyleComboBox->itemText(i);
+        if (itemText.compare(defaultStyleName, Qt::CaseInsensitive) == 0) {
             m_defaultAppStyleIndex = i;
+            break;
         }
     }
+    
+    // On macOS, handle style name aliases (macOS <-> macintosh)
+#ifdef Q_OS_MAC
+    if (m_defaultAppStyleIndex < 0 && !defaultStyleName.isEmpty()) {
+        // Try to match macOS/macintosh style names (they are equivalent)
+        if (defaultStyleName.compare("macOS", Qt::CaseInsensitive) == 0 ||
+            defaultStyleName.compare("macintosh", Qt::CaseInsensitive) == 0) {
+            for (int i = 0; i < m_ui->appStyleComboBox->count(); ++i) {
+                QString itemText = m_ui->appStyleComboBox->itemText(i);
+                if (itemText.compare("macOS", Qt::CaseInsensitive) == 0 ||
+                    itemText.compare("macintosh", Qt::CaseInsensitive) == 0) {
+                    m_defaultAppStyleIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+#endif
 
+    // Set default index (use 0 if no match found)
+    if (m_defaultAppStyleIndex < 0) {
+        m_defaultAppStyleIndex = 0;
+    }
     m_ui->appStyleComboBox->setCurrentIndex(m_defaultAppStyleIndex);
 }
 

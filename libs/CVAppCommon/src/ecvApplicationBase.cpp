@@ -339,7 +339,7 @@ bool ecvApplicationBase::setAppStyle(const QString &styleKey) {
         }
 
         // Clear any existing stylesheet
-        setStyleSheet(QString());
+        setStyleSheet({});
         CVLog::Print(
                 QStringLiteral("Applying application style: %1").arg(styleKey));
         setStyle(style);
