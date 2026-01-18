@@ -44,10 +44,12 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
           git add -u
           if ! git diff --staged --quiet; then
             git commit -m "Apply automatic code formatting"
-            git push || exit 1
+            # Push to the branch even if we're in detached HEAD state
+            git push origin HEAD:"$BRANCH_NAME" || exit 1
           else
             echo "No formatting changes needed"
           fi
