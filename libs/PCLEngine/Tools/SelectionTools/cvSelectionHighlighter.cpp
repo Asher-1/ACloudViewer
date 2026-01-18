@@ -297,9 +297,9 @@ bool cvSelectionHighlighter::highlightSelection(
     }
 
     CVLog::PrintVerbose(QString("[cvSelectionHighlighter] Got polyData with %1 "
-                              "cells, %2 points")
-                              .arg(polyData->GetNumberOfCells())
-                              .arg(polyData->GetNumberOfPoints()));
+                                "cells, %2 points")
+                                .arg(polyData->GetNumberOfCells())
+                                .arg(polyData->GetNumberOfPoints()));
 
     // Delegate to the explicit polyData overload
     return highlightSelection(polyData, selection, fieldAssociation, mode);
@@ -950,10 +950,11 @@ void cvSelectionHighlighter::setPointLabelArray(const QString& arrayName,
     m_pointLabelArrayName = arrayName;
     m_pointLabelVisible = visible && !arrayName.isEmpty();
 
-    CVLog::PrintVerbose(QString("[cvSelectionHighlighter] Point label array set: "
-                              "'%1', visible=%2")
-                              .arg(arrayName)
-                              .arg(m_pointLabelVisible));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionHighlighter] Point label array set: "
+                    "'%1', visible=%2")
+                    .arg(arrayName)
+                    .arg(m_pointLabelVisible));
 
     // Update label rendering
     updateLabelActor(true);  // true = point labels
@@ -968,10 +969,11 @@ void cvSelectionHighlighter::setCellLabelArray(const QString& arrayName,
     m_cellLabelArrayName = arrayName;
     m_cellLabelVisible = visible && !arrayName.isEmpty();
 
-    CVLog::PrintVerbose(QString("[cvSelectionHighlighter] Cell label array set: "
-                              "'%1', visible=%2")
-                              .arg(arrayName)
-                              .arg(m_cellLabelVisible));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionHighlighter] Cell label array set: "
+                    "'%1', visible=%2")
+                    .arg(arrayName)
+                    .arg(m_cellLabelVisible));
 
     // Update label rendering
     updateLabelActor(false);  // false = cell labels
@@ -1009,8 +1011,9 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
 
     if (!visible || arrayName.isEmpty()) {
         // Labels disabled - ensure proper cleanup and refresh
-        CVLog::PrintVerbose(QString("[cvSelectionHighlighter] Clearing %1 labels")
-                                  .arg(isPointLabels ? "point" : "cell"));
+        CVLog::PrintVerbose(
+                QString("[cvSelectionHighlighter] Clearing %1 labels")
+                        .arg(isPointLabels ? "point" : "cell"));
         // Force render to update the view
         if (pclVis->getRenderWindow()) {
             pclVis->getRenderWindow()->Modified();
@@ -1076,11 +1079,12 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
     maskFilter->RandomModeOn();  // ParaView uses random sampling
     maskFilter->Update();
 
-    CVLog::PrintVerbose(QString("[cvSelectionHighlighter] Label mask: %1 points "
-                              "-> %2 labels (max %3)")
-                              .arg(data->GetNumberOfPoints())
-                              .arg(maskFilter->GetOutput()->GetNumberOfPoints())
-                              .arg(maxLabels));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionHighlighter] Label mask: %1 points "
+                    "-> %2 labels (max %3)")
+                    .arg(data->GetNumberOfPoints())
+                    .arg(maskFilter->GetOutput()->GetNumberOfPoints())
+                    .arg(maxLabels));
 
     // Create label mapper with masked input for performance
     vtkSmartPointer<vtkLabeledDataMapper> labelMapper =

@@ -3938,8 +3938,8 @@ bool ccMesh::fromFile_MeOnly(QFile& in,
     // triangles indexes (dataVersion>=20)
     if (!m_triVertIndexes) return false;
     if (!ccSerializationHelper::GenericArrayFromFile<
-                cloudViewer::VerticesIndexes, 3, unsigned>(*m_triVertIndexes,
-                                                           in, dataVersion, "vertex indexes"))
+                cloudViewer::VerticesIndexes, 3, unsigned>(
+                *m_triVertIndexes, in, dataVersion, "vertex indexes"))
         return false;
 
     // per-triangle materials (dataVersion>=20))
@@ -3968,7 +3968,8 @@ bool ccMesh::fromFile_MeOnly(QFile& in,
             m_texCoordIndexes->link();
         }
         if (!ccSerializationHelper::GenericArrayFromFile<Tuple3i, 3, int>(
-                    *m_texCoordIndexes, in, dataVersion, "texture coordinates")) {
+                    *m_texCoordIndexes, in, dataVersion,
+                    "texture coordinates")) {
             m_texCoordIndexes->release();
             m_texCoordIndexes = nullptr;
             return false;

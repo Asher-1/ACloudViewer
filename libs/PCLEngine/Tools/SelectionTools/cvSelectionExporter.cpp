@@ -156,10 +156,11 @@ ccPointCloud* cvSelectionExporter::exportToPointCloud(
         return nullptr;
     }
 
-    CVLog::PrintVerbose(QString("[cvSelectionExporter] Created point cloud '%1' "
-                              "with %2 points")
-                              .arg(cloudName)
-                              .arg(cloud->size()));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionExporter] Created point cloud '%1' "
+                    "with %2 points")
+                    .arg(cloudName)
+                    .arg(cloud->size()));
 
     // Save to file if requested
     if (options.saveToFile && !options.filename.isEmpty()) {
@@ -576,9 +577,10 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 // Skip arrays without names (coordinate arrays)
                 const char* arrName = srcArray->GetName();
                 if (!arrName || strlen(arrName) == 0) {
-                    CVLog::PrintVerbose(QString("[cvSelectionExporter] Skipping "
-                                              "unnamed array[%1]")
-                                              .arg(a));
+                    CVLog::PrintVerbose(
+                            QString("[cvSelectionExporter] Skipping "
+                                    "unnamed array[%1]")
+                                    .arg(a));
                     continue;
                 }
 
@@ -596,10 +598,10 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                     vtkIdType firstSrcId = validArray->GetValue(0);
                     double firstVal = srcArray->GetTuple1(firstSrcId);
                     CVLog::PrintVerbose(QString("[cvSelectionExporter] Array "
-                                              "'%1': srcId[0]=%2 -> value=%3")
-                                              .arg(arrName)
-                                              .arg(firstSrcId)
-                                              .arg(firstVal));
+                                                "'%1': srcId[0]=%2 -> value=%3")
+                                                .arg(arrName)
+                                                .arg(firstSrcId)
+                                                .arg(firstVal));
                 }
 
                 // Copy data for each selected point using appropriate method
@@ -626,9 +628,9 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 if (numSelectedPoints > 0 && numComp == 1) {
                     double copiedVal = dstArray->GetTuple1(0);
                     CVLog::PrintVerbose(QString("[cvSelectionExporter] Array "
-                                              "'%1': copied[0] = %2")
-                                              .arg(arrName)
-                                              .arg(copiedVal));
+                                                "'%1': copied[0] = %2")
+                                                .arg(arrName)
+                                                .arg(copiedVal));
                 }
 
                 dstPointData->AddArray(dstArray);
@@ -694,10 +696,11 @@ vtkPolyData* cvSelectionExporter::extractSelection(
             return nullptr;
         }
 
-        CVLog::PrintVerbose(QString("[cvSelectionExporter] Extracted %1 points, "
-                                  "%2 cells (cell selection)")
-                                  .arg(extracted->GetNumberOfPoints())
-                                  .arg(extracted->GetNumberOfCells()));
+        CVLog::PrintVerbose(
+                QString("[cvSelectionExporter] Extracted %1 points, "
+                        "%2 cells (cell selection)")
+                        .arg(extracted->GetNumberOfPoints())
+                        .arg(extracted->GetNumberOfCells()));
 
         // Convert to polydata
         vtkSmartPointer<vtkGeometryFilter> geometryFilter =

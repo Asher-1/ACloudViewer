@@ -239,10 +239,10 @@ bool ccMaterial::loadAndSetTextureMap(TextureMapType type,
     const QString& nativeFilename =
             CVTools::ToNativeSeparators(absoluteFilename);
 
-    CVLog::PrintVerbose(
-            QString("[ccMaterial::loadAndSetTextureMap] Loading texture map (type=%1): %2")
-            .arg(static_cast<int>(type))
-            .arg(nativeFilename));
+    CVLog::PrintVerbose(QString("[ccMaterial::loadAndSetTextureMap] Loading "
+                                "texture map (type=%1): %2")
+                                .arg(static_cast<int>(type))
+                                .arg(nativeFilename));
 
     // Load texture into global DB if not already present
     if (!s_textureDB.contains(nativeFilename)) {

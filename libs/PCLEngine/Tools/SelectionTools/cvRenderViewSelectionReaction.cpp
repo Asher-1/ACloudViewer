@@ -1688,8 +1688,8 @@ void cvRenderViewSelectionReaction::storeCurrentStyle() {
             if (!isSelectionStyle) {
                 m_previousStyle = style;
                 CVLog::PrintVerbose(QString("[storeCurrentStyle] Stored "
-                                          "non-selection style: %1")
-                                          .arg(style->GetClassName()));
+                                            "non-selection style: %1")
+                                            .arg(style->GetClassName()));
             }
         }
     }

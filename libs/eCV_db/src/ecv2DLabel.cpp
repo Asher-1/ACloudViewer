@@ -1303,22 +1303,24 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                 ecvDisplayTools::GetLabelDisplayFont();  // takes rendering zoom
                                                          // into account!
         titleFont = bodyFont;  // takes rendering zoom into account!
-        
-        // CRITICAL FIX: Adaptively increase title font size on macOS for better visibility
-        // Only affects eCV2DLabel caption text, not other fonts
-        // Adjust based on screen resolution and DPI for compatibility across different displays
-        // CRITICAL: Always get current screen info (not cached) to handle display changes
+
+        // CRITICAL FIX: Adaptively increase title font size on macOS for better
+        // visibility Only affects eCV2DLabel caption text, not other fonts
+        // Adjust based on screen resolution and DPI for compatibility across
+        // different displays CRITICAL: Always get current screen info (not
+        // cached) to handle display changes
 #ifdef Q_OS_MAC
         int currentSize = titleFont.pointSize();
         float scaleFactor = 1.0f;
-        
+
         // CRITICAL: Get the screen where the label is actually displayed
         // This ensures correct scaling when window moves between displays
-        // Use the widget's screen if available, otherwise fall back to primary screen
+        // Use the widget's screen if available, otherwise fall back to primary
+        // screen
         QWidget* win = ecvDisplayTools::GetMainWindow();
         QScreen* screen = nullptr;
         int dpiScale = 1;
-        
+
         if (win) {
             // Get the screen where the window is currently displayed
             // This is critical for multi-monitor setups and display changes
@@ -1330,13 +1332,13 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         } else {
             screen = QApplication::primaryScreen();
         }
-        
+
         if (screen) {
             QSize screenSize = screen->size();
             int screenWidth = screenSize.width();
             int screenHeight = screenSize.height();
             int screenDPI = screen->physicalDotsPerInch();
-            
+
             // Adaptive scaling based on resolution and DPI
             // User requested: increase all scaling by 50% (multiply by 1.5)
             if (screenWidth >= 3840 || screenHeight >= 2160) {
@@ -1346,17 +1348,18 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                 // 2K resolution: Use higher scaling (1.5x * 1.5 = 2.25x)
                 scaleFactor = 2.25f;
             } else if (screenWidth >= 1920 && screenHeight >= 1080) {
-                // 1080p: Use higher scaling (1.6x * 1.5 = 2.4x) for better visibility
+                // 1080p: Use higher scaling (1.6x * 1.5 = 2.4x) for better
+                // visibility
                 scaleFactor = 2.4f;
             } else {
                 // Lower resolution: Use even higher scaling (1.8x * 1.5 = 2.7x)
                 scaleFactor = 2.7f;
             }
-            
+
             // Adjust for Retina displays (dpiScale > 1)
-            // Retina displays have higher pixel density, so they need less scaling
-            // For Retina (dpiScale = 2), reduce scaling by ~20%
-            // For non-Retina (dpiScale = 1), keep full scaling
+            // Retina displays have higher pixel density, so they need less
+            // scaling For Retina (dpiScale = 2), reduce scaling by ~20% For
+            // non-Retina (dpiScale = 1), keep full scaling
             if (dpiScale >= 2) {
                 // Retina display: reduce scaling since text is already sharper
                 scaleFactor *= 0.85f;  // Reduce by 15% for Retina
@@ -1364,7 +1367,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                 // Partial scaling (rare case)
                 scaleFactor *= (1.0f - (dpiScale - 1.0f) * 0.15f);
             }
-            
+
             // Adjust for DPI: Higher DPI screens need less scaling
             // This provides fine-tuning based on physical DPI
             if (screenDPI > 150) {
@@ -1373,7 +1376,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
                 scaleFactor *= 1.05f;  // Increase by 5% for lower DPI
             }
         }
-        
+
         // Apply the calculated scale factor
         int newSize = static_cast<int>(currentSize * scaleFactor);
         titleFont.setPointSize(newSize);
