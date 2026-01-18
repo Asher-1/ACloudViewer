@@ -156,7 +156,7 @@ def _load_qt_library(lib_name, required=True):
         _load_qt_library('DBus')  # Loads libQt6DBus* or libQt5DBus*
     """
     detected_version = _detect_qt_version()
-    
+
     if detected_version == 6:
         pattern = f'libQt6{lib_name}*'
     elif detected_version == 5:
@@ -168,7 +168,7 @@ def _load_qt_library(lib_name, required=True):
                 ImportWarning,
             )
         pattern = f'libQt5{lib_name}*'
-    
+
     try_load_cdll(pattern)
 
 
@@ -188,7 +188,10 @@ def _load_qt_libraries(lib_names, required=True):
 
 
 # Platform-specific environment setup utilities
-def _setup_path(lib_path, path_separator=':', env_var='PATH', keep_old_path=True):
+def _setup_path(lib_path,
+                path_separator=':',
+                env_var='PATH',
+                keep_old_path=True):
     """
     Set up PATH environment variable for any platform.
     Filters out conda/system Qt paths to avoid mixing Qt versions.
@@ -205,16 +208,19 @@ def _setup_path(lib_path, path_separator=':', env_var='PATH', keep_old_path=True
         old_path = os.environ.get('path', '') or os.environ.get('PATH', '')
     else:
         old_path = os.environ.get(env_var, '')
-    
+
     # Filter out conda/system Qt paths to avoid mixing Qt versions
     filtered_paths = [
-        p for p in old_path.split(path_separator) if p and not any(
-            x in p.lower()
-            for x in ['qt5', 'qt\\5', 'qt-5', 'qt6', 'qt\\6', 'qt-6', 'anaconda', 'miniconda', 'conda'])
+        p for p in old_path.split(path_separator)
+        if p and not any(x in p.lower() for x in [
+            'qt5', 'qt\\5', 'qt-5', 'qt6', 'qt\\6', 'qt-6', 'anaconda',
+            'miniconda', 'conda'
+        ])
     ]
-    
+
     if filtered_paths:
-        os.environ[env_var] = lib_path + path_separator + path_separator.join(filtered_paths)
+        os.environ[env_var] = lib_path + path_separator + path_separator.join(
+            filtered_paths)
     else:
         if keep_old_path:
             os.environ[env_var] = lib_path + path_separator + old_path
@@ -248,11 +254,12 @@ def _setup_linux_libraries():
     # Filter out conda/system Qt paths to avoid mixing Qt versions
     linux_filtered_paths = [
         p for p in old_ld_path.split(':') if p and not any(
-            x in p.lower()
-            for x in ['qt5', 'qt-5', 'qt6', 'qt-6', 'anaconda', 'miniconda', 'conda'])
+            x in p.lower() for x in
+            ['qt5', 'qt-5', 'qt6', 'qt-6', 'anaconda', 'miniconda', 'conda'])
     ]
     if linux_filtered_paths:
-        os.environ['LD_LIBRARY_PATH'] = LIB_PATH + ":" + ":".join(linux_filtered_paths)
+        os.environ['LD_LIBRARY_PATH'] = LIB_PATH + ":" + ":".join(
+            linux_filtered_paths)
     else:
         os.environ['LD_LIBRARY_PATH'] = LIB_PATH
 
@@ -370,7 +377,10 @@ if os.path.exists(MAIN_LIB_PATH):
 
     if sys.platform == "win32":
         # Windows: Set PATH and Qt plugin paths
-        _setup_path(LIB_PATH, path_separator=';', env_var='path', keep_old_path=False)
+        _setup_path(LIB_PATH,
+                    path_separator=';',
+                    env_var='path',
+                    keep_old_path=False)
         _setup_qt_plugin_path(LIB_PATH)
     elif sys.platform == "darwin":
         # macOS: Set PATH and Qt plugin paths
@@ -592,6 +602,6 @@ def _jupyter_nbextension_paths():
 if sys.platform == "win32":
     _win32_dll_dir.close()
 del (os, re, sys, CDLL, load_cdll, try_load_cdll, find_library, Path, warnings,
-     _insert_pybind_names, _loaded_libs_cache, _detect_qt_version, _load_qt_library,
-     _load_qt_libraries, _qt_version_cache, _setup_path, _setup_qt_plugin_path,
-     _setup_linux_libraries)
+     _insert_pybind_names, _loaded_libs_cache, _detect_qt_version,
+     _load_qt_library, _load_qt_libraries, _qt_version_cache, _setup_path,
+     _setup_qt_plugin_path, _setup_linux_libraries)

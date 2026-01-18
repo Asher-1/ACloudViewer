@@ -57,7 +57,8 @@ void CVLog::EnableMessageBackup(bool state) { s_backupEnabled = state; }
 int CVLog::VerbosityLevel() { return s_verbosityLevel; }
 
 void CVLog::SetVerbosityLevel(int level) {
-    s_verbosityLevel = std::min(level, static_cast<int>(LOG_ERROR)); // can't ignore error messages
+    s_verbosityLevel = std::min(
+            level, static_cast<int>(LOG_ERROR));  // can't ignore error messages
 }
 
 void CVLog::LogMessage(const QString& message, int level) {
@@ -114,10 +115,9 @@ bool CVLog::Print(const char* format, ...) {
     return true;
 }
 
-bool CVLog::Print(const QString& message)
-{
-	LogMessage(message, LOG_STANDARD);
-	return true;
+bool CVLog::Print(const QString& message) {
+    LogMessage(message, LOG_STANDARD);
+    return true;
 }
 
 bool CVLog::PrintHigh(const char* format, ...) {
@@ -135,10 +135,9 @@ bool CVLog::Warning(const char* format, ...) {
     return false;
 }
 
-bool CVLog::Warning(const QString& message)
-{
-	LogMessage(message, LOG_WARNING);
-	return false;
+bool CVLog::Warning(const QString& message) {
+    LogMessage(message, LOG_WARNING);
+    return false;
 }
 
 bool CVLog::Error(const char* format, ...) {
@@ -146,10 +145,9 @@ bool CVLog::Error(const char* format, ...) {
     return false;
 }
 
-bool CVLog::Error(const QString& message)
-{
-	LogMessage(message, LOG_ERROR);
-	return false;
+bool CVLog::Error(const QString& message) {
+    LogMessage(message, LOG_ERROR);
+    return false;
 }
 
 bool CVLog::PrintDebug(const char* format, ...) {
@@ -159,12 +157,11 @@ bool CVLog::PrintDebug(const char* format, ...) {
     return true;
 }
 
-bool CVLog::PrintDebug(const QString& message)
-{
+bool CVLog::PrintDebug(const QString& message) {
 #ifdef QT_DEBUG
-	LogMessage(message, LOG_STANDARD | DEBUG_FLAG);
+    LogMessage(message, LOG_STANDARD | DEBUG_FLAG);
 #endif
-	return false;
+    return false;
 }
 
 bool CVLog::WarningDebug(const char* format, ...) {
@@ -174,12 +171,11 @@ bool CVLog::WarningDebug(const char* format, ...) {
     return false;
 }
 
-bool CVLog::WarningDebug(const QString& message)
-{
+bool CVLog::WarningDebug(const QString& message) {
 #ifdef QT_DEBUG
-	LogMessage(message, LOG_WARNING | DEBUG_FLAG);
+    LogMessage(message, LOG_WARNING | DEBUG_FLAG);
 #endif
-	return false;
+    return false;
 }
 
 bool CVLog::ErrorDebug(const char* format, ...) {
@@ -189,10 +185,9 @@ bool CVLog::ErrorDebug(const char* format, ...) {
     return false;
 }
 
-bool CVLog::ErrorDebug(const QString& message)
-{
+bool CVLog::ErrorDebug(const QString& message) {
 #ifdef QT_DEBUG
-	LogMessage(message, LOG_ERROR | DEBUG_FLAG);
+    LogMessage(message, LOG_ERROR | DEBUG_FLAG);
 #endif
-	return false;
+    return false;
 }

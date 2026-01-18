@@ -80,7 +80,8 @@ void ReconstructionWidget::iniEnvironment() {
                 }
             }
         } else {
-            // Configuration file doesn't exist, try to use saved database and image paths
+            // Configuration file doesn't exist, try to use saved database and
+            // image paths
             std::string database_path = CVTools::FromQString(
                     settings.value("database_path", "").toString());
             std::string image_path = CVTools::FromQString(

@@ -17,6 +17,7 @@
 #include <CVTools.h>
 
 // QT
+#include <QAbstractButton>
 #include <QAction>
 #include <QColorDialog>
 #include <QDebug>
@@ -33,7 +34,6 @@
 #include <QMouseEvent>
 #include <QProgressBar>
 #include <QPushButton>
-#include <QAbstractButton>
 #include <QSet>
 #include <QStatusBar>
 #include <QString>

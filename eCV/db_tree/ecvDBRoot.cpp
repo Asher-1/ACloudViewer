@@ -848,12 +848,14 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         // for bbox
                         context.viewID = sensor->getViewId();
                         if (sensor->isSelected() && context.visible) {
-                            // Check if Axes Grid is visible - if so, hide BoundingBox
+                            // Check if Axes Grid is visible - if so, hide
+                            // BoundingBox
                             bool shouldShowBB = true;
                             if (ecvDisplayTools::TheInstance()) {
                                 AxesGridProperties axesGridProps;
-                                ecvDisplayTools::TheInstance()->getDataAxesGridProperties(
-                                        context.viewID, axesGridProps);
+                                ecvDisplayTools::TheInstance()
+                                        ->getDataAxesGridProperties(
+                                                context.viewID, axesGridProps);
                                 if (axesGridProps.visible) {
                                     shouldShowBB = false;
                                 }
@@ -878,12 +880,14 @@ bool ccDBRoot::setData(const QModelIndex& index,
                         // for bbox
                         context.viewID = prim->getViewId();
                         if (prim->isSelected() && context.visible) {
-                            // Check if Axes Grid is visible - if so, hide BoundingBox
+                            // Check if Axes Grid is visible - if so, hide
+                            // BoundingBox
                             bool shouldShowBB = true;
                             if (ecvDisplayTools::TheInstance()) {
                                 AxesGridProperties axesGridProps;
-                                ecvDisplayTools::TheInstance()->getDataAxesGridProperties(
-                                        context.viewID, axesGridProps);
+                                ecvDisplayTools::TheInstance()
+                                        ->getDataAxesGridProperties(
+                                                context.viewID, axesGridProps);
                                 if (axesGridProps.visible) {
                                     shouldShowBB = false;
                                 }
