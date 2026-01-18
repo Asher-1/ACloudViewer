@@ -307,7 +307,7 @@ jobs:
             python_version: '3.11'
 
     env:
-       # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
+      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
       BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
       # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
       BUILD_TENSORFLOW_OPS: OFF
