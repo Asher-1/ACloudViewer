@@ -85,21 +85,24 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="fontColorButton">
+    <widget class="QToolButton" name="fontColorButton">
      <property name="minimumSize">
       <size>
-       <width>30</width>
-       <height>25</height>
+       <width>0</width>
+       <height>0</height>
       </size>
      </property>
-     <property name="maximumSize">
-      <size>
-       <width>30</width>
-       <height>25</height>
-      </size>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
      <property name="toolTip">
       <string>Set font color</string>
+     </property>
+     <property name="toolButtonStyle">
+      <enum>Qt::ToolButtonTextBesideIcon</enum>
      </property>
      <property name="text">
       <string/>

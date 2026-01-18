@@ -85,7 +85,7 @@ void ecvGui::ParamStruct::reset() {
 
 #ifdef Q_OS_MAC
     defaultFontSize = 12;
-    labelFontSize = 10;
+    labelFontSize = 24;  // Increased to 1.5x (16 * 1.5) for better visibility on macOS, especially Retina displays
 #else
     defaultFontSize = 10;
     labelFontSize = 8;
@@ -102,7 +102,11 @@ void ecvGui::ParamStruct::reset() {
 void ecvGui::ParamStruct::initFontSizesIfNeeded() {
     // 只有在QApplication已初始化后才调用
     defaultFontSize = ecvDisplayTools::GetOptimizedFontSize(12);
+#ifdef Q_OS_MAC
+    labelFontSize = ecvDisplayTools::GetOptimizedFontSize(24);  // Increased to 1.5x (16 * 1.5) for better visibility on macOS, especially Retina displays
+#else
     labelFontSize = ecvDisplayTools::GetOptimizedFontSize(10);
+#endif
 }
 
 static int c_fColorArraySize = sizeof(float) * 4;

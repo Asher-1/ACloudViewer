@@ -34,11 +34,13 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QDialog>
+#include <QEvent>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QRegularExpression>
+#include <QResizeEvent>
 #include <QTabWidget>
 #include <QTimer>
 
@@ -85,11 +87,18 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QAbstractButton>
+#include <QBrush>
+#include <QEvent>
+#include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPixmap>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QScrollArea>
 #include <QSpinBox>
 #include <QTabWidget>
@@ -203,6 +212,63 @@ cvSelectionPropertiesWidget::~cvSelectionPropertiesWidget() {
     delete m_tooltipFormatter;
 }
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::updateScrollContentWidth() {
+    // Helper function to update scroll content width
+    // Called from multiple places to ensure consistency
+    if (m_scrollContent && m_scrollArea && m_scrollArea->viewport()) {
+        int viewportWidth = m_scrollArea->viewport()->width();
+        if (viewportWidth > 0) {
+            // CRITICAL: Set width BEFORE adjustSize to prevent it from being reset
+            // Use setFixedWidth to ensure width constraint is maintained
+            m_scrollContent->setFixedWidth(viewportWidth);
+            // Force immediate layout update
+            m_scrollContent->updateGeometry();
+            // Update content size to recalculate layout (height only, width is fixed)
+            m_scrollContent->adjustSize();
+            // Ensure width is still correct after adjustSize (defensive check)
+            if (m_scrollContent->width() != viewportWidth) {
+                m_scrollContent->setFixedWidth(viewportWidth);
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+bool cvSelectionPropertiesWidget::eventFilter(QObject* obj, QEvent* event) {
+    // Handle scroll area resize events to update content width
+    if (obj == m_scrollArea && event->type() == QEvent::Resize) {
+        updateScrollContentWidth();
+    }
+    // Handle viewport resize events (more reliable for drag resize)
+    else if (obj == m_scrollArea->viewport() && event->type() == QEvent::Resize) {
+        updateScrollContentWidth();
+    }
+    // Handle resize events for color buttons (like ParaView's pqColorChooserButton::resizeEvent)
+    else if (event->type() == QEvent::Resize) {
+        if (obj == m_selectionColorButton && m_highlighter) {
+            QColor color = m_highlighter->getHighlightQColor(
+                    cvSelectionHighlighter::SELECTED);
+            updateColorButtonIcon(m_selectionColorButton, color);
+        } else if (obj == m_interactiveSelectionColorButton && m_highlighter) {
+            QColor color = m_highlighter->getHighlightQColor(
+                    cvSelectionHighlighter::HOVER);
+            updateColorButtonIcon(m_interactiveSelectionColorButton, color);
+        }
+    }
+    // Call base class event filter
+    return QWidget::eventFilter(obj, event);
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    // Update scroll content width immediately when widget is resized (e.g., by dragging)
+    // This ensures real-time responsiveness during drag resize operations
+    updateScrollContentWidth();
+}
+
 // setVisualizer is inherited from cvGenericSelectionTool
 
 //-----------------------------------------------------------------------------
@@ -294,37 +360,34 @@ void cvSelectionPropertiesWidget::syncInternalColorArray(double r,
     // DEPRECATED: Colors are now stored in cvSelectionHighlighter
     // This method now only updates UI buttons to reflect color changes
     // Called when colors change via highlightColorChanged signal
+    // Use ParaView-style icon-based color buttons
     QColor color = QColor::fromRgbF(r, g, b);
-    QString buttonStyle = QString("background-color: %1;").arg(color.name());
-    QString pvButtonStyle =
-            QString("QPushButton { background-color: %1; color: white; }")
-                    .arg(color.name());
 
     switch (mode) {
         case cvSelectionHighlighter::HOVER:
             if (m_interactiveSelectionColorButton) {
-                m_interactiveSelectionColorButton->setStyleSheet(pvButtonStyle);
+                updateColorButtonIcon(m_interactiveSelectionColorButton, color);
             }
             if (m_hoverColorButton) {
-                m_hoverColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_hoverColorButton, color);
             }
             break;
         case cvSelectionHighlighter::PRESELECTED:
             if (m_preselectedColorButton) {
-                m_preselectedColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_preselectedColorButton, color);
             }
             break;
         case cvSelectionHighlighter::SELECTED:
             if (m_selectionColorButton) {
-                m_selectionColorButton->setStyleSheet(pvButtonStyle);
+                updateColorButtonIcon(m_selectionColorButton, color);
             }
             if (m_selectedColorButton) {
-                m_selectedColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_selectedColorButton, color);
             }
             break;
         case cvSelectionHighlighter::BOUNDARY:
             if (m_boundaryColorButton) {
-                m_boundaryColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_boundaryColorButton, color);
             }
             break;
         default:
@@ -333,43 +396,93 @@ void cvSelectionPropertiesWidget::syncInternalColorArray(double r,
 }
 
 //-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::updateColorButtonIcon(QAbstractButton* button,
+                                                        const QColor& color) {
+    if (!button) return;
+
+    // ParaView style: use button height * 0.75 for icon radius (same as pqColorChooserButton)
+    // Reference: pqColorChooserButton::renderColorSwatch
+    int buttonHeight = button->height();
+    if (buttonHeight <= 0) {
+        button->adjustSize();
+        buttonHeight = button->height();
+    }
+    if (buttonHeight <= 0) {
+        buttonHeight = button->sizeHint().height();
+    }
+    if (buttonHeight <= 0) {
+        buttonHeight = 25;  // Fallback default
+    }
+
+    // Calculate radius based on height (ParaView style: IconRadiusHeightRatio = 0.75)
+    int radius = qRound(buttonHeight * 0.75);
+    radius = std::max(radius, 10);  // Minimum 10px (ParaView default)
+
+    // Create circular color swatch icon (ParaView-style)
+    // Use exact same approach as pqColorChooserButton::renderColorSwatch
+    QPixmap pix(radius, radius);
+    pix.fill(QColor(0, 0, 0, 0));  // Transparent background
+
+    QPainter painter(&pix);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setBrush(QBrush(color));
+    painter.drawEllipse(1, 1, radius - 2, radius - 2);
+    painter.end();
+
+    QIcon icon(pix);
+
+    // Add high-dpi version for retina displays (ParaView exact style)
+    QPixmap pix2x(radius * 2, radius * 2);
+    pix2x.setDevicePixelRatio(2.0);
+    pix2x.fill(QColor(0, 0, 0, 0));
+
+    QPainter painter2x(&pix2x);
+    painter2x.setRenderHint(QPainter::Antialiasing, true);
+    painter2x.setBrush(QBrush(color));
+    // ParaView uses: drawEllipse(2, 2, radius - 4, radius - 4) for 2x version
+    painter2x.drawEllipse(2, 2, radius - 4, radius - 4);
+    painter2x.end();
+
+    icon.addPixmap(pix2x);
+
+    button->setIcon(icon);
+    
+    // Set icon size (QToolButton will use this)
+    if (QToolButton* toolButton = qobject_cast<QToolButton*>(button)) {
+        toolButton->setIconSize(QSize(radius, radius));
+    }
+}
+
+//-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onHighlighterColorChanged(int mode) {
     // Called when highlighter color changes externally
-    // Update UI buttons to reflect the new color
+    // Update UI buttons to reflect the new color using ParaView-style icons
     if (!m_highlighter) return;
 
     cvSelectionHighlighter::HighlightMode hlMode =
             static_cast<cvSelectionHighlighter::HighlightMode>(mode);
     QColor color = m_highlighter->getHighlightQColor(hlMode);
 
-    QString buttonStyle = QString("background-color: rgb(%1, %2, %3);")
-                                  .arg(color.red())
-                                  .arg(color.green())
-                                  .arg(color.blue());
-    QString pvButtonStyle =
-            QString("QPushButton { background-color: %1; color: white; }")
-                    .arg(color.name());
-
     switch (mode) {
         case cvSelectionHighlighter::HOVER:
             if (m_hoverColorButton)
-                m_hoverColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_hoverColorButton, color);
             if (m_interactiveSelectionColorButton)
-                m_interactiveSelectionColorButton->setStyleSheet(pvButtonStyle);
+                updateColorButtonIcon(m_interactiveSelectionColorButton, color);
             break;
         case cvSelectionHighlighter::PRESELECTED:
             if (m_preselectedColorButton)
-                m_preselectedColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_preselectedColorButton, color);
             break;
         case cvSelectionHighlighter::SELECTED:
             if (m_selectedColorButton)
-                m_selectedColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_selectedColorButton, color);
             if (m_selectionColorButton)
-                m_selectionColorButton->setStyleSheet(pvButtonStyle);
+                updateColorButtonIcon(m_selectionColorButton, color);
             break;
         case cvSelectionHighlighter::BOUNDARY:
             if (m_boundaryColorButton)
-                m_boundaryColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_boundaryColorButton, color);
             break;
     }
 
@@ -467,27 +580,18 @@ void cvSelectionPropertiesWidget::syncUIWithHighlighter() {
             cvSelectionHighlighter::BOUNDARY);
 
     // Update UI controls - colors are read directly from highlighter
-    // No more internal color arrays to update
-    QString buttonStyle;
-
+    // Use ParaView-style icon-based color buttons
     if (m_hoverColorButton) {
-        buttonStyle = QString("background-color: %1;").arg(hoverColor.name());
-        m_hoverColorButton->setStyleSheet(buttonStyle);
+        updateColorButtonIcon(m_hoverColorButton, hoverColor);
     }
     if (m_preselectedColorButton) {
-        buttonStyle =
-                QString("background-color: %1;").arg(preselectedColor.name());
-        m_preselectedColorButton->setStyleSheet(buttonStyle);
+        updateColorButtonIcon(m_preselectedColorButton, preselectedColor);
     }
     if (m_selectedColorButton) {
-        buttonStyle =
-                QString("background-color: %1;").arg(selectedColor.name());
-        m_selectedColorButton->setStyleSheet(buttonStyle);
+        updateColorButtonIcon(m_selectedColorButton, selectedColor);
     }
     if (m_boundaryColorButton) {
-        buttonStyle =
-                QString("background-color: %1;").arg(boundaryColor.name());
-        m_boundaryColorButton->setStyleSheet(buttonStyle);
+        updateColorButtonIcon(m_boundaryColorButton, boundaryColor);
     }
 
     // Update opacity spinboxes
@@ -515,19 +619,12 @@ void cvSelectionPropertiesWidget::syncUIWithHighlighter() {
     // Label properties are now stored in highlighter (single source of truth)
     // No local copy needed - dialog will read directly from highlighter
 
-    // Update ParaView-style selection color buttons
-    QString pvButtonStyle;
+    // Update ParaView-style selection color buttons using icons
     if (m_selectionColorButton) {
-        pvButtonStyle =
-                QString("QPushButton { background-color: %1; color: white; }")
-                        .arg(selectedColor.name());
-        m_selectionColorButton->setStyleSheet(pvButtonStyle);
+        updateColorButtonIcon(m_selectionColorButton, selectedColor);
     }
     if (m_interactiveSelectionColorButton) {
-        pvButtonStyle =
-                QString("QPushButton { background-color: %1; color: white; }")
-                        .arg(hoverColor.name());
-        m_interactiveSelectionColorButton->setStyleSheet(pvButtonStyle);
+        updateColorButtonIcon(m_interactiveSelectionColorButton, hoverColor);
     }
 
     CVLog::PrintVerbose(
@@ -543,15 +640,22 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     // Create scroll area for ParaView-style layout
     m_scrollArea = new QScrollArea(this);
-    m_scrollArea->setWidgetResizable(true);
+    // Set widgetResizable to false so content maintains its natural size
+    // This allows scrollbars to appear when content exceeds available space
+    m_scrollArea->setWidgetResizable(false);
     m_scrollArea->setFrameShape(QFrame::NoFrame);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
     m_scrollContent = new QWidget();
+    // Set size policy to allow content to expand naturally based on its contents
+    m_scrollContent->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     QVBoxLayout* scrollLayout = new QVBoxLayout(m_scrollContent);
     scrollLayout->setContentsMargins(5, 5, 5, 5);
     scrollLayout->setSpacing(
             0);  // ParaView-style: no spacing between expanders
+    // Set size constraint to ensure layout calculates minimum size correctly
+    scrollLayout->setSizeConstraint(QLayout::SetMinimumSize);
 
     // === ParaView-style sections with cvExpanderButton ===
 
@@ -574,6 +678,12 @@ void cvSelectionPropertiesWidget::setupUi() {
                 if (m_findDataButton) m_findDataButton->setVisible(checked);
                 if (m_resetButton) m_resetButton->setVisible(checked);
                 if (m_clearButton) m_clearButton->setVisible(checked);
+                // Update scroll content size when section is toggled
+                // Ensure width is maintained and content size is updated
+                QTimer::singleShot(0, this, [this]() {
+                    // First ensure width is set, then adjust size
+                    updateScrollContentWidth();
+                });
             });
 
     // 2. Selected Data section (with Freeze/Extract/Plot Over Time buttons)
@@ -589,6 +699,14 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     connect(m_selectedDataSpreadsheetExpander, &cvExpanderButton::toggled,
             m_selectedDataSpreadsheetContainer, &QWidget::setVisible);
+    // Update scroll content size when section is toggled
+    connect(m_selectedDataSpreadsheetExpander, &cvExpanderButton::toggled,
+            [this](bool) {
+                QTimer::singleShot(0, this, [this]() {
+                    // First ensure width is set, then adjust size
+                    updateScrollContentWidth();
+                });
+            });
 
     // Action buttons row (Freeze, Extract, Plot Over Time)
     setupSelectedDataHeader();
@@ -616,6 +734,14 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     connect(m_selectionDisplayExpander, &cvExpanderButton::toggled,
             m_selectionDisplayContainer, &QWidget::setVisible);
+    // Update scroll content size when section is toggled
+    connect(m_selectionDisplayExpander, &cvExpanderButton::toggled,
+            [this](bool) {
+                QTimer::singleShot(0, this, [this]() {
+                    // First ensure width is set, then adjust size
+                    updateScrollContentWidth();
+                });
+            });
 
     // 4. Selection Editor section (for combining and managing selections)
     m_selectionEditorExpander = new cvExpanderButton(m_scrollContent);
@@ -631,6 +757,14 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     connect(m_selectionEditorExpander, &cvExpanderButton::toggled,
             m_selectionEditorContainer, &QWidget::setVisible);
+    // Update scroll content size when section is toggled
+    connect(m_selectionEditorExpander, &cvExpanderButton::toggled,
+            [this](bool) {
+                QTimer::singleShot(0, this, [this]() {
+                    // First ensure width is set, then adjust size
+                    updateScrollContentWidth();
+                });
+            });
 
     // 5. Compact Statistics Section (ParaView-style: no tabs)
     m_compactStatsExpander = new cvExpanderButton(m_scrollContent);
@@ -646,6 +780,14 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     connect(m_compactStatsExpander, &cvExpanderButton::toggled,
             m_compactStatsContainer, &QWidget::setVisible);
+    // Update scroll content size when section is toggled
+    connect(m_compactStatsExpander, &cvExpanderButton::toggled,
+            [this](bool) {
+                QTimer::singleShot(0, this, [this]() {
+                    // First ensure width is set, then adjust size
+                    updateScrollContentWidth();
+                });
+            });
 
     // Note: Tab widget removed to align with ParaView's simpler UI design
     // Export/Advanced features are now accessible via action buttons or menus
@@ -654,8 +796,25 @@ void cvSelectionPropertiesWidget::setupUi() {
     scrollLayout->addStretch();
 
     m_scrollContent->setLayout(scrollLayout);
+    
     m_scrollArea->setWidget(m_scrollContent);
+    // Set the scroll area to expand and fill available space
+    m_scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     mainLayout->addWidget(m_scrollArea);
+    
+    // Install event filter on scroll area and viewport to detect resize events
+    // This ensures content width matches scroll area width (prevents horizontal scrolling)
+    // while allowing vertical scrolling when content height exceeds available space
+    m_scrollArea->installEventFilter(this);
+    if (m_scrollArea->viewport()) {
+        m_scrollArea->viewport()->installEventFilter(this);
+    }
+    
+    // Update scroll content size after everything is set up
+    // Use QTimer to ensure this happens after the widget is shown
+    QTimer::singleShot(0, this, [this]() {
+        updateScrollContentWidth();
+    });
 
     setLayout(mainLayout);
 }
@@ -927,17 +1086,21 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     displayLayout->addLayout(appearanceHeaderLayout);
 
     // Selection Color button (ParaView: pqColorChooserButton style)
-    m_selectionColorButton = new QPushButton(tr("Selection Color"));
+    // Use QToolButton like ParaView's pqColorChooserButton (which extends QToolButton)
+    m_selectionColorButton = new QToolButton();
+    m_selectionColorButton->setText(tr("Selection Color"));
     m_selectionColorButton->setToolTip(
             tr("Set the color to use to show selected elements"));
     m_selectionColorButton->setSizePolicy(QSizePolicy::Minimum,
                                           QSizePolicy::Fixed);
+    // ParaView style: TextBesideIcon - text and icon side by side
+    m_selectionColorButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    // Install event filter to handle resize events (like ParaView's pqColorChooserButton)
+    m_selectionColorButton->installEventFilter(this);
+    // ParaView style: use icon to display color (will be updated when highlighter is set)
     // Default color (magenta) - will be updated when highlighter is set
-    m_selectionColorButton->setStyleSheet(
-            QString("QPushButton { background-color: %1; color: white; border: "
-                    "1px solid gray; padding: 4px; }")
-                    .arg(QColor(255, 0, 255).name()));  // Magenta default
-    connect(m_selectionColorButton, &QPushButton::clicked, this,
+    updateColorButtonIcon(m_selectionColorButton, QColor(255, 0, 255));  // Magenta default
+    connect(m_selectionColorButton, &QToolButton::clicked, this,
             &cvSelectionPropertiesWidget::onSelectionColorClicked);
     displayLayout->addWidget(m_selectionColorButton);
 
@@ -955,19 +1118,22 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     displayLayout->addLayout(interactiveHeaderLayout);
 
     // Interactive Selection Color button (ParaView: pqColorChooserButton style)
-    m_interactiveSelectionColorButton =
-            new QPushButton(tr("Interactive Selection Color"));
+    // Use QToolButton like ParaView's pqColorChooserButton (which extends QToolButton)
+    m_interactiveSelectionColorButton = new QToolButton();
+    m_interactiveSelectionColorButton->setText(tr("Interactive Selection Color"));
     m_interactiveSelectionColorButton->setToolTip(
             tr("Set the color to use to show selected elements during "
                "interaction"));
     m_interactiveSelectionColorButton->setSizePolicy(QSizePolicy::Minimum,
                                                      QSizePolicy::Fixed);
+    // ParaView style: TextBesideIcon - text and icon side by side
+    m_interactiveSelectionColorButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    // Install event filter to handle resize events (like ParaView's pqColorChooserButton)
+    m_interactiveSelectionColorButton->installEventFilter(this);
+    // ParaView style: use icon to display color (will be updated when highlighter is set)
     // Default color (cyan) - will be updated when highlighter is set
-    m_interactiveSelectionColorButton->setStyleSheet(
-            QString("QPushButton { background-color: %1; color: white; border: "
-                    "1px solid gray; padding: 4px; }")
-                    .arg(QColor(0, 255, 255).name()));  // Cyan default
-    connect(m_interactiveSelectionColorButton, &QPushButton::clicked, this,
+    updateColorButtonIcon(m_interactiveSelectionColorButton, QColor(0, 255, 255));  // Cyan default
+    connect(m_interactiveSelectionColorButton, &QToolButton::clicked, this,
             &cvSelectionPropertiesWidget::onInteractiveSelectionColorClicked);
     displayLayout->addWidget(m_interactiveSelectionColorButton);
 
@@ -2877,7 +3043,7 @@ void cvSelectionPropertiesWidget::onEditLabelPropertiesClicked() {
 void cvSelectionPropertiesWidget::onSelectionColorClicked() {
     QColor currentColor = getSelectionColor();
     QColor color = QColorDialog::getColor(currentColor, this,
-                                          tr("Select Selection Color"));
+                                          tr("Set Color"));
     if (color.isValid() && m_highlighter) {
         // Set color directly on highlighter (single source of truth)
         // This will trigger colorChanged signal which updates UI
@@ -2900,7 +3066,7 @@ void cvSelectionPropertiesWidget::onSelectionColorClicked() {
 void cvSelectionPropertiesWidget::onInteractiveSelectionColorClicked() {
     QColor currentColor = getInteractiveSelectionColor();
     QColor color = QColorDialog::getColor(
-            currentColor, this, tr("Select Interactive Selection Color"));
+            currentColor, this, tr("Set Color"));
     if (color.isValid() && m_highlighter) {
         // Set color directly on highlighter (single source of truth)
         // This will trigger colorChanged signal which updates UI
