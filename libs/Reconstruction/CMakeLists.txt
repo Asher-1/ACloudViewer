@@ -229,7 +229,7 @@ else()
 endif ()
 message(STATUS "Colmap CUDA enabled: ${CUDA_ENABLED}")
 
-if (GUI_ENABLED AND Qt5_FOUND)
+if (GUI_ENABLED)
     add_compile_definitions(GUI_ENABLED)
     message(STATUS "Enabling GUI support")
 else ()

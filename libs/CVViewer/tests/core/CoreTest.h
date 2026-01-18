@@ -63,5 +63,22 @@ public:
     static std::vector<int64_t> TestCases();
 };
 
+/// Get a device for testing. Prefers CUDA if available, otherwise uses CPU.
+/// This function ensures the device is actually available before returning it.
+inline core::Device GetTestDevice() {
+#ifdef BUILD_CUDA_MODULE
+    // Check if CUDA is actually available (not just compiled in)
+    if (core::cuda::IsAvailable()) {
+        std::vector<core::Device> cuda_devices =
+                core::Device::GetAvailableCUDADevices();
+        if (!cuda_devices.empty()) {
+            return cuda_devices[0];
+        }
+    }
+#endif
+    // Fall back to CPU
+    return core::Device("CPU:0");
+}
+
 }  // namespace tests
 }  // namespace cloudViewer

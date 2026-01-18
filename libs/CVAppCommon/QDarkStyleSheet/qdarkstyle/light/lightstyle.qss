@@ -39,9 +39,9 @@ QToolBar * {
 
 /* QWidget ----------------------------------------------------------------
 
+Note: No default background-color for QWidget to avoid covering OpenGL content like HotZone
 --------------------------------------------------------------------------- */
 QWidget {
-  background-color: #FAFAFA;
   border: 0px solid #C0C4C8;
   padding: 0px;
   color: #19232D;
@@ -519,7 +519,10 @@ QAbstractItemView {
 }
 
 QAbstractItemView QLineEdit {
-  padding: 2px;
+  padding: 4px 8px;
+  background-color: #FAFAFA;
+  border: 1px solid #C0C4C8;
+  border-radius: 4px;
 }
 
 /* QAbstractScrollArea ----------------------------------------------------
@@ -1415,16 +1418,17 @@ https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qlineedit
 --------------------------------------------------------------------------- */
 QLineEdit {
   background-color: #FAFAFA;
-  padding-top: 2px;
+  padding-top: 4px;
   /* This QLineEdit fix  103, 111 */
-  padding-bottom: 2px;
+  padding-bottom: 4px;
   /* This QLineEdit fix  103, 111 */
-  padding-left: 4px;
-  padding-right: 4px;
+  padding-left: 8px;
+  padding-right: 8px;
   border-style: solid;
   border: 1px solid #C0C4C8;
   border-radius: 4px;
   color: #19232D;
+  min-height: 20px;
 }
 
 QLineEdit:disabled {
@@ -1444,6 +1448,12 @@ QLineEdit:focus {
 QLineEdit:selected {
   background-color: #9FCBFF;
   color: #C0C4C8;
+}
+
+/* QLineEdit specific fixes to prevent black blocks */
+QLineEdit {
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 /* QTabWiget --------------------------------------------------------------

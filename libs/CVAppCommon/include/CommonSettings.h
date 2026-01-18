@@ -37,6 +37,16 @@ static const QString THEME_PSBLACK = ":/qss/psblack.css";
 static const QString THEME_SILVER = ":/qss/silvery.css";
 static const QString THEME_BF = ":/qss/bf.css";
 static const QString THEME_TEST = ":/qss/test.css";
+static const QString THEME_MATERIALDARK = ":/qss/materialdark.css";
+static const QString THEME_MATERIALLIGHT = ":/qss/materiallight.css";
+static const QString THEME_NORD = ":/qss/nord.css";
+static const QString THEME_DRACULA = ":/qss/dracula.css";
+static const QString THEME_FLUENT = ":/qss/fluent.css";
+static const QString THEME_MACOS = ":/qss/macos.css";
+static const QString THEME_ONEDARK = ":/qss/onedark.css";
+static const QString THEME_CATPPUCCIN = ":/qss/catppuccin.css";
+static const QString THEME_TOKYONIGHT = ":/qss/tokyonight.css";
+static const QString THEME_GRUVBOX = ":/qss/gruvbox.css";
 }  // namespace Themes
 
 namespace Settings {

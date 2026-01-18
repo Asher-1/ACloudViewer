@@ -33,7 +33,8 @@ conda activate cloudViewer
 ../scripts/setup_conda_env.ps1
 
 cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
-    -DDEVELOPER_BUILD="OFF" `
+    -DDEVELOPER_BUILD=OFF `
+    -DBUILD_UNIT_TESTS=ON `
     -DBUILD_EXAMPLES=OFF `
     -DBUILD_SHARED_LIBS=OFF `
     -DSTATIC_WINDOWS_RUNTIME=OFF `
@@ -132,6 +133,7 @@ cd build
 
 cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
         -DBUILD_SHARED_LIBS=OFF `
+        -DBUILD_UNIT_TESTS=ON `
         -DDEVELOPER_BUILD=OFF `
         -DCMAKE_BUILD_TYPE=Release `
         -DUSE_SYSTEM_EIGEN3=ON `

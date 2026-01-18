@@ -132,6 +132,17 @@
      <addaction name="BFThemeAction"/>
      <addaction name="ParaviewThemeAction"/>
      <addaction name="TestThemeAction"/>
+     <addaction name="separator"/>
+     <addaction name="MaterialDarkThemeAction"/>
+     <addaction name="MaterialLightThemeAction"/>
+     <addaction name="NordThemeAction"/>
+     <addaction name="DraculaThemeAction"/>
+     <addaction name="FluentThemeAction"/>
+     <addaction name="MacOSThemeAction"/>
+     <addaction name="OneDarkThemeAction"/>
+     <addaction name="CatppuccinThemeAction"/>
+     <addaction name="TokyoNightThemeAction"/>
+     <addaction name="GruvboxThemeAction"/>
     </widget>
     <widget class="QMenu" name="langAction">
      <property name="title">
@@ -3523,6 +3534,56 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="TestThemeAction">
    <property name="text">
     <string>Test</string>
+   </property>
+  </action>
+  <action name="MaterialDarkThemeAction">
+   <property name="text">
+    <string>Material Dark</string>
+   </property>
+  </action>
+  <action name="MaterialLightThemeAction">
+   <property name="text">
+    <string>Material Light</string>
+   </property>
+  </action>
+  <action name="NordThemeAction">
+   <property name="text">
+    <string>Nord</string>
+   </property>
+  </action>
+  <action name="DraculaThemeAction">
+   <property name="text">
+    <string>Dracula</string>
+   </property>
+  </action>
+  <action name="FluentThemeAction">
+   <property name="text">
+    <string>Fluent Design</string>
+   </property>
+  </action>
+  <action name="MacOSThemeAction">
+   <property name="text">
+    <string>macOS Big Sur</string>
+   </property>
+  </action>
+  <action name="OneDarkThemeAction">
+   <property name="text">
+    <string>One Dark</string>
+   </property>
+  </action>
+  <action name="CatppuccinThemeAction">
+   <property name="text">
+    <string>Catppuccin</string>
+   </property>
+  </action>
+  <action name="TokyoNightThemeAction">
+   <property name="text">
+    <string>Tokyo Night</string>
+   </property>
+  </action>
+  <action name="GruvboxThemeAction">
+   <property name="text">
+    <string>Gruvbox</string>
    </property>
   </action>
   <action name="DfaultThemeAction">

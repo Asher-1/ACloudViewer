@@ -285,6 +285,16 @@
         <file>qss/bf/radiobutton_checked_disable.png</file>
         <file>qss/bf/radiobutton_unchecked.png</file>
         <file>qss/bf/radiobutton_unchecked_disable.png</file>
+        <file>qss/materialdark.css</file>
+        <file>qss/materiallight.css</file>
+        <file>qss/nord.css</file>
+        <file>qss/dracula.css</file>
+        <file>qss/fluent.css</file>
+        <file>qss/macos.css</file>
+        <file>qss/onedark.css</file>
+        <file>qss/catppuccin.css</file>
+        <file>qss/tokyonight.css</file>
+        <file>qss/gruvbox.css</file>
         <file>qss/paraview.css</file>
     </qresource>
 </RCC>

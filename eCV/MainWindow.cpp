@@ -336,7 +336,7 @@ MainWindow::MainWindow()
 
     m_ui->actionFullScreen->setText(tr("Enter Full Screen"));
     m_ui->actionFullScreen->setShortcut(
-            QKeySequence(Qt::CTRL + Qt::META + Qt::Key_F));
+            QKeySequence(Qt::CTRL | Qt::META | Qt::Key_F));
 #endif
 
     // Initialization
@@ -1281,6 +1281,16 @@ void MainWindow::initThemes() {
     m_ui->BFThemeAction->setData(QVariant(Themes::THEME_BF));
     m_ui->TestThemeAction->setData(QVariant(Themes::THEME_TEST));
     m_ui->ParaviewThemeAction->setData(QVariant(Themes::THEME_PARAVIEW));
+    m_ui->MaterialDarkThemeAction->setData(QVariant(Themes::THEME_MATERIALDARK));
+    m_ui->MaterialLightThemeAction->setData(QVariant(Themes::THEME_MATERIALLIGHT));
+    m_ui->NordThemeAction->setData(QVariant(Themes::THEME_NORD));
+    m_ui->DraculaThemeAction->setData(QVariant(Themes::THEME_DRACULA));
+    m_ui->FluentThemeAction->setData(QVariant(Themes::THEME_FLUENT));
+    m_ui->MacOSThemeAction->setData(QVariant(Themes::THEME_MACOS));
+    m_ui->OneDarkThemeAction->setData(QVariant(Themes::THEME_ONEDARK));
+    m_ui->CatppuccinThemeAction->setData(QVariant(Themes::THEME_CATPPUCCIN));
+    m_ui->TokyoNightThemeAction->setData(QVariant(Themes::THEME_TOKYONIGHT));
+    m_ui->GruvboxThemeAction->setData(QVariant(Themes::THEME_GRUVBOX));
 
     connect(m_ui->DfaultThemeAction, &QAction::triggered, this,
             &MainWindow::changeTheme);
@@ -1315,6 +1325,26 @@ void MainWindow::initThemes() {
     connect(m_ui->TestThemeAction, &QAction::triggered, this,
             &MainWindow::changeTheme);
     connect(m_ui->ParaviewThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->MaterialDarkThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->MaterialLightThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->NordThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->DraculaThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->FluentThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->MacOSThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->OneDarkThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->CatppuccinThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->TokyoNightThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->GruvboxThemeAction, &QAction::triggered, this,
             &MainWindow::changeTheme);
 }
 

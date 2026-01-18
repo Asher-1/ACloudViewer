@@ -54,10 +54,15 @@ export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
 
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
+# you can use PackageManager to install 3DFin==0.4.1 as python plugin (with qt5 support not latest version)
+python -m pip install -r ${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt
+
 cd ACloudViewer
 mkdir build_app
 cd build_app
 cmake   -DDEVELOPER_BUILD=OFF \
+        -DBUILD_UNIT_TESTS=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_JUPYTER_EXTENSION=OFF \
         -DBUILD_LIBREALSENSE=OFF \

@@ -43,10 +43,15 @@ PS: no opencv support due to some issues on local macos machine
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
 
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
+# you can use PackageManager to install 3DFin==0.4.1 as python plugin (with qt5 support not latest version)
+python -m pip install -r ${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt
+
 cd ACloudViewer
 mkdir build_app
 cd build_app
 cmake   -DDEVELOPER_BUILD=OFF \
+        -DBUILD_UNIT_TESTS=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_JUPYTER_EXTENSION=OFF \
         -DBUILD_LIBREALSENSE=OFF \
@@ -56,6 +61,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DWITH_IPP=OFF \
         -DWITH_SIMD=ON \
         -DUSE_SIMD=ON \
+        -DUSE_QT6=ON \
         -DPACKAGE=ON \
         -DUSE_PCL_BACKEND=ON \
         -DBUILD_WEBRTC=OFF \
@@ -132,14 +138,25 @@ sed -i "" "s/3.8/3.12/g" /tmp/conda_macos.yml
 conda env create -f /tmp/conda_macos.yml
 conda activate python3.12
 
-CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+bash
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
 source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 install_python_dependencies with-unit-test purge-cache
+
+# fix zsh shell
+bash -l -c "source util/ci_utils.sh && install_python_dependencies with-unit-test purge-cache"
+
 ```
 
 ```
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
+export DEVELOPER_BUILD=OFF
+export BUILD_SHARED_LIBS=OFF
+export BUILD_CUDA_MODULE=OFF
+export BUILD_PYTORCH_OPS=ON
+export BUILD_TENSORFLOW_OPS=OFF
 
 cd ACloudViewer
 mkdir build
@@ -147,6 +164,7 @@ cd build
 
 cmake -DDEVELOPER_BUILD=OFF \
       -DBUILD_SHARED_LIBS=OFF \
+      -DBUILD_UNIT_TESTS=ON \
       -DCMAKE_BUILD_TYPE=Release \
       -DBUILD_LIBREALSENSE=ON \
       -DBUILD_AZURE_KINECT=OFF \
@@ -156,6 +174,7 @@ cmake -DDEVELOPER_BUILD=OFF \
       -DWITH_IPP=OFF \
       -DWITH_SIMD=ON \
       -DUSE_SIMD=ON \
+      -DUSE_QT6=OFF \
       -DCVCORELIB_SHARED=ON \
       -DCVCORELIB_USE_CGAL=ON \
       -DCVCORELIB_USE_QT_CONCURRENT=ON \
