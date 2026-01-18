@@ -242,10 +242,10 @@ constexpr Rgbf defaultViewBkgColor(10 / 255.0f, 102 / 255.0f, 151 / 255.0f);
 
 // Default foreground color (unsigned byte)
 // constexpr Rgbub defaultBkgColor		( 10, 102, 151); //dark blue
-constexpr Rgbub defaultBkgColor(135, 206, 235);  // sky blue
-constexpr Rgbub defaultColor(MAX, MAX, MAX);                   // white
-constexpr Rgbub defaultLabelBkgColor(MAX, MAX, MAX);           // white
-constexpr Rgbub defaultLabelMarkerColor(MAX, 0, MAX);          // magenta
+constexpr Rgbub defaultBkgColor(135, 206, 235);        // sky blue
+constexpr Rgbub defaultColor(MAX, MAX, MAX);           // white
+constexpr Rgbub defaultLabelBkgColor(MAX, MAX, MAX);   // white
+constexpr Rgbub defaultLabelMarkerColor(MAX, 0, MAX);  // magenta
 
 //! Colors generator
 class Generator {

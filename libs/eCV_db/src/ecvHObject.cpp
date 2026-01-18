@@ -21,11 +21,11 @@
 #include "ecvDisc.h"
 #include "ecvDish.h"
 #include "ecvDisplayTools.h"
-#include "ecvGuiParameters.h"
 #include "ecvExternalFactory.h"
 #include "ecvExtru.h"
 #include "ecvFacet.h"
 #include "ecvGBLSensor.h"
+#include "ecvGuiParameters.h"
 #include "ecvHObjectCaster.h"
 #include "ecvImage.h"
 #include "ecvIndexedTransformationBuffer.h"
@@ -1551,7 +1551,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         // Check if BoundingBox should be shown
         const ecvGui::ParamStruct& params = ecvGui::Parameters();
         bool shouldShowBB = params.showBBOnSelected;
-        
+
         // Check if Axes Grid is visible - if so, ALWAYS hide BoundingBox
         // (unconditionally, regardless of showBBOnSelected setting)
         if (ecvDisplayTools::TheInstance()) {
@@ -1559,18 +1559,21 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
             ecvDisplayTools::TheInstance()->getDataAxesGridProperties(
                     context.viewID, axesGridProps);
             if (axesGridProps.visible) {
-                shouldShowBB = false;  // Force hide BBox when axes grid is visible
+                shouldShowBB =
+                        false;  // Force hide BBox when axes grid is visible
             }
         }
-        
+
         if (shouldShowBB) {
             CC_DRAW_CONTEXT tempContext = context;
-            tempContext.meshRenderingMode = MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
+            tempContext.meshRenderingMode =
+                    MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
             tempContext.viewID = getViewId();
             // Apply BoundingBox color, opacity and line width from parameters
             tempContext.bbDefaultCol = params.bbDefaultCol;
             tempContext.opacity = params.bbOpacity;
-            tempContext.defaultLineWidth = static_cast<unsigned char>(params.bbLineWidth);
+            tempContext.defaultLineWidth =
+                    static_cast<unsigned char>(params.bbLineWidth);
             tempContext.currentLineWidth = tempContext.defaultLineWidth;
             drawBB(tempContext, params.bbDefaultCol);
             tempContext.viewID = getViewId();

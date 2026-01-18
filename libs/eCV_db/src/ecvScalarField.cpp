@@ -414,11 +414,16 @@ bool ccScalarField::fromFile(QFile& in,
                 (flags & ccSerializableObject::DF_SCALAR_VAL_32_BITS);
         if (fileScalarIsFloat)  // file is 'float'
         {
-            result = ccSerializationHelper::GenericArrayFromFile<ScalarType, 1, ScalarType>(*this, in, dataVersion, sfDescription);
+            result = ccSerializationHelper::GenericArrayFromFile<ScalarType, 1,
+                                                                 ScalarType>(
+                    *this, in, dataVersion, sfDescription);
         } else  // file is 'double'
         {
-            // we load it as float, but apply an automatic offset (based on the first element) to not lose information/accuracy
-            result = ccSerializationHelper::GenericArrayFromTypedFile<ScalarType, 1, ScalarType, double>(*this, in, dataVersion, sfDescription, &baseOffset);
+            // we load it as float, but apply an automatic offset (based on the
+            // first element) to not lose information/accuracy
+            result = ccSerializationHelper::GenericArrayFromTypedFile<
+                    ScalarType, 1, ScalarType, double>(
+                    *this, in, dataVersion, sfDescription, &baseOffset);
         }
     }
     if (!result) {

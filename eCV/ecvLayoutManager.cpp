@@ -578,7 +578,8 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
             }
         }
 
-        CVLog::PrintVerbose("[ecvLayoutManager] GUI layout restored from settings");
+        CVLog::PrintVerbose(
+                "[ecvLayoutManager] GUI layout restored from settings");
     } else {
         // Use default layout
         setupDefaultLayout();
@@ -638,7 +639,8 @@ void ecvLayoutManager::restoreDefaultLayout() {
     setupDefaultLayout();
     saveGUILayout();
 
-    CVLog::PrintVerbose("[ecvLayoutManager] Default layout restored successfully");
+    CVLog::PrintVerbose(
+            "[ecvLayoutManager] Default layout restored successfully");
 }
 
 bool ecvLayoutManager::restoreCustomLayout() {
@@ -660,6 +662,7 @@ bool ecvLayoutManager::restoreCustomLayout() {
     m_mainWindow->restoreGeometry(geometry.toByteArray());
     m_mainWindow->restoreState(state.toByteArray());
 
-    CVLog::PrintVerbose("[ecvLayoutManager] Custom layout restored successfully");
+    CVLog::PrintVerbose(
+            "[ecvLayoutManager] Custom layout restored successfully");
     return true;
 }

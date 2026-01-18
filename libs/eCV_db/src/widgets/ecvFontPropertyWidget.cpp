@@ -16,7 +16,6 @@
 #include <QResizeEvent>
 #include <QTimer>
 #include <QToolButton>
-
 #include <algorithm>
 
 #include "ui_ecvFontPropertyWidget.h"
@@ -79,12 +78,10 @@ ecvFontPropertyWidget::ecvFontPropertyWidget(QWidget* parent)
     }
 
     setupConnections();
-    
+
     // Update color button icon after widget is shown and has proper size
     // This ensures button height is available for icon size calculation
-    QTimer::singleShot(0, this, [this]() {
-        updateColorButtonAppearance();
-    });
+    QTimer::singleShot(0, this, [this]() { updateColorButtonAppearance(); });
 
     // Apply ParaView-style toggle button styling for better visual feedback
     const QString toggleButtonStyle =
@@ -254,10 +251,10 @@ void ecvFontPropertyWidget::setFontColor(const QColor& color,
     if (m_fontColor != color) {
         m_fontColor = color;
         // Delay update to ensure button has correct size after dialog closes
-        // This prevents the icon from being rendered at incorrect size (1/4 circle issue)
-        QTimer::singleShot(0, this, [this]() {
-            updateColorButtonAppearance();
-        });
+        // This prevents the icon from being rendered at incorrect size (1/4
+        // circle issue)
+        QTimer::singleShot(0, this,
+                           [this]() { updateColorButtonAppearance(); });
         if (!blockSignal && !m_blockSignals) {
             Q_EMIT fontColorChanged(color);
             Q_EMIT fontPropertiesChanged();
@@ -419,9 +416,9 @@ void ecvFontPropertyWidget::updateColorButtonAppearance() {
 
     // Force button to update its geometry first to ensure correct size
     ui->fontColorButton->updateGeometry();
-    
-    // ParaView style: use button height * 0.75 for icon radius (same as pqColorChooserButton)
-    // Wait for button to have proper size
+
+    // ParaView style: use button height * 0.75 for icon radius (same as
+    // pqColorChooserButton) Wait for button to have proper size
     int buttonHeight = ui->fontColorButton->height();
     if (buttonHeight <= 0) {
         // Force a layout update to get correct size
@@ -435,8 +432,9 @@ void ecvFontPropertyWidget::updateColorButtonAppearance() {
         // Fallback if height not available yet - use a reasonable default
         buttonHeight = 25;
     }
-    
-    // Calculate radius based on height (ParaView style: IconRadiusHeightRatio = 0.75)
+
+    // Calculate radius based on height (ParaView style: IconRadiusHeightRatio =
+    // 0.75)
     int radius = qRound(buttonHeight * 0.75);
     radius = std::max(radius, 10);  // Minimum 10px (ParaView default)
 
@@ -468,11 +466,11 @@ void ecvFontPropertyWidget::updateColorButtonAppearance() {
     icon.addPixmap(pix2x);
 
     ui->fontColorButton->setIcon(icon);
-    
+
     // Set icon size explicitly to match the pixmap size (ParaView style)
     // This ensures the button's internal icon area matches the rendered pixmap
     ui->fontColorButton->setIconSize(QSize(radius, radius));
-    
+
     // Ensure button has minimum width to display icon properly
     // For ToolButtonTextBesideIcon, we need width for icon + text spacing
     // Icon diameter = radius * 2, add some padding

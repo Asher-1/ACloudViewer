@@ -87,7 +87,7 @@ void cvSelectionPipeline::setVisualizer(PclUtils::PCLVis* viewer) {
     clearCache();
 
     CVLog::PrintVerbose(QString("[cvSelectionPipeline] Visualizer set: %1")
-                              .arg((quintptr)viewer, 0, 16));
+                                .arg((quintptr)viewer, 0, 16));
 }
 
 //-----------------------------------------------------------------------------
@@ -508,7 +508,8 @@ void cvSelectionPipeline::invalidateCachedSelection() {
     // Clear invalidating flag
     m_invalidating = false;
 
-    // CVLog::PrintVerbose("[cvSelectionPipeline] Invalidated cached selection");
+    // CVLog::PrintVerbose("[cvSelectionPipeline] Invalidated cached
+    // selection");
 }
 
 //-----------------------------------------------------------------------------
@@ -563,15 +564,15 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     vtk_region[3] = std::max(region[1], region[3]);  // Y2
 
     CVLog::PrintVerbose(QString("[cvSelectionPipeline] Selection region: "
-                              "Input[%1,%2,%3,%4] -> Normalized[%5,%6,%7,%8]")
-                              .arg(region[0])
-                              .arg(region[1])
-                              .arg(region[2])
-                              .arg(region[3])
-                              .arg(vtk_region[0])
-                              .arg(vtk_region[1])
-                              .arg(vtk_region[2])
-                              .arg(vtk_region[3]));
+                                "Input[%1,%2,%3,%4] -> Normalized[%5,%6,%7,%8]")
+                                .arg(region[0])
+                                .arg(region[1])
+                                .arg(region[2])
+                                .arg(region[3])
+                                .arg(vtk_region[0])
+                                .arg(vtk_region[1])
+                                .arg(vtk_region[2])
+                                .arg(vtk_region[3]));
 
     // ParaView-style: Disable buffer swapping during selection to avoid
     // clobbering the user's view (BUG #16042 in ParaView)
@@ -885,10 +886,11 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
         }
     }
 
-    CVLog::PrintVerbose(QString("[cvSelectionPipeline::convertToCvSelectionData] "
-                              "Created selection: %1 IDs, %2 actors")
-                              .arg(result.count())
-                              .arg(result.actorCount()));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionPipeline::convertToCvSelectionData] "
+                    "Created selection: %1 IDs, %2 actors")
+                    .arg(result.count())
+                    .arg(result.actorCount()));
 
     return result;
 }

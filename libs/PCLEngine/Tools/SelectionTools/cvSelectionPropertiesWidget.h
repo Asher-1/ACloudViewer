@@ -254,14 +254,14 @@ private:
 
     // Color synchronization helper
     void syncInternalColorArray(double r, double g, double b, int mode);
-    
+
     // ParaView-style color button icon update helper
     // Uses QAbstractButton to support both QPushButton and QToolButton
     void updateColorButtonIcon(QAbstractButton* button, const QColor& color);
 
     // Helper to setup collapsible QGroupBox behavior
     void setupCollapsibleGroupBox(QGroupBox* groupBox);
-    
+
     // Helper to update scroll content width (called from resize handlers)
     void updateScrollContentWidth();
 
@@ -314,9 +314,12 @@ private:
     QMenu* m_pointLabelsMenu;
     QPushButton* m_editLabelPropertiesButton;
     // Selection Appearance
-    QToolButton* m_selectionColorButton;  // ParaView uses QToolButton (pqColorChooserButton extends QToolButton)
+    QToolButton* m_selectionColorButton;  // ParaView uses QToolButton
+                                          // (pqColorChooserButton extends
+                                          // QToolButton)
     // Interactive Selection
-    QToolButton* m_interactiveSelectionColorButton;  // ParaView uses QToolButton
+    QToolButton*
+            m_interactiveSelectionColorButton;  // ParaView uses QToolButton
     QPushButton* m_editInteractiveLabelPropertiesButton;
 
     // === Selection Editor Section ===
