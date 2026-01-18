@@ -11,7 +11,13 @@
 #include <QColorDialog>
 #include <QIcon>
 #include <QMenu>
+#include <QPainter>
+#include <QPixmap>
+#include <QResizeEvent>
+#include <QTimer>
 #include <QToolButton>
+
+#include <algorithm>
 
 #include "ui_ecvFontPropertyWidget.h"
 
@@ -73,7 +79,12 @@ ecvFontPropertyWidget::ecvFontPropertyWidget(QWidget* parent)
     }
 
     setupConnections();
-    updateColorButtonAppearance();
+    
+    // Update color button icon after widget is shown and has proper size
+    // This ensures button height is available for icon size calculation
+    QTimer::singleShot(0, this, [this]() {
+        updateColorButtonAppearance();
+    });
 
     // Apply ParaView-style toggle button styling for better visual feedback
     const QString toggleButtonStyle =
@@ -112,7 +123,7 @@ void ecvFontPropertyWidget::setupConnections() {
             &ecvFontPropertyWidget::onFontFamilyChanged);
     connect(ui->fontSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &ecvFontPropertyWidget::onFontSizeChanged);
-    connect(ui->fontColorButton, &QPushButton::clicked, this,
+    connect(ui->fontColorButton, &QToolButton::clicked, this,
             &ecvFontPropertyWidget::onFontColorClicked);
     connect(ui->fontOpacitySpinBox,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
@@ -242,7 +253,11 @@ void ecvFontPropertyWidget::setFontColor(const QColor& color,
                                          bool blockSignal) {
     if (m_fontColor != color) {
         m_fontColor = color;
-        updateColorButtonAppearance();
+        // Delay update to ensure button has correct size after dialog closes
+        // This prevents the icon from being rendered at incorrect size (1/4 circle issue)
+        QTimer::singleShot(0, this, [this]() {
+            updateColorButtonAppearance();
+        });
         if (!blockSignal && !m_blockSignals) {
             Q_EMIT fontColorChanged(color);
             Q_EMIT fontPropertiesChanged();
@@ -391,15 +406,79 @@ void ecvFontPropertyWidget::onShadowToggled(bool checked) {
     }
 }
 
+//-----------------------------------------------------------------------------
+void ecvFontPropertyWidget::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    // Update color button icon when widget is resized (ParaView behavior)
+    // This ensures icon size matches button height
+    updateColorButtonAppearance();
+}
+
 void ecvFontPropertyWidget::updateColorButtonAppearance() {
-    if (ui->fontColorButton) {
-        QString styleSheet =
-                QString("QPushButton { background-color: rgb(%1, %2, %3); "
-                        "border: 1px solid gray; }")
-                        .arg(m_fontColor.red())
-                        .arg(m_fontColor.green())
-                        .arg(m_fontColor.blue());
-        ui->fontColorButton->setStyleSheet(styleSheet);
+    if (!ui->fontColorButton) return;
+
+    // Force button to update its geometry first to ensure correct size
+    ui->fontColorButton->updateGeometry();
+    
+    // ParaView style: use button height * 0.75 for icon radius (same as pqColorChooserButton)
+    // Wait for button to have proper size
+    int buttonHeight = ui->fontColorButton->height();
+    if (buttonHeight <= 0) {
+        // Force a layout update to get correct size
+        ui->fontColorButton->adjustSize();
+        buttonHeight = ui->fontColorButton->height();
+    }
+    if (buttonHeight <= 0) {
+        buttonHeight = ui->fontColorButton->sizeHint().height();
+    }
+    if (buttonHeight <= 0) {
+        // Fallback if height not available yet - use a reasonable default
+        buttonHeight = 25;
+    }
+    
+    // Calculate radius based on height (ParaView style: IconRadiusHeightRatio = 0.75)
+    int radius = qRound(buttonHeight * 0.75);
+    radius = std::max(radius, 10);  // Minimum 10px (ParaView default)
+
+    // Create circular color swatch icon (ParaView-style)
+    // Use exact same approach as pqColorChooserButton::renderColorSwatch
+    QPixmap pix(radius, radius);
+    pix.fill(QColor(0, 0, 0, 0));  // Transparent background
+
+    QPainter painter(&pix);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setBrush(QBrush(m_fontColor));
+    painter.drawEllipse(1, 1, radius - 2, radius - 2);
+    painter.end();
+
+    QIcon icon(pix);
+
+    // Add high-dpi version for retina displays (ParaView exact style)
+    QPixmap pix2x(radius * 2, radius * 2);
+    pix2x.setDevicePixelRatio(2.0);
+    pix2x.fill(QColor(0, 0, 0, 0));
+
+    QPainter painter2x(&pix2x);
+    painter2x.setRenderHint(QPainter::Antialiasing, true);
+    painter2x.setBrush(QBrush(m_fontColor));
+    // ParaView uses: drawEllipse(2, 2, radius - 4, radius - 4) for 2x version
+    painter2x.drawEllipse(2, 2, radius - 4, radius - 4);
+    painter2x.end();
+
+    icon.addPixmap(pix2x);
+
+    ui->fontColorButton->setIcon(icon);
+    
+    // Set icon size explicitly to match the pixmap size (ParaView style)
+    // This ensures the button's internal icon area matches the rendered pixmap
+    ui->fontColorButton->setIconSize(QSize(radius, radius));
+    
+    // Ensure button has minimum width to display icon properly
+    // For ToolButtonTextBesideIcon, we need width for icon + text spacing
+    // Icon diameter = radius * 2, add some padding
+    int minWidth = radius * 2 + 6;  // Icon diameter + small padding
+    if (ui->fontColorButton->minimumWidth() < minWidth) {
+        ui->fontColorButton->setMinimumWidth(minWidth);
     }
 }
 
