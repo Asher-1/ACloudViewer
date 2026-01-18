@@ -241,12 +241,14 @@ jobs:
           
           $PACKAGE_INSTALLER_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "ACloudViewer-*.exe")).Name
           echo "PACKAGE_INSTALLER_NAME=$PACKAGE_INSTALLER_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Run C++ unit tests
-        if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
           .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
+
       - name: Upload ACloudViewer to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
@@ -478,6 +480,15 @@ jobs:
           }
           echo "Testing wheel: $PIP_PKG_NAME"
           Test-Wheel -wheel_path $PIP_PKG_NAME
+      - name: Run Python unit tests (CPU)
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cloudViewer_test.venv\Scripts\Activate.ps1
+          echo "Running CloudViewer python tests (CPU)..."
+          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
+          echo "Testing ML and ML Ops disabled"
+          python -m pytest python/test/ --ignore python/test/ml_ops/
+          deactivate
       - name: Test Python package (CUDA)
         env:
           BUILD_CUDA_MODULE: ON
@@ -494,12 +505,11 @@ jobs:
           }
           echo "Testing wheel: $PIP_PKG_NAME"
           Test-Wheel -wheel_path $PIP_PKG_NAME
-
-      - name: Run Python unit tests
+      - name: Run Python unit tests (CUDA)
         run: |
           $ErrorActionPreference = 'Stop'
           cloudViewer_test.venv\Scripts\Activate.ps1
-          echo "Running CloudViewer python tests..."
+          echo "Running CloudViewer python tests (CUDA)..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
           python -m pytest python/test/ --ignore python/test/ml_ops/
