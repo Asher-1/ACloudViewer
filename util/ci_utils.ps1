@@ -15,6 +15,11 @@ $env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalPr
 $env:BUILD_RIEGL = "ON"
 if ($env:CONDA_PREFIX) {
     $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
+    if (-not [string]::IsNullOrEmpty($env:EIGEN_ROOT_DIR)) {
+        # EIGEN_ROOT_DIR already set, use it
+    } else {
+        $env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR\include\eigen3"
+    }
 }
 
 if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_INSTALL_DIR)) {
@@ -229,10 +234,12 @@ function Build-GuiApp {
     Push-Location "build"
 
     $cmakeGuiOptions = @(
+        "-DEIGEN3_ROOT_DIR=$env:EIGEN_ROOT_DIR",
         "-DBUILD_SHARED_LIBS=$env:BUILD_SHARED_LIBS",
         "-DDEVELOPER_BUILD=$env:DEVELOPER_BUILD",
         "-DSTATIC_WINDOWS_RUNTIME=$env:STATIC_RUNTIME",
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_UNIT_TESTS=ON",
         "-DBUILD_JUPYTER_EXTENSION=OFF",
         "-DBUILD_LIBREALSENSE=OFF",
         "-DBUILD_AZURE_KINECT=OFF",
@@ -417,7 +424,7 @@ function Build-PipPackage {
         "-DUSE_SYSTEM_EIGEN3=ON", # fix gdi32 in hwloc - not found
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT",
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE",
-        "-DBUILD_UNIT_TESTS=OFF",
+        "-DBUILD_UNIT_TESTS=ON",
         "-DBUILD_BENCHMARKS=OFF",
         "-DUSE_SIMD=ON",
         "-DWITH_SIMD=ON",

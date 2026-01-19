@@ -165,6 +165,8 @@ Write-Host "Build options: $build_options"
 Build-PipPackage -options $build_options
 
 if ($env:IGNORE_TEST -ne "ON") {
+    # Find wheel file
+    $wheel_file = $null
     Push-Location build  # PWD=ACloudViewer/build
     Write-Host "Try importing cloudviewer Python package"
     if ($env:BUILD_CUDA_MODULE -eq "ON") {
@@ -177,6 +179,32 @@ if ($env:IGNORE_TEST -ne "ON") {
     Write-Host "Wheel_file path: $wheel_file"
     Test-Wheel -wheel_path $wheel_file
     Pop-Location  # PWD=ACloudViewer
+
+    # Run C++ unit tests
+    Write-Host "======================================================================"
+    Write-Host "Running C++ Unit Tests"
+    Write-Host "======================================================================"
+    Run-CppUnitTests
+    $cppTestResult = $LASTEXITCODE
+
+    # Run Python unit tests
+    Write-Host "======================================================================"
+    Write-Host "Running Python Unit Tests"
+    Write-Host "======================================================================"
+    Run-PythonTests -wheel_path $wheel_file
+    $pythonTestResult = $LASTEXITCODE
+
+    # Check test results
+    if ($cppTestResult -ne 0 -or $pythonTestResult -ne 0) {
+        Write-Host "======================================================================"
+        Write-Host "Some tests failed. C++: $cppTestResult, Python: $pythonTestResult"
+        Write-Host "======================================================================"
+        if ($LASTEXITCODE -eq $null) {
+            exit 1
+        } else {
+            exit $LASTEXITCODE
+        }
+    }
 }
 
 Write-Host "Move to install path: $env:CLOUDVIEWER_INSTALL_DIR"
