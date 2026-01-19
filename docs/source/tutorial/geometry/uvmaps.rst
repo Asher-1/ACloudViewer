@@ -20,7 +20,7 @@ How to add custom UV maps ?
 
 
 Quick Reference to default UV Maps for some primitive shapes provided by ACloudViewer
---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
 
 The examples below all assume the following code preamble:
 
