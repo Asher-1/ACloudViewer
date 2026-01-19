@@ -30,8 +30,7 @@ using namespace cloudViewer;
 
 ccMesh &ccMesh::RemoveDuplicatedVertices() {
     typedef std::tuple<double, double, double> Coordinate3;
-    std::unordered_map<Coordinate3, size_t,
-                       utility::hash_tuple<Coordinate3>>
+    std::unordered_map<Coordinate3, size_t, utility::hash_tuple<Coordinate3>>
             point_to_old_index;
     std::vector<int> index_old_to_new(getVerticeSize());
     bool has_vert_normal = hasNormals();
