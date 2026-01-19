@@ -10,6 +10,7 @@
 #include <Parallel.h>
 
 #include <Eigen/Dense>
+#include <algorithm>
 #include <numeric>
 #include <queue>
 #include <random>
@@ -30,7 +31,7 @@ using namespace cloudViewer;
 ccMesh &ccMesh::RemoveDuplicatedVertices() {
     typedef std::tuple<double, double, double> Coordinate3;
     std::unordered_map<Coordinate3, size_t,
-                       utility::hash_tuple::hash<Coordinate3>>
+                       utility::hash_tuple<Coordinate3>>
             point_to_old_index;
     std::vector<int> index_old_to_new(getVerticeSize());
     bool has_vert_normal = hasNormals();
@@ -88,7 +89,7 @@ ccMesh &ccMesh::RemoveDuplicatedTriangles() {
                 "that are not handled in this function");
     }
     typedef std::tuple<int, int, int> Index3;
-    std::unordered_map<Index3, size_t, utility::hash_tuple::hash<Index3>>
+    std::unordered_map<Index3, size_t, utility::hash_tuple<Index3>>
             triangle_to_old_index;
     bool has_tri_normal = hasTriNormals();
     size_t old_triangle_num = size();

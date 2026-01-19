@@ -45,7 +45,7 @@ void pybind_core_dtype(py::module &m) {
     dtype.def("__eq__", &Dtype::operator==);
     dtype.def("__hash__", [](const Dtype &dt) {
         using DtypeTuple = std::tuple<size_t, size_t, std::string>;
-        return utility::hash_tuple::hash<DtypeTuple>()(
+        return utility::hash_tuple<DtypeTuple>()(
                 std::make_tuple(static_cast<size_t>(dt.GetDtypeCode()),
                                 dt.ByteSize(), dt.ToString()));
     });
