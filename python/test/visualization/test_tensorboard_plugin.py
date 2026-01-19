@@ -205,7 +205,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     dirpath_ref = [
         logdir,
         os.path.join(logdir, 'plugins'),
-        os.path.join(logdir, 'plugins/CloudViewer')
+        os.path.join(logdir, 'plugins', 'CloudViewer')
     ]
     filenames_ref = geometry_data['filenames']
 
@@ -303,7 +303,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
     dirpath_ref = [
         logdir,
         os.path.join(logdir, 'plugins'),
-        os.path.join(logdir, 'plugins/CloudViewer')
+        os.path.join(logdir, 'plugins', 'CloudViewer')
     ]
     filenames_ref = geometry_data['filenames']
     dirpath, filenames = [], []

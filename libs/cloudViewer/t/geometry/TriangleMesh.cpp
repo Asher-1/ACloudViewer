@@ -24,6 +24,8 @@
 #include "cloudViewer/t/geometry/VtkUtils.h"
 using namespace cloudViewer::t::geometry::vtkutils;
 
+#include <Helper.h>
+
 #include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
@@ -1671,21 +1673,13 @@ static inline Edge<T> GetOrderedEdge(T vidx0, T vidx1) {
     return (vidx0 < vidx1) ? Edge<T>{vidx0, vidx1} : Edge<T>{vidx1, vidx0};
 }
 
-/// brief Helper
-///
-struct TupleEdgeHash {
-    template <class T>
-    size_t operator()(const std::tuple<T, T> &e) const noexcept {
-        auto h1 = std::hash<T>{}(std::get<0>(e));
-        auto h2 = std::hash<T>{}(std::get<1>(e));
-        return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
-    }
-};
-
 template <typename T>
-static std::unordered_map<Edge<T>, std::vector<size_t>, TupleEdgeHash>
+static std::unordered_map<Edge<T>,
+                          std::vector<size_t>,
+                          utility::hash_tuple<Edge<T>>>
 GetEdgeToTrianglesMap(const core::Tensor &tris_cpu) {
-    std::unordered_map<Edge<T>, std::vector<size_t>, TupleEdgeHash>
+    std::unordered_map<Edge<T>, std::vector<size_t>,
+                       utility::hash_tuple<Edge<T>>>
             tris_per_edge;
     auto AddEdge = [&](T vidx0, T vidx1, int64_t tidx) {
         tris_per_edge[GetOrderedEdge(vidx0, vidx1)].push_back(tidx);
