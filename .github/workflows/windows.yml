@@ -226,7 +226,6 @@ jobs:
             -DPLUGIN_PYTHON=ON `
             -DBUILD_PYTHON_MODULE=ON `
             -DBUILD_WITH_CONDA=ON `
-            -DBUILD_UNIT_TESTS=OFF `
             ${{ env.SRC_DIR }}
 
       - name: ACloudViewer App
