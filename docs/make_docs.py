@@ -41,6 +41,11 @@ from pathlib import Path
 import certifi
 import nbconvert
 import nbformat
+try:
+    from nbclient.exceptions import DeadKernelError
+except ImportError:
+    # Fallback for older versions of nbclient
+    DeadKernelError = Exception
 
 
 def _create_or_clear_dir(dir_path):
@@ -210,9 +215,32 @@ class PyExampleDocsBuilder:
             ("voxel_grid", "Voxel Grid"),
         ]
 
-        sys.path.append(os.path.join(pwd, "..", "python", "tools"))
-        from cli import _get_all_examples_dict
-        self.get_all_examples_dict = _get_all_examples_dict
+        # Try to import from cli, but fall back to direct implementation
+        # to avoid dependency on cloudViewer module (which may fail to import)
+        # Note: cli.py imports cloudViewer at module level, which can fail
+        # with OSError due to libcurl symbol issues, so we catch all exceptions
+        try:
+            sys.path.append(os.path.join(pwd, "..", "python", "tools"))
+            from cli import _get_all_examples_dict
+            self.get_all_examples_dict = _get_all_examples_dict
+        except Exception:
+            # Fallback: implement _get_all_examples_dict directly
+            # This avoids needing to import cloudViewer module
+            # The function just scans the filesystem, so no cloudViewer dependency needed
+            def _get_all_examples_dict():
+                ex_dir = Path(input_dir)
+                if not ex_dir.exists():
+                    return {}
+                categories = [cat for cat in ex_dir.iterdir() if cat.is_dir()]
+                examples_dict = {}
+                for cat_path in categories:
+                    examples = sorted(Path(cat_path).glob("*.py"))
+                    if len(examples) > 0:
+                        examples_dict[cat_path.stem] = [
+                            ex.stem for ex in examples if ex.stem != "__init__"
+                        ]
+                return examples_dict
+            self.get_all_examples_dict = _get_all_examples_dict
 
     def _get_examples_dict(self):
         examples_dict = self.get_all_examples_dict()
@@ -608,9 +636,9 @@ class JupyterDocsBuilder:
                 ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=6000)
                 try:
                     ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
-                except nbconvert.preprocessors.execute.CellExecutionError:
-                    print("Execution of {} failed, this will cause CI to fail.".
-                          format(nb_path.name))
+                except (nbconvert.preprocessors.execute.CellExecutionError, DeadKernelError) as e:
+                    print("Execution of {} failed: {} (this will cause CI to fail).".
+                          format(nb_path.name, type(e).__name__))
                     if "GITHUB_ACTIONS" in os.environ:
                         raise
 
@@ -677,6 +705,22 @@ class SphinxDocsBuilder:
         nproc = multiprocessing.cpu_count() if self.parallel else 1
         print(f"Building docs with {nproc} processes")
 
+        # Find sphinx-build command
+        sphinx_build = shutil.which("sphinx-build")
+        if sphinx_build is None:
+            # Try using python -m sphinx as fallback
+            try:
+                import sphinx
+                sphinx_build = [sys.executable, "-m", "sphinx"]
+                print("📦 Using 'python -m sphinx' (sphinx-build not in PATH)")
+            except ImportError:
+                raise RuntimeError(
+                    "❌ sphinx-build not found and sphinx module not available.\n"
+                    "Please install sphinx: pip install sphinx"
+                )
+        else:
+            sphinx_build = [sphinx_build]
+
         today = os.environ.get("SPHINX_TODAY", None)
         if today:
             cmd_args_today = ["-D", "today=" + today]
@@ -691,8 +735,8 @@ class SphinxDocsBuilder:
             release_version = ".".join(version_list[:3])
             print("Building docs for release:", release_version)
 
-            cmd = [
-                "sphinx-build", "-j",
+            cmd = sphinx_build + [
+                "-j",
                 str(nproc), "-b", "html", "-D", "version=" + release_version,
                 "-D", "release=" + release_version
             ] + cmd_args_today + [
@@ -700,8 +744,7 @@ class SphinxDocsBuilder:
                 build_dir,
             ]
         else:
-            cmd = [
-                "sphinx-build",
+            cmd = sphinx_build + [
                 "-j",
                 str(nproc),
                 "-b",
