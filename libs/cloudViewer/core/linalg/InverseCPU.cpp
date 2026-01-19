@@ -22,12 +22,12 @@ void InverseCPU(void* A_data,
         OPEN3D_LAPACK_CHECK(
                 getrf_cpu<scalar_t>(
                         LAPACK_COL_MAJOR, n, n, static_cast<scalar_t*>(A_data),
-                        n, static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
+                        n, static_cast<CLOUDVIEWER_CPU_LINALG_INT*>(ipiv_data)),
                 "getrf failed in InverseCPU");
         OPEN3D_LAPACK_CHECK(
                 getri_cpu<scalar_t>(
                         LAPACK_COL_MAJOR, n, static_cast<scalar_t*>(A_data), n,
-                        static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
+                        static_cast<CLOUDVIEWER_CPU_LINALG_INT*>(ipiv_data)),
                 "getri failed in InverseCPU");
     });
 }

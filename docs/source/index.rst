@@ -29,22 +29,6 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    :caption: Tutorial
 
    tutorial/index
-   tutorial/geometry/index
-   tutorial/visualization/index
-   tutorial/pipelines/index
-   tutorial/reconstruction/index
-   tutorial/ml/index
-   tutorial/advanced/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Additional Tutorials
-
-   tutorials/basic_usage
-   tutorials/point_cloud_processing
-   tutorials/registration
-   tutorials/reconstruction
-   tutorials/visualization
 
 .. toctree::
    :maxdepth: 1
@@ -55,10 +39,10 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    python_api/cloudViewer.data
    python_api/cloudViewer.geometry
    python_api/cloudViewer.io
+   python_api/cloudViewer.t
    python_api/cloudViewer.ml
    python_api/cloudViewer.pipelines
    python_api/cloudViewer.reconstruction
-   python_api/cloudViewer.t
    python_api/cloudViewer.utility
    python_api/cloudViewer.visualization
 
@@ -66,9 +50,16 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    :maxdepth: 2
    :caption: Python Examples
 
+   python_example/benchmark/index
+   python_example/camera/index
+   python_example/core/index
    python_example/geometry/index
    python_example/io/index
    python_example/pipelines/index
+   python_example/reconstruction/index
+   python_example/reconstruction_system/index
+   python_example/t_reconstruction_system/index
+   python_example/utility/index
    python_example/visualization/index
 
 .. toctree::

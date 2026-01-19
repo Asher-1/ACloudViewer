@@ -1255,27 +1255,28 @@ bool GrainsAsEllipsoids::fromFile_MeOnly(QFile& in,
 
     if (!ccSerializationHelper::GenericArrayFromFile<Eigen::Array3f, 1,
                                                      Eigen::Array3f>(
-                m_center, in, dataVersion)) {
+                m_center, in, dataVersion, "G3Point m_center")) {
         CVLog::Warning("[G3Point] error reading m_center");
         return ReadError();
     }
 
     if (!ccSerializationHelper::GenericArrayFromFile<Eigen::Array3f, 1,
                                                      Eigen::Array3f>(
-                m_radii, in, dataVersion)) {
+                m_radii, in, dataVersion, "G3Point m_radii")) {
         CVLog::Warning("[G3Point] error reading m_radii");
         return ReadError();
     }
 
     if (!ccSerializationHelper::GenericArrayFromFile<Eigen::Matrix3f, 1,
                                                      Eigen::Matrix3f>(
-                m_rotationMatrix, in, dataVersion)) {
+                m_rotationMatrix, in, dataVersion,
+                "G3Point m_rotationMatrix")) {
         CVLog::Warning("[G3Point] error reading m_rorationMatrix");
         return ReadError();
     }
 
     if (!ccSerializationHelper::GenericArrayFromFile<CCVector3f, 1, CCVector3f>(
-                m_grainColors, in, dataVersion)) {
+                m_grainColors, in, dataVersion, "G3Point m_grainColors")) {
         CVLog::Warning("[G3Point] error reading m_rorationMatrix");
         return ReadError();
     }

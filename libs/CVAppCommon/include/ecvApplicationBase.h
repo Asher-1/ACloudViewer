@@ -57,9 +57,12 @@ public:
      * @return true if successful, false otherwise
      *
      * Supported style keys:
-     * - Any Qt native style (e.g., "Fusion", "Windows", "macOS")
+     * - Any Qt native style (e.g., "Fusion", "Windows", "macOS", "macintosh")
      * - "QDarkStyleSheet::Dark" - Dark theme (if available)
      * - "QDarkStyleSheet::Light" - Light theme (if available)
+     *
+     * On macOS, the native "macintosh" or "macOS" style is used by default
+     * if available, providing native macOS appearance.
      */
     bool setAppStyle(const QString &styleKey);
 

@@ -28,7 +28,9 @@ cloudViewer.pipelines.registration
     L2Loss
     PoseGraph
     PoseGraphEdge
+    PoseGraphEdgeVector
     PoseGraphNode
+    PoseGraphNodeVector
     RANSACConvergenceCriteria
     RegistrationResult
     RobustKernel
@@ -37,6 +39,7 @@ cloudViewer.pipelines.registration
     TransformationEstimationForGeneralizedICP
     TransformationEstimationPointToPlane
     TransformationEstimationPointToPoint
+    TukeyLoss
 
 **Functions**
 
@@ -77,7 +80,9 @@ cloudViewer.pipelines.registration
     L2Loss <cloudViewer.pipelines.registration.L2Loss>
     PoseGraph <cloudViewer.pipelines.registration.PoseGraph>
     PoseGraphEdge <cloudViewer.pipelines.registration.PoseGraphEdge>
+    PoseGraphEdgeVector <cloudViewer.pipelines.registration.PoseGraphEdgeVector>
     PoseGraphNode <cloudViewer.pipelines.registration.PoseGraphNode>
+    PoseGraphNodeVector <cloudViewer.pipelines.registration.PoseGraphNodeVector>
     RANSACConvergenceCriteria <cloudViewer.pipelines.registration.RANSACConvergenceCriteria>
     RegistrationResult <cloudViewer.pipelines.registration.RegistrationResult>
     RobustKernel <cloudViewer.pipelines.registration.RobustKernel>
@@ -86,6 +91,7 @@ cloudViewer.pipelines.registration
     TransformationEstimationForGeneralizedICP <cloudViewer.pipelines.registration.TransformationEstimationForGeneralizedICP>
     TransformationEstimationPointToPlane <cloudViewer.pipelines.registration.TransformationEstimationPointToPlane>
     TransformationEstimationPointToPoint <cloudViewer.pipelines.registration.TransformationEstimationPointToPoint>
+    TukeyLoss <cloudViewer.pipelines.registration.TukeyLoss>
     compute_fpfh_feature <cloudViewer.pipelines.registration.compute_fpfh_feature>
     correspondences_from_features <cloudViewer.pipelines.registration.correspondences_from_features>
     evaluate_registration <cloudViewer.pipelines.registration.evaluate_registration>

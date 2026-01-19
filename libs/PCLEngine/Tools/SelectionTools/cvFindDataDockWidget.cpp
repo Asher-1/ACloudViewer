@@ -32,12 +32,12 @@ cvFindDataDockWidget::cvFindDataDockWidget(QWidget* parent)
 
     setupUi();
 
-    CVLog::PrintDebug("[cvFindDataDockWidget] Dock widget created");
+    CVLog::PrintVerbose("[cvFindDataDockWidget] Dock widget created");
 }
 
 //-----------------------------------------------------------------------------
 cvFindDataDockWidget::~cvFindDataDockWidget() {
-    CVLog::PrintDebug("[cvFindDataDockWidget] Dock widget destroyed");
+    CVLog::PrintVerbose("[cvFindDataDockWidget] Dock widget destroyed");
 }
 
 //-----------------------------------------------------------------------------
@@ -140,12 +140,12 @@ void cvFindDataDockWidget::showEvent(QShowEvent* event) {
         m_selectionWidget->refreshDataProducers();
     }
 
-    CVLog::PrintDebug("[cvFindDataDockWidget] Dock shown");
+    CVLog::PrintVerbose("[cvFindDataDockWidget] Dock shown");
 }
 
 //-----------------------------------------------------------------------------
 void cvFindDataDockWidget::hideEvent(QHideEvent* event) {
     QDockWidget::hideEvent(event);
     emit visibilityChanged(false);
-    CVLog::PrintDebug("[cvFindDataDockWidget] Dock hidden");
+    CVLog::PrintVerbose("[cvFindDataDockWidget] Dock hidden");
 }

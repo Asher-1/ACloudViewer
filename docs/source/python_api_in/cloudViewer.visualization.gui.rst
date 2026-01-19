@@ -67,11 +67,17 @@ cloudViewer.visualization.gui
     Theme
     Color
     FontDescription
+    FontStyle
     KeyEvent
+    KeyModifier
+    KeyName
+    Layout1D
+    MouseButton
     MouseEvent
     Size
     Rect
     UIImage
+    VGrid
     WidgetProxy
     WidgetStack
 
@@ -116,10 +122,16 @@ cloudViewer.visualization.gui
     Theme <cloudViewer.visualization.gui.Theme>
     Color <cloudViewer.visualization.gui.Color>
     FontDescription <cloudViewer.visualization.gui.FontDescription>
+    FontStyle <cloudViewer.visualization.gui.FontStyle>
     KeyEvent <cloudViewer.visualization.gui.KeyEvent>
+    KeyModifier <cloudViewer.visualization.gui.KeyModifier>
+    KeyName <cloudViewer.visualization.gui.KeyName>
+    Layout1D <cloudViewer.visualization.gui.Layout1D>
+    MouseButton <cloudViewer.visualization.gui.MouseButton>
     MouseEvent <cloudViewer.visualization.gui.MouseEvent>
     Size <cloudViewer.visualization.gui.Size>
     Rect <cloudViewer.visualization.gui.Rect>
     UIImage <cloudViewer.visualization.gui.UIImage>
+    VGrid <cloudViewer.visualization.gui.VGrid>
     WidgetProxy <cloudViewer.visualization.gui.WidgetProxy>
     WidgetStack <cloudViewer.visualization.gui.WidgetStack>

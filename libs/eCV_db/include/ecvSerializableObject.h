@@ -218,7 +218,8 @@ public:
     template <class Type, int N, class ComponentType>
     static bool GenericArrayFromFile(std::vector<Type>& data,
                                      QFile& in,
-                                     short dataVersion) {
+                                     short dataVersion,
+                                     const QString& verboseDescription) {
         ::uint8_t componentCount = 0;
         ::uint32_t elementCount = 0;
         if (!ReadArrayHeader(in, dataVersion, componentCount, elementCount)) {
@@ -227,6 +228,12 @@ public:
         if (componentCount != N) {
             return ccSerializableObject::CorruptError();
         }
+
+        CVLog::PrintVerbose(
+                QString("Loading %0: %1 elements and %2 dimension(s)")
+                        .arg(verboseDescription)
+                        .arg(elementCount)
+                        .arg(componentCount));
 
         if (elementCount) {
             // try to allocate memory
@@ -268,9 +275,12 @@ public:
             \return success
     **/
     template <class Type, int N, class ComponentType, class FileComponentType>
-    static bool GenericArrayFromTypedFile(std::vector<Type>& data,
-                                          QFile& in,
-                                          short dataVersion) {
+    static bool GenericArrayFromTypedFile(
+            std::vector<Type>& data,
+            QFile& in,
+            short dataVersion,
+            const QString& verboseDescription,
+            FileComponentType* _autoOffset = nullptr) {
         ::uint8_t componentCount = 0;
         ::uint32_t elementCount = 0;
         if (!ReadArrayHeader(in, dataVersion, componentCount, elementCount)) {
@@ -279,6 +289,12 @@ public:
         if (componentCount != N) {
             return ccSerializableObject::CorruptError();
         }
+
+        CVLog::PrintVerbose(
+                QString("Loading %0: %1 elements and %2 dimension(s)")
+                        .arg(verboseDescription)
+                        .arg(elementCount)
+                        .arg(componentCount));
 
         if (elementCount) {
             // try to allocate memory
@@ -289,19 +305,48 @@ public:
             }
 
             // array data (dataVersion>=20)
-            //--> saldy we can't read it as a block...
+            //--> sadly we can't read it as a block...
             // we must convert each element, value by value!
-            FileComponentType dummyArray[N] = {0};
+            FileComponentType dummyArray[N]{0};
 
             ComponentType* _data = (ComponentType*)data.data();
-            for (unsigned i = 0; i < elementCount; ++i) {
-                if (in.read((char*)dummyArray, sizeof(FileComponentType) * N) >=
-                    0) {
+
+            size_t elementSize = sizeof(FileComponentType) * N;
+
+            if (_autoOffset) {
+                // read the first element
+                if (in.read((char*)dummyArray, elementSize) >= 0) {
                     for (unsigned k = 0; k < N; ++k) {
-                        *_data++ = static_cast<ComponentType>(dummyArray[k]);
+                        _autoOffset[k] = dummyArray[k];
+                        *_data++ = 0;
                     }
                 } else {
                     return ccSerializableObject::ReadError();
+                }
+
+                // read the next elements
+                for (unsigned i = 1; i < elementCount; ++i) {
+                    if (in.read((char*)dummyArray, elementSize) >= 0) {
+                        for (unsigned k = 0; k < N; ++k) {
+                            *_data++ = static_cast<ComponentType>(
+                                    dummyArray[k] - _autoOffset[k]);
+                        }
+                    } else {
+                        return ccSerializableObject::ReadError();
+                    }
+                }
+            } else {
+                // no automatic offset
+                for (unsigned i = 0; i < elementCount; ++i) {
+                    if (in.read((char*)dummyArray,
+                                sizeof(FileComponentType) * N) >= 0) {
+                        for (unsigned k = 0; k < N; ++k) {
+                            *_data++ =
+                                    static_cast<ComponentType>(dummyArray[k]);
+                        }
+                    } else {
+                        return ccSerializableObject::ReadError();
+                    }
                 }
             }
         }

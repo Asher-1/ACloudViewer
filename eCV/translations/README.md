@@ -41,7 +41,7 @@ This extracts all translatable strings from source code and updates `ACloudViewe
 #### Method A: Using Qt Linguist (Recommended)
 
 ```bash
-/opt/qt515/bin/linguist ACloudViewer_zh.ts
+/usr/lib/x86_64-linux-gnu/qt5/bin/linguist ACloudViewer_zh.ts
 ```
 
 Qt Linguist provides:
@@ -211,7 +211,7 @@ For detailed instructions, see [`scripts/README.md`](scripts/README.md)
 
 2. **Translate strings** using Qt Linguist:
    ```bash
-   /opt/qt515/bin/linguist ACloudViewer_zh.ts
+   /usr/lib/x86_64-linux-gnu/qt5/bin/linguist ACloudViewer_zh.ts
    ```
 
 3. **Validate quality**:

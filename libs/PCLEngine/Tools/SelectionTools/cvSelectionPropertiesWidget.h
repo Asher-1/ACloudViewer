@@ -216,6 +216,12 @@ private slots:
     void onHighlighterOpacityChanged(int mode);
     void onHighlighterLabelPropertiesChanged(bool interactive);
 
+protected:
+    // Override eventFilter to handle scroll area resize events
+    bool eventFilter(QObject* obj, QEvent* event) override;
+    // Override resizeEvent to handle widget resize (for drag resize)
+    void resizeEvent(QResizeEvent* event) override;
+
 private:
     void setupUi();
 
@@ -249,8 +255,15 @@ private:
     // Color synchronization helper
     void syncInternalColorArray(double r, double g, double b, int mode);
 
+    // ParaView-style color button icon update helper
+    // Uses QAbstractButton to support both QPushButton and QToolButton
+    void updateColorButtonIcon(QAbstractButton* button, const QColor& color);
+
     // Helper to setup collapsible QGroupBox behavior
     void setupCollapsibleGroupBox(QGroupBox* groupBox);
+
+    // Helper to update scroll content width (called from resize handlers)
+    void updateScrollContentWidth();
 
     // Expression evaluation helpers (ParaView-style selection algebra)
     cvSelectionData evaluateExpression(const QString& expression);
@@ -301,9 +314,12 @@ private:
     QMenu* m_pointLabelsMenu;
     QPushButton* m_editLabelPropertiesButton;
     // Selection Appearance
-    QPushButton* m_selectionColorButton;
+    QToolButton* m_selectionColorButton;  // ParaView uses QToolButton
+                                          // (pqColorChooserButton extends
+                                          // QToolButton)
     // Interactive Selection
-    QPushButton* m_interactiveSelectionColorButton;
+    QToolButton*
+            m_interactiveSelectionColorButton;  // ParaView uses QToolButton
     QPushButton* m_editInteractiveLabelPropertiesButton;
 
     // === Selection Editor Section ===

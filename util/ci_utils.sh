@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Detect if script is being sourced (for VS Code terminal compatibility)
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    # Script is being sourced - disable strict mode to prevent terminal crash
+    _CI_UTILS_SOURCED=1
+    set +e  # Don't exit on error when sourced
+    set +u  # Don't exit on unset variables when sourced
+    set +o pipefail  # Don't exit on pipe failures when sourced
+else
+    # Script is being executed - enable strict mode
+    _CI_UTILS_SOURCED=0
+    set -euo pipefail
+fi
 
 # The following environment variables are required:
 SUDO=${SUDO:=sudo}
@@ -51,7 +62,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 
     # use lower target(11.0) version for compacibility
     PROCESSOR_ARCH=$(uname -m)
-    if [ "$PROCESSOR_ARCH" == "arm64" ]; then
+    if [[ "$PROCESSOR_ARCH" == "arm64" ]]; then
         export MACOSX_DEPLOYMENT_TARGET=11.0
     else
         export MACOSX_DEPLOYMENT_TARGET=10.15
@@ -76,7 +87,13 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     fi
 else # do not support windows
     echo "Do not support windows system with this script!"
-    exit -1
+    if [[ "${_CI_UTILS_SOURCED:-0}" -eq 1 ]]; then
+        # Script is sourced, use return instead of exit
+        return 1 2>/dev/null || exit 1
+    else
+        # Script is executed, exit normally
+        exit 1
+    fi
 fi
 
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -163,7 +180,7 @@ build_mac_wheel() {
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
-        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b torch271 || true
+        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b main || true
         BUNDLE_CLOUDVIEWER_ML=ON
     else
         echo "CloudViewer-ML not available."
@@ -191,6 +208,7 @@ build_mac_wheel() {
     pushd build # PWD=ACloudViewer/build
     cmakeOptions=(
         "-DBUILD_SHARED_LIBS=OFF"
+        "-DBUILD_UNIT_TESTS=ON"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_BENCHMARKS=OFF"
@@ -262,6 +280,16 @@ build_gui_app() {
         WITH_PCL_NURBS=OFF
         echo "WITH_PCL_NURBS is off"
     fi
+    if [[ "with_rdb" =~ ^($options)$ ]]; then
+        BUILD_RIEGL=ON
+        echo "PLUGIN_IO_QRDB is on"
+    elif [[ "without_rdb" =~ ^($options)$ ]]; then
+        BUILD_RIEGL=OFF
+        echo "PLUGIN_IO_QRDB is off"
+    else
+        # Keep default behavior based on OS if option not specified
+        echo "PLUGIN_IO_QRDB uses default: $BUILD_RIEGL (based on OS)"
+    fi
     if [[ "plugin_treeiso" =~ ^($options)$ ]]; then
         PLUGIN_STANDARD_QTREEISO=ON
         echo "PLUGIN_STANDARD_QTREEISO is on"
@@ -293,6 +321,7 @@ build_gui_app() {
     mkdir -p build
     pushd build # PWD=ACloudViewer/build
     cmakeGuiOptions=("-DBUILD_SHARED_LIBS=OFF"
+                "-DBUILD_UNIT_TESTS=ON"
                 "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
                 "-DCMAKE_BUILD_TYPE=Release"
                 "-DUSE_QT6=$USE_QT6"
@@ -395,7 +424,7 @@ build_pip_package() {
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
-        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b torch271 || true
+        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b main || true
         BUNDLE_CLOUDVIEWER_ML=ON
     else
         echo "CloudViewer-ML not available."
@@ -590,7 +619,9 @@ test_wheel() {
 # Run in virtual environment
 # Note: This function expects cloudViewer_test.venv to exist (created by test_wheel)
 # or creates a new one if it doesn't exist.
+# Usage: run_python_tests [wheel_path]
 run_python_tests() {
+    wheel_path="${1:-}"
     # Create venv if it doesn't exist
     if [ ! -d "cloudViewer_test.venv" ]; then
         echo "Creating virtual environment cloudViewer_test.venv..."
@@ -606,18 +637,23 @@ run_python_tests() {
     
     # Install cloudViewer if not already installed
     if ! python -c "import cloudViewer" 2>/dev/null; then
-        echo "cloudViewer not installed in venv. Installing from source..."
-        python -m pip install -e "${CLOUDVIEWER_SOURCE_ROOT}/python"
+        if [ -n "$wheel_path" ]; then
+            python -m pip install "$wheel_path"
+        else
+            echo "Warning: cloudViewer not installed and no wheel_path provided. Tests may fail."
+        fi
     fi
     
     echo "Add --randomly-seed=SEED to the test command to reproduce test order."
     pytest_args=("${CLOUDVIEWER_SOURCE_ROOT}/python/test/")
     
     # Check if ML ops should be tested
-    if [ "${BUILD_PYTORCH_OPS:-OFF}" == "OFF" ] && [ "${BUILD_TENSORFLOW_OPS:-OFF}" == "OFF" ]; then
-        echo "Testing ML Ops disabled"
-        pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
-    fi
+    # TODO: not supported for now
+    pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
+    # if [ "${BUILD_PYTORCH_OPS:-OFF}" == "OFF" ] && [ "${BUILD_TENSORFLOW_OPS:-OFF}" == "OFF" ]; then
+    #     echo "Testing ML Ops disabled"
+    #     pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
+    # fi
     
     # Run pytest with verbose output
     echo "======================================================================"
@@ -641,7 +677,7 @@ run_python_tests() {
     deactivate || true
     
     # Optionally cleanup venv (commented out to allow reuse)
-    rm -rf cloudViewer_test.venv
+    # rm -rf cloudViewer_test.venv
     
     return $pytest_result
 }
@@ -654,6 +690,7 @@ run_cpp_unit_tests() {
     echo "Running C++ Unit Tests"
     echo "======================================================================"
     
+    pushd build
     # Check if tests executable exists
     if [ ! -f "./bin/tests" ]; then
         echo "Error: tests executable not found at ./bin/tests"
@@ -687,6 +724,7 @@ run_cpp_unit_tests() {
         return $test_result
     fi
     echo ""
+    popd # build directory
 }
 
 # Run all tests (C++ and Python)
@@ -702,13 +740,8 @@ run_all_tests() {
     local python_result=0
     
     # Run C++ tests if BUILD_UNIT_TESTS is ON
-    if [ -f "./bin/tests" ]; then
-        run_cpp_unit_tests
-        cpp_result=$?
-    else
-        echo "Skipping C++ tests: BUILD_UNIT_TESTS is OFF or tests not built"
-        echo ""
-    fi
+    run_cpp_unit_tests
+    cpp_result=$?
     
     # Run Python tests if venv exists or can be created
     if [ -d "cloudViewer_test.venv" ] || command -v python3 &>/dev/null; then
@@ -756,6 +789,9 @@ install_docs_dependencies() {
     python -V
     python -m pip install -U -q "pip==$PIP_VER"
     which cmake || python -m pip install -U -q cmake
+
+    $SUDO apt remove python3-blinker -y
+    pip install --ignore-installed -U blinker
     python -m pip install -U -q -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ -d "$1" ]]; then
         CLOUDVIEWER_ML_ROOT="$1"
@@ -766,8 +802,7 @@ install_docs_dependencies() {
         echo CLOUDVIEWER_ML_ROOT="${1:-not specified}" - Skipping ML dependencies.
     fi
     echo
-    # Use --ignore-installed to override system packages (e.g., blinker from software-properties-common)
-    python -m pip install --ignore-installed -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" \
+    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" \
         -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" \
         -r "${CLOUDVIEWER_SOURCE_ROOT}/docs/requirements.txt"
 }
@@ -867,9 +902,9 @@ build_docs() {
         cd ..
     fi
     
-    # Generate documentation (Open3D style)
+    # Generate documentation
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "📄 Generating Documentation (Open3D Strategy)"
+    echo "📄 Generating Documentation"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "Build Strategy:"
@@ -893,7 +928,7 @@ build_docs() {
     # - Doxygen runs first, generates independent HTML
     # - Sphinx runs second, generates Python docs
     # - HTML outputs are combined via file system
-    python make_docs.py $DOC_ARGS --sphinx --doxygen
+    python make_docs.py $DOC_ARGS --sphinx --doxygen --parallel
     set +x
     
     echo ""

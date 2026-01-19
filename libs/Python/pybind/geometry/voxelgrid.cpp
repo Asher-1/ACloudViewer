@@ -162,6 +162,9 @@ void pybind_voxelgrid(py::module &m) {
             .def_readwrite("origin", &VoxelGrid::origin_,
                            "``float64`` vector of length 3: Coorindate of the "
                            "origin point.")
+            .def_readwrite("rotation", &VoxelGrid::rotation_,
+                           "``float64`` 3x3 matrix: Rotation matrix of the "
+                           "origin point.")
             .def_readwrite("voxel_size", &VoxelGrid::voxel_size_,
                            "``float64`` Size of the voxel.");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_colors");

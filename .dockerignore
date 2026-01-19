@@ -5,7 +5,8 @@ tags
 .clangd
 .vscode
 docker_cache
-docs/_static/build
+docs/source/_static/build
 docs/_out
+docs/doxygen
 .python-version
 cmake-build-*

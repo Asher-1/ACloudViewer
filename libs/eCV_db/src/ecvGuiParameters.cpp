@@ -62,6 +62,9 @@ void ecvGui::ParamStruct::reset() {
     labelBackgroundCol = ecvColor::defaultLabelBkgColor;
     labelMarkerCol = ecvColor::defaultLabelMarkerColor;
     bbDefaultCol = ecvColor::yellow;
+    showBBOnSelected = true;
+    bbOpacity = 0.5;
+    bbLineWidth = 1;
 
     lightDoubleSided = true;
     drawBackgroundGradient = true;
@@ -82,7 +85,8 @@ void ecvGui::ParamStruct::reset() {
 
 #ifdef Q_OS_MAC
     defaultFontSize = 12;
-    labelFontSize = 10;
+    labelFontSize = 24;  // Increased to 1.5x (16 * 1.5) for better visibility
+                         // on macOS, especially Retina displays
 #else
     defaultFontSize = 10;
     labelFontSize = 8;
@@ -99,7 +103,13 @@ void ecvGui::ParamStruct::reset() {
 void ecvGui::ParamStruct::initFontSizesIfNeeded() {
     // 只有在QApplication已初始化后才调用
     defaultFontSize = ecvDisplayTools::GetOptimizedFontSize(12);
+#ifdef Q_OS_MAC
+    labelFontSize = ecvDisplayTools::GetOptimizedFontSize(
+            24);  // Increased to 1.5x (16 * 1.5) for better visibility on
+                  // macOS, especially Retina displays
+#else
     labelFontSize = ecvDisplayTools::GetOptimizedFontSize(10);
+#endif
 }
 
 static int c_fColorArraySize = sizeof(float) * 4;
@@ -197,6 +207,10 @@ void ecvGui::ParamStruct::fromPersistentSettings() {
                                    c_ubColorArraySize))
                     .toByteArray()
                     .data()));
+    showBBOnSelected = settings.value("showBBOnSelected", true).toBool();
+    bbOpacity = settings.value("bbOpacity", 0.5).toDouble();
+    bbLineWidth = static_cast<unsigned>(
+            std::max(1u, settings.value("bbLineWidth", 1).toUInt()));
 
     lightDoubleSided = settings.value("lightDoubleSided", true).toBool();
     drawBackgroundGradient =
@@ -269,6 +283,9 @@ void ecvGui::ParamStruct::toPersistentSettings() const {
     settings.setValue(
             "bbDefaultColor",
             QByteArray((const char*)bbDefaultCol.rgb, c_ubColorArraySize));
+    settings.setValue("showBBOnSelected", showBBOnSelected);
+    settings.setValue("bbOpacity", bbOpacity);
+    settings.setValue("bbLineWidth", bbLineWidth);
     settings.setValue("backgroundGradient", drawBackgroundGradient);
     settings.setValue("drawRoundedPoints", drawRoundedPoints);
     settings.setValue("meshDecimation", decimateMeshOnMove);

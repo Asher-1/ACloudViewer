@@ -176,16 +176,20 @@ build_docs ON       # Developer mode
 Build documentation in a clean Docker environment:
 
 ```bash
-# Build Docker image with documentation
-docker build --network=host \
-    -t acloudviewer-ci:docs \
-    -f docker/Dockerfile.docs .
+# Build Docker image with documentation (runs in background)
+nohup docker build --network=host --build-arg BASE_IMAGE=ubuntu:22.04 --build-arg DEVELOPER_BUILD=OFF -t acloudviewer-ci:docs -f docker/Dockerfile.docs . > docker_docs_build.log 2>&1 &
+
+# Check build progress
+tail -f docker_docs_build.log
+
+# Or check if build is still running
+ps aux | grep "docker build"
 
 # Extract documentation
-docker run -v $(pwd):/opt/mount --rm acloudviewer-ci:docs \
-    bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/"
+docker run -v $(pwd):/opt/mount --rm acloudviewer-ci:docs bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/ && chown $(id -u):$(id -g) /opt/mount/acloudviewer-*-docs.tar.gz"
 
 # Extract and preview
+mkdir -p docs-output
 tar -xzf acloudviewer-*-docs.tar.gz -C ./docs-output/
 cd docs-output && python3 -m http.server 8080
 ```

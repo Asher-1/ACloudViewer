@@ -17,6 +17,7 @@
 #include <CVTools.h>
 
 // QT
+#include <QAbstractButton>
 #include <QAction>
 #include <QColorDialog>
 #include <QDebug>
@@ -32,6 +33,7 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QProgressBar>
+#include <QPushButton>
 #include <QSet>
 #include <QStatusBar>
 #include <QString>
@@ -461,6 +463,7 @@ private slots:
     void popMenuInConsole(const QPoint&);
     void clearConsoleItems();
     void clearConsole();
+    void copyConsoleItems();
 
     // Display method
     //! toggles full screen

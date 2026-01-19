@@ -282,7 +282,7 @@ Available Functions
    run_cpp_unit_tests
    
    # Run Python unit tests
-   run_python_tests
+   run_python_tests path/to/wheel.whl
    
    # Maximize GitHub Actions build space (~10GB)
    maximize_ubuntu_github_actions_build_space

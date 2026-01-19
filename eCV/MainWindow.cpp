@@ -43,6 +43,7 @@
 #include "ecvUtils.h"
 
 // CV_CORE_LIB
+#include <CVLog.h>
 #include <CVMath.h>
 #include <CVPointCloud.h>
 #include <CloudSamplingTools.h>
@@ -335,7 +336,7 @@ MainWindow::MainWindow()
 
     m_ui->actionFullScreen->setText(tr("Enter Full Screen"));
     m_ui->actionFullScreen->setShortcut(
-            QKeySequence(Qt::CTRL + Qt::META + Qt::Key_F));
+            QKeySequence(Qt::CTRL | Qt::META | Qt::Key_F));
 #endif
 
     // Initialization
@@ -718,6 +719,33 @@ void MainWindow::initConsole() {
     // set Console
     ecvConsole::Init(m_ui->consoleWidget, this, this);
     m_ui->actionEnableQtWarnings->setChecked(ecvConsole::QtMessagesEnabled());
+
+    // Initialize log verbosity level from options (similar to CloudCompare)
+    {
+        CVLog::SetVerbosityLevel(
+                static_cast<int>(ecvOptions::Instance().logVerbosityLevel));
+        // Print current log verbosity level
+        QString levelName;
+        switch (ecvOptions::Instance().logVerbosityLevel) {
+            case CVLog::LOG_VERBOSE:
+                levelName = "Verbose";
+                break;
+            case CVLog::LOG_STANDARD:
+                levelName = "Standard";
+                break;
+            case CVLog::LOG_IMPORTANT:
+                levelName = "Important";
+                break;
+            case CVLog::LOG_WARNING:
+                levelName = "Warning";
+                break;
+            default:
+                levelName = QString::number(
+                        ecvOptions::Instance().logVerbosityLevel);
+                break;
+        }
+        CVLog::Print(QString("Log verbosity level: %1").arg(levelName));
+    }
 }
 
 void MainWindow::connectActions() {
@@ -1193,6 +1221,8 @@ void MainWindow::connectActions() {
     // echo mode
     m_ui->consoleWidget->setProperty("contextMenuPolicy",
                                      Qt::CustomContextMenu);
+    // Enable multi-selection (Ctrl+Click and Shift+Click)
+    m_ui->consoleWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
     connect(m_ui->consoleWidget,
             &ecvCustomQListWidget::customContextMenuRequested, this,
             &MainWindow::popMenuInConsole);
@@ -1253,6 +1283,18 @@ void MainWindow::initThemes() {
     m_ui->BFThemeAction->setData(QVariant(Themes::THEME_BF));
     m_ui->TestThemeAction->setData(QVariant(Themes::THEME_TEST));
     m_ui->ParaviewThemeAction->setData(QVariant(Themes::THEME_PARAVIEW));
+    m_ui->MaterialDarkThemeAction->setData(
+            QVariant(Themes::THEME_MATERIALDARK));
+    m_ui->MaterialLightThemeAction->setData(
+            QVariant(Themes::THEME_MATERIALLIGHT));
+    m_ui->NordThemeAction->setData(QVariant(Themes::THEME_NORD));
+    m_ui->DraculaThemeAction->setData(QVariant(Themes::THEME_DRACULA));
+    m_ui->FluentThemeAction->setData(QVariant(Themes::THEME_FLUENT));
+    m_ui->MacOSThemeAction->setData(QVariant(Themes::THEME_MACOS));
+    m_ui->OneDarkThemeAction->setData(QVariant(Themes::THEME_ONEDARK));
+    m_ui->CatppuccinThemeAction->setData(QVariant(Themes::THEME_CATPPUCCIN));
+    m_ui->TokyoNightThemeAction->setData(QVariant(Themes::THEME_TOKYONIGHT));
+    m_ui->GruvboxThemeAction->setData(QVariant(Themes::THEME_GRUVBOX));
 
     connect(m_ui->DfaultThemeAction, &QAction::triggered, this,
             &MainWindow::changeTheme);
@@ -1287,6 +1329,26 @@ void MainWindow::initThemes() {
     connect(m_ui->TestThemeAction, &QAction::triggered, this,
             &MainWindow::changeTheme);
     connect(m_ui->ParaviewThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->MaterialDarkThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->MaterialLightThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->NordThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->DraculaThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->FluentThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->MacOSThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->OneDarkThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->CatppuccinThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->TokyoNightThemeAction, &QAction::triggered, this,
+            &MainWindow::changeTheme);
+    connect(m_ui->GruvboxThemeAction, &QAction::triggered, this,
             &MainWindow::changeTheme);
 }
 
@@ -5160,12 +5222,62 @@ void MainWindow::showEvent(QShowEvent* event) {
 
 // exit event
 void MainWindow::closeEvent(QCloseEvent* event) {
-    if ((m_ccRoot && m_ccRoot->getRootEntity()->getChildrenNumber() == 0) ||
-        QMessageBox::question(
-                this, tr("Quit"), tr("Are you sure you want to quit?"),
-                QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Cancel) {
+    // Check if we should ask for confirmation before quitting
+    bool askForConfirmation =
+            ecvOptions::Instance().askForConfirmationBeforeQuitting;
+
+    // If no entities loaded, quit without asking
+    if (m_ccRoot && m_ccRoot->getRootEntity()->getChildrenNumber() == 0) {
+        event->accept();
+        if (s_autoSaveGuiElementPos) {
+            saveGUIElementsPos();
+        }
+        return;
+    }
+
+    // If confirmation is disabled, quit directly
+    if (!askForConfirmation) {
+        event->accept();
+        if (s_autoSaveGuiElementPos) {
+            saveGUIElementsPos();
+        }
+        return;
+    }
+
+    // Create custom message box with three buttons (similar to CloudCompare)
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("Quit"));
+    msgBox.setText(tr("Are you sure you want to quit?"));
+    msgBox.setIcon(QMessageBox::Question);
+
+    // Add three buttons: No, Yes (don't ask again), Yes
+    QPushButton* noButton = msgBox.addButton(tr("No"), QMessageBox::RejectRole);
+    QPushButton* yesDontAskButton = msgBox.addButton(tr("Yes, don't ask again"),
+                                                     QMessageBox::ActionRole);
+    QPushButton* yesButton =
+            msgBox.addButton(tr("Yes"), QMessageBox::AcceptRole);
+
+    // Set default button
+    msgBox.setDefaultButton(noButton);
+
+    // Show the dialog
+    msgBox.exec();
+
+    // Handle the result
+    QAbstractButton* clickedButton = msgBox.clickedButton();
+    if (clickedButton == yesButton || clickedButton == yesDontAskButton) {
+        // User wants to quit
+        if (clickedButton == yesDontAskButton) {
+            // User clicked "Yes, don't ask again" - disable confirmation and
+            // save setting
+            ecvOptions options = ecvOptions::Instance();
+            options.askForConfirmationBeforeQuitting = false;
+            ecvOptions::Set(options);
+            options.toPersistentSettings();
+        }
         event->accept();
     } else {
+        // User clicked "No" or closed the dialog
         event->ignore();
     }
 
@@ -7793,13 +7905,29 @@ void MainWindow::doActionClone() {
 
 // consoleTable right click envent
 void MainWindow::popMenuInConsole(const QPoint& pos) {
+    QAction copyAction(tr("Copy"), this);
     QAction clearItemsAction(tr("Clear selected items"), this);
     QAction clearConsoleAction(tr("Clear console"), this);
+
+    // Check if there are selected items
+    QList<QListWidgetItem*> selectedItems =
+            m_ui->consoleWidget->selectedItems();
+    bool hasSelection = selectedItems.count() > 0;
+
+    // Enable/disable copy and clear selected items based on selection
+    copyAction.setEnabled(hasSelection);
+    clearItemsAction.setEnabled(hasSelection);
+
+    connect(&copyAction, &QAction::triggered, this,
+            &MainWindow::copyConsoleItems);
     connect(&clearItemsAction, &QAction::triggered, this,
             &MainWindow::clearConsoleItems);
     connect(&clearConsoleAction, &QAction::triggered, this,
             &MainWindow::clearConsole);
+
     QMenu menu(m_ui->consoleWidget);
+    menu.addAction(&copyAction);
+    menu.addSeparator();
     menu.addAction(&clearItemsAction);
     menu.addAction(&clearConsoleAction);
     menu.exec(QCursor::pos());  // show in mouse position
@@ -7807,6 +7935,27 @@ void MainWindow::popMenuInConsole(const QPoint& pos) {
 
 // Clear consoleTable
 void MainWindow::clearConsole() { m_ui->consoleWidget->clear(); }
+
+// Copy selected items in consoleTable
+void MainWindow::copyConsoleItems() {
+    QList<QListWidgetItem*> items = m_ui->consoleWidget->selectedItems();
+
+    if (items.count() > 0) {
+        QStringList strings;
+        // Sort items by their row index to maintain order
+        QList<QListWidgetItem*> sortedItems = items;
+        std::sort(sortedItems.begin(), sortedItems.end(),
+                  [](QListWidgetItem* a, QListWidgetItem* b) {
+                      return a->listWidget()->row(a) < b->listWidget()->row(b);
+                  });
+
+        foreach (QListWidgetItem* item, sortedItems) {
+            strings << item->text();
+        }
+
+        QApplication::clipboard()->setText(strings.join("\n"));
+    }
+}
 
 // Remove selected items in consoleTable
 void MainWindow::clearConsoleItems() {

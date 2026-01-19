@@ -301,8 +301,8 @@ public:
                           const Eigen::Vector3d& center) override;
     virtual Octree& Rotate(const Eigen::Matrix3d& R,
                            const Eigen::Vector3d& center) override;
-    bool ConvertToJsonValue(Json::Value& value) const;
-    bool ConvertFromJsonValue(const Json::Value& value);
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
 
 public:
     /// \brief Convert octree from point cloud.

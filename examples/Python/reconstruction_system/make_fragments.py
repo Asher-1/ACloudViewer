@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/Python/ReconstructionSystem/make_fragments.py
+# examples/Python/reconstruction_system/make_fragments.py
 
 import math
 import multiprocessing

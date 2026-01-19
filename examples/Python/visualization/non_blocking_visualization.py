@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
+# examples/Python/visualization/non_blocking_visualization.py
+
 import cloudViewer as cv3d
 import numpy as np
 

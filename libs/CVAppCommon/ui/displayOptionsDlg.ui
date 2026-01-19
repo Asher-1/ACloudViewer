@@ -292,6 +292,96 @@
               </layout>
              </item>
              <item>
+              <widget class="QCheckBox" name="showBBOnSelectedCheckBox">
+               <property name="text">
+                <string>Show BoundingBox on selected</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout">
+               <item>
+                <widget class="QLabel" name="label_bbOpacity">
+                 <property name="text">
+                  <string>BoundingBox opacity</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QDoubleSpinBox" name="bbOpacityDoubleSpinBox">
+                 <property name="decimals">
+                  <number>2</number>
+                 </property>
+                 <property name="minimum">
+                  <double>0.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>1.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                 <property name="value">
+                  <double>0.500000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_bbOpacity">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout">
+               <item>
+                <widget class="QLabel" name="label_bbLineWidth">
+                 <property name="text">
+                  <string>BoundingBox line width</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="bbLineWidthSpinBox">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>10</number>
+                 </property>
+                 <property name="value">
+                  <number>1</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_bbLineWidth">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+             <item>
               <layout class="QHBoxLayout">
                <item>
                 <widget class="QToolButton" name="textColorButton">
@@ -881,6 +971,67 @@
         <widget class="QCheckBox" name="useNativeDialogsCheckBox">
          <property name="text">
           <string>Use native load / save dialogs</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_logVerbosity">
+         <item>
+          <widget class="QLabel" name="label_logVerbosity">
+           <property name="text">
+            <string>Log/console verbosity level</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="logVerbosityComboBox">
+           <property name="toolTip">
+            <string>Set the verbosity level for log messages displayed in the console</string>
+           </property>
+           <item>
+            <property name="text">
+             <string>Verbose</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Standard</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Important</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Warning &amp; errors</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_logVerbosity">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="askForConfirmationBeforeQuittingCheckBox">
+         <property name="text">
+          <string>Ask for a confirmation before quitting</string>
          </property>
          <property name="checked">
           <bool>true</bool>

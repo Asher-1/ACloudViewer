@@ -197,6 +197,7 @@ docker run \
   bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/"
 
 # Extract and preview
+mkdir -p docs-output
 tar -xzf acloudviewer-*-docs.tar.gz -C docs-output/
 cd docs-output && python3 -m http.server 8080
 ```

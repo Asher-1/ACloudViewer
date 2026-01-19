@@ -140,6 +140,9 @@ private Q_SLOTS:
     void onHorizontalJustificationTriggered(QAction* action);
     void onVerticalJustificationTriggered(QAction* action);
 
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
 private:
     void setupConnections();
     void updateColorButtonAppearance();

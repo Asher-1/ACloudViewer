@@ -5,6 +5,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 
+HTML_HEADER            = source/_static/google_analytics_header.html
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "ACloudViewer"
 PROJECT_NUMBER         = @PROJECT_VERSION@

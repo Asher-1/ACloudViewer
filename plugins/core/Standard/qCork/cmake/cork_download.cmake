@@ -129,9 +129,9 @@ if [ -f \"Makefile\" ]; then
     sed -i.bak 's/-lgmpxx -lgmp/-lgmp/g' Makefile
     
     # Ensure -fPIC is present in CCFLAGS (critical for linking with shared libraries)
-    if ! grep -q "CCFLAGS.*-fPIC" Makefile; then
+    if ! grep -q 'CCFLAGS.*-fPIC' Makefile; then
         echo \"Adding -fPIC to CCFLAGS...\"
-        sed -i.bak_pic 's/^CCFLAGS[[:space:]]*:=/CCFLAGS := -fPIC /g' Makefile
+        sed -i.bak_pic \"s/^CCFLAGS[[:space:]]*:=/CCFLAGS := -fPIC /g\" Makefile
     else
         echo \"-fPIC already present in CCFLAGS\"
     fi

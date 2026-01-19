@@ -81,6 +81,7 @@
 // STL
 #include <algorithm>
 #include <exception>
+#include <functional>
 
 // System
 #include <assert.h>
@@ -415,13 +416,20 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
               PERSISTENT_EDITOR(OBJECT_VIEW_LIGHT_KIT_INTENSITY), true);
 
     // 2. Opacity - moved from ECV Object section (ParaView has this in View
-    // properties) Only show for renderable objects
-    if (m_currentObject && (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD) ||
-                            m_currentObject->isKindOf(CV_TYPES::MESH) ||
-                            m_currentObject->isKindOf(CV_TYPES::PRIMITIVE) ||
-                            m_currentObject->isKindOf(CV_TYPES::POLY_LINE) ||
-                            m_currentObject->isKindOf(CV_TYPES::FACET))) {
-        appendRow(ITEM(tr("Opacity")), PERSISTENT_EDITOR(OBJECT_OPACITY), true);
+    // properties) Show for renderable objects and folders (to control all
+    // children)
+    if (m_currentObject) {
+        bool isRenderable = (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD) ||
+                             m_currentObject->isKindOf(CV_TYPES::MESH) ||
+                             m_currentObject->isKindOf(CV_TYPES::PRIMITIVE) ||
+                             m_currentObject->isKindOf(CV_TYPES::POLY_LINE) ||
+                             m_currentObject->isKindOf(CV_TYPES::FACET));
+        bool isFolder = (m_currentObject->getChildrenNumber() > 0);
+
+        if (isRenderable || isFolder) {
+            appendRow(ITEM(tr("Opacity")), PERSISTENT_EDITOR(OBJECT_OPACITY),
+                      true);
+        }
     }
 
     // 3. Data Axes Grid - ParaView-style: checkbox with integrated Edit button
@@ -2220,7 +2228,44 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             QDoubleSpinBox* spinBox = container->findChild<QDoubleSpinBox*>();
 
             // Get current opacity from the object [0.0, 1.0]
+            // For folders, calculate average opacity from all renderable
+            // children
             float opacity = m_currentObject->getOpacity();
+
+            if (m_currentObject->getChildrenNumber() > 0) {
+                // This is a folder - calculate average opacity from renderable
+                // children
+                float totalOpacity = 0.0f;
+                int renderableCount = 0;
+
+                std::function<void(ccHObject*)> collectOpacity =
+                        [&collectOpacity, &totalOpacity,
+                         &renderableCount](ccHObject* obj) {
+                            if (!obj || !obj->isEnabled()) return;
+
+                            // Check if this is a renderable object
+                            if (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
+                                obj->isKindOf(CV_TYPES::MESH) ||
+                                obj->isKindOf(CV_TYPES::PRIMITIVE) ||
+                                obj->isKindOf(CV_TYPES::POLY_LINE) ||
+                                obj->isKindOf(CV_TYPES::FACET)) {
+                                totalOpacity += obj->getOpacity();
+                                renderableCount++;
+                            }
+
+                            // Recursively process children
+                            for (unsigned i = 0; i < obj->getChildrenNumber();
+                                 ++i) {
+                                collectOpacity(obj->getChild(i));
+                            }
+                        };
+
+                collectOpacity(m_currentObject);
+
+                if (renderableCount > 0) {
+                    opacity = totalOpacity / renderableCount;
+                }
+            }
 
             // Set both controls (slider triggers spinbox sync via signal)
             if (slider) {
@@ -2263,8 +2308,45 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
 
                         // Update visibility
                         props.visible = checked;
+
+                        // Bounds will be automatically recalculated in
+                        // SetDataAxesGridProperties if useCustomBounds is false
+                        // For parent nodes/folders, bounds will be calculated
+                        // from getDisplayBB_recursive(false) which includes all
+                        // children
                         ecvDisplayTools::TheInstance()
                                 ->setDataAxesGridProperties(viewID, props);
+
+                        // Immediately update bbox visibility for all selected
+                        // objects that use this viewID
+                        if (MainWindow::TheInstance()) {
+                            const ccHObject::Container& selectedEntities =
+                                    MainWindow::TheInstance()
+                                            ->getSelectedEntities();
+                            const ecvGui::ParamStruct& params =
+                                    ecvGui::Parameters();
+
+                            for (ccHObject* entity : selectedEntities) {
+                                if (entity && entity->getViewId() == viewID) {
+                                    CC_DRAW_CONTEXT context;
+                                    context.viewID = viewID;
+
+                                    // If axes grid is now visible, immediately
+                                    // hide bbox
+                                    if (checked) {
+                                        entity->hideBB(context);
+                                    } else {
+                                        // If axes grid is hidden, check if bbox
+                                        // should be shown
+                                        if (params.showBBOnSelected) {
+                                            entity->showBB(context);
+                                        } else {
+                                            entity->hideBB(context);
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         ecvDisplayTools::UpdateScreen();
                     });
@@ -2391,7 +2473,23 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     // for bbox
                     context.viewID = sensor->getViewId();
                     if (sensor->isSelected() && sensor->isEnabled()) {
-                        sensor->showBB(context);
+                        // Check if Axes Grid is visible - if so, hide
+                        // BoundingBox
+                        bool shouldShowBB = true;
+                        if (ecvDisplayTools::TheInstance()) {
+                            AxesGridProperties axesGridProps;
+                            ecvDisplayTools::TheInstance()
+                                    ->getDataAxesGridProperties(context.viewID,
+                                                                axesGridProps);
+                            if (axesGridProps.visible) {
+                                shouldShowBB = false;
+                            }
+                        }
+                        if (shouldShowBB) {
+                            sensor->showBB(context);
+                        } else {
+                            sensor->hideBB(context);
+                        }
                     } else {
                         sensor->hideBB(context);
                     }
@@ -2409,7 +2507,23 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     // for bbox
                     context.viewID = prim->getViewId();
                     if (prim->isSelected() && prim->isEnabled()) {
-                        prim->showBB(context);
+                        // Check if Axes Grid is visible - if so, hide
+                        // BoundingBox
+                        bool shouldShowBB = true;
+                        if (ecvDisplayTools::TheInstance()) {
+                            AxesGridProperties axesGridProps;
+                            ecvDisplayTools::TheInstance()
+                                    ->getDataAxesGridProperties(context.viewID,
+                                                                axesGridProps);
+                            if (axesGridProps.visible) {
+                                shouldShowBB = false;
+                            }
+                        }
+                        if (shouldShowBB) {
+                            prim->showBB(context);
+                        } else {
+                            prim->hideBB(context);
+                        }
                     } else {
                         prim->hideBB(context);
                     }
@@ -3138,41 +3252,107 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
     // Convert slider value [0, 100] to opacity [0.0, 1.0]
     float opacity = val / 100.0f;
 
-    // Check if opacity actually changed to avoid unnecessary updates
-    if (std::abs(m_currentObject->getOpacity() - opacity) < 0.001f) {
-        return;
+    // Check if this is a folder with children
+    if (m_currentObject->getChildrenNumber() > 0) {
+        // For folders, apply opacity to all renderable children recursively
+        std::function<void(ccHObject*, float)> applyOpacityRecursive =
+                [&applyOpacityRecursive](ccHObject* obj, float op) {
+                    if (!obj || !obj->isEnabled()) return;
+
+                    // Check if this is a renderable object
+                    bool isRenderable = (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
+                                         obj->isKindOf(CV_TYPES::MESH) ||
+                                         obj->isKindOf(CV_TYPES::PRIMITIVE) ||
+                                         obj->isKindOf(CV_TYPES::POLY_LINE) ||
+                                         obj->isKindOf(CV_TYPES::FACET));
+
+                    if (isRenderable) {
+                        // Check if opacity actually changed to avoid
+                        // unnecessary updates
+                        if (std::abs(obj->getOpacity() - op) >= 0.001f) {
+                            obj->setOpacity(op);
+
+                            // Determine entity type for proper property
+                            // application
+                            ENTITY_TYPE entityType =
+                                    ENTITY_TYPE::ECV_POINT_CLOUD;
+                            if (obj->isKindOf(CV_TYPES::POINT_CLOUD)) {
+                                entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
+                            } else if (obj->isKindOf(CV_TYPES::MESH) ||
+                                       obj->isKindOf(CV_TYPES::PRIMITIVE)) {
+                                entityType = ENTITY_TYPE::ECV_MESH;
+                            } else if (obj->isKindOf(CV_TYPES::POLY_LINE)) {
+                                entityType = ENTITY_TYPE::ECV_LINES_3D;
+                            } else if (obj->isKindOf(CV_TYPES::FACET)) {
+                                entityType = ENTITY_TYPE::ECV_MESH;
+                            }
+
+                            // Create property parameter and apply opacity
+                            // change
+                            PROPERTY_PARAM param(obj, static_cast<double>(op));
+                            param.entityType = entityType;
+                            param.viewId = obj->getViewId();
+                            param.viewport = 0;
+
+                            // Apply the opacity change via display tools
+                            ecvDisplayTools::ChangeEntityProperties(param,
+                                                                    true);
+                        }
+                    }
+
+                    // Recursively process children
+                    for (unsigned i = 0; i < obj->getChildrenNumber(); ++i) {
+                        applyOpacityRecursive(obj->getChild(i), op);
+                    }
+                };
+
+        applyOpacityRecursive(m_currentObject, opacity);
+
+        CVLog::PrintVerbose(
+                QString("[ccPropertiesTreeDelegate::opacityChanged] "
+                        "Set opacity to %1 for folder '%2' and all renderable "
+                        "children")
+                        .arg(opacity)
+                        .arg(m_currentObject->getName()));
+    } else {
+        // Single object - original behavior
+        // Check if opacity actually changed to avoid unnecessary updates
+        if (std::abs(m_currentObject->getOpacity() - opacity) < 0.001f) {
+            return;
+        }
+
+        // Store the new opacity in the object
+        m_currentObject->setOpacity(opacity);
+
+        // Determine entity type for proper property application
+        ENTITY_TYPE entityType = ENTITY_TYPE::ECV_POINT_CLOUD;  // Default
+
+        if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
+            entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
+        } else if (m_currentObject->isKindOf(CV_TYPES::MESH) ||
+                   m_currentObject->isKindOf(CV_TYPES::PRIMITIVE)) {
+            entityType = ENTITY_TYPE::ECV_MESH;
+        } else if (m_currentObject->isKindOf(CV_TYPES::POLY_LINE)) {
+            entityType = ENTITY_TYPE::ECV_LINES_3D;
+        } else if (m_currentObject->isKindOf(CV_TYPES::FACET)) {
+            entityType = ENTITY_TYPE::ECV_MESH;
+        }
+
+        // Create property parameter and apply opacity change
+        PROPERTY_PARAM param(m_currentObject, static_cast<double>(opacity));
+        param.entityType = entityType;
+        param.viewId = m_currentObject->getViewId();
+        param.viewport = 0;
+
+        // Apply the opacity change via display tools
+        ecvDisplayTools::ChangeEntityProperties(param, true);
+
+        CVLog::PrintVerbose(
+                QString("[ccPropertiesTreeDelegate::opacityChanged] "
+                        "Set opacity to %1 for object '%2'")
+                        .arg(opacity)
+                        .arg(m_currentObject->getName()));
     }
-
-    // Store the new opacity in the object
-    m_currentObject->setOpacity(opacity);
-
-    // Determine entity type for proper property application
-    ENTITY_TYPE entityType = ENTITY_TYPE::ECV_POINT_CLOUD;  // Default
-
-    if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
-        entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
-    } else if (m_currentObject->isKindOf(CV_TYPES::MESH) ||
-               m_currentObject->isKindOf(CV_TYPES::PRIMITIVE)) {
-        entityType = ENTITY_TYPE::ECV_MESH;
-    } else if (m_currentObject->isKindOf(CV_TYPES::POLY_LINE)) {
-        entityType = ENTITY_TYPE::ECV_LINES_3D;
-    } else if (m_currentObject->isKindOf(CV_TYPES::FACET)) {
-        entityType = ENTITY_TYPE::ECV_MESH;
-    }
-
-    // Create property parameter and apply opacity change
-    PROPERTY_PARAM param(m_currentObject, static_cast<double>(opacity));
-    param.entityType = entityType;
-    param.viewId = m_currentObject->getViewId();
-    param.viewport = 0;
-
-    // Apply the opacity change via display tools
-    ecvDisplayTools::ChangeEntityProperties(param, true);
-
-    CVLog::Print(QString("[ccPropertiesTreeDelegate::opacityChanged] "
-                         "Set opacity to %1 for object '%2'")
-                         .arg(opacity)
-                         .arg(m_currentObject->getName()));
 }
 
 void ccPropertiesTreeDelegate::applyImageViewport() {

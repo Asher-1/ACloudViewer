@@ -54,11 +54,13 @@ The following shows how to create a scene and compute ray intersections::
 )doc");
 
     // Constructors.
-    raycasting_scene.def(py::init<int64_t>(), "nthreads"_a = 0, R"doc(
+    raycasting_scene.def(py::init<int64_t, core::Device>(), "nthreads"_a = 0,
+                         "device"_a = core::Device("CPU:0"), R"doc(
 Create a RaycastingScene.
 
 Args:
     nthreads (int): The number of threads to use for building the scene. Set to 0 for automatic.
+    device (cloudViewer.core.Device): The device to use. Currently CPU and SYCL devices are supported.
 )doc");
 
     raycasting_scene.def(
