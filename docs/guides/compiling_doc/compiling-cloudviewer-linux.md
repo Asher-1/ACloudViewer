@@ -200,6 +200,13 @@ sudo apt install libudev-dev
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+
+export BUILD_PYTORCH_OPS=ON
+export DEVELOPER_BUILD=OFF
+export BUILD_SHARED_LIBS=OFF
+export BUILD_TENSORFLOW_OPS=OFF
+export CLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML
+
 cd ACloudViewer
 mkdir build
 cd build
@@ -244,6 +251,27 @@ python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 
 ```
 
+## Test
+```
+cd ${CLOUDVIEWER_SOURCE_ROOT}
+export BUILD_PYTORCH_OPS=ON
+export DEVELOPER_BUILD=OFF
+export BUILD_SHARED_LIBS=OFF
+export BUILD_TENSORFLOW_OPS=OFF
+export CLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML
+source util/ci_utils.sh
+
+test_wheel build/lib/python_package/pip_package/cloudviewer*
+
+# test c++ and python
+run_all_tests
+
+# test c++
+run_cpp_unit_tests
+
+# test python
+run_python_tests
+```
 
 ## Install
 

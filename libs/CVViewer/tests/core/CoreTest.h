@@ -63,6 +63,18 @@ public:
     static std::vector<int64_t> TestCases();
 };
 
+/// Check if CUDA is available (both compiled and runtime available).
+inline bool IsCUDAAvailable() {
+#ifdef BUILD_CUDA_MODULE
+    if (core::cuda::IsAvailable()) {
+        std::vector<core::Device> cuda_devices =
+                core::Device::GetAvailableCUDADevices();
+        return !cuda_devices.empty();
+    }
+#endif
+    return false;
+}
+
 /// Get a device for testing. Prefers CUDA if available, otherwise uses CPU.
 /// This function ensures the device is actually available before returning it.
 inline core::Device GetTestDevice() {

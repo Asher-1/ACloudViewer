@@ -166,6 +166,7 @@ html_theme_options = {
     },
     "sidebar_hide_name": False,
     "navigation_with_keys": True,
+    "top_of_page_button": None,  # Hide "back to top" button (we have our own)
 }
 
 # The name for this set of Sphinx documents.  If None, it defaults to
