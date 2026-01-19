@@ -140,6 +140,7 @@ conda activate python3.12
 
 bash
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
+export BUILD_PYTORCH_OPS=ON
 source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 install_python_dependencies with-unit-test purge-cache
 
@@ -199,6 +200,28 @@ make "-j$(nproc)" python-package
 make "-j$(nproc)" pip-package
 make "-j$(nproc)" install-pip-package
 python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
+```
+
+## Test
+```
+cd ${CLOUDVIEWER_SOURCE_ROOT}
+export BUILD_PYTORCH_OPS=ON
+export DEVELOPER_BUILD=OFF
+export BUILD_SHARED_LIBS=OFF
+export BUILD_TENSORFLOW_OPS=OFF
+export CLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML
+source util/ci_utils.sh
+
+test_wheel build/lib/python_package/pip_package/cloudviewer*
+
+# test c++ and python
+run_all_tests
+
+# test c++
+run_cpp_unit_tests
+
+# test python
+run_python_tests
 ```
 
 ## Install

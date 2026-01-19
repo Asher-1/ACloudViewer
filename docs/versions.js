@@ -1,4 +1,4 @@
-/* Version switcher for ACloudViewer documentation */
+// ACloudViewer Documentation Version Switcher
 // This file provides version selection functionality for documentation pages
 // Similar to Open3D's version management system
 
@@ -134,6 +134,26 @@
                     border-color: #0066cc;
                     box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
                 }
+                .version-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 10px;
+                }
+                .version-table td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                }
+                .version-table td a {
+                    color: #0066cc;
+                    text-decoration: none;
+                }
+                .version-table td a:hover {
+                    text-decoration: underline;
+                }
+                .version-table tr:hover {
+                    background: #f5f5f5;
+                }
             </style>
             <label for="version-select">Documentation Version:</label>
             <select id="version-select" onchange="ACloudViewerVersionSwitcher.switchVersion(this.value)">
@@ -158,33 +178,10 @@
 
         // Load versions asynchronously
         loadVersions().then(() => {
-            // Create and insert version selector (for fixed position)
+            // Create and insert version selector
             const selector = createVersionSelector();
             document.body.appendChild(selector);
-            
-            // Dispatch event to notify sidebar version selector
-            const event = new CustomEvent('versionsLoaded', { 
-                detail: { versions: VERSIONS, currentVersion: getCurrentVersion() }
-            });
-            document.dispatchEvent(event);
         });
-    }
-
-    // Update sidebar version selector
-    function updateSidebarSelector() {
-        const select = document.getElementById('docs-version-select-sidebar');
-        if (select) {
-            select.innerHTML = '';
-            VERSIONS.forEach(v => {
-                const option = document.createElement('option');
-                option.value = v.value;
-                option.textContent = v.display;
-                if (v.value === getCurrentVersion() || (getCurrentVersion() === 'latest' && v.value === 'latest')) {
-                    option.selected = true;
-                }
-                select.appendChild(option);
-            });
-        }
     }
 
     // Export functions to global scope
@@ -192,14 +189,10 @@
         switchVersion: switchVersion,
         getCurrentVersion: getCurrentVersion,
         getVersions: () => VERSIONS,
-        updateSidebarSelector: updateSidebarSelector,
         init: init
     };
 
     // Auto-initialize
     init();
-    
-    // Listen for versions loaded event to update sidebar
-    document.addEventListener('versionsLoaded', updateSidebarSelector);
 })();
 

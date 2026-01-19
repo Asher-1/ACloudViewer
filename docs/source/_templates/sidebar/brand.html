@@ -1,0 +1,104 @@
+{# Furo theme sidebar brand template with version selector #}
+{# Add version selector below the brand/logo #}
+
+<div class="sidebar-brand">
+  <a href="{{ pathto(master_doc) }}">
+    {%- if logo %}
+      <img src="{{ pathto('_static/' + logo, 1) }}" class="logo" alt="{{ project }}"/>
+    {%- endif %}
+    <span class="sidebar-brand-text">{{ project }}</span>
+  </a>
+</div>
+
+{# Version selector similar to Open3D #}
+<div class="sidebar-version-selector">
+  <label for="docs-version-select-sidebar" class="version-label">Docs Version</label>
+  <select id="docs-version-select-sidebar" class="version-select-sidebar" onchange="ACloudViewerVersionSwitcher.switchVersion(this.value)">
+    <option value="latest">Latest (main)</option>
+    <!-- Versions will be dynamically loaded by version_switch.js -->
+  </select>
+</div>
+
+<style>
+.sidebar-version-selector {
+  margin: 1em 0.5em;
+  padding: 0.75em;
+  background: var(--color-sidebar-background);
+  border-radius: 6px;
+  border: 1px solid var(--color-sidebar-item-background--hover);
+}
+
+.sidebar-version-selector .version-label {
+  display: block;
+  font-size: 0.85em;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  color: var(--color-sidebar-caption-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.version-select-sidebar {
+  width: 100%;
+  padding: 0.5em;
+  border: 1px solid var(--color-sidebar-item-background--hover);
+  border-radius: 4px;
+  background: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+  font-size: 0.9em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.version-select-sidebar:hover {
+  border-color: var(--color-brand-primary);
+  background: var(--color-sidebar-item-background--hover);
+}
+
+.version-select-sidebar:focus {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .sidebar-version-selector {
+    background: var(--color-sidebar-background);
+    border-color: var(--color-sidebar-item-background--hover);
+  }
+}
+</style>
+
+<script>
+// Initialize version selector in sidebar when DOM is ready
+(function() {
+  function initVersionSelector() {
+    const select = document.getElementById('docs-version-select-sidebar');
+    if (!select) return;
+    
+    if (window.ACloudViewerVersionSwitcher) {
+      // Use the version switcher's update function
+      window.ACloudViewerVersionSwitcher.updateSidebarSelector();
+    } else {
+      // Retry after a short delay
+      setTimeout(initVersionSelector, 200);
+    }
+  }
+  
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initVersionSelector);
+  } else {
+    initVersionSelector();
+  }
+  
+  // Listen for versions loaded event
+  document.addEventListener('versionsLoaded', function() {
+    if (window.ACloudViewerVersionSwitcher) {
+      window.ACloudViewerVersionSwitcher.updateSidebarSelector();
+    }
+  });
+})();
+</script>
+

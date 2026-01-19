@@ -561,3 +561,184 @@ function Test-Wheel {
 
     deactivate
 }
+
+function Run-PythonTests {
+    param (
+        [Parameter(Mandatory=$false)]
+        [string]$wheel_path = ""
+    )
+
+    # Create venv if it doesn't exist
+    if (-not (Test-Path "cloudViewer_test.venv")) {
+        Write-Host "Creating virtual environment cloudViewer_test.venv..."
+        python -m venv cloudViewer_test.venv
+    }
+    
+    # Activate venv
+    & .\cloudViewer_test.venv\Scripts\Activate.ps1
+    
+    # Install test requirements
+    python -m pip install -U pip
+    $testReqPath = Join-Path $CLOUDVIEWER_SOURCE_ROOT "python\requirements_test.txt"
+    Install-Requirements $testReqPath
+    
+    # Install cloudViewer if not already installed
+    $cloudViewerInstalled = $false
+    try {
+        python -c "import cloudViewer" 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $cloudViewerInstalled = $true
+        }
+    } catch {
+        $cloudViewerInstalled = $false
+    }
+    
+    if (-not $cloudViewerInstalled) {
+        if ($wheel_path) {
+            Write-Host "Installing CloudViewer from wheel: $wheel_path"
+            python -m pip install $wheel_path
+        } else {
+            Write-Warning "cloudViewer not installed and no wheel_path provided. Tests may fail."
+        }
+    }
+    
+    Write-Host "Add --randomly-seed=SEED to the test command to reproduce test order."
+    $testPath = Join-Path $CLOUDVIEWER_SOURCE_ROOT "python\test"
+    $pytestArgs = @($testPath)
+    
+    # Check if ML ops should be tested
+    # TODO: not supported for now
+    $mlOpsPath = Join-Path $CLOUDVIEWER_SOURCE_ROOT "python\test\ml_ops"
+    $pytestArgs += @("--ignore", $mlOpsPath)
+    
+    # Run pytest with verbose output
+    Write-Host "======================================================================"
+    Write-Host "Running Python Unit Tests"
+    Write-Host "======================================================================"
+    python -m pytest -v $pytestArgs
+    $pytestResult = $LASTEXITCODE
+    
+    Write-Host ""
+    if ($pytestResult -eq 0) {
+        Write-Host "======================================================================"
+        Write-Host "Python Unit Tests: PASSED"
+        Write-Host "======================================================================"
+    } else {
+        Write-Host "======================================================================"
+        Write-Host "Python Unit Tests: FAILED (exit code: $pytestResult)"
+        Write-Host "======================================================================"
+    }
+    
+    deactivate
+    
+    return $pytestResult
+}
+
+function Run-CppUnitTests {
+    param (
+        [Parameter(Mandatory=$false)]
+        [string]$Config = "Release"
+    )
+
+    Write-Host "======================================================================"
+    Write-Host "Running C++ Unit Tests"
+    Write-Host "======================================================================"
+    
+    $originalLocation = Get-Location
+    $buildDir = Join-Path $CLOUDVIEWER_SOURCE_ROOT "build"
+    
+    if (-not (Test-Path $buildDir)) {
+        Write-Host "Error: build directory not found at $buildDir"
+        Write-Host "Please build the project first"
+        return 1
+    }
+    
+    Push-Location $buildDir
+    
+    # Check if tests executable exists
+    $testExe = Join-Path $buildDir "bin\$Config\tests.exe"
+    if (-not (Test-Path $testExe)) {
+        Write-Host "Error: tests executable not found at $testExe"
+        Write-Host "Please build with -DBUILD_UNIT_TESTS=ON"
+        Pop-Location
+        return 1
+    }
+    
+    # Set test flags
+    $unitTestFlags = @("--gtest_shuffle")
+    if ($env:LOW_MEM_USAGE -eq "ON") {
+        $unitTestFlags += "--gtest_filter=-*Reduce*Sum*"
+    }
+    
+    $flagsString = $unitTestFlags -join " "
+    Write-Host "Test flags: $flagsString"
+    Write-Host "Tip: Run '$testExe $flagsString --gtest_random_seed=SEED' to repeat this test sequence."
+    Write-Host ""
+    
+    # Run the tests
+    & $testExe $unitTestFlags
+    $testResult = $LASTEXITCODE
+    
+    Write-Host ""
+    if ($testResult -eq 0) {
+        Write-Host "======================================================================"
+        Write-Host "C++ Unit Tests: PASSED"
+        Write-Host "======================================================================"
+    } else {
+        Write-Host "======================================================================"
+        Write-Host "C++ Unit Tests: FAILED (exit code: $testResult)"
+        Write-Host "======================================================================"
+    }
+    
+    Pop-Location
+    
+    return $testResult
+}
+
+function Run-AllTests {
+    param (
+        [Parameter(Mandatory=$false)]
+        [string]$wheel_path = "",
+        [Parameter(Mandatory=$false)]
+        [string]$Config = "Release"
+    )
+
+    Write-Host "======================================================================"
+    Write-Host "Running All Tests (C++ and Python)"
+    Write-Host "======================================================================"
+    Write-Host ""
+    
+    $cppResult = 0
+    $pythonResult = 0
+    
+    # Run C++ tests if BUILD_UNIT_TESTS is ON
+    Run-CppUnitTests -Config $Config
+    $cppResult = $LASTEXITCODE
+    
+    # Run Python tests if venv exists or can be created
+    $venvPath = Join-Path $CLOUDVIEWER_SOURCE_ROOT "cloudViewer_test.venv"
+    if ((Test-Path $venvPath) -or (Get-Command python -ErrorAction SilentlyContinue)) {
+        Run-PythonTests -wheel_path $wheel_path
+        $pythonResult = $LASTEXITCODE
+    } else {
+        Write-Host "Skipping Python tests: Python environment not available"
+        Write-Host ""
+    }
+    
+    # Summary
+    Write-Host ""
+    Write-Host "======================================================================"
+    Write-Host "Test Summary"
+    Write-Host "======================================================================"
+    $cppStatus = if ($cppResult -eq 0) { "PASSED" } else { "FAILED" }
+    $pythonStatus = if ($pythonResult -eq 0) { "PASSED" } else { "FAILED" }
+    Write-Host "C++ Tests:    $cppStatus"
+    Write-Host "Python Tests: $pythonStatus"
+    Write-Host "======================================================================"
+    
+    # Return non-zero if any test failed
+    if ($cppResult -ne 0 -or $pythonResult -ne 0) {
+        return 1
+    }
+    return 0
+}
