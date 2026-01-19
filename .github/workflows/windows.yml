@@ -484,6 +484,9 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           cloudViewer_test.venv\Scripts\Activate.ps1
+          python -V
+          echo "Installing test dependencies..."
+          python -m pip install -r python/requirements_test.txt
           echo "Running CloudViewer python tests (CPU)..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
@@ -509,6 +512,9 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           cloudViewer_test.venv\Scripts\Activate.ps1
+          echo "Installing test dependencies..."
+          python -V
+          python -m pip install -r python/requirements_test.txt
           echo "Running CloudViewer python tests (CUDA)..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"

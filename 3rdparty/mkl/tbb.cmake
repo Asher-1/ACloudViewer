@@ -29,9 +29,29 @@ set(TBB_STRICT OFF CACHE BOOL "Treat compiler warnings as errors")
 # Disable tbbbind on Windows - it tries to link pthread.lib which doesn't exist on Windows
 # oneTBB uses TBB_BUILD_BIND option to control tbbbind build
 if(WIN32)
-    set(TBB_BUILD_BIND OFF CACHE BOOL "Enable tbbbind build (disabled on Windows).")
+    set(TBB_BUILD_BIND OFF CACHE BOOL "Enable tbbbind build (disabled on Windows)." FORCE)
+    # Also disable hwloc detection to prevent tbbbind from being enabled
+    set(TBB_FIND_HWLOC OFF CACHE BOOL "Find hwloc library (disabled on Windows)." FORCE)
 endif()
 FetchContent_MakeAvailable(ext_tbb)
+# Explicitly disable tbbbind targets on Windows if they were created
+# This is a safety measure in case TBB_BUILD_BIND setting didn't take effect
+if(WIN32)
+    if(TARGET tbbbind_2_5)
+        set_target_properties(tbbbind_2_5 PROPERTIES EXCLUDE_FROM_ALL TRUE EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+        # Remove any dependencies on tbbbind to prevent it from being built
+        get_target_property(tbbbind_deps tbbbind_2_5 LINK_LIBRARIES)
+        if(tbbbind_deps)
+            list(REMOVE_ITEM tbbbind_deps pthread)
+            set_target_properties(tbbbind_2_5 PROPERTIES LINK_LIBRARIES "${tbbbind_deps}")
+        endif()
+        message(STATUS "Disabled tbbbind_2_5 target on Windows to avoid pthread.lib dependency")
+    endif()
+    if(TARGET tbbbind)
+        set_target_properties(tbbbind PROPERTIES EXCLUDE_FROM_ALL TRUE EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+        message(STATUS "Disabled tbbbind target on Windows to avoid pthread.lib dependency")
+    endif()
+endif()
 set(BUILD_SHARED_LIBS ${_build_shared_libs})
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ${_win_exp_all_syms})
 
