@@ -11,6 +11,8 @@ import pytest
 from collections import namedtuple
 import importlib
 from types import SimpleNamespace
+import urllib.request
+import io
 
 # skip all tests if the ml ops were not built
 have_tf = importlib.util.find_spec("tensorflow") is not None
@@ -23,23 +25,31 @@ default_marks = [
                        reason='PyTorch and Tensorflow not installed.'),
 ]
 
-MLModules = namedtuple('MLModules',
-                       ['module', 'ops', 'layers', 'device', 'cpu_device'])
+MLModules = namedtuple('MLModules', [
+    'module', 'ops', 'layers', 'classes', 'device', 'cpu_device',
+    'device_is_gpu'
+])
 
 # define the list of frameworks and devices for running the ops
 _ml_modules = {}
 try:
-    tf = importlib.import_module('tensorflow')
+    # Suppress deprecated imp module warnings caused by tensorflow,
+    # see https://github.com/tensorflow/tensorflow/issues/31412
+    import warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        tf = importlib.import_module('tensorflow')
     ml3d_ops = importlib.import_module('cloudViewer.ml.tf.ops')
     ml3d_layers = importlib.import_module('cloudViewer.ml.tf.layers')
-    _ml_modules['tf'] = MLModules(tf, ml3d_ops, ml3d_layers, 'CPU:0', 'CPU:0')
+    _ml_modules['tf'] = MLModules(tf, ml3d_ops, ml3d_layers, None, 'CPU:0',
+                                  'CPU:0', False)
     # check for GPUs and set memory growth to prevent tf from allocating all memory
     tf_gpu_devices = tf.config.experimental.list_physical_devices('GPU')
     for dev in tf_gpu_devices:
         tf.config.experimental.set_memory_growth(dev, True)
     if tf_gpu_devices and cv3d._build_config['BUILD_CUDA_MODULE']:
-        _ml_modules['tf_gpu'] = MLModules(tf, ml3d_ops, ml3d_layers, 'GPU:0',
-                                          'CPU:0')
+        _ml_modules['tf_gpu'] = MLModules(tf, ml3d_ops, ml3d_layers, None,
+                                          'GPU:0', 'CPU:0', True)
 except ImportError:
     pass
 
@@ -47,10 +57,12 @@ try:
     torch = importlib.import_module('torch')
     ml3d_ops = importlib.import_module('cloudViewer.ml.torch.ops')
     ml3d_layers = importlib.import_module('cloudViewer.ml.torch.layers')
-    _ml_modules['torch'] = MLModules(torch, ml3d_ops, ml3d_layers, 'cpu', 'cpu')
+    ml3d_classes = importlib.import_module('cloudViewer.ml.torch.classes')
+    _ml_modules['torch'] = MLModules(torch, ml3d_ops, ml3d_layers, ml3d_classes,
+                                     'cpu', 'cpu', False)
     if torch.cuda.is_available() and cv3d._build_config['BUILD_CUDA_MODULE']:
         _ml_modules['torch_cuda'] = MLModules(torch, ml3d_ops, ml3d_layers,
-                                              'cuda', 'cpu')
+                                              ml3d_classes, 'cuda', 'cpu', True)
 except ImportError:
     pass
 
@@ -187,13 +199,94 @@ def run_op_grad(ml, device_name, check_device, fn, x, y_attr_name,
     return to_numpy(dy_dx)
 
 
+class MLTensor:
+    """Class for dealing with ml framework specific tensors and rng.
+
+    Args:
+        module: Either the tensorflow or torch module
+    """
+
+    def __init__(self, module):
+        self.module = module
+
+    def get_dtype(self, dtype_str):
+        return getattr(self.module, dtype_str)
+
+    def set_seed(self, seed):
+        if self.module.__name__ == 'tensorflow':
+            self.module.random.set_seed(seed)
+        elif self.module.__name__ == 'torch':
+            self.module.manual_seed(seed)
+        else:
+            raise Exception('Unsupported ml framework')
+
+    def set_deterministic(self, deterministic):
+        if self.module.__name__ == 'tensorflow':
+            pass
+        elif self.module.__name__ == 'torch':
+            self.module.set_deterministic(deterministic)
+        else:
+            raise Exception('Unsupported ml framework')
+
+    def random_uniform(self, size, dtype, minval=0, maxval=1):
+        if isinstance(dtype, str):
+            dtype = self.get_dtype(dtype)
+        if self.module.__name__ == 'tensorflow':
+            return self.module.random.uniform(shape=size,
+                                              dtype=dtype,
+                                              minval=minval,
+                                              maxval=maxval)
+        elif self.module.__name__ == 'torch':
+            ans = self.module.empty(size=size, dtype=dtype)
+            return ans.uniform_(minval, maxval)
+        else:
+            raise Exception('Unsupported ml framework')
+
+    def empty(self, shape, dtype):
+        if isinstance(dtype, str):
+            dtype = self.get_dtype(dtype)
+        if self.module.__name__ == 'tensorflow':
+            return self.module.zeros(shape=shape, dtype=dtype)
+        elif self.module.__name__ == 'torch':
+            return self.module.empty(size=shape, dtype=dtype)
+        else:
+            raise Exception('Unsupported ml framework')
+
+    def zeros(self, shape, dtype):
+        if isinstance(dtype, str):
+            dtype = self.get_dtype(dtype)
+        if self.module.__name__ == 'tensorflow':
+            return self.module.zeros(shape=shape, dtype=dtype)
+        elif self.module.__name__ == 'torch':
+            return self.module.zeros(size=shape, dtype=dtype)
+        else:
+            raise Exception('Unsupported ml framework')
+
+
 # add parameterizations for the ml module and the device
 parametrize = SimpleNamespace(
     ml=pytest.mark.parametrize('ml', _ml_modules.values()),
     ml_cpu_only=pytest.mark.parametrize(
-        'ml',
-        [v for k, v in _ml_modules.items() if v.device in ('CPU:0', 'cpu')]),
+        'ml', [v for k, v in _ml_modules.items() if not v.device_is_gpu]),
     ml_gpu_only=pytest.mark.parametrize(
+        'ml', [v for k, v in _ml_modules.items() if v.device_is_gpu]),
+    ml_torch_only=pytest.mark.parametrize(
         'ml',
-        [v for k, v in _ml_modules.items() if is_gpu_device_name(v.device)]),
+        [v for k, v in _ml_modules.items() if v.module.__name__ == 'torch']),
+    ml_tf_only=pytest.mark.parametrize('ml', [
+        v for k, v in _ml_modules.items() if v.module.__name__ == 'tensorflow'
+    ]),
 )
+
+
+def fetch_numpy(url):
+    # prevents security issue
+    if url.lower().startswith('http'):
+        req = urllib.request.Request(url)
+    else:
+        raise ValueError from None
+
+    with urllib.request.urlopen(req) as response:  #nosec
+        np_file = response.read()
+        return np.load(io.BytesIO(np_file))
+    return None

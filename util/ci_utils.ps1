@@ -513,7 +513,7 @@ function Test-Wheel {
     python -m pip --version
 
     Write-Host "Installing CloudViewer wheel $wheel_path in virtual environment..."
-    python -m pip install $wheel_path
+    python -m pip install --upgrade $wheel_path
 
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
@@ -600,23 +600,46 @@ function Run-PythonTests {
         $cloudViewerInstalled = $false
     }
     
-    if (-not $cloudViewerInstalled) {
-        if ($wheel_path) {
-            Write-Host "Installing CloudViewer from wheel: $wheel_path"
-            python -m pip install $wheel_path
-        } else {
-            Write-Warning "cloudViewer not installed and no wheel_path provided. Tests may fail."
-        }
+    # Install cloudViewer from wheel if provided
+    if ($wheel_path) {
+        python -m pip install --upgrade $wheel_path
+    } elseif (-not $cloudViewerInstalled) {
+        Write-Warning "cloudViewer not installed and no wheel_path provided. Tests may fail."
     }
     
     Write-Host "Add --randomly-seed=SEED to the test command to reproduce test order."
     $testPath = Join-Path $CLOUDVIEWER_SOURCE_ROOT "python\test"
     $pytestArgs = @($testPath)
     
-    # Check if ML ops should be tested
-    # TODO: not supported for now
-    $mlOpsPath = Join-Path $CLOUDVIEWER_SOURCE_ROOT "python\test\ml_ops"
-    $pytestArgs += @("--ignore", $mlOpsPath)
+    # Check if ML ops should be tested by checking build configuration
+    # This checks the actual installed cloudViewer package, not environment variables
+    $HAVE_PYTORCH_OPS = $false
+    $HAVE_TENSORFLOW_OPS = $false
+    try {
+        python -c "import sys, cloudViewer; sys.exit(not cloudViewer._build_config['BUILD_PYTORCH_OPS'])" 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $HAVE_PYTORCH_OPS = $true
+        }
+    } catch {
+        $HAVE_PYTORCH_OPS = $false
+    }
+    
+    try {
+        python -c "import sys, cloudViewer; sys.exit(not cloudViewer._build_config['BUILD_TENSORFLOW_OPS'])" 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $HAVE_TENSORFLOW_OPS = $true
+        }
+    } catch {
+        $HAVE_TENSORFLOW_OPS = $false
+    }
+    
+    if (-not $HAVE_PYTORCH_OPS -and -not $HAVE_TENSORFLOW_OPS) {
+        Write-Host "ML Ops not built, skipping ml_ops tests"
+        $mlOpsPath = Join-Path $CLOUDVIEWER_SOURCE_ROOT "python\test\ml_ops"
+        $pytestArgs += @("--ignore", $mlOpsPath)
+    } else {
+        Write-Host "ML Ops built (PyTorch: $HAVE_PYTORCH_OPS, TensorFlow: $HAVE_TENSORFLOW_OPS), including ml_ops tests"
+    }
     
     # Run pytest with verbose output
     Write-Host "======================================================================"
