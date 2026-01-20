@@ -169,6 +169,11 @@ html_theme_options = {
     "top_of_page_button": None,  # Hide "back to top" button (we have our own)
 }
 
+# Configure sidebar to use custom brand template with version selector
+# Furo theme automatically uses templates in _templates/sidebar/ directory
+# The brand.html template will be automatically picked up by Furo
+# No need to explicitly configure html_sidebars unless we want custom order
+
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
 # html_title = None
