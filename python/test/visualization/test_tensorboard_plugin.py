@@ -59,8 +59,7 @@ def _safe_rmtree(path, max_retries=3, retry_delay=0.5):
                 warnings.warn(
                     f"Failed to remove {path} after {max_retries} attempts: {e}. "
                     "The directory may be cleaned up later by the OS.",
-                    RuntimeWarning
-                )
+                    RuntimeWarning)
 
 
 @pytest.fixture
@@ -253,14 +252,14 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     assert filenames[0][0].startswith(filenames_ref[0][0][:20])
     assert sorted(x.split('.')[0] for x in filenames[2]) == tags_ref
     assert all(fn.endswith('.msgpack') for fn in filenames[2])
-    
+
     # Explicitly close the writer to release file handles, especially important on Windows
     # This prevents PermissionError when pytest's tmp_path tries to clean up the directory
     writer.close()
     # Additional sleep on Windows to ensure file handles are fully released
     if sys.platform == "win32":
         sleep(0.5)
-    
+
     # Note: The event file written during this test cannot be reliably verified
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
@@ -281,7 +280,8 @@ def test_pytorch_summary(geometry_data, tmp_path):
 
     try:
         rng = np.random.default_rng()
-        tensor_converter = (torch.from_numpy, cv3d.core.Tensor.from_numpy, np.array)
+        tensor_converter = (torch.from_numpy, cv3d.core.Tensor.from_numpy,
+                            np.array)
 
         cube, material = geometry_data['cube'], geometry_data['material']
         cube_custom_prop = geometry_data['cube_custom_prop']
@@ -309,8 +309,12 @@ def test_pytorch_summary(geometry_data, tmp_path):
                     # skip material scalar and vector props
                     if (not prop.startswith("material_") or
                             prop.startswith("material_texture_map_")):
-                        cube_summary[prop] = rng.choice(tensor_converter)(tensor)
-            writer.add_3d('cube', cube_summary, step=step, max_outputs=max_outputs)
+                        cube_summary[prop] = rng.choice(tensor_converter)(
+                            tensor)
+            writer.add_3d('cube',
+                          cube_summary,
+                          step=step,
+                          max_outputs=max_outputs)
             for key in tuple(cube_summary):  # Convert to PointCloud
                 if key.startswith(('triangle_', 'material_texture_map_')):
                     cube_summary.pop(key)
@@ -369,7 +373,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
         # Additional sleep on Windows to ensure file handles are fully released
         if sys.platform == "win32":
             sleep(0.5)
-        
+
         # Note: The event file written during this test cannot be reliably verified
         # in the same Python process, since it's usually buffered by GFile / Python
         # / OS and written to disk in increments of the filesystem blocksize.
@@ -420,16 +424,16 @@ def logdir():
     )
 
     yield test_data.extract_dir
-    
+
     # Force garbage collection to close any open file handles before cleanup
     # This is especially important on Windows where open file handles prevent deletion
     import gc
     gc.collect()
-    
+
     # Additional sleep on Windows to ensure file handles are fully released
     if sys.platform == "win32":
         sleep(0.5)
-    
+
     # Use retry mechanism for Windows file locking issues
     _safe_rmtree(test_data.extract_dir)
 
