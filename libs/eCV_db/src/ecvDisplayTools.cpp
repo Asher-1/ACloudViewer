@@ -1444,27 +1444,121 @@ void ecvDisplayTools::SetView(CC_VIEW_ORIENTATION orientation, ccBBox* bbox) {
 }
 
 void ecvDisplayTools::SetView(CC_VIEW_ORIENTATION orientation,
-                              bool forceRedraw /*=true*/) {
+                              bool forceRedraw /*=false*/) {
+    // may be useless
     bool wasViewerBased =
             !s_tools.instance->m_viewportParams.objectCenteredView;
-    if (wasViewerBased)
+    if (wasViewerBased) {
         SetPerspectiveState(s_tools.instance->m_viewportParams.perspectiveView,
                             true);
-
+    }
     s_tools.instance->m_viewportParams.viewMat = GenerateViewMat(orientation);
-
-    if (wasViewerBased)
+    if (wasViewerBased) {
         SetPerspectiveState(s_tools.instance->m_viewportParams.perspectiveView,
                             false);
+    }
 
-    InvalidateVisualization();
-    Deprecate3DLayer();
-
-    // we emit the 'baseViewMatChanged' signal
     emit s_tools.instance->baseViewMatChanged(
             s_tools.instance->m_viewportParams.viewMat);
     emit s_tools.instance->cameraParamChanged();
-    if (forceRedraw) RedrawDisplay();
+    // may be useless
+
+    // Get current camera parameters to preserve zoom/distance
+    double currentPos[3], currentFocal[3];
+    GetCameraPos(currentPos);
+    GetCameraFocal(currentFocal);
+
+    CCVector3d currentCameraPos(currentPos[0], currentPos[1], currentPos[2]);
+    CCVector3d currentFocalPoint(currentFocal[0], currentFocal[1],
+                                 currentFocal[2]);
+
+    // Calculate current distance from camera to focal point (this represents
+    // the zoom level)
+    CCVector3d currentViewDir = currentFocalPoint - currentCameraPos;
+    double currentDistance = currentViewDir.norm();
+
+    // If distance is too small or invalid, use a default distance
+    if (currentDistance < 1e-6) {
+        currentDistance = 1.0;
+    }
+
+    // Generate view direction and up vector for the new orientation
+    CCVector3d eye(0, 0, 0);
+    CCVector3d center(0, 0, 0);
+    CCVector3d top(0, 0, 0);
+
+    switch (orientation) {
+        case CC_TOP_VIEW:
+            eye.z = 1.0;
+            top.y = 1.0;
+            break;
+        case CC_BOTTOM_VIEW:
+            eye.z = -1.0;
+            top.y = 1.0;
+            break;
+        case CC_FRONT_VIEW:
+            eye.y = -1.0;
+            top.z = 1.0;
+            break;
+        case CC_BACK_VIEW:
+            eye.y = 1.0;
+            top.z = 1.0;
+            break;
+        case CC_LEFT_VIEW:
+            eye.x = -1.0;
+            top.z = 1.0;
+            break;
+        case CC_RIGHT_VIEW:
+            eye.x = 1.0;
+            top.z = 1.0;
+            break;
+        case CC_ISO_VIEW_1:
+            eye.x = -1.0;
+            eye.y = -1.0;
+            eye.z = 1.0;
+            top.x = 1.0;
+            top.y = 1.0;
+            top.z = 1.0;
+            break;
+        case CC_ISO_VIEW_2:
+            eye.x = 1.0;
+            eye.y = 1.0;
+            eye.z = 1.0;
+            top.x = -1.0;
+            top.y = -1.0;
+            top.z = 1.0;
+            break;
+        default:
+            return;
+    }
+
+    // Normalize the view direction
+    CCVector3d newViewDir = center - eye;
+    newViewDir.normalize();
+
+    // Normalize the up vector
+    top.normalize();
+
+    // Calculate new camera position: keep the focal point, move camera along
+    // new view direction The new camera position = focal point - (view
+    // direction * distance) This preserves the zoom level (distance) while
+    // changing only the orientation
+    CCVector3d newCameraPos = currentFocalPoint - newViewDir * currentDistance;
+
+    // Set camera with new orientation but preserved distance and focal point
+    SetCameraPosition(newCameraPos.x, newCameraPos.y, newCameraPos.z,
+                      currentFocalPoint.x, currentFocalPoint.y,
+                      currentFocalPoint.z, top.x, top.y, top.z);
+
+    InvalidateViewport();
+    InvalidateVisualization();
+    Deprecate3DLayer();
+    // Update screen without changing zoom
+    if (forceRedraw) {
+        RedrawDisplay();
+    } else {
+        UpdateScreen();
+    }
 }
 
 inline float RoundScale(float equivalentWidth) {
@@ -1845,9 +1939,6 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
         RedrawDisplay();
     }
 
-    ResetCamera(&zoomedBox);
-    UpdateScreen();
-
     // we get the bounding-box diagonal length
     double bbDiag = static_cast<double>(zoomedBox.getDiagNorm());
 
@@ -1855,6 +1946,18 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
         CVLog::Warning("[ecvDisplayTools] Entity/DB has a null bounding-box!");
         return;
     }
+
+    // Add margin to bounding box to ensure objects are fully visible
+    // and not clipped at the edges (default 10% margin)
+    const double margin = 1.1;  // 10% margin on all sides
+    if (margin > 1.0) {
+        CCVector3d centerVec = CCVector3d::fromArray(zoomedBox.getCenter().u);
+        Eigen::Vector3d center(centerVec.x, centerVec.y, centerVec.z);
+        zoomedBox.Scale(margin, center);
+    }
+
+    ResetCamera(&zoomedBox);
+    UpdateScreen();
 
     // we compute the pixel size (in world coordinates)
     {
