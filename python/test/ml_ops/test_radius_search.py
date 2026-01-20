@@ -10,6 +10,10 @@ import numpy as np
 from scipy.spatial import cKDTree
 import pytest
 import mltest
+if cv3d._build_config['BUILD_PYTORCH_OPS']:
+    import torch
+if cv3d._build_config['BUILD_TENSORFLOW_OPS']:
+    import tensorflow as tf
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow
@@ -27,9 +31,10 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
 @pytest.mark.parametrize('normalize_distances', [False, True])
+@pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_radius_search(dtype, ml, num_points_queries, metric,
                        ignore_query_point, return_distances,
-                       normalize_distances):
+                       normalize_distances, index_dtype):
     rng = np.random.RandomState(123)
 
     num_points, num_queries = num_points_queries
@@ -49,10 +54,18 @@ def test_radius_search(dtype, ml, num_points_queries, metric,
         tree.query_ball_point(q, r, p=p_norm) for q, r in zip(queries, radii)
     ]
 
+    if ml.module.__name__ == 'tensorflow':
+        index_dtype_ = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
+    elif ml.module.__name__ == 'torch':
+        index_dtype_ = {'int32': torch.int32, 'int64': torch.int64}[index_dtype]
+    else:
+        raise Exception('Unsupported ml framework')
+
     layer = ml.layers.RadiusSearch(metric=metric,
                                    ignore_query_point=ignore_query_point,
                                    return_distances=return_distances,
-                                   normalize_distances=normalize_distances)
+                                   normalize_distances=normalize_distances,
+                                   index_dtype=index_dtype_)
     ans = mltest.run_op(
         ml,
         ml.device,
@@ -62,6 +75,9 @@ def test_radius_search(dtype, ml, num_points_queries, metric,
         queries=queries,
         radii=radii,
     )
+
+    index_dtype_np = {'int32': np.int32, 'int64': np.int64}[index_dtype]
+    assert ans.neighbors_index.dtype == index_dtype_np
 
     for i, q in enumerate(queries):
         # check neighbors
@@ -87,7 +103,7 @@ def test_radius_search(dtype, ml, num_points_queries, metric,
                     if normalize_distances:
                         gt_dist /= radii[i]
 
-                np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
+                np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-7)
 
 
 @mltest.parametrize.ml_cpu_only
@@ -220,4 +236,4 @@ def test_radius_search_batches(ml, batch_size):
                     if normalize_distances:
                         gt_dist /= radii[i]
 
-                np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
+                np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-7)

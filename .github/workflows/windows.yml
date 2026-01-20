@@ -38,7 +38,6 @@ env:
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
   CUDA_VERSION: "12.6.0" # CUDA_VERSION: "11.8.0"
   SRC_DIR: "D:\\a\\ACloudViewer\\ACloudViewer"
-  BUILD_DIR: "C:\\ACloudViewer\\build"
   INSTALL_DIR: "C:\\dev\\cloudViewer_install"
   NPROC: 8
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
@@ -174,8 +173,62 @@ jobs:
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         working-directory: ${{ env.SRC_DIR }}\build
         run: |
-          echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
-          .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
+          $ErrorActionPreference = 'Continue'
+          
+          # Check if build directory exists
+          $buildDir = "${{ env.SRC_DIR }}\build"
+          if (-not (Test-Path $buildDir)) {
+            Write-Error "Build directory not found: $buildDir"
+            exit 1
+          }
+          
+          # Check if test executable exists
+          $testExe = Join-Path $buildDir "bin\${{ matrix.CONFIG }}\tests.exe"
+          if (-not (Test-Path $testExe)) {
+            Write-Error "Test executable not found: $testExe"
+            Write-Host "Current directory: $(Get-Location)"
+            Write-Host "Listing bin directory:"
+            if (Test-Path (Join-Path $buildDir "bin")) {
+              Get-ChildItem (Join-Path $buildDir "bin") -Recurse -Filter "*.exe" | Select-Object FullName
+            }
+            exit 1
+          }
+          
+          # For CUDA builds, ensure CUDA DLL path is in PATH
+          if ("${{ matrix.BUILD_CUDA_MODULE }}" -eq "ON" -and $env:CUDA_PATH) {
+            $cudaBinPath = Join-Path $env:CUDA_PATH "bin"
+            if (Test-Path $cudaBinPath) {
+              Write-Host "Adding CUDA bin directory to PATH: $cudaBinPath"
+              $env:PATH = "$cudaBinPath;$env:PATH"
+            } else {
+              Write-Warning "CUDA bin directory not found: $cudaBinPath"
+            }
+          }
+          
+          Write-Host "Running C++ unit tests from: $(Get-Location)"
+          Write-Host "Test executable: $testExe"
+          Write-Host "BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA_MODULE }}"
+          if ($env:CUDA_PATH) {
+            Write-Host "CUDA_PATH: $env:CUDA_PATH"
+          }
+          Write-Host "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
+          
+          # Run the tests
+          & $testExe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
+          $testResult = $LASTEXITCODE
+          
+          if ($testResult -ne 0) {
+            Write-Error "C++ unit tests failed with exit code: $testResult"
+            # On Windows, if the test executable fails to start, it might be a DLL issue
+            if ($testResult -eq -1073741515 -or $testResult -eq 0xC0000135) {
+              Write-Error "Possible DLL loading error. Check if CUDA DLLs are accessible."
+              Write-Host "CUDA_PATH: $env:CUDA_PATH"
+              Write-Host "PATH contains CUDA: $($env:PATH -like '*CUDA*')"
+            }
+            exit $testResult
+          }
+          
+          Write-Host "C++ unit tests passed successfully."
       - name: Upload ACloudViewer to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4

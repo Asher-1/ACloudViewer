@@ -553,7 +553,7 @@ test_wheel() {
     echo -n "Using pip: "
     python -m pip --version
     echo "Installing CloudViewer wheel $wheel_path in virtual environment..."
-    python -m pip install "$wheel_path"
+    python -m pip install --upgrade "$wheel_path"
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
     # python -W default -c "import cloudViewer; cloudViewer.reconstruction.gui.run_graphical_gui()"
@@ -635,25 +635,33 @@ run_python_tests() {
     python -m pip install -U pip
     python -m pip install -U -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt"
     
-    # Install cloudViewer if not already installed
-    if ! python -c "import cloudViewer" 2>/dev/null; then
-        if [ -n "$wheel_path" ]; then
-            python -m pip install "$wheel_path"
-        else
-            echo "Warning: cloudViewer not installed and no wheel_path provided. Tests may fail."
-        fi
+    # Install cloudViewer from wheel if provided
+    if [ -n "$wheel_path" ]; then
+        python -m pip install --upgrade "$wheel_path"
+    elif ! python -c "import cloudViewer" 2>/dev/null; then
+        echo "Warning: cloudViewer not installed and no wheel_path provided. Tests may fail."
     fi
     
     echo "Add --randomly-seed=SEED to the test command to reproduce test order."
     pytest_args=("${CLOUDVIEWER_SOURCE_ROOT}/python/test/")
     
-    # Check if ML ops should be tested
-    # TODO: not supported for now
-    pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
-    # if [ "${BUILD_PYTORCH_OPS:-OFF}" == "OFF" ] && [ "${BUILD_TENSORFLOW_OPS:-OFF}" == "OFF" ]; then
-    #     echo "Testing ML Ops disabled"
-    #     pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
-    # fi
+    # Check if ML ops should be tested by checking build configuration
+    # This checks the actual installed cloudViewer package, not environment variables
+    HAVE_PYTORCH_OPS=OFF
+    HAVE_TENSORFLOW_OPS=OFF
+    if python -c "import sys, cloudViewer; sys.exit(not cloudViewer._build_config['BUILD_PYTORCH_OPS'])"; then
+        HAVE_PYTORCH_OPS=ON
+    fi
+    if python -c "import sys, cloudViewer; sys.exit(not cloudViewer._build_config['BUILD_TENSORFLOW_OPS'])"; then
+        HAVE_TENSORFLOW_OPS=ON
+    fi
+    
+    if [ "$HAVE_PYTORCH_OPS" == "OFF" ] && [ "$HAVE_TENSORFLOW_OPS" == "OFF" ]; then
+        echo "ML Ops not built, skipping ml_ops tests"
+        pytest_args+=(--ignore "${CLOUDVIEWER_SOURCE_ROOT}/python/test/ml_ops/")
+    else
+        echo "ML Ops built (PyTorch: $HAVE_PYTORCH_OPS, TensorFlow: $HAVE_TENSORFLOW_OPS), including ml_ops tests"
+    fi
     
     # Run pytest with verbose output
     echo "======================================================================"
