@@ -268,10 +268,10 @@ ccBBox ecvFilterTool::getSelectedEntityBbox() {
 }
 
 void ecvFilterTool::setView(CC_VIEW_ORIENTATION orientation) {
-    ccBBox* bbox = nullptr;
-    ccBBox box = getSelectedEntityBbox();
-    if (box.isValid()) {
-        bbox = &box;
-    }
-    ecvDisplayTools::SetView(orientation, bbox);
+    // ccBBox* bbox = nullptr;
+    // ccBBox box = getSelectedEntityBbox();
+    // if (box.isValid()) {
+    //     bbox = &box;
+    // }
+    ecvDisplayTools::SetView(orientation);
 }

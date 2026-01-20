@@ -3717,12 +3717,7 @@ void MainWindow::zoomOn(ccHObject* object) {
 }
 
 void MainWindow::setView(CC_VIEW_ORIENTATION view) {
-    ccBBox* bbox = nullptr;
-    ccBBox box = getSelectedEntityBbox();
-    if (box.isValid()) {
-        bbox = &box;
-    }
-    ecvDisplayTools::SetView(view, bbox);
+    ecvDisplayTools::SetView(view);
 }
 
 void MainWindow::updateMenus() {

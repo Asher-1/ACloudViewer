@@ -1443,7 +1443,7 @@ public:  // visualization matrix transformation
 
     static void SetView(CC_VIEW_ORIENTATION orientation, ccBBox* bbox);
     static void SetView(CC_VIEW_ORIENTATION orientation,
-                        bool forceRedraw = true);
+                        bool forceRedraw = false);
 
     //! Returns a 4x4 'OpenGL' matrix corresponding to a default 'view'
     //! orientation
