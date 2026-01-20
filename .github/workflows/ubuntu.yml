@@ -119,6 +119,16 @@ jobs:
           gh release upload main-devel ACloudViewer-*.run --clobber
           gh release view main-devel
 
+      - name: Docker test
+        run: |
+          # Map CI_CONFIG to docker_test.sh options
+          # The test script will dynamically check if ML ops are available
+          TEST_CONFIG="${CI_CONFIG}"
+          if [ "$DEVELOPER_BUILD" == "OFF" ]; then
+            TEST_CONFIG="${CI_CONFIG}-release"
+          fi
+          docker/docker_test.sh ${TEST_CONFIG}
+
       - name: Public CPU App Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')

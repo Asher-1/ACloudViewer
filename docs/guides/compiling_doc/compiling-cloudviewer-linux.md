@@ -255,9 +255,9 @@ python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 ```
 cd ${CLOUDVIEWER_SOURCE_ROOT}
 export BUILD_PYTORCH_OPS=ON
+export BUILD_TENSORFLOW_OPS=OFF
 export DEVELOPER_BUILD=OFF
 export BUILD_SHARED_LIBS=OFF
-export BUILD_TENSORFLOW_OPS=OFF
 export CLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML
 source util/ci_utils.sh
 

@@ -24,11 +24,20 @@ __usage_docker_build="USAGE:
 OPTION:
 
     # Ubuntu CPU CI (Dockerfile.ci)
-    cpu-static                  : Ubuntu CPU static
+    cpu-focal                  : Ubuntu 20.04 CPU CI, developer mode
+    cpu-jammy                  : Ubuntu 22.04 CPU CI, developer mode
+    cpu-noble                  : Ubuntu 24.04 CPU CI, developer mode
+    cpu-focal-release          : Ubuntu 20.04 CPU CI, release mode
+    cpu-jammy-release          : Ubuntu 22.04 CPU CI, release mode
+    cpu-noble-release          : Ubuntu 24.04 CPU CI, release mode
 
-    # ML CIs (Dockerfile.ci)
-    2-focal                   : CUDA CI, 2-bionic, developer mode
-    5-ml-jammy                 : CUDA CI, 5-ml-focal, developer mode
+    # CUDA CI (Dockerfile.ci)
+    cuda-focal                 : CUDA CI, Ubuntu 20.04, developer mode
+    cuda-jammy                 : CUDA CI, Ubuntu 22.04, developer mode
+    cuda-noble                 : CUDA CI, Ubuntu 24.04, developer mode
+    cuda-focal-release         : CUDA CI, Ubuntu 20.04, release mode
+    cuda-jammy-release         : CUDA CI, Ubuntu 22.04, release mode
+    cuda-noble-release         : CUDA CI, Ubuntu 24.04, release mode
 
     # CUDA wheels (Dockerfile.ci)
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode

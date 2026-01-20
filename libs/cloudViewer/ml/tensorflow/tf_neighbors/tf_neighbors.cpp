@@ -13,7 +13,7 @@
 using namespace tensorflow;
 using namespace cloudViewer::ml::contrib;
 
-REGISTER_OP("CloudviewerOrderedNeighbors")
+REGISTER_OP("CloudViewerOrderedNeighbors")
         .Input("queries: float")
         .Input("supports: float")
         .Input("radius: float")
@@ -22,7 +22,7 @@ REGISTER_OP("CloudviewerOrderedNeighbors")
             ::tensorflow::shape_inference::ShapeHandle input;
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &input));
             c->set_output(0, input);
-            return Status::OK();
+            return Status();
         });
 
 class OrderedNeighborsOp : public OpKernel {
@@ -89,5 +89,5 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudviewerOrderedNeighbors").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("CloudViewerOrderedNeighbors").Device(DEVICE_CPU),
                         OrderedNeighborsOp);

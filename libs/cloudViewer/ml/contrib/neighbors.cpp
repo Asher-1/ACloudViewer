@@ -139,7 +139,7 @@ void batch_nanoflann_neighbors(std::vector<PointXYZ>& queries,
 
     // Counting vector
     int max_count = 0;
-    std::vector<std::vector<std::pair<size_t, float>>> all_inds_dists(
+    std::vector<std::vector<nanoflann::ResultItem<unsigned int, float>>> all_inds_dists(
             queries.size());
 
     // batch index

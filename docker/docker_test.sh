@@ -15,19 +15,33 @@ __usage_docker_test="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    # Ubuntu CPU CI (Dockerfile.ci)
-    cpu-static                  : Ubuntu CPU static
-    cpu-static-release          : Ubuntu CPU static, release mode
-    cpu-shared-ml               : Ubuntu CPU shared with ML
-    cpu-shared-ml-release       : Ubuntu CPU shared with ML, release mode
-
-    # ML CIs (Dockerfile.ci)
-    cuda-ml-shared-jammy        : CUDA CI, ml-shared-jammy (cxx11_abi), developer mode
-    cuda-ml-shared-jammy-release: CUDA CI, ml-shared-jammy (cxx11_abi), release mode
+    # CUDA wheels (Dockerfile.ci)
+    cuda_wheel_py310_dev        : CUDA Python 3.10 wheel, developer mode
+    cuda_wheel_py311_dev        : CUDA Python 3.11 wheel, developer mode
+    cuda_wheel_py312_dev        : CUDA Python 3.12 wheel, developer mode
+    cuda_wheel_py313_dev        : CUDA Python 3.13 wheel, developer mode
+    cuda_wheel_py310            : CUDA Python 3.10 wheel, release mode
+    cuda_wheel_py311            : CUDA Python 3.11 wheel, release mode
+    cuda_wheel_py312            : CUDA Python 3.12 wheel, release mode
+    cuda_wheel_py313            : CUDA Python 3.13 wheel, release mode
 
     # Qt6 builds (Dockerfile.ci.qt6)
-    qt6-cpu-static              : Qt6 CPU static build
-    qt6-cuda-shared             : Qt6 CUDA shared build
+    qt6-cpu                     : Qt6 CPU build
+    qt6-cuda                    : Qt6 CUDA build
+
+    # CI builds (Dockerfile.ci) - matches CI_CONFIG from GitHub Actions
+    cpu-focal                   : CPU Ubuntu 20.04 CI build
+    cpu-jammy                   : CPU Ubuntu 22.04 CI build
+    cpu-noble                   : CPU Ubuntu 24.04 CI build
+    cpu-focal-release           : CPU Ubuntu 20.04 CI build, release mode
+    cpu-jammy-release           : CPU Ubuntu 22.04 CI build, release mode
+    cpu-noble-release           : CPU Ubuntu 24.04 CI build, release mode
+    cuda-focal                  : CUDA Ubuntu 20.04 CI build
+    cuda-jammy                  : CUDA Ubuntu 22.04 CI build
+    cuda-noble                  : CUDA Ubuntu 24.04 CI build
+    cuda-focal-release          : CUDA Ubuntu 20.04 CI build, release mode
+    cuda-jammy-release          : CUDA Ubuntu 22.04 CI build, release mode
+    cuda-noble-release          : CUDA Ubuntu 24.04 CI build, release mode
 "
 
 HOST_ACLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -51,41 +65,14 @@ ci_print_env() {
     echo "[ci_print_env()] PACKAGE=${PACKAGE}"
 }
 
-restart_docker_daemon_if_on_gcloud() {
-    # Sometimes `docker run` may fail on the second run on Google Cloud with the
-    # following error:
-    # ```
-    # docker: Error response from daemon: OCI runtime create failed:
-    # container_linux.go:349: starting container process caused
-    # "process_linux.go:449: container init caused \"process_linux.go:432:
-    # running prestart hook 0 caused \\\"error running hook: exit status 1,
-    # stdout: , stderr: nvidia-container-cli: initialization error:
-    # nvml error: driver/library version mismatch\\\\n\\\"\"": unknown.
-    # ```
-    if curl metadata.google.internal -i 2>/dev/null | grep -q Google; then
-        # https://stackoverflow.com/a/30921162/1255535
-        echo "[restart_docker_daemon_if_on_gcloud()] Restarting Docker daemon on Google Cloud."
-        sudo systemctl daemon-reload
-        sudo systemctl restart docker
-    else
-        echo "[restart_docker_daemon_if_on_gcloud()] Skipped."
-    fi
-}
-
-cpp_python_linking_uninstall_test() {
+cpp_test_only() {
     # Expects the following environment variables to be set:
     # - DOCKER_TAG
-    # - BUILD_SHARED_LIBS
     # - BUILD_CUDA_MODULE
-    # - BUILD_PYTORCH_OPS
-    # - BUILD_TENSORFLOW_OPS
     # - NPROC (optional)
-    echo "[cpp_python_linking_uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
-    echo "[cpp_python_linking_uninstall_test()] NPROC=${NPROC:=$(nproc)}"
+    echo "[cpp_test_only()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[cpp_test_only()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
+    echo "[cpp_test_only()] NPROC=${NPROC:=$(nproc)}"
 
     # Config-dependent argument: gpu_run_args
     docker_run="docker run --cpus ${NPROC}"
@@ -93,13 +80,38 @@ cpp_python_linking_uninstall_test() {
         docker_run="${docker_run} --gpus all"
     fi
 
-    # Config-dependent argument: pytest_args
-    if [ "${BUILD_PYTORCH_OPS}" == "OFF" ] || [ "${BUILD_TENSORFLOW_OPS}" == "OFF" ]; then
-        pytest_args="--ignore python/test/ml_ops/"
-    else
-        pytest_args=""
+    # C++ test only
+    echo "======================================================================"
+    echo "Running C++ Unit Tests"
+    echo "======================================================================"
+    echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
+    ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
+        cd build \
+     && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+    "
+}
+
+cpp_python_command_tools_test() {
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_SHARED_LIBS
+    # - BUILD_CUDA_MODULE
+    # - BUILD_PYTORCH_OPS (for logging only, actual check is done dynamically)
+    # - BUILD_TENSORFLOW_OPS (for logging only, actual check is done dynamically)
+    # - NPROC (optional)
+    echo "[cpp_python_command_tools_test()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[cpp_python_command_tools_test()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+    echo "[cpp_python_command_tools_test()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
+    echo "[cpp_python_command_tools_test()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+    echo "[cpp_python_command_tools_test()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
+    echo "[cpp_python_command_tools_test()] NPROC=${NPROC:=$(nproc)}"
+    echo "[cpp_python_command_tools_test()] Note: ML ops testing is determined dynamically by checking cloudViewer._build_config"
+
+    # Config-dependent argument: gpu_run_args
+    docker_run="docker run --cpus ${NPROC}"
+    if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
+        docker_run="${docker_run} --gpus all"
     fi
-    restart_docker_daemon_if_on_gcloud
 
     # C++ test
     echo "======================================================================"
@@ -110,52 +122,41 @@ cpp_python_linking_uninstall_test() {
         cd build \
      && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
     "
-    restart_docker_daemon_if_on_gcloud
 
     # Python test
+    # Check if ML ops should be tested by checking build configuration dynamically
+    # This checks the actual installed cloudViewer package, not environment variables
     echo "======================================================================"
     echo "Running Python Unit Tests"
     echo "======================================================================"
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
-    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
-        python -W default -m pytest python/test ${pytest_args} -v"
-    restart_docker_daemon_if_on_gcloud
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "
+        # Check if ML ops should be tested by checking build configuration
+        pytest_args=\"\"
+        if ! python -c \"import sys, cloudViewer; sys.exit(not (cloudViewer._build_config['BUILD_PYTORCH_OPS'] or cloudViewer._build_config['BUILD_TENSORFLOW_OPS']))\" 2>/dev/null; then
+            pytest_args=\"--ignore python/test/ml_ops/\"
+        fi
+        python -W default -m pytest python/test \${pytest_args} -v
+    "
 
-    # Command-line tools test (optional, ACloudViewer may not have CLI yet)
+    # Command-line tools test
     echo "======================================================================"
     echo "Testing ACloudViewer command-line tools"
     echo "======================================================================"
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        cloudviewer --version || echo 'CloudViewer CLI not available yet' \
-    "
-
-    # C++ linking with new project
-    echo "======================================================================"
-    echo "Testing C++ linking with CMake find_package"
-    echo "======================================================================"
-    if [ -d "examples/cmake/cloudviewer-cmake-find-package" ]; then
-        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-            cd examples/cmake/cloudviewer-cmake-find-package \
-         && mkdir -p build \
-         && pushd build \
-         && echo Testing build with cmake \
-         && cmake -DCMAKE_INSTALL_PREFIX=~/cloudviewer_install .. \
-         && make -j\$(nproc) VERBOSE=1 \
-         && ./Draw --skip-for-unit-test || echo 'Example execution skipped' \
-        "
-    else
-        echo "CMake example not found, skipping..."
-    fi
-
-    restart_docker_daemon_if_on_gcloud
-
-    # Uninstall
-    echo "======================================================================"
-    echo "Testing uninstall"
-    echo "======================================================================"
-    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        cd build \
-     && make uninstall || echo 'Uninstall target not available' \
+        cloudviewer \
+     && cloudviewer -h \
+     && cloudviewer --help \
+     && cloudviewer -V \
+     && cloudviewer --version \
+     && cloudviewer example -h \
+     && cloudviewer example --help \
+     && cloudviewer example -l \
+     && cloudviewer example --list \
+     && cloudviewer example -l io \
+     && cloudviewer example --list io \
+     && cloudviewer example -s io/image_io \
+     && cloudviewer example --show io/image_io \
     "
 }
 
@@ -175,83 +176,209 @@ else
 fi
 
 case "$1" in
-# CPU CI
-cpu-static)
-    # Export environment for cpu-static build
-    export DOCKER_TAG="acloudviewer-cpu-static:latest"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-cpu-static-release)
-    export DOCKER_TAG="acloudviewer-cpu-static-release:latest"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-cpu-shared-ml)
-    export DOCKER_TAG="acloudviewer-cpu-shared-ml:latest"
-    export BUILD_SHARED_LIBS="ON"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="ON"
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-cpu-shared-ml-release)
-    export DOCKER_TAG="acloudviewer-cpu-shared-ml-release:latest"
-    export BUILD_SHARED_LIBS="ON"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="ON"
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
 
-# ML CIs
-cuda-ml-shared-jammy)
-    export DOCKER_TAG="acloudviewer-cuda-ml-shared-jammy:latest"
-    export BUILD_SHARED_LIBS="ON"
+# CUDA wheels
+cuda_wheel_py310_dev)
+    export DOCKER_TAG="cloudviewer-ci:wheel"
+    export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
     export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="ON"
+    export BUILD_TENSORFLOW_OPS="OFF"
     ci_print_env
-    cpp_python_linking_uninstall_test
+    cpp_python_command_tools_test
     ;;
-cuda-ml-shared-jammy-release)
-    export DOCKER_TAG="acloudviewer-cuda-ml-shared-jammy-release:latest"
-    export BUILD_SHARED_LIBS="ON"
+cuda_wheel_py311_dev)
+    export DOCKER_TAG="cloudviewer-ci:wheel"
+    export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
     export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="ON"
+    export BUILD_TENSORFLOW_OPS="OFF"
     ci_print_env
-    cpp_python_linking_uninstall_test
+    cpp_python_command_tools_test
+    ;;
+cuda_wheel_py312_dev)
+    export DOCKER_TAG="cloudviewer-ci:wheel"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="ON"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_python_command_tools_test
+    ;;
+cuda_wheel_py313_dev)
+    export DOCKER_TAG="cloudviewer-ci:wheel"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="ON"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_python_command_tools_test
+    ;;
+cuda_wheel_py310)
+    export DOCKER_TAG="cloudviewer-ci:wheel"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="ON"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_python_command_tools_test
+    ;;
+cuda_wheel_py311)
+    export DOCKER_TAG="cloudviewer-ci:wheel"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="ON"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_python_command_tools_test
+    ;;
+cuda_wheel_py312)
+    export DOCKER_TAG="cloudviewer-ci:wheel"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="ON"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_python_command_tools_test
+    ;;
+cuda_wheel_py313)
+    export DOCKER_TAG="cloudviewer-ci:wheel"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="ON"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_python_command_tools_test
     ;;
 
 # Qt6 builds
-qt6-cpu-static)
-    export DOCKER_TAG="acloudviewer-qt6-cpu-static:latest"
+qt6-cpu)
+    export DOCKER_TAG="acloudviewer-qt6-cpu:latest"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="OFF"
     export BUILD_PYTORCH_OPS="OFF"
     export BUILD_TENSORFLOW_OPS="OFF"
     ci_print_env
-    cpp_python_linking_uninstall_test
+    cpp_python_command_tools_test
     ;;
-qt6-cuda-shared)
-    export DOCKER_TAG="acloudviewer-qt6-cuda-shared:latest"
-    export BUILD_SHARED_LIBS="ON"
+qt6-cuda)
+    export DOCKER_TAG="acloudviewer-qt6-cuda:latest"
+    export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="ON"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
     ci_print_env
-    cpp_python_linking_uninstall_test
+    cpp_python_command_tools_test
+    ;;
+
+# CI builds (matches CI_CONFIG from GitHub Actions)
+cpu-focal)
+    export DOCKER_TAG="cloudviewer-ci:cpu-focal"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="OFF"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cpu-jammy)
+    export DOCKER_TAG="cloudviewer-ci:cpu-jammy"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="OFF"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cpu-noble)
+    export DOCKER_TAG="cloudviewer-ci:cpu-noble"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="OFF"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cpu-focal-release)
+    export DOCKER_TAG="cloudviewer-ci:cpu-focal"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="OFF"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cpu-jammy-release)
+    export DOCKER_TAG="cloudviewer-ci:cpu-jammy"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="OFF"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cpu-noble-release)
+    export DOCKER_TAG="cloudviewer-ci:cpu-noble"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="OFF"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cuda-focal)
+    export DOCKER_TAG="cloudviewer-ci:cuda-focal"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cuda-jammy)
+    export DOCKER_TAG="cloudviewer-ci:cuda-jammy"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cuda-noble)
+    export DOCKER_TAG="cloudviewer-ci:cuda-noble"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cuda-focal-release)
+    export DOCKER_TAG="cloudviewer-ci:cuda-focal"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cuda-jammy-release)
+    export DOCKER_TAG="cloudviewer-ci:cuda-jammy"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cuda-noble-release)
+    export DOCKER_TAG="cloudviewer-ci:cuda-noble"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
     ;;
 *)
     echo "Error: invalid argument: ${1}." >&2

@@ -98,7 +98,7 @@ private:
 
 #define REG_KB(feattype, outtype, indextype, kernelindextype)         \
     REGISTER_KERNEL_BUILDER(                                          \
-            Name("CloudviewerSparseConv")                             \
+            Name("CloudViewerSparseConv")                             \
                     .Device(DEVICE_GPU)                               \
                     .TypeConstraint<feattype>("TFeat")                \
                     .TypeConstraint<outtype>("output_type")           \

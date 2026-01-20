@@ -507,8 +507,7 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 # Build ACloudViewer app installer
 RUN echo "Start Build ACloudViewer apps installer..."                                   \
     && rm -rf ${ACloudViewer_BUILD}/*                                                   \
-    && WITH_RDB=ON ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}     \
-    && rm -rf ${ACloudViewer_BUILD}/*
+    && WITH_RDB=ON ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 RUN echo "Docker ci build done with Qt6, VTK 9.4.2, and PCL 1.15.1."

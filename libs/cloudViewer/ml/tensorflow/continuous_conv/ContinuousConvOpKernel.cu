@@ -111,7 +111,7 @@ private:
 };
 
 #define REG_KB(feattype, outtype, realtype, indextype)                      \
-    REGISTER_KERNEL_BUILDER(Name("CloudviewerContinuousConv")               \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerContinuousConv")               \
                                     .Device(DEVICE_GPU)                     \
                                     .TypeConstraint<feattype>("TFeat")      \
                                     .TypeConstraint<outtype>("output_type") \

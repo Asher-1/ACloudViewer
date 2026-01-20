@@ -513,7 +513,21 @@ function Test-Wheel {
     python -m pip --version
 
     Write-Host "Installing CloudViewer wheel $wheel_path in virtual environment..."
-    python -m pip install --upgrade $wheel_path
+    # Uninstall cloudViewer if already installed to ensure clean installation
+    $cloudViewerInstalled = $false
+    try {
+        python -c "import cloudViewer" 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $cloudViewerInstalled = $true
+        }
+    } catch {
+        $cloudViewerInstalled = $false
+    }
+    if ($cloudViewerInstalled) {
+        Write-Host "cloudViewer is already installed, uninstalling first..."
+        python -m pip uninstall --yes cloudviewer cloudviewer-cpu 2>&1 | Out-Null
+    }
+    python -m pip install $wheel_path
 
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
@@ -602,7 +616,12 @@ function Run-PythonTests {
     
     # Install cloudViewer from wheel if provided
     if ($wheel_path) {
-        python -m pip install --upgrade $wheel_path
+        # Uninstall cloudViewer if already installed to ensure clean installation
+        if ($cloudViewerInstalled) {
+            Write-Host "cloudViewer is already installed, uninstalling first..."
+            python -m pip uninstall --yes cloudviewer cloudviewer-cpu 2>&1 | Out-Null
+        }
+        python -m pip install $wheel_path
     } elseif (-not $cloudViewerInstalled) {
         Write-Warning "cloudViewer not installed and no wheel_path provided. Tests may fail."
     }
@@ -645,7 +664,7 @@ function Run-PythonTests {
     Write-Host "======================================================================"
     Write-Host "Running Python Unit Tests"
     Write-Host "======================================================================"
-    python -m pytest -v $pytestArgs
+    python -m pytest -v @pytestArgs
     $pytestResult = $LASTEXITCODE
     
     Write-Host ""

@@ -481,7 +481,7 @@ build_pip_package() {
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE"
-        "-DBUILD_UNIT_TESTS=OFF"
+        "-DBUILD_UNIT_TESTS=ON"
         "-DBUILD_BENCHMARKS=OFF"
         "-DUSE_SIMD=ON"
         "-DUSE_QT6=$USE_QT6"
@@ -553,7 +553,12 @@ test_wheel() {
     echo -n "Using pip: "
     python -m pip --version
     echo "Installing CloudViewer wheel $wheel_path in virtual environment..."
-    python -m pip install --upgrade "$wheel_path"
+    # Uninstall cloudViewer if already installed to ensure clean installation
+    if python -c "import cloudViewer" 2>/dev/null; then
+        echo "cloudViewer is already installed, uninstalling first..."
+        python -m pip uninstall --yes cloudviewer cloudviewer-cpu 2>/dev/null || true
+    fi
+    python -m pip install "$wheel_path"
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
     # python -W default -c "import cloudViewer; cloudViewer.reconstruction.gui.run_graphical_gui()"
@@ -637,7 +642,12 @@ run_python_tests() {
     
     # Install cloudViewer from wheel if provided
     if [ -n "$wheel_path" ]; then
-        python -m pip install --upgrade "$wheel_path"
+        # Uninstall cloudViewer if already installed to ensure clean installation
+        if python -c "import cloudViewer" 2>/dev/null; then
+            echo "cloudViewer is already installed, uninstalling first..."
+            python -m pip uninstall --yes cloudviewer cloudviewer-cpu 2>/dev/null || true
+        fi
+        python -m pip install "$wheel_path"
     elif ! python -c "import cloudViewer" 2>/dev/null; then
         echo "Warning: cloudViewer not installed and no wheel_path provided. Tests may fail."
     fi
