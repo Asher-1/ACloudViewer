@@ -14,7 +14,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerSparseConvTranspose")
+REGISTER_OP("CloudViewerSparseConvTranspose")
         .Attr("TFeat: {float, double, bfloat16}")  // Type for features and
                                                    // weights
         .Attr("output_type: {float, double, bfloat16} = DT_FLOAT")  // Type for
@@ -75,7 +75,7 @@ REGISTER_OP("CloudviewerSparseConvTranspose")
             ShapeHandle out_features_shape =
                     MakeShapeHandle(c, num_out, out_channels);
             c->set_output(0, out_features_shape);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Sparse tranpose convolution of two pointclouds.

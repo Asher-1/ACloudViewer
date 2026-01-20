@@ -60,7 +60,7 @@ public:
 
 #define REG_KB(feattype, outtype, indextype, kernelindextype)         \
     REGISTER_KERNEL_BUILDER(                                          \
-            Name("CloudviewerSparseConvTransposeBackpropFilter")      \
+            Name("CloudViewerSparseConvTransposeBackpropFilter")      \
                     .Device(DEVICE_CPU)                               \
                     .TypeConstraint<feattype>("TFeat")                \
                     .TypeConstraint<outtype>("output_type")           \

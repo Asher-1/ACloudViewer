@@ -17,7 +17,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerThreeNN")
+REGISTER_OP("CloudViewerThreeNN")
         .Input("query_pts: float32")
         .Input("data_pts: float32")
         .Output("out_dist2: float32")
@@ -30,11 +30,11 @@ REGISTER_OP("CloudviewerThreeNN")
                     c->MakeShape({c->Dim(dims1, 0), c->Dim(dims1, 1), 3});
             c->set_output(0, output);
             c->set_output(1, output);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc( TODO )doc");
 
-REGISTER_OP("CloudviewerThreeInterpolate")
+REGISTER_OP("CloudViewerThreeInterpolate")
         .Input("points: float32")
         .Input("idx: int32")
         .Input("weights: float32")
@@ -50,11 +50,11 @@ REGISTER_OP("CloudviewerThreeInterpolate")
             ::tensorflow::shape_inference::ShapeHandle output = c->MakeShape(
                     {c->Dim(dims1, 0), c->Dim(dims1, 1), c->Dim(dims2, 1)});
             c->set_output(0, output);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc( TODO )doc");
 
-REGISTER_OP("CloudviewerThreeInterpolateGrad")
+REGISTER_OP("CloudViewerThreeInterpolateGrad")
         .Input("grad_out: float32")
         .Input("idx: int32")
         .Input("weights: float32")
@@ -70,6 +70,6 @@ REGISTER_OP("CloudviewerThreeInterpolateGrad")
                     c->MakeShape({c->Dim(dims1, 0), c->Dim(dims1, 1), M});
             c->set_output(0, output);
             c->set_output(1, output);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc( TODO )doc");

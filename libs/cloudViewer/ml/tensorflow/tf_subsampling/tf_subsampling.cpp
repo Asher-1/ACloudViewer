@@ -13,7 +13,7 @@
 using namespace tensorflow;
 using namespace cloudViewer::ml::contrib;
 
-REGISTER_OP("CloudviewerGridSubsampling")
+REGISTER_OP("CloudViewerGridSubsampling")
         .Input("points: float")
         .Input("dl: float")
         .Output("sub_points: float")
@@ -21,7 +21,7 @@ REGISTER_OP("CloudviewerGridSubsampling")
             ::tensorflow::shape_inference::ShapeHandle input;
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &input));
             c->set_output(0, input);
-            return Status::OK();
+            return Status();
         });
 
 class GridSubsamplingOp : public OpKernel {
@@ -84,5 +84,5 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudviewerGridSubsampling").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("CloudViewerGridSubsampling").Device(DEVICE_CPU),
                         GridSubsamplingOp);

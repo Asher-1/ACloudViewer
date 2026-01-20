@@ -69,7 +69,7 @@ public:
 
 #define REG_KB(feattype, outtype, realtype, indextype)               \
     REGISTER_KERNEL_BUILDER(                                         \
-            Name("CloudviewerContinuousConvTransposeBackpropFilter") \
+            Name("CloudViewerContinuousConvTransposeBackpropFilter") \
                     .Device(DEVICE_CPU)                              \
                     .TypeConstraint<feattype>("TFeat")               \
                     .TypeConstraint<outtype>("output_type")          \

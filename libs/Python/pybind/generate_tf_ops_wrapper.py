@@ -4,6 +4,7 @@ import sys
 import inspect
 import argparse
 import textwrap
+import re
 import tensorflow as tf
 from yapf.yapflib.yapf_api import FormatFile
 
@@ -36,15 +37,18 @@ def main():
 
     generated_function_strs = ''
     for fn_name, value in inspect.getmembers(oplib):
-        if not inspect.isfunction(value) or not fn_name.startswith(
-                'cloudviewer_') or fn_name.endswith('_eager_fallback'):
+        # TensorFlow exports op names as "CloudViewerBatchGridSubsampling" (CamelCase)
+        # We need to match both "CloudViewer" (new style) and "cloudviewer_" (old style)
+        if not inspect.isfunction(value) or fn_name.endswith('_eager_fallback'):
+            continue
+        if not (fn_name.startswith('CloudViewer') or fn_name.startswith('cloudviewer_')):
             continue
 
         docstring = getattr(oplib, fn_name).__doc__
         docstring = '"""' + docstring + '\n"""'
         docstring = textwrap.indent(docstring, INDENT_SPACES)
 
-        print("fn_name --> {}\t value --> {}".format(fn_name, value))
+        # print("fn_name --> {}\t value --> {}".format(fn_name, value))
 
         signature = inspect.signature(value)
 
@@ -64,8 +68,21 @@ def main():
             args_fwd.append('{arg}={arg}'.format(arg=param.name))
         fn_args = ', '.join(fn_args)
         args_fwd = ', '.join(args_fwd)
+        
+        # Convert function name to snake_case for Python API
+        # "CloudViewerBatchGridSubsampling" -> "batch_grid_subsampling"
+        if fn_name.startswith('CloudViewer'):
+            # Remove "CloudViewer" prefix (11 characters)
+            fn_name_short = fn_name[11:]
+            # Convert CamelCase to snake_case
+            fn_name_short = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', fn_name_short)
+            fn_name_short = re.sub('([a-z0-9])([A-Z])', r'\1_\2', fn_name_short).lower()
+        else:
+            # Old style: "cloudviewer_batch_grid_subsampling" -> "batch_grid_subsampling"
+            fn_name_short = fn_name[12:]  # Remove "cloudviewer_" prefix
+        
         generated_function_strs += FN_TEMPLATE_STR.format(
-            fn_name_short=fn_name[12:],
+            fn_name_short=fn_name_short,
             fn_name='_lib.' + fn_name,
             fn_args=fn_args,
             docstring=docstring,

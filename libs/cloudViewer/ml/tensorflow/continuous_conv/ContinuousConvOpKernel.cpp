@@ -59,7 +59,7 @@ public:
 };
 
 #define REG_KB(feattype, outtype, realtype, indextype)                      \
-    REGISTER_KERNEL_BUILDER(Name("CloudviewerContinuousConv")               \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerContinuousConv")               \
                                     .Device(DEVICE_CPU)                     \
                                     .TypeConstraint<feattype>("TFeat")      \
                                     .TypeConstraint<outtype>("output_type") \
