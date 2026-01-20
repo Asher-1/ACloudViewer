@@ -172,7 +172,7 @@ jobs:
 
       - name: Run C++ unit tests
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
-        working-directory: ${{ env.BUILD_DIR }}
+        working-directory: ${{ env.SRC_DIR }}\build
         run: |
           echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
           .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
