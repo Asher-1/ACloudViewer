@@ -102,6 +102,7 @@ endif()
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
 target_sources(${CLOUDVIEWER_APP_NAME} PRIVATE
     $<TARGET_OBJECTS:core>
+    $<TARGET_OBJECTS:core_impl>
     $<TARGET_OBJECTS:data>
     $<TARGET_OBJECTS:tgeometry>
     $<TARGET_OBJECTS:tgeometry_kernel>
