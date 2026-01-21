@@ -72,7 +72,17 @@ cpp_test_only() {
     # Config-dependent argument: gpu_run_args
     docker_run="docker run --cpus ${NPROC}"
     if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
-        docker_run="${docker_run} --gpus all"
+        # Check if GPU is available before adding --gpus flag
+        # This allows CUDA builds to run on systems without GPU (tests will skip GPU-specific tests)
+        # Check if nvidia-container-toolkit is available by checking docker info or nvidia-smi
+        if (docker info 2>/dev/null | grep -qi "runtimes.*nvidia") || \
+           (command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null 2>&1); then
+            docker_run="${docker_run} --gpus all"
+            echo "[cpp_test_only()] GPU support detected, using --gpus all"
+        else
+            echo "[cpp_test_only()] Warning: GPU not available, running without --gpus flag"
+            echo "[cpp_test_only()] CUDA tests that require GPU will be skipped"
+        fi
     fi
 
     # C++ test only
@@ -81,7 +91,8 @@ cpp_test_only() {
     echo "======================================================================"
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
-        cd build \
+        export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
+     && cd build \
      && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
     "
 }
@@ -105,7 +116,17 @@ cpp_python_command_tools_test() {
     # Config-dependent argument: gpu_run_args
     docker_run="docker run --cpus ${NPROC}"
     if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
-        docker_run="${docker_run} --gpus all"
+        # Check if GPU is available before adding --gpus flag
+        # This allows CUDA builds to run on systems without GPU (tests will skip GPU-specific tests)
+        # Check if nvidia-container-toolkit is available by checking docker info or nvidia-smi
+        if (docker info 2>/dev/null | grep -qi "runtimes.*nvidia") || \
+           (command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null 2>&1); then
+            docker_run="${docker_run} --gpus all"
+            echo "[cpp_python_command_tools_test()] GPU support detected, using --gpus all"
+        else
+            echo "[cpp_python_command_tools_test()] Warning: GPU not available, running without --gpus flag"
+            echo "[cpp_python_command_tools_test()] CUDA tests that require GPU will be skipped"
+        fi
     fi
 
     # C++ test

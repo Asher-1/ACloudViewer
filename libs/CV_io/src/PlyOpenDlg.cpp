@@ -8,6 +8,7 @@
 #include "PlyOpenDlg.h"
 
 // Qt
+#include <QListWidgetItem>
 #include <QMessageBox>
 #include <QStringList>
 
@@ -15,8 +16,8 @@
 #include <CVLog.h>
 
 // System
-#include <cassert>
-#include <cstring>
+#include <assert.h>
+#include <string.h>
 
 //! Ply dialog loading context
 struct PlyLoadingContext {
@@ -48,10 +49,6 @@ PlyOpenDlg::PlyOpenDlg(QWidget* parent) : QDialog(parent), Ui::PlyOpenDlg() {
         m_standardCombos.push_back(nxComboBox);
         m_standardCombos.push_back(nyComboBox);
         m_standardCombos.push_back(nzComboBox);
-        m_standardCombos.push_back(tuComboBox);
-        m_standardCombos.push_back(tvComboBox);
-
-        m_sfCombos.push_back(sfComboBox);
 
         m_listCombos.push_back(facesComboBox);
         m_listCombos.push_back(textCoordsComboBox);
@@ -63,6 +60,8 @@ PlyOpenDlg::PlyOpenDlg(QWidget* parent) : QDialog(parent), Ui::PlyOpenDlg() {
 
     connect(addSFToolButton, &QAbstractButton::clicked, this,
             &PlyOpenDlg::addSFComboBox);
+    connect(addAllSFToolButton, &QAbstractButton::clicked, this,
+            &PlyOpenDlg::addAllStdPropsAsSF);
     connect(applyButton, &QAbstractButton::clicked, this, &PlyOpenDlg::apply);
     connect(applyAllButton, &QAbstractButton::clicked, this,
             &PlyOpenDlg::applyAll);
@@ -329,22 +328,14 @@ bool PlyOpenDlg::restoreContext(PlyLoadingContext* context,
     }
 
     // additional SF combos
-    assert(m_sfCombos.size() == 1);
     {
-        m_sfCombos.front()->setCurrentIndex(0);
-        bool firstSF = true;
         for (size_t i = 0; i < context->sfCombosProperties.size(); ++i) {
             // try to find it in the new property list!
-            int idx = m_sfCombos.front()->findText(
-                    context->sfCombosProperties[i]);
+            int idx =
+                    m_stdPropsText.lastIndexOf(context->sfCombosProperties[i]);
             if (idx >= 0) {
                 ++assignedEntries;
-                // we use the default sf combo-box by default
-                if (firstSF)
-                    m_sfCombos.front()->setCurrentIndex(idx);
-                else
-                    addSFComboBox(idx);
-                firstSF = false;
+                addSFComboBox(idx);
             }
         }
     }
@@ -359,7 +350,7 @@ void PlyOpenDlg::apply() {
     if (isValid()) {
         saveContext(&s_lastContext);
         s_lastContext.applyAll = false;
-        emit fullyAccepted();
+        Q_EMIT fullyAccepted();
     }
 }
 
@@ -367,7 +358,7 @@ void PlyOpenDlg::applyAll() {
     if (isValid()) {
         saveContext(&s_lastContext);
         s_lastContext.applyAll = true;
-        emit fullyAccepted();
+        Q_EMIT fullyAccepted();
     }
 }
 
@@ -381,7 +372,7 @@ bool PlyOpenDlg::isValid(bool displayErrors /*=true*/) const {
     if (zeroCoord > 1) {
         if (displayErrors)
             QMessageBox::warning(
-                    0, "Error",
+                    nullptr, "Error",
                     "At least two vertex coordinates (X,Y,Z) must be defined!");
         return false;
     }
@@ -410,7 +401,7 @@ bool PlyOpenDlg::isValid(bool displayErrors /*=true*/) const {
     for (int i = 1; i < n + p + q; ++i) {
         if (assignedIndexCount[i] > 1) {
             if (displayErrors)
-                QMessageBox::warning(0, "Error",
+                QMessageBox::warning(nullptr, "Error",
                                      QString("Can't assign same property to "
                                              "multiple fields! (%1)")
                                              .arg(xComboBox->itemText(i)));
@@ -426,13 +417,64 @@ bool PlyOpenDlg::canBeSkipped() const {
 }
 
 void PlyOpenDlg::addSFComboBox(int selectedIndex /*=0*/) {
-    // create a new combo-box
-    m_sfCombos.push_back(new QComboBox());
-    formLayout->addRow(QString("Scalar #%1").arg(m_sfCombos.size()),
-                       m_sfCombos.back());
+    // create a new item in the SF list
+    QString itemTitle = QString("Scalar #%1").arg(m_sfCombos.size());
+    QListWidgetItem* sfItem = new QListWidgetItem(itemTitle);
 
+    // create a new combo-box
+    QComboBox* sfCombo = new QComboBox;
     // fill it with default items
-    m_sfCombos.back()->addItems(m_stdPropsText);
-    m_sfCombos.back()->setMaxVisibleItems(m_stdPropsText.size());
-    m_sfCombos.back()->setCurrentIndex(selectedIndex);
+    sfCombo->addItems(m_stdPropsText);
+    sfCombo->setMaxVisibleItems(m_stdPropsText.size());
+    sfCombo->setCurrentIndex(selectedIndex);
+
+    scalarFields->addItem(sfItem);
+    scalarFields->setItemWidget(sfItem, sfCombo);
+
+    m_sfCombos.push_back(sfCombo);
+}
+
+void PlyOpenDlg::addAllStdPropsAsSF() {
+    std::vector<bool> notUsed;
+    notUsed.resize(m_stdPropsText.size(), true);
+
+    // check standard comboboxes
+    for (QComboBox* combo : m_standardCombos) {
+        assert(combo);
+        int index = combo->currentIndex();
+        if (index >= 0) {
+            if (static_cast<size_t>(index) < notUsed.size()) {
+                notUsed[index] = false;
+            }
+        } else {
+            assert(false);
+            CVLog::Warning("Invalid combobox index!");
+        }
+    }
+
+    // check already existing SF combos
+    for (QComboBox* combo : m_sfCombos) {
+        assert(combo);
+        int index = combo->currentIndex();
+        if (index >= 0) {
+            if (static_cast<size_t>(index) < notUsed.size()) {
+                notUsed[index] = false;
+            }
+        } else {
+            assert(false);
+            CVLog::Warning("Invalid combobox index!");
+        }
+    }
+
+    size_t createdSFCount = 0;
+    for (size_t i = 0; i < notUsed.size(); ++i) {
+        if (notUsed[i]) {
+            addSFComboBox(static_cast<int>(i));
+            ++createdSFCount;
+        }
+    }
+
+    if (createdSFCount == 0) {
+        QMessageBox::warning(this, "Add all SFs", "No unused property");
+    }
 }

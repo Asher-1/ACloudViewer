@@ -316,7 +316,7 @@ static FbxNode* ToFbxMesh(ccGenericMesh* mesh,
                          texFilenames.begin();
                  it != texFilenames.end(); ++it) {
                 const QImage image = ccMaterial::GetTexture(it.key());
-                image.mirrored().save(it.value());
+                image.save(it.value());
             }
 
             texFilenames.clear();  // don't need this anymore!

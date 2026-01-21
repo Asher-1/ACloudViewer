@@ -556,7 +556,7 @@ CC_FILE_ERROR RasterGridFilter::loadFile(const QString& filename,
             }
 
             if (quad) {
-                ccPlane::SetQuadTexture(quad, quadTexture.mirrored());
+                ccPlane::SetQuadTexture(quad, quadTexture);
                 container.addChild(quad);
             } else if (pc) {
                 if (!zRasterProcessed) {
