@@ -25,13 +25,13 @@ INPUT += @PROJECT_SOURCE_DIR@/libs/cloudViewer/core \
          @PROJECT_SOURCE_DIR@/libs/cloudViewer/data \
          @PROJECT_SOURCE_DIR@/libs/cloudViewer/t
 
-# Module 3: eCV_db (Database/Data Structures)
+# Module 3: CV_db (Database/Data Structures)
 # Core database and data structure module
-INPUT += @PROJECT_SOURCE_DIR@/libs/eCV_db/include
+INPUT += @PROJECT_SOURCE_DIR@/libs/CV_db/include
 
-# Module 4: eCV_io (Input/Output)
+# Module 4: CV_io (Input/Output)
 # File I/O module
-INPUT += @PROJECT_SOURCE_DIR@/libs/eCV_io/include
+INPUT += @PROJECT_SOURCE_DIR@/libs/CV_io/include
 
 # Module 5: PCLEngine
 # PCL integration module
@@ -61,9 +61,9 @@ INPUT += @PROJECT_SOURCE_DIR@/libs/CVViewer
 # Python interface module
 INPUT += @PROJECT_SOURCE_DIR@/libs/Python/pybind
 
-# Module 12: eCV Main Application
+# Module 12: ACloudViewer Main Application
 # ACloudViewer main program
-INPUT += @PROJECT_SOURCE_DIR@/eCV
+INPUT += @PROJECT_SOURCE_DIR@/app
 
 # Module 13: Plugins
 # Plugin implementations

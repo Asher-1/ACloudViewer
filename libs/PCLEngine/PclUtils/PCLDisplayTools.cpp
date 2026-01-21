@@ -17,7 +17,7 @@
 #include <CVTools.h>
 #include <ecvGLMatrix.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvBBox.h>
 #include <ecvCameraSensor.h>
 #include <ecvGenericMesh.h>

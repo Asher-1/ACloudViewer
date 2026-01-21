@@ -17,7 +17,7 @@
 #include <QtCompat.h>
 #include <ecvPickingHub.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvBox.h>
 #include <ecvDisplayTools.h>
 #include <ecvProgressDialog.h>

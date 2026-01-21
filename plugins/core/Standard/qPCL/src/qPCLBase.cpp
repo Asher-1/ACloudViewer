@@ -7,7 +7,7 @@
 
 #include "qPCLBase.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvPointCloud.h>
 
 // PCL_PLUGIN_ALGORIGHM_LIB

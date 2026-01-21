@@ -10,7 +10,7 @@
 // qCC
 #include <ecvStdPluginInterface.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvHObject.h>
 
 //! CANUPO plugin

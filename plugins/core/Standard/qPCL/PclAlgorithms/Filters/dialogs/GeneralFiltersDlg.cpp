@@ -7,7 +7,7 @@
 
 #include "GeneralFiltersDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvMainAppInterface.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>

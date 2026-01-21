@@ -14,7 +14,7 @@
 // cloudViewer
 #include <CVGeom.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorScale.h>
 #include <ecvGLMatrix.h>
 

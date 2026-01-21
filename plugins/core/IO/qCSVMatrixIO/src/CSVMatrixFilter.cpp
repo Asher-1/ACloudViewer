@@ -17,7 +17,7 @@
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <CVLog.h>
 #include <ecvHObject.h>
 #include <ecvMesh.h>

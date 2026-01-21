@@ -9,13 +9,13 @@
 
 #include <ClassMap.h>
 
-#include "eCV_python.h"
+#include "CV_python.h"
 
 class ccHObject;
 namespace cloudViewer {
 namespace utility {
 
-class ECV_PYTHON_LIB_API DeepSemanticSegmentation {
+class CV_PYTHON_LIB_API DeepSemanticSegmentation {
 public:
     DeepSemanticSegmentation();
     ~DeepSemanticSegmentation();

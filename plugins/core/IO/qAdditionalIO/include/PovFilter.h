@@ -10,7 +10,7 @@
 #include "FileIOFilter.h"
 
 //! P.O.V. meta-file I/O filter
-class /*ECV_IO_LIB_API*/ PovFilter : public FileIOFilter {
+class /*CV_IO_LIB_API*/ PovFilter : public FileIOFilter {
 public:
     PovFilter();
 

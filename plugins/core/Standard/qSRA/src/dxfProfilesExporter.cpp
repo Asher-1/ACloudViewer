@@ -7,7 +7,7 @@
 
 #include "dxfProfilesExporter.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvPolyline.h>
 
 // ECV_plugins

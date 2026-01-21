@@ -28,7 +28,7 @@
 // CV_CORE_LIB
 #include <CVGeom.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>

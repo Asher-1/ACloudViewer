@@ -93,7 +93,7 @@ Yes, ACloudViewer is released under a permissive license that allows commercial 
 What file formats are supported?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-ACloudViewer supports a wide range of file formats through core I/O libraries (``libs/eCV_io``) and extensible I/O plugins (``plugins/core/IO``).
+ACloudViewer supports a wide range of file formats through core I/O libraries (``libs/CV_io``) and extensible I/O plugins (``plugins/core/IO``).
 
 **Point Cloud Formats:**
 

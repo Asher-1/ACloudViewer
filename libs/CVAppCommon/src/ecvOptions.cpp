@@ -12,7 +12,7 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
-// eCV_db
+// CV_db
 #include <ecvSingleton.h>
 
 //! Unique instance of ecvOptions

@@ -18,7 +18,7 @@
 #include "cvSelectionLabelPropertiesDialog.h"
 #include "cvViewSelectionManager.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvGenericVisualizer3D.h>
 #include <ecvMesh.h>
@@ -27,7 +27,7 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
-// ECV_IO_LIB
+// CV_IO_LIB
 #include <FileIOFilter.h>
 
 // Qt

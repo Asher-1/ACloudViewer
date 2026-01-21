@@ -303,7 +303,7 @@ clean:                # Clean generated files
 
 Current documentation includes:
 - **Python modules**: 47 (cloudViewer.core, geometry, io, pipelines, etc.)
-- **C++ modules**: 11 (core, 3rdparty, libs, plugins, eCV)
+- **C++ modules**: 11 (core, 3rdparty, libs, plugins, app)
 - **Tutorials**: 30+ interactive Jupyter notebooks
 - **Pages**: 500+ HTML pages
 - **Build time**: ~30-40 minutes (full build)

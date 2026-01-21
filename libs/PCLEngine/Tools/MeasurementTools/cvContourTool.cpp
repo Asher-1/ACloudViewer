@@ -25,7 +25,7 @@
 #include "Tools/PickingTools/cvPointPickingHelper.h"
 #include "VTKExtensions/ConstrainedWidgets/cvConstrainedContourRepresentation.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <CVLog.h>
 #include <ecvColorTypes.h>
 #include <ecvPolyline.h>

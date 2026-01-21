@@ -8,7 +8,7 @@
 // CV_CORE_LIB
 #include <Logging.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvBox.h>
 #include <ecvCone.h>
 #include <ecvCoordinateSystem.h>

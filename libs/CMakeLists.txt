@@ -1,12 +1,12 @@
-add_subdirectory( eCV_db )
-add_subdirectory( eCV_io )
+add_subdirectory( CV_db )
+add_subdirectory( CV_io )
 
 # Links <target> against all 3rdparty libraries.
 # We need this because we create a lot of object libraries to assemble the main CloudViewer library.
 function(cloudViewer_link_3rdparty_libraries target)
     # Directly pass public and private dependencies to the target.
-    target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS} ECV_DB_LIB ECV_IO_LIB)
-    target_link_libraries(${target} PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS} ECV_DB_LIB ECV_IO_LIB)
+    target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS} CV_DB_LIB CV_IO_LIB)
+    target_link_libraries(${target} PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS} CV_DB_LIB CV_IO_LIB)
 
     if(USE_SIMD)
         target_compile_definitions(${target} PRIVATE ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
@@ -80,7 +80,7 @@ endif ()
 
 # PCL ENGINE LIB
 if (USE_PCL_BACKEND)
-	add_subdirectory( PCLEngine ) # must always be included after eCV_db and eCV_io (dependency)
+	add_subdirectory( PCLEngine ) # must always be included after CV_db and CV_io (dependency)
 endif()
 
 add_subdirectory( CVAppCommon )

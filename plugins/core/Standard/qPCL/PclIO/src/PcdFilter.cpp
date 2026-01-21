@@ -24,7 +24,7 @@
 #include <Helper.h>
 #include <ProgressReporters.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGBLSensor.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>

@@ -10,14 +10,14 @@
 #include <QDialog>
 
 // local
-#include "eCV_io.h"
+#include "CV_io.h"
 #include "ui_openBundlerFileDlg.h"
 
 class ccGLMatrix;
 
 //! Dialog for importation of Snavely's Bundler files
-class /*ECV_IO_LIB_API*/ BundlerImportDlg : public QDialog,
-                                            public Ui::BundlerImportDlg {
+class /*CV_IO_LIB_API*/ BundlerImportDlg : public QDialog,
+                                           public Ui::BundlerImportDlg {
     Q_OBJECT
 
 public:

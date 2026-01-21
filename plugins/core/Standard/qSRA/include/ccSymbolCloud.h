@@ -10,7 +10,7 @@
 // Qt
 #include <QString>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvPointCloud.h>
 
 class ccSymbolCloud : public ccPointCloud {

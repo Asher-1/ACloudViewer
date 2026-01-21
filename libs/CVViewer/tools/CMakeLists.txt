@@ -7,8 +7,8 @@ macro(cloudViewer_add_tool TOOL_NAME)
     target_sources(${TOOL_NAME} PRIVATE "${TOOL_NAME}.cpp")
     target_link_libraries(${TOOL_NAME} PRIVATE ${ARGN})
 
-    target_link_libraries( ${TOOL_NAME} PRIVATE ECV_DB_LIB )
-    target_link_libraries( ${TOOL_NAME} PRIVATE ECV_IO_LIB )
+    target_link_libraries( ${TOOL_NAME} PRIVATE CV_DB_LIB )
+    target_link_libraries( ${TOOL_NAME} PRIVATE CV_IO_LIB )
 
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
     cloudViewer_set_targets_independent(${TOOL_NAME})

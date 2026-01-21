@@ -15,7 +15,7 @@
 #include "Tools/Common/ecvTools.h"  // must below above three
 #include "dialogs/SACSegmentationDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvPointCloud.h>
 
 // ECV_PLUGINS

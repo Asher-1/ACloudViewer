@@ -9,7 +9,7 @@
 
 #include "ccMPlaneErrors.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvDisplayTools.h>
 
 bool compareObjects(QString name,

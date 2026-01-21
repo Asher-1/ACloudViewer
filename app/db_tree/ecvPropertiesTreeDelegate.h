@@ -1,0 +1,292 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+// CV_DB_LIB
+#include <ecvArray.h>
+
+// Qt
+#include <QPointer>
+#include <QStyledItemDelegate>
+
+// Forward declarations
+class ecvGenericVisualizer3D;
+class ccHObject;
+class ccGenericPointCloud;
+class ccPolyline;
+class ccGenericMesh;
+class ccGenericPrimitive;
+class ccOctree;
+class ccKdTree;
+class ccImage;
+class ccGBLSensor;
+class ccCameraSensor;
+class ccMaterialSet;
+class cc2DLabel;
+class cc2DViewportObject;
+class ccFacet;
+class ccIndexedTransformationBuffer;
+class ccShiftedObject;
+class CCShareable;
+class ccPlanarEntityInterface;
+class ccSensor;
+class ccCoordinateSystem;
+
+class QStandardItemModel;
+class QStandardItem;
+class QAbstractItemView;
+
+//! GUI properties list dialog element
+class ccPropertiesTreeDelegate : public QStyledItemDelegate {
+    Q_OBJECT
+
+public:
+    //! Delegate items roles
+    enum CC_PROPERTY_ROLE {
+        OBJECT_NO_PROPERTY = 0,
+        OBJECT_NAME,
+        OBJECT_VISIBILITY,
+        OBJECT_OPACITY,  // Object transparency/opacity [0.0, 1.0]
+        OBJECT_CURRENT_DISPLAY,
+        OBJECT_NORMALS_SHOWN,
+        OBJECT_COLOR_SOURCE,
+        OBJECT_POLYLINE_WIDTH,
+        OBJECT_SENSOR_DRAW_FRUSTUM,
+        OBJECT_SENSOR_DRAW_FRUSTUM_PLANES,
+        OBJECT_SF_SHOW_SCALE,
+        OBJECT_OCTREE_LEVEL,
+        OBJECT_OCTREE_TYPE,
+        OBJECT_MESH_WIRE,
+        OBJECT_MESH_POINTS,
+        OBJECT_MESH_STIPPLING,
+        OBJECT_MESH_TEXTUREFILE,
+        OBJECT_CURRENT_SCALAR_FIELD,
+        OBJECT_CURRENT_COLOR_RAMP,
+        OBJECT_IMAGE_ALPHA,
+        OBJECT_APPLY_IMAGE_VIEWPORT,
+        OBJECT_APPLY_SENSOR_VIEWPORT,
+        OBJECT_CLOUD_SF_EDITOR,
+        OBJECT_SENSOR_MATRIX_EDITOR,
+        OBJECT_SENSOR_DISPLAY_SCALE,
+        OBJECT_SENSOR_UNCERTAINTY,
+        OBJECT_COLOR_RAMP_STEPS,
+        OBJECT_MATERIALS,
+        OBJECT_APPLY_LABEL_VIEWPORT,
+        OBJECT_UPDATE_LABEL_VIEWPORT,
+        OBJECT_LABEL_DISP_2D,
+        OBJECT_LABEL_POINT_LEGEND,
+        OBJECT_PRIMITIVE_PRECISION,
+        OBJECT_CIRCLE_RESOLUTION,
+        OBJECT_SPHERE_RADIUS,
+        OBJECT_CIRCLE_RADIUS,
+        OBJECT_DISC_RADIUS,
+        OBJECT_CONE_HEIGHT,
+        OBJECT_CONE_BOTTOM_RADIUS,
+        OBJECT_CONE_TOP_RADIUS,
+        OBJECT_CLOUD_POINT_SIZE,
+        OBJECT_NAME_IN_3D,
+        OBJECT_FACET_CONTOUR,
+        OBJECT_FACET_MESH,
+        OBJECT_PLANE_NORMAL_VECTOR,
+        OBJECT_SENSOR_INDEX,
+        OBJECT_SHOW_TRANS_BUFFER_PATH,
+        OBJECT_SHOW_TRANS_BUFFER_TRIHDERONS,
+        OBJECT_TRANS_BUFFER_TRIHDERONS_SCALE,
+        OBJECT_HISTORY_MATRIX_EDITOR,
+        OBJECT_GLTRANS_MATRIX_EDITOR,
+        OBJECT_COORDINATE_SYSTEM_DISP_PLANES,
+        OBJECT_COORDINATE_SYSTEM_DISP_AXES,
+        OBJECT_COORDINATE_SYSTEM_AXES_WIDTH,
+        OBJECT_COORDINATE_SYSTEM_DISP_SCALE,
+        // Note: OBJECT_SELECTION_PROPERTIES has been removed.
+        // Selection properties are now shown in the standalone Find Data dock
+        // widget (cvFindDataDockWidget) which is decoupled from the properties
+        // tree. This follows ParaView's design pattern.
+        OBJECT_SELECTION_HOVER_COLOR,        // Legacy - kept for compatibility
+        OBJECT_SELECTION_PRESELECTED_COLOR,  // Legacy - kept for compatibility
+        OBJECT_SELECTION_SELECTED_COLOR,     // Legacy - kept for compatibility
+        OBJECT_SELECTION_BOUNDARY_COLOR,  // Color picker for boundary highlight
+        OBJECT_SELECTION_HOVER_OPACITY,   // Opacity for hover
+        OBJECT_SELECTION_PRESELECTED_OPACITY,  // Opacity for preselected
+        OBJECT_SELECTION_SELECTED_OPACITY,     // Opacity for selected
+        OBJECT_SELECTION_BOUNDARY_OPACITY,     // Opacity for boundary
+        OBJECT_SELECTION_SHOW_TOOLTIPS,        // Checkbox for tooltip display
+        OBJECT_SELECTION_MAX_ATTRIBUTES,  // Spinbox for max tooltip attributes
+        // View properties (ParaView-style)
+        OBJECT_VIEW_USE_LIGHT_KIT,           // Light Kit enable/disable
+        OBJECT_VIEW_LIGHT_KIT_INTENSITY,     // Light Kit intensity slider
+                                             // (0.0-2.0)
+        OBJECT_VIEW_DATA_AXES_GRID_VISIBLE,  // Show/hide data axes grid
+                                             // (ParaView-style)
+        OBJECT_VIEW_DATA_AXES_GRID_EDIT,     // Edit data axes grid properties
+        OBJECT_VIEW_CAMERA_ORIENTATION_WIDGET,  // Camera orientation widget
+                                                // visibility (toolbar only)
+        OBJECT_VIEW_CENTER_AXES_VISIBILITY,  // Center axes visibility (simple
+                                             // coordinate system)
+        TREE_VIEW_HEADER,
+    };
+
+    //! Default constructor
+    ccPropertiesTreeDelegate(QStandardItemModel* _model,
+                             QAbstractItemView* _view,
+                             QObject* parent = 0);
+
+    //! Default destructor
+    virtual ~ccPropertiesTreeDelegate();
+
+    // inherited from QStyledItemDelegate
+    virtual QSize sizeHint(const QStyleOptionViewItem& option,
+                           const QModelIndex& index) const;
+    virtual QWidget* createEditor(QWidget* parent,
+                                  const QStyleOptionViewItem& option,
+                                  const QModelIndex& index) const;
+    // virtual bool editorEvent(QEvent* event, QAbstractItemModel* model, const
+    // QStyleOptionViewItem& option, const QModelIndex& index);
+    virtual void updateEditorGeometry(QWidget* editor,
+                                      const QStyleOptionViewItem& option,
+                                      const QModelIndex& index) const;
+    virtual void setEditorData(QWidget* editor, const QModelIndex& index) const;
+    virtual void unbind();
+
+    //! Fill property view with QItems corresponding to object's type
+    void fillModel(ccHObject* hObject);
+
+    //! Returns currently bound object
+    ccHObject* getCurrentObject();
+
+    // Note: setSelectionToolsActive, areSelectionToolsActive, and
+    // showSelectionPropertiesOnly have been removed. Selection properties are
+    // now shown in the standalone Find Data dock widget (cvFindDataDockWidget)
+    // which is decoupled from the properties tree and selection tool state.
+
+    //! Clear the model completely
+    void clearModel();
+
+    //! Set visualizer for other property editors
+    void setVisualizer(ecvGenericVisualizer3D* viewer) { m_viewer = viewer; }
+
+signals:
+    void ccObjectPropertiesChanged(ccHObject* hObject) const;
+    void ccObjectAppearanceChanged(ccHObject* hObject,
+                                   bool forceRedraw = true) const;
+    void ccObjectAndChildrenAppearanceChanged(ccHObject* hObject,
+                                              bool forceRedraw = true) const;
+
+    /**
+     * @brief Request to clear all selection data (prevents crashes from stale
+     * references)
+     * @note Emitted when objects might have been deleted or selection tools
+     * state changes
+     */
+    void requestClearSelection() const;
+
+private:
+    static const char* s_noneString;
+    static const char* s_rgbColor;
+    static const char* s_sfColor;
+    static const char* s_defaultPointSizeString;
+    static const char* s_defaultPolyWidthSizeString;
+
+    void updateItem(QStandardItem*);
+    void scalarFieldChanged(int);
+    void textureFileChanged(int);
+    void colorScaleChanged(int);
+    void colorRampStepsChanged(int);
+    void spawnColorRampEditor();
+    void spawnTextureFileEditor();
+    void octreeDisplayModeChanged(int);
+    void octreeDisplayedLevelChanged(int);
+    void primitivePrecisionChanged(int);
+    void circleResolutionChanged(int);
+    void sphereRadiusChanged(double);
+    void circleRadiusChanged(double);
+    void discRadiusChanged(double);
+    void coneHeightChanged(double);
+    void coneBottomRadiusChanged(double);
+    void coneTopRadiusChanged(double);
+    void imageAlphaChanged(int);
+    void applyImageViewport();
+    void applySensorViewport();
+    void applyLabelViewport();
+    void updateLabelViewport();
+    void updateDisplay();
+    void objectDisplayChanged(const QString&);
+    void colorSourceChanged(const QString&);
+    void sensorScaleChanged(double);
+    void coordinateSystemDisplayScaleChanged(double);
+    void sensorUncertaintyChanged();
+    void sensorIndexChanged(double);
+    void updateCurrentEntity(bool redraw = true);
+    void cloudPointSizeChanged(int);
+    void polyineWidthChanged(int);
+    void coordinateSystemAxisWidthChanged(int);
+    void trihedronsScaleChanged(double);
+    void opacityChanged(int);  // Opacity slider value changed [0, 100]
+    void lightIntensityChanged(double);  // Light intensity changed [0.0, 1.0]
+    // View property slots (ParaView-style)
+    void dataAxesGridEditRequested();
+    void cameraOrientationWidgetChanged(bool);
+    void centerAxesVisibilityChanged(bool);
+
+protected:
+    void addSeparator(QString title);
+    void appendRow(QStandardItem* leftItem,
+                   QStandardItem* rightItem,
+                   bool openPersistentEditor = false);
+    void appendWideRow(QStandardItem* item, bool openPersistentEditor = true);
+
+    void fillWithHObject(ccHObject*);
+    void fillWithPointCloud(ccGenericPointCloud*);
+    void fillSFWithPointCloud(ccGenericPointCloud*);
+    void fillWithMesh(ccGenericMesh*);
+    void fillWithFacet(ccFacet*);
+    void fillWithPlanarEntity(ccPlanarEntityInterface*);
+    void fillWithSensor(ccSensor*);
+    void fillWithTransBuffer(ccIndexedTransformationBuffer*);
+    void fillWithPolyline(ccPolyline*);
+    void fillWithPrimitive(ccGenericPrimitive*);
+    void fillWithPointOctree(ccOctree*);
+    void fillWithPointKdTree(ccKdTree*);
+    void fillWithImage(ccImage*);
+    void fillWithLabel(cc2DLabel*);
+    void fillWithViewportObject(cc2DViewportObject*);
+    void fillWithGBLSensor(ccGBLSensor*);
+    void fillWithCameraSensor(ccCameraSensor*);
+    void fillWithMaterialSet(ccMaterialSet*);
+    void fillWithShareable(CCShareable*);
+    void fillWithMetaData(ccObject*);
+    void fillWithShifted(ccShiftedObject*);
+    void fillWithCoordinateSystem(const ccCoordinateSystem*);
+    void fillWithSelectionProperties();
+    void fillWithViewProperties();  // ParaView-style view properties
+    template <class Type, int N, class ComponentType>
+    void fillWithCCArray(ccArray<Type, N, ComponentType>*);
+
+    //! Returns whether the editor is wide (i.e. spans on two columns) or not
+    bool isWideEditor(int itemData) const;
+
+    //! Updates the current model (assuming object is the same)
+    void updateModel();
+
+    //! Get texture path map for current mesh object
+    QMap<QString, QString> getCurrentMeshTexturePathMap() const;
+    //! Clear texture path map for a specific mesh object
+    void clearMeshTexturePathMap(ccHObject* mesh);
+
+    ccHObject* m_currentObject;
+    QStandardItemModel* m_model;
+    QAbstractItemView* m_view;
+    //! Texture path maps indexed by mesh object pointer
+    //! Maps mesh object -> (texture name -> texture path)
+    //! Mutable to allow modification in const methods (setEditorData)
+    mutable QMap<ccHObject*, QMap<QString, QString>> m_meshTexturePathMaps;
+    //! Visualizer for other property editors
+    ecvGenericVisualizer3D* m_viewer;
+    //! Last focused item role (used to force scroll focus after model update)
+    CC_PROPERTY_ROLE m_lastFocusItemRole;
+};

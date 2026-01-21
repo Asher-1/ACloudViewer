@@ -10,7 +10,7 @@
 #include "FileIOFilter.h"
 
 //! Point+Normal binary point cloud file I/O filter
-class /*ECV_IO_LIB_API*/ PNFilter : public FileIOFilter {
+class /*CV_IO_LIB_API*/ PNFilter : public FileIOFilter {
 public:
     PNFilter();
 

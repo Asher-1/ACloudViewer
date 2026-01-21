@@ -7,7 +7,7 @@
 
 #include "ccFitPlaneTool.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 // #include <ecvPointCloud.h>
 
 ccFitPlaneTool::ccFitPlaneTool() : ccTool() {}

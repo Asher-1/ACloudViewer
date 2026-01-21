@@ -9,7 +9,7 @@
 
 #include "PdmsParser.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <CVLog.h>
 #include <assert.h>
 #include <ecvBox.h>

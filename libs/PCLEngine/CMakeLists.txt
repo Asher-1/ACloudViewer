@@ -187,8 +187,8 @@ if (USE_PCL_BACKEND)
 
     # INTERNAL LIB
     target_link_libraries(${PROJECT_NAME}
-            ECV_DB_LIB
-            ECV_IO_LIB)
+            CV_DB_LIB
+            CV_IO_LIB)
 
     # Qt
     # Qt5/Qt6 compatibility - use unified Qt:: prefix
