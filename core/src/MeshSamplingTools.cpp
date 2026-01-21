@@ -280,7 +280,7 @@ PointCloud* MeshSamplingTools::samplePointsOnMesh(
             progressCb->setMethodTitle("Mesh sampling");
             char buffer[64];
             snprintf(buffer, 64, "Triangles: %u\nPoints: %u", triCount,
-                    theoreticNumberOfPoints);
+                     theoreticNumberOfPoints);
             progressCb->setInfo(buffer);
         }
         progressCb->update(0);
