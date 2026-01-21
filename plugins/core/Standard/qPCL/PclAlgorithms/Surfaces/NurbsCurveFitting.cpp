@@ -15,7 +15,7 @@
 #include "Tools/Common/ecvTools.h"  // must below above three
 #include "dialogs/NurbsCurveFittingDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>

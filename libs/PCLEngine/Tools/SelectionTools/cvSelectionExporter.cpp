@@ -11,7 +11,7 @@
 #include <CVLog.h>
 #include <ReferenceCloud.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGenericMesh.h>
 #include <ecvMaterialSet.h>
 #include <ecvMesh.h>
@@ -20,7 +20,7 @@
 #include <ecvScalarField.h>
 #include <ecvSerializableObject.h>
 
-// ECV_IO_LIB - Use existing I/O infrastructure
+// CV_IO_LIB - Use existing I/O infrastructure
 #include <AutoIO.h>
 #include <FileIO.h>
 #include <FileIOFilter.h>
@@ -435,7 +435,7 @@ bool cvSelectionExporter::exportToFile(vtkPolyData* polyData,
         return false;
     }
 
-    // Save using eCV_io module
+    // Save using CV_io module
     bool success = saveObjectToFile(object, filename, writeAscii, compressed);
     delete object;
 
@@ -784,7 +784,7 @@ bool cvSelectionExporter::saveObjectToFile(ccHObject* object,
         return false;
     }
 
-    // Use eCV_io module for saving
+    // Use CV_io module for saving
     // This supports all formats: BIN, OBJ, PLY, STL, PCD, etc.
     std::string filenameStr = filename.toStdString();
 

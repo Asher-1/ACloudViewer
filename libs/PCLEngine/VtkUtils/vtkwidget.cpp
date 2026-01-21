@@ -22,7 +22,7 @@
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorTypes.h>
 
 #include <QDebug>

@@ -105,7 +105,7 @@
       <string>Picking Tool. Use this to select GeoObjects or measurements.</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/dbGBLSensorSymbol.png</normaloff>:/Resources/images/dbGBLSensorSymbol.png</iconset>
      </property>
      <property name="checkable">
@@ -122,7 +122,7 @@
       <string>Plane Tool: Measure surface orientations</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/ecvSamplePoints.png</normaloff>:/Resources/images/ecvSamplePoints.png</iconset>
      </property>
      <property name="checkable">
@@ -148,7 +148,7 @@
       <string>Trace Tool: Measure orientation from structure trace</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/orthoSections.png</normaloff>:/Resources/images/orthoSections.png</iconset>
      </property>
      <property name="checkable">
@@ -168,7 +168,7 @@
       <string>Lineation Tool: Measure distances and directions</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/smallPointDistance.png</normaloff>:/Resources/images/smallPointDistance.png</iconset>
      </property>
      <property name="checkable">
@@ -185,7 +185,7 @@
       <string>Other Tools</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/ecvAddConstSF.png</normaloff>:/Resources/images/ecvAddConstSF.png</iconset>
      </property>
      <property name="checkable">
@@ -212,7 +212,7 @@
       <string>Change tool and visibility settings</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/ecvGear128.png</normaloff>:/Resources/images/ecvGear128.png</iconset>
      </property>
      <property name="checkable">
@@ -235,7 +235,7 @@
       <string>Undo last action</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/smallRevert.png</normaloff>:/Resources/images/smallRevert.png</iconset>
      </property>
      <property name="shortcut">
@@ -252,7 +252,7 @@
       <string>Save current label (added to cloud children)</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/save.png</normaloff>:/Resources/images/save.png</iconset>
      </property>
     </widget>
@@ -263,7 +263,7 @@
       <string>Show readme and help information</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/ecvConsole.png</normaloff>:/Resources/images/ecvConsole.png</iconset>
      </property>
     </widget>
@@ -274,7 +274,7 @@
       <string>Accept latest changes</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/smallValidate.png</normaloff>:/Resources/images/smallValidate.png</iconset>
      </property>
      <property name="shortcut">
@@ -288,7 +288,7 @@
       <string>Exit ccCompass plugin. Thanks for visiting :)</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../eCV/MainWindow.qrc">
+      <iconset resource="../../../../app/MainWindow.qrc">
        <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
      </property>
      <property name="shortcut">
@@ -300,7 +300,7 @@
  </widget>
  <resources>
   <include location="../ccCompass.qrc"/>
-  <include location="../../../../eCV/MainWindow.qrc"/>
+  <include location="../../../../app/MainWindow.qrc"/>
  </resources>
  <connections/>
 </ui>

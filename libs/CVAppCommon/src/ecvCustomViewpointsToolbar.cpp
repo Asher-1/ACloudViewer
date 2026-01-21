@@ -12,7 +12,7 @@
 #include "ecvCustomViewpointButtonDlg.h"
 #include "ecvSettingManager.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvDisplayTools.h>
 
 #ifdef USE_PCL_BACKEND

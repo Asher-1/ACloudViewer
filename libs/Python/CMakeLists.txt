@@ -18,7 +18,7 @@ if (BUILD_PYTHON_MODULE)
         endif ()
     endif ()
 
-    project(ECV_PYTHON_LIB)
+    project(CV_PYTHON_LIB)
 
     # CURRENT DIR
     file(GLOB header_list *.h)
@@ -52,7 +52,7 @@ if (BUILD_PYTHON_MODULE)
     target_link_libraries(
         ${PROJECT_NAME}
         CVCoreLib
-        ECV_DB_LIB
+        CV_DB_LIB
         Qt::Core
         Qt::PrintSupport
         pybind11::embed
@@ -67,10 +67,10 @@ if (BUILD_PYTHON_MODULE)
     else ()
         # Do not treat includes from IMPORTED target as SYSTEM (Python headers in pybind11::embed).
         # This may be needed to resolve header conflicts, e.g. between Python release and debug headers.
-        set_target_properties(${PROJECT_NAME} PROPERTIES NO_SYSTEM_FROM_IMPORTED ON COMPILE_DEFINITIONS ECV_PYTHON_LIB_LIBRARY_BUILD)
+        set_target_properties(${PROJECT_NAME} PROPERTIES NO_SYSTEM_FROM_IMPORTED ON COMPILE_DEFINITIONS CV_PYTHON_LIB_LIBRARY_BUILD)
     endif ()
 
-    target_compile_definitions(${PROJECT_NAME} PRIVATE ECV_PYTHON_LIB_LIBRARY_BUILD)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE CV_PYTHON_LIB_LIBRARY_BUILD)
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_PYTHON_MODULE)
 
     if (NOT APPLE) # no need to copy targets on macos due to rpath

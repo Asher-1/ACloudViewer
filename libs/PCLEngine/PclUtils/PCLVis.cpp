@@ -32,7 +32,7 @@
 #include <Helper.h>
 #include <ecvGLMatrix.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <LineSet.h>
 #include <ecvBBox.h>
 #include <ecvCameraSensor.h>

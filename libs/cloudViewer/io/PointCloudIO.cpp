@@ -13,10 +13,10 @@
 #include <Logging.h>
 #include <ProgressReporters.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvPointCloud.h>
 
-// ECV_IO_LIB
+// CV_IO_LIB
 #include <AutoIO.h>
 
 // SYSTEM

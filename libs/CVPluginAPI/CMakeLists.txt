@@ -17,8 +17,8 @@ get_target_property( STUB_INCLUDES CVPluginStub INCLUDE_DIRECTORIES )
 target_include_directories( ${PROJECT_NAME} PUBLIC "${STUB_INCLUDES}" )
 
 target_link_libraries( ${PROJECT_NAME}
-	ECV_DB_LIB
-	ECV_IO_LIB
+	CV_DB_LIB
+	CV_IO_LIB
 )
 
 target_compile_definitions( ${PROJECT_NAME} PRIVATE CVPLUGIN_API_LIBRARY_BUILD )

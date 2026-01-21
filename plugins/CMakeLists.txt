@@ -7,7 +7,7 @@ list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" )
 
 include( Plugins )
 
-set( ACloudViewer_SOURCE_DIR "${CMAKE_SOURCE_DIR}/eCV" )
+set( ACloudViewer_SOURCE_DIR "${CMAKE_SOURCE_DIR}/app" )
 set( ACloudViewerPlugins_SOURCE_DIR "${CMAKE_SOURCE_DIR}/plugins" )
 
 add_subdirectory( core )

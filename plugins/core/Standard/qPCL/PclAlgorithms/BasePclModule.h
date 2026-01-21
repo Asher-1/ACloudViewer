@@ -12,7 +12,7 @@
 #include <QObject>
 #include <QString>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvHObject.h>
 
 // ECV_PLUGINS

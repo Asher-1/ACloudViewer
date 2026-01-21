@@ -19,7 +19,7 @@
 // ECV_PLUGINS
 #include <ecvMainAppInterface.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorScaleEditorDlg.h>
 #include <ecvColorScaleSelector.h>
 #include <ecvColorScalesManager.h>

@@ -10,7 +10,7 @@
 // CV_CORE_LIB
 #include <CVPlatform.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvSingleton.h>
 
 // QT

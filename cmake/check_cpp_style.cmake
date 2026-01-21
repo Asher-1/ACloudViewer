@@ -51,7 +51,7 @@ endmacro()
 set(CPP_FORMAT_DIRS
     core
 	libs
-	eCV
+	app
     examples
     docs/_static
 )

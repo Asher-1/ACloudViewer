@@ -18,7 +18,7 @@ It uses CMake, requires C++14, and compiles & runs on Linux, macOS, and Windows.
 | CVCORELIB_USE_TBB | Use [Intel Threading Building Blocks](https://github.com/oneapi-src/oneTBB) lib to enable some parallel processing | OFF |
 | CVCORELIB_USE_QT_CONCURRENT | Use Qt to enable parallel processing using [QtConcurrent](https://doc.qt.io/qt-5/qtconcurrent-index.html) | ON |
 | CVCORELIB_SHARED | Compile as a shared library | ON |
-| CVCORELIB_SCALAR_DOUBLE | Define _ScalarType_ as double (instead of float) | OFF |
+| CVCORELIB_SCALAR_DOUBLE | Define _ScalarType_ and PointCoordinateType as double (instead of float) | OFF |
 
 ### Qt Option (Qt5_DIR)
 

@@ -11,7 +11,7 @@
 #include <QApplication>
 #include <QProgressDialog>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include "ecvFacet.h"
 #include "ecvPointCloud.h"
 #include "ecvPolyline.h"

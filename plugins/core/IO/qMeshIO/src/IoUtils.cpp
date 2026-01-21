@@ -12,7 +12,7 @@
 // CV_CORE_LIB
 #include <CVTools.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include "IoUtils.h"
 #include "assimp/material.h"
 #include "assimp/mesh.h"

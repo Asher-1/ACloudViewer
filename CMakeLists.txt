@@ -770,7 +770,7 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 endif ()
 add_subdirectory(examples)
 
-# load plugins (potentially used by eCV)
+# load plugins (potentially used by ACloudViewer app)
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
     if (MSVC)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug/plugins)
@@ -783,7 +783,7 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 endif ()
 add_subdirectory(plugins)
 
-# eCV
+# ACloudViewer app
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
     if (MSVC)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
@@ -796,7 +796,7 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 endif ()
 
 # ACloudViewer app
-add_subdirectory(eCV)
+add_subdirectory(app)
 
 # Documentation (optional)
 if(BUILD_DOCUMENTATION)
@@ -871,8 +871,8 @@ set(CHANGELOG_TXT "${CHANGELOG_TXT}" CACHE INTERNAL "Path to generated CHANGELOG
 set(SCRIPTS_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 file(GLOB main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/*.md" )
 list(APPEND main_documents_list "${CHANGELOG_TXT}" )
-list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/license.txt" 
-                                "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/global_shift_list_template.txt")
+list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/app/bin_other/license.txt" 
+                                "${CMAKE_CURRENT_SOURCE_DIR}/app/bin_other/global_shift_list_template.txt")
 
 SET(DEPLOY_ROOT_PATH "${CMAKE_INSTALL_PREFIX}/deploy")
 install(DIRECTORY "${SCRIPTS_BASE_PATH}/QtInstallerFramework/deploy"

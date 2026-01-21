@@ -31,7 +31,7 @@
 // Qt
 #include <QImage>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvBBox.h>
 
 // VTK

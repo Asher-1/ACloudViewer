@@ -8,7 +8,7 @@
 #pragma once
 
 // Shim header to match upstream include path.
-// Maps cloudViewer/geometry/LineSet.h -> repo's LineSet.h (eCV_db)
+// Maps cloudViewer/geometry/LineSet.h -> repo's LineSet.h (CV_db)
 
 #include <LineSet.h>
 

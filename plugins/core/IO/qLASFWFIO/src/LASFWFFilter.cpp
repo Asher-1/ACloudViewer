@@ -11,7 +11,7 @@
 #include <CVLog.h>
 #include <CVTools.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorScalesManager.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>

@@ -36,7 +36,7 @@
 #include <CVPlatform.h>
 #include <ScalarField.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvCone.h>
 #include <ecvCylinder.h>
 #include <ecvGenericMesh.h>

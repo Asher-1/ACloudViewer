@@ -10,7 +10,7 @@
 // local
 #include "qCanupoTools.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPointCloud.h>

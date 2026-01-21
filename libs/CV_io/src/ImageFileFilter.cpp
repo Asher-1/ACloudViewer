@@ -1,0 +1,187 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include "ImageFileFilter.h"
+
+// CV_DB_LIB
+#include <ecvHObjectCaster.h>
+#include <ecvImage.h>
+
+// LOCAL
+#include "FileIO.h"
+
+// Qt
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QImage>
+#include <QImageReader>
+#include <QImageWriter>
+
+// System
+#include <assert.h>
+
+ImageFileFilter::ImageFileFilter()
+    : FileIOFilter({"_Image Filter",
+                    17.0f,          // priority
+                    QStringList(),  // set below
+                    "png",
+                    QStringList(),  // set below
+                    QStringList(),  // set below
+                    Import | Export | BuiltIn | DynamicInfo}) {
+    // output filters
+    {
+        // we grab the list of supported image file formats (for writing)
+        QList<QByteArray> formats = QImageWriter::supportedImageFormats();
+
+        QStringList exportFilters;
+
+        // we convert this list into a proper "filters" string
+        for (auto& format : formats) {
+            exportFilters.append(QStringLiteral("%1 image (*.%2)")
+                                         .arg(QString(format.data()).toUpper(),
+                                              format.data()));
+        }
+
+        setExportFileFilterStrings(exportFilters);
+    }
+
+    // input filters
+    {
+        // we grab the list of supported image file formats (for reading)
+        QList<QByteArray> formats = QImageReader::supportedImageFormats();
+
+        QStringList imageFilters;
+        QStringList importExtensions;
+        for (auto& format : formats) {
+            imageFilters.append(QStringLiteral("*.%1").arg(format.data()));
+            importExtensions.append(QStringLiteral("%1").arg(format.data()));
+        }
+        setImportExtensions(importExtensions);
+
+        // we convert this list into a proper "filters" string
+        if (!imageFilters.empty()) {
+            QString imageFilter =
+                    QString("Image (%1)").arg(imageFilters.join(" "));
+            setImportFileFilterStrings({imageFilter});
+        }
+    }
+}
+
+QString ImageFileFilter::GetSaveFilename(const QString& dialogTitle,
+                                         const QString& baseName,
+                                         const QString& imageSavePath,
+                                         QWidget* parentWidget /*=0*/) {
+    // add images output file filters
+    QString filters;
+
+    // we grab the list of supported image file formats (writing)
+    QList<QByteArray> formats = QImageWriter::supportedImageFormats();
+    if (formats.empty()) {
+        CVLog::Error(
+                "No image format supported by your system?!\n(check that the "
+                "'imageformats' directory is alongside the application "
+                "executable)");
+        return QString();
+    }
+
+    // we convert this list into a proper "filters" string
+    QString pngFilter;
+    for (int i = 0; i < formats.size(); ++i) {
+        QString ext = QString(formats[i].data()).toUpper();
+        QString filter = QString("%1 image (*.%2)").arg(ext, formats[i].data());
+        filters.append(filter + QString("\n"));
+
+        // find PNG by default
+        if (pngFilter.isEmpty() && ext == "PNG") {
+            pngFilter = filter;
+        }
+    }
+
+    QString outputFilename = QFileDialog::getSaveFileName(
+            parentWidget, dialogTitle,
+            imageSavePath +
+                    QString("/%1.%2").arg(baseName,
+                                          pngFilter.isEmpty()
+                                                  ? QString(formats[0].data())
+                                                  : QString("png")),
+            filters,
+            pngFilter.isEmpty() ? static_cast<QString*>(0) : &pngFilter);
+
+    return outputFilename;
+}
+
+QString ImageFileFilter::GetLoadFilename(const QString& dialogTitle,
+                                         const QString& imageLoadPath,
+                                         QWidget* parentWidget /*=0*/) {
+    // we grab the list of supported image file formats (for reading)
+    QList<QByteArray> formats = QImageReader::supportedImageFormats();
+    QStringList imageExts;
+    for (int i = 0; i < formats.size(); ++i) {
+        imageExts.append(QString("*.%1").arg(formats[i].data()));
+    }
+    // we convert this list into a proper "filters" string
+    QString imageFilter = QString("Image (%1)").arg(imageExts.join(" "));
+
+    return QFileDialog::getOpenFileName(parentWidget, dialogTitle,
+                                        imageLoadPath, imageFilter);
+}
+
+bool ImageFileFilter::canSave(CV_CLASS_ENUM type,
+                              bool& multiple,
+                              bool& exclusive) const {
+    if (type == CV_TYPES::IMAGE) {
+        multiple = false;
+        exclusive = true;
+        return true;
+    }
+    return false;
+}
+
+CC_FILE_ERROR ImageFileFilter::saveToFile(ccHObject* entity,
+                                          const QString& filename,
+                                          const SaveParameters& parameters) {
+    if (!entity) return CC_FERR_BAD_ARGUMENT;
+
+    ccImage* image = ccHObjectCaster::ToImage(entity);
+    if (!image) return CC_FERR_BAD_ENTITY_TYPE;
+
+    if (image->data().isNull() || image->getW() == 0 || image->getH() == 0) {
+        CVLog::Warning(
+                QString("[IMAGE] Image '%1' is empty!").arg(image->getName()));
+        return CC_FERR_NO_SAVE;
+    }
+
+    QImageWriter writer(filename);
+
+    writer.setText("Author", FileIO::writerInfo());
+
+    if (!writer.write(image->data())) {
+        CVLog::Warning(
+                QString("[IMAGE] Failed to save image in '%1").arg(filename));
+        return CC_FERR_CONSOLE_ERROR;
+    }
+
+    return CC_FERR_NO_ERROR;
+}
+
+CC_FILE_ERROR ImageFileFilter::loadFile(const QString& filename,
+                                        ccHObject& container,
+                                        LoadParameters& parameters) {
+    QImage qImage;
+    if (!qImage.load(filename)) {
+        CVLog::Warning(
+                QString("[IMAGE] Failed to load image '%1").arg(filename));
+        return CC_FERR_CONSOLE_ERROR;
+    }
+
+    // create corresponding ccImage
+    ccImage* image = new ccImage(qImage, QFileInfo(filename).baseName());
+
+    container.addChild(image);
+
+    return CC_FERR_NO_ERROR;
+}

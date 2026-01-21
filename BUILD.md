@@ -141,11 +141,11 @@ Here’s a list of installation related targets. Please refer to 5. Install for 
 
 ### Translations
 
-有道云翻译：
-应用ID：6a470044a4c9069a
-应用秘钥：62EddBoyfG0KXCp5Ih0C100Ir0DNYcId
+Youdao Cloud Translation:
+Application ID: 6a470044a4c9069a
+Application Secret Key: 62EddBoyfG0KXCp5Ih0C100Ir0DNYcId
 
-翻译文件的正则替换：
+Regular expression replacements for translation files:
 ui_(\w+).h
 \1.ui
 
@@ -154,11 +154,11 @@ ui_(\w+).h
 "(\w+).h"
 "../\1.h"
 
-Copy "$(TargetDir)*.*" "$(SolutionDir)\eCV\Debug"
-Copy "$(TargetDir)*.*" "$(SolutionDir)\eCV\Debug\plugins"
+Copy "$(TargetDir)*.*" "$(SolutionDir)\app\Debug"
+Copy "$(TargetDir)*.*" "$(SolutionDir)\app\Debug\plugins"
 
-Copy "$(TargetDir)*.*" "$(SolutionDir)\eCV\Release"
-Copy "$(TargetDir)*.*" "$(SolutionDir)\eCV\Release\plugins"
+Copy "$(TargetDir)*.*" "$(SolutionDir)\app\Release"
+Copy "$(TargetDir)*.*" "$(SolutionDir)\app\Release\plugins"
 
 Copy "$(TargetDir)*.*" "$(SolutionDir)\qCC\Debug"
 Copy "$(TargetDir)*.*" "$(SolutionDir)\qCC\Debug\plugins"

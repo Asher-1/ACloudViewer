@@ -20,7 +20,7 @@
 // CV_CORE_LIB
 #include <CVPlatform.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvDisplayTools.h>
 
 // Common
@@ -230,7 +230,7 @@ void ecvApplicationBase::setupPaths() {
 
     m_PluginPaths << (bundleDir.absolutePath() + "/cvPlugins");
     m_ShaderPath = (bundleDir.absolutePath() + "/shaders");
-    m_TranslationPath = (bundleDir.absolutePath() + "/eCV/translations");
+    m_TranslationPath = (bundleDir.absolutePath() + "/app/translations");
 #else
     m_ShaderPath = (bundleDir.absolutePath() + "/Shaders");
     m_TranslationPath = (bundleDir.absolutePath() + "/translations");

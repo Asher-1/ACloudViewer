@@ -333,8 +333,8 @@ def _setup_linux_libraries():
 
     # 5. Load project-specific core libraries
     try_load_cdll('libCVCoreLib*')
-    try_load_cdll('libECV_DB_LIB*')
-    try_load_cdll('libECV_IO_LIB*')
+    try_load_cdll('libCV_DB_LIB*')
+    try_load_cdll('libCV_IO_LIB*')
 
     # 6. Load reconstruction libraries (if enabled)
     if _build_config["BUILD_RECONSTRUCTION"]:

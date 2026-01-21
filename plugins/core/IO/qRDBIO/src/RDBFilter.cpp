@@ -21,7 +21,7 @@
 #include <CVLog.h>
 #include <ScalarField.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvHObject.h>
 #include <ecvMaterial.h>
 #include <ecvMaterialSet.h>

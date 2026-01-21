@@ -32,7 +32,7 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ShpDBFFields.h>
 #include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>
@@ -42,7 +42,7 @@
 #include <ecvProgressDialog.h>
 #include <ecvScalarField.h>
 
-// ECV_IO_LIB
+// CV_IO_LIB
 #include <ShpFilter.h>
 
 // semi-persistent dialog values

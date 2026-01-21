@@ -16,7 +16,7 @@
 #include "ecvPickingHub.h"
 #include "ecvSettingManager.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGenericCameraTool.h>
 
 // CV_CORE_LIB

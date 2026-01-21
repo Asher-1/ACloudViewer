@@ -131,7 +131,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="../../eCV/MainWindow.qrc">
+        <iconset resource="../../app/MainWindow.qrc">
          <normaloff>:/Resources/images/svg/pqPlus.png</normaloff>:/Resources/images/svg/pqPlus.png</iconset>
        </property>
       </widget>
@@ -169,7 +169,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../eCV/MainWindow.qrc"/>
+  <include location="../../app/MainWindow.qrc"/>
  </resources>
  <connections>
   <connection>

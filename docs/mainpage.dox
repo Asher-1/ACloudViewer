@@ -102,7 +102,7 @@ ACloudViewer is organized into several key modules that work together to provide
 │                        <b>Core Processing Layer</b>                         │
 │                                                                             │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ cloudViewer  │  │   eCV_db     │  │   eCV_io     │  │  PCLEngine   │     │
+│  │ cloudViewer  │  │   CV_db     │  │   CV_io     │  │  PCLEngine   │     │
 │  │              │  │              │  │              │  │              │     │
 │  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • PCL        │     │
 │  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Integration│     │
@@ -127,8 +127,8 @@ ACloudViewer is organized into several key modules that work together to provide
 └─────────────────────────────────────────────────────────────────────────────┘
 
 <b>Data Flow:</b>
-  Input Files → eCV_io → Core Structures → Processing (Plugins/PCL) → 
-  Visualization/Output → Export (eCV_io)
+  Input Files → CV_io → Core Structures → Processing (Plugins/PCL) → 
+  Visualization/Output → Export (CV_io)
 
 <b>Extension Points:</b>
   • Plugin System: Add custom I/O formats and processing algorithms
@@ -148,8 +148,8 @@ Here's a brief overview of the different components and how they fit together to
   - ccHObject - Hierarchical object model
   - ccGenericPointCloud - Abstract point cloud interface
 
-- **eCV_db**: Database and entity management for complex 3D scenes
-- **eCV_io**: I/O operations for various file formats (PCD, PLY, LAS, E57, OBJ, STL, etc.)
+- **CV_db**: Database and entity management for complex 3D scenes
+- **CV_io**: I/O operations for various file formats (PCD, PLY, LAS, E57, OBJ, STL, etc.)
 - **PCLEngine**: Integration with Point Cloud Library (PCL)
   - Filtering algorithms
   - Registration (ICP, NDT)
@@ -173,7 +173,7 @@ Here's a brief overview of the different components and how they fit together to
 \subsection app_layer Application Layer
 
 - **CVViewer**: Standalone 3D viewer application
-- **eCV**: Main ACloudViewer application with full GUI
+- **ACloudViewer**: Main ACloudViewer application with full GUI
 
 \section quickstart_cpp_sec C++ Quick Start
 
@@ -285,8 +285,8 @@ ACloudViewer provides powerful 3D visualization capabilities for interactive dat
 
 - **C++ API**: Browse the complete API reference using the navigation above
   - cloudViewer - Core Module
-  - eCV_db - Database Module
-  - eCV_io - I/O Module
+  - CV_db - Database Module
+  - CV_io - I/O Module
   - Classes, Namespaces, Files tabs for detailed navigation
 
 - **Python API**: See the <a href="../python_api/index.html">Python API documentation</a>

@@ -14,7 +14,7 @@ if (PLUGIN_STANDARD_3DMASC)
 
 	#As we are going to re-use several components of the main qCC project
 	#we define its sources path relatively to the plugin's dir
-	set(${ACloudViewer_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../eCV)
+	set(${ACloudViewer_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../app)
 
 	#include the whole CC directory (easier)
 	include_directories( ${${ACloudViewer_SOURCE_DIR}} )

@@ -15,7 +15,7 @@
 #include "ecvQtHelpers.h"
 #include "ecvSettingManager.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorTypes.h>
 #include <ecvDisplayTools.h>
 

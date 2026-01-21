@@ -10,7 +10,7 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>

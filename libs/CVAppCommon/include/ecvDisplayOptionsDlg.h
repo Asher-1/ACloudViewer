@@ -14,7 +14,7 @@
 // CV_CORE_LIB
 #include <CVPlatform.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGuiParameters.h>
 
 // Qt

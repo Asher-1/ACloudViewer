@@ -119,6 +119,11 @@ v3.9.4-Beta (Asher) - 01/16/2026
         -   Enhanced theme selection UI in Display settings
         -   Improved theme loading and application performance
         -   Updated compilation documentation with theme information
+    -   Refactor project structure and module naming
+        -   Rename main application folder from `eCV` to `app` for better clarity and consistency
+        -   Rename library modules from `eCV_db`/`eCV_io` to `CV_db`/`CV_io` to align with naming conventions (CVViewer, CVAppCommon, CVPluginAPI)
+        -   Update all CMakeLists.txt, build scripts, documentation, and UI resource paths to reflect new folder structure
+        -   Maintain backward compatibility with CMake target names (CV_DB_LIB, CV_IO_LIB)
 
 - New plugins:
     - G3 Point - Granulometry made simple in ACloudViewer
@@ -635,7 +640,7 @@ v3.6.0 (Asher) - 12/10/2020
     - Update rendering window when call removeFromDB function
 
 - Changes:
-    - Reconstruct CVCoreLib, ECV_DB_LIB, ECV_IO_DB direction structure
+    - Reconstruct CVCoreLib, CV_DB_LIB, ECV_IO_DB direction structure
     - Add CVAppCommon, CVPluginAPI and CVPluginStub modules
     - Reconstruct plugin Standard and IO module direction structure
     - Remove Contribs directory and put some third parties into plugins itself
