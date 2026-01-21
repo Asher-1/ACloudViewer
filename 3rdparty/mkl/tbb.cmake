@@ -34,34 +34,41 @@ if(WIN32)
     set(TBB_FIND_HWLOC OFF CACHE BOOL "Find hwloc library (disabled on Windows)." FORCE)
 endif()
 FetchContent_MakeAvailable(ext_tbb)
-# Explicitly disable tbbbind targets on Windows if they were created
-# This is a safety measure in case TBB_BUILD_BIND setting didn't take effect
-if(WIN32)
-    if(TARGET tbbbind_2_5)
-        set_target_properties(tbbbind_2_5 PROPERTIES EXCLUDE_FROM_ALL TRUE EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-        # Remove any dependencies on tbbbind to prevent it from being built
-        get_target_property(tbbbind_deps tbbbind_2_5 LINK_LIBRARIES)
-        if(tbbbind_deps)
-            list(REMOVE_ITEM tbbbind_deps pthread)
-            set_target_properties(tbbbind_2_5 PROPERTIES LINK_LIBRARIES "${tbbbind_deps}")
-        endif()
-        message(STATUS "Disabled tbbbind_2_5 target on Windows to avoid pthread.lib dependency")
-    endif()
-    if(TARGET tbbbind)
-        set_target_properties(tbbbind PROPERTIES EXCLUDE_FROM_ALL TRUE EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-        message(STATUS "Disabled tbbbind target on Windows to avoid pthread.lib dependency")
-    endif()
-endif()
+
 set(BUILD_SHARED_LIBS ${_build_shared_libs})
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ${_win_exp_all_syms})
 
 # TBB is built and linked as a shared library - this is different from all other CloudViewer dependencies.
-install(TARGETS tbb EXPORT ${PROJECT_NAME}Targets
-  ARCHIVE DESTINATION ${CloudViewer_INSTALL_LIB_DIR}     # Windows .lib files
-  COMPONENT tbb
-  LIBRARY DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
-  COMPONENT tbb
-  RUNTIME DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
-  COMPONENT tbb
-)
+# On Windows, install TBB only if target exists and files are available
+# TBB DLL may have version numbers (e.g., tbb12.dll) which can cause install(TARGETS) to fail
+if(TARGET tbb)
+    if(WIN32)
+        # On Windows, use install(FILES) with generator expressions to handle versioned DLL names
+        # This is more reliable than install(TARGETS) when DLL names have version numbers
+        install(FILES $<TARGET_FILE:tbb>
+            DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
+            COMPONENT tbb
+            OPTIONAL
+        )
+        # Install the import library (.lib file)
+        install(FILES $<TARGET_LINKER_FILE:tbb>
+            DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
+            COMPONENT tbb
+            OPTIONAL
+        )
+    else()
+        # On non-Windows platforms, use standard install(TARGETS)
+        install(TARGETS tbb EXPORT ${PROJECT_NAME}Targets
+          ARCHIVE DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
+          COMPONENT tbb
+          LIBRARY DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
+          COMPONENT tbb
+          RUNTIME DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
+          COMPONENT tbb
+        )
+    endif()
+else()
+    message(STATUS "TBB target not found, skipping TBB installation")
+endif()
+
 add_library(3rdparty_tbb ALIAS tbb)
