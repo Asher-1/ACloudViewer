@@ -52,17 +52,12 @@ print_usage_and_exit_docker_test() {
 }
 
 ci_print_env() {
-    echo "[ci_print_env()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[ci_print_env()] BASE_IMAGE=${BASE_IMAGE}"
-    echo "[ci_print_env()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
-    echo "[ci_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
-    echo "[ci_print_env()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[ci_print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
-    echo "[ci_print_env()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-    echo "[ci_print_env()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
-    echo "[ci_print_env()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
-    echo "[ci_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-    echo "[ci_print_env()] PACKAGE=${PACKAGE}"
+    echo "[ci_print_env()] DOCKER_TAG=${DOCKER_TAG:-not set}"
+    echo "[ci_print_env()] DEVELOPER_BUILD=${DEVELOPER_BUILD:-not set}"
+    echo "[ci_print_env()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-not set}"
+    echo "[ci_print_env()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE:-not set}"
+    echo "[ci_print_env()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-not set}"
+    echo "[ci_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-not set}"
 }
 
 cpp_test_only() {
@@ -274,6 +269,7 @@ qt6-cuda)
 # CI builds (matches CI_CONFIG from GitHub Actions)
 cpu-focal)
     export DOCKER_TAG="cloudviewer-ci:cpu-focal"
+    export DEVELOPER_BUILD="ON"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="OFF"
     export BUILD_PYTORCH_OPS="OFF"
@@ -283,6 +279,7 @@ cpu-focal)
     ;;
 cpu-jammy)
     export DOCKER_TAG="cloudviewer-ci:cpu-jammy"
+    export DEVELOPER_BUILD="ON"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="OFF"
     export BUILD_PYTORCH_OPS="OFF"
@@ -292,6 +289,7 @@ cpu-jammy)
     ;;
 cpu-noble)
     export DOCKER_TAG="cloudviewer-ci:cpu-noble"
+    export DEVELOPER_BUILD="ON"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="OFF"
     export BUILD_PYTORCH_OPS="OFF"
@@ -301,6 +299,7 @@ cpu-noble)
     ;;
 cpu-focal-release)
     export DOCKER_TAG="cloudviewer-ci:cpu-focal"
+    export DEVELOPER_BUILD="OFF"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="OFF"
     export BUILD_PYTORCH_OPS="OFF"
@@ -310,6 +309,7 @@ cpu-focal-release)
     ;;
 cpu-jammy-release)
     export DOCKER_TAG="cloudviewer-ci:cpu-jammy"
+    export DEVELOPER_BUILD="OFF"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="OFF"
     export BUILD_PYTORCH_OPS="OFF"
@@ -319,6 +319,7 @@ cpu-jammy-release)
     ;;
 cpu-noble-release)
     export DOCKER_TAG="cloudviewer-ci:cpu-noble"
+    export DEVELOPER_BUILD="OFF"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="OFF"
     export BUILD_PYTORCH_OPS="OFF"
@@ -328,6 +329,7 @@ cpu-noble-release)
     ;;
 cuda-focal)
     export DOCKER_TAG="cloudviewer-ci:cuda-focal"
+    export DEVELOPER_BUILD="ON"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
     export BUILD_PYTORCH_OPS="OFF"
@@ -337,6 +339,7 @@ cuda-focal)
     ;;
 cuda-jammy)
     export DOCKER_TAG="cloudviewer-ci:cuda-jammy"
+    export DEVELOPER_BUILD="ON"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
     export BUILD_PYTORCH_OPS="OFF"
@@ -346,6 +349,7 @@ cuda-jammy)
     ;;
 cuda-noble)
     export DOCKER_TAG="cloudviewer-ci:cuda-noble"
+    export DEVELOPER_BUILD="ON"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
     export BUILD_PYTORCH_OPS="OFF"
@@ -355,6 +359,7 @@ cuda-noble)
     ;;
 cuda-focal-release)
     export DOCKER_TAG="cloudviewer-ci:cuda-focal"
+    export DEVELOPER_BUILD="OFF"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
     export BUILD_PYTORCH_OPS="OFF"
@@ -364,6 +369,7 @@ cuda-focal-release)
     ;;
 cuda-jammy-release)
     export DOCKER_TAG="cloudviewer-ci:cuda-jammy"
+    export DEVELOPER_BUILD="OFF"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
     export BUILD_PYTORCH_OPS="OFF"
@@ -373,6 +379,7 @@ cuda-jammy-release)
     ;;
 cuda-noble-release)
     export DOCKER_TAG="cloudviewer-ci:cuda-noble"
+    export DEVELOPER_BUILD="OFF"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
     export BUILD_PYTORCH_OPS="OFF"

@@ -35,6 +35,31 @@ target_sources(core PRIVATE
 
 target_sources(core PRIVATE
         kernel/Kernel.cpp
+        linalg/AddMM.cpp
+        linalg/Det.cpp
+        linalg/Inverse.cpp
+        linalg/LeastSquares.cpp
+        linalg/LU.cpp
+        linalg/Matmul.cpp
+        linalg/Solve.cpp
+        linalg/SVD.cpp
+        linalg/Tri.cpp
+        )
+
+target_sources(core PRIVATE
+        nns/FixedRadiusIndex.cpp
+        nns/FixedRadiusSearchOps.cpp
+        nns/KnnIndex.cpp
+        nns/NanoFlannIndex.cpp
+        nns/NearestNeighborSearch.cpp
+        nns/NNSIndex.cpp
+        )
+
+# core_impl contains the implementation of core functions that are not exposed in the public API
+add_library(core_impl OBJECT)
+set_target_properties(core_impl PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+
+target_sources(core_impl PRIVATE
         kernel/Arange.cpp
         kernel/BinaryEW.cpp
         kernel/IndexGetSet.cpp
@@ -49,49 +74,25 @@ target_sources(core PRIVATE
         kernel/NonZeroCPU.cpp
         kernel/ReductionCPU.cpp
         kernel/UnaryEWCPU.cpp
-)
-
-target_sources(core PRIVATE
-        linalg/AddMM.cpp
         linalg/AddMMCPU.cpp
-        linalg/Det.cpp
-        linalg/Inverse.cpp
         linalg/InverseCPU.cpp
-        linalg/LeastSquares.cpp
         linalg/LeastSquaresCPU.cpp
-        linalg/LU.cpp
         linalg/LUCPU.cpp
-        linalg/Matmul.cpp
         linalg/MatmulCPU.cpp
-        linalg/Solve.cpp
         linalg/SolveCPU.cpp
-        linalg/SVD.cpp
         linalg/SVDCPU.cpp
-        linalg/Tri.cpp
         linalg/TriCPU.cpp
-        )
-
-target_sources(core PRIVATE
-        nns/FixedRadiusIndex.cpp
-        nns/FixedRadiusSearchOps.cpp
-        nns/KnnIndex.cpp
-        nns/NanoFlannIndex.cpp
-        nns/NearestNeighborSearch.cpp
-        nns/NNSIndex.cpp
         )
 
 if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
-            MemoryManagerCUDA.cpp
-            )
+        MemoryManagerCUDA.cpp
+    )
 
-    target_sources(core PRIVATE
-            hashmap/CUDA/CreateCUDAHashBackend.cu
-            hashmap/CUDA/CUDAHashBackendBuffer.cu
-            hashmap/CUDA/SlabNodeManager.cu
-            )
-
-    target_sources(core PRIVATE
+    target_sources(core_impl PRIVATE
+        hashmap/CUDA/CreateCUDAHashBackend.cu
+        hashmap/CUDA/CUDAHashBackendBuffer.cu
+        hashmap/CUDA/SlabNodeManager.cu
         kernel/ArangeCUDA.cu
         kernel/BinaryEWCUDA.cu
         kernel/IndexGetSetCUDA.cu
@@ -99,9 +100,6 @@ if (BUILD_CUDA_MODULE)
         kernel/NonZeroCUDA.cu
         kernel/ReductionCUDA.cu
         kernel/UnaryEWCUDA.cu
-     )
-
-    target_sources(core PRIVATE
         linalg/AddMMCUDA.cpp
         linalg/InverseCUDA.cpp
         linalg/LeastSquaresCUDA.cpp
@@ -111,14 +109,11 @@ if (BUILD_CUDA_MODULE)
         linalg/SolveCUDA.cpp
         linalg/SVDCUDA.cpp
         linalg/TriCUDA.cu
-        )
-
-    target_sources(core PRIVATE
-            nns/FixedRadiusSearchOps.cu
-            nns/kernel/BlockSelectFloat32.cu
-            nns/kernel/BlockSelectFloat64.cu
-            nns/KnnSearchOps.cu
-            )
+        nns/FixedRadiusSearchOps.cu
+        nns/kernel/BlockSelectFloat32.cu
+        nns/kernel/BlockSelectFloat64.cu
+        nns/KnnSearchOps.cu
+    )
 endif ()
 
 cloudViewer_show_and_abort_on_warning(core)
@@ -126,6 +121,12 @@ cloudViewer_set_global_properties(core)
 cloudViewer_set_cloudViewer_lib_properties(core)
 cloudViewer_link_3rdparty_libraries(core)
 
+cloudViewer_show_and_abort_on_warning(core_impl)
+cloudViewer_set_global_properties(core_impl)
+cloudViewer_set_cloudViewer_lib_properties(core_impl HIDDEN)
+cloudViewer_link_3rdparty_libraries(core_impl)
+
 if (BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_include_directories(core_impl SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif ()
