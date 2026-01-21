@@ -8,6 +8,7 @@
 #include "cloudViewer/core/Device.h"
 
 #include "tests/Tests.h"
+#include "tests/core/CoreTest.h"
 
 namespace cloudViewer {
 namespace tests {
@@ -24,18 +25,30 @@ TEST(Device, CPUMustBeID0) {
 }
 
 TEST(Device, SpecifiedConstructor) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     core::Device ctx(core::Device::DeviceType::CUDA, 1);
     EXPECT_EQ(ctx.GetType(), core::Device::DeviceType::CUDA);
     EXPECT_EQ(ctx.GetID(), 1);
 }
 
 TEST(Device, StringConstructor) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     core::Device ctx("CUDA:1");
     EXPECT_EQ(ctx.GetType(), core::Device::DeviceType::CUDA);
     EXPECT_EQ(ctx.GetID(), 1);
 }
 
 TEST(Device, StringConstructorLower) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     core::Device ctx("cuda:1");
     EXPECT_EQ(ctx.GetType(), core::Device::DeviceType::CUDA);
     EXPECT_EQ(ctx.GetID(), 1);

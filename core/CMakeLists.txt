@@ -31,7 +31,7 @@ option(CVCORELIB_SHARED
         )
 option(CVCORELIB_SCALAR_DOUBLE
         "Define ScalarType as double (instead of float)"
-        OFF
+        ON
         )
 
 # Add the library (shared or static)

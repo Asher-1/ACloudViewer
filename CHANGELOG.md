@@ -87,6 +87,10 @@ v3.9.4-Beta (Asher) - 01/16/2026
     -   Fix Find data UI issues
     -   Fix GitHub CI issues for macOS, Windows, and Ubuntu workflows
         -   Fix curl and MKL/TBB CMake configuration issues
+    -   Fix PLY filter error handling and metadata preservation
+        -   Fix ply.comments metadata not being preserved when saving PLY files
+        -   Fix incorrect error code returned when PLY file opening fails
+        -   Fix scalar field value saving to use getValue() instead of getGlobalShift() + getValue()
 
 - Enhancements:
     -   Replace `#ifndef` with `#pragma once`
@@ -124,6 +128,20 @@ v3.9.4-Beta (Asher) - 01/16/2026
         -   Rename library modules from `eCV_db`/`eCV_io` to `CV_db`/`CV_io` to align with naming conventions (CVViewer, CVAppCommon, CVPluginAPI)
         -   Update all CMakeLists.txt, build scripts, documentation, and UI resource paths to reflect new folder structure
         -   Maintain backward compatibility with CMake target names (CV_DB_LIB, CV_IO_LIB)
+    -   Add CMake option for ScalarType precision
+        -   Add CVCORELIB_SCALAR_DOUBLE option to define ScalarType as double (instead of float)
+        -   Default value is ON (double precision)
+        -   Allows users to choose between float and double precision for scalar computations
+    -   Align PLY filter implementation with CloudCompare
+        -   Remove tuComboBox and tvComboBox texture coordinate selection UI elements
+        -   Remove special_texture logic and texCoords_cb2 function
+        -   Fix scalar field saving logic to properly handle originalStdPropsNames and compute min/max values
+        -   Fix texture saving to use mirrored().save() method
+        -   Fix TextureFile comment handling to use "TextureFile" keyword
+        -   Fix ply.comments metadata handling to preserve existing comments or add createdBy/createdDateTime
+        -   Fix error code for ply_open failures (use CC_FERR_THIRD_PARTY_LIB_FAILURE instead of CC_FERR_READING)
+        -   Update PLY open dialog UI to use QListWidget for scalar fields selection instead of fixed combo boxes
+        -   Improve scalar field type selection based on value ranges (int8, uint8, int16, uint16, float32, float64)
 
 - New plugins:
     - G3 Point - Granulometry made simple in ACloudViewer

@@ -19,6 +19,9 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
+// STL
+#include <limits>
+
 void ccRenderingTools::ShowDepthBuffer(ccGBLSensor* sensor,
                                        QWidget* parent /*=0*/,
                                        unsigned maxDim /*=1024*/) {
@@ -30,8 +33,8 @@ void ccRenderingTools::ShowDepthBuffer(ccGBLSensor* sensor,
     }
 
     // determine min and max depths
-    ScalarType minDist = 0.0f;
-    ScalarType maxDist = 0.0f;
+    PointCoordinateType minDist = 0.0f;
+    PointCoordinateType maxDist = 0.0f;
     {
         const PointCoordinateType* _zBuff = depthBuffer.zBuff.data();
         double sumDist = 0.0;
@@ -48,17 +51,17 @@ void ccRenderingTools::ShowDepthBuffer(ccGBLSensor* sensor,
 
             if (*_zBuff > 0) {
                 sumDist += *_zBuff;
-                sumDist2 += *_zBuff * *_zBuff;
+                sumDist2 += static_cast<double>(*_zBuff) * *_zBuff;
                 ++count;
             }
         }
 
         if (count) {
             double avg = sumDist / count;
-            double stdDev = sqrt(fabs(sumDist2 / count - avg * avg));
+            double stdDev = sqrt(std::abs(sumDist2 / count - avg * avg));
             // for better dynamics
-            maxDist = std::min(maxDist,
-                               static_cast<ScalarType>(avg + 1.0 * stdDev));
+            maxDist = std::min(maxDist, static_cast<PointCoordinateType>(
+                                                avg + 1.0 * stdDev));
         }
     }
 
@@ -179,8 +182,10 @@ void ConvertToLogScale(ScalarType& dispMin, ScalarType& dispMax) {
     ScalarType absDispMin = (dispMax < 0 ? std::min(-dispMax, -dispMin)
                                          : std::max<ScalarType>(dispMin, 0));
     ScalarType absDispMax = std::max(std::abs(dispMin), std::abs(dispMax));
-    dispMin = std::log10(std::max(absDispMin, FLT_EPSILON));
-    dispMax = std::log10(std::max(absDispMax, FLT_EPSILON));
+    dispMin = std::log10(
+            std::max(absDispMin, std::numeric_limits<ScalarType>::epsilon()));
+    dispMax = std::log10(
+            std::max(absDispMax, std::numeric_limits<ScalarType>::epsilon()));
 }
 
 void ccRenderingTools::DrawColorRamp(const CC_DRAW_CONTEXT& context) {

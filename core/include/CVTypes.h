@@ -7,23 +7,26 @@
 
 #pragma once
 
+#ifndef CVCORELIB_CVTYPES_H
+#define CVCORELIB_CVTYPES_H
+
 #include <stdint.h>
 
 //! Type of the coordinates of a (N-D) point
+using PointCoordinateType = float;
+
 //! Type of a single scalar field value
 #if defined CV_CORE_LIB_USES_DOUBLE
 using ScalarType = double;
-using PointCoordinateType = double;
 #elif defined CV_CORE_LIB_USES_FLOAT
 using ScalarType = float;
-using PointCoordinateType = float;
 #else
 static_assert(false, "type for ScalarType has not been declared");
 #endif  // SCALAR_TYPE_DOUBLE
 
 //! Object state flag
-enum CV_OBJECT_FLAG {  // CC_UNUSED			= 1, //DGM: not used
-                       // anymore (former CC_FATHER_DEPENDENT)
+enum CV_OBJECT_FLAG {
+    // CC_UNUSED = 1, //DGM: not used anymore (former CC_FATHER_DEPENDENT)
     CC_ENABLED = 2,
     CC_LOCKED = 4,
 };
@@ -176,4 +179,6 @@ typedef enum : CV_CLASS_ENUM {
     CUSTOM_H_OBJECT = HIERARCHY_OBJECT | CC_CUSTOM_BIT,
     CUSTOM_LEAF_OBJECT = CUSTOM_H_OBJECT | CC_LEAF_BIT,
 } GeometryType;
-}
+}  // namespace CV_TYPES
+
+#endif  // CVCORELIB_CVTYPES_H

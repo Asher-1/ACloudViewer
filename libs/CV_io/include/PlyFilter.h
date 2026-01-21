@@ -5,12 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <rply.h>
+#ifndef CC_PLY_FILTER_HEADER
+#define CC_PLY_FILTER_HEADER
 
 #include "FileIOFilter.h"
-// #include "FileRply.h"
+#include "rply.h"
 
 //! PLY format types
 static const char e_ply_type_names[][12] = {
@@ -52,16 +51,16 @@ public:
     static void SetDefaultOutputFormat(e_ply_storage_mode format);
 
     // inherited from FileIOFilter
-    virtual CC_FILE_ERROR loadFile(const QString& filename,
-                                   ccHObject& container,
-                                   LoadParameters& parameters) override;
+    CC_FILE_ERROR loadFile(const QString& filename,
+                           ccHObject& container,
+                           LoadParameters& parameters) override;
 
-    virtual bool canSave(CV_CLASS_ENUM type,
-                         bool& multiple,
-                         bool& exclusive) const override;
-    virtual CC_FILE_ERROR saveToFile(ccHObject* entity,
-                                     const QString& filename,
-                                     const SaveParameters& parameters) override;
+    bool canSave(CV_CLASS_ENUM type,
+                 bool& multiple,
+                 bool& exclusive) const override;
+    CC_FILE_ERROR saveToFile(ccHObject* entity,
+                             const QString& filename,
+                             const SaveParameters& parameters) override;
 
     //! Custom loading method
     CC_FILE_ERROR loadFile(const QString& filename,
@@ -69,9 +68,11 @@ public:
                            ccHObject& container,
                            LoadParameters& parameters);
 
-protected:
+private:
     //! Internal method
     CC_FILE_ERROR saveToFile(ccHObject* entity,
                              QString filename,
                              e_ply_storage_mode storageType);
 };
+
+#endif  // CC_PLY_FILTER_HEADER
