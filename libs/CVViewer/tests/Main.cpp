@@ -49,7 +49,8 @@ int main(int argc, char** argv) {
             core::CUDAState::GetInstance().ForceDisableP2PForTesting();
             utility::LogInfo("P2P device transfer has been disabled.");
         } else {
-            utility::LogInfo("P2P device transfer disable skipped: CUDA not available.");
+            utility::LogInfo(
+                    "P2P device transfer disable skipped: CUDA not available.");
         }
     }
 #endif
