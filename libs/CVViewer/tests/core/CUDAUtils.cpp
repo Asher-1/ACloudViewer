@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "tests/Tests.h"
+#include "tests/core/CoreTest.h"
 
 // #include <fmt/std.h>   // fmt version >=9, else:
 namespace {
@@ -30,6 +31,10 @@ namespace cloudViewer {
 namespace tests {
 
 TEST(CUDAUtils, InitState) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "enable CUDA support.";
+    }
     const int device_count = core::cuda::DeviceCount();
     const core::CUDAState& cuda_state = core::CUDAState::GetInstance();
     utility::LogInfo("Number of CUDA devices: {}", device_count);
@@ -107,15 +112,35 @@ void CheckScopedStreamMultiThreaded(const std::function<void()>& func) {
     }
 }
 
-TEST(CUDAUtils, ScopedStreamManually) { CheckScopedStreamManually(); }
+TEST(CUDAUtils, ScopedStreamManually) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "enable CUDA support.";
+    }
+    CheckScopedStreamManually();
+}
 
 TEST(CUDAUtils, ScopedStreamManuallyMultiThreaded) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "enable CUDA support.";
+    }
     CheckScopedStreamMultiThreaded(&CheckScopedStreamManually);
 }
 
-TEST(CUDAUtils, ScopedStreamAutomatically) { CheckScopedStreamAutomatically(); }
+TEST(CUDAUtils, ScopedStreamAutomatically) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "enable CUDA support.";
+    }
+    CheckScopedStreamAutomatically();
+}
 
 TEST(CUDAUtils, ScopedStreamAutomaticallyMultiThreaded) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "enable CUDA support.";
+    }
     CheckScopedStreamMultiThreaded(&CheckScopedStreamAutomatically);
 }
 

@@ -44,8 +44,13 @@ int main(int argc, char** argv) {
 
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {
-        core::CUDAState::GetInstance().ForceDisableP2PForTesting();
-        utility::LogInfo("P2P device transfer has been disabled.");
+        // Only disable P2P if CUDA is actually available
+        if (core::cuda::IsAvailable() && core::cuda::DeviceCount() > 0) {
+            core::CUDAState::GetInstance().ForceDisableP2PForTesting();
+            utility::LogInfo("P2P device transfer has been disabled.");
+        } else {
+            utility::LogInfo("P2P device transfer disable skipped: CUDA not available.");
+        }
     }
 #endif
 
